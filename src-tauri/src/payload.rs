@@ -1,6 +1,7 @@
 use anyhow::Result;
 use prost::Message;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::{
     fs,
     io::{Cursor, Read, Seek, SeekFrom, Write},
@@ -297,6 +298,14 @@ fn decode_operation(
     }
 
     let raw_data = &payload.bytes[data_offset..data_end];
+    if let Some(expected_hash) = operation.data_sha256_hash.as_ref() {
+        if !expected_hash.is_empty() {
+            let actual_hash = Sha256::digest(raw_data);
+            if actual_hash.as_slice() != expected_hash.as_slice() {
+                anyhow::bail!("payload operation checksum mismatch");
+            }
+        }
+    }
     let mut decoded = match operation_type {
         Type::Replace => raw_data.to_vec(),
         Type::ReplaceXz => {
@@ -548,6 +557,55 @@ mod tests {
         assert_eq!(&image[4096..8192], &[0; 4096]);
         assert_eq!(&image[8192..12288], &[5; 4096]);
         assert_eq!(&image[12288..16384], &[0; 4096]);
+    }
+
+    #[test]
+    fn rejects_payload_when_data_hash_mismatches() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+        let output_dir = temp.path().join("out");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "boot".to_string(),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(4096),
+                        hash: Some(Vec::new()),
+                    }),
+                    operations: vec![InstallOperation {
+                        r#type: Type::Replace as i32,
+                        data_offset: Some(0),
+                        data_length: Some(4096),
+                        dst_extents: vec![chromeos_update_engine::Extent {
+                            start_block: Some(0),
+                            num_blocks: Some(1),
+                        }],
+                        data_sha256_hash: Some(vec![0u8; 32]),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &[9; 4096],
+        );
+
+        let cache = PayloadCache::default();
+        let error = extract_payload(
+            &payload_path,
+            Some(&output_dir),
+            &[String::from("boot")],
+            &cache,
+            |_, _, _, _| {},
+        )
+        .expect_err("expected checksum verification failure");
+
+        assert!(
+            error.to_string().contains("checksum mismatch"),
+            "expected checksum mismatch error, got: {error}"
+        );
     }
 
     fn write_test_payload(path: &Path, partition_name: &str, size: u64, image_bytes: &[u8]) {
