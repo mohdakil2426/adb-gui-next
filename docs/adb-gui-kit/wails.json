@@ -1,0 +1,43 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "ADBKit",
+  "outputfilename": "ADBKit",
+  "frontend:install": "pnpm install",
+  "frontend:build": "pnpm build",
+  "frontend:dev:watcher": "pnpm dev",
+  "frontend:dev:serverUrl": "http://localhost:4333",
+  "frontend:dev:message": "ready in",
+  "author": {
+    "name": "AKIL",
+    "email": "akilazmi1234@gmail.com"
+  },
+  "info": {
+    "companyName": "AKIL",
+    "productName": "ADBKit Enhanced",
+    "productVersion": "2.0.0",
+    "fileVersion": "2.0.0",
+    "copyright": "Copyright (c) 2025 AKIL (Enhanced). Original by Drenzzz.",
+    "comments": "Enhanced Edition with Payload Dumper, Standalone Builds, and more."
+  },
+  "linux": {
+    "packagemetadata": {
+      "name": "ADBKit",
+      "description": "A powerful, modern GUI for ADB and Fastboot - Enhanced Edition.",
+      "packagename": "ADBKit",
+      "version": "2.0.0",
+      "maintainer": "AKIL <akilazmi1234@gmail.com>",
+      "depends": [
+        "libgtk-3-0",
+        "libwebkit2gtk-4.0-37"
+      ]
+    },
+    "resources": [
+      "bin/linux/"
+    ]
+  },
+  "windows": {
+    "resources": [
+      "bin/windows/"
+    ]
+  }
+}
