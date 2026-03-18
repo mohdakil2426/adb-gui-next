@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLogStore } from '@/lib/logStore';
 
-
-import { SelectMultipleApkFiles, InstallPackage, UninstallPackage, GetInstalledPackages } from '../../lib/desktop/backend';
-import { backend } from '../../lib/desktop/models';
+import {
+  SelectMultipleApkFiles,
+  InstallPackage,
+  UninstallPackage,
+  GetInstalledPackages,
+} from '../../lib/desktop/backend';
+import type { backend } from '../../lib/desktop/models';
 
 import {
   AlertDialog,
@@ -15,28 +19,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { toast } from "sonner";
-import { Loader2, Package, Trash2, FileUp, RefreshCw, X, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button-variants';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Loader2, Package, Trash2, FileUp, RefreshCw, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const [apkPaths, setApkPaths] = useState<string[]>([]);
   const [isInstalling, setIsInstalling] = useState(false);
-  const [installProgress, setInstallProgress] = useState<{ current: number, total: number } | null>(null);
+  const [installProgress, setInstallProgress] = useState<{ current: number; total: number } | null>(
+    null,
+  );
 
   const [packages, setPackages] = useState<backend.InstalledPackage[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter packages: Search -> Sort (Selected First) -> Slice
   const filteredPackages = packages
-    .filter(pkg => pkg.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((pkg) => pkg.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       const aSelected = selectedPackages.has(a.name);
       const bSelected = selectedPackages.has(b.name);
@@ -60,8 +65,8 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       const packageList = await GetInstalledPackages();
       setPackages(packageList || []);
     } catch (error) {
-      console.error("Failed to load packages:", error);
-      toast.error("Failed to load packages", { description: String(error) });
+      console.error('Failed to load packages:', error);
+      toast.error('Failed to load packages', { description: String(error) });
     } finally {
       setIsLoadingPackages(false);
     }
@@ -75,21 +80,21 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
         toast.info(`${selectedPaths.length} file(s) selected`);
       }
     } catch (error) {
-      console.error("File selection error:", error);
-      toast.error("Failed to open file dialog", { description: String(error) });
+      console.error('File selection error:', error);
+      toast.error('Failed to open file dialog', { description: String(error) });
     }
   };
 
   const handleInstall = async () => {
     if (apkPaths.length === 0) {
-      toast.error("No APK files selected.");
+      toast.error('No APK files selected.');
       return;
     }
 
     setIsInstalling(true);
     setInstallProgress({ current: 0, total: apkPaths.length });
 
-    const toastId = toast.loading("Starting installation...");
+    const toastId = toast.loading('Starting installation...');
 
     let successCount = 0;
     let failCount = 0;
@@ -135,7 +140,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
   const handleUninstall = async () => {
     if (selectedPackages.size === 0) {
-      toast.error("No packages selected.");
+      toast.error('No packages selected.');
       return;
     }
 
@@ -172,7 +177,6 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -196,13 +200,11 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">
-                Selected Apk
-              </label>
+              <label className="text-sm font-medium">Selected Apk</label>
             </div>
 
             <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
-              <div className="max-h-[300px] overflow-y-auto">
+              <div className="max-h-75 overflow-y-auto">
                 {apkPaths.length === 0 ? (
                   <div className="py-6 text-center text-sm text-muted-foreground">
                     No files selected.
@@ -241,7 +243,10 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
           {apkPaths.length > 0 && (
             <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
-              <span>Selected: <span className="font-medium text-foreground">{apkPaths.length}</span> file(s)</span>
+              <span>
+                Selected: <span className="font-medium text-foreground">{apkPaths.length}</span>{' '}
+                file(s)
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -275,8 +280,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               )}
               {isInstalling
                 ? `Installing ${installProgress?.current}/${installProgress?.total}...`
-                : `Install ${apkPaths.length > 0 ? `(${apkPaths.length})` : ''}`
-              }
+                : `Install ${apkPaths.length > 0 ? `(${apkPaths.length})` : ''}`}
             </span>
           </Button>
         </CardContent>
@@ -307,16 +311,14 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               )}
             </Button>
             <div className="flex-1 text-sm text-muted-foreground flex items-center">
-              {isLoadingPackages ? "Loading packages..." : `${packages.length} packages found`}
+              {isLoadingPackages ? 'Loading packages...' : `${packages.length} packages found`}
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Select Package
-            </label>
+            <label className="text-sm font-medium">Select Package</label>
             <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
-              <div className="flex items-center border-b px-3" >
+              <div className="flex items-center border-b px-3">
                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                 <input
                   className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
@@ -325,7 +327,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="max-h-[300px] overflow-y-auto p-1">
+              <div className="max-h-75 overflow-y-auto p-1">
                 {filteredPackages.length === 0 ? (
                   <div className="py-6 text-center text-sm">No packages found.</div>
                 ) : (
@@ -336,16 +338,20 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                         key={pkg.name}
                         onClick={() => togglePackage(pkg.name)}
                         className={cn(
-                          "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                          isSelected && "bg-accent text-accent-foreground"
+                          'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                          isSelected && 'bg-accent text-accent-foreground',
                         )}
                       >
-                        <div className={cn(
-                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                          isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                        )}>
+                        <div
+                          className={cn(
+                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                            isSelected
+                              ? 'bg-primary text-primary-foreground'
+                              : 'opacity-50 [&_svg]:invisible',
+                          )}
+                        >
                           <svg
-                            className={cn("h-3 w-3", isSelected ? "visible" : "invisible")}
+                            className={cn('h-3 w-3', isSelected ? 'visible' : 'invisible')}
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -369,7 +375,11 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
           {selectedPackages.size > 0 && (
             <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
-              <span>Selected: <span className="font-medium text-foreground">{selectedPackages.size}</span> package(s)</span>
+              <span>
+                Selected:{' '}
+                <span className="font-medium text-foreground">{selectedPackages.size}</span>{' '}
+                package(s)
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -396,24 +406,30 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  You are about to uninstall <span className="font-semibold text-foreground">{selectedPackages.size}</span> package(s).
+                  You are about to uninstall{' '}
+                  <span className="font-semibold text-foreground">{selectedPackages.size}</span>{' '}
+                  package(s).
                   <br />
-                  <div className="mt-2 max-h-[100px] overflow-y-auto text-xs bg-muted p-2 rounded">
-                    {Array.from(selectedPackages).map(p => (
-                      <div key={p} className="truncate">{p}</div>
+                  <div className="mt-2 max-h-25 overflow-y-auto text-xs bg-muted p-2 rounded">
+                    {Array.from(selectedPackages).map((p) => (
+                      <div key={p} className="truncate">
+                        {p}
+                      </div>
                     ))}
                   </div>
                   <br />
                   This action cannot be undone.
                   <div className="mt-4 p-3 border border-yellow-500/20 bg-yellow-500/10 rounded-md text-yellow-600 dark:text-yellow-500 text-xs text-left">
-                    <span className="font-bold">Disclaimer:</span> ADBKit is not responsible for any system instability, bootloops, or data loss resulting from uninstalling packages. Please verify that these packages are safe to remove.
+                    <span className="font-bold">Disclaimer:</span> ADB GUI Next is not responsible
+                    for any system instability, bootloops, or data loss resulting from uninstalling
+                    packages. Please verify that these packages are safe to remove.
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className={buttonVariants({ variant: "destructive" })}
+                  className={buttonVariants({ variant: 'destructive' })}
                   onClick={handleUninstall}
                   disabled={isUninstalling}
                 >
@@ -429,7 +445,6 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
           </AlertDialog>
         </CardContent>
       </Card>
-
-    </div >
+    </div>
   );
 }

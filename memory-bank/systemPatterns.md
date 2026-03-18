@@ -18,14 +18,14 @@ The current app uses a Tauri desktop architecture.
 ├── src/lib/desktop/        # Frontend desktop command/runtime layer
 ├── docs/                   # Docs plus preserved legacy reference source
 ├── memory-bank/            # Current project memory bank
-└── TAURI_MIGRATION_PLAN.md # Top-level migration plan
+└── TAURI_MIGRATION_PLAN.md # Historical plan archive
 ```
 
 ## Key Patterns
 
-### 1. Copy-first frontend migration
+### 1. Preserved frontend shell
 
-The frontend was copied from the legacy app into the root `src/` tree with minimal behavioral changes. Host/runtime concerns were handled around it instead of rewriting the UI architecture.
+The frontend shell was brought into the root `src/` tree with minimal behavioral changes. Host/runtime concerns are handled around it instead of rewriting the UI architecture.
 
 ### 2. Native desktop abstraction
 

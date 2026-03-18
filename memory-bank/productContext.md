@@ -37,4 +37,3 @@ ADB and fastboot are powerful but awkward for many repetitive Android workflows.
 - Multi-user collaboration
 - Device farm orchestration
 - macOS parity in the current implementation
-

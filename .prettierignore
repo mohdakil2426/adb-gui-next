@@ -1,0 +1,9 @@
+.worktrees/
+dist/
+node_modules/
+src-tauri/target/
+src-tauri/gen/schemas/
+docs/adb-gui-kit/refernces/
+dev-tauri.log
+pnpm-lock.yaml
+src-tauri/Cargo.lock

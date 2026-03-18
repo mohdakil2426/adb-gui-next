@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
 import path from 'path-browserify';
 
@@ -9,12 +9,12 @@ import {
   SelectFileToPush,
   SelectSaveDirectory,
   SelectDirectoryForPull,
-  SelectDirectoryToPush
+  SelectDirectoryToPush,
 } from '../../lib/desktop/backend';
-import { backend } from '../../lib/desktop/models';
+import type { backend } from '../../lib/desktop/models';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -22,10 +22,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { toast } from "sonner";
-import { Loader2, RefreshCw, Upload, Download, Folder, File, ArrowUp, FolderUp } from "lucide-react";
+} from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from 'sonner';
+import {
+  Loader2,
+  RefreshCw,
+  Upload,
+  Download,
+  Folder,
+  File,
+  ArrowUp,
+  FolderUp,
+} from 'lucide-react';
 
 type FileEntry = backend.FileEntry;
 
@@ -38,17 +47,22 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [isPushingFile, setIsPushingFile] = useState(false);
   const [isPushingFolder, setIsPushingFolder] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
+  const currentPathRef = useRef(currentPath);
 
-  const loadFiles = async (path: string) => {
+  useEffect(() => {
+    currentPathRef.current = currentPath;
+  }, [currentPath]);
+
+  const loadFiles = useCallback(async (targetPath: string) => {
     setIsLoading(true);
     setSelectedFile(null);
     try {
-      const files = await ListFiles(path);
+      const files = await ListFiles(targetPath);
 
       if (!files) {
         setFileList([]);
-        setCurrentPath(path);
-        setIsLoading(false);
+        setCurrentPath(targetPath);
+        currentPathRef.current = targetPath;
         return;
       }
 
@@ -59,20 +73,22 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       });
 
       setFileList(files);
-      setCurrentPath(path);
+      setCurrentPath(targetPath);
+      currentPathRef.current = targetPath;
     } catch (error) {
-      console.error("Failed to list files:", error);
-      toast.error("Failed to list files", { description: String(error) });
-      setCurrentPath(currentPath);
+      console.error('Failed to list files:', error);
+      toast.error('Failed to list files', { description: String(error) });
+      setCurrentPath(currentPathRef.current);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (activeView === 'files') {
-      loadFiles(currentPath);
+      loadFiles(currentPathRef.current);
     }
-  }, [activeView]);
+  }, [activeView, loadFiles]);
 
   const handleRowClick = (file: FileEntry) => {
     setSelectedFile(file);
@@ -93,7 +109,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const handlePushFile = async () => {
     setIsPushingFile(true);
-    let toastId: string | number = "";
+    let toastId: string | number = '';
     try {
       const localPath = await SelectFileToPush();
       if (!localPath) {
@@ -106,15 +122,17 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       toastId = toast.loading(`Pushing ${fileName}...`, { description: `To: ${remotePath}` });
 
       const output = await PushFile(localPath, remotePath);
-      toast.success("File Import Complete", { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed file ${fileName} to ${remotePath}: ${output}`, 'success');
+      toast.success('File Import Complete', { description: output, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Pushed file ${fileName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      console.error("Import file error:", error);
+      console.error('Import file error:', error);
       if (toastId) {
-        toast.error("File Import Failed", { description: String(error), id: toastId });
+        toast.error('File Import Failed', { description: String(error), id: toastId });
       } else {
-        toast.error("File Import Failed", { description: String(error) });
+        toast.error('File Import Failed', { description: String(error) });
       }
       useLogStore.getState().addLog(`Failed to push file: ${error}`, 'error');
     } finally {
@@ -124,7 +142,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const handlePushFolder = async () => {
     setIsPushingFolder(true);
-    let toastId: string | number = "";
+    let toastId: string | number = '';
     try {
       const localFolderPath = await SelectDirectoryToPush();
       if (!localFolderPath) {
@@ -133,45 +151,51 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       }
 
       const remotePath = currentPath;
-      const folderName = localFolderPath.replace(/\\/g, '/').split('/').pop() || path.basename(localFolderPath);
+      const folderName =
+        localFolderPath.replace(/\\/g, '/').split('/').pop() || path.basename(localFolderPath);
 
-      toastId = toast.loading(`Pushing folder ${folderName}...`, { description: `To: ${remotePath}` });
+      toastId = toast.loading(`Pushing folder ${folderName}...`, {
+        description: `To: ${remotePath}`,
+      });
 
       const output = await PushFile(localFolderPath, remotePath);
-      toast.success("Folder Import Complete", { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${remotePath}: ${output}`, 'success');
+      toast.success('Folder Import Complete', { description: output, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Pushed folder ${folderName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      console.error("Import folder error:", error);
+      console.error('Import folder error:', error);
       if (toastId) {
-        toast.error("Folder Import Failed", { description: String(error), id: toastId });
+        toast.error('Folder Import Failed', { description: String(error), id: toastId });
       } else {
-        toast.error("Folder Import Failed", { description: String(error) });
+        toast.error('Folder Import Failed', { description: String(error) });
       }
       useLogStore.getState().addLog(`Failed to push folder: ${error}`, 'error');
     }
     setIsPushingFolder(false);
   };
 
-
   const handlePull = async () => {
     if (!selectedFile) {
-      toast.error("No file or folder selected to pull.");
+      toast.error('No file or folder selected to pull.');
       return;
     }
     if (selectedFile.type !== 'File' && selectedFile.type !== 'Directory') {
-      toast.error("Cannot export this item type.", { description: `Selected type: ${selectedFile.type}` });
+      toast.error('Cannot export this item type.', {
+        description: `Selected type: ${selectedFile.type}`,
+      });
       return;
     }
 
     setIsPulling(true);
-    let toastId: string | number = "";
+    let toastId: string | number = '';
     try {
       const remotePath = path.posix.join(currentPath, selectedFile.name);
-      let localPath = "";
+      let localPath = '';
 
       if (selectedFile.type === 'Directory') {
-        toast.info("Select a folder to save the directory into.");
+        toast.info('Select a folder to save the directory into.');
         localPath = await SelectDirectoryForPull();
       } else {
         localPath = await SelectSaveDirectory(selectedFile.name);
@@ -182,17 +206,21 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         return;
       }
 
-      toastId = toast.loading(`Pulling ${selectedFile.name}...`, { description: `From: ${remotePath}` });
+      toastId = toast.loading(`Pulling ${selectedFile.name}...`, {
+        description: `From: ${remotePath}`,
+      });
 
       const output = await PullFile(remotePath, localPath);
-      toast.success("Export Complete", { description: `Saved to ${localPath}`, id: toastId });
-      useLogStore.getState().addLog(`Pulled ${selectedFile.name} to ${localPath}: ${output}`, 'success');
+      toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Pulled ${selectedFile.name} to ${localPath}: ${output}`, 'success');
     } catch (error) {
-      console.error("Export error:", error);
+      console.error('Export error:', error);
       if (toastId) {
-        toast.error("Export Failed", { description: String(error), id: toastId });
+        toast.error('Export Failed', { description: String(error), id: toastId });
       } else {
-        toast.error("Export Failed", { description: String(error) });
+        toast.error('Export Failed', { description: String(error) });
       }
       useLogStore.getState().addLog(`Failed to pull ${selectedFile.name}: ${error}`, 'error');
     }
@@ -200,39 +228,65 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   };
 
   const isBusy = isLoading || isPushingFile || isPushingFolder || isPulling;
-  const isPullDisabled = isPulling || !selectedFile || (selectedFile.type !== 'File' && selectedFile.type !== 'Directory');
+  const isPullDisabled =
+    isPulling ||
+    !selectedFile ||
+    (selectedFile.type !== 'File' && selectedFile.type !== 'Directory');
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] gap-4">
-
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2">
-            File Explorer
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2">File Explorer</CardTitle>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="icon" onClick={() => loadFiles(currentPath)} disabled={isBusy}>
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => loadFiles(currentPath)}
+              disabled={isBusy}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
             </Button>
 
             <Button variant="default" onClick={handlePushFile} disabled={isBusy}>
-              {isPushingFile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              {isPushingFile ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
               Import File
             </Button>
             <Button variant="default" onClick={handlePushFolder} disabled={isBusy}>
-              {isPushingFolder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FolderUp className="mr-2 h-4 w-4" />}
+              {isPushingFolder ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FolderUp className="mr-2 h-4 w-4" />
+              )}
               Import Folder
             </Button>
 
             <Button variant="default" onClick={handlePull} disabled={isPullDisabled || isBusy}>
-              {isPulling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              {isPulling ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
               Export Selected
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
-            <Button variant="ghost" size="icon" onClick={handleBackClick} disabled={currentPath === '/' || isBusy}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleBackClick}
+              disabled={currentPath === '/' || isBusy}
+            >
               <ArrowUp className="h-4 w-4" />
             </Button>
             <p className="font-mono text-sm truncate">{currentPath}</p>
@@ -246,7 +300,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             <Table>
               <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                 <TableRow>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-12.5"></TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Date</TableHead>

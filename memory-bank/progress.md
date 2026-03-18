@@ -2,7 +2,7 @@
 
 ## Overall Status
 
-The repository has been successfully migrated into a working root-level Tauri 2 application and merged into `main`.
+ADB GUI Next is a working root-level Tauri 2 application on `main`.
 
 ## What Works
 
@@ -35,12 +35,22 @@ The repository has been successfully migrated into a working root-level Tauri 2 
 - Windows debug MSI and NSIS bundles build successfully
 - Platform-specific resource bundling is configured
 
+### Tooling
+
+- React Strict Mode is enabled
+- TypeScript strict mode is enabled
+- ESLint flat config is active for the web app
+- Prettier is active for the web app
+- `cargo fmt` and strict `cargo clippy` are active for Rust
+- `pnpm check` runs the main verification workflow
+
 ## Remaining Work
 
 - Broader end-to-end parity validation with real devices
 - Cleanup of placeholder Rust dialog commands
 - Potential backend modularization
 - Additional payload tests for more compressed operation paths
+- Gradual cleanup of remaining ESLint warnings in copied frontend files
 
 ## Risks / Known Issues
 

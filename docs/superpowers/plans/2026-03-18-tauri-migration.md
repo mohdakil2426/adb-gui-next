@@ -13,6 +13,7 @@
 ### Task 1: Scaffold The Root Tauri App
 
 **Files:**
+
 - Create: root Tauri/Vite scaffold files
 - Preserve: `docs/`, `TAURI_MIGRATION_PLAN.md`
 - Reference: `docs/adb-gui-kit/refernces/build/*`
@@ -45,6 +46,7 @@ Run: `git commit -m "chore: scaffold root tauri app"`
 ### Task 2: Copy The Legacy Frontend Intact
 
 **Files:**
+
 - Copy from: `docs/adb-gui-kit/refernces/frontend/src/*`
 - Copy from: `docs/adb-gui-kit/refernces/frontend/public/*`
 - Create: root `src/desktop/*`
@@ -74,6 +76,7 @@ Run: `git commit -m "feat: copy legacy frontend into root app"`
 ### Task 3: Build The Frontend Compatibility Layer
 
 **Files:**
+
 - Create: `src/desktop/commands/*.ts`
 - Create: `src/desktop/events/*.ts`
 - Create: `src/desktop/dialogs/*.ts`
@@ -109,6 +112,7 @@ Run: `git commit -m "feat: add tauri desktop compatibility layer"`
 ### Task 4: Port The Rust Foundation
 
 **Files:**
+
 - Create: `src-tauri/src/error.rs`
 - Create: `src-tauri/src/state.rs`
 - Create: `src-tauri/src/models/*`
@@ -147,6 +151,7 @@ Run: `git commit -m "feat: add tauri rust foundation"`
 ### Task 5: Port Core Feature Commands In Vertical Slices
 
 **Files:**
+
 - Modify/Create: `src-tauri/src/commands/adb.rs`
 - Modify/Create: `src-tauri/src/commands/fastboot.rs`
 - Modify/Create: `src-tauri/src/commands/files.rs`
@@ -165,6 +170,7 @@ Run: `git commit -m "feat: add tauri rust foundation"`
 ### Task 6: Port The Payload Dumper As A Dedicated Milestone
 
 **Files:**
+
 - Create: `src-tauri/src/services/payload/*`
 - Modify/Create: `src-tauri/src/commands/payload.rs`
 - Modify: `src/desktop/events/payload.ts`
@@ -180,6 +186,7 @@ Run: `git commit -m "feat: add tauri rust foundation"`
 ### Task 7: Validate Packaging And Parity
 
 **Files:**
+
 - Modify as needed: `src-tauri/tauri.conf.json`, capabilities, resources, icons
 - Preserve: `docs/adb-gui-kit/refernces` for side-by-side reference
 
@@ -193,4 +200,3 @@ Run: `pnpm tauri build --debug`
 - [ ] **Step 3: Validate Linux standalone packaging behavior as far as current environment allows**
 - [ ] **Step 4: Compare core workflows against the legacy app parity matrix**
 - [ ] **Step 5: Commit final migration progress**
-

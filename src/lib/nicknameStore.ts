@@ -1,12 +1,11 @@
 const NICKNAME_STORAGE_KEY = 'adb-kit-nicknames';
 
-
 function getNicknames(): Record<string, string> {
   try {
     const nicknames = localStorage.getItem(NICKNAME_STORAGE_KEY);
     return nicknames ? JSON.parse(nicknames) : {};
   } catch (error) {
-    console.error("Failed to parse nicknames from localStorage", error);
+    console.error('Failed to parse nicknames from localStorage', error);
     return {};
   }
 }

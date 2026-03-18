@@ -1,33 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
-import { GetDevices, GetDeviceInfo, EnableWirelessAdb, ConnectWirelessAdb, DisconnectWirelessAdb } from '../../lib/desktop/backend';
-import { backend } from '../../lib/desktop/models';
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Smartphone, Battery, Info, Server, RefreshCw, Loader2, Hash, Wifi, ShieldCheck, Cpu, Database, Code, Building, Usb, PlugZap, Tag, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { getNickname, setNickname } from '@/lib/nicknameStore';
+import {
+  GetDevices,
+  GetDeviceInfo,
+  EnableWirelessAdb,
+  ConnectWirelessAdb,
+  DisconnectWirelessAdb,
+} from '../../lib/desktop/backend';
+import type { backend } from '../../lib/desktop/models';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Smartphone,
+  Battery,
+  Info,
+  Server,
+  RefreshCw,
+  Loader2,
+  Hash,
+  Wifi,
+  ShieldCheck,
+  Cpu,
+  Database,
+  Code,
+  Building,
+  Usb,
+  PlugZap,
+  Tag,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useLogStore } from '@/lib/logStore';
 import { useDeviceStore } from '@/lib/deviceStore';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { ConnectedDevicesCard } from "@/components/ConnectedDevicesCard";
-import { EditNicknameDialog } from "@/components/EditNicknameDialog";
-
+import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
+import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 
 type Device = backend.Device;
-type DeviceInfo = backend.DeviceInfo;
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
   const { devices, setDevices, deviceInfo, setDeviceInfo } = useDeviceStore();
@@ -42,19 +51,20 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
 
-  const refreshDevices = async () => {
+  const refreshDevices = useCallback(async () => {
     setIsRefreshingDevices(true);
     try {
       const result = await GetDevices();
       setDevices(result || []);
     } catch (error) {
-      console.error("Error refreshing devices:", error);
+      console.error('Error refreshing devices:', error);
       setDevices([]);
+    } finally {
+      setIsRefreshingDevices(false);
     }
-    setIsRefreshingDevices(false);
-  };
+  }, [setDevices]);
 
-  const refreshInfo = async () => {
+  const refreshInfo = useCallback(async () => {
     if (devices.length === 0) {
       setDeviceInfo(null);
       return;
@@ -65,17 +75,18 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       const result = await GetDeviceInfo();
       setDeviceInfo(result);
     } catch (error) {
-      console.error("Error refreshing device info:", error);
+      console.error('Error refreshing device info:', error);
       setDeviceInfo(null);
+    } finally {
+      setIsRefreshingInfo(false);
     }
-    setIsRefreshingInfo(false);
-  };
+  }, [devices.length, setDeviceInfo]);
 
   useEffect(() => {
     if (activeView === 'dashboard') {
       refreshDevices();
     }
-  }, [activeView]);
+  }, [activeView, refreshDevices]);
 
   useEffect(() => {
     if (activeView === 'dashboard') {
@@ -87,25 +98,25 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
       return () => clearInterval(interval);
     }
-  }, [activeView, isRefreshingDevices]);
+  }, [activeView, isRefreshingDevices, refreshDevices]);
 
   useEffect(() => {
-    if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith("N/A")) {
+    if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {
       setWirelessIp(deviceInfo.ipAddress);
     }
   }, [deviceInfo?.ipAddress]);
 
   const handleEnableTcpip = async () => {
     setIsEnablingTcpip(true);
-    const toastId = toast.loading("Enabling wireless mode (port 5555)...", {
-      description: "Please wait... Device must be connected via USB.",
+    const toastId = toast.loading('Enabling wireless mode (port 5555)...', {
+      description: 'Please wait... Device must be connected via USB.',
     });
     try {
       const output = await EnableWirelessAdb('5555');
-      toast.success("Wireless mode enabled!", { id: toastId, description: output });
+      toast.success('Wireless mode enabled!', { id: toastId, description: output });
       useLogStore.getState().addLog(`Wireless mode enabled: ${output}`, 'success');
     } catch (error) {
-      toast.error("Failed to enable wireless mode", { id: toastId, description: String(error) });
+      toast.error('Failed to enable wireless mode', { id: toastId, description: String(error) });
       useLogStore.getState().addLog(`Failed to enable wireless mode: ${error}`, 'error');
     }
     setIsEnablingTcpip(false);
@@ -113,40 +124,48 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
   const handleConnect = async () => {
     if (!wirelessIp) {
-      toast.error("IP Address cannot be empty");
+      toast.error('IP Address cannot be empty');
       return;
     }
     setIsConnecting(true);
     const toastId = toast.loading(`Connecting to ${wirelessIp}:${wirelessPort}...`);
     try {
       const output = await ConnectWirelessAdb(wirelessIp, wirelessPort);
-      toast.success("Connection successful!", { id: toastId, description: output });
-      useLogStore.getState().addLog(`Connected to ${wirelessIp}:${wirelessPort}: ${output}`, 'success');
+      toast.success('Connection successful!', { id: toastId, description: output });
+      useLogStore
+        .getState()
+        .addLog(`Connected to ${wirelessIp}:${wirelessPort}: ${output}`, 'success');
 
       refreshDevices();
     } catch (error) {
-      toast.error("Connection failed", { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Connection failed to ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
+      toast.error('Connection failed', { id: toastId, description: String(error) });
+      useLogStore
+        .getState()
+        .addLog(`Connection failed to ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
     }
     setIsConnecting(false);
   };
 
   const handleDisconnect = async () => {
     if (!wirelessIp) {
-      toast.error("IP Address cannot be empty");
+      toast.error('IP Address cannot be empty');
       return;
     }
     setIsDisconnecting(true);
     const toastId = toast.loading(`Disconnecting from ${wirelessIp}:${wirelessPort}...`);
     try {
       const output = await DisconnectWirelessAdb(wirelessIp, wirelessPort);
-      toast.success("Disconnected", { id: toastId, description: output });
-      useLogStore.getState().addLog(`Disconnected from ${wirelessIp}:${wirelessPort}: ${output}`, 'info');
+      toast.success('Disconnected', { id: toastId, description: output });
+      useLogStore
+        .getState()
+        .addLog(`Disconnected from ${wirelessIp}:${wirelessPort}: ${output}`, 'info');
 
       refreshDevices();
     } catch (error) {
-      toast.error("Disconnect failed", { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Disconnect failed from ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
+      toast.error('Disconnect failed', { id: toastId, description: String(error) });
+      useLogStore
+        .getState()
+        .addLog(`Disconnect failed from ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
     }
     setIsDisconnecting(false);
   };
@@ -157,21 +176,21 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   };
 
   const handleNicknameSaved = () => {
-    setNicknameVersion(v => v + 1); // Trigger re-render
+    setNicknameVersion((v) => v + 1); // Trigger re-render
   };
 
   return (
     <div className="flex flex-col gap-6">
-
       <ConnectedDevicesCard
-        devices={devices.map(device => ({
+        key={nicknameVersion}
+        devices={devices.map((device) => ({
           serial: device.serial,
-          status: device.status
+          status: device.status,
         }))}
         isLoading={isRefreshingDevices}
         onRefresh={refreshDevices}
         onEdit={(serial) => {
-          const device = devices.find(d => d.serial === serial);
+          const device = devices.find((d) => d.serial === serial);
           if (device) openEditDialog(device);
         }}
       />
@@ -184,7 +203,6 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-
           <div className="space-y-3">
             <p className="font-medium">Step 1: Enable (via USB)</p>
             <p className="text-sm text-muted-foreground">
@@ -282,21 +300,47 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             <p className="text-muted-foreground">Click "Refresh Info" to load data.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
               <InfoItem icon={<Building size={18} />} label="Brand" value={deviceInfo.brand} />
-              <InfoItem icon={<Tag size={18} />} label="Device Name" value={deviceInfo.deviceName} />
+              <InfoItem
+                icon={<Tag size={18} />}
+                label="Device Name"
+                value={deviceInfo.deviceName}
+              />
               <InfoItem icon={<Code size={18} />} label="Codename" value={deviceInfo.codename} />
               <InfoItem icon={<Smartphone size={18} />} label="Model" value={deviceInfo.model} />
               <InfoItem icon={<Hash size={18} />} label="Serial Number" value={deviceInfo.serial} />
-              <InfoItem icon={<Server size={18} />} label="Build Number" value={deviceInfo.buildNumber} />
-              <InfoItem icon={<Info size={18} />} label="Android Version" value={deviceInfo.androidVersion} />
-              <InfoItem icon={<Battery size={18} />} label="Battery" value={deviceInfo.batteryLevel} />
+              <InfoItem
+                icon={<Server size={18} />}
+                label="Build Number"
+                value={deviceInfo.buildNumber}
+              />
+              <InfoItem
+                icon={<Info size={18} />}
+                label="Android Version"
+                value={deviceInfo.androidVersion}
+              />
+              <InfoItem
+                icon={<Battery size={18} />}
+                label="Battery"
+                value={deviceInfo.batteryLevel}
+              />
               <InfoItem icon={<Cpu size={18} />} label="Total RAM" value={deviceInfo.ramTotal} />
-              <InfoItem icon={<Database size={18} />} label="Internal Storage" value={deviceInfo.storageInfo} />
+              <InfoItem
+                icon={<Database size={18} />}
+                label="Internal Storage"
+                value={deviceInfo.storageInfo}
+              />
               <InfoItem icon={<Wifi size={18} />} label="IP Address" value={deviceInfo.ipAddress} />
-              <InfoItem icon={<ShieldCheck size={18} />} label="Root Status" value={deviceInfo.rootStatus}
-                valueClassName={deviceInfo.rootStatus === 'Yes' ? 'text-green-500 font-bold' : 'text-muted-foreground'} />
-
+              <InfoItem
+                icon={<ShieldCheck size={18} />}
+                label="Root Status"
+                value={deviceInfo.rootStatus}
+                valueClassName={
+                  deviceInfo.rootStatus === 'Yes'
+                    ? 'text-green-500 font-bold'
+                    : 'text-muted-foreground'
+                }
+              />
             </div>
           )}
         </CardContent>
@@ -316,20 +360,22 @@ function InfoItem({
   icon,
   label,
   value,
-  valueClassName
+  valueClassName,
 }: {
-  icon: React.ReactNode,
-  label: string,
-  value: string,
-  valueClassName?: string
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  valueClassName?: string;
 }) {
   return (
     <div className="flex items-center p-3 bg-muted rounded-lg overflow-hidden">
       <div className="mr-3 text-primary shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm text-muted-foreground truncate" title={label}>{label}</div>
-        <div className={cn("font-semibold truncate", valueClassName)} title={value}>
-          {value ? value : "N/A"}
+        <div className="text-sm text-muted-foreground truncate" title={label}>
+          {label}
+        </div>
+        <div className={cn('font-semibold truncate', valueClassName)} title={value}>
+          {value ? value : 'N/A'}
         </div>
       </div>
     </div>

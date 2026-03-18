@@ -1,6 +1,6 @@
-import * as eventApi from "@tauri-apps/api/event";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import * as eventApi from '@tauri-apps/api/event';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 type EventCallback = (...data: any[]) => void;
 type Unlisten = () => void;
@@ -50,26 +50,28 @@ function registerEventListener(eventName: string, callback: EventCallback): () =
 
   current.add(entry);
 
-  void eventApi.listen(eventName, (event: any) => {
-    if (active) {
-      callback(event.payload);
-    }
-  }).then((dispose) => {
-    if (!active) {
-      dispose();
-      return;
-    }
-
-    unlisten = () => {
+  void eventApi
+    .listen(eventName, (event: any) => {
+      if (active) {
+        callback(event.payload);
+      }
+    })
+    .then((dispose) => {
       if (!active) {
+        dispose();
         return;
       }
 
-      active = false;
-      dispose();
-      removeListener(eventName, entry);
-    };
-  });
+      unlisten = () => {
+        if (!active) {
+          return;
+        }
+
+        active = false;
+        dispose();
+        removeListener(eventName, entry);
+      };
+    });
 
   return entry.dispose;
 }
@@ -110,7 +112,7 @@ export function OnFileDrop(callback: FileDropCallback, _useDropTarget: boolean):
   void getCurrentWebview()
     .onDragDropEvent((event: any) => {
       const payload = event.payload;
-      if (payload?.type !== "drop" || !Array.isArray(payload.paths)) {
+      if (payload?.type !== 'drop' || !Array.isArray(payload.paths)) {
         return;
       }
 

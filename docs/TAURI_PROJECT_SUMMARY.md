@@ -1,8 +1,8 @@
-# ADB GUI Next: Tauri Migration Summary
+# ADB GUI Next Project Summary
 
 ## Overview
 
-ADB GUI Next is now a root-level Tauri 2 desktop application that preserves the legacy Wails implementation under `docs/adb-gui-kit/refernces/` as a permanent in-repo reference. The migration kept the legacy React UI structure, replaced the Wails runtime/backend bridge with Tauri-compatible shims and Rust commands, and bundled the required Android platform tools for Windows and Linux.
+ADB GUI Next is a root-level Tauri 2 desktop application that preserves the legacy reference implementation under `docs/adb-gui-kit/refernces/` as permanent in-repo documentation. The app uses a React frontend, a Rust backend, and bundled Android platform tools for Windows and Linux.
 
 The repository now contains:
 
@@ -16,7 +16,7 @@ The repository now contains:
 ### Application foundation
 
 - Scaffolded the root project from the Tauri 2 React TypeScript template.
-- Kept `docs/` and `TAURI_MIGRATION_PLAN.md` intact during migration.
+- Kept `docs/` and the historical plan archive intact.
 - Copied the legacy frontend into the root `src/` tree with minimal structural change.
 - Replaced the Astro host with a Vite React host while preserving the existing app shell and manual view-switching architecture.
 
@@ -28,7 +28,7 @@ The repository now contains:
 - Rewired the copied frontend away from `wailsjs/*` imports completely.
 - Deleted the old `wailsjs/` compatibility folder.
 
-### Rust backend migration
+### Rust backend
 
 - Added a Tauri Rust backend in `src-tauri/src/lib.rs`.
 - Implemented command execution for:
@@ -70,7 +70,7 @@ The repository now contains:
 
 ## Verification Performed
 
-The merged result on `main` was verified with:
+The current `main` branch was verified with:
 
 - `cargo test --manifest-path src-tauri/Cargo.toml`
 - `pnpm build`
@@ -107,18 +107,18 @@ The current Rust payload tests cover:
 ### Current warnings
 
 - Generated protobuf types include dead-code warnings for unused message types like `Signatures` and `ApexMetadata`.
-- The repo currently has an unstaged deletion of `.mcp.json` on `main` that pre-existed merge finalization and was intentionally left untouched.
+- The repo currently has an unrelated local `.gitignore` modification in the working tree.
 
 ## Important Preservation Rules
 
 - Do not delete or overwrite `docs/adb-gui-kit/refernces/`.
-- Do not delete or overwrite `TAURI_MIGRATION_PLAN.md`.
-- Treat the legacy reference app as documentation and comparison material, not as disposable migration scaffolding.
+- Do not delete or overwrite the historical plan archive at `TAURI_MIGRATION_PLAN.md`.
+- Treat the legacy reference app as documentation and comparison material, not as active app code.
 
 ## Key Paths
 
 - Root frontend: `src/`
 - Tauri backend: `src-tauri/`
 - Frontend desktop layer: `src/lib/desktop/`
-- Migration plan: `docs/superpowers/plans/2026-03-18-tauri-migration.md`
+- Build plan archive: `docs/superpowers/plans/2026-03-18-tauri-migration.md`
 - Legacy reference app: `docs/adb-gui-kit/refernces/`

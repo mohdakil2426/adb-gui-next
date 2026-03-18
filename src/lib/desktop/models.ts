@@ -8,9 +8,9 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.serial = source["serial"];
-      this.status = source["status"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.serial = source['serial'];
+      this.status = source['status'];
     }
   }
 
@@ -33,19 +33,19 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.model = source["model"];
-      this.androidVersion = source["androidVersion"];
-      this.buildNumber = source["buildNumber"];
-      this.batteryLevel = source["batteryLevel"];
-      this.serial = source["serial"];
-      this.ipAddress = source["ipAddress"];
-      this.rootStatus = source["rootStatus"];
-      this.codename = source["codename"];
-      this.ramTotal = source["ramTotal"];
-      this.storageInfo = source["storageInfo"];
-      this.brand = source["brand"];
-      this.deviceName = source["deviceName"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.model = source['model'];
+      this.androidVersion = source['androidVersion'];
+      this.buildNumber = source['buildNumber'];
+      this.batteryLevel = source['batteryLevel'];
+      this.serial = source['serial'];
+      this.ipAddress = source['ipAddress'];
+      this.rootStatus = source['rootStatus'];
+      this.codename = source['codename'];
+      this.ramTotal = source['ramTotal'];
+      this.storageInfo = source['storageInfo'];
+      this.brand = source['brand'];
+      this.deviceName = source['deviceName'];
     }
   }
 
@@ -60,11 +60,11 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.success = source["success"];
-      this.outputDir = source["outputDir"];
-      this.extractedFiles = source["extractedFiles"];
-      this.error = source["error"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.success = source['success'];
+      this.outputDir = source['outputDir'];
+      this.extractedFiles = source['extractedFiles'];
+      this.error = source['error'];
     }
   }
 
@@ -81,13 +81,13 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.name = source["name"];
-      this.type = source["type"];
-      this.size = source["size"];
-      this.permissions = source["permissions"];
-      this.date = source["date"];
-      this.time = source["time"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.name = source['name'];
+      this.type = source['type'];
+      this.size = source['size'];
+      this.permissions = source['permissions'];
+      this.date = source['date'];
+      this.time = source['time'];
     }
   }
 
@@ -99,8 +99,8 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.name = source["name"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.name = source['name'];
     }
   }
 
@@ -113,9 +113,9 @@ export namespace backend {
     }
 
     constructor(source: any = {}) {
-      if (typeof source === "string") source = JSON.parse(source);
-      this.name = source["name"];
-      this.size = source["size"];
+      if (typeof source === 'string') source = JSON.parse(source);
+      this.name = source['name'];
+      this.size = source['size'];
     }
   }
 }

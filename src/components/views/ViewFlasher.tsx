@@ -1,11 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLogStore } from '@/lib/logStore';
-import { WipeData, FlashPartition, SelectImageFile, GetFastbootDevices, GetDevices, SelectZipFile, SideloadPackage } from '../../lib/desktop/backend';
-import { backend } from '../../lib/desktop/models';
+import {
+  WipeData,
+  FlashPartition,
+  SelectImageFile,
+  GetFastbootDevices,
+  GetDevices,
+  SelectZipFile,
+  SideloadPackage,
+} from '../../lib/desktop/backend';
+import type { backend } from '../../lib/desktop/models';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,27 +23,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { Loader2, AlertTriangle, FileUp, Trash2, Package } from "lucide-react";
-import { ConnectedDevicesCard } from "@/components/ConnectedDevicesCard";
-import { EditNicknameDialog } from "@/components/EditNicknameDialog";
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import { Loader2, AlertTriangle, FileUp, Trash2, Package } from 'lucide-react';
+import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
+import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 
 type Device = backend.Device;
-
-const sanitizeFastbootDevices = (devices: Device[] | null | undefined): Device[] => {
-  if (!Array.isArray(devices)) {
-    return [];
-  }
-
-  return devices
-    .filter((device): device is Device => !!device && typeof device.serial === 'string')
-    .map((device) => ({
-      serial: device.serial,
-      status: device.status ?? 'fastboot',
-    }));
-};
 
 const areDeviceListsEqual = (a: Device[], b: Device[]): boolean => {
   if (a.length !== b.length) return false;
@@ -55,12 +50,10 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   const [devices, setDevices] = useState<Device[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [scanError, setScanError] = useState<string | null>(null);
 
   // Nickname Editing State
   const [editingSerial, setEditingSerial] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [nicknameVersion, setNicknameVersion] = useState(0);
 
   const isMountedRef = useRef(true);
   const devicesRef = useRef<Device[]>([]);
@@ -78,7 +71,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
   const applyDevices = useCallback((newDevices: Device[]) => {
     if (!isMountedRef.current) return;
     devicesRef.current = newDevices;
-    setDevices((current) => areDeviceListsEqual(current, newDevices) ? current : newDevices);
+    setDevices((current) => (areDeviceListsEqual(current, newDevices) ? current : newDevices));
   }, []);
 
   const refreshDevices = useCallback(
@@ -94,10 +87,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
       }
 
       try {
-        const [fbResult, adbResult] = await Promise.all([
-          GetFastbootDevices(),
-          GetDevices()
-        ]);
+        const [fbResult, adbResult] = await Promise.all([GetFastbootDevices(), GetDevices()]);
 
         if (!isMountedRef.current) return;
 
@@ -105,23 +95,23 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
         // Process Fastboot devices
         if (Array.isArray(fbResult)) {
-          combinedDevices.push(...fbResult
-            .filter(d => !!d && typeof d.serial === 'string')
-            .map(d => ({ serial: d.serial, status: d.status ?? 'fastboot' }))
+          combinedDevices.push(
+            ...fbResult
+              .filter((d) => !!d && typeof d.serial === 'string')
+              .map((d) => ({ serial: d.serial, status: d.status ?? 'fastboot' })),
           );
         }
 
         // Process ADB devices
         if (Array.isArray(adbResult)) {
-          combinedDevices.push(...adbResult
-            .filter(d => !!d && typeof d.serial === 'string')
-            // Don't add if already found in fastboot (unlikely but safe)
-            .filter(d => !combinedDevices.some(cd => cd.serial === d.serial))
-            .map(d => ({ serial: d.serial, status: d.status }))
+          combinedDevices.push(
+            ...adbResult
+              .filter((d) => !!d && typeof d.serial === 'string')
+              // Don't add if already found in fastboot (unlikely but safe)
+              .filter((d) => !combinedDevices.some((cd) => cd.serial === d.serial))
+              .map((d) => ({ serial: d.serial, status: d.status })),
           );
         }
-
-        setScanError(null);
 
         if (combinedDevices.length > 0) {
           emptyPollCountRef.current = 0;
@@ -134,10 +124,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
           }
         }
       } catch (error) {
-        console.error("Error refreshing devices:", error);
-        if (isMountedRef.current) {
-          setScanError("Failed to refresh devices.");
-        }
+        console.error('Error refreshing devices:', error);
       } finally {
         if (isMountedRef.current) {
           setIsRefreshing(false);
@@ -152,7 +139,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
         }
       }
     },
-    [applyDevices]
+    [applyDevices],
   );
 
   useEffect(() => {
@@ -171,8 +158,10 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
     return () => window.clearInterval(interval);
   }, [activeView, refreshDevices]);
 
-  const hasFastbootDevice = devices.some(d => d.status === 'fastboot' || d.status === 'bootloader');
-  const hasSideloadDevice = devices.some(d => d.status === 'sideload' || d.status === 'recovery');
+  const hasFastbootDevice = devices.some(
+    (d) => d.status === 'fastboot' || d.status === 'bootloader',
+  );
+  const hasSideloadDevice = devices.some((d) => d.status === 'sideload' || d.status === 'recovery');
 
   const handleSelectFile = async () => {
     try {
@@ -183,8 +172,8 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
         toast.info(`File selected: ${selectedPath.split(/[/\\]/).pop()}`);
       }
     } catch (error) {
-      console.error("File selection error:", error);
-      toast.error("Failed to open file dialog", { description: String(error) });
+      console.error('File selection error:', error);
+      toast.error('Failed to open file dialog', { description: String(error) });
     }
   };
 
@@ -197,18 +186,18 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
         toast.info(`ZIP selected: ${selectedPath.split(/[/\\]/).pop()}`);
       }
     } catch (error) {
-      console.error("ZIP selection error:", error);
-      toast.error("Failed to open file dialog", { description: String(error) });
+      console.error('ZIP selection error:', error);
+      toast.error('Failed to open file dialog', { description: String(error) });
     }
   };
 
   const handleFlash = async () => {
     if (!partition) {
-      toast.error("Partition name cannot be empty.");
+      toast.error('Partition name cannot be empty.');
       return;
     }
     if (!filePath) {
-      toast.error("No file selected.");
+      toast.error('No file selected.');
       return;
     }
 
@@ -217,11 +206,14 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
     try {
       await FlashPartition(partition, filePath);
-      toast.success("Flash Complete", { description: `${partition} flashed successfully.`, id: toastId });
+      toast.success('Flash Complete', {
+        description: `${partition} flashed successfully.`,
+        id: toastId,
+      });
       useLogStore.getState().addLog(`Flashed partition ${partition}: Success`, 'success');
     } catch (error) {
-      console.error("Flash error:", error);
-      toast.error("Flash Failed", { description: String(error), id: toastId });
+      console.error('Flash error:', error);
+      toast.error('Flash Failed', { description: String(error), id: toastId });
       useLogStore.getState().addLog(`Failed to flash partition ${partition}: ${error}`, 'error');
     } finally {
       setIsFlashing(false);
@@ -230,22 +222,22 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   const handleSideload = async () => {
     if (!sideloadFilePath) {
-      toast.error("No update package selected.");
+      toast.error('No update package selected.');
       return;
     }
 
-    const fileName = sideloadFilePath.split(/[/\\]/).pop() ?? "update.zip";
+    const fileName = sideloadFilePath.split(/[/\\]/).pop() ?? 'update.zip';
     setIsSideloading(true);
     const toastId = toast.loading(`Sideloading ${fileName}...`);
 
     try {
       const output = await SideloadPackage(sideloadFilePath);
       const description = output ? output : `${fileName} sideloaded successfully.`;
-      toast.success("Sideload Complete", { description, id: toastId });
+      toast.success('Sideload Complete', { description, id: toastId });
       useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
     } catch (error) {
-      console.error("Sideload error:", error);
-      toast.error("Sideload Failed", { description: String(error), id: toastId });
+      console.error('Sideload error:', error);
+      toast.error('Sideload Failed', { description: String(error), id: toastId });
       useLogStore.getState().addLog(`Failed to sideload ${fileName}: ${error}`, 'error');
     } finally {
       setIsSideloading(false);
@@ -254,15 +246,15 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   const handleWipe = async () => {
     setIsWiping(true);
-    const toastId = toast.loading("Wiping data... Device will factory reset.");
+    const toastId = toast.loading('Wiping data... Device will factory reset.');
 
     try {
       await WipeData();
-      toast.success("Wipe Complete", { description: "Device data has been erased.", id: toastId });
+      toast.success('Wipe Complete', { description: 'Device data has been erased.', id: toastId });
       useLogStore.getState().addLog(`Device data wiped (Factory Reset): Success`, 'success');
     } catch (error) {
-      console.error("Wipe error:", error);
-      toast.error("Wipe Failed", { description: String(error), id: toastId });
+      console.error('Wipe error:', error);
+      toast.error('Wipe Failed', { description: String(error), id: toastId });
       useLogStore.getState().addLog(`Failed to wipe data: ${error}`, 'error');
     } finally {
       setIsWiping(false);
@@ -271,11 +263,10 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-
       <ConnectedDevicesCard
-        devices={devices.map(d => ({
+        devices={devices.map((d) => ({
           serial: d.serial,
-          status: d.status
+          status: d.status,
         }))}
         isLoading={isRefreshing}
         onRefresh={() => refreshDevices()}
@@ -283,14 +274,14 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
           setEditingSerial(serial);
           setIsEditing(true);
         }}
-        emptyText={isRefreshing ? "Scanning for devices..." : "No devices detected."}
+        emptyText={isRefreshing ? 'Scanning for devices...' : 'No devices detected.'}
       />
 
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         serial={editingSerial}
-        onSaved={() => setNicknameVersion(v => v + 1)}
+        onSaved={() => refreshDevices({ silent: true })}
       />
 
       <Card>
@@ -299,13 +290,13 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
             <FileUp />
             Flash Partition
           </CardTitle>
-          <CardDescription>
-            Flash an image file (.img) to a specific partition.
-          </CardDescription>
+          <CardDescription>Flash an image file (.img) to a specific partition.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="partition" className="text-sm font-medium">Partition Name</label>
+            <label htmlFor="partition" className="text-sm font-medium">
+              Partition Name
+            </label>
             <Input
               id="partition"
               placeholder="e.g., boot, recovery, vendor_boot"
@@ -328,7 +319,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground truncate">
-              {filePath ? filePath : "No file selected."}
+              {filePath ? filePath : 'No file selected.'}
             </p>
           </div>
 
@@ -372,7 +363,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground truncate">
-              {sideloadFilePath ? sideloadFilePath : "No ZIP selected."}
+              {sideloadFilePath ? sideloadFilePath : 'No ZIP selected.'}
             </p>
           </div>
 
@@ -426,9 +417,8 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently
-                  erase all user data (photos, files, settings)
-                  from your device, performing a full factory reset.
+                  This action cannot be undone. This will permanently erase all user data (photos,
+                  files, settings) from your device, performing a full factory reset.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

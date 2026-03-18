@@ -10,6 +10,7 @@ use std::{
 };
 use zip::ZipArchive;
 
+#[allow(dead_code, clippy::all)]
 pub mod chromeos_update_engine {
     include!(concat!(env!("OUT_DIR"), "/chromeos_update_engine.rs"));
 }
@@ -79,11 +80,7 @@ impl PayloadCache {
 
 pub fn list_payload_partitions(payload_path: &Path, cache: &PayloadCache) -> Result<Vec<String>> {
     let manifest = load_payload(payload_path, cache)?.manifest;
-    Ok(manifest
-        .partitions
-        .into_iter()
-        .map(|partition| partition.partition_name)
-        .collect())
+    Ok(manifest.partitions.into_iter().map(|partition| partition.partition_name).collect())
 }
 
 pub fn list_payload_partitions_with_details(
@@ -96,10 +93,7 @@ pub fn list_payload_partitions_with_details(
         .into_iter()
         .map(|partition| PartitionDetail {
             name: partition.partition_name,
-            size: partition
-                .new_partition_info
-                .and_then(|info| info.size)
-                .unwrap_or_default(),
+            size: partition.new_partition_info.and_then(|info| info.size).unwrap_or_default(),
         })
         .collect())
 }
@@ -179,9 +173,9 @@ fn load_payload(payload_path: &Path, cache: &PayloadCache) -> Result<LoadedPaylo
         anyhow::bail!("unsupported payload version: {version}");
     }
 
-    let manifest_len = usize::try_from(
-        u64::from_be_bytes(bytes[12..20].try_into().expect("manifest length slice")),
-    )
+    let manifest_len = usize::try_from(u64::from_be_bytes(
+        bytes[12..20].try_into().expect("manifest length slice"),
+    ))
     .map_err(|_| anyhow::anyhow!("payload manifest is too large"))?;
     let metadata_sig_len = usize::try_from(u32::from_be_bytes(
         bytes[20..24].try_into().expect("metadata sig length slice"),
@@ -224,24 +218,21 @@ fn extract_partition(
     }
 
     for (index, operation) in partition.operations.iter().enumerate() {
-        let destination_extents = operation
-            .dst_extents
-            .as_slice();
+        let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
         }
-        let expected_size = destination_extents
-            .iter()
-            .try_fold(0usize, |total, extent| {
-                let block_count = usize::try_from(extent.num_blocks.unwrap_or_default())
-                    .map_err(|_| anyhow::anyhow!("destination extent block count overflow"))?;
-                total.checked_add(
+        let expected_size = destination_extents.iter().try_fold(0usize, |total, extent| {
+            let block_count = usize::try_from(extent.num_blocks.unwrap_or_default())
+                .map_err(|_| anyhow::anyhow!("destination extent block count overflow"))?;
+            total
+                .checked_add(
                     block_count
                         .checked_mul(BLOCK_SIZE as usize)
                         .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?,
                 )
                 .ok_or_else(|| anyhow::anyhow!("destination extent total size overflow"))
-            })?;
+        })?;
 
         let decoded = decode_operation(payload, operation, expected_size)?;
         let mut written = 0usize;
@@ -365,9 +356,7 @@ fn extract_payload_bin_from_zip(zip_path: &Path) -> Result<PathBuf> {
         fs::create_dir_all(&temp_dir)?;
         let temp_path = temp_dir.join(format!(
             "payload-{}.bin",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)?
-                .as_millis()
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)?.as_millis()
         ));
         let mut temp_file = fs::File::create(&temp_path)?;
         std::io::copy(&mut entry, &mut temp_file)?;
@@ -414,13 +403,7 @@ mod tests {
             list_payload_partitions_with_details(&payload_path, &cache).expect("partition details");
 
         assert_eq!(partitions, vec!["system".to_string()]);
-        assert_eq!(
-            details,
-            vec![PartitionDetail {
-                name: "system".into(),
-                size: 4096,
-            }]
-        );
+        assert_eq!(details, vec![PartitionDetail { name: "system".into(), size: 4096 }]);
     }
 
     #[test]
@@ -451,9 +434,7 @@ mod tests {
         assert!(output_dir.join("system.img").exists());
         assert_eq!(fs::read(output_dir.join("system.img")).expect("image bytes"), image_bytes);
         assert!(
-            progress_events
-                .iter()
-                .any(|event| event == &("system".into(), 1, 1, true)),
+            progress_events.iter().any(|event| event == &("system".into(), 1, 1, true)),
             "expected a completion progress event"
         );
     }
@@ -524,12 +505,10 @@ mod tests {
                             r#type: Type::Zero as i32,
                             data_offset: Some(8192),
                             data_length: Some(0),
-                            dst_extents: vec![
-                                chromeos_update_engine::Extent {
-                                    start_block: Some(3),
-                                    num_blocks: Some(1),
-                                },
-                            ],
+                            dst_extents: vec![chromeos_update_engine::Extent {
+                                start_block: Some(3),
+                                num_blocks: Some(1),
+                            }],
                             data_sha256_hash: Some(Vec::new()),
                             ..Default::default()
                         },
@@ -644,10 +623,8 @@ mod tests {
         let mut file = fs::File::create(path).expect("create payload");
         file.write_all(b"CrAU").expect("write magic");
         file.write_all(&2u64.to_be_bytes()).expect("write version");
-        file.write_all(&(manifest_bytes.len() as u64).to_be_bytes())
-            .expect("write manifest len");
-        file.write_all(&0u32.to_be_bytes())
-            .expect("write metadata sig len");
+        file.write_all(&(manifest_bytes.len() as u64).to_be_bytes()).expect("write manifest len");
+        file.write_all(&0u32.to_be_bytes()).expect("write metadata sig len");
         file.write_all(&manifest_bytes).expect("write manifest");
         file.write_all(data_bytes).expect("write data");
     }
@@ -655,10 +632,8 @@ mod tests {
     fn write_zip_with_payload(zip_path: &Path, payload_path: &Path) {
         let zip_file = fs::File::create(zip_path).expect("create zip");
         let mut zip = zip::ZipWriter::new(zip_file);
-        zip.start_file("payload.bin", SimpleFileOptions::default())
-            .expect("start payload entry");
-        zip.write_all(&fs::read(payload_path).expect("read payload"))
-            .expect("write payload entry");
+        zip.start_file("payload.bin", SimpleFileOptions::default()).expect("start payload entry");
+        zip.write_all(&fs::read(payload_path).expect("read payload")).expect("write payload entry");
         zip.finish().expect("finish zip");
     }
 }

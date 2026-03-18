@@ -13,6 +13,7 @@
 ### Task 1: Create Native Desktop Modules
 
 **Files:**
+
 - Create: `src/lib/desktop/backend.ts`
 - Create: `src/lib/desktop/runtime.ts`
 - Create: `src/lib/desktop/models.ts`
@@ -25,6 +26,7 @@
 ### Task 2: Rewire Frontend Imports
 
 **Files:**
+
 - Modify: `src/components/views/ViewAbout.tsx`
 - Modify: `src/components/views/ViewAppManager.tsx`
 - Modify: `src/components/views/ViewDashboard.tsx`
@@ -42,6 +44,7 @@
 ### Task 3: Remove Compatibility Layer
 
 **Files:**
+
 - Delete: `wailsjs/go/backend/App.ts`
 - Delete: `wailsjs/go/backend/App.d.ts`
 - Delete: `wailsjs/go/models.ts`
@@ -55,6 +58,7 @@
 ### Task 4: Verify And Document
 
 **Files:**
+
 - Modify: `memory-bank/systemPatterns.md`
 - Modify: `memory-bank/activeContext.md`
 - Modify: `memory-bank/progress.md`

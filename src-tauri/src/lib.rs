@@ -3,8 +3,7 @@ mod payload;
 use crate::payload::{ExtractPayloadResult, PartitionDetail, PayloadCache};
 use serde::Serialize;
 use std::{
-    fs,
-    io,
+    fs, io,
     path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
@@ -12,7 +11,7 @@ use std::{
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 
-const DEFAULT_LOG_PREFIX: &str = "adbkit_log";
+const DEFAULT_LOG_PREFIX: &str = "adb_gui_next_log";
 const DEFAULT_ADB_PORT: &str = "5555";
 const VALUE_NOT_AVAILABLE: &str = "N/A";
 const VALUE_NOT_AVAILABLE_WIFI: &str = "N/A (Not on WiFi?)";
@@ -87,11 +86,7 @@ fn connect_wireless_adb(app: AppHandle, ip: String, port: String) -> CmdResult<S
 fn disconnect_wireless_adb(app: AppHandle, ip: String, port: String) -> CmdResult<String> {
     let address = format!("{}:{}", ip.trim(), default_if_empty(&port, DEFAULT_ADB_PORT));
     let output = run_binary_command(&app, "adb", &["disconnect", &address])?;
-    Ok(if output.is_empty() {
-        format!("Disconnected from {address}")
-    } else {
-        output
-    })
+    Ok(if output.is_empty() { format!("Disconnected from {address}") } else { output })
 }
 
 #[tauri::command]
@@ -187,10 +182,7 @@ fn get_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
     for line in output.lines().skip(1) {
         let parts: Vec<_> = line.split_whitespace().collect();
         if parts.len() == 2 {
-            devices.push(Device {
-                serial: parts[0].to_string(),
-                status: parts[1].to_string(),
-            });
+            devices.push(Device { serial: parts[0].to_string(), status: parts[1].to_string() });
         }
     }
 
@@ -205,10 +197,7 @@ fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
     for line in output.lines() {
         let parts: Vec<_> = line.split_whitespace().collect();
         if parts.len() >= 2 && matches!(parts[1], "fastboot" | "bootloader") {
-            devices.push(Device {
-                serial: parts[0].to_string(),
-                status: parts[1].to_string(),
-            });
+            devices.push(Device { serial: parts[0].to_string(), status: parts[1].to_string() });
         }
     }
 
@@ -221,9 +210,7 @@ fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
     let packages = output
         .lines()
         .filter_map(|line| line.trim().strip_prefix("package:"))
-        .map(|name| InstalledPackage {
-            name: name.to_string(),
-        })
+        .map(|name| InstalledPackage { name: name.to_string() })
         .collect();
     Ok(packages)
 }
@@ -269,10 +256,8 @@ fn launch_terminal() -> CmdResult<()> {
     }
     #[cfg(target_os = "linux")]
     {
-        let _ = Command::new("xdg-open")
-            .arg(directory)
-            .spawn()
-            .map_err(|error| error.to_string())?;
+        let _ =
+            Command::new("xdg-open").arg(directory).spawn().map_err(|error| error.to_string())?;
     }
     Ok(())
 }
@@ -284,7 +269,10 @@ fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
 }
 
 #[tauri::command]
-fn list_payload_partitions(payload_cache: State<PayloadCache>, payload_path: String) -> CmdResult<Vec<String>> {
+fn list_payload_partitions(
+    payload_cache: State<PayloadCache>,
+    payload_path: String,
+) -> CmdResult<Vec<String>> {
     payload::list_payload_partitions(Path::new(payload_path.trim()), &payload_cache)
         .map_err(|error| error.to_string())
 }
@@ -304,27 +292,17 @@ fn open_folder(app: AppHandle, folder_path: String) -> CmdResult<()> {
         return Err("Folder path is empty.".into());
     }
 
-    app.opener()
-        .open_path(folder_path, None::<&str>)
-        .map_err(|error| error.to_string())
+    app.opener().open_path(folder_path, None::<&str>).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 fn pull_file(app: AppHandle, remote_path: String, local_path: String) -> CmdResult<String> {
-    run_binary_command(
-        &app,
-        "adb",
-        &["pull", "-a", remote_path.trim(), local_path.trim()],
-    )
+    run_binary_command(&app, "adb", &["pull", "-a", remote_path.trim(), local_path.trim()])
 }
 
 #[tauri::command]
 fn push_file(app: AppHandle, local_path: String, remote_path: String) -> CmdResult<String> {
-    run_binary_command(
-        &app,
-        "adb",
-        &["push", local_path.trim(), remote_path.trim()],
-    )
+    run_binary_command(&app, "adb", &["push", local_path.trim(), remote_path.trim()])
 }
 
 #[tauri::command]
@@ -379,10 +357,8 @@ fn save_log(content: String, prefix: String) -> CmdResult<String> {
     fs::create_dir_all(&logs_dir).map_err(|error| error.to_string())?;
 
     let prefix = default_if_empty(&prefix, DEFAULT_LOG_PREFIX);
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|error| error.to_string())?
-        .as_secs();
+    let timestamp =
+        SystemTime::now().duration_since(UNIX_EPOCH).map_err(|error| error.to_string())?.as_secs();
     let file_path = logs_dir.join(format!("{prefix}_{timestamp}.txt"));
 
     fs::write(&file_path, content).map_err(|error| error.to_string())?;
@@ -452,11 +428,7 @@ fn sideload_package(app: AppHandle, path: String) -> CmdResult<String> {
 
 #[tauri::command]
 fn uninstall_package(app: AppHandle, package_name: String) -> CmdResult<String> {
-    run_binary_command(
-        &app,
-        "adb",
-        &["shell", "pm", "uninstall", package_name.trim()],
-    )
+    run_binary_command(&app, "adb", &["shell", "pm", "uninstall", package_name.trim()])
 }
 
 #[tauri::command]
@@ -467,7 +439,11 @@ fn wipe_data(app: AppHandle) -> CmdResult<()> {
 
 fn default_if_empty<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     let trimmed = value.trim();
-    if trimmed.is_empty() { fallback } else { trimmed }
+    if trimmed.is_empty() {
+        fallback
+    } else {
+        trimmed
+    }
 }
 
 fn split_args(command: &str) -> Vec<&str> {
@@ -522,11 +498,7 @@ fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     }
 
     if let Ok(repo_root) = std::env::current_dir() {
-        let candidate = repo_root
-            .join("src-tauri")
-            .join("resources")
-            .join(os_dir)
-            .join(&file_name);
+        let candidate = repo_root.join("src-tauri").join("resources").join(os_dir).join(&file_name);
         if candidate.exists() {
             ensure_executable_if_needed(&candidate)?;
             return Ok(candidate);
@@ -546,7 +518,8 @@ fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
         }
     }
 
-    which::which(&file_name).map_err(|_| format!("Unable to locate bundled or system binary for {name}."))
+    which::which(&file_name)
+        .map_err(|_| format!("Unable to locate bundled or system binary for {name}."))
 }
 
 fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
@@ -554,10 +527,9 @@ fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
 
     if let Some(app) = app {
         if let Ok(resource_dir) = app.path().resource_dir() {
-            for candidate in [
-                resource_dir.join(os_dir),
-                resource_dir.join("resources").join(os_dir),
-            ] {
+            for candidate in
+                [resource_dir.join(os_dir), resource_dir.join("resources").join(os_dir)]
+            {
                 if candidate.exists() {
                     return Some(candidate);
                 }
@@ -639,11 +611,7 @@ fn run_command_capture(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResul
         (true, true) => String::new(),
     };
 
-    Ok(CommandOutput {
-        success: output.status.success(),
-        stderr,
-        combined,
-    })
+    Ok(CommandOutput { success: output.status.success(), stderr, combined })
 }
 
 fn get_prop(app: &AppHandle, prop: &str) -> String {
@@ -699,7 +667,9 @@ fn get_battery_level(app: &AppHandle) -> String {
 }
 
 fn get_ram_total(app: &AppHandle) -> String {
-    if let Ok(output) = run_binary_command(app, "adb", &["shell", "cat /proc/meminfo | grep MemTotal"]) {
+    if let Ok(output) =
+        run_binary_command(app, "adb", &["shell", "cat /proc/meminfo | grep MemTotal"])
+    {
         if let Some(value) = output.split_whitespace().nth(1) {
             if let Ok(kb) = value.parse::<f64>() {
                 return format!("{:.1} GB", kb / 1024.0 / 1024.0);
@@ -715,7 +685,11 @@ fn get_storage_info(app: &AppHandle) -> String {
             let parts: Vec<_> = line.split_whitespace().collect();
             if parts.len() >= 3 {
                 if let (Ok(total), Ok(used)) = (parts[1].parse::<f64>(), parts[2].parse::<f64>()) {
-                    return format!("{:.1} GB / {:.1} GB", used / 1024.0 / 1024.0, total / 1024.0 / 1024.0);
+                    return format!(
+                        "{:.1} GB / {:.1} GB",
+                        used / 1024.0 / 1024.0,
+                        total / 1024.0 / 1024.0
+                    );
                 }
             }
         }

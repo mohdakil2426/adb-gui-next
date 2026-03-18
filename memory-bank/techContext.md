@@ -28,6 +28,10 @@
 - `pnpm`
 - Cargo
 - Tauri CLI
+- ESLint flat config
+- Prettier
+- `cargo fmt`
+- `cargo clippy`
 
 ## Important Files
 
@@ -50,3 +54,19 @@
 - Windows and Linux resources are bundled separately via platform-specific Tauri config files.
 - Windows debug bundle generation has been verified from `main`.
 - The app currently uses bundled resources rather than Tauri sidecars for Android tools.
+
+## Quality Commands
+
+- `pnpm lint`
+- `pnpm lint:web`
+- `pnpm lint:web:fix`
+- `pnpm lint:rust`
+- `pnpm format`
+- `pnpm format:check`
+- `pnpm format:web`
+- `pnpm format:web:check`
+- `pnpm format:rust`
+- `pnpm format:rust:check`
+- `pnpm check`
+
+See `memory-bank/tooling.md` for the full workflow and command intent.

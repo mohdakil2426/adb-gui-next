@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ADBKit Enhanced",
+  "productName": "ADB GUI Next",
   "version": "0.1.0",
   "identifier": "com.akila.adbguinext",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "ADBKit Enhanced",
+        "title": "ADB GUI Next",
         "width": 1280,
         "height": 820,
         "minWidth": 1024,
