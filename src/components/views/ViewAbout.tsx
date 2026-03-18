@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Github, Globe, Heart, ExternalLink, Code2, Rocket, Smartphone } from 'lucide-react';
+import { Globe, Heart, Code2, Rocket, Smartphone } from 'lucide-react';
 import { BrowserOpenURL } from '../../lib/desktop/runtime';
 
 export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
@@ -72,42 +71,17 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="w-5 h-5 text-primary" />
-              Connect
+              Project
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-2">
-              <Button
-                variant="outline"
-                className="justify-start gap-2 h-auto min-h-12 py-2"
-                onClick={() => openLink('https://github.com/mohdakil2426/adb-gui-kit-enhanced')}
-              >
-                <Github className="w-5 h-5 shrink-0" />
-                <div className="flex flex-col items-start min-w-0 flex-1">
-                  <span className="font-semibold truncate w-full text-left">GitHub Repository</span>
-                  <span className="text-xs text-muted-foreground truncate w-full text-left">
-                    Source code, issues & contributions
-                  </span>
-                </div>
-                <ExternalLink className="w-4 h-4 ml-auto shrink-0 text-muted-foreground" />
-              </Button>
-
-              <Button
-                variant="outline"
-                className="justify-start gap-2 h-auto min-h-12 py-2"
-                onClick={() => openLink('https://github.com/Drenzzz/adb-gui-kit')}
-              >
-                <Github className="w-5 h-5 shrink-0" />
-                <div className="flex flex-col items-start min-w-0 flex-1">
-                  <span className="font-semibold truncate w-full text-left">
-                    Original Foundation
-                  </span>
-                  <span className="text-xs text-muted-foreground truncate w-full text-left">
-                    Credits to Drenzzz
-                  </span>
-                </div>
-                <ExternalLink className="w-4 h-4 ml-auto shrink-0 text-muted-foreground" />
-              </Button>
+            <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-2">
+              <p className="text-sm font-medium">Rust-first Tauri desktop app</p>
+              <p className="text-sm text-muted-foreground">
+                The live application is built and maintained in this Tauri + Rust codebase. Legacy
+                material is kept separately for offline reference and is not part of the running
+                app.
+              </p>
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 flex items-center gap-3 border border-border/50">
@@ -123,16 +97,6 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
 
       {/* Credits / Footer */}
       <div className="text-center text-sm text-muted-foreground py-6 space-y-1">
-        <p>
-          Original foundation by{' '}
-          <a
-            href="https://github.com/Drenzzz/adb-gui-kit"
-            className="font-semibold text-foreground hover:underline cursor-pointer"
-            onClick={() => openLink('https://github.com/Drenzzz/adb-gui-kit')}
-          >
-            Drenzzz
-          </a>
-        </p>
         <p>
           ADB GUI Next by{' '}
           <a

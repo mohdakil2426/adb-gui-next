@@ -47,7 +47,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [nicknameVersion, setNicknameVersion] = useState(0);
+  const [, forceNicknameRefresh] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
 
@@ -176,13 +176,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   };
 
   const handleNicknameSaved = () => {
-    setNicknameVersion((v) => v + 1); // Trigger re-render
+    forceNicknameRefresh((version) => version + 1);
   };
 
   return (
     <div className="flex flex-col gap-6">
       <ConnectedDevicesCard
-        key={nicknameVersion}
         devices={devices.map((device) => ({
           serial: device.serial,
           status: device.status,

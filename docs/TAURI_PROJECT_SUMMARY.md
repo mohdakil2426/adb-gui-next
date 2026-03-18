@@ -2,14 +2,14 @@
 
 ## Overview
 
-ADB GUI Next is a root-level Tauri 2 desktop application that preserves the legacy reference implementation under `docs/adb-gui-kit/refernces/` as permanent in-repo documentation. The app uses a React frontend, a Rust backend, and bundled Android platform tools for Windows and Linux.
+ADB GUI Next is a root-level Tauri 2 desktop application. The app uses a React frontend, a Rust backend, and bundled Android platform tools for Windows and Linux. Legacy source material is kept only as offline reference and is not part of the live build or runtime path.
 
 The repository now contains:
 
 - a root Vite + React 19 frontend
 - a `src-tauri/` Rust backend using Tauri 2
 - a native frontend desktop layer under `src/lib/desktop/`
-- preserved legacy reference source and docs under `docs/adb-gui-kit/refernces/`
+- preserved legacy reference material under `docs/`
 
 ## What Was Implemented
 
@@ -43,11 +43,13 @@ The repository now contains:
   - device info and mode detection
   - log saving and folder opening
 - Added bundled Android binaries under `src-tauri/resources/windows/` and `src-tauri/resources/linux/`.
+- Removed the last live fallback to legacy archive binaries from the Rust backend.
 
 ### Payload dumper
 
 - Ported payload parsing and extraction into `src-tauri/src/payload.rs`.
 - Added protobuf compilation in `src-tauri/build.rs` using `prost-build`.
+- Moved the protobuf input into `src-tauri/update_metadata.proto` so the build is self-contained.
 - Implemented:
   - payload header parsing
   - manifest decoding
@@ -95,7 +97,6 @@ The current Rust payload tests cover:
   - Flasher
   - Utilities
   - Shell
-- The Rust backend still contains placeholder dialog commands that return empty values. They are not currently used by the frontend because the new `src/lib/desktop/backend.ts` layer handles dialog selection directly, but they remain misleading dead surface area.
 
 ### Medium-value improvements
 
@@ -111,7 +112,7 @@ The current Rust payload tests cover:
 
 ## Important Preservation Rules
 
-- Do not delete or overwrite `docs/adb-gui-kit/refernces/`.
+- Do not delete or overwrite the legacy reference archive under `docs/`.
 - Do not delete or overwrite the historical plan archive at `TAURI_MIGRATION_PLAN.md`.
 - Treat the legacy reference app as documentation and comparison material, not as active app code.
 
@@ -121,4 +122,4 @@ The current Rust payload tests cover:
 - Tauri backend: `src-tauri/`
 - Frontend desktop layer: `src/lib/desktop/`
 - Build plan archive: `docs/superpowers/plans/2026-03-18-tauri-migration.md`
-- Legacy reference app: `docs/adb-gui-kit/refernces/`
+- Legacy reference archive: `docs/`

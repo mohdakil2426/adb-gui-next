@@ -18,8 +18,6 @@
     "format:web:check": "prettier . --check .",
     "format:rust": "cargo fmt --manifest-path src-tauri/Cargo.toml --all",
     "format:rust:check": "cargo fmt --manifest-path src-tauri/Cargo.toml --all --check",
-    "hooks:install": "git config core.hooksPath .githooks",
-    "hooks:status": "git config --get core.hooksPath",
     "check": "pnpm lint && pnpm format:check && cargo test --manifest-path src-tauri/Cargo.toml && pnpm build",
     "preview": "vite preview",
     "tauri": "tauri"

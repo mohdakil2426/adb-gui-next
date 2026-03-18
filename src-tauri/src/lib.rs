@@ -165,13 +165,12 @@ fn get_device_info(app: AppHandle) -> CmdResult<DeviceInfo> {
 
 #[tauri::command]
 fn get_device_mode(app: AppHandle) -> CmdResult<String> {
-    if !get_devices(app.clone())?.is_empty() {
-        return Ok("adb".into());
+    Ok(match current_connection_mode(&app)? {
+        ConnectionMode::Adb => "adb",
+        ConnectionMode::Fastboot => "fastboot",
+        ConnectionMode::Unknown => "unknown",
     }
-    if !get_fastboot_devices(app)?.is_empty() {
-        return Ok("fastboot".into());
-    }
-    Ok("unknown".into())
+    .into())
 }
 
 #[tauri::command]
@@ -222,7 +221,7 @@ fn install_package(app: AppHandle, path: String) -> CmdResult<String> {
         return Err("Package path is required.".into());
     }
 
-    if path.to_ascii_lowercase().ends_with(".apks") {
+    if Path::new(path).extension().is_some_and(|extension| extension.eq_ignore_ascii_case("apks")) {
         return install_apks(&app, path);
     }
 
@@ -366,56 +365,6 @@ fn save_log(content: String, prefix: String) -> CmdResult<String> {
 }
 
 #[tauri::command]
-fn select_apk_file() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_directory_for_pull() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_directory_to_push() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_file_to_push() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_image_file() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_multiple_apk_files() -> CmdResult<Vec<String>> {
-    Ok(Vec::new())
-}
-
-#[tauri::command]
-fn select_output_directory() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_payload_file() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_save_directory(_default_name: String) -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
-fn select_zip_file() -> CmdResult<String> {
-    Ok(String::new())
-}
-
-#[tauri::command]
 fn set_active_slot(app: AppHandle, slot: String) -> CmdResult<()> {
     let _ = run_binary_command(&app, "fastboot", &[&format!("--set-active={}", slot.trim())])?;
     Ok(())
@@ -447,7 +396,43 @@ fn default_if_empty<'a>(value: &'a str, fallback: &'a str) -> &'a str {
 }
 
 fn split_args(command: &str) -> Vec<&str> {
-    command.split_whitespace().collect()
+    let mut args = Vec::new();
+    let mut token_start = None;
+    let mut quote = None;
+
+    for (index, ch) in command.char_indices() {
+        if let Some(active_quote) = quote {
+            if ch == active_quote {
+                if let Some(start) = token_start {
+                    args.push(&command[start..index]);
+                }
+                token_start = None;
+                quote = None;
+            }
+            continue;
+        }
+
+        if ch.is_whitespace() {
+            if let Some(start) = token_start.take() {
+                args.push(&command[start..index]);
+            }
+            continue;
+        }
+
+        if matches!(ch, '"' | '\'') && token_start.is_none() {
+            quote = Some(ch);
+            token_start = Some(index + ch.len_utf8());
+            continue;
+        }
+
+        token_start.get_or_insert(index);
+    }
+
+    if let Some(start) = token_start {
+        args.push(&command[start..]);
+    }
+
+    args
 }
 
 fn normalize_path(path: &Path) -> String {
@@ -498,23 +483,10 @@ fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     }
 
     if let Ok(repo_root) = std::env::current_dir() {
-        let candidate = repo_root.join("src-tauri").join("resources").join(os_dir).join(&file_name);
+        let candidate = repo_resource_binary_path(&repo_root, os_dir, &file_name);
         if candidate.exists() {
             ensure_executable_if_needed(&candidate)?;
             return Ok(candidate);
-        }
-
-        let legacy_candidate = repo_root
-            .join("docs")
-            .join("adb-gui-kit")
-            .join("refernces")
-            .join("backend")
-            .join("bin")
-            .join(os_dir)
-            .join(&file_name);
-        if legacy_candidate.exists() {
-            ensure_executable_if_needed(&legacy_candidate)?;
-            return Ok(legacy_candidate);
         }
     }
 
@@ -538,9 +510,17 @@ fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
     }
 
     std::env::current_dir().ok().and_then(|repo_root| {
-        let candidate = repo_root.join("src-tauri").join("resources").join(os_dir);
+        let candidate = repo_resource_directory(&repo_root, os_dir);
         candidate.exists().then_some(candidate)
     })
+}
+
+fn repo_resource_directory(repo_root: &Path, os_dir: &str) -> PathBuf {
+    repo_root.join("src-tauri").join("resources").join(os_dir)
+}
+
+fn repo_resource_binary_path(repo_root: &Path, os_dir: &str, file_name: &str) -> PathBuf {
+    repo_resource_directory(repo_root, os_dir).join(file_name)
 }
 
 fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
@@ -810,16 +790,6 @@ pub fn run() {
             run_fastboot_host_command,
             run_shell_command,
             save_log,
-            select_apk_file,
-            select_directory_for_pull,
-            select_directory_to_push,
-            select_file_to_push,
-            select_image_file,
-            select_multiple_apk_files,
-            select_output_directory,
-            select_payload_file,
-            select_save_directory,
-            select_zip_file,
             set_active_slot,
             sideload_package,
             uninstall_package,
@@ -833,4 +803,31 @@ pub fn run() {
                 let _ = payload_cache.cleanup();
             }
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{repo_resource_binary_path, split_args};
+    use std::path::Path;
+
+    #[test]
+    fn split_args_keeps_double_quoted_segments_together() {
+        assert_eq!(
+            split_args(r#"install "/tmp/My App.apk" --user 0"#),
+            vec!["install", "/tmp/My App.apk", "--user", "0"]
+        );
+    }
+
+    #[test]
+    fn split_args_keeps_single_quoted_segments_together() {
+        assert_eq!(split_args("flash 'boot image.img'"), vec!["flash", "boot image.img"]);
+    }
+
+    #[test]
+    fn repo_resource_binary_path_stays_inside_src_tauri_resources() {
+        let candidate = repo_resource_binary_path(Path::new("repo"), "windows", "adb.exe");
+        let normalized = candidate.to_string_lossy().replace('\\', "/");
+
+        assert_eq!(normalized, "repo/src-tauri/resources/windows/adb.exe");
+    }
 }

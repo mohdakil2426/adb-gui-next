@@ -76,7 +76,6 @@ export function MainLayout() {
   const [progress, setProgress] = useState(0);
   const [shellHistory, setShellHistory] = useState<HistoryEntry[]>([]);
   const [shellCommandHistory, setShellCommandHistory] = useState<string[]>([]);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const { togglePanel, isOpen: isLogOpen } = useLogStore();
 
@@ -247,8 +246,6 @@ export function MainLayout() {
                     <TooltipTrigger asChild>
                       <button
                         onClick={() => setActiveView(item.id)}
-                        onMouseEnter={() => setHoveredItem(item.id)}
-                        onMouseLeave={() => setHoveredItem(null)}
                         className={cn(
                           'relative w-full rounded-xl transition-all duration-200 overflow-hidden group flex items-center',
                           isCollapsed ? 'h-12 p-0 justify-center' : 'h-12 px-4 gap-3',
@@ -269,8 +266,8 @@ export function MainLayout() {
                         )}
 
                         {/* Hover Effect */}
-                        {hoveredItem === item.id && !isActive && (
-                          <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-primary/5 transition-opacity duration-200" />
+                        {!isActive && (
+                          <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-primary/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none" />
                         )}
 
                         <div className="relative z-10 flex items-center shrink-0">
@@ -309,7 +306,7 @@ export function MainLayout() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  onClick={() => setIsCollapsed((current) => !current)}
                   className={cn(
                     'absolute -right-4 top-1/2 -translate-y-1/2 z-20',
                     'h-8 w-8 rounded-2xl',

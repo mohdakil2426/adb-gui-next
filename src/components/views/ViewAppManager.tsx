@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
 
 import {
@@ -39,27 +39,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter packages: Search -> Sort (Selected First) -> Slice
-  const filteredPackages = packages
-    .filter((pkg) => pkg.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => {
-      const aSelected = selectedPackages.has(a.name);
-      const bSelected = selectedPackages.has(b.name);
-      if (aSelected && !bSelected) return -1;
-      if (!aSelected && bSelected) return 1;
-      return 0;
-    })
-    .slice(0, 50);
-
   const [isUninstalling, setIsUninstalling] = useState(false);
 
-  useEffect(() => {
-    if (activeView === 'apps') {
-      loadPackages();
-    }
-  }, [activeView]);
-
-  const loadPackages = async () => {
+  const loadPackages = useCallback(async () => {
     setIsLoadingPackages(true);
     try {
       const packageList = await GetInstalledPackages();
@@ -70,7 +52,28 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
     } finally {
       setIsLoadingPackages(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'apps') {
+      loadPackages();
+    }
+  }, [activeView, loadPackages]);
+
+  const filteredPackages = useMemo(() => {
+    const normalizedSearchQuery = searchQuery.toLowerCase();
+
+    return packages
+      .filter((pkg) => pkg.name.toLowerCase().includes(normalizedSearchQuery))
+      .sort((a, b) => {
+        const aSelected = selectedPackages.has(a.name);
+        const bSelected = selectedPackages.has(b.name);
+        if (aSelected && !bSelected) return -1;
+        if (!aSelected && bSelected) return 1;
+        return 0;
+      })
+      .slice(0, 50);
+  }, [packages, searchQuery, selectedPackages]);
 
   const handleSelectApk = async () => {
     try {
@@ -129,13 +132,15 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   };
 
   const togglePackage = (packageName: string) => {
-    const newSelected = new Set(selectedPackages);
-    if (newSelected.has(packageName)) {
-      newSelected.delete(packageName);
-    } else {
-      newSelected.add(packageName);
-    }
-    setSelectedPackages(newSelected);
+    setSelectedPackages((current) => {
+      const next = new Set(current);
+      if (next.has(packageName)) {
+        next.delete(packageName);
+      } else {
+        next.add(packageName);
+      }
+      return next;
+    });
   };
 
   const handleUninstall = async () => {

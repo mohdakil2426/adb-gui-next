@@ -2,7 +2,7 @@
 
 ## Product Summary
 
-ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastboot workflows. It is the current product codebase, built with Rust, React, and Vite, while preserving the legacy implementation under `docs/adb-gui-kit/refernces/` as permanent reference material.
+ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastboot workflows. It is the current product codebase, built with Rust, React, and Vite, while preserving the legacy implementation as reference-only material outside the live app build and runtime flow.
 
 ## Core Goals
 

@@ -44,7 +44,8 @@ struct PayloadCacheInner {
 
 impl PayloadCache {
     pub fn cleanup(&self) -> Result<()> {
-        let mut inner = self.inner.lock().expect("payload cache lock poisoned");
+        let mut inner =
+            self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
         if let Some(path) = inner.cached_payload_path.take() {
             let _ = fs::remove_file(path);
         }
@@ -57,7 +58,8 @@ impl PayloadCache {
             return Ok(payload_path.to_path_buf());
         }
 
-        let mut inner = self.inner.lock().expect("payload cache lock poisoned");
+        let mut inner =
+            self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
         if inner.cached_zip_path.as_deref() == Some(payload_path) {
             if let Some(cached_payload_path) = inner.cached_payload_path.as_ref() {
                 if cached_payload_path.exists() {

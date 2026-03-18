@@ -37,7 +37,7 @@ The app still uses the legacy single-shell, no-router architecture centered arou
 
 ### 4. Resource-bundled tool execution
 
-Bundled Android binaries live under `src-tauri/resources/`. Rust resolves them from packaged resources first, then local dev resources, then legacy references, then system PATH.
+Bundled Android binaries live under `src-tauri/resources/`. Rust resolves them from packaged resources first, then local dev resources, then system PATH.
 
 ### 5. Payload as dedicated subsystem
 
@@ -46,4 +46,3 @@ The payload extractor lives in `src-tauri/src/payload.rs` and handles manifest p
 ## Known Architectural Gaps
 
 - `src-tauri/src/lib.rs` is still too large and should eventually be split.
-- Some placeholder Rust dialog commands remain registered but unused.

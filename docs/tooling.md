@@ -39,7 +39,7 @@
 ## Combined Commands
 
 - `pnpm check:fast`
-  Runs the fast local verification used by `pre-commit`:
+  Runs the fast local verification workflow:
   1. `pnpm lint`
   2. `pnpm format:check`
 
@@ -58,28 +58,6 @@
   2. `pnpm format:check`
   3. `cargo test --manifest-path src-tauri/Cargo.toml`
   4. `pnpm build`
-
-## Git Hooks
-
-- `pnpm hooks:install`
-  Sets `core.hooksPath` to the tracked `.githooks` directory for this repository.
-
-- `pnpm hooks:status`
-  Prints the currently configured git hooks path.
-
-Tracked hook behavior:
-
-- `pre-commit`
-  Runs `pnpm check:fast` so commits get a quick production-baseline sanity check.
-
-- `pre-push`
-  Runs `pnpm check` so pushes are blocked when the full project verification fails.
-
-Windows support notes:
-
-- `.githooks/pre-commit` and `.githooks/pre-push` are the git hook entrypoints.
-- `.cmd` wrappers are included so the same checks can be executed directly from Command Prompt or PowerShell during local smoke testing.
-- `.gitattributes` pins LF for shell hooks and CRLF for `.cmd` files to avoid hook breakage across environments.
 
 ## Live Development
 
@@ -100,16 +78,13 @@ Windows support notes:
   Prettier code style configuration.
 
 - `.prettierignore`
-  Excludes generated, preserved-reference, and local-artifact paths from Prettier.
+  Excludes generated, preserved-reference, local-artifact, and local skill-corpus paths from Prettier.
 
 - `eslint.config.mjs`
   ESLint flat config for React + TypeScript + Vite.
 
 - `.gitattributes`
-  Normalizes repository line endings and protects hook script line endings.
-
-- `.githooks/`
-  Tracked git hook scripts for `pre-commit` and `pre-push`.
+  Normalizes repository line endings.
 
 - `rustfmt.toml`
   Rust formatting defaults.

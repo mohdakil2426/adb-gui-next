@@ -13,6 +13,10 @@ ADB GUI Next now lives directly on `main` as the active product codebase.
 - Platform-specific Tauri resource configs are in place for Windows and Linux
 - Pure-Tauri frontend wiring is complete with `wailsjs/` removed
 - Project-wide linting, formatting, and quality scripts are now configured
+- Repo-managed git hooks have been removed from the current workflow
+- Unused placeholder Rust dialog commands have been removed from `src-tauri/src/lib.rs`
+- Host command parsing now preserves quoted arguments for ADB and fastboot commands
+- Tauri build and runtime no longer depend on the legacy archive; payload protobuf input now lives under `src-tauri/`
 - Main-branch verification has passed
 
 ## Current Verification Evidence
@@ -26,13 +30,12 @@ Verified on `main` with:
 
 ## Immediate Follow-up Candidates
 
-- Remove or implement placeholder Rust dialog commands
 - Run broader device-backed parity tests for the main views
 - Split `src-tauri/src/lib.rs` into smaller modules
 - Work down the remaining ESLint warnings in the copied frontend
 
 ## Important Notes
 
-- Preserve `docs/adb-gui-kit/refernces/` permanently
+- Preserve the legacy archive permanently as offline reference material only
 - Preserve the historical plan archive at `TAURI_MIGRATION_PLAN.md`
 - `.mcp.json` currently shows as deleted in the working tree and was not modified during merge finalization

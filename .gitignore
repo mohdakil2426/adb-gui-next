@@ -9,6 +9,7 @@ __tauri_template_tmp/
 # Local machine / MCP
 .mcp.json
 docs/adb-gui-kit/
+skills-lock.json
 
 # Local logs and temp files
 dev-tauri.log
