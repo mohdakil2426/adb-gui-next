@@ -1,3 +1,6 @@
+mod payload;
+
+use crate::payload::{ExtractPayloadResult, PartitionDetail, PayloadCache};
 use serde::Serialize;
 use std::{
     fs,
@@ -6,7 +9,7 @@ use std::{
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_opener::OpenerExt;
 
 const DEFAULT_LOG_PREFIX: &str = "adbkit_log";
@@ -55,22 +58,6 @@ struct InstalledPackage {
     name: String,
 }
 
-#[derive(Debug, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct PartitionDetail {
-    name: String,
-    size: u64,
-}
-
-#[derive(Debug, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct ExtractPayloadResult {
-    success: bool,
-    output_dir: String,
-    extracted_files: Vec<String>,
-    error: Option<String>,
-}
-
 type CmdResult<T> = Result<T, String>;
 
 #[tauri::command]
@@ -79,7 +66,9 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn cleanup_payload_cache() {}
+fn cleanup_payload_cache(payload_cache: State<PayloadCache>) -> CmdResult<()> {
+    payload_cache.cleanup().map_err(|error| error.to_string())
+}
 
 #[tauri::command]
 fn connect_wireless_adb(app: AppHandle, ip: String, port: String) -> CmdResult<String> {
@@ -113,16 +102,38 @@ fn enable_wireless_adb(app: AppHandle, port: String) -> CmdResult<String> {
 
 #[tauri::command]
 fn extract_payload(
-    _payload_path: String,
-    _output_dir: String,
-    _selected_partitions: Vec<String>,
+    app: AppHandle,
+    payload_cache: State<PayloadCache>,
+    payload_path: String,
+    output_dir: String,
+    selected_partitions: Vec<String>,
 ) -> CmdResult<ExtractPayloadResult> {
-    Ok(ExtractPayloadResult {
-        success: false,
-        output_dir: String::new(),
-        extracted_files: Vec::new(),
-        error: Some("Payload extraction is not implemented yet.".into()),
-    })
+    let output_dir = (!output_dir.trim().is_empty()).then(|| PathBuf::from(output_dir.trim()));
+    match payload::extract_payload(
+        Path::new(payload_path.trim()),
+        output_dir.as_deref(),
+        &selected_partitions,
+        &payload_cache,
+        |partition_name, current, total, completed| {
+            let _ = app.emit(
+                "payload:progress",
+                serde_json::json!({
+                    "partitionName": partition_name,
+                    "current": current,
+                    "total": total,
+                    "completed": completed,
+                }),
+            );
+        },
+    ) {
+        Ok(result) => Ok(result),
+        Err(error) => Ok(ExtractPayloadResult {
+            success: false,
+            output_dir: String::new(),
+            extracted_files: Vec::new(),
+            error: Some(error.to_string()),
+        }),
+    }
 }
 
 #[tauri::command]
@@ -136,7 +147,7 @@ fn flash_partition(app: AppHandle, partition: String, image_path: String) -> Cmd
 
 #[tauri::command]
 fn get_bootloader_variables(app: AppHandle) -> CmdResult<String> {
-    run_binary_command(&app, "fastboot", &["getvar", "all"])
+    run_binary_command_allow_output_on_failure(&app, "fastboot", &["getvar", "all"])
 }
 
 #[tauri::command]
@@ -193,7 +204,7 @@ fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
 
     for line in output.lines() {
         let parts: Vec<_> = line.split_whitespace().collect();
-        if parts.len() >= 2 {
+        if parts.len() >= 2 && matches!(parts[1], "fastboot" | "bootloader") {
             devices.push(Device {
                 serial: parts[0].to_string(),
                 status: parts[1].to_string(),
@@ -273,13 +284,18 @@ fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
 }
 
 #[tauri::command]
-fn list_payload_partitions(_payload_path: String) -> CmdResult<Vec<String>> {
-    Ok(Vec::new())
+fn list_payload_partitions(payload_cache: State<PayloadCache>, payload_path: String) -> CmdResult<Vec<String>> {
+    payload::list_payload_partitions(Path::new(payload_path.trim()), &payload_cache)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
-fn list_payload_partitions_with_details(_payload_path: String) -> CmdResult<Vec<PartitionDetail>> {
-    Ok(Vec::new())
+fn list_payload_partitions_with_details(
+    payload_cache: State<PayloadCache>,
+    payload_path: String,
+) -> CmdResult<Vec<PartitionDetail>> {
+    payload::list_payload_partitions_with_details(Path::new(payload_path.trim()), &payload_cache)
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -572,9 +588,45 @@ fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
 }
 
 fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResult<String> {
+    let command_output = run_command_capture(app, binary, args)?;
+    if command_output.success {
+        Ok(command_output.combined)
+    } else if !command_output.stderr.is_empty() {
+        Err(command_output.stderr)
+    } else if !command_output.combined.is_empty() {
+        Err(command_output.combined)
+    } else {
+        Err(format!("{binary} command failed."))
+    }
+}
+
+fn run_binary_command_allow_output_on_failure(
+    app: &AppHandle,
+    binary: &str,
+    args: &[&str],
+) -> CmdResult<String> {
+    let command_output = run_command_capture(app, binary, args)?;
+    if command_output.success || !command_output.combined.is_empty() {
+        Ok(command_output.combined)
+    } else {
+        Err(format!("{binary} command failed."))
+    }
+}
+
+struct CommandOutput {
+    success: bool,
+    stderr: String,
+    combined: String,
+}
+
+fn run_command_capture(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResult<CommandOutput> {
     let binary_path = resolve_binary_path(app, binary)?;
     let output = Command::new(binary_path)
         .args(args)
+        .current_dir(
+            binary_working_directory(Some(app))
+                .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))),
+        )
         .output()
         .map_err(|error| error.to_string())?;
 
@@ -582,16 +634,16 @@ fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResult
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
     let combined = match (stdout.is_empty(), stderr.is_empty()) {
         (false, false) => format!("{stdout}\n{stderr}"),
-        (false, true) => stdout,
-        (true, false) => stderr,
+        (false, true) => stdout.clone(),
+        (true, false) => stderr.clone(),
         (true, true) => String::new(),
     };
 
-    if output.status.success() || !combined.is_empty() {
-        Ok(combined)
-    } else {
-        Err(format!("{binary} command failed."))
-    }
+    Ok(CommandOutput {
+        success: output.status.success(),
+        stderr,
+        combined,
+    })
 }
 
 fn get_prop(app: &AppHandle, prop: &str) -> String {
@@ -755,6 +807,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .manage(PayloadCache::default())
         .invoke_handler(tauri::generate_handler![
             cleanup_payload_cache,
             connect_wireless_adb,
@@ -798,6 +851,12 @@ pub fn run() {
             uninstall_package,
             wipe_data
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if matches!(event, tauri::RunEvent::Exit | tauri::RunEvent::ExitRequested { .. }) {
+                let payload_cache = app_handle.state::<PayloadCache>();
+                let _ = payload_cache.cleanup();
+            }
+        });
 }
