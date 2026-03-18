@@ -1,3 +1,4 @@
+import { open, save } from "@tauri-apps/plugin-dialog";
 import * as core from "@tauri-apps/api/core";
 import { backend } from "../models";
 
@@ -5,6 +6,30 @@ const invoke = core.invoke as <T>(command: string, args?: Record<string, unknown
 
 function call<T>(command: string, args?: Record<string, unknown>) {
   return invoke<T>(command, args);
+}
+
+function normalizeSingleSelection(selection: string | null): string {
+  return selection ?? "";
+}
+
+function normalizeMultipleSelection(selection: string | string[] | null): Array<string> {
+  if (Array.isArray(selection)) {
+    return selection;
+  }
+
+  return selection ? [selection] : [];
+}
+
+async function selectFile(options: Parameters<typeof open>[0]): Promise<string> {
+  return normalizeSingleSelection(await open(options));
+}
+
+async function selectFiles(options: Parameters<typeof open>[0]): Promise<Array<string>> {
+  return normalizeMultipleSelection(await open(options));
+}
+
+async function selectSavePath(options: Parameters<typeof save>[0]): Promise<string> {
+  return normalizeSingleSelection(await save(options));
 }
 
 export function CleanupPayloadCache(): Promise<void> {
@@ -20,7 +45,7 @@ export function DisconnectWirelessAdb(arg1: string, arg2: string): Promise<strin
 }
 
 export function EnableWirelessAdb(arg1: string): Promise<string> {
-  return call("enable_wireless_adb", { serial: arg1 });
+  return call("enable_wireless_adb", { port: arg1 });
 }
 
 export function ExtractPayload(
@@ -124,43 +149,87 @@ export function SaveLog(arg1: string, arg2: string): Promise<string> {
 }
 
 export function SelectApkFile(): Promise<string> {
-  return call("select_apk_file");
+  return selectFile({
+    filters: [
+      {
+        name: "APK files",
+        extensions: ["apk", "apks"],
+      },
+    ],
+  });
 }
 
 export function SelectDirectoryForPull(): Promise<string> {
-  return call("select_directory_for_pull");
+  return selectFile({
+    directory: true,
+  });
 }
 
 export function SelectDirectoryToPush(): Promise<string> {
-  return call("select_directory_to_push");
+  return selectFile({
+    directory: true,
+  });
 }
 
 export function SelectFileToPush(): Promise<string> {
-  return call("select_file_to_push");
+  return selectFile({});
 }
 
 export function SelectImageFile(): Promise<string> {
-  return call("select_image_file");
+  return selectFile({
+    filters: [
+      {
+        name: "Image files",
+        extensions: ["img"],
+      },
+    ],
+  });
 }
 
 export function SelectMultipleApkFiles(): Promise<Array<string>> {
-  return call("select_multiple_apk_files");
+  return selectFiles({
+    multiple: true,
+    filters: [
+      {
+        name: "APK files",
+        extensions: ["apk", "apks"],
+      },
+    ],
+  });
 }
 
 export function SelectOutputDirectory(): Promise<string> {
-  return call("select_output_directory");
+  return selectFile({
+    directory: true,
+  });
 }
 
 export function SelectPayloadFile(): Promise<string> {
-  return call("select_payload_file");
+  return selectFile({
+    filters: [
+      {
+        name: "Payload files",
+        extensions: ["bin", "zip"],
+      },
+    ],
+  });
 }
 
 export function SelectSaveDirectory(arg1: string): Promise<string> {
-  return call("select_save_directory", { defaultName: arg1 });
+  return selectSavePath({
+    defaultPath: arg1,
+  });
 }
 
 export function SelectZipFile(): Promise<string> {
-  return call("select_zip_file");
+  return selectFile({
+    filters: [
+      {
+        name: "ZIP files",
+        extensions: ["zip"],
+      },
+    ],
+  });
 }
 
 export function SetActiveSlot(arg1: string): Promise<void> {

@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::{
     fs,
+    io,
     path::{Path, PathBuf},
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
@@ -105,12 +106,8 @@ fn disconnect_wireless_adb(app: AppHandle, ip: String, port: String) -> CmdResul
 }
 
 #[tauri::command]
-fn enable_wireless_adb(app: AppHandle, serial: String) -> CmdResult<String> {
-    let port = if serial.trim().is_empty() {
-        DEFAULT_ADB_PORT
-    } else {
-        serial.trim()
-    };
+fn enable_wireless_adb(app: AppHandle, port: String) -> CmdResult<String> {
+    let port = default_if_empty(&port, DEFAULT_ADB_PORT);
     run_binary_command(&app, "adb", &["tcpip", port])
 }
 
@@ -221,8 +218,17 @@ fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
 }
 
 #[tauri::command]
-fn install_package(_path: String) -> CmdResult<String> {
-    Ok("Package installation is not implemented yet.".into())
+fn install_package(app: AppHandle, path: String) -> CmdResult<String> {
+    let path = path.trim();
+    if path.is_empty() {
+        return Err("Package path is required.".into());
+    }
+
+    if path.to_ascii_lowercase().ends_with(".apks") {
+        return install_apks(&app, path);
+    }
+
+    run_binary_command(&app, "adb", &["install", "-r", path])
 }
 
 #[tauri::command]
@@ -239,10 +245,21 @@ fn launch_device_manager() -> CmdResult<()> {
 
 #[tauri::command]
 fn launch_terminal() -> CmdResult<()> {
+    let directory = binary_working_directory(None)
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+
     #[cfg(target_os = "windows")]
     {
         let _ = Command::new("cmd")
-            .args(["/C", "start"])
+            .args(["/C", "start", "cmd", "/K", "cd", "/d"])
+            .arg(directory)
+            .spawn()
+            .map_err(|error| error.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let _ = Command::new("xdg-open")
+            .arg(directory)
             .spawn()
             .map_err(|error| error.to_string())?;
     }
@@ -297,11 +314,25 @@ fn push_file(app: AppHandle, local_path: String, remote_path: String) -> CmdResu
 #[tauri::command]
 fn reboot(app: AppHandle, mode: String) -> CmdResult<()> {
     let mode = mode.trim();
-    let mut args = vec!["reboot"];
-    if !mode.is_empty() {
-        args.push(mode);
+    match current_connection_mode(&app)? {
+        ConnectionMode::Adb => {
+            let mut args = vec!["reboot"];
+            if !mode.is_empty() {
+                args.push(mode);
+            }
+            let _ = run_binary_command(&app, "adb", &args)?;
+        }
+        ConnectionMode::Fastboot => {
+            if mode == "bootloader" {
+                let _ = run_binary_command(&app, "fastboot", &["reboot-bootloader"])?;
+            } else if mode.is_empty() {
+                let _ = run_binary_command(&app, "fastboot", &["reboot"])?;
+            } else {
+                let _ = run_binary_command(&app, "fastboot", &["reboot", mode])?;
+            }
+        }
+        ConnectionMode::Unknown => return Err("No connected ADB or fastboot device found.".into()),
     }
-    let _ = run_binary_command(&app, "adb", &args)?;
     Ok(())
 }
 
@@ -439,14 +470,38 @@ fn binary_name(name: &str) -> String {
     }
 }
 
+#[derive(Clone, Copy)]
+enum ConnectionMode {
+    Adb,
+    Fastboot,
+    Unknown,
+}
+
+fn current_connection_mode(app: &AppHandle) -> CmdResult<ConnectionMode> {
+    if !get_devices(app.clone())?.is_empty() {
+        return Ok(ConnectionMode::Adb);
+    }
+    if !get_fastboot_devices(app.clone())?.is_empty() {
+        return Ok(ConnectionMode::Fastboot);
+    }
+    Ok(ConnectionMode::Unknown)
+}
+
 fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     let file_name = binary_name(name);
     let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
 
     if let Ok(resource_dir) = app.path().resource_dir() {
-        let candidate = resource_dir.join("resources").join(os_dir).join(&file_name);
-        if candidate.exists() {
-            return Ok(candidate);
+        let candidates = [
+            resource_dir.join(os_dir).join(&file_name),
+            resource_dir.join("resources").join(os_dir).join(&file_name),
+        ];
+
+        for candidate in candidates {
+            if candidate.exists() {
+                ensure_executable_if_needed(&candidate)?;
+                return Ok(candidate);
+            }
         }
     }
 
@@ -457,6 +512,7 @@ fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
             .join(os_dir)
             .join(&file_name);
         if candidate.exists() {
+            ensure_executable_if_needed(&candidate)?;
             return Ok(candidate);
         }
 
@@ -469,11 +525,50 @@ fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
             .join(os_dir)
             .join(&file_name);
         if legacy_candidate.exists() {
+            ensure_executable_if_needed(&legacy_candidate)?;
             return Ok(legacy_candidate);
         }
     }
 
     which::which(&file_name).map_err(|_| format!("Unable to locate bundled or system binary for {name}."))
+}
+
+fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
+    let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
+
+    if let Some(app) = app {
+        if let Ok(resource_dir) = app.path().resource_dir() {
+            for candidate in [
+                resource_dir.join(os_dir),
+                resource_dir.join("resources").join(os_dir),
+            ] {
+                if candidate.exists() {
+                    return Some(candidate);
+                }
+            }
+        }
+    }
+
+    std::env::current_dir().ok().and_then(|repo_root| {
+        let candidate = repo_root.join("src-tauri").join("resources").join(os_dir);
+        candidate.exists().then_some(candidate)
+    })
+}
+
+fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
+    #[cfg(target_family = "unix")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+
+        let metadata = fs::metadata(_path).map_err(|error| error.to_string())?;
+        let mut permissions = metadata.permissions();
+        if permissions.mode() & 0o111 == 0 {
+            permissions.set_mode(permissions.mode() | 0o755);
+            fs::set_permissions(_path, permissions).map_err(|error| error.to_string())?;
+        }
+    }
+
+    Ok(())
 }
 
 fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResult<String> {
@@ -611,9 +706,54 @@ fn parse_file_entries(output: &str) -> Vec<FileEntry> {
         .collect()
 }
 
+fn install_apks(app: &AppHandle, apks_path: &str) -> CmdResult<String> {
+    let file = fs::File::open(apks_path).map_err(|error| error.to_string())?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|error| error.to_string())?;
+
+    let temp_dir = std::env::temp_dir().join(format!(
+        "adb-gui-next-apks-{}",
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|error| error.to_string())?
+            .as_millis()
+    ));
+    fs::create_dir_all(&temp_dir).map_err(|error| error.to_string())?;
+
+    let mut extracted = Vec::new();
+
+    for index in 0..archive.len() {
+        let mut entry = archive.by_index(index).map_err(|error| error.to_string())?;
+        if !entry.name().to_ascii_lowercase().ends_with(".apk") {
+            continue;
+        }
+
+        let file_name = Path::new(entry.name())
+            .file_name()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| "Invalid APK entry name.".to_string())?;
+        let target = temp_dir.join(file_name);
+        let mut output = fs::File::create(&target).map_err(|error| error.to_string())?;
+        io::copy(&mut entry, &mut output).map_err(|error| error.to_string())?;
+        extracted.push(target);
+    }
+
+    if extracted.is_empty() {
+        return Err("No APK files found in the APKS archive.".into());
+    }
+
+    let mut args = vec!["install-multiple".to_string(), "-r".to_string()];
+    args.extend(extracted.iter().map(|path| path.to_string_lossy().to_string()));
+    let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+
+    let result = run_binary_command(app, "adb", &arg_refs);
+    let _ = fs::remove_dir_all(&temp_dir);
+    result
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             cleanup_payload_cache,
