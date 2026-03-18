@@ -41,12 +41,12 @@
 - `src-tauri/tauri.conf.json`
 - `src-tauri/tauri.windows.conf.json`
 - `src-tauri/tauri.linux.conf.json`
-- `wailsjs/go/backend/App.ts`
-- `wailsjs/runtime/runtime.ts`
+- `src/lib/desktop/backend.ts`
+- `src/lib/desktop/runtime.ts`
+- `src/lib/desktop/models.ts`
 
 ## Packaging Notes
 
 - Windows and Linux resources are bundled separately via platform-specific Tauri config files.
 - Windows debug bundle generation has been verified from `main`.
 - The app currently uses bundled resources rather than Tauri sidecars for Android tools.
-

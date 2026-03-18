@@ -10,8 +10,8 @@ import {
   SelectSaveDirectory,
   SelectDirectoryForPull,
   SelectDirectoryToPush
-} from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
+} from '../../lib/desktop/backend';
+import { backend } from '../../lib/desktop/models';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

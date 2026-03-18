@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Copy, Logs, GripVertical, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { SaveLog } from '../../wailsjs/go/backend/App';
+import { SaveLog } from '../lib/desktop/backend';
 
 const MIN_WIDTH = 300;
 const MAX_WIDTH = 800;

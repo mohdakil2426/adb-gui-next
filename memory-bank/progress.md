@@ -10,7 +10,7 @@ The repository has been successfully migrated into a working root-level Tauri 2 
 
 - App shell loads under Vite/React
 - Copied views compile and build
-- Wails compatibility imports continue to work through local shims
+- Frontend now calls a native `src/lib/desktop/` Tauri abstraction directly
 
 ### Backend
 
@@ -39,13 +39,10 @@ The repository has been successfully migrated into a working root-level Tauri 2 
 
 - Broader end-to-end parity validation with real devices
 - Cleanup of placeholder Rust dialog commands
-- Runtime type-surface cleanup
 - Potential backend modularization
 - Additional payload tests for more compressed operation paths
 
 ## Risks / Known Issues
 
-- Some runtime type definitions still overstate implemented behavior
 - `src-tauri/src/lib.rs` is large and should eventually be split
 - Large frontend bundle chunk warning remains during build
-

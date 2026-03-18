@@ -8,7 +8,7 @@ The repository now contains:
 
 - a root Vite + React 19 frontend
 - a `src-tauri/` Rust backend using Tauri 2
-- a `wailsjs/` compatibility layer to preserve most legacy frontend call sites
+- a native frontend desktop layer under `src/lib/desktop/`
 - preserved legacy reference source and docs under `docs/adb-gui-kit/refernces/`
 
 ## What Was Implemented
@@ -20,12 +20,13 @@ The repository now contains:
 - Copied the legacy frontend into the root `src/` tree with minimal structural change.
 - Replaced the Astro host with a Vite React host while preserving the existing app shell and manual view-switching architecture.
 
-### Compatibility layer
+### Native frontend desktop layer
 
-- Added `wailsjs/go/backend/App.ts` as a Tauri-backed compatibility wrapper.
-- Added `wailsjs/runtime/runtime.ts` for the runtime subset actually used by the copied frontend.
-- Preserved existing frontend imports for most view files instead of rewriting feature code broadly.
-- Routed file/folder selection to `@tauri-apps/plugin-dialog` from the compatibility layer.
+- Added `src/lib/desktop/backend.ts` as the frontend command layer over Tauri `invoke()`.
+- Added `src/lib/desktop/runtime.ts` for browser open, events, and drag/drop helpers.
+- Added `src/lib/desktop/models.ts` for shared frontend DTO types.
+- Rewired the copied frontend away from `wailsjs/*` imports completely.
+- Deleted the old `wailsjs/` compatibility folder.
 
 ### Rust backend migration
 
@@ -94,8 +95,7 @@ The current Rust payload tests cover:
   - Flasher
   - Utilities
   - Shell
-- The Rust backend still contains placeholder dialog commands that return empty values. They are not currently used by the copied frontend because the JS compatibility layer handles dialog selection directly, but they remain misleading dead surface area.
-- `wailsjs/runtime/runtime.d.ts` still exposes a much larger Wails runtime surface than is actually implemented in `wailsjs/runtime/runtime.ts`.
+- The Rust backend still contains placeholder dialog commands that return empty values. They are not currently used by the frontend because the new `src/lib/desktop/backend.ts` layer handles dialog selection directly, but they remain misleading dead surface area.
 
 ### Medium-value improvements
 
@@ -119,7 +119,6 @@ The current Rust payload tests cover:
 
 - Root frontend: `src/`
 - Tauri backend: `src-tauri/`
-- Compatibility layer: `wailsjs/`
+- Frontend desktop layer: `src/lib/desktop/`
 - Migration plan: `docs/superpowers/plans/2026-03-18-tauri-migration.md`
 - Legacy reference app: `docs/adb-gui-kit/refernces/`
-

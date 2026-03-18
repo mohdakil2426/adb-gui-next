@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLogStore } from '@/lib/logStore';
 
 
-import { SelectMultipleApkFiles, InstallPackage, UninstallPackage, GetInstalledPackages } from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
+import { SelectMultipleApkFiles, InstallPackage, UninstallPackage, GetInstalledPackages } from '../../lib/desktop/backend';
+import { backend } from '../../lib/desktop/models';
 
 import {
   AlertDialog,

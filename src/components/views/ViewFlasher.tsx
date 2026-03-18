@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLogStore } from '@/lib/logStore';
-import { WipeData, FlashPartition, SelectImageFile, GetFastbootDevices, GetDevices, SelectZipFile, SideloadPackage } from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
+import { WipeData, FlashPartition, SelectImageFile, GetFastbootDevices, GetDevices, SelectZipFile, SideloadPackage } from '../../lib/desktop/backend';
+import { backend } from '../../lib/desktop/models';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

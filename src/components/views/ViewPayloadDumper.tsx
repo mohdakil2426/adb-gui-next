@@ -30,8 +30,8 @@ import {
     ExtractPayload,
     OpenFolder,
     CleanupPayloadCache,
-} from "../../../wailsjs/go/backend/App";
-import { OnFileDrop, OnFileDropOff, EventsOn, EventsOff } from "../../../wailsjs/runtime/runtime";
+} from "../../lib/desktop/backend";
+import { OnFileDrop, OnFileDropOff, EventsOn, EventsOff } from "../../lib/desktop/runtime";
 
 // Format bytes to human-readable size
 const formatBytes = (bytes: number): string => {

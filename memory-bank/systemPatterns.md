@@ -7,7 +7,7 @@ The current app uses a Tauri desktop architecture.
 - Frontend: React 19 + TypeScript + Vite
 - Backend: Rust commands under `src-tauri/`
 - Desktop bridge: Tauri 2 APIs
-- Compatibility layer: `wailsjs/` shims that preserve most legacy frontend imports
+- Frontend desktop layer: `src/lib/desktop/`
 
 ## High-Level Structure
 
@@ -15,7 +15,7 @@ The current app uses a Tauri desktop architecture.
 /
 ├── src/                    # Copied and adapted frontend
 ├── src-tauri/              # Rust backend and Tauri config
-├── wailsjs/                # Compatibility layer for legacy frontend imports
+├── src/lib/desktop/        # Frontend desktop command/runtime layer
 ├── docs/                   # Docs plus preserved legacy reference source
 ├── memory-bank/            # Current project memory bank
 └── TAURI_MIGRATION_PLAN.md # Top-level migration plan
@@ -27,9 +27,9 @@ The current app uses a Tauri desktop architecture.
 
 The frontend was copied from the legacy app into the root `src/` tree with minimal behavioral changes. Host/runtime concerns were handled around it instead of rewriting the UI architecture.
 
-### 2. Compatibility-first bridge strategy
+### 2. Native desktop abstraction
 
-`wailsjs/go/backend/App.ts` and `wailsjs/runtime/runtime.ts` provide a compatibility layer so copied views can continue calling familiar APIs.
+`src/lib/desktop/backend.ts`, `src/lib/desktop/runtime.ts`, and `src/lib/desktop/models.ts` provide the frontend-facing Tauri abstraction for commands, runtime events, dialogs, and DTO types.
 
 ### 3. Manual view switching
 
@@ -47,5 +47,3 @@ The payload extractor lives in `src-tauri/src/payload.rs` and handles manifest p
 
 - `src-tauri/src/lib.rs` is still too large and should eventually be split.
 - Some placeholder Rust dialog commands remain registered but unused.
-- The runtime type definitions advertise more API than the implementation actually supports.
-

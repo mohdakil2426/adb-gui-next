@@ -42,7 +42,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ThemeProvider } from "./ThemeProvider";
 import { WelcomeScreen } from "./WelcomeScreen";
 import { ViewShell } from './views/ViewShell';
-import { LaunchDeviceManager, LaunchTerminal } from "../../wailsjs/go/backend/App";
+import { LaunchDeviceManager, LaunchTerminal } from "../lib/desktop/backend";
 import { toast } from "sonner";
 
 const VIEWS = {

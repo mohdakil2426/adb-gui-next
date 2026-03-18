@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-import { GetDevices, GetDeviceInfo, EnableWirelessAdb, ConnectWirelessAdb, DisconnectWirelessAdb } from '../../../wailsjs/go/backend/App';
-import { backend } from '../../../wailsjs/go/models';
+import { GetDevices, GetDeviceInfo, EnableWirelessAdb, ConnectWirelessAdb, DisconnectWirelessAdb } from '../../lib/desktop/backend';
+import { backend } from '../../lib/desktop/models';
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

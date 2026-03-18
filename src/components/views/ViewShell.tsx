@@ -3,7 +3,7 @@ import {
   RunShellCommand,
   RunAdbHostCommand,
   RunFastbootHostCommand
-} from '../../../wailsjs/go/backend/App';
+} from '../../lib/desktop/backend';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Terminal, ChevronRight, Loader2, Trash2 } from "lucide-react";

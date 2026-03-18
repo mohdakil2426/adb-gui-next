@@ -9,7 +9,7 @@ import {
   RunFastbootHostCommand,
   WipeData,
   SaveLog
-} from '../../../wailsjs/go/backend/App';
+} from '../../lib/desktop/backend';
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";

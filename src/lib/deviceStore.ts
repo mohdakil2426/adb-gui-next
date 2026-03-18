@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { backend } from '../../wailsjs/go/models';
+import { backend } from './desktop/models';
 
 type Device = backend.Device;
 type DeviceInfo = backend.DeviceInfo;

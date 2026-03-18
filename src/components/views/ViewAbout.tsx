@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Github, Globe, Heart, Coffee, ExternalLink, Code2, Rocket, Smartphone, Send } from "lucide-react";
-import { BrowserOpenURL } from "../../../wailsjs/runtime/runtime";
+import { BrowserOpenURL } from "../../lib/desktop/runtime";
 
 export function ViewAbout({ activeView }: { activeView: string }) {
 
