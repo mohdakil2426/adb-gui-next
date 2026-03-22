@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
+import { partitionSchema } from '@/lib/schemas';
+import { queryKeys, fetchAllDevices } from '@/lib/queries';
 import {
   WipeData,
   FlashPartition,
   SelectImageFile,
-  GetFastbootDevices,
-  GetDevices,
   SelectZipFile,
   SideloadPackage,
 } from '../../lib/desktop/backend';
-import type { backend } from '../../lib/desktop/models';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,16 +32,6 @@ import { Loader2, AlertTriangle, FileUp, Trash2, Package } from 'lucide-react';
 import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 
-type Device = backend.Device;
-
-const areDeviceListsEqual = (a: Device[], b: Device[]): boolean => {
-  if (a.length !== b.length) return false;
-  return a.every((device, index) => {
-    const bDevice = b[index];
-    return device.serial === bDevice.serial && device.status === bDevice.status;
-  });
-};
-
 export function ViewFlasher({ activeView }: { activeView: string }) {
   const [partition, setPartition] = useState('');
   const [filePath, setFilePath] = useState('');
@@ -49,122 +39,37 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
   const [isFlashing, setIsFlashing] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
   const [isSideloading, setIsSideloading] = useState(false);
-
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   // Nickname Editing State
   const [editingSerial, setEditingSerial] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const isMountedRef = useRef(true);
-  const devicesRef = useRef<Device[]>([]);
-  const refreshInFlightRef = useRef(false);
-  const queuedRefreshRef = useRef(false);
-  const emptyPollCountRef = useRef(0);
+  const {
+    data: queriedDevices = [],
+    isFetching: isRefreshing,
+    refetch: refetchDevices,
+  } = useQuery({
+    queryKey: queryKeys.allDevices(),
+    queryFn: fetchAllDevices,
+    refetchInterval: activeView === 'flasher' ? 4000 : false,
+    enabled: activeView === 'flasher',
+    // Keep previous list visible during background refetch (anti-flicker)
+    placeholderData: (prev) => prev,
+  });
+
+  const refreshDevices = () => void refetchDevices();
 
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+    if (activeView === 'flasher') {
+      void refetchDevices();
+    }
+  }, [activeView, refetchDevices]);
 
-  const applyDevices = useCallback((newDevices: Device[]) => {
-    if (!isMountedRef.current) return;
-    devicesRef.current = newDevices;
-    setDevices((current) => (areDeviceListsEqual(current, newDevices) ? current : newDevices));
-  }, []);
-
-  const refreshDevices = useCallback(
-    async ({ silent }: { silent?: boolean } = {}) => {
-      if (refreshInFlightRef.current) {
-        queuedRefreshRef.current = true;
-        return;
-      }
-
-      refreshInFlightRef.current = true;
-      if (!silent && isMountedRef.current) {
-        setIsRefreshing(true);
-      }
-
-      try {
-        debugLog('Refreshing devices (flasher)');
-        const [fbResult, adbResult] = await Promise.all([GetFastbootDevices(), GetDevices()]);
-
-        if (!isMountedRef.current) return;
-
-        const combinedDevices: Device[] = [];
-
-        // Process Fastboot devices
-        if (Array.isArray(fbResult)) {
-          combinedDevices.push(
-            ...fbResult
-              .filter((d) => !!d && typeof d.serial === 'string')
-              .map((d) => ({ serial: d.serial, status: d.status ?? 'fastboot' })),
-          );
-        }
-
-        // Process ADB devices
-        if (Array.isArray(adbResult)) {
-          combinedDevices.push(
-            ...adbResult
-              .filter((d) => !!d && typeof d.serial === 'string')
-              // Don't add if already found in fastboot (unlikely but safe)
-              .filter((d) => !combinedDevices.some((cd) => cd.serial === d.serial))
-              .map((d) => ({ serial: d.serial, status: d.status })),
-          );
-        }
-
-        if (combinedDevices.length > 0) {
-          emptyPollCountRef.current = 0;
-          applyDevices(combinedDevices);
-        } else {
-          emptyPollCountRef.current += 1;
-          // Only clear if empty for a couple polls to avoid flickering
-          if (devicesRef.current.length === 0 || emptyPollCountRef.current >= 2) {
-            applyDevices([]);
-          }
-        }
-      } catch (error) {
-        handleError('Refresh Devices', error);
-      } finally {
-        if (isMountedRef.current) {
-          setIsRefreshing(false);
-        }
-        refreshInFlightRef.current = false;
-
-        if (queuedRefreshRef.current && isMountedRef.current) {
-          queuedRefreshRef.current = false;
-          refreshDevices({ silent: true });
-        } else {
-          queuedRefreshRef.current = false;
-        }
-      }
-    },
-    [applyDevices],
-  );
-
-  useEffect(() => {
-    devicesRef.current = devices;
-  }, [devices]);
-
-  useEffect(() => {
-    if (activeView !== 'flasher') return;
-
-    emptyPollCountRef.current = 0;
-    refreshDevices();
-    const interval = window.setInterval(() => {
-      refreshDevices({ silent: true });
-    }, 4000);
-
-    return () => window.clearInterval(interval);
-  }, [activeView, refreshDevices]);
-
-  const hasFastbootDevice = devices.some(
+  const hasFastbootDevice = queriedDevices.some(
     (d) => d.status === 'fastboot' || d.status === 'bootloader',
   );
-  const hasSideloadDevice = devices.some((d) => d.status === 'sideload' || d.status === 'recovery');
+  const hasSideloadDevice = queriedDevices.some(
+    (d) => d.status === 'sideload' || d.status === 'recovery',
+  );
 
   const handleSelectFile = async () => {
     try {
@@ -197,8 +102,9 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
   };
 
   const handleFlash = async () => {
-    if (!partition) {
-      toast.error('Partition name cannot be empty.');
+    const parsed = partitionSchema.safeParse(partition);
+    if (!parsed.success) {
+      toast.error('Invalid partition name', { description: parsed.error.issues[0].message });
       return;
     }
     if (!filePath) {
@@ -269,7 +175,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
   return (
     <div className="flex flex-col gap-6">
       <ConnectedDevicesCard
-        devices={devices.map((d) => ({
+        devices={queriedDevices.map((d) => ({
           serial: d.serial,
           status: d.status,
         }))}
@@ -286,7 +192,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         serial={editingSerial}
-        onSaved={() => refreshDevices({ silent: true })}
+        onSaved={() => refreshDevices()}
       />
 
       <Card>

@@ -52,21 +52,25 @@ Three-tier fallback for ADB/fastboot binaries:
 ### 4. Payload Extraction
 
 `src-tauri/src/payload/` handles OTA payload.bin (4 modules):
-- `parser.rs` — CrAU header parsing, protobuf manifest decoding (prost)
-- `extractor.rs` — Per-operation decompress (XZ/BZ2/Zstd/Zero), SHA-256 verification, parallel extraction
-- `zip.rs` — ZIP payload caching with temp directory
+- `parser.rs` — CrAU header parsing, protobuf manifest decoding; returns `LoadedPayload { mmap: Arc<Mmap>, manifest, data_offset }`
+- `extractor.rs` — Streaming decompression (XZ/BZ2/Zstd/Replace) with 256 KiB stack buffer; SHA-256 verification; parallel extraction via `std::thread::scope`
+- `zip.rs` — Streaming ZIP extraction to `NamedTempFile`; caches path only (not bytes)
 - `tests.rs` — 5 payload tests
 
-**Performance optimizations:**
-- Sparse zero handling: `Type::Zero` returns empty vec, seeks past region
-- Position tracking: skips redundant seeks when already at target
-- Block size from manifest instead of hardcoding
-- Parallel partition extraction via `std::thread::scope`
+**Memory model:**
+- `Arc<memmap2::Mmap>` — each thread gets an 8-byte Arc clone (not a 4–6 GB Vec clone)
+- ZIP streamed to disk via `std::io::copy` + `NamedTempFile` — never buffered in RAM
+- `tokio::task::block_in_place` wraps sync extraction to prevent Tokio thread starvation
+- `BufWriter` (1 MB) on output files reduces syscall overhead
+- `file.set_len(partition_size)` pre-allocates output; `Type::Zero` ops seek (no write)
+- `Option<AppHandle>` — tests pass `None`; production passes `Some(app)` for live events
 
 ### 5. Error Handling
 
-- **Frontend**: Every Tauri call wrapped in try/catch → `toast.error()` + `addLog()`
+- **Frontend**: Centralized via `errorHandler.ts` → `handleError()` (toast + log + tauri log)
 - **Rust**: `CmdResult<T> = Result<T, String>` — all commands return this
+- **Structured Logging**: `tauri-plugin-log` with Stdout + LogDir + Webview targets
+- **Debug Mode**: `debug.ts` provides `debugLog()` and `timedOperation()` utilities
 
 ### 6. View Switching
 
@@ -78,7 +82,7 @@ const [activeView, setActiveView] = useState<ViewType>('dashboard');
 
 ### 7. Device Polling
 
-`setInterval` per view (3-4s) — duplicated in Dashboard, Flasher, Utilities
+Migrated to **TanStack Query v5** — `useQuery({ refetchInterval: 3000 })` in Dashboard, Flasher, and Utilities. Replaced ~220 lines of manual `setInterval` + `useEffect` code.
 
 ## Component Architecture
 
@@ -96,5 +100,6 @@ src/components/
 ## Known Architectural Notes
 
 - `src-tauri/src/lib.rs` has been split into 8 focused files (helpers + 7 command modules)
-- Device polling is duplicated across views (could be centralized)
-- No JS/TS test framework configured (only 8 Rust tests)
+- Device polling centralized via TanStack Query v5 (`useQuery` with `refetchInterval`)
+- Vitest + React Testing Library configured — 21 JS/TS tests pass
+- 5 Rust payload tests; `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)

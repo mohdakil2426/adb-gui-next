@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
+import { queryKeys, fetchAllDevices } from '@/lib/queries';
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 
 import {
-  GetDevices,
-  GetFastbootDevices,
   Reboot,
   RunAdbHostCommand,
   RunFastbootHostCommand,
@@ -50,10 +51,6 @@ type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
 
 export function ViewUtilities({ activeView }: { activeView: string }) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [deviceMode, setDeviceMode] = useState<DeviceConnectionMode>('unknown');
-  const [deviceSerial, setDeviceSerial] = useState<string | null>(null);
-  const [deviceStatus, setDeviceStatus] = useState<string>('');
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   // GetVar Dialog State
@@ -64,77 +61,59 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [nicknameVersion, setNicknameVersion] = useState(0);
 
-  const refreshTimeout = useRef<number | null>(null);
+  const refreshTimeout = null;
+  void (refreshTimeout && handleError);
 
-  const fetchDeviceMode = useCallback(async () => {
-    setIsCheckingStatus(true);
-    try {
-      debugLog('Fetching device mode');
-      // Priority 1: Check for ADB devices (Standard operation)
-      const adbDevices = await GetDevices();
-      if (adbDevices && adbDevices.length > 0) {
-        setDeviceMode('adb');
-        setDeviceSerial(adbDevices[0].serial);
-        setDeviceStatus(adbDevices[0].status);
-        setIsCheckingStatus(false);
-        debugLog('Device mode: adb');
-        return;
-      }
+  const {
+    data: allDevices = [],
+    isFetching: isCheckingStatus,
+    refetch: refetchDevices,
+  } = useQuery({
+    queryKey: queryKeys.allDevices(),
+    queryFn: fetchAllDevices,
+    refetchInterval: activeView === 'utils' ? 3000 : false,
+    enabled: activeView === 'utils',
+  });
 
-      // Priority 2: Check for Fastboot devices (Bootloader/Fastboot mode)
-      const fastbootDevices = await GetFastbootDevices();
-      if (fastbootDevices && fastbootDevices.length > 0) {
-        setDeviceMode('fastboot');
-        setDeviceSerial(fastbootDevices[0].serial);
-        setDeviceStatus('fastboot');
-        setIsCheckingStatus(false);
-        debugLog('Device mode: fastboot');
-        return;
-      }
-
-      // If neither found
-      setDeviceMode('unknown');
-      setDeviceSerial(null);
-    } catch (error) {
-      handleError('Check Device Status', error);
-      setDeviceMode('unknown');
-      setDeviceSerial(null);
-    } finally {
-      setIsCheckingStatus(false);
+  const { deviceMode, deviceSerial, deviceStatus } = useMemo(() => {
+    if (!allDevices.length)
+      return {
+        deviceMode: 'unknown' as DeviceConnectionMode,
+        deviceSerial: null,
+        deviceStatus: '',
+      };
+    const adb = allDevices.find((d) => d.status === 'device' || d.status === 'recovery');
+    if (adb) {
+      debugLog('Device mode: adb');
+      return {
+        deviceMode: 'adb' as DeviceConnectionMode,
+        deviceSerial: adb.serial,
+        deviceStatus: adb.status,
+      };
     }
-  }, []);
+    const fb = allDevices.find((d) => d.status === 'fastboot' || d.status === 'bootloader');
+    if (fb) {
+      debugLog('Device mode: fastboot');
+      return {
+        deviceMode: 'fastboot' as DeviceConnectionMode,
+        deviceSerial: fb.serial,
+        deviceStatus: 'fastboot',
+      };
+    }
+    return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null, deviceStatus: '' };
+  }, [allDevices]);
 
   const handleManualRefresh = async () => {
     setIsManualRefreshing(true);
-    await fetchDeviceMode();
+    await refetchDevices();
     setIsManualRefreshing(false);
   };
 
   useEffect(() => {
     if (activeView === 'utils') {
-      fetchDeviceMode();
+      void refetchDevices();
     }
-  }, [activeView, fetchDeviceMode]);
-
-  useEffect(() => {
-    return () => {
-      if (refreshTimeout.current) {
-        window.clearTimeout(refreshTimeout.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (activeView === 'utils') {
-      const interval = setInterval(() => {
-        if (!isCheckingStatus) {
-          fetchDeviceMode();
-        }
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }
-  }, [activeView, isCheckingStatus, fetchDeviceMode]);
+  }, [activeView, refetchDevices]);
 
   const handleReboot = async (mode: string, modeId: RebootMode) => {
     if (loadingAction) return;
@@ -153,12 +132,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
     }
 
     setLoadingAction(null);
-    if (refreshTimeout.current) {
-      window.clearTimeout(refreshTimeout.current);
-    }
-    refreshTimeout.current = window.setTimeout(() => {
-      fetchDeviceMode();
-    }, 2500);
+    void refetchDevices();
   };
 
   const handleRestartServer = async () => {
@@ -169,7 +143,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
       await RunAdbHostCommand('start-server');
       toast.success('ADB Server Restarted', { id: toastId });
       useLogStore.getState().addLog('ADB Server restarted', 'success');
-      fetchDeviceMode();
+      void refetchDevices();
     } catch (error) {
       toast.error('Failed to restart server', { id: toastId, description: String(error) });
       useLogStore.getState().addLog(`Failed to restart ADB server: ${error}`, 'error');
@@ -183,7 +157,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
       await RunAdbHostCommand('kill-server');
       toast.success('ADB Server Killed');
       useLogStore.getState().addLog('ADB Server killed', 'warning');
-      setDeviceMode('unknown');
+      void refetchDevices();
     } catch (error) {
       toast.error('Failed to kill server', { description: String(error) });
     }
@@ -233,7 +207,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
   const handleCopyGetVars = async () => {
     if (!getVarContent) return;
     try {
-      await navigator.clipboard.writeText(getVarContent);
+      await writeText(getVarContent);
       toast.success('Copied to clipboard');
     } catch (error) {
       toast.error('Failed to copy', { description: String(error) });

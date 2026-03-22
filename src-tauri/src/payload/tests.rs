@@ -41,6 +41,7 @@ fn extracts_selected_partition_image() {
         Some(&output_dir),
         &[String::from("system")],
         &cache,
+        None, // No AppHandle in tests — events are silently skipped
         |name, current, total, completed| {
             progress_events.push((name.to_string(), current, total, completed));
         },
@@ -132,6 +133,7 @@ fn extracts_multi_extent_and_zero_operations() {
         Some(&output_dir),
         &[String::from("system")],
         &cache,
+        None,
         |_, _, _, _| {},
     )
     .expect("extract multi extent payload");
@@ -183,6 +185,7 @@ fn rejects_payload_when_data_hash_mismatches() {
         Some(&output_dir),
         &[String::from("boot")],
         &cache,
+        None,
         |_, _, _, _| {},
     )
     .expect_err("expected checksum verification failure");

@@ -31,13 +31,14 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 ### Payload Dumper
 
-- Lists partitions from payload files
-- Supports OTA ZIP input
-- Extracts selected partitions
-- Emits progress events via Tauri event system
-- Handles multi-extent writes
-- Verifies SHA-256 operation checksums
-- Cleans up cached payload files
+- Lists partitions from payload files (plain `.bin` or OTA `.zip`)
+- ZIP extraction streams to `NamedTempFile` — no 4–6 GB RAM spike
+- Payload loaded via `Arc<memmap2::Mmap>` — no per-thread heap clone
+- Streaming decompression: 256 KiB stack buffer (XZ, BZ2, Zstd, Replace)
+- Output files pre-allocated with `set_len`; Zero ops do sparse seeks
+- Real-time per-operation `payload:progress` Tauri events from inside threads
+- SHA-256 operation checksum verification
+- Cleans up cached temp files on demand
 
 ### Packaging
 
@@ -55,6 +56,9 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - cargo clippy with `-D warnings` (strict) active
 - `pnpm check` runs full verification workflow
 - 8 Rust tests passing
+- `tauri-plugin-log` for structured logging (Stdout + LogDir + Webview)
+- `errorHandler.ts` for centralized frontend error handling
+- `debug.ts` for debug logging and performance timing
 
 ## Rust Code Structure (Refactored)
 

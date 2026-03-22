@@ -2,7 +2,7 @@ use crate::CmdResult;
 use crate::payload::{self, ExtractPayloadResult, PartitionDetail, PayloadCache};
 use log::{error, info};
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub async fn cleanup_payload_cache(payload_cache: State<'_, PayloadCache>) -> CmdResult<()> {
@@ -24,23 +24,22 @@ pub async fn extract_payload(
         selected_partitions.join(", ")
     );
     let output_dir = (!output_dir.trim().is_empty()).then(|| PathBuf::from(output_dir.trim()));
-    match payload::extract_payload(
-        Path::new(payload_path.trim()),
-        output_dir.as_deref(),
-        &selected_partitions,
-        &payload_cache,
-        |partition_name, current, total, completed| {
-            let _ = app.emit(
-                "payload:progress",
-                serde_json::json!({
-                    "partitionName": partition_name,
-                    "current": current,
-                    "total": total,
-                    "completed": completed,
-                }),
-            );
-        },
-    ) {
+
+    // Use `block_in_place` to run the synchronous extraction on the current async thread
+    // without starving the Tokio runtime. This is preferred over `spawn_blocking` here
+    // because `State<'_, PayloadCache>` does not have a `'static` bound.
+    let result = tokio::task::block_in_place(|| {
+        payload::extract_payload(
+            Path::new(payload_path.trim()),
+            output_dir.as_deref(),
+            &selected_partitions,
+            &payload_cache,
+            Some(app),
+            |_, _, _, _| {}, // Per-partition completion emitted via AppHandle inside threads
+        )
+    });
+
+    match result {
         Ok(result) => {
             info!(
                 "Payload extraction completed: {} files in {}",

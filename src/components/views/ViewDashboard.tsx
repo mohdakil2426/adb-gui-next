@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import {
-  GetDevices,
   GetDeviceInfo,
   EnableWirelessAdb,
   ConnectWirelessAdb,
@@ -11,6 +11,10 @@ import type { backend } from '../../lib/desktop/models';
 import { toast } from 'sonner';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
+import { wirelessAdbSchema, type WirelessAdbValues } from '@/lib/schemas';
+import { queryKeys, fetchDevices } from '@/lib/queries';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,15 +40,13 @@ import { cn } from '@/lib/utils';
 import { useDeviceStore } from '@/lib/deviceStore';
 import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
+import { CopyButton } from '@/components/CopyButton';
 
 type Device = backend.Device;
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
-  const { devices, setDevices, deviceInfo, setDeviceInfo } = useDeviceStore();
-  const [isRefreshingDevices, setIsRefreshingDevices] = useState(false);
+  const { deviceInfo, setDeviceInfo } = useDeviceStore();
   const [isRefreshingInfo, setIsRefreshingInfo] = useState(false);
-  const [wirelessIp, setWirelessIp] = useState('');
-  const [wirelessPort, setWirelessPort] = useState('5555');
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -52,23 +54,29 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
 
-  const refreshDevices = useCallback(async () => {
-    setIsRefreshingDevices(true);
-    try {
-      debugLog('Refreshing devices');
-      const result = await GetDevices();
-      setDevices(result || []);
-      debugLog('Devices refreshed:', result);
-    } catch (error) {
-      handleError('Refresh Devices', error);
-      setDevices([]);
-    } finally {
-      setIsRefreshingDevices(false);
-    }
-  }, [setDevices]);
+  const wirelessForm = useForm<WirelessAdbValues>({
+    resolver: zodResolver(wirelessAdbSchema),
+    defaultValues: { ip: '', port: '5555' },
+  });
+  const watchedIp = wirelessForm.watch('ip');
+
+  const {
+    data: queriedDevices = [],
+    isFetching: isRefreshingDevices,
+    refetch: refetchDevices,
+  } = useQuery({
+    queryKey: queryKeys.devices(),
+    queryFn: fetchDevices,
+    refetchInterval: activeView === 'dashboard' ? 3000 : false,
+    enabled: activeView === 'dashboard',
+  });
+
+  const refreshDevices = useCallback(() => {
+    void refetchDevices();
+  }, [refetchDevices]);
 
   const refreshInfo = useCallback(async () => {
-    if (devices.length === 0) {
+    if (queriedDevices.length === 0) {
       setDeviceInfo(null);
       return;
     }
@@ -85,7 +93,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     } finally {
       setIsRefreshingInfo(false);
     }
-  }, [devices.length, setDeviceInfo]);
+  }, [queriedDevices.length, setDeviceInfo]);
 
   useEffect(() => {
     if (activeView === 'dashboard') {
@@ -94,22 +102,10 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   }, [activeView, refreshDevices]);
 
   useEffect(() => {
-    if (activeView === 'dashboard') {
-      const interval = setInterval(() => {
-        if (!isRefreshingDevices) {
-          refreshDevices();
-        }
-      }, 3000);
-
-      return () => clearInterval(interval);
-    }
-  }, [activeView, isRefreshingDevices, refreshDevices]);
-
-  useEffect(() => {
     if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {
-      setWirelessIp(deviceInfo.ipAddress);
+      wirelessForm.setValue('ip', deviceInfo.ipAddress, { shouldValidate: false });
     }
-  }, [deviceInfo?.ipAddress]);
+  }, [deviceInfo?.ipAddress, wirelessForm]);
 
   const handleEnableTcpip = async () => {
     setIsEnablingTcpip(true);
@@ -128,18 +124,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsEnablingTcpip(false);
   };
 
-  const handleConnect = async () => {
-    if (!wirelessIp) {
-      toast.error('IP Address cannot be empty');
-      return;
-    }
+  const handleConnect = async (values: WirelessAdbValues) => {
     setIsConnecting(true);
-    const toastId = toast.loading(`Connecting to ${wirelessIp}:${wirelessPort}...`);
+    const toastId = toast.loading(`Connecting to ${values.ip}:${values.port}...`);
     try {
-      debugLog(`Connecting to ${wirelessIp}:${wirelessPort}`);
-      const output = await ConnectWirelessAdb(wirelessIp, wirelessPort);
+      debugLog(`Connecting to ${values.ip}:${values.port}`);
+      const output = await ConnectWirelessAdb(values.ip, values.port);
       toast.success('Connection successful!', { id: toastId, description: output });
-      handleSuccess('Wireless ADB', `Connected to ${wirelessIp}:${wirelessPort}: ${output}`);
+      handleSuccess('Wireless ADB', `Connected to ${values.ip}:${values.port}: ${output}`);
       refreshDevices();
     } catch (error) {
       toast.error('Connection failed', { id: toastId });
@@ -149,17 +141,19 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   };
 
   const handleDisconnect = async () => {
-    if (!wirelessIp) {
-      toast.error('IP Address cannot be empty');
+    const values = wirelessForm.getValues();
+    const parsed = wirelessAdbSchema.safeParse(values);
+    if (!parsed.success) {
+      toast.error('Invalid input', { description: parsed.error.issues[0].message });
       return;
     }
     setIsDisconnecting(true);
-    const toastId = toast.loading(`Disconnecting from ${wirelessIp}:${wirelessPort}...`);
+    const toastId = toast.loading(`Disconnecting from ${values.ip}:${values.port}...`);
     try {
-      debugLog(`Disconnecting from ${wirelessIp}:${wirelessPort}`);
-      const output = await DisconnectWirelessAdb(wirelessIp, wirelessPort);
+      debugLog(`Disconnecting from ${values.ip}:${values.port}`);
+      const output = await DisconnectWirelessAdb(values.ip, values.port);
       toast.success('Disconnected', { id: toastId, description: output });
-      handleSuccess('Wireless ADB', `Disconnected from ${wirelessIp}:${wirelessPort}: ${output}`);
+      handleSuccess('Wireless ADB', `Disconnected from ${values.ip}:${values.port}: ${output}`);
       refreshDevices();
     } catch (error) {
       toast.error('Disconnect failed', { id: toastId });
@@ -180,14 +174,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   return (
     <div className="flex flex-col gap-6">
       <ConnectedDevicesCard
-        devices={devices.map((device) => ({
+        devices={queriedDevices.map((device) => ({
           serial: device.serial,
           status: device.status,
         }))}
         isLoading={isRefreshingDevices}
         onRefresh={refreshDevices}
         onEdit={(serial) => {
-          const device = devices.find((d) => d.serial === serial);
+          const device = queriedDevices.find((d) => d.serial === serial);
           if (device) openEditDialog(device);
         }}
       />
@@ -208,7 +202,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             <Button
               className="w-full h-auto whitespace-normal"
               onClick={handleEnableTcpip}
-              disabled={isEnablingTcpip || devices.length === 0 || isConnecting}
+              disabled={isEnablingTcpip || queriedDevices.length === 0 || isConnecting}
             >
               {isEnablingTcpip ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
@@ -224,49 +218,62 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             <p className="text-sm text-muted-foreground">
               Enter the Device IP (usually automatically filled in) and Port.
             </p>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Device IP Address"
-                value={wirelessIp}
-                onChange={(e) => setWirelessIp(e.target.value)}
-                disabled={isConnecting || isDisconnecting}
-                className="flex-1"
-              />
-              <Input
-                placeholder="Port"
-                value={wirelessPort}
-                onChange={(e) => setWirelessPort(e.target.value)}
-                disabled={isConnecting || isDisconnecting}
-                className="w-24"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button
-                className="w-full"
-                onClick={handleConnect}
-                disabled={isConnecting || !wirelessIp || isDisconnecting}
-              >
-                {isConnecting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                ) : (
-                  <Wifi className="mr-2 h-4 w-4 shrink-0" />
-                )}
-                Connect
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleDisconnect}
-                disabled={isDisconnecting || !wirelessIp || isConnecting}
-              >
-                {isDisconnecting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                ) : (
-                  <PlugZap className="mr-2 h-4 w-4 shrink-0" />
-                )}
-                Disconnect
-              </Button>
-            </div>
+            <form onSubmit={wirelessForm.handleSubmit(handleConnect)} className="space-y-3">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Device IP Address"
+                    {...wirelessForm.register('ip')}
+                    disabled={isConnecting || isDisconnecting}
+                  />
+                  {wirelessForm.formState.errors.ip && (
+                    <p className="text-xs text-destructive mt-1">
+                      {wirelessForm.formState.errors.ip.message}
+                    </p>
+                  )}
+                </div>
+                <div className="w-24">
+                  <Input
+                    placeholder="Port"
+                    {...wirelessForm.register('port')}
+                    disabled={isConnecting || isDisconnecting}
+                  />
+                  {wirelessForm.formState.errors.port && (
+                    <p className="text-xs text-destructive mt-1">
+                      {wirelessForm.formState.errors.port.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isConnecting || !watchedIp || isDisconnecting}
+                >
+                  {isConnecting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                  ) : (
+                    <Wifi className="mr-2 h-4 w-4 shrink-0" />
+                  )}
+                  Connect
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleDisconnect}
+                  disabled={isDisconnecting || !watchedIp || isConnecting}
+                >
+                  {isDisconnecting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                  ) : (
+                    <PlugZap className="mr-2 h-4 w-4 shrink-0" />
+                  )}
+                  Disconnect
+                </Button>
+              </div>
+            </form>
           </div>
         </CardContent>
       </Card>
@@ -280,7 +287,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           <Button
             variant="default"
             onClick={refreshInfo}
-            disabled={isRefreshingInfo || devices.length === 0}
+            disabled={isRefreshingInfo || queriedDevices.length === 0}
           >
             {isRefreshingInfo ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -291,7 +298,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           </Button>
         </CardHeader>
         <CardContent>
-          {devices.length === 0 ? (
+          {queriedDevices.length === 0 ? (
             <p className="text-muted-foreground">Connect a device to see info.</p>
           ) : !deviceInfo ? (
             <p className="text-muted-foreground">Click "Refresh Info" to load data.</p>
@@ -305,7 +312,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
               />
               <InfoItem icon={<Code size={18} />} label="Codename" value={deviceInfo.codename} />
               <InfoItem icon={<Smartphone size={18} />} label="Model" value={deviceInfo.model} />
-              <InfoItem icon={<Hash size={18} />} label="Serial Number" value={deviceInfo.serial} />
+              <InfoItem
+                icon={<Hash size={18} />}
+                label="Serial Number"
+                value={deviceInfo.serial}
+                copyable
+              />
               <InfoItem
                 icon={<Server size={18} />}
                 label="Build Number"
@@ -327,7 +339,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                 label="Internal Storage"
                 value={deviceInfo.storageInfo}
               />
-              <InfoItem icon={<Wifi size={18} />} label="IP Address" value={deviceInfo.ipAddress} />
+              <InfoItem
+                icon={<Wifi size={18} />}
+                label="IP Address"
+                value={deviceInfo.ipAddress}
+                copyable
+              />
               <InfoItem
                 icon={<ShieldCheck size={18} />}
                 label="Root Status"
@@ -358,11 +375,13 @@ function InfoItem({
   label,
   value,
   valueClassName,
+  copyable = false,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
   valueClassName?: string;
+  copyable?: boolean;
 }) {
   return (
     <div className="flex items-center p-3 bg-muted rounded-lg overflow-hidden">
@@ -375,6 +394,7 @@ function InfoItem({
           {value ? value : 'N/A'}
         </div>
       </div>
+      {copyable && value && <CopyButton value={value} label={label} />}
     </div>
   );
 }

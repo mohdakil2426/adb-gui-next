@@ -11,6 +11,9 @@
 | Vite | ^8.0.1 | Latest |
 | Tailwind CSS | ^4.2.2 | CSS-first config (v4) |
 | Zustand | ^5.0.12 | State management |
+| TanStack Query | ^5.94.5 | Server state + device polling |
+| React Hook Form | ^7.72.0 | Form state management |
+| Zod | ^4.3.6 | Schema validation |
 | Framer Motion | ^12.38.0 | Animations |
 | Radix UI | Various | shadcn primitives |
 | lucide-react | ^0.577.0 | Icons |
@@ -19,14 +22,23 @@
 | @tauri-apps/api | ^2.10.1 | Tauri frontend API |
 | @tauri-apps/plugin-dialog | ^2.6.0 | Native dialogs |
 | @tauri-apps/plugin-opener | ^2.5.3 | URL/file opener |
+| @tauri-apps/plugin-clipboard-manager | ^2.3.2 | Clipboard read/write |
 
 ### Backend
 
 | Package | Version | Notes |
 |---------|---------|-------|
 | Tauri | 2.x | Desktop framework |
+| tauri-plugin-log | 2.x | Structured logging |
+| tauri-plugin-dialog | 2.6.0 | Native dialogs |
+| tauri-plugin-opener | 2.5.3 | URL/file opener |
+| tauri-plugin-clipboard-manager | 2.3.2 | Clipboard read/write |
+| tokio | 1.x | Async runtime (block_in_place for extraction) |
+| log | 0.4 | Logging facade |
 | Prost | 0.14 | Protobuf (payload manifest) |
-| zip | 8.2.0 | ZIP archive handling |
+| memmap2 | 0.9 | Zero-copy memory-mapped payload reading |
+| rayon | 1.10 | CPU-parallel partition extraction |
+| zip | 8.3.1 | ZIP archive handling |
 | zstd | 0.13 | Zstandard decompression |
 | xz2 | 0.1 | XZ decompression |
 | bzip2 | 0.6 | Bzip2 decompression |
@@ -34,7 +46,7 @@
 | serde | 1.x | Serialization |
 | serde_json | 1.x | JSON handling |
 | which | 8.x | Binary lookup |
-| tempfile | 3.x | Temp file handling |
+| tempfile | 3.x | Streaming ZIP extraction to temp files |
 | anyhow | 1.x | Error handling |
 
 ## Tooling
@@ -147,4 +159,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-03-22
+- **Last Updated**: 2026-03-22 (payload dumper overhaul — Arc<Mmap>, streaming decompression, TanStack Query, Vitest)

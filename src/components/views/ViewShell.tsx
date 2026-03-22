@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
+import { shellCommandSchema } from '@/lib/schemas';
 import {
   RunShellCommand,
   RunAdbHostCommand,
@@ -67,6 +68,19 @@ export function ViewShell({
 
     e.preventDefault();
     const trimmedCommand = command.trim();
+
+    // Validate command prefix before any backend interaction
+    const parsed = shellCommandSchema.safeParse(trimmedCommand);
+    if (!parsed.success) {
+      const errorText = parsed.error.issues[0].message;
+      setHistory([
+        ...history,
+        { type: 'command', text: trimmedCommand },
+        { type: 'error', text: errorText },
+      ]);
+      setCommand('');
+      return;
+    }
 
     if (commandHistory[commandHistory.length - 1] !== trimmedCommand) {
       setCommandHistory([...commandHistory, trimmedCommand]);
