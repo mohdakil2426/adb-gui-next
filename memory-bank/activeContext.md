@@ -6,6 +6,16 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-22 — Dialog Permission Fix & Rust Code Refactoring
+- Fixed payload dumper dialog permission error by adding `"dialog:default"` to capabilities
+- Split `lib.rs` (833 lines) into 8 focused files: helpers.rs + 7 command modules
+- Split `payload.rs` (645 lines) into 4 modules: parser, extractor, zip, tests
+- Added doc comments to payload module public functions
+- Fixed rust-analyzer module tree issue (include path)
+- Generated audit report at `docs/rust-audit-report.md` (scores: 6.6→7.7)
+- Generated performance research at `docs/rust-performance-research.md`
+- All 8 Rust tests pass, all quality gates pass (`pnpm check`)
+
 ### 2026-03-22 — Dependency & Quality Audit
 - Verified all frontend dependencies are at latest versions
 - Verified all Rust dependencies are at current versions

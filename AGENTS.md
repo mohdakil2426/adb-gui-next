@@ -66,6 +66,7 @@
 ```
 
 **Key folders:**
+
 - `src/components/ui/` — 11 shadcn primitives (button, card, table, dialog, etc.)
 - `src/components/views/` — 8 views (Dashboard, AppManager, FileExplorer, Flasher, Utilities, PayloadDumper, Shell, About)
 - `src/lib/desktop/` — Tauri abstraction layer (backend.ts, runtime.ts, models.ts)

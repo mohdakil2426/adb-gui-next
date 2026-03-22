@@ -18,15 +18,11 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  runtime.ts → event listeners, file drop, URL opener                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Backend (Rust — src-tauri/)                         │
-│  lib.rs (833 lines) — 26 Tauri commands + helpers                      │
-│    ├─ Device: get_devices, get_device_info, get_device_mode            │
-│    ├─ ADB: run_adb_host_command, run_shell_command, wireless ADB       │
-│    ├─ Fastboot: flash_partition, reboot, wipe_data, set_active_slot    │
-│    ├─ Files: list_files, push_file, pull_file                          │
-│    ├─ Apps: install_package, uninstall_package, sideload_package       │
-│    ├─ System: open_folder, launch_terminal, save_log                   │
-│    └─ Payload: extract_payload, list_payload_partitions                │
-│  payload.rs (645 lines) — OTA payload.bin dumper (CrAU + protobuf)     │
+│  lib.rs (52 lines) — thin orchestrator                                 │
+│  helpers.rs — shared utilities (binary resolution, command execution)   │
+│  commands/ — 7 focused modules (device, adb, fastboot, files, apps,    │
+│              system, payload)                                          │
+│  payload/ — 4 modules (parser, extractor, zip, tests)                  │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```

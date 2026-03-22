@@ -56,24 +56,55 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `pnpm check` runs full verification workflow
 - 8 Rust tests passing
 
+## Rust Code Structure (Refactored)
+
+```
+src-tauri/src/
+├── lib.rs (52 lines) — thin orchestrator
+├── helpers.rs — shared utilities (binary resolution, command execution, device info)
+├── commands/
+│   ├── mod.rs — re-exports
+│   ├── device.rs — get_devices, get_device_info, get_device_mode, get_fastboot_devices
+│   ├── adb.rs — wireless ADB, run_adb_host_command, run_shell_command
+│   ├── fastboot.rs — flash_partition, reboot, wipe_data, set_active_slot
+│   ├── files.rs — list_files, push_file, pull_file
+│   ├── apps.rs — install_package, uninstall_package, sideload_package
+│   ├── system.rs — greet, open_folder, save_log, launch_terminal
+│   └── payload.rs — payload command wrappers
+└── payload/
+    ├── mod.rs — re-exports + chromeos_update_engine protobuf
+    ├── parser.rs — CrAU header parsing, protobuf decoding
+    ├── extractor.rs — partition extraction with SHA-256 verification
+    ├── zip.rs — ZIP payload handling and caching
+    └── tests.rs — 5 payload tests
+```
+
+## Documentation
+
+- `docs/rust-audit-report.md` — Code quality audit (scores: 6.6→7.7)
+- `docs/rust-performance-research.md` — Performance optimization research (KISS-ordered)
+
 ## Remaining Work
 
 | Priority | Task | Notes |
 |----------|------|-------|
-| Medium | Split `src-tauri/src/lib.rs` into modules | Currently 833 lines |
-| Medium | Centralize device polling | Duplicated across views |
+| Medium | Async Tauri commands | One keyword change, UI responsiveness |
+| Medium | Sparse zero handling | Instant seeks vs writing zeros |
+| Medium | Streaming decompression | BufReader 256KB, 2-5x less memory |
+| Medium | Parallel partition extraction | std::thread::scope, 4-8x faster |
+| Low | Centralize device polling | Duplicated across views |
 | Low | Add Vitest for React testing | No JS/TS test framework |
 | Low | Run device-backed parity tests | Need real Android devices |
-| Low | Additional payload tests | More compressed operation paths |
 
 ## Risks / Known Issues
 
-- `src-tauri/src/lib.rs` is large (833 lines) and should eventually be split
 - Large frontend bundle chunk warning during build (589KB JS)
 - Device polling duplicated across Dashboard, Flasher, Utilities views
+- Payload extraction uses sync I/O (performance research identifies async/streaming improvements)
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-22 | 0.1.0 | Dialog permission fix, Rust code refactoring, audit & performance research |
 | 2026-03-22 | 0.1.0 | Rust edition 2024, all clippy warnings fixed, dependencies verified |
