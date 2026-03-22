@@ -75,7 +75,6 @@
 ## Important Files
 
 ```text
-/
 ├── package.json                  # Frontend deps + scripts
 ├── vite.config.ts                # Vite config with Tailwind plugin
 ├── tsconfig.json                 # TypeScript config (strict mode)
@@ -99,8 +98,23 @@
 └── src-tauri/
     ├── Cargo.toml                # Rust deps (edition 2024)
     ├── src/
-    │   ├── lib.rs                # 26 Tauri commands (833 lines)
-    │   ├── payload.rs            # OTA payload parser (645 lines)
+    │   ├── lib.rs                # Thin orchestrator (52 lines)
+    │   ├── helpers.rs            # Shared utilities
+    │   ├── commands/             # 7 command modules
+    │   │   ├── mod.rs
+    │   │   ├── device.rs
+    │   │   ├── adb.rs
+    │   │   ├── fastboot.rs
+    │   │   ├── files.rs
+    │   │   ├── apps.rs
+    │   │   ├── system.rs
+    │   │   └── payload.rs
+    │   ├── payload/              # OTA payload parser (4 modules)
+    │   │   ├── mod.rs
+    │   │   ├── parser.rs
+    │   │   ├── extractor.rs
+    │   │   ├── zip.rs
+    │   │   └── tests.rs
     │   └── generated/            # Protobuf types
     ├── build.rs                  # prost-build + tauri-build
     ├── tauri.conf.json           # Main Tauri config

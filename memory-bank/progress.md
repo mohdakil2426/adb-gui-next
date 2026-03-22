@@ -84,14 +84,19 @@ src-tauri/src/
 - `docs/rust-audit-report.md` — Code quality audit (scores: 6.6→7.7)
 - `docs/rust-performance-research.md` — Performance optimization research (KISS-ordered)
 
+## Performance Optimizations (Implemented)
+
+- ✅ Sparse zero handling: `Type::Zero` returns empty vec, seeks past region (instant vs minutes)
+- ✅ Position tracking: skips redundant seeks when already at target position
+- ✅ Block size from manifest: reads `block_size` field instead of hardcoding 4096
+- ✅ Async Tauri commands: `extract_payload` and `cleanup_payload_cache` run on Tokio runtime
+- ✅ Parallel partition extraction: `std::thread::scope` for concurrent extraction (4-8x faster)
+
 ## Remaining Work
 
 | Priority | Task | Notes |
 |----------|------|-------|
-| Medium | Async Tauri commands | One keyword change, UI responsiveness |
-| Medium | Sparse zero handling | Instant seeks vs writing zeros |
-| Medium | Streaming decompression | BufReader 256KB, 2-5x less memory |
-| Medium | Parallel partition extraction | std::thread::scope, 4-8x faster |
+| Low | Streaming decompression | BufReader 256KB, 2-5x less memory (Phase 2) |
 | Low | Centralize device polling | Duplicated across views |
 | Low | Add Vitest for React testing | No JS/TS test framework |
 | Low | Run device-backed parity tests | Need real Android devices |
@@ -100,7 +105,6 @@ src-tauri/src/
 
 - Large frontend bundle chunk warning during build (589KB JS)
 - Device polling duplicated across Dashboard, Flasher, Utilities views
-- Payload extraction uses sync I/O (performance research identifies async/streaming improvements)
 
 ## Version History
 

@@ -9,6 +9,8 @@ import {
 } from '../../lib/desktop/backend';
 import type { backend } from '../../lib/desktop/models';
 import { toast } from 'sonner';
+import { handleError, handleSuccess } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +33,6 @@ import {
   Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLogStore } from '@/lib/logStore';
 import { useDeviceStore } from '@/lib/deviceStore';
 import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
@@ -54,10 +55,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const refreshDevices = useCallback(async () => {
     setIsRefreshingDevices(true);
     try {
+      debugLog('Refreshing devices');
       const result = await GetDevices();
       setDevices(result || []);
+      debugLog('Devices refreshed:', result);
     } catch (error) {
-      console.error('Error refreshing devices:', error);
+      handleError('Refresh Devices', error);
       setDevices([]);
     } finally {
       setIsRefreshingDevices(false);
@@ -72,10 +75,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
     setIsRefreshingInfo(true);
     try {
+      debugLog('Refreshing device info');
       const result = await GetDeviceInfo();
       setDeviceInfo(result);
+      debugLog('Device info refreshed:', result);
     } catch (error) {
-      console.error('Error refreshing device info:', error);
+      handleError('Refresh Device Info', error);
       setDeviceInfo(null);
     } finally {
       setIsRefreshingInfo(false);
@@ -112,12 +117,13 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       description: 'Please wait... Device must be connected via USB.',
     });
     try {
+      debugLog('Enabling wireless ADB on port 5555');
       const output = await EnableWirelessAdb('5555');
       toast.success('Wireless mode enabled!', { id: toastId, description: output });
-      useLogStore.getState().addLog(`Wireless mode enabled: ${output}`, 'success');
+      handleSuccess('Wireless ADB', `Wireless mode enabled: ${output}`);
     } catch (error) {
-      toast.error('Failed to enable wireless mode', { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Failed to enable wireless mode: ${error}`, 'error');
+      toast.error('Failed to enable wireless mode', { id: toastId });
+      handleError('Enable Wireless ADB', error);
     }
     setIsEnablingTcpip(false);
   };
@@ -130,18 +136,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsConnecting(true);
     const toastId = toast.loading(`Connecting to ${wirelessIp}:${wirelessPort}...`);
     try {
+      debugLog(`Connecting to ${wirelessIp}:${wirelessPort}`);
       const output = await ConnectWirelessAdb(wirelessIp, wirelessPort);
       toast.success('Connection successful!', { id: toastId, description: output });
-      useLogStore
-        .getState()
-        .addLog(`Connected to ${wirelessIp}:${wirelessPort}: ${output}`, 'success');
-
+      handleSuccess('Wireless ADB', `Connected to ${wirelessIp}:${wirelessPort}: ${output}`);
       refreshDevices();
     } catch (error) {
-      toast.error('Connection failed', { id: toastId, description: String(error) });
-      useLogStore
-        .getState()
-        .addLog(`Connection failed to ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
+      toast.error('Connection failed', { id: toastId });
+      handleError('Wireless ADB Connect', error);
     }
     setIsConnecting(false);
   };
@@ -154,18 +156,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsDisconnecting(true);
     const toastId = toast.loading(`Disconnecting from ${wirelessIp}:${wirelessPort}...`);
     try {
+      debugLog(`Disconnecting from ${wirelessIp}:${wirelessPort}`);
       const output = await DisconnectWirelessAdb(wirelessIp, wirelessPort);
       toast.success('Disconnected', { id: toastId, description: output });
-      useLogStore
-        .getState()
-        .addLog(`Disconnected from ${wirelessIp}:${wirelessPort}: ${output}`, 'info');
-
+      handleSuccess('Wireless ADB', `Disconnected from ${wirelessIp}:${wirelessPort}: ${output}`);
       refreshDevices();
     } catch (error) {
-      toast.error('Disconnect failed', { id: toastId, description: String(error) });
-      useLogStore
-        .getState()
-        .addLog(`Disconnect failed from ${wirelessIp}:${wirelessPort}: ${error}`, 'error');
+      toast.error('Disconnect failed', { id: toastId });
+      handleError('Wireless ADB Disconnect', error);
     }
     setIsDisconnecting(false);
   };

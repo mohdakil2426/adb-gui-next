@@ -1,5 +1,6 @@
 use crate::CmdResult;
 use crate::helpers::run_binary_command;
+use log::{debug, info};
 use serde::Serialize;
 use std::{
     fs, io,
@@ -16,12 +17,14 @@ pub struct InstalledPackage {
 
 #[tauri::command]
 pub fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
+    info!("Getting installed packages");
     let output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages"])?;
-    let packages = output
+    let packages: Vec<InstalledPackage> = output
         .lines()
         .filter_map(|line| line.trim().strip_prefix("package:"))
         .map(|name| InstalledPackage { name: name.to_string() })
         .collect();
+    debug!("Found {} installed packages", packages.len());
     Ok(packages)
 }
 
@@ -36,16 +39,19 @@ pub fn install_package(app: AppHandle, path: String) -> CmdResult<String> {
         return install_apks(&app, path);
     }
 
+    info!("Installing package from {}", path);
     run_binary_command(&app, "adb", &["install", "-r", path])
 }
 
 #[tauri::command]
 pub fn uninstall_package(app: AppHandle, package_name: String) -> CmdResult<String> {
+    info!("Uninstalling package {}", package_name.trim());
     run_binary_command(&app, "adb", &["shell", "pm", "uninstall", package_name.trim()])
 }
 
 #[tauri::command]
 pub fn sideload_package(app: AppHandle, path: String) -> CmdResult<String> {
+    info!("Sideloading package from {}", path.trim());
     run_binary_command(&app, "adb", &["sideload", path.trim()])
 }
 

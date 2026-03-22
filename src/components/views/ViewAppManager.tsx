@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
+import { handleError } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 
 import {
   SelectMultipleApkFiles,
@@ -44,11 +46,12 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   const loadPackages = useCallback(async () => {
     setIsLoadingPackages(true);
     try {
+      debugLog('Loading installed packages');
       const packageList = await GetInstalledPackages();
       setPackages(packageList || []);
+      debugLog('Loaded packages:', packageList);
     } catch (error) {
-      console.error('Failed to load packages:', error);
-      toast.error('Failed to load packages', { description: String(error) });
+      handleError('Load Packages', error);
     } finally {
       setIsLoadingPackages(false);
     }
@@ -77,14 +80,15 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
   const handleSelectApk = async () => {
     try {
+      debugLog('Selecting APK files');
       const selectedPaths = await SelectMultipleApkFiles();
       if (selectedPaths && selectedPaths.length > 0) {
         setApkPaths(selectedPaths);
         toast.info(`${selectedPaths.length} file(s) selected`);
+        debugLog('Selected APK files:', selectedPaths);
       }
     } catch (error) {
-      console.error('File selection error:', error);
-      toast.error('Failed to open file dialog', { description: String(error) });
+      handleError('Select APK Files', error);
     }
   };
 

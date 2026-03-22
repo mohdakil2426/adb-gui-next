@@ -1,5 +1,6 @@
 use crate::CmdResult;
 use crate::helpers::run_binary_command;
+use log::{debug, info};
 use serde::Serialize;
 use tauri::AppHandle;
 
@@ -16,17 +17,22 @@ pub struct FileEntry {
 
 #[tauri::command]
 pub fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
+    info!("Listing files at {}", path.trim());
     let output = run_binary_command(&app, "adb", &["shell", "ls", "-lA", path.trim()])?;
-    Ok(parse_file_entries(&output))
+    let entries = parse_file_entries(&output);
+    debug!("Found {} entries at {}", entries.len(), path.trim());
+    Ok(entries)
 }
 
 #[tauri::command]
 pub fn pull_file(app: AppHandle, remote_path: String, local_path: String) -> CmdResult<String> {
+    info!("Pulling {} to {}", remote_path.trim(), local_path.trim());
     run_binary_command(&app, "adb", &["pull", "-a", remote_path.trim(), local_path.trim()])
 }
 
 #[tauri::command]
 pub fn push_file(app: AppHandle, local_path: String, remote_path: String) -> CmdResult<String> {
+    info!("Pushing {} to {}", local_path.trim(), remote_path.trim());
     run_binary_command(&app, "adb", &["push", local_path.trim(), remote_path.trim()])
 }
 

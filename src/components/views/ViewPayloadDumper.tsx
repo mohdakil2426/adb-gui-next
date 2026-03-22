@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLogStore } from '@/lib/logStore';
+import { handleError, handleSuccess } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
 import {
   SelectPayloadFile,
@@ -160,6 +162,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       useLogStore.getState().addLog('Loading partitions from payload...', 'info');
 
       try {
+        debugLog(`Loading partitions from: ${path}`);
         const partitionList = await ListPayloadPartitionsWithDetails(path);
         if (partitionList && partitionList.length > 0) {
           // Get current completed partitions to preserve their deselected state
@@ -175,7 +178,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           );
           setStatus('ready');
           toast.success(`Found ${partitionList.length} partitions`);
-          useLogStore.getState().addLog(`Found ${partitionList.length} partitions`, 'success');
+          handleSuccess('Load Partitions', `Found ${partitionList.length} partitions`);
         } else {
           setErrorMessage('No partitions found in payload');
           setStatus('error');
@@ -184,8 +187,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       } catch (error) {
         setErrorMessage(String(error));
         setStatus('error');
-        toast.error(`Failed to load partitions: ${error}`);
-        useLogStore.getState().addLog(`Failed to load partitions: ${error}`, 'error');
+        handleError('Load Partitions', error);
       }
     },
     [setStatus, setErrorMessage, setPartitions],
@@ -271,6 +273,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
 
   const handleSelectPayload = async () => {
     try {
+      debugLog('Selecting payload file');
       const path = await SelectPayloadFile();
       if (path) {
         // Clean up any previously extracted temp files
@@ -283,13 +286,13 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
         await loadPartitions(path);
       }
     } catch (error) {
-      toast.error(`Failed to select file: ${error}`);
-      useLogStore.getState().addLog(`Failed to select payload file: ${error}`, 'error');
+      handleError('Select Payload File', error);
     }
   };
 
   const handleSelectOutput = async () => {
     try {
+      debugLog('Selecting output directory');
       const path = await SelectOutputDirectory();
       if (path) {
         setOutputPath(path);
@@ -297,7 +300,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
         useLogStore.getState().addLog(`Selected output directory: ${path}`, 'info');
       }
     } catch (error) {
-      toast.error(`Failed to select directory: ${error}`);
+      handleError('Select Output Directory', error);
     }
   };
 
@@ -308,12 +311,10 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     }
 
     try {
-      useLogStore.getState().addLog(`Opening folder: ${effectiveOutputPath}`, 'info');
+      debugLog(`Opening folder: ${effectiveOutputPath}`);
       await OpenFolder(effectiveOutputPath);
     } catch (error) {
-      const errorMsg = String(error);
-      toast.error(`Failed to open folder: ${errorMsg}`);
-      useLogStore.getState().addLog(`Failed to open folder: ${errorMsg}`, 'error');
+      handleError('Open Output Folder', error);
     }
   };
 

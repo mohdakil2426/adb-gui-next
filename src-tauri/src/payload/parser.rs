@@ -8,7 +8,6 @@ use prost::Message;
 use std::path::Path;
 
 /// Parse the CrAU header and decode the protobuf manifest.
-///
 /// Returns the manifest bytes, data offset, and manifest length.
 fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
     if payload_bytes.len() < 24 {
@@ -18,20 +17,27 @@ fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
         anyhow::bail!("invalid payload magic");
     }
 
-    let version = u64::from_be_bytes(payload_bytes[4..12].try_into().expect("version slice"));
+    let version = u64::from_be_bytes(
+        payload_bytes[4..12]
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("invalid payload: version slice too short"))?,
+    );
     if version != 2 {
         anyhow::bail!("unsupported payload version: {version}");
     }
 
     let manifest_len = usize::try_from(u64::from_be_bytes(
-        payload_bytes[12..20].try_into().expect("manifest length slice"),
+        payload_bytes[12..20]
+            .try_into()
+            .map_err(|_| anyhow::anyhow!("invalid payload: manifest length slice too short"))?,
     ))
     .map_err(|_| anyhow::anyhow!("payload manifest is too large"))?;
 
-    let metadata_sig_len = usize::try_from(u32::from_be_bytes(
-        payload_bytes[20..24].try_into().expect("metadata sig length slice"),
-    ))
-    .map_err(|_| anyhow::anyhow!("payload metadata signature is too large"))?;
+    let metadata_sig_len =
+        usize::try_from(u32::from_be_bytes(payload_bytes[20..24].try_into().map_err(|_| {
+            anyhow::anyhow!("invalid payload: metadata sig length slice too short")
+        })?))
+        .map_err(|_| anyhow::anyhow!("payload metadata signature is too large"))?;
 
     let manifest_start: usize = 24;
     let manifest_end = manifest_start

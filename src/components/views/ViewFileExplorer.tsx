@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
+import { handleError } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 import path from 'path-browserify';
 
 import {
@@ -57,6 +59,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     setIsLoading(true);
     setSelectedFile(null);
     try {
+      debugLog(`Listing files at: ${targetPath}`);
       const files = await ListFiles(targetPath);
 
       if (!files) {
@@ -76,8 +79,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       setCurrentPath(targetPath);
       currentPathRef.current = targetPath;
     } catch (error) {
-      console.error('Failed to list files:', error);
-      toast.error('Failed to list files', { description: String(error) });
+      handleError('List Files', error);
       setCurrentPath(currentPathRef.current);
     } finally {
       setIsLoading(false);
@@ -119,6 +121,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const fileName = localPath.replace(/\\/g, '/').split('/').pop() || path.basename(localPath);
       const remotePath = path.posix.join(currentPath, fileName);
 
+      debugLog(`Pushing file ${fileName} to ${remotePath}`);
       toastId = toast.loading(`Pushing ${fileName}...`, { description: `To: ${remotePath}` });
 
       const output = await PushFile(localPath, remotePath);
@@ -128,13 +131,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         .addLog(`Pushed file ${fileName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      console.error('Import file error:', error);
       if (toastId) {
-        toast.error('File Import Failed', { description: String(error), id: toastId });
-      } else {
-        toast.error('File Import Failed', { description: String(error) });
+        toast.error('File Import Failed', { id: toastId });
       }
-      useLogStore.getState().addLog(`Failed to push file: ${error}`, 'error');
+      handleError('Push File', error);
     } finally {
       setIsPushingFile(false);
     }
@@ -154,6 +154,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const folderName =
         localFolderPath.replace(/\\/g, '/').split('/').pop() || path.basename(localFolderPath);
 
+      debugLog(`Pushing folder ${folderName} to ${remotePath}`);
       toastId = toast.loading(`Pushing folder ${folderName}...`, {
         description: `To: ${remotePath}`,
       });
@@ -165,15 +166,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         .addLog(`Pushed folder ${folderName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      console.error('Import folder error:', error);
       if (toastId) {
-        toast.error('Folder Import Failed', { description: String(error), id: toastId });
-      } else {
-        toast.error('Folder Import Failed', { description: String(error) });
+        toast.error('Folder Import Failed', { id: toastId });
       }
-      useLogStore.getState().addLog(`Failed to push folder: ${error}`, 'error');
+      handleError('Push Folder', error);
+    } finally {
+      setIsPushingFolder(false);
     }
-    setIsPushingFolder(false);
   };
 
   const handlePull = async () => {
@@ -206,6 +205,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         return;
       }
 
+      debugLog(`Pulling ${selectedFile.name} from ${remotePath} to ${localPath}`);
       toastId = toast.loading(`Pulling ${selectedFile.name}...`, {
         description: `From: ${remotePath}`,
       });
@@ -216,15 +216,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         .getState()
         .addLog(`Pulled ${selectedFile.name} to ${localPath}: ${output}`, 'success');
     } catch (error) {
-      console.error('Export error:', error);
       if (toastId) {
-        toast.error('Export Failed', { description: String(error), id: toastId });
-      } else {
-        toast.error('Export Failed', { description: String(error) });
+        toast.error('Export Failed', { id: toastId });
       }
-      useLogStore.getState().addLog(`Failed to pull ${selectedFile.name}: ${error}`, 'error');
+      handleError('Pull File', error);
+    } finally {
+      setIsPulling(false);
     }
-    setIsPulling(false);
   };
 
   const isBusy = isLoading || isPushingFile || isPushingFolder || isPulling;

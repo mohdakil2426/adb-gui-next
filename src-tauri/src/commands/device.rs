@@ -1,5 +1,6 @@
 use crate::CmdResult;
 use crate::helpers::*;
+use log::{debug, info};
 use serde::Serialize;
 use tauri::AppHandle;
 
@@ -29,6 +30,7 @@ pub struct DeviceInfo {
 
 #[tauri::command]
 pub fn get_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
+    info!("Getting ADB devices");
     let output = run_binary_command(&app, "adb", &["devices"])?;
     let mut devices = Vec::new();
 
@@ -39,11 +41,13 @@ pub fn get_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
         }
     }
 
+    debug!("Found {} ADB device(s)", devices.len());
     Ok(devices)
 }
 
 #[tauri::command]
 pub fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
+    info!("Getting fastboot devices");
     let output = run_binary_command(&app, "fastboot", &["devices"])?;
     let mut devices = Vec::new();
 
@@ -54,11 +58,13 @@ pub fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
         }
     }
 
+    debug!("Found {} fastboot device(s)", devices.len());
     Ok(devices)
 }
 
 #[tauri::command]
 pub fn get_device_info(app: AppHandle) -> CmdResult<DeviceInfo> {
+    info!("Getting device info");
     Ok(DeviceInfo {
         model: get_prop(&app, "ro.product.model"),
         android_version: get_prop(&app, "ro.build.version.release"),

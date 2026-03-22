@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { handleError } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 import {
   RunShellCommand,
   RunAdbHostCommand,
@@ -78,6 +80,7 @@ export function ViewShell({
     setHistory(newHistory);
 
     try {
+      debugLog(`Executing shell command: ${trimmedCommand}`);
       let result = '';
       if (trimmedCommand.startsWith('adb shell ')) {
         const shellCmd = trimmedCommand.substring(10).trim();
@@ -97,6 +100,7 @@ export function ViewShell({
       setHistory([...newHistory, { type: 'result', text: result.trim() || '(No output)' }]);
     } catch (err) {
       const error = err as Error;
+      handleError('Shell Command', error);
       setHistory([...newHistory, { type: 'error', text: error.message }]);
     } finally {
       setIsLoading(false);

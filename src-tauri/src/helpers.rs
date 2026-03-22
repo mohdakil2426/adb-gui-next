@@ -1,4 +1,5 @@
 use crate::CmdResult;
+use log::{debug, error, warn};
 use std::{
     path::{Path, PathBuf},
     process::Command,
@@ -85,6 +86,7 @@ pub fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
 }
 
 pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
+    debug!("Resolving binary path for: {}", name);
     let file_name = binary_name(name);
     let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
 
@@ -96,6 +98,7 @@ pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
 
         for candidate in candidates {
             if candidate.exists() {
+                debug!("Binary found at: {:?}", candidate);
                 ensure_executable_if_needed(&candidate)?;
                 return Ok(candidate);
             }
@@ -105,13 +108,19 @@ pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     if let Ok(repo_root) = std::env::current_dir() {
         let candidate = repo_resource_binary_path(&repo_root, os_dir, &file_name);
         if candidate.exists() {
+            debug!("Binary found at repo resource: {:?}", candidate);
             ensure_executable_if_needed(&candidate)?;
             return Ok(candidate);
         }
     }
 
-    which::which(&file_name)
-        .map_err(|_| format!("Unable to locate bundled or system binary for {name}."))
+    which::which(&file_name).map_err(|_| {
+        error!(
+            "Unable to locate binary: {} (tried resource dir, repo resources, and system PATH)",
+            name
+        );
+        format!("Unable to locate bundled or system binary for {name}.")
+    })
 }
 
 pub fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
@@ -144,15 +153,19 @@ pub fn run_command_capture(
     binary: &str,
     args: &[&str],
 ) -> CmdResult<CommandOutput> {
+    debug!("Running command: {} {:?}", binary, args);
     let binary_path = resolve_binary_path(app, binary)?;
-    let output = Command::new(binary_path)
+    let output = Command::new(&binary_path)
         .args(args)
         .current_dir(
             binary_working_directory(Some(app))
                 .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))),
         )
         .output()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| {
+            error!("Failed to execute {} {:?}: {}", binary, args, error);
+            error.to_string()
+        })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -162,6 +175,10 @@ pub fn run_command_capture(
         (true, false) => stderr.clone(),
         (true, true) => String::new(),
     };
+
+    if !output.status.success() {
+        warn!("Command failed: {} {:?} (exit {}): {}", binary, args, output.status, stderr.trim());
+    }
 
     Ok(CommandOutput { success: output.status.success(), stderr, combined })
 }
@@ -175,7 +192,7 @@ pub fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdRe
     } else if !command_output.combined.is_empty() {
         Err(command_output.combined)
     } else {
-        Err(format!("{binary} command failed."))
+        Err(format!("{} {:?} failed (no output)", binary, args))
     }
 }
 

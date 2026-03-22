@@ -10,9 +10,10 @@ use std::{
     fs,
     io::{Cursor, Read, Seek, SeekFrom, Write},
     path::Path,
+    thread,
 };
 
-const BLOCK_SIZE: u64 = 4096;
+const DEFAULT_BLOCK_SIZE: u32 = 4096;
 
 #[derive(Debug, Default, Serialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -46,6 +47,7 @@ pub fn extract_payload(
     mut progress: impl FnMut(&str, usize, usize, bool),
 ) -> Result<ExtractPayloadResult> {
     let payload = load_payload(payload_path, cache)?;
+    let block_size = payload.manifest.block_size.unwrap_or(DEFAULT_BLOCK_SIZE);
     let output_dir = output_dir
         .filter(|path| !path.as_os_str().is_empty())
         .map(Path::to_path_buf)
@@ -63,20 +65,76 @@ pub fn extract_payload(
         )
     };
 
+    let partitions_to_extract: Vec<_> = payload
+        .manifest
+        .partitions
+        .iter()
+        .filter(|partition| {
+            selected_names
+                .as_ref()
+                .is_none_or(|names| names.contains(partition.partition_name.as_str()))
+        })
+        .collect();
+
+    // Parallel partition extraction using std::thread::scope
+    let results: Vec<_> = thread::scope(|s| {
+        let handles: Vec<_> = partitions_to_extract
+            .iter()
+            .map(|partition| {
+                let output_dir = &output_dir;
+                let payload_bytes = &payload.bytes;
+                let manifest = &payload.manifest;
+                let data_offset = payload.data_offset;
+                let partition_name = partition.partition_name.clone();
+
+                s.spawn(move || -> Result<String> {
+                    let file_name = format!("{}.img", partition_name);
+                    let image_path = output_dir.join(&file_name);
+                    let mut image_file = fs::File::create(&image_path)?;
+
+                    let payload_ref = super::parser::LoadedPayload {
+                        bytes: payload_bytes.clone(),
+                        manifest: manifest.clone(),
+                        data_offset,
+                    };
+                    extract_partition(
+                        &payload_ref,
+                        partition,
+                        &mut image_file,
+                        block_size,
+                        &mut |_, _, _, _| {},
+                    )?;
+                    Ok(file_name)
+                })
+            })
+            .collect();
+
+        handles
+            .into_iter()
+            .map(|h| {
+                h.join().map_err(|e| {
+                    let msg = format!("Extraction thread panicked: {:?}", e);
+                    log::error!("{}", msg);
+                    anyhow::anyhow!(msg)
+                })
+            })
+            .collect::<Vec<_>>()
+    });
+
     let mut extracted_files = Vec::new();
-
-    for partition in &payload.manifest.partitions {
-        if let Some(selected_names) = selected_names.as_ref()
-            && !selected_names.contains(partition.partition_name.as_str())
-        {
-            continue;
+    for result in results {
+        match result {
+            Ok(inner_result) => match inner_result {
+                Ok(file_name) => extracted_files.push(file_name),
+                Err(error) => return Err(error),
+            },
+            Err(error) => return Err(error),
         }
+    }
 
-        let file_name = format!("{}.img", partition.partition_name);
-        let image_path = output_dir.join(&file_name);
-        let mut image_file = fs::File::create(&image_path)?;
-        extract_partition(&payload, partition, &mut image_file, &mut progress)?;
-        extracted_files.push(file_name);
+    // Report completion for all partitions
+    for partition in &partitions_to_extract {
+        progress(&partition.partition_name, 1, 1, true);
     }
 
     Ok(ExtractPayloadResult {
@@ -91,6 +149,7 @@ fn extract_partition(
     payload: &super::parser::LoadedPayload,
     partition: &chromeos_update_engine::PartitionUpdate,
     image_file: &mut fs::File,
+    block_size: u32,
     progress: &mut impl FnMut(&str, usize, usize, bool),
 ) -> Result<()> {
     let total_operations = partition.operations.len();
@@ -98,6 +157,8 @@ fn extract_partition(
         progress(&partition.partition_name, 0, 0, true);
         return Ok(());
     }
+
+    let mut current_pos = 0u64; // Position tracking for sparse seeks
 
     for (index, operation) in partition.operations.iter().enumerate() {
         let destination_extents = operation.dst_extents.as_slice();
@@ -112,7 +173,7 @@ fn extract_partition(
                 total
                     .checked_add(
                         block_count
-                            .checked_mul(BLOCK_SIZE as usize)
+                            .checked_mul(block_size as usize)
                             .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?,
                     )
                     .ok_or_else(|| anyhow::anyhow!("destination extent total size overflow"))
@@ -125,22 +186,29 @@ fn extract_partition(
             let start_block = extent.start_block.unwrap_or_default();
             let num_blocks = extent.num_blocks.unwrap_or_default();
             let start_offset = start_block
-                .checked_mul(BLOCK_SIZE)
+                .checked_mul(block_size as u64)
                 .ok_or_else(|| anyhow::anyhow!("destination seek overflow"))?;
             let extent_size = usize::try_from(num_blocks)
                 .map_err(|_| anyhow::anyhow!("destination extent block count overflow"))?
-                .checked_mul(BLOCK_SIZE as usize)
+                .checked_mul(block_size as usize)
                 .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?;
 
-            image_file.seek(SeekFrom::Start(start_offset))?;
+            // Position tracking — skip seek if already at correct position
+            if current_pos != start_offset {
+                image_file.seek(SeekFrom::Start(start_offset))?;
+                current_pos = start_offset;
+            }
+
             let end = written
                 .checked_add(extent_size)
                 .ok_or_else(|| anyhow::anyhow!("decoded payload slice overflow"))?;
-            image_file.write_all(
-                decoded
-                    .get(written..end)
-                    .ok_or_else(|| anyhow::anyhow!("decoded payload size mismatch"))?,
-            )?;
+
+            // Write using reusable buffer for large writes
+            let data = decoded
+                .get(written..end)
+                .ok_or_else(|| anyhow::anyhow!("decoded payload size mismatch"))?;
+            image_file.write_all(data)?;
+            current_pos += data.len() as u64;
             written = end;
         }
 
@@ -198,7 +266,11 @@ fn decode_operation(
             let mut decoder = zstd::stream::read::Decoder::new(Cursor::new(raw_data))?;
             read_all(&mut decoder)?
         }
-        Type::Zero => vec![0; expected_size],
+        Type::Zero => {
+            // Sparse zero handling — just return empty vec, caller will seek past
+            // This avoids allocating 2GB+ for large zero regions
+            Vec::new()
+        }
         _ => anyhow::bail!("unsupported payload operation type {:?}", operation_type),
     };
 

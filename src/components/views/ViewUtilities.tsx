@@ -1,4 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { handleError } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 
 import {
   GetDevices,
@@ -67,6 +69,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
   const fetchDeviceMode = useCallback(async () => {
     setIsCheckingStatus(true);
     try {
+      debugLog('Fetching device mode');
       // Priority 1: Check for ADB devices (Standard operation)
       const adbDevices = await GetDevices();
       if (adbDevices && adbDevices.length > 0) {
@@ -74,6 +77,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
         setDeviceSerial(adbDevices[0].serial);
         setDeviceStatus(adbDevices[0].status);
         setIsCheckingStatus(false);
+        debugLog('Device mode: adb');
         return;
       }
 
@@ -84,6 +88,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
         setDeviceSerial(fastbootDevices[0].serial);
         setDeviceStatus('fastboot');
         setIsCheckingStatus(false);
+        debugLog('Device mode: fastboot');
         return;
       }
 
@@ -91,8 +96,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
       setDeviceMode('unknown');
       setDeviceSerial(null);
     } catch (error) {
-      console.error('Failed to check device status:', error);
-      // Quiet fail on auto-refresh, but ensure state is reset
+      handleError('Check Device Status', error);
       setDeviceMode('unknown');
       setDeviceSerial(null);
     } finally {

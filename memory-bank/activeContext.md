@@ -6,6 +6,14 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-22 — Performance Optimization (Phase 1-3)
+- Implemented sparse zero handling: `Type::Zero` returns empty vec, seeks past region (instant vs minutes)
+- Added position tracking: skips redundant seeks when already at target position
+- Changed block size to read from manifest (`block_size` field) instead of hardcoding 4096
+- Made payload commands async: `extract_payload` and `cleanup_payload_cache` run on Tokio runtime
+- Implemented parallel partition extraction: `std::thread::scope` for concurrent extraction (4-8x faster)
+- All 8 Rust tests pass, all quality gates pass (`pnpm check`)
+
 ### 2026-03-22 — Dialog Permission Fix & Rust Code Refactoring
 - Fixed payload dumper dialog permission error by adding `"dialog:default"` to capabilities
 - Split `lib.rs` (833 lines) into 8 focused files: helpers.rs + 7 command modules

@@ -51,12 +51,17 @@ Three-tier fallback for ADB/fastboot binaries:
 
 ### 4. Payload Extraction
 
-`src-tauri/src/payload.rs` handles OTA payload.bin:
-- CrAU header parsing
-- Protobuf manifest decoding (prost)
-- Per-operation decompress (XZ/BZ2/Zstd/Zero)
-- SHA-256 checksum verification
-- ZIP payload caching with temp directory
+`src-tauri/src/payload/` handles OTA payload.bin (4 modules):
+- `parser.rs` — CrAU header parsing, protobuf manifest decoding (prost)
+- `extractor.rs` — Per-operation decompress (XZ/BZ2/Zstd/Zero), SHA-256 verification, parallel extraction
+- `zip.rs` — ZIP payload caching with temp directory
+- `tests.rs` — 5 payload tests
+
+**Performance optimizations:**
+- Sparse zero handling: `Type::Zero` returns empty vec, seeks past region
+- Position tracking: skips redundant seeks when already at target
+- Block size from manifest instead of hardcoding
+- Parallel partition extraction via `std::thread::scope`
 
 ### 5. Error Handling
 
@@ -90,6 +95,6 @@ src/components/
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` is 833 lines and should eventually be split into modules
+- `src-tauri/src/lib.rs` has been split into 8 focused files (helpers + 7 command modules)
 - Device polling is duplicated across views (could be centralized)
 - No JS/TS test framework configured (only 8 Rust tests)

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLogStore } from '@/lib/logStore';
+import { handleError } from '@/lib/errorHandler';
+import { debugLog } from '@/lib/debug';
 import {
   WipeData,
   FlashPartition,
@@ -87,6 +89,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
       }
 
       try {
+        debugLog('Refreshing devices (flasher)');
         const [fbResult, adbResult] = await Promise.all([GetFastbootDevices(), GetDevices()]);
 
         if (!isMountedRef.current) return;
@@ -124,7 +127,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
           }
         }
       } catch (error) {
-        console.error('Error refreshing devices:', error);
+        handleError('Refresh Devices', error);
       } finally {
         if (isMountedRef.current) {
           setIsRefreshing(false);
@@ -165,29 +168,31 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   const handleSelectFile = async () => {
     try {
+      debugLog('Selecting image file');
       const selectedPath = await SelectImageFile();
 
       if (selectedPath) {
         setFilePath(selectedPath);
         toast.info(`File selected: ${selectedPath.split(/[/\\]/).pop()}`);
+        debugLog('Selected image file:', selectedPath);
       }
     } catch (error) {
-      console.error('File selection error:', error);
-      toast.error('Failed to open file dialog', { description: String(error) });
+      handleError('Select Image File', error);
     }
   };
 
   const handleSelectSideloadFile = async () => {
     try {
+      debugLog('Selecting ZIP file for sideload');
       const selectedPath = await SelectZipFile();
 
       if (selectedPath) {
         setSideloadFilePath(selectedPath);
         toast.info(`ZIP selected: ${selectedPath.split(/[/\\]/).pop()}`);
+        debugLog('Selected ZIP file:', selectedPath);
       }
     } catch (error) {
-      console.error('ZIP selection error:', error);
-      toast.error('Failed to open file dialog', { description: String(error) });
+      handleError('Select ZIP File', error);
     }
   };
 
