@@ -64,12 +64,11 @@ impl PayloadCache {
 
         let mut inner =
             self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
-        if inner.cached_zip_path.as_deref() == Some(payload_path) {
-            if let Some(cached_payload_path) = inner.cached_payload_path.as_ref() {
-                if cached_payload_path.exists() {
-                    return Ok(cached_payload_path.clone());
-                }
-            }
+        if inner.cached_zip_path.as_deref() == Some(payload_path)
+            && let Some(cached_payload_path) = inner.cached_payload_path.as_ref()
+            && cached_payload_path.exists()
+        {
+            return Ok(cached_payload_path.clone());
         }
 
         if let Some(previous_payload_path) = inner.cached_payload_path.take() {
@@ -132,10 +131,10 @@ pub fn extract_payload(
     let mut extracted_files = Vec::new();
 
     for partition in &payload.manifest.partitions {
-        if let Some(selected_names) = selected_names.as_ref() {
-            if !selected_names.contains(partition.partition_name.as_str()) {
-                continue;
-            }
+        if let Some(selected_names) = selected_names.as_ref()
+            && !selected_names.contains(partition.partition_name.as_str())
+        {
+            continue;
         }
 
         let file_name = format!("{}.img", partition.partition_name);
@@ -295,12 +294,12 @@ fn decode_operation(
     }
 
     let raw_data = &payload.bytes[data_offset..data_end];
-    if let Some(expected_hash) = operation.data_sha256_hash.as_ref() {
-        if !expected_hash.is_empty() {
-            let actual_hash = Sha256::digest(raw_data);
-            if actual_hash.as_slice() != expected_hash.as_slice() {
-                anyhow::bail!("payload operation checksum mismatch");
-            }
+    if let Some(expected_hash) = operation.data_sha256_hash.as_ref()
+        && !expected_hash.is_empty()
+    {
+        let actual_hash = Sha256::digest(raw_data);
+        if actual_hash.as_slice() != expected_hash.as_slice() {
+            anyhow::bail!("payload operation checksum mismatch");
         }
     }
     let mut decoded = match operation_type {

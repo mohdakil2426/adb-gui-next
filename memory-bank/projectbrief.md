@@ -2,15 +2,14 @@
 
 ## Product Summary
 
-ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastboot workflows. It is the current product codebase, built with Rust, React, and Vite, while preserving the legacy implementation as reference-only material outside the live app build and runtime flow.
+ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastboot workflows. Built with React 19 + TypeScript + Vite + Rust, it provides a modern, native-feeling desktop experience for Android device management.
 
 ## Core Goals
 
-- Preserve the app’s practical Android workflow coverage and UX direction.
-- Keep the copied frontend as intact as practical.
-- Maintain a clean Tauri-native desktop architecture.
-- Bundle required Android tools for standalone Windows and Linux usage.
-- Preserve `docs/`, the historical plan archive, and the legacy reference app without harming them.
+- Provide comprehensive ADB and fastboot workflow coverage
+- Maintain a clean Tauri 2 native desktop architecture
+- Bundle required Android tools for standalone Windows and Linux usage
+- Preserve the legacy Go/Wails reference archive for documentation only
 
 ## Primary Users
 
@@ -21,18 +20,24 @@ ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastb
 
 ## Supported Platforms
 
-- Windows: first-class target
-- Linux: intended target
-- macOS: out of current scope
+- **Windows**: First-class target
+- **Linux**: First-class target
+- **macOS**: Out of current scope
 
 ## Major Feature Areas
 
-- Dashboard and device info
-- Wireless ADB
-- App Manager
-- File Explorer
-- Flasher
-- Utilities
-- Shell command runner
-- Payload Dumper
-- Global logs panel
+1. **Dashboard** — Device info, battery, storage, IP address
+2. **Wireless ADB** — Connect/disconnect, TCP/IP enable
+3. **App Manager** — Install, uninstall, sideload, list packages
+4. **File Explorer** — List, push, pull files
+5. **Flasher** — Fastboot flash, reboot, wipe, slot management
+6. **Utilities** — Reboot modes, bootloader variables, device manager
+7. **Shell** — Run shell commands on device
+8. **Payload Dumper** — Extract OTA payload.bin partitions
+9. **Global Logs Panel** — Timestamped operation logs
+
+## Current Version
+
+- Version: 0.1.0
+- Rust Edition: 2024
+- Last Updated: 2026-03-22

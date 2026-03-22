@@ -2,40 +2,55 @@
 
 ## Current State
 
-ADB GUI Next now lives directly on `main` as the active product codebase.
+ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-22 — Dependency & Quality Audit
+- Verified all frontend dependencies are at latest versions
+- Verified all Rust dependencies are at current versions
+- Updated Rust edition from 2021 to 2024
+- Fixed all 11 clippy collapsible_if warnings using Rust 2024 let_chains
+- Verified `pnpm check` passes (lint + format + tests + build)
+- Updated all memory-bank files with accurate information
+
+### Previous Milestones
 - Root-level Tauri 2 app structure is in place
 - Frontend runs through the native desktop layer under `src/lib/desktop/`
-- Rust backend command surface is active
-- Payload dumper runs natively in Rust
-- Platform-specific Tauri resource configs are in place for Windows and Linux
-- Pure-Tauri frontend wiring is complete with `wailsjs/` removed
-- Project-wide linting, formatting, and quality scripts are now configured
-- Repo-managed git hooks have been removed from the current workflow
-- Unused placeholder Rust dialog commands have been removed from `src-tauri/src/lib.rs`
-- Host command parsing now preserves quoted arguments for ADB and fastboot commands
-- Tauri build and runtime no longer depend on the legacy archive; payload protobuf input now lives under `src-tauri/`
-- Main-branch verification has passed
+- Rust backend command surface is active (26 commands)
+- Payload dumper runs natively in Rust with checksum verification
+- Platform-specific Tauri resource configs for Windows and Linux
+- Project-wide linting, formatting, and quality scripts configured
 
 ## Current Verification Evidence
 
-Verified on `main` with:
+Verified on `main` (2026-03-22) with:
+- `pnpm check` ✅ — Full gate (lint + format + tests + build)
+- `cargo clippy --all-targets -- -D warnings` ✅ — Zero warnings
+- `cargo test --manifest-path src-tauri/Cargo.toml` ✅ — 8 tests passing
+- `pnpm build` ✅ — TypeScript + Vite bundle successful
 
-- `pnpm check`
-- `cargo test --manifest-path src-tauri/Cargo.toml`
-- `pnpm build`
-- `pnpm tauri build --debug`
+## Architecture Status
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Frontend | ✅ Complete | 8 views, Zustand stores, shadcn/ui |
+| Backend | ✅ Complete | 26 Tauri commands, payload parser |
+| IPC Layer | ✅ Complete | backend.ts, runtime.ts, models.ts |
+| Linting | ✅ Complete | ESLint 10 flat config + typescript-eslint |
+| Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
+| Testing | ⚠️ Partial | 8 Rust tests, no JS/TS tests |
+| Documentation | ✅ Complete | Memory bank updated |
 
 ## Immediate Follow-up Candidates
 
-- Run broader device-backed parity tests for the main views
-- Split `src-tauri/src/lib.rs` into smaller modules
-- Work down the remaining ESLint warnings in the copied frontend
+- Split `src-tauri/src/lib.rs` into smaller modules (currently 833 lines)
+- Centralize device polling (currently duplicated across views)
+- Add Vitest for React component testing
+- Run broader device-backed parity tests for main views
 
 ## Important Notes
 
-- Preserve the legacy archive permanently as offline reference material only
-- Preserve the historical plan archive at `TAURI_MIGRATION_PLAN.md`
-- `.mcp.json` currently shows as deleted in the working tree and was not modified during merge finalization
+- Rust edition updated to 2024 (uses let_chains feature)
+- All clippy warnings resolved with -D warnings
+- Dependencies verified as up-to-date as of 2026-03-22

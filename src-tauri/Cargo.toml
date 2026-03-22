@@ -3,7 +3,7 @@ name = "adb-gui-next"
 version = "0.1.0"
 description = "ADB GUI Next for Android device workflows"
 authors = ["akila"]
-edition = "2021"
+edition = "2024"
 
 [lib]
 name = "adb_gui_next_lib"
@@ -28,4 +28,4 @@ tempfile = "3"
 which = "8"
 xz2 = "0.1"
 zstd = "0.13"
-zip = "8.2.0"
+zip = "8.3.1"

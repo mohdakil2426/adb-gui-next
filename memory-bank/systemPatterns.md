@@ -2,47 +2,98 @@
 
 ## Architecture Overview
 
-The current app uses a Tauri desktop architecture.
-
-- Frontend: React 19 + TypeScript + Vite
-- Backend: Rust commands under `src-tauri/`
-- Desktop bridge: Tauri 2 APIs
-- Frontend desktop layer: `src/lib/desktop/`
-
-## High-Level Structure
+The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust backend.
 
 ```text
-/
-├── src/                    # Copied and adapted frontend
-├── src-tauri/              # Rust backend and Tauri config
-├── src/lib/desktop/        # Frontend desktop command/runtime layer
-├── docs/                   # Docs plus preserved legacy reference source
-├── memory-bank/            # Current project memory bank
-└── TAURI_MIGRATION_PLAN.md # Historical plan archive
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Frontend (React 19 + TypeScript + Vite)             │
+│  main.tsx → App.tsx → MainLayout (sidebar + view switch + log panel)   │
+│  8 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
+│           Utilities │ PayloadDumper │ Shell │ About                     │
+│  Zustand Stores: deviceStore │ logStore │ payloadDumperStore            │
+│  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                     Tauri 2 IPC Bridge                                  │
+│  backend.ts → core.invoke<T>(command, args) → Rust commands            │
+│  runtime.ts → event listeners, file drop, URL opener                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                     Backend (Rust — src-tauri/)                         │
+│  lib.rs (833 lines) — 26 Tauri commands + helpers                      │
+│    ├─ Device: get_devices, get_device_info, get_device_mode            │
+│    ├─ ADB: run_adb_host_command, run_shell_command, wireless ADB       │
+│    ├─ Fastboot: flash_partition, reboot, wipe_data, set_active_slot    │
+│    ├─ Files: list_files, push_file, pull_file                          │
+│    ├─ Apps: install_package, uninstall_package, sideload_package       │
+│    ├─ System: open_folder, launch_terminal, save_log                   │
+│    └─ Payload: extract_payload, list_payload_partitions                │
+│  payload.rs (645 lines) — OTA payload.bin dumper (CrAU + protobuf)     │
+│  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Key Patterns
 
-### 1. Preserved frontend shell
+### 1. Desktop Abstraction Layer
 
-The frontend shell was brought into the root `src/` tree with minimal behavioral changes. Host/runtime concerns are handled around it instead of rewriting the UI architecture.
+`src/lib/desktop/` wraps every Tauri command:
+- `backend.ts` — All `invoke<T>()` wrappers (252 lines)
+- `runtime.ts` — Event listeners, file drop, URL opener (139 lines)
+- `models.ts` — DTO classes matching Rust structs (121 lines)
 
-### 2. Native desktop abstraction
+### 2. State Management
 
-`src/lib/desktop/backend.ts`, `src/lib/desktop/runtime.ts`, and `src/lib/desktop/models.ts` provide the frontend-facing Tauri abstraction for commands, runtime events, dialogs, and DTO types.
+- **Zustand v5** for shared state (device, log, payloadDumper)
+- **localStorage** for nickname persistence (no reactivity)
+- **No router** — `useState<ViewType>` + switch statement in MainLayout
 
-### 3. Manual view switching
+### 3. Binary Resolution
 
-The app still uses the legacy single-shell, no-router architecture centered around `MainLayout`.
+Three-tier fallback for ADB/fastboot binaries:
+1. Tauri resource dir (`src-tauri/resources/{platform}/`)
+2. Repo `resources/` directory
+3. System PATH via `which`
 
-### 4. Resource-bundled tool execution
+### 4. Payload Extraction
 
-Bundled Android binaries live under `src-tauri/resources/`. Rust resolves them from packaged resources first, then local dev resources, then system PATH.
+`src-tauri/src/payload.rs` handles OTA payload.bin:
+- CrAU header parsing
+- Protobuf manifest decoding (prost)
+- Per-operation decompress (XZ/BZ2/Zstd/Zero)
+- SHA-256 checksum verification
+- ZIP payload caching with temp directory
 
-### 5. Payload as dedicated subsystem
+### 5. Error Handling
 
-The payload extractor lives in `src-tauri/src/payload.rs` and handles manifest parsing, ZIP payload caching, extraction, progress reporting, and checksum verification.
+- **Frontend**: Every Tauri call wrapped in try/catch → `toast.error()` + `addLog()`
+- **Rust**: `CmdResult<T> = Result<T, String>` — all commands return this
 
-## Known Architectural Gaps
+### 6. View Switching
 
-- `src-tauri/src/lib.rs` is still too large and should eventually be split.
+No router. Manual view switching via:
+```tsx
+const [activeView, setActiveView] = useState<ViewType>('dashboard');
+// switch (activeView) { case 'dashboard': return <ViewDashboard />; ... }
+```
+
+### 7. Device Polling
+
+`setInterval` per view (3-4s) — duplicated in Dashboard, Flasher, Utilities
+
+## Component Architecture
+
+```text
+src/components/
+├── MainLayout.tsx           # App shell: sidebar nav, view switch, log panel
+├── ConnectedDevicesCard.tsx # Shared device list (Dashboard, Flasher, Utilities)
+├── TerminalLogPanel.tsx     # Resizable right drawer, timestamped logs
+├── WelcomeScreen.tsx        # 750ms animated splash
+├── ui/                      # 11 shadcn primitives (button, card, table, dialog, etc.)
+└── views/                   # 8 views (Dashboard, AppManager, FileExplorer, Flasher,
+                           #   Utilities, PayloadDumper, Shell, About)
+```
+
+## Known Architectural Notes
+
+- `src-tauri/src/lib.rs` is 833 lines and should eventually be split into modules
+- Device polling is duplicated across views (could be centralized)
+- No JS/TS test framework configured (only 8 Rust tests)
