@@ -12,9 +12,12 @@ export default defineConfig([
       'dist/**',
       'node_modules/**',
       '.worktrees/**',
+      '.claude/**',
+      '.agents/**',
+      'memory-bank/**',
       'src-tauri/target/**',
       'src-tauri/gen/schemas/**',
-      'docs/adb-gui-kit/refernces/**',
+      'docs/**',
     ],
   },
   {

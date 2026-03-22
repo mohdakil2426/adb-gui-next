@@ -21,6 +21,7 @@ dev-tauri.log
 .env
 .env.local
 .env.*.local
+.mcp.json
 
 # Editor / IDE
 .vscode/
@@ -33,3 +34,6 @@ dev-tauri.log
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# AI Agents
+.clinerules

@@ -59,23 +59,16 @@ export function ConnectedDevicesCard({
               const displayName = getNickname(device.serial) || device.serial;
               const description = displayName !== device.serial ? device.serial : undefined;
 
-              let statusText = device.status;
+              let statusText = device.status.toLowerCase();
               let statusColor = 'text-yellow-500';
 
               if (device.status === 'device') {
                 statusText = 'adb';
                 statusColor = 'text-green-500';
               } else if (device.status === 'fastboot') {
-                statusText = 'fastboot';
                 statusColor = 'text-blue-500';
-              } else if (device.status === 'recovery') {
-                statusText = 'recovery';
-                // yellow is default
               } else if (device.status === 'unauthorized') {
-                statusText = 'unauthorized';
                 statusColor = 'text-red-500';
-              } else {
-                statusText = device.status.toLowerCase();
               }
 
               return (
