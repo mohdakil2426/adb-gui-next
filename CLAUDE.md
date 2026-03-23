@@ -286,46 +286,10 @@ Before closing any task, confirm ALL of the following:
 
 > **MANDATORY — Query BEFORE writing any code, every time, no exceptions.**
 
-| Server       | Priority | Covers                                                 |
-| ------------ | -------- | ------------------------------------------------------ |
-| **shadcn**   | **1st**  | shadcn/ui components, registries, styling, composition |
-| **context7** | 2nd      | Tauri, React, Zustand, Rust, all non-Google libraries  |
-
----
-
-## Skills
-
-**MANDATORY: Read relevant skills BEFORE generating any code.**
-
-Skills are located in `.claude/skills/` — read the **SKILL.md** file inside each skill folder.
-
-### Tauri & Rust
-
-| Skill                                | When to Use                                              | Path                                               |
-| :----------------------------------- | :------------------------------------------------------- | :------------------------------------------------- |
-| **integrating-tauri-rust-frontends** | Tauri v2 frontend integration, IPC, event system         | `.claude/skills/integrating-tauri-rust-frontends/` |
-| **rust-refactor-helper**             | Refactoring Rust code, modularization, code smells       | `.claude/skills/rust-refactor-helper/`             |
-| **m06-error-handling**               | Rust error handling patterns (Result, anyhow, thiserror) | `.claude/skills/m06-error-handling/`               |
-| **m01-ownership**                    | Rust ownership, borrowing, lifetimes                     | `.claude/skills/m01-ownership/`                    |
-| **m03-mutability**                   | Rust mutability, interior mutability, Mutex, RefCell     | `.claude/skills/m03-mutability/`                   |
-| **m07-concurrency**                  | Rust concurrency (threads, async, channels, atomics)     | `.claude/skills/m07-concurrency/`                  |
-| **unsafe-checker**                   | Auditing unsafe blocks in Rust code                      | `.claude/skills/unsafe-checker/`                   |
-| **rust-code-navigator**              | Navigating and understanding Rust codebases              | `.claude/skills/rust-code-navigator/`              |
-
-### React & Frontend
-
-| Skill                           | When to Use                                          | Path                                          |
-| :------------------------------ | :--------------------------------------------------- | :-------------------------------------------- |
-| **shadcn**                      | shadcn/ui component management, styling, composition | `.claude/skills/shadcn/`                      |
-| **vercel-react-best-practices** | React patterns, hooks, performance                   | `.claude/skills/vercel-react-best-practices/` |
-| **vercel-composition-patterns** | React component composition, state patterns          | `.claude/skills/vercel-composition-patterns/` |
-| **web-design-guidelines**       | UI/UX design principles                              | `.claude/skills/web-design-guidelines/`       |
-
-### Design & Planning
-
-| Skill                | When to Use                                                       | Path                               |
-| :------------------- | :---------------------------------------------------------------- | :--------------------------------- |
-| **mermaid-diagrams** | Creating software diagrams (class, sequence, flow, C4, ERD, Git). | `.claude/skills/mermaid-diagrams/` |
+| Server       | Covers                                                 |
+| ------------ | ------------------------------------------------------ |
+| **context7** | Tauri, React, Zustand, Rust, all non-Google libraries  |
+| **shadcn**   | shadcn/ui components, registries, styling, composition |
 
 ---
 
