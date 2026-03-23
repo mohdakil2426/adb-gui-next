@@ -7,10 +7,11 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
-│  main.tsx → App.tsx → MainLayout (sidebar + view switch + log panel)   │
-│  8 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
-│           Utilities │ PayloadDumper │ Shell │ About                     │
-│  Zustand Stores: deviceStore │ logStore │ payloadDumperStore            │
+│  main.tsx → App.tsx → MainLayout (sidebar + views + bottom panel)      │
+│  7 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
+│           Utilities │ PayloadDumper │ About                             │
+│  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
+│  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
 │  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
@@ -38,7 +39,7 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 
 ### 2. State Management
 
-- **Zustand v5** for shared state (device, log, payloadDumper)
+- **Zustand v5** for shared state (device, log, shell, payloadDumper)
 - **localStorage** for nickname persistence (no reactivity)
 - **No router** — `useState<ViewType>` + switch statement in MainLayout
 
@@ -84,17 +85,30 @@ const [activeView, setActiveView] = useState<ViewType>('dashboard');
 
 Migrated to **TanStack Query v5** — `useQuery({ refetchInterval: 3000 })` in Dashboard, Flasher, and Utilities. Replaced ~220 lines of manual `setInterval` + `useEffect` code.
 
+### 8. Bottom Panel (VS Code-style)
+
+VS Code-style bottom panel replaces the old right-side drawer log panel:
+- `BottomPanel.tsx` — Container with vertical resize, tab bar (Logs/Shell), action buttons
+- `LogsPanel.tsx` — Filtered log viewer with search highlighting, auto-scroll detection
+- `ShellPanel.tsx` — Interactive ADB/fastboot terminal (previously `ViewShell.tsx`)
+- `logStore.ts` — Ring buffer (1000 max), ISO timestamps, filter/search/panel state, unread count
+- `shellStore.ts` — Shell history + command history Zustand store
+- 12 terminal CSS variables in `global.css` for light/dark theme support
+- Keyboard shortcut: `Ctrl+\`` to toggle panel
+
 ## Component Architecture
 
 ```text
 src/components/
-├── MainLayout.tsx           # App shell: sidebar nav, view switch, log panel
+├── MainLayout.tsx           # App shell: sidebar nav, view switch, bottom panel
+├── BottomPanel.tsx          # VS Code-style bottom panel (tabs, resize, actions)
+├── LogsPanel.tsx            # Filtered log viewer with search highlight
+├── ShellPanel.tsx           # Interactive ADB/fastboot terminal
 ├── ConnectedDevicesCard.tsx # Shared device list (Dashboard, Flasher, Utilities)
-├── TerminalLogPanel.tsx     # Resizable right drawer, timestamped logs
 ├── WelcomeScreen.tsx        # 750ms animated splash
-├── ui/                      # 11 shadcn primitives (button, card, table, dialog, etc.)
-└── views/                   # 8 views (Dashboard, AppManager, FileExplorer, Flasher,
-                           #   Utilities, PayloadDumper, Shell, About)
+├── ui/                      # 13 shadcn primitives (button, card, table, tabs, dropdown-menu, etc.)
+└── views/                   # 7 views (Dashboard, AppManager, FileExplorer, Flasher,
+                           #   Utilities, PayloadDumper, About)
 ```
 
 ## Known Architectural Notes
@@ -103,3 +117,4 @@ src/components/
 - Device polling centralized via TanStack Query v5 (`useQuery` with `refetchInterval`)
 - Vitest + React Testing Library configured — 21 JS/TS tests pass
 - 5 Rust payload tests; `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)
+- Shell is no longer a sidebar view — it lives in the bottom panel as a tab

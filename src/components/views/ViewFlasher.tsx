@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
+import { getFileName } from '@/lib/utils';
 import { partitionSchema } from '@/lib/schemas';
 import { queryKeys, fetchAllDevices } from '@/lib/queries';
 import {
@@ -78,7 +79,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
       if (selectedPath) {
         setFilePath(selectedPath);
-        toast.info(`File selected: ${selectedPath.split(/[/\\]/).pop()}`);
+        toast.info(`File selected: ${getFileName(selectedPath)}`);
         debugLog('Selected image file:', selectedPath);
       }
     } catch (error) {
@@ -93,7 +94,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
       if (selectedPath) {
         setSideloadFilePath(selectedPath);
-        toast.info(`ZIP selected: ${selectedPath.split(/[/\\]/).pop()}`);
+        toast.info(`ZIP selected: ${getFileName(selectedPath)}`);
         debugLog('Selected ZIP file:', selectedPath);
       }
     } catch (error) {

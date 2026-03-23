@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { getNickname, setNickname } from '@/lib/nicknameStore';
@@ -45,15 +44,15 @@ export function EditNicknameDialog({
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Edit Nickname</AlertDialogTitle>
-          <AlertDialogDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Nickname</DialogTitle>
+          <DialogDescription>
             Give a nickname to the device:
             <span className="block font-mono text-foreground mt-2">{serial}</span>
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="py-4">
           <Label htmlFor="nickname" className="text-left">
@@ -65,14 +64,19 @@ export function EditNicknameDialog({
             onChange={(e) => setNewNickname(e.target.value)}
             placeholder="Ex: My Device"
             className="mt-2"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSaveNickname();
+            }}
           />
         </div>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSaveNickname}>Save</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveNickname}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

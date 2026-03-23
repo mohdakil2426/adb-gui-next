@@ -329,7 +329,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     >
                       <TableCell>
                         {file.type === 'Directory' ? (
-                          <Folder className="h-4 w-4 text-blue-500" />
+                          <Folder className="h-4 w-4 text-primary" />
                         ) : (
                           <File className="h-4 w-4 text-muted-foreground" />
                         )}

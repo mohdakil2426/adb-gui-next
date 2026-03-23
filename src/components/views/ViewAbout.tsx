@@ -85,7 +85,7 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 flex items-center gap-3 border border-border/50">
-              <Heart className="w-5 h-5 text-red-500 fill-red-500/20" />
+              <Heart className="w-5 h-5 text-destructive fill-destructive/20" />
               <div className="flex-1">
                 <p className="text-sm font-medium">Built with care</p>
                 <p className="text-xs text-muted-foreground">Powered by Tauri, React & Rust</p>

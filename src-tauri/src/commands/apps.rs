@@ -13,17 +13,35 @@ use tauri::AppHandle;
 #[serde(rename_all = "camelCase")]
 pub struct InstalledPackage {
     pub name: String,
+    pub package_type: String,
+}
+
+fn parse_package_names(output: &str) -> Vec<String> {
+    output
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix("package:"))
+        .map(|name| name.to_string())
+        .collect()
 }
 
 #[tauri::command]
 pub fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
     info!("Getting installed packages");
-    let output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages"])?;
-    let packages: Vec<InstalledPackage> = output
-        .lines()
-        .filter_map(|line| line.trim().strip_prefix("package:"))
-        .map(|name| InstalledPackage { name: name.to_string() })
+
+    let user_output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages", "-3"])?;
+    let user_names: std::collections::HashSet<String> =
+        parse_package_names(&user_output).into_iter().collect();
+
+    let all_output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages"])?;
+    let packages: Vec<InstalledPackage> = parse_package_names(&all_output)
+        .into_iter()
+        .map(|name| {
+            let package_type =
+                if user_names.contains(&name) { "user".to_string() } else { "system".to_string() };
+            InstalledPackage { name, package_type }
+        })
         .collect();
+
     debug!("Found {} installed packages", packages.len());
     Ok(packages)
 }

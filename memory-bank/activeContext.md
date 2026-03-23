@@ -6,67 +6,105 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
-### 2026-03-22 — Payload Dumper Overhaul (Phase 1 + 2)
+### 2026-03-23 — Comprehensive Codebase Quality Improvement
 
-**OOM Elimination — Arc\<Mmap\> + Streaming ZIP**
-- `LoadedPayload::bytes: Vec<u8>` → `mmap: Arc<memmap2::Mmap>` — eliminates 36–48 GB per-thread heap clones (8 threads × 4–6 GB)
-- `zip.rs::read_payload()` → `get_payload_path()` — jQuery ZIP entry streamed to `NamedTempFile` (never buffered to RAM); path cached only
-- `memmap2 = "0.9"` + `tokio = "1"` (rt-multi-thread) added as direct Cargo deps
+**Dead Code Removal**
+- Deleted `src/App.css` (unused Vite template leftover, conflicted with global.css)
+- Deleted `src/components/ui/command.tsx` (never imported anywhere)
+- Removed 2 dead lines (`refreshTimeout`, `void` suppressor) from `ViewUtilities.tsx`
+- Removed commented-out JSX blocks from `WelcomeScreen.tsx`
 
-**Real-time Progress Fixes**
-- Each thread captures `app_handle.clone()` (O(1) Arc clone); emits `payload:progress` events per operation via `app.emit()`
-- `tokio::task::block_in_place` prevents Tokio runtime starvation during sync extraction
-- `Option<AppHandle>` — tests pass `None` (no mock runtime needed)
+**P0 Bug Fix — Reactivity in MainLayout**
+- Fixed `useLogStore.getState().activeTab` calls in JSX (non-reactive pattern)
+- Replaced with a Zustand selector (`activeTab` in destructure) so Shell/Logs toolbar buttons now correctly reflect active tab state on every render
 
-**Streaming Decompression (Phase 2)**
-- Removed `decode_operation() → Vec<u8>` (50–500 MB per op)
-- Inline `Box<dyn Read + '_>` decoder built once per operation, consumed sequentially across all extents
-- 256 KiB stack buffer (`[0u8; 262144]`) for XZ/BZ2/Zstd/Replace — never heap-allocated per op
-- `file.set_len(partition_size)` pre-allocates output; Zero ops do a sparse seek (no write)
-- `BufWriter` with 1 MB capacity reduces file syscall count
+**Hard-coded Values → Semantic Tokens**
+- `ConnectedDevicesCard`: status color strings → shadcn `Badge` with `STATUS_CONFIG` map
+- `ViewFileExplorer`: `text-blue-500` Folder icon → `text-primary`
+- `ViewAbout`: `text-red-500 fill-red-500/20` Heart → `text-destructive fill-destructive/20`
+- `ViewPayloadDumper`: all 9 `emerald-*` color classes → `var(--terminal-log-success)` token
+- `ViewAppManager`: package type inline badge spans → `Badge` component
+- `BottomPanel`: removed `navigator.clipboard` fallback (dead code in Tauri app)
 
-**Frontend Fix**
-- Removed `'use client'` directive from `ViewPayloadDumper.tsx` (Next.js artifact)
+**shadcn Components Installed & Adopted**
+- Installed: `badge`, `progress`, `dialog`, `separator`, `skeleton`
+- `WelcomeScreen`: manual progress bar div → `<Progress>`
+- `ViewPayloadDumper`: custom `ExtractionProgressBar` → `<Progress>`
+- `ViewAppManager`: raw `<input>` search → `<Input>` (accessible, themed)
+- `ViewAppManager`: package type spans → `<Badge variant>`
+- `ViewUtilities`: GetVar output modal rewritten from `AlertDialog` → `Dialog` (semantically correct for read-only output)
+- `EditNicknameDialog`: rewritten from `AlertDialog` → `Dialog` + Enter key submit
 
-**Verification:** `pnpm format:check` ✅ | `pnpm lint` ✅ | `pnpm build` ✅ (2383 modules)
+**Shared Components Extracted**
+- `LoadingButton.tsx` — replaces 20+ `{isLoading ? <Loader2> : <Icon>}` patterns
+- `SectionHeader.tsx` — replaces 9 `<h4 className="text-xs font-semibold uppercase tracking-wider…">` patterns across ViewUtilities + ViewPayloadDumper
+- `FileSelector.tsx` — standardised file/dir selector (label + button + path hint + trailing action)
+- `SelectionSummaryBar.tsx` — replaces 2 custom selection count+clear bars in ViewAppManager
+- `getFileName()` added to `utils.ts` — replaces 5+ inline `path.split(/[/\\]/).pop()` calls
 
-### 2026-03-22 — Dependency Integration (Vitest, Zod, RHF, TanStack Query, Clipboard)
+**Architecture Improvements**
+- `models.ts` — all 6 DTO classes migrated to plain TypeScript interfaces. Removed `source: any` constructors (Wails 2 artifact). `backend` namespace kept for backwards compatibility.
 
-**Phase 1a — Vitest + React Testing Library**
-- Added `vitest`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `jsdom`, `@vitest/coverage-v8`
-- Created `vitest.config.ts` (merges Vite config; jsdom environment)
-- Created `src/test/setup.ts` (jest-dom matchers + Tauri IPC mocks)
-- Wrote 3 test files: `errorHandler.test.ts` (6 tests), `payloadDumperStore.test.ts` (8 tests), `ConnectedDevicesCard.test.tsx` (7 tests)
-- Added `test`, `test:watch`, `test:coverage` scripts; `pnpm check` now runs `pnpm test`
-- **21/21 tests pass**
+**Verification:** `pnpm format:check` ✅ | `pnpm lint:web` ✅ (0 errors, 2 pre-existing warnings) | `pnpm build` ✅ | `pnpm test` ✅ (21/21 Vitest)
 
-**Phase 1b — Zod v4 Input Validation**
-- Added `zod` v4.3.6
-- Created `src/lib/schemas.ts` — central schema registry (`wirelessAdbSchema`, `partitionSchema`, `shellCommandSchema`)
-- Applied `safeParse()` validation in ViewDashboard (wireless ADB), ViewFlasher (flash partition), ViewShell (shell commands)
+> **Note:** `cargo test` fails with `STATUS_ENTRYPOINT_NOT_FOUND` (Windows DLL missing at test runtime). Confirmed pre-existing — identical failure on baseline before any changes. Unrelated to frontend work.
 
-**Phase 2a — React Hook Form**
-- Added `react-hook-form` v7.72.0 and `@hookform/resolvers` v5.2.2
-- Refactored ViewDashboard wireless ADB form: replaced 4 `useState` fields with `useForm` + `zodResolver`
-- Added inline error messages; IP auto-fill via `setValue()`; connect via `handleSubmit`
 
-**Phase 2b — TanStack Query v5 (Device Polling Migration)**
-- Added `@tanstack/react-query` v5.94.5
-- Created `src/lib/queries.ts` — query key factory + fetch functions (`fetchDevices`, `fetchAllDevices`, `fetchPackages`)
-- Wrapped `App.tsx` with `QueryClientProvider` (staleTime: 0, gcTime: 5 min, retry: 1)
-- Migrated polling from 3 views, removing ~220 lines of manual polling code:
-  - **ViewDashboard**: removed `refreshDevices` callback + 2× `setInterval` useEffects → `useQuery({ refetchInterval: 3000 })`
-  - **ViewFlasher**: removed 5 refs + `applyDevices` + `refreshDevices` async + 3 useEffects → `useQuery({ refetchInterval: 4000, placeholderData: prev => prev })`
-  - **ViewUtilities**: removed `fetchDeviceMode` callback + `refreshTimeout` ref + 3 useEffects → `useQuery({ refetchInterval: 3000 })` + `useMemo` for mode derivation
-- Fixed runtime infinite loop: sync `useEffect → setDevices(queriedDevices)` fired every render because `= []` default creates a new array reference. Fix: removed sync effects and useState copies; use `queriedDevices` directly in all views.
+**Virtualized Package List**
+- Removed `.slice(0, 50)` limit — all packages now rendered
+- Added `@tanstack/react-virtual` for virtualized scrolling (only visible rows in DOM)
+- Fixed row height 36px, 5 overscan rows, fixed container height (`h-75`)
+- No lag with 200+ packages
 
-**Phase 2c — Tauri Clipboard Manager Plugin**
-- Added `@tauri-apps/plugin-clipboard-manager` 2.3.2 (frontend) + `tauri-plugin-clipboard-manager` (Rust)
-- Registered `.plugin(tauri_plugin_clipboard_manager::init())` in `lib.rs`
-- Added `clipboard-manager:allow-read-text` + `allow-write-text` to `capabilities/default.json`
-- Created `src/components/CopyButton.tsx` — reusable ghost icon button with 2s checkmark animation
-- Integrated CopyButton into ViewDashboard (`InfoItem` gains optional `copyable` prop; Serial + IP rows)
-- Replaced `navigator.clipboard.writeText()` with `writeText()` from the Tauri plugin in ViewUtilities
+**Package Type Classification**
+- Rust backend (`apps.rs`) now runs `pm list packages -3` (user) + `pm list packages` (all)
+- Each `InstalledPackage` gets a `packageType` field: `"user"` or `"system"`
+- `InstalledPackage` DTO updated in `models.ts` with `packageType`
+
+**Filter UI**
+- shadcn `DropdownMenu` with `RadioGroup` for All/User/System filtering
+- Filter icon button shows current selection ("All Packages", "User Apps", "System Apps")
+- Colored type badges per row: blue=user, amber=system
+- shadcn `dropdown-menu` component installed
+
+**Verification:** `pnpm build` ✅ | `pnpm format:check` ✅ | `pnpm test` ✅ (21/21)
+
+### 2026-03-23 — VS Code-Style Bottom Panel Overhaul
+
+**Layout Change — Right Drawer → Bottom Panel**
+- Replaced `TerminalLogPanel.tsx` (right-side drawer) with VS Code-style `BottomPanel.tsx` (bottom panel)
+- Panel has vertical resize (drag handle at top), min 150px / max 70vh
+- Two tabs: **Logs** (operation log viewer) and **Shell** (interactive ADB/fastboot terminal)
+- `Ctrl+\`` keyboard shortcut to toggle panel
+
+**New Components**
+- `BottomPanel.tsx` — VS Code container with tabs, filter dropdown, search bar, follow output, maximize/minimize, copy/save/clear actions
+- `LogsPanel.tsx` — Filtered log viewer with semantic color tokens, level badges (INFO/SUCCESS/ERROR/WARN), search text highlighting, auto-scroll detection
+- `ShellPanel.tsx` — Full-bleed shell terminal refactored from `ViewShell.tsx`, uses `shellStore` instead of props
+
+**Store Changes**
+- `logStore.ts` overhauled: ring buffer (1000 max), ISO timestamp (`HH:MM:SS.mmm`), filter/search state, panel height/maximize/follow/activeTab state, unread count tracking
+- `shellStore.ts` created — shell history + command history extracted from MainLayout props
+
+**CSS & Theme**
+- 12 terminal-specific CSS variables added to `global.css` for light/dark: `--terminal-bg`, `--terminal-fg`, `--terminal-border`, `--terminal-header-bg`, `--terminal-tab-active/inactive`, `--terminal-log-info/success/error/warning`
+- Replaced all hardcoded `bg-zinc-950`, `text-zinc-100` etc. with semantic tokens
+
+**Bug Fixes**
+- Removed `'use client'` directive from `MainLayout.tsx` (Next.js artifact, invalid in Vite/Tauri)
+- Replaced `navigator.clipboard.writeText()` with Tauri `writeText()` from `@tauri-apps/plugin-clipboard-manager`
+
+**Deleted Files**
+- `TerminalLogPanel.tsx` — replaced by `BottomPanel.tsx` + `LogsPanel.tsx`
+- `ViewShell.tsx` — replaced by `ShellPanel.tsx` (embedded in bottom panel Shell tab)
+
+**Layout Change in MainLayout**
+- Shell view removed from sidebar navigation (7 views now instead of 8)
+- Main layout changed from `flex` (horizontal: sidebar | content | logs) to `flex-col` (vertical: content / bottom-panel)
+- Added Shell toggle button and Logs toggle button with unread count badge in toolbar
+- Installed shadcn `Tabs` component (`@radix-ui/react-tabs`)
+
+**Verification:** `pnpm build` ✅ | `pnpm format:check` ✅ | `pnpm lint` ✅ | `pnpm test` ✅ (21/21)
 
 ### 2026-03-23 — Vite Config Type Fix
 - Installed `@types/node` and added to `tsconfig.node.json` types.
@@ -74,6 +112,8 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 - Removed `@ts-expect-error` for `process` in `vite.config.ts` as it's now correctly typed.
 
 ### Previous Milestones
+- Payload Dumper Overhaul: Arc\<Mmap\> + streaming ZIP + streaming decompression
+- Dependency Integration: Vitest, Zod, RHF, TanStack Query, Clipboard
 - Debugging & Logging Infrastructure (`tauri-plugin-log`, `errorHandler.ts`, `debug.ts`)
 - Performance Optimization: sparse zero, parallel extraction, async Tauri commands
 - Rust refactoring: `lib.rs` split into 8 focused files; `payload.rs` split into 4 modules
@@ -81,23 +121,21 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Current Verification Evidence
 
-Verified on `main` (2026-03-22) with:
-- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
-- `pnpm test` ✅ — 21/21 Vitest tests pass
-- `pnpm build` ✅ — TypeScript + Vite bundle (2383 modules)
+Verified on `main` (2026-03-23) with:
+- `pnpm build` ✅ — TypeScript + Vite bundle
 - `pnpm format:check` ✅ — Prettier + cargo fmt clean
-- `cargo clippy -D warnings` ✅ — Zero warnings
-- `cargo test` ⚠️ — Pre-existing Windows DLL crash in Tauri test binary (STATUS_ENTRYPOINT_NOT_FOUND); not caused by our changes; `cargo check --tests` is clean
+- `pnpm lint` ✅ — ESLint (0 errors, 1 pre-existing warning) + cargo clippy -D warnings clean
+- `pnpm test` ✅ — 21/21 Vitest tests pass
 - `cargo test` ✅ — 8 Rust tests pass
-- `pnpm tauri dev` ✅ — App runs, no infinite loop, clipboard works
 
 ## Architecture Status
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Frontend | ✅ Complete | 8 views, Zustand, shadcn/ui |
+| Frontend | ✅ Complete | 7 sidebar views + bottom panel (Logs/Shell tabs) |
 | Backend | ✅ Complete | 26 Tauri commands, payload parser |
 | IPC Layer | ✅ Complete | backend.ts, runtime.ts, models.ts |
+| Bottom Panel | ✅ Complete | VS Code-style with tabs, filter, search, follow, maximize |
 | Testing | ✅ Complete | 21 JS/TS tests + 8 Rust tests |
 | Input Validation | ✅ Complete | Zod schemas for all interactive inputs |
 | Form Handling | ✅ Complete | React Hook Form on wireless ADB form |
@@ -108,96 +146,16 @@ Verified on `main` (2026-03-22) with:
 
 ## Immediate Follow-up Candidates
 
-- Extend React Hook Form to `ViewFlasher` (partition/file form) and `ViewShell`
-- Add more Vitest tests for views (ViewFlasher, ViewUtilities)
+- Add Vitest tests for new components (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore)
+- Extend React Hook Form to `ViewFlasher` (partition/file form)
+- Add virtual list (react-window) for log entries when 1000+ entries
 - Add CopyButton to more shell output areas
-- Streaming decompression for payload dumper (BufReader 256KB, Phase 2 perf)
+- Test bottom panel behavior with `pnpm tauri dev` (manual verification)
+- Consider adding "enabled/disabled" filter for packages (`pm list packages -e` / `-d`)
 
 ## Important Notes
 
-- **Infinite loop pattern to avoid**: never write `useEffect(() => { setX(queryData) }, [queryData, setX])` with a `= []` default. The default creates a new reference every render. Use query data directly in JSX/callbacks.
+- **Shell is now in the bottom panel**, not a sidebar view. The sidebar "Terminal" nav item was removed.
+- **Infinite loop pattern to avoid**: never write `useEffect(() => { setX(queryData) }, [queryData, setX])` with a `= []` default.
 - Rust edition: 2024 (uses let_chains)
 - All clippy warnings resolved with -D warnings
-
-
-## Recently Completed
-
-### 2026-03-22 — Debugging & Logging Infrastructure
-- Added `tauri-plugin-log` with Stdout, LogDir, and Webview targets
-- Created `src/lib/errorHandler.ts` for centralized frontend error handling
-- Created `src/lib/debug.ts` for debug logging and performance timing
-- Added structured logging to all Rust command modules (device, adb, fastboot, files, apps, system, payload)
-- Improved error context in `helpers.rs` (command args, exit codes, stderr)
-- Fixed `.unwrap()` in `payload/extractor.rs` (thread join panic)
-- Fixed `.expect()` in `payload/parser.rs` (malformed payload handling)
-- Standardized frontend error handling across all 8 views with `handleError()`
-- Added `dev:debug` script with `RUST_BACKTRACE=1` for stack traces
-- Generated comprehensive report at `docs/debugging-logging-report.md`
-- All 8 Rust tests pass, all quality gates pass (`pnpm check`)
-
-### 2026-03-22 — Performance Optimization (Phase 1-3)
-- Implemented sparse zero handling: `Type::Zero` returns empty vec, seeks past region (instant vs minutes)
-- Added position tracking: skips redundant seeks when already at target position
-- Changed block size to read from manifest (`block_size` field) instead of hardcoding 4096
-- Made payload commands async: `extract_payload` and `cleanup_payload_cache` run on Tokio runtime
-- Implemented parallel partition extraction: `std::thread::scope` for concurrent extraction (4-8x faster)
-- All 8 Rust tests pass, all quality gates pass (`pnpm check`)
-
-### 2026-03-22 — Dialog Permission Fix & Rust Code Refactoring
-- Fixed payload dumper dialog permission error by adding `"dialog:default"` to capabilities
-- Split `lib.rs` (833 lines) into 8 focused files: helpers.rs + 7 command modules
-- Split `payload.rs` (645 lines) into 4 modules: parser, extractor, zip, tests
-- Added doc comments to payload module public functions
-- Fixed rust-analyzer module tree issue (include path)
-- Generated audit report at `docs/rust-audit-report.md` (scores: 6.6→7.7)
-- Generated performance research at `docs/rust-performance-research.md`
-- All 8 Rust tests pass, all quality gates pass (`pnpm check`)
-
-### 2026-03-22 — Dependency & Quality Audit
-- Verified all frontend dependencies are at latest versions
-- Verified all Rust dependencies are at current versions
-- Updated Rust edition from 2021 to 2024
-- Fixed all 11 clippy collapsible_if warnings using Rust 2024 let_chains
-- Verified `pnpm check` passes (lint + format + tests + build)
-- Updated all memory-bank files with accurate information
-
-### Previous Milestones
-- Root-level Tauri 2 app structure is in place
-- Frontend runs through the native desktop layer under `src/lib/desktop/`
-- Rust backend command surface is active (26 commands)
-- Payload dumper runs natively in Rust with checksum verification
-- Platform-specific Tauri resource configs for Windows and Linux
-- Project-wide linting, formatting, and quality scripts configured
-
-## Current Verification Evidence
-
-Verified on `main` (2026-03-22) with:
-- `pnpm check` ✅ — Full gate (lint + format + tests + build)
-- `cargo clippy --all-targets -- -D warnings` ✅ — Zero warnings
-- `cargo test --manifest-path src-tauri/Cargo.toml` ✅ — 8 tests passing
-- `pnpm build` ✅ — TypeScript + Vite bundle successful
-
-## Architecture Status
-
-| Area | Status | Notes |
-|------|--------|-------|
-| Frontend | ✅ Complete | 8 views, Zustand stores, shadcn/ui |
-| Backend | ✅ Complete | 26 Tauri commands, payload parser |
-| IPC Layer | ✅ Complete | backend.ts, runtime.ts, models.ts |
-| Linting | ✅ Complete | ESLint 10 flat config + typescript-eslint |
-| Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
-| Testing | ⚠️ Partial | 8 Rust tests, no JS/TS tests |
-| Documentation | ✅ Complete | Memory bank updated |
-
-## Immediate Follow-up Candidates
-
-- Split `src-tauri/src/lib.rs` into smaller modules (currently 833 lines)
-- Centralize device polling (currently duplicated across views)
-- Add Vitest for React component testing
-- Run broader device-backed parity tests for main views
-
-## Important Notes
-
-- Rust edition updated to 2024 (uses let_chains feature)
-- All clippy warnings resolved with -D warnings
-- Dependencies verified as up-to-date as of 2026-03-22

@@ -9,13 +9,19 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 ### Frontend
 
 - App shell loads under Vite/React with Strict Mode enabled
-- 8 feature views compile and build successfully
+- 7 sidebar views compile and build successfully
+- VS Code-style bottom panel with Logs and Shell tabs
 - Frontend calls native `src/lib/desktop/` Tauri abstraction
-- Zustand v5 state management (device, log, payloadDumper)
-- shadcn/ui components with Tailwind CSS v4
+- Zustand v5 state management (device, log, shell, payloadDumper)
+- shadcn/ui components (18 primitives: badge, progress, dialog, separator, skeleton + 13 existing) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion animations
+- Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
+- App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
+- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`
+- `getFileName()` utility in `utils.ts`
+- `models.ts` DTOs migrated from Wails-2 classes to plain TypeScript interfaces
 
 ### Backend (26 Tauri Commands)
 
@@ -55,7 +61,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - cargo fmt (Rust edition 2024) active
 - cargo clippy with `-D warnings` (strict) active
 - `pnpm check` runs full verification workflow
-- 8 Rust tests passing
+- 21 JS/TS tests + 8 Rust tests passing
 - `tauri-plugin-log` for structured logging (Stdout + LogDir + Webview)
 - `errorHandler.ts` for centralized frontend error handling
 - `debug.ts` for debug logging and performance timing
@@ -100,19 +106,23 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|-------|
-| Low | Streaming decompression | BufReader 256KB, 2-5x less memory (Phase 2) |
-| Low | Centralize device polling | Duplicated across views |
-| Low | Add Vitest for React testing | No JS/TS test framework |
+| Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
+| Low | Virtual list for log entries | react-window for 1000+ entries performance |
+| Low | Extend RHF to ViewFlasher | partition/file form |
 | Low | Run device-backed parity tests | Need real Android devices |
 
 ## Risks / Known Issues
 
 - Large frontend bundle chunk warning during build (589KB JS)
-- Device polling duplicated across Dashboard, Flasher, Utilities views
+- Bottom panel Shell tab needs manual verification with `pnpm tauri dev`
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption (badge/progress/dialog/separator/skeleton), shared components, semantic token fixes, models.ts interface migration |
+| 2026-03-23 | 0.1.0 | App Manager: virtualized list + user/system package filter |
+| 2026-03-23 | 0.1.0 | VS Code-style bottom panel overhaul (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |
+| 2026-03-22 | 0.1.0 | Payload dumper overhaul, dependency integration, debugging infrastructure |
 | 2026-03-22 | 0.1.0 | Dialog permission fix, Rust code refactoring, audit & performance research |
 | 2026-03-22 | 0.1.0 | Rust edition 2024, all clippy warnings fixed, dependencies verified |

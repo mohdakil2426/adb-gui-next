@@ -65,7 +65,7 @@ export function MainLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
-  const { togglePanel, isOpen: isLogOpen, setActiveTab, unreadCount } = useLogStore();
+  const { togglePanel, isOpen: isLogOpen, setActiveTab, unreadCount, activeTab } = useLogStore();
 
   const handleLaunchDeviceManager = async () => {
     try {
@@ -352,7 +352,7 @@ export function MainLayout() {
                         size="icon"
                         className={cn(
                           'rounded-full shadow-md transition-all',
-                          isLogOpen && useLogStore.getState().activeTab === 'shell'
+                          isLogOpen && activeTab === 'shell'
                             ? 'bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90'
                             : 'bg-card text-foreground hover:bg-muted hover:text-foreground',
                         )}
@@ -372,7 +372,7 @@ export function MainLayout() {
                         size="icon"
                         className={cn(
                           'rounded-full shadow-md transition-all relative',
-                          isLogOpen && useLogStore.getState().activeTab === 'logs'
+                          isLogOpen && activeTab === 'logs'
                             ? 'bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90'
                             : 'bg-card text-foreground hover:bg-muted hover:text-foreground',
                         )}

@@ -32,12 +32,11 @@ ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastb
 4. **File Explorer** — List, push, pull files
 5. **Flasher** — Fastboot flash, reboot, wipe, slot management
 6. **Utilities** — Reboot modes, bootloader variables, device manager
-7. **Shell** — Run shell commands on device
-8. **Payload Dumper** — Extract OTA payload.bin partitions
-9. **Global Logs Panel** — Timestamped operation logs
+7. **Payload Dumper** — Extract OTA payload.bin partitions
+8. **Bottom Panel** — VS Code-style panel with Logs tab (filtered, searchable) and Shell tab (adb/fastboot commands)
 
 ## Current Version
 
 - Version: 0.1.0
 - Rust Edition: 2024
-- Last Updated: 2026-03-22
+- Last Updated: 2026-03-23

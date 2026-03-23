@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { handleError } from '@/lib/errorHandler';
+
 import { debugLog } from '@/lib/debug';
 import { queryKeys, fetchAllDevices } from '@/lib/queries';
-import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 
 import {
   Reboot,
@@ -29,11 +28,20 @@ import {
   Smartphone,
   Info,
   Save,
-  Copy,
 } from 'lucide-react';
 import { useLogStore } from '@/lib/logStore';
 import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { CopyButton } from '@/components/CopyButton';
+import { SectionHeader } from '@/components/SectionHeader';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,9 +68,6 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
   // Nickname Editing State
   const [isEditing, setIsEditing] = useState(false);
   const [nicknameVersion, setNicknameVersion] = useState(0);
-
-  const refreshTimeout = null;
-  void (refreshTimeout && handleError);
 
   const {
     data: allDevices = [],
@@ -204,16 +209,6 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
     }
   };
 
-  const handleCopyGetVars = async () => {
-    if (!getVarContent) return;
-    try {
-      await writeText(getVarContent);
-      toast.success('Copied to clipboard');
-    } catch (error) {
-      toast.error('Failed to copy', { description: String(error) });
-    }
-  };
-
   const handleWipeData = async () => {
     setLoadingAction('wipe_data');
     const toastId = toast.loading('Wiping User Data (this may take a while)...');
@@ -276,9 +271,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Power Menu
-              </h4>
+              <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="outline"
@@ -320,9 +313,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Server Control
-              </h4>
+              <SectionHeader>Server Control</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="secondary"
@@ -366,9 +357,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Power Menu
-              </h4>
+              <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="outline"
@@ -401,9 +390,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Slot Management
-              </h4>
+              <SectionHeader>Slot Management</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
                   variant="secondary"
@@ -435,9 +422,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Device Operations
-              </h4>
+              <SectionHeader>Device Operations</SectionHeader>
               <div className="grid grid-cols-1 gap-3">
                 <Button
                   variant="secondary"
@@ -489,30 +474,22 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
         </Card>
       </div>
 
-      {/* Dialog for GetVar All Output - Using AlertDialog as fallback */}
-      <AlertDialog open={showGetVarDialog} onOpenChange={setShowGetVarDialog}>
-        <AlertDialogContent className="w-[95vw] max-w-2xl max-h-[80vh] flex flex-col">
-          <AlertDialogHeader>
+      {/* Dialog for GetVar All Output */}
+      <Dialog open={showGetVarDialog} onOpenChange={setShowGetVarDialog}>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <AlertDialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2">
                   <FileJson className="h-5 w-5" />
                   Fastboot Variables
-                </AlertDialogTitle>
-                <AlertDialogDescription>
+                </DialogTitle>
+                <DialogDescription>
                   Output of <code>fastboot getvar all</code>
-                </AlertDialogDescription>
+                </DialogDescription>
               </div>
               <div className="flex gap-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleCopyGetVars}
-                  disabled={!getVarContent}
-                  title="Copy to Clipboard"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <CopyButton value={getVarContent} label="Variables" />
                 <Button
                   size="icon"
                   variant="outline"
@@ -524,17 +501,19 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                 </Button>
               </div>
             </div>
-          </AlertDialogHeader>
+          </DialogHeader>
           <div className="rounded-md border bg-muted/50 p-4 max-h-[60vh] overflow-y-auto">
             <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
               {getVarContent || 'No output received.'}
             </pre>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Close</AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGetVarDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

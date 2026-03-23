@@ -115,9 +115,7 @@ export function BottomPanel() {
       await writeText(text);
       toast.info('Logs copied to clipboard');
     } catch {
-      // Fallback for environments without Tauri clipboard
-      navigator.clipboard.writeText(text);
-      toast.info('Logs copied to clipboard');
+      toast.error('Failed to copy logs to clipboard');
     }
   };
 

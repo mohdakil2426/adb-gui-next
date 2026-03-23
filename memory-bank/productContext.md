@@ -52,4 +52,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-03-22
+- Last Updated: 2026-03-23

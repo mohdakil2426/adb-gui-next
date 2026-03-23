@@ -15,11 +15,12 @@
 | React Hook Form | ^7.72.0 | Form state management |
 | Zod | ^4.3.6 | Schema validation |
 | Framer Motion | ^12.38.0 | Animations |
-| Radix UI | Various | shadcn primitives |
+| Radix UI | Various | shadcn primitives (incl. tabs) |
 | lucide-react | ^0.577.0 | Icons |
 | next-themes | ^0.4.6 | Light/dark/system theme |
 | sonner | ^2.0.7 | Toast notifications |
 | @tauri-apps/api | ^2.10.1 | Tauri frontend API |
+| @tanstack/react-virtual | ^3.13.23 | Virtualized list rendering |
 | @tauri-apps/plugin-dialog | ^2.6.0 | Native dialogs |
 | @tauri-apps/plugin-opener | ^2.5.3 | URL/file opener |
 | @tauri-apps/plugin-clipboard-manager | ^2.3.2 | Clipboard read/write |
@@ -99,15 +100,21 @@
 │   ├── main.tsx                  # Entry point
 │   ├── App.tsx                   # Root component
 │   ├── components/               # UI components
-│   │   ├── MainLayout.tsx        # App shell
-│   │   ├── ui/                   # shadcn primitives
-│   │   └── views/                # 8 feature views
+│   │   ├── MainLayout.tsx        # App shell (sidebar + views + bottom panel)
+│   │   ├── BottomPanel.tsx       # VS Code-style bottom panel container
+│   │   ├── LogsPanel.tsx         # Filtered log viewer
+│   │   ├── ShellPanel.tsx        # Interactive ADB/fastboot terminal
+│   │   ├── ui/                   # 12 shadcn primitives (incl. tabs)
+│   │   └── views/                # 7 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
-│   │   ├── *Store.ts             # Zustand stores
+│   │   ├── logStore.ts           # Log panel state (ring buffer, filter, search)
+│   │   ├── shellStore.ts         # Shell history state
+│   │   ├── deviceStore.ts        # Device state
+│   │   ├── payloadDumperStore.ts # Payload dumper state
 │   │   └── desktop/              # Tauri abstraction layer
 │   └── styles/
-│       └── global.css            # Tailwind v4 config + theme
+│       └── global.css            # Tailwind v4 config + theme + terminal tokens
 └── src-tauri/
     ├── Cargo.toml                # Rust deps (edition 2024)
     ├── src/
@@ -160,4 +167,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-03-22 (payload dumper overhaul — Arc<Mmap>, streaming decompression, TanStack Query, Vitest)
+- **Last Updated**: 2026-03-23 (VS Code-style bottom panel overhaul)

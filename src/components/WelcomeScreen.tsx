@@ -1,4 +1,6 @@
 import React from 'react';
+import { Progress } from '@/components/ui/progress';
+
 type WelcomeScreenProps = {
   progress: number;
 };
@@ -13,19 +15,8 @@ export function WelcomeScreen({ progress }: WelcomeScreenProps) {
 
         <div className="w-56 space-y-2">
           <h1 className="text-xl font-bold text-foreground text-center">ADB GUI Next</h1>
-
-          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
-              style={{ width: `${clampedProgress}%` }}
-            />
-          </div>
-          {/* <p className="text-center text-xs text-muted-foreground">
-            Loading app... {Math.round(clampedProgress)}%
-          </p> */}
+          <Progress value={clampedProgress} className="h-2" />
         </div>
-
-        {/* <Loader2 className="h-6 w-6 animate-spin text-primary" /> */}
       </div>
     </div>
   );

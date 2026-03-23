@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
@@ -25,9 +26,22 @@ import {
 import { buttonVariants } from '@/components/ui/button-variants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Loader2, Package, Trash2, FileUp, RefreshCw, Search } from 'lucide-react';
+import { Loader2, Package, Trash2, FileUp, RefreshCw, Search, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
+import { getFileName } from '@/lib/utils';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const [apkPaths, setApkPaths] = useState<string[]>([]);
@@ -40,6 +54,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+  const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
 
   const [isUninstalling, setIsUninstalling] = useState(false);
 
@@ -67,16 +82,27 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
     const normalizedSearchQuery = searchQuery.toLowerCase();
 
     return packages
-      .filter((pkg) => pkg.name.toLowerCase().includes(normalizedSearchQuery))
+      .filter((pkg) => {
+        if (packageFilter !== 'all' && pkg.packageType !== packageFilter) return false;
+        return pkg.name.toLowerCase().includes(normalizedSearchQuery);
+      })
       .sort((a, b) => {
         const aSelected = selectedPackages.has(a.name);
         const bSelected = selectedPackages.has(b.name);
         if (aSelected && !bSelected) return -1;
         if (!aSelected && bSelected) return 1;
         return 0;
-      })
-      .slice(0, 50);
-  }, [packages, searchQuery, selectedPackages]);
+      });
+  }, [packages, searchQuery, selectedPackages, packageFilter]);
+
+  const packageListRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredPackages.length,
+    getScrollElement: () => packageListRef.current,
+    estimateSize: () => 36,
+    overscan: 5,
+  });
 
   const handleSelectApk = async () => {
     try {
@@ -108,7 +134,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
     for (let i = 0; i < apkPaths.length; i++) {
       const path = apkPaths[i];
-      const fileName = path.split(/[/\\]/).pop();
+      const fileName = getFileName(path);
 
       toast.loading(`Installing (${i + 1}/${apkPaths.length}): ${fileName}`, { id: toastId });
       setInstallProgress({ current: i + 1, total: apkPaths.length });
@@ -250,23 +276,12 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
             </div>
           </div>
 
-          {apkPaths.length > 0 && (
-            <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
-              <span>
-                Selected: <span className="font-medium text-foreground">{apkPaths.length}</span>{' '}
-                file(s)
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-                onClick={() => setApkPaths([])}
-                disabled={isInstalling}
-              >
-                Clear Selection
-              </Button>
-            </div>
-          )}
+          <SelectionSummaryBar
+            count={apkPaths.length}
+            label="file(s)"
+            onClear={() => setApkPaths([])}
+            disabled={isInstalling}
+          />
 
           <Button
             variant="default"
@@ -306,7 +321,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -319,86 +334,119 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                 <RefreshCw className="h-4 w-4" />
               )}
             </Button>
-            <div className="flex-1 text-sm text-muted-foreground flex items-center">
-              {isLoadingPackages ? 'Loading packages...' : `${packages.length} packages found`}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="capitalize">
+                    {packageFilter === 'all' ? 'All Packages' : `${packageFilter} Apps`}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  value={packageFilter}
+                  onValueChange={(value) => setPackageFilter(value as 'all' | 'user' | 'system')}
+                >
+                  <DropdownMenuRadioItem value="all">All ({packages.length})</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="user">
+                    User ({packages.filter((p) => p.packageType === 'user').length})
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">
+                    System ({packages.filter((p) => p.packageType === 'system').length})
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="flex-1 text-sm text-muted-foreground flex items-center justify-end">
+              {isLoadingPackages
+                ? 'Loading packages...'
+                : `${filteredPackages.length} of ${packages.length} packages`}
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Select Package</label>
             <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
               <div className="flex items-center border-b px-3">
                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                <input
-                  className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                <Input
+                  className="h-10 border-none shadow-none focus-visible:ring-0 bg-transparent px-0"
                   placeholder="Search packages..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="max-h-75 overflow-y-auto p-1">
+              <div ref={packageListRef} className="h-75 overflow-y-auto">
                 {filteredPackages.length === 0 ? (
                   <div className="py-6 text-center text-sm">No packages found.</div>
                 ) : (
-                  filteredPackages.map((pkg) => {
-                    const isSelected = selectedPackages.has(pkg.name);
-                    return (
-                      <div
-                        key={pkg.name}
-                        onClick={() => togglePackage(pkg.name)}
-                        className={cn(
-                          'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                          isSelected && 'bg-accent text-accent-foreground',
-                        )}
-                      >
+                  <div
+                    style={{
+                      height: `${rowVirtualizer.getTotalSize()}px`,
+                      width: '100%',
+                      position: 'relative',
+                    }}
+                  >
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                      const pkg = filteredPackages[virtualRow.index];
+                      const isSelected = selectedPackages.has(pkg.name);
+                      return (
                         <div
+                          key={pkg.name}
+                          onClick={() => togglePackage(pkg.name)}
                           className={cn(
-                            'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-                            isSelected
-                              ? 'bg-primary text-primary-foreground'
-                              : 'opacity-50 [&_svg]:invisible',
+                            'absolute left-0 w-full flex cursor-pointer select-none items-center rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                            isSelected && 'bg-accent text-accent-foreground',
                           )}
+                          style={{
+                            height: `${virtualRow.size}px`,
+                            transform: `translateY(${virtualRow.start}px)`,
+                          }}
                         >
-                          <svg
-                            className={cn('h-3 w-3', isSelected ? 'visible' : 'invisible')}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={3}
+                          <div
+                            className={cn(
+                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
+                              isSelected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'opacity-50 [&_svg]:invisible',
+                            )}
                           >
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
+                            <svg
+                              className={cn('h-3 w-3', isSelected ? 'visible' : 'invisible')}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={3}
+                            >
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          </div>
+                          <Package className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm truncate flex-1">{pkg.name}</span>
+                          <Badge
+                            variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
+                            className="ml-2 shrink-0 text-[10px] px-1.5 py-0"
+                          >
+                            {pkg.packageType}
+                          </Badge>
                         </div>
-                        <Package className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{pkg.name}</span>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>
-            <div className="text-xs text-muted-foreground text-right px-1">
-              Showing {filteredPackages.length} of {packages.length}
-            </div>
           </div>
 
-          {selectedPackages.size > 0 && (
-            <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
-              <span>
-                Selected:{' '}
-                <span className="font-medium text-foreground">{selectedPackages.size}</span>{' '}
-                package(s)
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-muted-foreground hover:text-destructive"
-                onClick={() => setSelectedPackages(new Set())}
-              >
-                Clear Selection
-              </Button>
-            </div>
-          )}
+          <SelectionSummaryBar
+            count={selectedPackages.size}
+            label="package(s)"
+            onClear={() => setSelectedPackages(new Set())}
+          />
 
           <AlertDialog>
             <AlertDialogTrigger asChild>

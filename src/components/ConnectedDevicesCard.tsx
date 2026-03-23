@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Smartphone, RefreshCw, Loader2, Pencil } from 'lucide-react';
 import { getNickname } from '@/lib/nicknameStore';
 
@@ -17,6 +18,22 @@ interface ConnectedDevicesCardProps {
   emptyText?: string;
   className?: string;
   isRefreshDisabled?: boolean;
+}
+
+type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
+
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant }> = {
+  device: { label: 'adb', variant: 'default' },
+  fastboot: { label: 'fastboot', variant: 'secondary' },
+  bootloader: { label: 'bootloader', variant: 'secondary' },
+  recovery: { label: 'recovery', variant: 'outline' },
+  sideload: { label: 'sideload', variant: 'outline' },
+  unauthorized: { label: 'unauthorized', variant: 'destructive' },
+  offline: { label: 'offline', variant: 'destructive' },
+};
+
+function getStatusConfig(status: string): { label: string; variant: BadgeVariant } {
+  return STATUS_CONFIG[status.toLowerCase()] ?? { label: status.toLowerCase(), variant: 'outline' };
 }
 
 export function ConnectedDevicesCard({
@@ -58,18 +75,7 @@ export function ConnectedDevicesCard({
             {devices.map((device) => {
               const displayName = getNickname(device.serial) || device.serial;
               const description = displayName !== device.serial ? device.serial : undefined;
-
-              let statusText = device.status.toLowerCase();
-              let statusColor = 'text-yellow-500';
-
-              if (device.status === 'device') {
-                statusText = 'adb';
-                statusColor = 'text-green-500';
-              } else if (device.status === 'fastboot') {
-                statusColor = 'text-blue-500';
-              } else if (device.status === 'unauthorized') {
-                statusColor = 'text-red-500';
-              }
+              const { label, variant } = getStatusConfig(device.status);
 
               return (
                 <div
@@ -84,7 +90,7 @@ export function ConnectedDevicesCard({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className={`font-semibold ${statusColor}`}>{statusText}</span>
+                    <Badge variant={variant}>{label}</Badge>
                     <Button
                       variant="ghost"
                       size="icon"
