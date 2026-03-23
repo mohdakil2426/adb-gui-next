@@ -5,6 +5,7 @@ import { LogsPanel } from './LogsPanel';
 import { ShellPanel } from './ShellPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Logs,
@@ -317,7 +318,7 @@ export function BottomPanel() {
             )}
 
             {/* Divider */}
-            <div className="w-px h-4 mx-1" style={{ backgroundColor: 'var(--terminal-border)' }} />
+            <Separator orientation="vertical" className="mx-1 h-4" />
 
             {/* Copy logs */}
             {activeTab === 'logs' && logs.length > 0 && (

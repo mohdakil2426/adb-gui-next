@@ -189,12 +189,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Wifi />
+            <Wifi className="h-5 w-5" />
             Wireless ADB Connection
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <p className="font-medium">Step 1: Enable (via USB)</p>
             <p className="text-sm text-muted-foreground">
               Make sure the device is connected with a USB cable, then click this button..
@@ -213,12 +213,15 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             </Button>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <p className="font-medium">Step 2: Connect (via WiFi)</p>
             <p className="text-sm text-muted-foreground">
               Enter the Device IP (usually automatically filled in) and Port.
             </p>
-            <form onSubmit={wirelessForm.handleSubmit(handleConnect)} className="space-y-3">
+            <form
+              onSubmit={wirelessForm.handleSubmit(handleConnect)}
+              className="flex flex-col gap-3"
+            >
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Input
@@ -281,7 +284,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2">
-            <Info />
+            <Info className="h-5 w-5" />
             Device Info
           </CardTitle>
           <Button
@@ -304,54 +307,70 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             <p className="text-muted-foreground">Click "Refresh Info" to load data.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <InfoItem icon={<Building size={18} />} label="Brand" value={deviceInfo.brand} />
               <InfoItem
-                icon={<Tag size={18} />}
+                icon={<Building className="h-4 w-4" />}
+                label="Brand"
+                value={deviceInfo.brand}
+              />
+              <InfoItem
+                icon={<Tag className="h-4 w-4" />}
                 label="Device Name"
                 value={deviceInfo.deviceName}
               />
-              <InfoItem icon={<Code size={18} />} label="Codename" value={deviceInfo.codename} />
-              <InfoItem icon={<Smartphone size={18} />} label="Model" value={deviceInfo.model} />
               <InfoItem
-                icon={<Hash size={18} />}
+                icon={<Code className="h-4 w-4" />}
+                label="Codename"
+                value={deviceInfo.codename}
+              />
+              <InfoItem
+                icon={<Smartphone className="h-4 w-4" />}
+                label="Model"
+                value={deviceInfo.model}
+              />
+              <InfoItem
+                icon={<Hash className="h-4 w-4" />}
                 label="Serial Number"
                 value={deviceInfo.serial}
                 copyable
               />
               <InfoItem
-                icon={<Server size={18} />}
+                icon={<Server className="h-4 w-4" />}
                 label="Build Number"
                 value={deviceInfo.buildNumber}
               />
               <InfoItem
-                icon={<Info size={18} />}
+                icon={<Info className="h-4 w-4" />}
                 label="Android Version"
                 value={deviceInfo.androidVersion}
               />
               <InfoItem
-                icon={<Battery size={18} />}
+                icon={<Battery className="h-4 w-4" />}
                 label="Battery"
                 value={deviceInfo.batteryLevel}
               />
-              <InfoItem icon={<Cpu size={18} />} label="Total RAM" value={deviceInfo.ramTotal} />
               <InfoItem
-                icon={<Database size={18} />}
+                icon={<Cpu className="h-4 w-4" />}
+                label="Total RAM"
+                value={deviceInfo.ramTotal}
+              />
+              <InfoItem
+                icon={<Database className="h-4 w-4" />}
                 label="Internal Storage"
                 value={deviceInfo.storageInfo}
               />
               <InfoItem
-                icon={<Wifi size={18} />}
+                icon={<Wifi className="h-4 w-4" />}
                 label="IP Address"
                 value={deviceInfo.ipAddress}
                 copyable
               />
               <InfoItem
-                icon={<ShieldCheck size={18} />}
+                icon={<ShieldCheck className="h-4 w-4" />}
                 label="Root Status"
                 value={deviceInfo.rootStatus}
                 valueClassName={
                   deviceInfo.rootStatus === 'Yes'
-                    ? 'text-green-500 font-bold'
+                    ? 'text-success font-bold'
                     : 'text-muted-foreground'
                 }
               />

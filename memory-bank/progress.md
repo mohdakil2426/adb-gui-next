@@ -11,19 +11,33 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail
+- `sidebar-context.ts` holds non-component exports (constants, context, hook) — Fast Refresh clean
 - `Ctrl+B` keyboard shortcut for sidebar toggle
 - 7 sidebar views compile and build successfully
 - VS Code-style bottom panel with Logs and Shell tabs
 - Proper header bar with SidebarTrigger + toolbar buttons (Device Manager, Terminal, Shell, Logs)
-- shadcn/ui components (20 primitives: sidebar, sheet, collapsible, badge, progress, dialog, etc.) with Tailwind CSS v4
+- shadcn/ui components (20+ primitives) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
-- Framer Motion animations
+- Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
-- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`
+- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`
 - `getFileName()` utility in `utils.ts`
-- `models.ts` DTOs migrated from Wails-2 classes to plain TypeScript interfaces
+- `models.ts` DTOs as plain TypeScript interfaces
+
+### UI Consistency (~95%)
+
+- All CardTitle icons: `className="h-5 w-5"` (no unsized icons, no `size={N}` prop)
+- All inline/list icons: `className="h-4 w-4"`
+- All in-button icons: `shrink-0` present
+- All form labels: shadcn `<Label>` (no raw `<label className="...">`)
+- All destructive AlertDialogAction: `buttonVariants({ variant: 'destructive' })`
+- Semantic color tokens everywhere: `text-success`, `bg-success`, `border-success` (no `[var(--terminal-log-success)]` in className)
+- All internal imports use `@/` alias
+- All clickable div lists have `role`/`aria-*`/`tabIndex`/`onKeyDown`
+- `CheckboxItem` shared component used in AppManager + PayloadDumper
+- `EmptyState` shared component used in AppManager
 
 ### Backend (26 Tauri Commands)
 
@@ -52,23 +66,18 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 - Windows debug MSI and NSIS bundles build successfully
 - Platform-specific resource bundling configured
-- Payload protobuf compilation uses local `src-tauri/` source file
 
 ### Tooling & Quality
 
 - React Strict Mode enabled
 - TypeScript strict mode enabled
 - ESLint 10 flat config active for web app
-- Prettier 3.8.1 active for web app
+- Prettier active for web app
 - cargo fmt (Rust edition 2024) active
 - cargo clippy with `-D warnings` (strict) active
 - `pnpm check` runs full verification workflow
-- 21 JS/TS tests + 8 Rust tests passing
-- `tauri-plugin-log` for structured logging (Stdout + LogDir + Webview)
-- `errorHandler.ts` for centralized frontend error handling
-- `debug.ts` for debug logging and performance timing
 
-## Rust Code Structure (Refactored)
+## Rust Code Structure
 
 ```
 src-tauri/src/
@@ -81,7 +90,7 @@ src-tauri/src/
 │   ├── fastboot.rs — flash_partition, reboot, wipe_data, set_active_slot
 │   ├── files.rs — list_files, push_file, pull_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
-│   ├── system.rs — greet, open_folder, save_log, launch_terminal
+│   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
 │   └── payload.rs — payload command wrappers
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
@@ -93,8 +102,9 @@ src-tauri/src/
 
 ## Documentation
 
-- `docs/rust-audit-report.md` — Code quality audit (scores: 6.6→7.7)
-- `docs/rust-performance-research.md` — Performance optimization research (KISS-ordered)
+- `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
+- `docs/rust-audit-report.md` — Code quality audit
+- `docs/rust-performance-research.md` — Performance optimization research
 
 ## Performance Optimizations (Implemented)
 
@@ -111,19 +121,22 @@ src-tauri/src/
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form |
+| Low | Adopt EmptyState in remaining views | FileExplorer empty dir, Dashboard empty device list |
 | Low | Run device-backed parity tests | Need real Android devices |
 
 ## Risks / Known Issues
 
 - Large frontend bundle chunk warning during build (589KB JS)
 - Bottom panel Shell tab needs manual verification with `pnpm tauri dev`
+- `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |
 | 2026-03-23 | 0.1.0 | shadcn Sidebar migration: `AppSidebar.tsx`, grouped nav, `SidebarProvider`/`SidebarInset`, header bar with `SidebarTrigger`, `Ctrl+B` shortcut |
-| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption (badge/progress/dialog/separator/skeleton), shared components, semantic token fixes, models.ts interface migration |
+| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption, shared components, semantic token fixes, models.ts interface migration |
 | 2026-03-23 | 0.1.0 | App Manager: virtualized list + user/system package filter |
 | 2026-03-23 | 0.1.0 | VS Code-style bottom panel overhaul (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |
 | 2026-03-22 | 0.1.0 | Payload dumper overhaul, dependency integration, debugging infrastructure |

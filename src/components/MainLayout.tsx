@@ -242,12 +242,7 @@ export function MainLayout() {
             {/* Main content area */}
             <div className="flex flex-1 flex-col overflow-hidden">
               <div className="flex-1 overflow-auto custom-scroll">
-                <div
-                  className={cn(
-                    'min-h-full min-w-(--content-min-width)',
-                    activeView === VIEWS.ABOUT ? 'p-4 sm:p-6' : 'p-4 sm:p-6',
-                  )}
-                >
+                <div className="min-h-full min-w-(--content-min-width) p-4 sm:p-6">
                   <div className="max-w-(--content-max-width) mx-auto">
                     <AnimatePresence mode="wait">
                       <motion.div

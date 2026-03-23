@@ -9,14 +9,14 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
       {/* Hero Section */}
-      <div className="flex flex-col items-center justify-center text-center py-12 space-y-4">
+      <div className="flex flex-col items-center justify-center text-center py-12 gap-4">
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
           <img src="/logo.png" alt="Logo" className="relative w-24 h-24 object-contain" />
         </div>
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             ADB GUI Next
           </h1>
@@ -43,11 +43,11 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Rocket className="w-5 h-5 text-primary" />
+              <Rocket className="size-5 text-primary" />
               Mission
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex flex-col gap-4">
             <p className="text-muted-foreground">
               ADB GUI Next exists to make Android device workflows faster, clearer, and safer.
               Whether you're debugging, flashing, transferring files, or extracting payloads, the
@@ -55,11 +55,11 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Smartphone className="w-4 h-4" />
+                <Smartphone className="size-4" />
                 <span>Device Management</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Code2 className="w-4 h-4" />
+                <Code2 className="size-4" />
                 <span>Terminal Shell</span>
               </div>
             </div>
@@ -70,12 +70,12 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" />
+              <Globe className="size-5 text-primary" />
               Project
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-2">
+          <CardContent className="flex flex-col gap-4">
+            <div className="rounded-lg border border-border/50 bg-muted/30 p-4 flex flex-col gap-2">
               <p className="text-sm font-medium">Rust-first Tauri desktop app</p>
               <p className="text-sm text-muted-foreground">
                 The live application is built and maintained in this Tauri + Rust codebase. Legacy
@@ -85,7 +85,7 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 flex items-center gap-3 border border-border/50">
-              <Heart className="w-5 h-5 text-destructive fill-destructive/20" />
+              <Heart className="size-5 text-destructive fill-destructive/20" />
               <div className="flex-1">
                 <p className="text-sm font-medium">Built with care</p>
                 <p className="text-xs text-muted-foreground">Powered by Tauri, React & Rust</p>
@@ -96,16 +96,15 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
       </div>
 
       {/* Credits / Footer */}
-      <div className="text-center text-sm text-muted-foreground py-6 space-y-1">
+      <div className="text-center text-sm text-muted-foreground py-6 flex flex-col gap-1">
         <p>
           ADB GUI Next by{' '}
-          <a
-            href="https://github.com/mohdakil2426"
-            className="font-semibold text-foreground hover:underline cursor-pointer"
+          <button
+            className="font-semibold text-foreground hover:underline cursor-pointer bg-transparent border-none p-0"
             onClick={() => openLink('https://github.com/mohdakil2426')}
           >
             AKIL
-          </a>{' '}
+          </button>{' '}
           © 2025
         </p>
       </div>

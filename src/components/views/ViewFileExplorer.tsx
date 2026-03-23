@@ -298,7 +298,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             <Table>
               <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                 <TableRow>
-                  <TableHead className="w-12.5"></TableHead>
+                  <TableHead className="w-12"></TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Date</TableHead>

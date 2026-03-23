@@ -11,9 +11,9 @@ export function WelcomeScreen({ progress }: WelcomeScreenProps) {
   return (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-6">
-        <img src="/logo.png" alt="ADB GUI Next logo" className="h-20 w-20 object-contain" />
+        <img src="/logo.png" alt="ADB GUI Next logo" className="size-20 object-contain" />
 
-        <div className="w-56 space-y-2">
+        <div className="w-56 flex flex-col gap-2">
           <h1 className="text-xl font-bold text-foreground text-center">ADB GUI Next</h1>
           <Progress value={clampedProgress} className="h-2" />
         </div>

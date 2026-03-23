@@ -40,8 +40,11 @@ import { Loader2, Package, Trash2, FileUp, RefreshCw, Search, Filter } from 'luc
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import { getFileName } from '@/lib/utils';
+import { CheckboxItem } from '@/components/CheckboxItem';
+import { EmptyState } from '@/components/EmptyState';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const [apkPaths, setApkPaths] = useState<string[]>([]);
@@ -215,14 +218,14 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package />
+            <Package className="h-5 w-5" />
             Install APK
           </CardTitle>
           <CardDescription>
             Select .apk or .apks files from your computer to install them on your device.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           <Button
             variant="outline"
             className="w-full"
@@ -233,9 +236,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
             Select App Files
           </Button>
 
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Selected Apk</label>
+              <Label>Selected Apk</Label>
             </div>
 
             <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
@@ -298,9 +301,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
             <span className="relative z-10 flex items-center">
               {isInstalling ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
               ) : (
-                <Package className="mr-2 h-4 w-4" />
+                <Package className="mr-2 h-4 w-4 shrink-0" />
               )}
               {isInstalling
                 ? `Installing ${installProgress?.current}/${installProgress?.total}...`
@@ -313,14 +316,14 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Trash2 />
+            <Trash2 className="h-5 w-5" />
             Uninstall Package
           </CardTitle>
           <CardDescription>
             Search and select a package to uninstall it from your device.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -369,7 +372,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
               <div className="flex items-center border-b px-3">
                 <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -380,9 +383,19 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div ref={packageListRef} className="h-75 overflow-y-auto">
+              <div
+                ref={packageListRef}
+                className="h-75 overflow-y-auto"
+                role="listbox"
+                aria-label="Installed packages"
+                aria-multiselectable="true"
+              >
                 {filteredPackages.length === 0 ? (
-                  <div className="py-6 text-center text-sm">No packages found.</div>
+                  <EmptyState
+                    description={
+                      searchQuery ? 'No packages match your search.' : 'No packages found.'
+                    }
+                  />
                 ) : (
                   <div
                     style={{
@@ -398,8 +411,17 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                         <div
                           key={pkg.name}
                           onClick={() => togglePackage(pkg.name)}
+                          role="option"
+                          aria-selected={isSelected}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === ' ' || e.key === 'Enter') {
+                              e.preventDefault();
+                              togglePackage(pkg.name);
+                            }
+                          }}
                           className={cn(
-                            'absolute left-0 w-full flex cursor-pointer select-none items-center rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                            'absolute left-0 w-full flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
                             isSelected && 'bg-accent text-accent-foreground',
                           )}
                           style={{
@@ -407,24 +429,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
                         >
-                          <div
-                            className={cn(
-                              'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary shrink-0',
-                              isSelected
-                                ? 'bg-primary text-primary-foreground'
-                                : 'opacity-50 [&_svg]:invisible',
-                            )}
-                          >
-                            <svg
-                              className={cn('h-3 w-3', isSelected ? 'visible' : 'invisible')}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={3}
-                            >
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                          </div>
+                          <CheckboxItem checked={isSelected} />
                           <Package className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-sm truncate flex-1">{pkg.name}</span>
                           <Badge
@@ -476,7 +481,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                   </div>
                   <br />
                   This action cannot be undone.
-                  <div className="mt-4 p-3 border border-yellow-500/20 bg-yellow-500/10 rounded-md text-yellow-600 dark:text-yellow-500 text-xs text-left">
+                  <div className="mt-4 p-3 border border-warning/20 bg-warning/10 rounded-md text-warning-foreground text-xs text-left">
                     <span className="font-bold">Disclaimer:</span> ADB GUI Next is not responsible
                     for any system instability, bootloops, or data loss resulting from uninstalling
                     packages. Please verify that these packages are safe to remove.
@@ -491,9 +496,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                   disabled={isUninstalling}
                 >
                   {isUninstalling ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Yes, Uninstall
                 </AlertDialogAction>

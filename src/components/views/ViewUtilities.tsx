@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button-variants';
 
 type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
 type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
@@ -269,8 +270,8 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
             </CardTitle>
             <CardDescription>Operations requiring USB Debugging enabled.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
+          <CardContent className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
@@ -312,7 +313,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <SectionHeader>Server Control</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
@@ -322,9 +323,9 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                   className="justify-start pl-4"
                 >
                   {isActionLoading('restart_server') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
+                    <RefreshCw className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Restart ADB Server
                 </Button>
@@ -335,9 +336,9 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                   className="justify-start pl-4 hover:bg-destructive/10 hover:text-destructive"
                 >
                   {isActionLoading('kill_server') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <Server className="mr-2 h-4 w-4" />
+                    <Server className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Kill ADB Server
                 </Button>
@@ -355,8 +356,8 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
             </CardTitle>
             <CardDescription>Operations requiring Bootloader/Fastboot mode.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
+          <CardContent className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
@@ -389,7 +390,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <SectionHeader>Slot Management</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Button
@@ -399,9 +400,9 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                   className="justify-start pl-4"
                 >
                   {isActionLoading('set_active_a') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <Zap className="mr-2 h-4 w-4" />
+                    <Zap className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Activate Slot A
                 </Button>
@@ -412,16 +413,16 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                   className="justify-start pl-4"
                 >
                   {isActionLoading('set_active_b') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <Zap className="mr-2 h-4 w-4" />
+                    <Zap className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Activate Slot B
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <SectionHeader>Device Operations</SectionHeader>
               <div className="grid grid-cols-1 gap-3">
                 <Button
@@ -431,9 +432,9 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                   className="justify-start pl-4"
                 >
                   {isActionLoading('get_vars') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                   ) : (
-                    <Info className="mr-2 h-4 w-4" />
+                    <Info className="mr-2 h-4 w-4 shrink-0" />
                   )}
                   Get Device Variables (GetVar All)
                 </Button>
@@ -461,7 +462,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleWipeData}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className={buttonVariants({ variant: 'destructive' })}
                       >
                         Yes, Wipe Data
                       </AlertDialogAction>
@@ -479,7 +480,7 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
         <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="flex flex-col gap-1">
                 <DialogTitle className="flex items-center gap-2">
                   <FileJson className="h-5 w-5" />
                   Fastboot Variables

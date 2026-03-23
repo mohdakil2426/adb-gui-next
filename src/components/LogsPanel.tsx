@@ -20,7 +20,7 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
     <>
       {parts.map((part, i) =>
         part.toLowerCase() === query.toLowerCase() ? (
-          <mark key={i} className="bg-yellow-500/30 text-inherit rounded-sm px-0.5">
+          <mark key={i} className="bg-warning/30 text-inherit rounded-sm px-0.5">
             {part}
           </mark>
         ) : (

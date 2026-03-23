@@ -20,6 +20,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Progress feedback and logging for long-running operations
 - Practical, task-oriented feature flows
 - Light/dark/system theme support
+- ~95% UI consistency: semantic tokens, standardized icons, accessible clickable lists, shared components
 
 ## Product Boundaries
 
@@ -52,4 +53,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-03-23
+- Last Updated: 2026-03-23 (UI consistency audit & fixes)

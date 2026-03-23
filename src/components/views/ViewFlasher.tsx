@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button-variants';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, FileUp, Trash2, Package } from 'lucide-react';
 import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
@@ -198,17 +200,15 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            <FileUp />
+          <CardTitle className="flex items-center gap-2">
+            <FileUp className="h-5 w-5" />
             Flash Partition
           </CardTitle>
           <CardDescription>Flash an image file (.img) to a specific partition.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="partition" className="text-sm font-medium">
-              Partition Name
-            </label>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="partition">Partition Name</Label>
             <Input
               id="partition"
               placeholder="e.g., boot, recovery, vendor_boot"
@@ -218,8 +218,8 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Image File (.img)</label>
+          <div className="flex flex-col gap-2">
+            <Label>Image File (.img)</Label>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -242,7 +242,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
             onClick={handleFlash}
           >
             {isFlashing ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
             ) : (
               <FileUp className="mr-2 h-4 w-4" />
             )}
@@ -253,17 +253,17 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            <Package />
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
             Recovery Sideload
           </CardTitle>
           <CardDescription>
             Send a flashable ZIP via adb sideload while your device is in recovery.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Flashable ZIP (.zip)</label>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>Flashable ZIP (.zip)</Label>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -290,9 +290,9 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
             onClick={handleSideload}
           >
             {isSideloading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
             ) : (
-              <Package className="mr-2 h-4 w-4" />
+              <Package className="mr-2 h-4 w-4 shrink-0" />
             )}
             Sideload Package
           </Button>
@@ -301,8 +301,8 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
       <Card className="border-destructive">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg text-destructive">
-            <AlertTriangle />
+          <CardTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
             Danger Zone
           </CardTitle>
           <CardDescription>
@@ -318,9 +318,9 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
                 disabled={isWiping || !hasFastbootDevice}
               >
                 {isWiping ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
                 ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4 shrink-0" />
                 )}
                 Wipe Data (Factory Reset)
               </Button>
@@ -336,7 +336,7 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-destructive hover:bg-destructive/90"
+                  className={buttonVariants({ variant: 'destructive' })}
                   onClick={handleWipe}
                 >
                   Yes, Wipe Data

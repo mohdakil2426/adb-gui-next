@@ -11,14 +11,13 @@ import {
   RefreshCw,
   Download,
   HardDrive,
-  Check,
   FolderOutput,
   FileDown,
   Upload,
   ExternalLink,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getFileName } from '@/lib/utils';
+import { cn, getFileName } from '@/lib/utils';
+import { CheckboxItem } from '@/components/CheckboxItem';
 import { Progress } from '@/components/ui/progress';
 import { SectionHeader } from '@/components/SectionHeader';
 import { useLogStore } from '@/lib/logStore';
@@ -32,8 +31,8 @@ import {
   ExtractPayload,
   OpenFolder,
   CleanupPayloadCache,
-} from '../../lib/desktop/backend';
-import { OnFileDrop, OnFileDropOff, EventsOn, EventsOff } from '../../lib/desktop/runtime';
+} from '@/lib/desktop/backend';
+import { OnFileDrop, OnFileDropOff, EventsOn, EventsOff } from '@/lib/desktop/runtime';
 
 // Format bytes to human-readable size
 const formatBytes = (bytes: number): string => {
@@ -61,15 +60,12 @@ function ExtractionProgressBar({
     <div className="flex items-center gap-2 w-full">
       <Progress
         value={displayProgress}
-        className={cn(
-          'flex-1 h-1.5',
-          isCompleted ? '[&>div]:bg-[var(--terminal-log-success)]' : '',
-        )}
+        className={cn('flex-1 h-1.5', isCompleted ? '[&>div]:bg-success' : '')}
       />
       <span
         className={cn(
           'text-[10px] font-medium tabular-nums w-8 text-right shrink-0',
-          isCompleted ? 'text-[var(--terminal-log-success)]' : 'text-primary',
+          isCompleted ? 'text-success' : 'text-primary',
         )}
       >
         {Math.round(displayProgress)}%
@@ -439,7 +435,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           </CardTitle>
           <CardDescription>Select payload file and output directory for extraction</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="flex flex-col gap-6">
           {/* Drag & Drop Zone (shown when dragging and no payload selected) */}
           {isDragging && !payloadPath && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
@@ -451,7 +447,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           )}
 
           {/* File Selection Section */}
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <SectionHeader>Input & Output</SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Input File Button */}
@@ -516,7 +512,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
 
             {/* Path hints */}
             {(payloadPath || effectiveOutputPath) && (
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-xs text-muted-foreground flex flex-col gap-1">
                 {payloadPath && (
                   <p className="truncate" title={payloadPath}>
                     <span className="font-medium">Input:</span> {payloadPath}
@@ -525,11 +521,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                 {effectiveOutputPath && (
                   <p className="truncate" title={effectiveOutputPath}>
                     <span className="font-medium">Output:</span>{' '}
-                    <span
-                      className={cn(
-                        outputDir && !outputPath && 'text-[var(--terminal-log-success)]',
-                      )}
-                    >
+                    <span className={cn(outputDir && !outputPath && 'text-success')}>
                       {effectiveOutputPath}
                       {outputDir && !outputPath && ' (auto-generated)'}
                     </span>
@@ -541,7 +533,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
 
           {/* Partition Selection - Full Table View with Progress */}
           {partitions.length > 0 && (
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {/* Partition Header */}
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <SectionHeader>Partitions</SectionHeader>
@@ -587,31 +579,37 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                         onClick={() =>
                           status !== 'extracting' && !isCompleted && togglePartition(index)
                         }
+                        role="checkbox"
+                        aria-checked={isCompleted ? true : partition.selected}
+                        aria-disabled={status === 'extracting' || isCompleted}
+                        tabIndex={isCompleted || status === 'extracting' ? -1 : 0}
+                        onKeyDown={(e) => {
+                          if (
+                            (e.key === ' ' || e.key === 'Enter') &&
+                            status !== 'extracting' &&
+                            !isCompleted
+                          ) {
+                            e.preventDefault();
+                            togglePartition(index);
+                          }
+                        }}
                         className={cn(
                           'grid grid-cols-[28px_1fr_minmax(120px,1fr)_72px] gap-2 px-4 py-3 text-sm transition-colors items-center',
                           status !== 'extracting' &&
                             !isCompleted &&
                             'cursor-pointer hover:bg-muted/50',
                           partition.selected && !isCompleted && 'bg-primary/5',
-                          isCompleted && 'bg-[var(--terminal-log-success)]/5',
+                          isCompleted && 'bg-success/5',
                         )}
                       >
                         {/* Status Icon (checkbox or completed icon) */}
                         {isCompleted ? (
-                          <CheckCircle2 className="h-5 w-5 text-[var(--terminal-log-success)]" />
+                          <CheckCircle2 className="h-5 w-5 text-success" />
                         ) : (
-                          <div
-                            className={cn(
-                              'h-4 w-4 rounded flex items-center justify-center border transition-colors shrink-0',
-                              partition.selected
-                                ? 'bg-primary border-primary'
-                                : 'border-muted-foreground/50',
-                            )}
-                          >
-                            {partition.selected && (
-                              <Check className="h-3 w-3 text-primary-foreground" />
-                            )}
-                          </div>
+                          <CheckboxItem
+                            checked={partition.selected}
+                            disabled={status === 'extracting'}
+                          />
                         )}
 
                         {/* Name with Icon */}
@@ -623,7 +621,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                               className={cn(
                                 'h-4 w-4 shrink-0',
                                 isCompleted
-                                  ? 'text-[var(--terminal-log-success)]'
+                                  ? 'text-success'
                                   : partition.selected
                                     ? 'text-primary'
                                     : 'text-muted-foreground',
@@ -634,7 +632,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                             className={cn(
                               'font-medium truncate',
                               isCompleted
-                                ? 'text-[var(--terminal-log-success)]'
+                                ? 'text-success'
                                 : partition.selected
                                   ? 'text-foreground'
                                   : 'text-muted-foreground',
@@ -657,9 +655,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                         <span
                           className={cn(
                             'text-xs tabular-nums text-right',
-                            isCompleted
-                              ? 'text-[var(--terminal-log-success)] font-medium'
-                              : 'text-muted-foreground',
+                            isCompleted ? 'text-success font-medium' : 'text-muted-foreground',
                           )}
                         >
                           {formatBytes(partition.size)}
@@ -673,7 +669,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           )}
 
           {/* Action Buttons */}
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <SectionHeader>Actions</SectionHeader>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
@@ -722,7 +718,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           className={cn(
             'border-2',
             status === 'success'
-              ? 'border-[var(--terminal-log-success)]/50 bg-[var(--terminal-log-success)]/5'
+              ? 'border-success/50 bg-success/5'
               : 'border-destructive/50 bg-destructive/5',
           )}
         >
@@ -730,7 +726,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
             <CardTitle
               className={cn(
                 'flex items-center gap-2 text-lg',
-                status === 'success' ? 'text-[var(--terminal-log-success)]' : 'text-destructive',
+                status === 'success' ? 'text-success' : 'text-destructive',
               )}
             >
               {status === 'success' ? (
@@ -748,7 +744,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           </CardHeader>
           <CardContent>
             {status === 'success' && (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 {outputDir && (
                   <div className="flex flex-col gap-2">
                     <span className="text-sm text-muted-foreground font-medium">Saved to:</span>
@@ -772,7 +768,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                   </div>
                 )}
                 {extractedFiles.length > 0 && (
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-2">
                     <p className="text-sm text-muted-foreground">
                       Extracted {extractedFiles.length} partition(s):
                     </p>
@@ -782,7 +778,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                           key={file}
                           className="flex items-center gap-2 text-sm text-muted-foreground"
                         >
-                          <FileDown className="h-3.5 w-3.5 text-[var(--terminal-log-success)] shrink-0" />
+                          <FileDown className="h-3.5 w-3.5 text-success shrink-0" />
                           <span className="truncate">{file}</span>
                         </div>
                       ))}

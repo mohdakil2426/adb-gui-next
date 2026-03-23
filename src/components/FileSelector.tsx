@@ -39,7 +39,7 @@ export function FileSelector({
   className,
 }: FileSelectorProps) {
   return (
-    <div className={cn('space-y-1.5', className)}>
+    <div className={cn('flex flex-col gap-1.5', className)}>
       <label className="text-sm font-medium">{label}</label>
       <div className="flex gap-2 min-w-0">
         <Button
@@ -49,7 +49,7 @@ export function FileSelector({
           disabled={disabled || isLoading}
         >
           {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
+            <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
           ) : icon ? (
             <span className="mr-2 h-4 w-4 shrink-0 flex items-center">{icon}</span>
           ) : null}

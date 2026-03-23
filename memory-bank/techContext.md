@@ -101,10 +101,19 @@
 │   ├── App.tsx                   # Root component
 │   ├── components/               # UI components
 │   │   ├── MainLayout.tsx        # App shell (sidebar + views + bottom panel)
+│   │   ├── AppSidebar.tsx        # shadcn Sidebar (grouped nav, header, footer, rail)
 │   │   ├── BottomPanel.tsx       # VS Code-style bottom panel container
 │   │   ├── LogsPanel.tsx         # Filtered log viewer
 │   │   ├── ShellPanel.tsx        # Interactive ADB/fastboot terminal
-│   │   ├── ui/                   # 20 shadcn primitives (sidebar, sheet, collapsible, tabs, etc.)
+│   │   ├── ConnectedDevicesCard.tsx  # Shared device list card
+│   │   ├── CheckboxItem.tsx      # Shared checkbox indicator
+│   │   ├── EmptyState.tsx        # Shared empty state component
+│   │   ├── CopyButton.tsx        # Shared copy-to-clipboard button
+│   │   ├── FileSelector.tsx      # Shared file/dir picker
+│   │   ├── LoadingButton.tsx     # Shared loading button
+│   │   ├── SectionHeader.tsx     # Shared section sub-header
+│   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear bar
+│   │   ├── ui/                   # 20+ shadcn primitives (sidebar, sidebar-context, sheet, etc.)
 │   │   └── views/                # 7 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
@@ -167,4 +176,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-03-23 (VS Code-style bottom panel overhaul)
+- **Last Updated**: 2026-03-23 (UI consistency audit & fixes)
