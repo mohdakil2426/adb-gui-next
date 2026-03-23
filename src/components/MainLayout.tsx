@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import '@/styles/global.css';
 import {
@@ -7,13 +5,13 @@ import {
   Box,
   FolderOpen,
   Terminal,
-  SquareTerminal,
   Settings,
   ChevronLeft,
   Info,
   Logs,
   Cpu,
   Package,
+  SquareTerminal,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -28,14 +26,13 @@ import { ViewUtilities } from './views/ViewUtilities';
 import { ViewPayloadDumper } from './views/ViewPayloadDumper';
 import { ViewAbout } from './views/ViewAbout';
 import { Toaster } from '@/components/ui/sonner';
-import { TerminalLogPanel } from './TerminalLogPanel';
+import { BottomPanel } from './BottomPanel';
 import { useLogStore } from '@/lib/logStore';
 
 import { ThemeToggle } from './ThemeToggle';
 import { ThemeProvider } from './ThemeProvider';
 import { WelcomeScreen } from './WelcomeScreen';
-import { ViewShell } from './views/ViewShell';
-import { LaunchDeviceManager, LaunchTerminal } from '../lib/desktop/backend';
+import { LaunchDeviceManager, LaunchTerminal } from '@/lib/desktop/backend';
 import { toast } from 'sonner';
 
 const VIEWS = {
@@ -45,18 +42,12 @@ const VIEWS = {
   FLASHER: 'flasher',
   UTILS: 'utils',
   PAYLOAD: 'payload',
-  SHELL: 'shell',
   ABOUT: 'about',
 } as const;
 
 type ViewType = (typeof VIEWS)[keyof typeof VIEWS];
 
 const LOADING_DURATION = 750;
-
-export type HistoryEntry = {
-  type: 'command' | 'result' | 'error';
-  text: string;
-};
 
 const NAV_ITEMS = [
   { id: VIEWS.DASHBOARD, icon: LayoutDashboard, label: 'Dashboard' },
@@ -65,7 +56,6 @@ const NAV_ITEMS = [
   { id: VIEWS.FLASHER, icon: Terminal, label: 'Flasher' },
   { id: VIEWS.UTILS, icon: Settings, label: 'Utility' },
   { id: VIEWS.PAYLOAD, icon: Package, label: 'Payload Dumper' },
-  { id: VIEWS.SHELL, icon: Terminal, label: 'Terminal' },
   { id: VIEWS.ABOUT, icon: Info, label: 'About' },
 ];
 
@@ -74,10 +64,8 @@ export function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [shellHistory, setShellHistory] = useState<HistoryEntry[]>([]);
-  const [shellCommandHistory, setShellCommandHistory] = useState<string[]>([]);
 
-  const { togglePanel, isOpen: isLogOpen } = useLogStore();
+  const { togglePanel, isOpen: isLogOpen, setActiveTab, unreadCount } = useLogStore();
 
   const handleLaunchDeviceManager = async () => {
     try {
@@ -97,6 +85,13 @@ export function MainLayout() {
     }
   };
 
+  const handleOpenShellPanel = () => {
+    if (!isLogOpen) {
+      togglePanel();
+    }
+    setActiveTab('shell');
+  };
+
   const renderActiveView = () => {
     switch (activeView) {
       case VIEWS.DASHBOARD:
@@ -111,16 +106,6 @@ export function MainLayout() {
         return <ViewUtilities activeView={activeView} />;
       case VIEWS.PAYLOAD:
         return <ViewPayloadDumper activeView={activeView} />;
-      case VIEWS.SHELL:
-        return (
-          <ViewShell
-            activeView={activeView}
-            history={shellHistory}
-            setHistory={setShellHistory}
-            commandHistory={shellCommandHistory}
-            setCommandHistory={setShellCommandHistory}
-          />
-        );
       case VIEWS.ABOUT:
         return <ViewAbout activeView={activeView} />;
       default:
@@ -327,7 +312,7 @@ export function MainLayout() {
             </Tooltip>
           </aside>
 
-          <main className="flex-1 flex overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-auto custom-scroll relative">
               {activeView !== VIEWS.ABOUT && (
                 <div className="absolute top-4 right-6 z-40 flex items-center gap-2">
@@ -359,6 +344,7 @@ export function MainLayout() {
                     <TooltipContent side="bottom">Launch Terminal</TooltipContent>
                   </Tooltip>
 
+                  {/* Shell panel toggle */}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -366,13 +352,38 @@ export function MainLayout() {
                         size="icon"
                         className={cn(
                           'rounded-full shadow-md transition-all',
-                          isLogOpen
+                          isLogOpen && useLogStore.getState().activeTab === 'shell'
+                            ? 'bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90'
+                            : 'bg-card text-foreground hover:bg-muted hover:text-foreground',
+                        )}
+                        onClick={handleOpenShellPanel}
+                      >
+                        <Terminal className="h-5 w-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">Shell (Ctrl+`)</TooltipContent>
+                  </Tooltip>
+
+                  {/* Logs panel toggle */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={cn(
+                          'rounded-full shadow-md transition-all relative',
+                          isLogOpen && useLogStore.getState().activeTab === 'logs'
                             ? 'bg-primary text-primary-foreground shadow-primary/20 hover:bg-primary/90'
                             : 'bg-card text-foreground hover:bg-muted hover:text-foreground',
                         )}
                         onClick={togglePanel}
                       >
                         <Logs className="h-5 w-5" />
+                        {!isLogOpen && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-destructive text-white text-[10px] font-bold flex items-center justify-center px-1">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
@@ -404,7 +415,7 @@ export function MainLayout() {
                 </div>
               </div>
             </div>
-            <TerminalLogPanel />
+            <BottomPanel />
           </main>
         </div>
         <Toaster position="bottom-right" richColors closeButton />
