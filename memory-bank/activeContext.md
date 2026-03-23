@@ -68,6 +68,11 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 - Integrated CopyButton into ViewDashboard (`InfoItem` gains optional `copyable` prop; Serial + IP rows)
 - Replaced `navigator.clipboard.writeText()` with `writeText()` from the Tauri plugin in ViewUtilities
 
+### 2026-03-23 — Vite Config Type Fix
+- Installed `@types/node` and added to `tsconfig.node.json` types.
+- Replaced `__dirname` with `import.meta.dirname` in `vite.config.ts` (modern Node ESM).
+- Removed `@ts-expect-error` for `process` in `vite.config.ts` as it's now correctly typed.
+
 ### Previous Milestones
 - Debugging & Logging Infrastructure (`tauri-plugin-log`, `errorHandler.ts`, `debug.ts`)
 - Performance Optimization: sparse zero, parallel extraction, async Tauri commands

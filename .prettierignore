@@ -1,7 +1,9 @@
 .worktrees/
 .agents/
+.agent/
 .claude/
 memory-bank/
+.clinerules
 dist/
 node_modules/
 src-tauri/target/

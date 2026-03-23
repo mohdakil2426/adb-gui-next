@@ -60,6 +60,7 @@
 | @vitejs/plugin-react | ^6.0.1 | React support |
 | @tailwindcss/vite | ^4.2.2 | Tailwind v4 plugin |
 | @eslint/js | ^10.1.0 | ESLint core |
+| @types/node | ^25.5.0 | TypeScript definitions for Node.js |
 | typescript-eslint | ^8.57.1 | TypeScript linting |
 | eslint-config-prettier | ^10.1.8 | ESLint/Prettier integration |
 | eslint-plugin-react-hooks | ^7.0.1 | React hooks linting |

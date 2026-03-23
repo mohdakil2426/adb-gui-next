@@ -329,4 +329,4 @@ Skills are located in `.agents/skills/` — read the **SKILL.md** file inside ea
 
 ---
 
-_Last Updated: 2026-03-21 (Tauri 2 migration complete, 26 commands, 8 views, 8 Rust tests, pnpm check pipeline, shadcn/ui + Tailwind v4)_
+_Last Updated: 2026-03-21_

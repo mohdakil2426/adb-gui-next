@@ -21,5 +21,15 @@
     }
   },
   "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".agent",
+    ".agents",
+    ".claude",
+    "memory-bank",
+    "docs",
+    ".clinerules"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

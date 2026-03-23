@@ -14,10 +14,12 @@ export default defineConfig([
       '.worktrees/**',
       '.claude/**',
       '.agents/**',
+      '.agent/**',
       'memory-bank/**',
       'src-tauri/target/**',
       'src-tauri/gen/schemas/**',
       'docs/**',
+      '.clinerules',
     ],
   },
   {
