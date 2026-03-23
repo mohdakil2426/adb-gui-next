@@ -6,6 +6,20 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-23 — shadcn Sidebar Migration
+
+**Sidebar Component Overhaul**
+- Replaced ~150 lines of custom inline sidebar JSX in `MainLayout.tsx` with shadcn `Sidebar` component (`collapsible="icon"` mode)
+- Created `AppSidebar.tsx` — grouped navigation (Main: Dashboard/Apps/Files, Advanced: Flasher/Utilities/Payload), SidebarHeader with logo, SidebarFooter with About + ThemeToggle, SidebarRail for collapse
+- Refactored `MainLayout.tsx` from 426 → ~240 lines — uses `SidebarProvider`/`SidebarInset`
+- Moved toolbar buttons from floating `absolute` position to proper header bar with `SidebarTrigger`
+- Simplified `ThemeToggle.tsx` — uses `SidebarMenuButton` (auto tooltips + collapse handling)
+- Removed `--sidebar-width`/`--sidebar-collapsed-width` from `global.css` (shadcn manages internally)
+- Installed shadcn `sidebar`, `collapsible`, `sheet` components + `use-mobile` hook
+- New capabilities: `Ctrl+B` keyboard shortcut, grouped nav with labels, SidebarRail, automatic tooltips in icon mode, mobile sheet/drawer support
+
+**Verification:** `pnpm format:check` ✅ | `pnpm lint:web` ✅ (0 errors, 3 pre-existing warnings) | `pnpm build` ✅ | `pnpm test` ✅ (21/21 Vitest)
+
 ### 2026-03-23 — Comprehensive Codebase Quality Improvement
 
 **Dead Code Removal**
@@ -132,7 +146,7 @@ Verified on `main` (2026-03-23) with:
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Frontend | ✅ Complete | 7 sidebar views + bottom panel (Logs/Shell tabs) |
+| Frontend | ✅ Complete | shadcn Sidebar (grouped nav, icon collapse) + 7 views + bottom panel (Logs/Shell tabs) |
 | Backend | ✅ Complete | 26 Tauri commands, payload parser |
 | IPC Layer | ✅ Complete | backend.ts, runtime.ts, models.ts |
 | Bottom Panel | ✅ Complete | VS Code-style with tabs, filter, search, follow, maximize |
@@ -155,6 +169,7 @@ Verified on `main` (2026-03-23) with:
 
 ## Important Notes
 
+- **Sidebar uses shadcn `Sidebar` component** with `collapsible="icon"` mode and `SidebarRail` for collapse.
 - **Shell is now in the bottom panel**, not a sidebar view. The sidebar "Terminal" nav item was removed.
 - **Infinite loop pattern to avoid**: never write `useEffect(() => { setX(queryData) }, [queryData, setX])` with a `= []` default.
 - Rust edition: 2024 (uses let_chains)

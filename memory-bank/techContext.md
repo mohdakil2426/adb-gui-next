@@ -104,7 +104,7 @@
 │   │   ├── BottomPanel.tsx       # VS Code-style bottom panel container
 │   │   ├── LogsPanel.tsx         # Filtered log viewer
 │   │   ├── ShellPanel.tsx        # Interactive ADB/fastboot terminal
-│   │   ├── ui/                   # 12 shadcn primitives (incl. tabs)
+│   │   ├── ui/                   # 20 shadcn primitives (sidebar, sheet, collapsible, tabs, etc.)
 │   │   └── views/                # 7 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper

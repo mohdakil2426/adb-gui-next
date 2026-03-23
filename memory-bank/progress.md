@@ -9,11 +9,13 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 ### Frontend
 
 - App shell loads under Vite/React with Strict Mode enabled
+- shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
+- `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail
+- `Ctrl+B` keyboard shortcut for sidebar toggle
 - 7 sidebar views compile and build successfully
 - VS Code-style bottom panel with Logs and Shell tabs
-- Frontend calls native `src/lib/desktop/` Tauri abstraction
-- Zustand v5 state management (device, log, shell, payloadDumper)
-- shadcn/ui components (18 primitives: badge, progress, dialog, separator, skeleton + 13 existing) with Tailwind CSS v4
+- Proper header bar with SidebarTrigger + toolbar buttons (Device Manager, Terminal, Shell, Logs)
+- shadcn/ui components (20 primitives: sidebar, sheet, collapsible, badge, progress, dialog, etc.) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion animations
@@ -120,6 +122,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-23 | 0.1.0 | shadcn Sidebar migration: `AppSidebar.tsx`, grouped nav, `SidebarProvider`/`SidebarInset`, header bar with `SidebarTrigger`, `Ctrl+B` shortcut |
 | 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption (badge/progress/dialog/separator/skeleton), shared components, semantic token fixes, models.ts interface migration |
 | 2026-03-23 | 0.1.0 | App Manager: virtualized list + user/system package filter |
 | 2026-03-23 | 0.1.0 | VS Code-style bottom panel overhaul (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |

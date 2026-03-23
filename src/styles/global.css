@@ -45,8 +45,6 @@
   --radius: 0.625rem;
 
   /* Layout constants for responsive design */
-  --sidebar-width: 280px;
-  --sidebar-collapsed-width: 80px;
   --content-min-width: 400px;
   --content-max-width: 1280px;
 

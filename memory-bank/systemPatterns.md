@@ -7,7 +7,7 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
-│  main.tsx → App.tsx → MainLayout (sidebar + views + bottom panel)      │
+│  main.tsx → App.tsx → MainLayout (SidebarProvider → AppSidebar + views) │
 │  7 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
 │           Utilities │ PayloadDumper │ About                             │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
@@ -73,13 +73,14 @@ Three-tier fallback for ADB/fastboot binaries:
 - **Structured Logging**: `tauri-plugin-log` with Stdout + LogDir + Webview targets
 - **Debug Mode**: `debug.ts` provides `debugLog()` and `timedOperation()` utilities
 
-### 6. View Switching
+### 6. Sidebar (shadcn)
 
-No router. Manual view switching via:
-```tsx
-const [activeView, setActiveView] = useState<ViewType>('dashboard');
-// switch (activeView) { case 'dashboard': return <ViewDashboard />; ... }
-```
+shadcn `Sidebar` component with `collapsible="icon"` mode:
+- `SidebarProvider` wraps entire layout (manages state, keyboard shortcut `Ctrl+B`)
+- `AppSidebar.tsx` — grouped nav (Main/Advanced), SidebarHeader, SidebarFooter, SidebarRail
+- `SidebarInset` wraps main content with header bar (`SidebarTrigger` + toolbar)
+- `SidebarMenuButton tooltip={label}` — automatic tooltips in icon mode
+- View switching via `useState<ViewType>` + switch statement (no router)
 
 ### 7. Device Polling
 
@@ -100,13 +101,15 @@ VS Code-style bottom panel replaces the old right-side drawer log panel:
 
 ```text
 src/components/
-├── MainLayout.tsx           # App shell: sidebar nav, view switch, bottom panel
+├── MainLayout.tsx           # App shell: SidebarProvider + SidebarInset + header + views
+├── AppSidebar.tsx           # shadcn Sidebar (grouped nav, header, footer, rail)
+├── ThemeToggle.tsx          # Theme toggle using SidebarMenuButton
 ├── BottomPanel.tsx          # VS Code-style bottom panel (tabs, resize, actions)
 ├── LogsPanel.tsx            # Filtered log viewer with search highlight
 ├── ShellPanel.tsx           # Interactive ADB/fastboot terminal
 ├── ConnectedDevicesCard.tsx # Shared device list (Dashboard, Flasher, Utilities)
 ├── WelcomeScreen.tsx        # 750ms animated splash
-├── ui/                      # 13 shadcn primitives (button, card, table, tabs, dropdown-menu, etc.)
+├── ui/                      # 20 shadcn primitives (sidebar, sheet, collapsible, button, card, etc.)
 └── views/                   # 7 views (Dashboard, AppManager, FileExplorer, Flasher,
                            #   Utilities, PayloadDumper, About)
 ```
