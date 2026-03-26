@@ -13,6 +13,9 @@ pub struct FileEntry {
     pub permissions: String,
     pub date: String,
     pub time: String,
+    /// For symlinks: the resolved target path (e.g. "/proc/self/fd").
+    /// Empty string for regular files and directories.
+    pub link_target: String,
 }
 
 #[tauri::command]
@@ -75,6 +78,24 @@ pub fn rename_file(app: AppHandle, old_path: String, new_path: String) -> CmdRes
     Ok(format!("Renamed to {}", new_path.trim()))
 }
 
+#[tauri::command]
+pub fn create_file(app: AppHandle, path: String) -> CmdResult<String> {
+    info!("Creating file: {}", path.trim());
+    let quoted = format!("'{}'", path.trim().replace('\'', r"'\''"));
+    let cmd = format!("touch {quoted}");
+    run_binary_command(&app, "adb", &["shell", &cmd])?;
+    Ok(format!("Created file: {}", path.trim()))
+}
+
+#[tauri::command]
+pub fn create_directory(app: AppHandle, path: String) -> CmdResult<String> {
+    info!("Creating directory: {}", path.trim());
+    let quoted = format!("'{}'", path.trim().replace('\'', r"'\''"));
+    let cmd = format!("mkdir -p {quoted}");
+    run_binary_command(&app, "adb", &["shell", &cmd])?;
+    Ok(format!("Created directory: {}", path.trim()))
+}
+
 fn parse_file_entries(output: &str) -> Vec<FileEntry> {
     output
         .lines()
@@ -98,13 +119,23 @@ fn parse_file_entries(output: &str) -> Vec<FileEntry> {
                 "File"
             };
 
+            // For symlinks ls outputs: name -> target
+            // parts[7..] joins all tokens after the timestamp, then we split on " -> "
+            let full_name = parts[7..].join(" ");
+            let (name, link_target) = if let Some((n, t)) = full_name.split_once(" -> ") {
+                (n.trim().to_string(), t.trim().to_string())
+            } else {
+                (full_name.trim().to_string(), String::new())
+            };
+
             Some(FileEntry {
-                name: parts[7..].join(" ").split(" -> ").next().unwrap_or("").to_string(),
+                name,
                 r#type: file_type.into(),
                 size: parts.get(4).copied().unwrap_or("").to_string(),
                 permissions,
                 date: parts.get(5).copied().unwrap_or("").to_string(),
                 time: parts.get(6).copied().unwrap_or("").to_string(),
+                link_target,
             })
         })
         .collect()

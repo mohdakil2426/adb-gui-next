@@ -24,17 +24,20 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
 - **File Explorer (full-featured dual-pane)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
-  - Editable address bar; tree collapse/expand; `fe.currentPath` + `fe.treeCollapsed` in localStorage
+  - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
   - 5 edge cases: permission denied, spaces in paths, symlinks, device disconnect, responsive
   - **Explicit multi-select mode** (`isMultiSelectMode` gate):
-    - Checkbox column completely absent by default
-    - Activated via `Ctrl+Click`, `Ctrl+A`, or right-click → Select
-    - Deactivated via Escape, Clear button, uncheck-all, or navigation
-    - `SelectionSummaryBar` with item count + Delete button (only in multi-select mode)
-  - **Inline rename**: `F2` or right-click → Rename; inline Input, Enter/Escape/blur
-  - **Bulk delete**: `Delete` key or right-click → Delete → `AlertDialog` with item list
-  - **Right-click ContextMenu**: Select / Open / Rename / Delete / Export
-  - Keyboard: `Ctrl+A` (select all), `F2` (rename), `Delete` (delete), `Ctrl+Click` (toggle), `Escape` (cancel/clear)
+    - Checkbox column absent by default; activated via `Ctrl+Click`, `Ctrl+A`, right-click → Select
+  - **Inline rename**: `F2` or right-click; inline Input, Enter/Escape/blur
+  - **Bulk delete**: `Delete` key or right-click → AlertDialog
+  - **Create File/Folder**: `Ctrl+N`/`Ctrl+Shift+N`, toolbar, right-click, empty-state buttons; inline phantom row
+  - **Back/Forward history**: `navHistory` stack (50 max), `Alt+←`/`Alt+→`; `historyIndexRef` prevents infinite loop
+  - **Search/Filter**: `Ctrl+F` to focus, client-side filter, `Escape` to clear
+  - **Sortable columns**: Name/Size/Date clickable headers; dirs always float above files
+  - **Human-readable sizes**: `formatBytes()` — `14.0 MB`, dirs show `—`
+  - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
+  - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
+  - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
 - Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
@@ -58,7 +61,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | Device | `get_devices`, `get_device_info`, `get_device_mode`, `get_fastboot_devices` |
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition`, `reboot`, `wipe_data`, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
-| Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file` |
+| Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
 | Apps | `install_package`, `uninstall_package`, `sideload_package`, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
@@ -150,7 +153,9 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate; no single-click selection; Ctrl+Click/Ctrl+A/right-click→Select only; auto-exit on empty |
+| 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder (Ctrl+N/Ctrl+Shift+N), Back/Forward history (Alt+←/→), Search/Filter (Ctrl+F), sortable columns, human-readable sizes, symlink targets, Copy Path; infinite render loop fix; empty-dir creation fix |
+| 2026-03-26 | 0.1.0 | File Explorer: Import/Export context menu (context-aware push/pull); DRY executePull/executePush helpers |
+| 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate; no single-click selection |
 | 2026-03-26 | 0.1.0 | File Explorer: checkbox column hidden until multi-select mode (isMultiSelectMode state); right-click Select menu item |
 | 2026-03-26 | 0.1.0 | File Explorer multi-select + inline rename + delete + context menu + keyboard shortcuts; Checkbox + ContextMenu shadcn components |
 | 2026-03-26 | 0.1.0 | File Explorer dual-pane: DirectoryTree, editable address bar, tree collapse, localStorage persistence, 5 edge case fixes |

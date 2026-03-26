@@ -36,6 +36,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::cleanup_payload_cache,
             commands::connect_wireless_adb,
+            commands::create_directory,
+            commands::create_file,
             commands::delete_files,
             commands::disconnect_wireless_adb,
             commands::enable_wireless_adb,

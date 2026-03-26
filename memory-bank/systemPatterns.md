@@ -46,29 +46,46 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
   - `fe.treeCollapsed` — File Explorer tree panel collapsed state
 - **No router** — `useState<ViewType>` + switch statement in MainLayout
 
-### 3. File Explorer Selection Model
+### 3. File Explorer — State Model & Critical Patterns
 
-`ViewFileExplorer` uses an **explicit multi-select mode gate** (`isMultiSelectMode: boolean`):
+`ViewFileExplorer` uses several carefully designed state patterns:
 
+**Multi-select gate (`isMultiSelectMode`):**
 | State | Checkbox column | SelectionSummaryBar |
 |-------|----------------|---------------------|
-| `isMultiSelectMode = false` | **Absent from DOM** | Hidden |
-| `isMultiSelectMode = true`, 0 items | Shown (empty) | Hidden |
-| `isMultiSelectMode = true`, ≥1 item | Shown (checked) | Shown with count + Delete |
+| `false` | **Absent from DOM** | Hidden |
+| `true`, 0 items | Shown (empty) | Hidden |
+| `true`, ≥1 item | Shown (checked) | Shown with count + Delete |
 
-**Activation triggers** (only way to enter multi-select mode):
-- `Ctrl+Click` on a row
-- `Ctrl+A` keyboard shortcut
-- Right-click → **Select** context menu item
+**Activation:** `Ctrl+Click`, `Ctrl+A`, right-click → Select  
+**Deactivation:** `Escape`, Clear, uncheck-all, header deselect-all, navigation
 
-**Deactivation triggers:**
-- `Escape` key (clears selection + exits)
-- Clear button in `SelectionSummaryBar`
-- `toggleCheckbox` empties the set (auto-exits)
-- Header checkbox deselects all (auto-exits)
-- Navigating to a new directory
+**loadFiles stable reference pattern (CRITICAL):**
+```ts
+// loadFiles MUST have [] deps. Using [historyIndex] causes an infinite render loop:
+// loadFiles → setHistoryIndex → historyIndex changes → new loadFiles ref → useEffect fires → ∞
+const historyIndexRef = useRef(0); // mirrors historyIndex for use inside loadFiles
+const loadFiles = useCallback(async (path, pushToHistory = true) => {
+  if (pushToHistory) {
+    const idx = historyIndexRef.current; // read from ref, not closed-over state
+    historyIndexRef.current = newIdx;    // update ref synchronously
+    setHistoryIndex(newIdx);             // schedule state update
+  }
+}, []); // stable — never changes reference
+```
 
-**Plain single click does NOT modify `selectedNames`** — intentional.
+**Empty-directory creation guard:**
+```tsx
+// WRONG: fileList.length === 0 ? <EmptyState> : <Table with phantom row>
+// If creatingType !== null, the table must render even in empty dirs
+// CORRECT:
+fileList.length === 0 && creatingType === null ? <EmptyState> : <Table>
+```
+
+**`pushToHistory` flag:**
+- `loadFiles(path)` — user navigation (default `true`): writes to history stack
+- `loadFiles(path, false)` — refresh/back/forward: no history entry added
+
 
 ### 4. Binary Resolution
 

@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  ChevronRight,
-  ChevronDown,
-  Folder,
-  FolderOpen,
-  Loader2,
-  File,
-} from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Loader2, File } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ListFiles } from '@/lib/desktop/backend';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -80,9 +73,7 @@ function findNode(nodes: TreeNode[], path: string): TreeNode | null {
  *  /storage/emulated/0/ → ['/storage/', '/storage/emulated/'] */
 function getAncestorPaths(path: string): string[] {
   const segments = path.split('/').filter(Boolean);
-  return segments
-    .slice(0, -1)
-    .map((_, i) => '/' + segments.slice(0, i + 1).join('/') + '/');
+  return segments.slice(0, -1).map((_, i) => '/' + segments.slice(0, i + 1).join('/') + '/');
 }
 
 /** Load all entries (files + dirs) for a path and return as TreeNode[]. */
@@ -324,9 +315,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
     if (!node || !node.isDirectory) return;
 
     if (node.isExpanded) {
-      setNodes((prev) =>
-        applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })),
-      );
+      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
       loadDirEntries(currentPath)
         .then((entries) => {
           setNodes((prev) =>
@@ -338,15 +327,11 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
           );
         })
         .catch(() => {
-          setNodes((prev) =>
-            applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })),
-          );
+          setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })));
         });
     } else {
       // Invalidate cache so it refetches on next expand
-      setNodes((prev) =>
-        applyToNode(prev, currentPath, (n) => ({ ...n, children: null })),
-      );
+      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
     }
   }, [refreshTrigger, currentPath, setNodes]);
 

@@ -33,6 +33,8 @@ export namespace backend {
     permissions: string;
     date: string;
     time: string;
+    /** For symlinks: resolved target (e.g. "/proc/self/fd"). Empty for files/dirs. */
+    linkTarget: string;
   }
 
   export interface InstalledPackage {
