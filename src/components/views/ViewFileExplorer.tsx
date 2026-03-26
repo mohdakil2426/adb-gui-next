@@ -12,10 +12,13 @@ import {
   SelectSaveDirectory,
   SelectDirectoryForPull,
   SelectDirectoryToPush,
+  DeleteFiles,
+  RenameFile,
 } from '../../lib/desktop/backend';
 import type { backend } from '../../lib/desktop/models';
 
 import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
 import {
   Table,
   TableBody,
@@ -27,6 +30,33 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
+import { DirectoryTree } from '@/components/DirectoryTree';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   Loader2,
@@ -34,19 +64,20 @@ import {
   Upload,
   Download,
   Folder,
+  FolderOpen,
   File,
   Link,
   ArrowUp,
-  FolderUp,
+  ChevronDown,
   Layers,
   Lock,
   MonitorOff,
   AlertCircle,
   PanelLeftClose,
   PanelLeft,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
-import { DirectoryTree } from '@/components/DirectoryTree';
-import { cn } from '@/lib/utils';
 
 type FileEntry = backend.FileEntry;
 type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
@@ -54,6 +85,7 @@ type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
 const MIN_LEFT_WIDTH = 180;
 const MAX_LEFT_WIDTH = 420;
 const DEFAULT_LEFT_WIDTH = 180;
+const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 
 function categorizeError(err: unknown): LoadError {
   const msg = String(err).toLowerCase();
@@ -70,17 +102,33 @@ function categorizeError(err: unknown): LoadError {
 }
 
 export function ViewFileExplorer({ activeView }: { activeView: string }) {
+  // ── Navigation ──────────────────────────────────────────────────────────
   const [fileList, setFileList] = useState<FileEntry[]>([]);
-  const [currentPath, setCurrentPath] = useState('/sdcard/');
-  const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
+  const [currentPath, setCurrentPath] = useState(
+    () => localStorage.getItem('fe.currentPath') ?? '/sdcard/',
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<LoadError>(null);
   const [treeRefreshKey, setTreeRefreshKey] = useState(0);
 
-  const [isPushingFile, setIsPushingFile] = useState(false);
-  const [isPushingFolder, setIsPushingFolder] = useState(false);
+  const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
+
+  // ── Inline rename ────────────────────────────────────────────────────────
+  const [renamingName, setRenamingName] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // ── Delete ───────────────────────────────────────────────────────────────
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // ── Transfer (push/pull) ─────────────────────────────────────────────────
+  const [isPushing, setIsPushing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
 
+  // ── Layout ───────────────────────────────────────────────────────────────
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(
@@ -88,32 +136,39 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   );
   const [isEditingPath, setIsEditingPath] = useState(false);
   const [editPathValue, setEditPathValue] = useState('');
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentPathRef = useRef(currentPath);
+  const currentPathRef = useRef(localStorage.getItem('fe.currentPath') ?? '/sdcard/');
 
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
 
+  // ── Derived ──────────────────────────────────────────────────────────────
+  const selectedList = fileList.filter((f) => selectedNames.has(f.name));
+  const singleSelected = selectedList.length === 1 ? selectedList[0] : null;
+  const allSelected = fileList.length > 0 && selectedNames.size === fileList.length;
+  const someSelected = selectedNames.size > 0 && !allSelected;
+  const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming;
+  const isPullDisabled = isPulling || !singleSelected;
+
+  // ── Tree toggle ──────────────────────────────────────────────────────────
   const toggleTree = useCallback((collapsed: boolean) => {
     setIsTreeCollapsed(collapsed);
     localStorage.setItem('fe.treeCollapsed', String(collapsed));
   }, []);
 
-  // Horizontal resize
+  // ── Resize ───────────────────────────────────────────────────────────────
   const startResizing = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
   }, []);
-
   const stopResizing = useCallback(() => setIsResizing(false), []);
-
   const resize = useCallback(
     (e: MouseEvent) => {
       if (!isResizing || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      const newWidth = Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, e.clientX - rect.left));
-      setLeftWidth(newWidth);
+      setLeftWidth(Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, e.clientX - rect.left)));
     },
     [isResizing],
   );
@@ -127,13 +182,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     };
   }, [resize, stopResizing]);
 
+  // ── Load files ───────────────────────────────────────────────────────────
   const loadFiles = useCallback(async (targetPath: string) => {
     setIsLoading(true);
-    setSelectedFile(null);
+    setSelectedNames(new Set());
+    setRenamingName(null);
     try {
       debugLog(`Listing files at: ${targetPath}`);
       const files = await ListFiles(targetPath);
-
       files.sort((a, b) => {
         const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
         const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
@@ -141,19 +197,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         if (!aIsDir && bIsDir) return 1;
         return a.name.localeCompare(b.name);
       });
-
       setFileList(files);
       setLoadError(null);
       setCurrentPath(targetPath);
       currentPathRef.current = targetPath;
+      localStorage.setItem('fe.currentPath', targetPath);
       setTreeRefreshKey((k) => k + 1);
     } catch (error) {
-      // Categorize and surface the error clearly; clear stale file list
-      const category = categorizeError(error);
-      setLoadError(category);
+      setLoadError(categorizeError(error));
       setFileList([]);
       handleError('List Files', error);
-      // Keep currentPath stable so the address bar still shows where the user tried to go
       setCurrentPath(targetPath);
       currentPathRef.current = targetPath;
     } finally {
@@ -162,130 +215,222 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   }, []);
 
   useEffect(() => {
-    if (activeView === 'files') {
-      loadFiles(currentPathRef.current);
-    }
+    if (activeView === 'files') loadFiles(currentPathRef.current);
   }, [activeView, loadFiles]);
 
-  const handleRowClick = (file: FileEntry) => {
-    setSelectedFile(file);
+  // ── Selection handlers ───────────────────────────────────────────────────
+  const handleRowClick = useCallback(
+    (file: FileEntry, e: React.MouseEvent) => {
+      if (renamingName) return;
+      if (e.ctrlKey || e.metaKey) {
+        setSelectedNames((prev) => {
+          const next = new Set(prev);
+          if (next.has(file.name)) next.delete(file.name);
+          else next.add(file.name);
+          return next;
+        });
+      } else {
+        setSelectedNames(new Set([file.name]));
+      }
+    },
+    [renamingName],
+  );
+
+  const handleRowDoubleClick = useCallback(
+    (file: FileEntry) => {
+      if (renamingName) return;
+      if (file.type === 'Directory' || file.type === 'Symlink') {
+        loadFiles(path.posix.join(currentPath, file.name) + '/');
+      }
+    },
+    [renamingName, currentPath, loadFiles],
+  );
+
+  const toggleCheckbox = useCallback((name: string) => {
+    setSelectedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedNames(new Set());
+    } else {
+      setSelectedNames(new Set(fileList.map((f) => f.name)));
+    }
+  }, [allSelected, fileList]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedNames(new Set());
+  }, []);
+
+  // ── Inline rename ────────────────────────────────────────────────────────
+  const startRename = useCallback((file: FileEntry) => {
+    setSelectedNames(new Set([file.name]));
+    setRenamingName(file.name);
+    setRenameValue(file.name);
+    setRenameError('');
+  }, []);
+
+  const handleRenameChange = (val: string) => {
+    setRenameValue(val);
+    if (!val.trim()) {
+      setRenameError('Name cannot be empty');
+      return;
+    }
+    if (FORBIDDEN_CHARS.test(val)) {
+      setRenameError('Invalid characters: / \\ : * ? " < > |');
+      return;
+    }
+    setRenameError('');
   };
 
-  const handleRowDoubleClick = (file: FileEntry) => {
-    // Treat Symlinks same as Directories — navigate into them; if it fails, toast shows error.
-    if (file.type === 'Directory' || file.type === 'Symlink') {
-      const newPath = path.posix.join(currentPath, file.name) + '/';
-      loadFiles(newPath);
+  const handleRenameConfirm = useCallback(async () => {
+    if (!renamingName) return;
+    const trimmed = renameValue.trim();
+    // Cancel conditions: empty, same name, or has forbidden chars
+    if (!trimmed || trimmed === renamingName || FORBIDDEN_CHARS.test(trimmed)) {
+      setRenamingName(null);
+      return;
+    }
+    setIsRenaming(true);
+    const oldPath = path.posix.join(currentPath, renamingName);
+    const newPath = path.posix.join(currentPath, trimmed);
+    try {
+      await RenameFile(oldPath, newPath);
+      toast.success(`Renamed to "${trimmed}"`);
+      useLogStore.getState().addLog(`Renamed ${renamingName} → ${trimmed}`, 'success');
+      setRenamingName(null);
+      setSelectedNames(new Set([trimmed]));
+      loadFiles(currentPath);
+    } catch (error) {
+      handleError('Rename', error);
+      setRenamingName(null);
+    } finally {
+      setIsRenaming(false);
+    }
+  }, [renamingName, renameValue, currentPath, loadFiles]);
+
+  const handleRenameCancel = useCallback(() => {
+    setRenamingName(null);
+    setRenameError('');
+  }, []);
+
+  // ── Delete ───────────────────────────────────────────────────────────────
+  const openDeleteDialog = useCallback((names: string[]) => {
+    setFilesToDelete(names);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleConfirmDelete = async () => {
+    const names = filesToDelete;
+    const paths = names.map((name) => path.posix.join(currentPath, name));
+    setIsDeleting(true);
+    try {
+      await DeleteFiles(paths);
+      const label = names.length === 1 ? `"${names[0]}"` : `${names.length} items`;
+      toast.success(`Deleted ${label}`);
+      useLogStore.getState().addLog(`Deleted from ${currentPath}: ${names.join(', ')}`, 'success');
+      setSelectedNames(new Set());
+      loadFiles(currentPath);
+    } catch (error) {
+      handleError('Delete', error);
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
+  // ── Back navigation ──────────────────────────────────────────────────────
   const handleBackClick = () => {
     if (currentPath === '/') return;
-    const newPath = path.posix.join(currentPath, '..') + '/';
-    loadFiles(newPath);
+    loadFiles(path.posix.join(currentPath, '..') + '/');
   };
 
+  // ── Push ─────────────────────────────────────────────────────────────────
   const handlePushFile = async () => {
-    setIsPushingFile(true);
+    setIsPushing(true);
     let toastId: string | number = '';
     try {
       const localPath = await SelectFileToPush();
       if (!localPath) return;
-
       const fileName = localPath.replace(/\\/g, '/').split('/').pop() || path.basename(localPath);
       const remotePath = path.posix.join(currentPath, fileName);
-
       debugLog(`Pushing file ${fileName} to ${remotePath}`);
       toastId = toast.loading(`Pushing ${fileName}...`, { description: `To: ${remotePath}` });
-
       const output = await PushFile(localPath, remotePath);
-      toast.success('File Import Complete', { description: output, id: toastId });
+      toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      if (toastId) toast.error('File Import Failed', { id: toastId });
+      if (toastId) toast.error('Import Failed', { id: toastId });
       handleError('Push File', error);
     } finally {
-      setIsPushingFile(false);
+      setIsPushing(false);
     }
   };
 
   const handlePushFolder = async () => {
-    setIsPushingFolder(true);
+    setIsPushing(true);
     let toastId: string | number = '';
     try {
       const localFolderPath = await SelectDirectoryToPush();
-      if (!localFolderPath) {
-        setIsPushingFolder(false);
-        return;
-      }
-
-      const remotePath = currentPath;
+      if (!localFolderPath) return;
       const folderName =
         localFolderPath.replace(/\\/g, '/').split('/').pop() || path.basename(localFolderPath);
-
-      debugLog(`Pushing folder ${folderName} to ${remotePath}`);
+      debugLog(`Pushing folder ${folderName} to ${currentPath}`);
       toastId = toast.loading(`Pushing folder ${folderName}...`, {
-        description: `To: ${remotePath}`,
+        description: `To: ${currentPath}`,
       });
-
-      const output = await PushFile(localFolderPath, remotePath);
-      toast.success('Folder Import Complete', { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${remotePath}`, 'success');
+      const output = await PushFile(localFolderPath, currentPath);
+      toast.success('Import Complete', { description: output, id: toastId });
+      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
       loadFiles(currentPath);
     } catch (error) {
-      if (toastId) toast.error('Folder Import Failed', { id: toastId });
+      if (toastId) toast.error('Import Failed', { id: toastId });
       handleError('Push Folder', error);
     } finally {
-      setIsPushingFolder(false);
+      setIsPushing(false);
     }
   };
 
+  // ── Pull ─────────────────────────────────────────────────────────────────
   const handlePull = async () => {
-    if (!selectedFile) {
-      toast.error('No file or folder selected to pull.');
+    if (!singleSelected) {
+      toast.error('Select a single item to export.');
       return;
     }
-    // Allow pulling Symlinks in the same way as Dirs/Files
-    const isNavigable =
-      selectedFile.type === 'File' ||
-      selectedFile.type === 'Directory' ||
-      selectedFile.type === 'Symlink';
-    if (!isNavigable) {
-      toast.error('Cannot export this item type.', {
-        description: `Selected type: ${selectedFile.type}`,
-      });
+    const isExportable =
+      singleSelected.type === 'File' ||
+      singleSelected.type === 'Directory' ||
+      singleSelected.type === 'Symlink';
+    if (!isExportable) {
+      toast.error('Cannot export this item type.', { description: `Type: ${singleSelected.type}` });
       return;
     }
-
     setIsPulling(true);
     let toastId: string | number = '';
     try {
-      const remotePath = path.posix.join(currentPath, selectedFile.name);
+      const remotePath = path.posix.join(currentPath, singleSelected.name);
       let localPath = '';
-
-      if (selectedFile.type === 'Directory' || selectedFile.type === 'Symlink') {
+      if (singleSelected.type === 'Directory' || singleSelected.type === 'Symlink') {
         toast.info('Select a folder to save the directory into.');
         localPath = await SelectDirectoryForPull();
       } else {
-        localPath = await SelectSaveDirectory(selectedFile.name);
+        localPath = await SelectSaveDirectory(singleSelected.name);
       }
-
-      if (!localPath) {
-        setIsPulling(false);
-        return;
-      }
-
-      debugLog(`Pulling ${selectedFile.name} from ${remotePath} to ${localPath}`);
-      toastId = toast.loading(`Pulling ${selectedFile.name}...`, {
+      if (!localPath) return;
+      toastId = toast.loading(`Pulling ${singleSelected.name}...`, {
         description: `From: ${remotePath}`,
       });
-
       const output = await PullFile(remotePath, localPath);
       toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
       useLogStore
         .getState()
-        .addLog(`Pulled ${selectedFile.name} to ${localPath}: ${output}`, 'success');
+        .addLog(`Pulled ${singleSelected.name} to ${localPath}: ${output}`, 'success');
     } catch (error) {
       if (toastId) toast.error('Export Failed', { id: toastId });
       handleError('Pull File', error);
@@ -294,14 +439,56 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     }
   };
 
-  const isBusy = isLoading || isPushingFile || isPushingFolder || isPulling;
-  const isPullDisabled =
-    isPulling ||
-    !selectedFile ||
-    (selectedFile.type !== 'File' &&
-      selectedFile.type !== 'Directory' &&
-      selectedFile.type !== 'Symlink');
+  // ── Keyboard shortcuts ───────────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (activeView !== 'files') return;
+      const tag = (document.activeElement as HTMLElement)?.tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA';
 
+      // Escape: cancel rename first, then clear selection
+      if (e.key === 'Escape') {
+        if (renamingName) {
+          handleRenameCancel();
+        } else if (!isInput && selectedNames.size > 0) {
+          clearSelection();
+        }
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key === 'Delete' && selectedNames.size > 0) {
+        e.preventDefault();
+        openDeleteDialog(Array.from(selectedNames));
+        return;
+      }
+      if (e.key === 'F2' && selectedNames.size === 1) {
+        e.preventDefault();
+        const name = Array.from(selectedNames)[0];
+        const file = fileList.find((f) => f.name === name);
+        if (file) startRename(file);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        setSelectedNames(new Set(fileList.map((f) => f.name)));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [
+    activeView,
+    selectedNames,
+    renamingName,
+    fileList,
+    startRename,
+    openDeleteDialog,
+    handleRenameCancel,
+    clearSelection,
+  ]);
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div
       ref={containerRef}
@@ -310,12 +497,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       {/* Drag overlay — prevents text selection while resizing */}
       {isResizing && <div className="fixed inset-0 z-50 cursor-col-resize select-none" />}
 
-      {/* Left: Directory tree (hidden when collapsed) */}
+      {/* Left: Directory tree */}
       {!isTreeCollapsed && (
-        <div
-          className="shrink-0 flex flex-col overflow-hidden"
-          style={{ width: `${leftWidth}px` }}
-        >
+        <div className="shrink-0 flex flex-col overflow-hidden" style={{ width: `${leftWidth}px` }}>
           <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0 bg-muted/30">
             <Layers className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-medium text-muted-foreground flex-1">Device</span>
@@ -339,7 +523,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         </div>
       )}
 
-      {/* Resize handle — only visible when tree is open */}
+      {/* Resize handle */}
       {!isTreeCollapsed && (
         <div
           className={cn(
@@ -350,11 +534,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         />
       )}
 
-      {/* Right: File list */}
+      {/* Right: File list pane */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center gap-1 px-2 h-10 border-b border-border shrink-0">
-          {/* Show tree toggle when collapsed */}
+          {/* Tree restore toggle */}
           {isTreeCollapsed && (
             <>
               <Button
@@ -389,15 +573,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    const trimmed = editPathValue.trim();
-                    const normalized =
-                      trimmed && !trimmed.endsWith('/') ? `${trimmed}/` : trimmed || '/';
-                    loadFiles(normalized);
+                    const t = editPathValue.trim();
+                    loadFiles(t && !t.endsWith('/') ? `${t}/` : t || '/');
                     setIsEditingPath(false);
                   }
-                  if (e.key === 'Escape') {
-                    setIsEditingPath(false);
-                  }
+                  if (e.key === 'Escape') setIsEditingPath(false);
                 }}
                 onBlur={() => setIsEditingPath(false)}
                 className="font-mono text-xs h-7 flex-1 min-w-0 focus-visible:ring-1 focus-visible:ring-primary"
@@ -421,6 +601,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
           {/* Action buttons */}
           <div className="flex items-center gap-1 shrink-0">
+            {/* Refresh */}
             <Button
               variant="ghost"
               size="icon"
@@ -434,27 +615,55 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 <RefreshCw className="h-4 w-4 shrink-0" />
               )}
             </Button>
-            <Button variant="outline" size="sm" onClick={handlePushFile} disabled={isBusy}>
-              {isPushingFile ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              ) : (
-                <Upload className="h-4 w-4 shrink-0" />
-              )}
-              <span className="hidden sm:inline">Import File</span>
-            </Button>
-            <Button variant="outline" size="sm" onClick={handlePushFolder} disabled={isBusy}>
-              {isPushingFolder ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              ) : (
-                <FolderUp className="h-4 w-4 shrink-0" />
-              )}
-              <span className="hidden sm:inline">Import Folder</span>
-            </Button>
+
+            {/* Split Import button */}
+            <div className="flex items-stretch">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-r-none border-r-0 pr-2"
+                onClick={handlePushFile}
+                disabled={isBusy}
+              >
+                {isPushing ? (
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                ) : (
+                  <Upload className="h-4 w-4 shrink-0" />
+                )}
+                <span className="hidden sm:inline">Import</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-l-none px-1.5"
+                    disabled={isBusy}
+                    aria-label="Import options"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handlePushFile}>
+                    <File className="h-4 w-4 shrink-0" />
+                    Import File
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePushFolder}>
+                    <FolderOpen className="h-4 w-4 shrink-0" />
+                    Import Folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Export */}
             <Button
               variant="outline"
               size="sm"
               onClick={handlePull}
               disabled={isPullDisabled || isBusy}
+              title={selectedNames.size > 1 ? 'Select a single item to export' : undefined}
             >
               {isPulling ? (
                 <Loader2 className="h-4 w-4 animate-spin shrink-0" />
@@ -466,7 +675,29 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           </div>
         </div>
 
-        {/* File table / empty / error states */}
+        {/* Selection summary bar */}
+        {selectedNames.size > 0 && !renamingName && (
+          <SelectionSummaryBar
+            count={selectedNames.size}
+            label={selectedNames.size === 1 ? 'item selected' : 'items selected'}
+            onClear={clearSelection}
+            disabled={isBusy}
+            actions={
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => openDeleteDialog(Array.from(selectedNames))}
+                disabled={isBusy}
+              >
+                <Trash2 className="h-3 w-3 shrink-0" />
+                <span className="hidden sm:inline ml-1">Delete</span>
+              </Button>
+            }
+          />
+        )}
+
+        {/* File table / states */}
         <ScrollArea className="flex-1">
           {isLoading ? (
             <div className="flex h-40 items-center justify-center">
@@ -502,6 +733,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             <Table>
               <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                 <TableRow>
+                  <TableHead className="w-10 pl-3">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                      disabled={isBusy}
+                    />
+                  </TableHead>
                   <TableHead className="w-10" />
                   <TableHead>Name</TableHead>
                   <TableHead>Size</TableHead>
@@ -510,34 +749,226 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {fileList.map((file) => (
-                  <TableRow
-                    key={file.name}
-                    onClick={() => handleRowClick(file)}
-                    onDoubleClick={() => handleRowDoubleClick(file)}
-                    data-state={selectedFile?.name === file.name ? 'selected' : ''}
-                    className="cursor-pointer"
-                  >
-                    <TableCell>
-                      {file.type === 'Directory' ? (
-                        <Folder className="h-4 w-4 shrink-0 text-primary" />
-                      ) : file.type === 'Symlink' ? (
-                        <Link className="h-4 w-4 shrink-0 text-primary/70" />
-                      ) : (
-                        <File className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{file.name}</TableCell>
-                    <TableCell>{file.size}</TableCell>
-                    <TableCell>{file.date}</TableCell>
-                    <TableCell>{file.time}</TableCell>
-                  </TableRow>
-                ))}
+                {fileList.map((file) => {
+                  const isSelected = selectedNames.has(file.name);
+                  const isBeingRenamed = renamingName === file.name;
+                  const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
+                  const isOnlySelected = isSelected && selectedNames.size === 1;
+
+                  return (
+                    <ContextMenu key={file.name}>
+                      <ContextMenuTrigger asChild>
+                        <TableRow
+                          data-state={isSelected ? 'selected' : ''}
+                          onClick={(e) => handleRowClick(file, e)}
+                          onDoubleClick={() => handleRowDoubleClick(file)}
+                          className="cursor-pointer"
+                        >
+                          {/* Checkbox cell — click doesn't propagate to row */}
+                          <TableCell
+                            className="pl-3 pr-0 w-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCheckbox(file.name);
+                            }}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              aria-label={`Select ${file.name}`}
+                              tabIndex={-1}
+                            />
+                          </TableCell>
+
+                          {/* Type icon */}
+                          <TableCell className="w-10">
+                            {file.type === 'Directory' ? (
+                              <Folder className="h-4 w-4 shrink-0 text-primary" />
+                            ) : file.type === 'Symlink' ? (
+                              <Link className="h-4 w-4 shrink-0 text-primary/70" />
+                            ) : (
+                              <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                          </TableCell>
+
+                          {/* Name cell — click on already-selected single item triggers inline rename */}
+                          <TableCell
+                            className="font-medium"
+                            onClick={(e) => {
+                              if (isOnlySelected && !isBeingRenamed) {
+                                e.stopPropagation();
+                                startRename(file);
+                              }
+                            }}
+                          >
+                            {isBeingRenamed ? (
+                              <div className="flex flex-col gap-0.5">
+                                <Input
+                                  value={renameValue}
+                                  onChange={(e) => handleRenameChange(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleRenameConfirm();
+                                    }
+                                    if (e.key === 'Escape') {
+                                      e.preventDefault();
+                                      handleRenameCancel();
+                                    }
+                                  }}
+                                  onBlur={handleRenameCancel}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={cn(
+                                    'h-7 py-0 px-1.5 font-medium text-sm w-full',
+                                    renameError &&
+                                      'border-destructive focus-visible:ring-destructive',
+                                  )}
+                                  autoFocus
+                                  onFocus={(e) => e.target.select()}
+                                />
+                                {renameError && (
+                                  <span className="text-xs text-destructive leading-none">
+                                    {renameError}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span
+                                className={cn(isOnlySelected && 'cursor-text')}
+                                title={isOnlySelected ? 'Click to rename, or press F2' : undefined}
+                              >
+                                {file.name}
+                              </span>
+                            )}
+                          </TableCell>
+
+                          <TableCell>{file.size}</TableCell>
+                          <TableCell>{file.date}</TableCell>
+                          <TableCell>{file.time}</TableCell>
+                        </TableRow>
+                      </ContextMenuTrigger>
+
+                      {/* Right-click context menu */}
+                      <ContextMenuContent>
+                        {isNavigable && (
+                          <>
+                            <ContextMenuItem
+                              onClick={() =>
+                                loadFiles(path.posix.join(currentPath, file.name) + '/')
+                              }
+                            >
+                              <FolderOpen className="h-4 w-4 shrink-0" />
+                              Open
+                            </ContextMenuItem>
+                            <ContextMenuSeparator />
+                          </>
+                        )}
+
+                        <ContextMenuItem
+                          disabled={
+                            (isSelected && selectedNames.size > 1) ||
+                            (!isSelected && selectedNames.size > 0)
+                          }
+                          onClick={() => startRename(file)}
+                        >
+                          <Pencil className="h-4 w-4 shrink-0" />
+                          Rename
+                        </ContextMenuItem>
+
+                        <ContextMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => {
+                            const namesToDelete =
+                              isSelected && selectedNames.size > 0
+                                ? Array.from(selectedNames)
+                                : [file.name];
+                            openDeleteDialog(namesToDelete);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 shrink-0" />
+                          {isSelected && selectedNames.size > 1
+                            ? `Delete ${selectedNames.size} items`
+                            : 'Delete'}
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+
+                        <ContextMenuItem
+                          disabled={!isSelected || selectedNames.size !== 1}
+                          onClick={handlePull}
+                        >
+                          <Download className="h-4 w-4 shrink-0" />
+                          Export
+                        </ContextMenuItem>
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </ScrollArea>
       </div>
+
+      {/* ── Delete confirmation dialog ─────────────────────────────────── */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {filesToDelete.length === 1
+                ? `Delete "${filesToDelete[0]}"?`
+                : `Delete ${filesToDelete.length} items?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  {filesToDelete.length === 1
+                    ? 'This item will be permanently deleted from the device. This action cannot be undone.'
+                    : 'These items will be permanently deleted from the device. This action cannot be undone.'}
+                </p>
+                {filesToDelete.length > 1 && (
+                  <ul className="mt-2 space-y-0.5 text-xs font-mono">
+                    {filesToDelete.slice(0, 5).map((name) => {
+                      const f = fileList.find((x) => x.name === name);
+                      return (
+                        <li key={name} className="flex items-center gap-1.5">
+                          {f?.type === 'Directory' ? (
+                            <Folder className="h-3 w-3 shrink-0" />
+                          ) : f?.type === 'Symlink' ? (
+                            <Link className="h-3 w-3 shrink-0" />
+                          ) : (
+                            <File className="h-3 w-3 shrink-0" />
+                          )}
+                          {name}
+                        </li>
+                      );
+                    })}
+                    {filesToDelete.length > 5 && (
+                      <li className="text-muted-foreground">
+                        … and {filesToDelete.length - 5} more
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: 'destructive' })}
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              ) : (
+                <Trash2 className="h-4 w-4 shrink-0" />
+              )}
+              Delete permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

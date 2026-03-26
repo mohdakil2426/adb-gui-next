@@ -48,6 +48,33 @@ pub fn push_file(app: AppHandle, local_path: String, remote_path: String) -> Cmd
     run_binary_command(&app, "adb", &["push", local_path.trim(), remote_path.trim()])
 }
 
+#[tauri::command]
+pub fn delete_files(app: AppHandle, paths: Vec<String>) -> CmdResult<String> {
+    if paths.is_empty() {
+        return Err("No paths provided".into());
+    }
+    let count = paths.len();
+    info!("Deleting {} item(s)", count);
+
+    // Build a single shell command: rm -rf 'path1' 'path2' ...
+    // Each path is single-quoted with the '' -> '\'' escape idiom for embedded quotes.
+    let quoted: Vec<String> =
+        paths.iter().map(|p| format!("'{}'", p.trim().replace('\'', r"'\''"))).collect();
+    let cmd = format!("rm -rf {}", quoted.join(" "));
+    run_binary_command(&app, "adb", &["shell", &cmd])?;
+    Ok(format!("Deleted {} item(s)", count))
+}
+
+#[tauri::command]
+pub fn rename_file(app: AppHandle, old_path: String, new_path: String) -> CmdResult<String> {
+    info!("Renaming '{}' to '{}'", old_path.trim(), new_path.trim());
+    let old_q = format!("'{}'", old_path.trim().replace('\'', r"'\''"));
+    let new_q = format!("'{}'", new_path.trim().replace('\'', r"'\''"));
+    let cmd = format!("mv {} {}", old_q, new_q);
+    run_binary_command(&app, "adb", &["shell", &cmd])?;
+    Ok(format!("Renamed to {}", new_path.trim()))
+}
+
 fn parse_file_entries(output: &str) -> Vec<FileEntry> {
     output
         .lines()

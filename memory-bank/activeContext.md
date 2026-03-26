@@ -6,7 +6,53 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
-### 2026-03-26 — File Explorer: Dual-Pane Navigation + 5 Edge Case Fixes
+### 2026-03-26 — File Explorer: Multi-Select, Delete & Rename
+
+**Multi-item selection (Checkbox-first pattern):**
+- Checkbox column added to table header (select-all / indeterminate) and each row
+- `selectedNames: Set<string>` replaces the old `selectedFile: FileEntry | null` state
+- Click row → single-select (clears others); `Ctrl+Click` → toggle in set
+- Click checkbox → toggles without clearing other selections
+- `SelectionSummaryBar` extended with optional `actions` slot; appears when ≥1 item selected with item count + `Delete` button
+
+**Inline rename (desktop-native style):**
+- Click the name cell of the already-selected single item → enters inline edit mode in-place
+- `F2` key → same; `Enter` → confirm; `Escape` / blur → cancel
+- Validation: empty name, same name, forbidden chars `/ \ : * ? " < > |` shown as inline error
+- On success: `adb shell mv 'old' 'new'` via new `rename_file` Rust command
+- Post-rename: refreshes directory, keeps new name selected
+
+**Delete with confirmation:**
+- `SelectionSummaryBar` Delete button, context menu Delete, and `Del` key all open `AlertDialog`
+- Dialog lists up to 5 items with type icons (📁 📄 🔗), then "… and N more"
+- On confirm: `adb shell rm -rf 'p1' 'p2' ...` via new `delete_files` Rust command (single call, all paths quoted)
+- Post-delete: refreshes directory, clears selection
+
+**Right-click ContextMenu on every table row:**
+- `Open` (directories/symlinks only)
+- `Rename` (disabled when >1 selected or right-clicking unselected item that's in a multi-select)
+- `Delete` (shows count when multi-selected)
+- `Export` (disabled when not exactly 1 item selected in current row)
+
+**Keyboard shortcuts:**
+- `Ctrl+A` — select all items
+- `F2` — start inline rename (single selection)
+- `Delete` — open delete confirmation (any selection)
+- `Escape` — cancel rename first, then clear selection
+
+**New Rust commands (`commands/files.rs`):**
+- `delete_files(paths: Vec<String>)` — single `adb shell rm -rf` with all paths quoted
+- `rename_file(old_path, new_path)` — `adb shell mv` with both paths quoted
+- Both registered in `lib.rs` invoke_handler
+
+**New frontend wrappers (`backend.ts`):**
+- `DeleteFiles(paths: string[])` → `delete_files`
+- `RenameFile(oldPath, newPath)` → `rename_file`
+
+**New shadcn components installed:** `Checkbox`, `ContextMenu` (via `pnpm dlx shadcn@latest add`)
+
+**Quality:** `pnpm format:check` ✅ | `pnpm lint:web` ✅ | `cargo clippy -D warnings` ✅ | `pnpm build` ✅
+
 
 **Dual-pane layout (`ViewFileExplorer.tsx` + new `DirectoryTree.tsx`):**
 - New `DirectoryTree` component: lazy-loaded tree showing both files and directories
@@ -128,20 +174,20 @@ A comprehensive UI consistency audit was performed and all issues resolved:
 
 ## Current Verification Evidence
 
-Verified on `main` (2026-03-23):
+Verified on `main` (2026-03-26):
 - `pnpm build` ✅ — TypeScript + Vite bundle
 - `pnpm format:check` ✅ — Prettier + cargo fmt clean
-- `pnpm lint:web` ✅ — ESLint (0 errors, 3 pre-existing warnings)
-- `pnpm lint:rust` ✅ — cargo clippy -D warnings clean (setup hook uses Rust 2024 let-chains)
+- `pnpm lint:web` ✅ — ESLint (0 errors, 0 warnings)
+- `pnpm lint:rust` ✅ — cargo clippy -D warnings clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL not available in bare test runtime)
-- Icons: ✅ Complete — `original_icons.png` source, 17 icon files, favicon.png, logo.png, setup hook, taskbar fix
+- `Checkbox` + `ContextMenu` shadcn components installed
 
 ## Architecture Status
 
 | Area | Status | Notes |
 |------|--------|-------|
 | Frontend | ✅ Complete | shadcn Sidebar (grouped nav, icon collapse) + 7 views + bottom panel (Logs/Shell tabs) |
-| File Explorer | ✅ Enhanced | Dual-pane (tree + file list), editable address bar, tree collapse, localStorage persistence |
+| File Explorer | ✅ Enhanced | Dual-pane + multi-select + inline rename + delete + context menu + keyboard shortcuts |
 | UI Consistency | ✅ Complete | ~95% consistency — semantic tokens, icon sizes, Label, aria roles, shared CheckboxItem/EmptyState |
 | Accessibility | ✅ Improved | role/aria/tabIndex/onKeyDown on all clickable div lists |
 | Backend | ✅ Complete | 26 Tauri commands, payload parser |

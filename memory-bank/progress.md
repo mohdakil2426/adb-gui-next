@@ -22,7 +22,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
-- **File Explorer (dual-pane)**: lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list; editable address bar; tree collapse/expand; `fe.currentPath` + `fe.treeCollapsed` persisted to localStorage; 5 edge cases fixed (permission denied, spaces in paths, symlinks, device disconnect, responsive)
+- **File Explorer (multi-select)**: Checkbox column + `Set<string>` selection state; inline rename (click selected name / F2); delete with AlertDialog confirmation; right-click ContextMenu; `Ctrl+A` / `Delete` / `F2` / `Escape` keyboard shortcuts; `SelectionSummaryBar` extended with actions slot
 - Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
@@ -47,7 +47,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | Device | `get_devices`, `get_device_info`, `get_device_mode`, `get_fastboot_devices` |
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition`, `reboot`, `wipe_data`, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
-| Files | `list_files`, `push_file`, `pull_file` |
+| Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file` |
 | Apps | `install_package`, `uninstall_package`, `sideload_package`, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
@@ -138,6 +138,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-26 | 0.1.0 | File Explorer multi-select + inline rename + delete + context menu + keyboard shortcuts; Checkbox + ContextMenu installed |
 | 2026-03-26 | 0.1.0 | File Explorer dual-pane: DirectoryTree, editable address bar, tree collapse, localStorage persistence, 5 edge case fixes |
 | 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, true PNG conversion, `pnpm tauri icon` cross-platform generation |
 | 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |

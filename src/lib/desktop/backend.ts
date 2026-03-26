@@ -126,6 +126,14 @@ export function PushFile(arg1: string, arg2: string): Promise<string> {
   return call('push_file', { localPath: arg1, remotePath: arg2 });
 }
 
+export function DeleteFiles(arg1: string[]): Promise<string> {
+  return call('delete_files', { paths: arg1 });
+}
+
+export function RenameFile(arg1: string, arg2: string): Promise<string> {
+  return call('rename_file', { oldPath: arg1, newPath: arg2 });
+}
+
 export function Reboot(arg1: string): Promise<void> {
   return call('reboot', { mode: arg1 });
 }

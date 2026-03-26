@@ -9,6 +9,8 @@ interface SelectionSummaryBarProps {
   label: string;
   /** Called when the clear button is clicked */
   onClear: () => void;
+  /** Optional action buttons rendered to the right of the count (before Clear) */
+  actions?: React.ReactNode;
   /** Disables the clear button */
   disabled?: boolean;
   className?: string;
@@ -16,12 +18,13 @@ interface SelectionSummaryBarProps {
 
 /**
  * A compact bar shown below a list when one or more items are selected.
- * Displays the selection count and a "Clear" button.
+ * Displays the selection count, optional action buttons, and a "Clear" button.
  */
 export function SelectionSummaryBar({
   count,
   label,
   onClear,
+  actions,
   disabled = false,
   className,
 }: SelectionSummaryBarProps) {
@@ -30,13 +33,14 @@ export function SelectionSummaryBar({
   return (
     <div
       className={cn(
-        'text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center',
+        'text-sm text-muted-foreground px-3 py-1.5 bg-muted/60 border-b border-border flex items-center gap-2',
         className,
       )}
     >
-      <span>
-        Selected: <span className="font-medium text-foreground">{count}</span> {label}
+      <span className="flex-1">
+        <span className="font-medium text-foreground">{count}</span> {label}
       </span>
+      {actions}
       <Button
         variant="ghost"
         size="sm"

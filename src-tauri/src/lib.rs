@@ -36,6 +36,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::cleanup_payload_cache,
             commands::connect_wireless_adb,
+            commands::delete_files,
             commands::disconnect_wireless_adb,
             commands::enable_wireless_adb,
             commands::extract_payload,
@@ -55,6 +56,7 @@ pub fn run() {
             commands::open_folder,
             commands::pull_file,
             commands::push_file,
+            commands::rename_file,
             commands::reboot,
             commands::run_adb_host_command,
             commands::run_fastboot_host_command,
