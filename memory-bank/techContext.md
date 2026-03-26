@@ -112,8 +112,9 @@
 │   │   ├── FileSelector.tsx      # Shared file/dir picker
 │   │   ├── LoadingButton.tsx     # Shared loading button
 │   │   ├── SectionHeader.tsx     # Shared section sub-header
-│   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear bar
-│   │   ├── ui/                   # 20+ shadcn primitives (sidebar, sidebar-context, sheet, etc.)
+│   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
+│   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
+│   │   ├── ui/                   # 22+ shadcn primitives (incl. Checkbox, ContextMenu)
 │   │   └── views/                # 7 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
@@ -176,4 +177,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-03-23 (UI consistency audit & fixes)
+- **Last Updated**: 2026-03-26 (File Explorer multi-select, delete_files, rename_file commands)

@@ -21,6 +21,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Practical, task-oriented feature flows
 - Light/dark/system theme support
 - ~95% UI consistency: semantic tokens, standardized icons, accessible clickable lists, shared components
+- File management: dual-pane explorer, multi-select, inline rename, delete with confirmation
 
 ## Product Boundaries
 
@@ -53,4 +54,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-03-23 (UI consistency audit & fixes)
+- Last Updated: 2026-03-26 (File Explorer multi-select, explicit selection model)

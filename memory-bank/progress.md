@@ -15,32 +15,43 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `Ctrl+B` keyboard shortcut for sidebar toggle
 - 7 sidebar views compile and build successfully
 - VS Code-style bottom panel with Logs and Shell tabs
-- Proper header bar with SidebarTrigger + toolbar buttons (Device Manager, Terminal, Shell, Logs)
+- Proper header bar with SidebarTrigger + toolbar buttons
 - shadcn/ui components (20+ primitives) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
-- **File Explorer (multi-select)**: Checkbox column + `Set<string>` selection state; inline rename (click selected name / F2); delete with AlertDialog confirmation; right-click ContextMenu; `Ctrl+A` / `Delete` / `F2` / `Escape` keyboard shortcuts; `SelectionSummaryBar` extended with actions slot
-- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`
+- **File Explorer (full-featured dual-pane)**:
+  - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
+  - Editable address bar; tree collapse/expand; `fe.currentPath` + `fe.treeCollapsed` in localStorage
+  - 5 edge cases: permission denied, spaces in paths, symlinks, device disconnect, responsive
+  - **Explicit multi-select mode** (`isMultiSelectMode` gate):
+    - Checkbox column completely absent by default
+    - Activated via `Ctrl+Click`, `Ctrl+A`, or right-click → Select
+    - Deactivated via Escape, Clear button, uncheck-all, or navigation
+    - `SelectionSummaryBar` with item count + Delete button (only in multi-select mode)
+  - **Inline rename**: `F2` or right-click → Rename; inline Input, Enter/Escape/blur
+  - **Bulk delete**: `Delete` key or right-click → Delete → `AlertDialog` with item list
+  - **Right-click ContextMenu**: Select / Open / Rename / Delete / Export
+  - Keyboard: `Ctrl+A` (select all), `F2` (rename), `Delete` (delete), `Ctrl+Click` (toggle), `Escape` (cancel/clear)
+- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 
 ### UI Consistency (~95%)
 
 - All CardTitle icons: `className="h-5 w-5"` (no unsized icons, no `size={N}` prop)
-- All inline/list icons: `className="h-4 w-4"`
-- All in-button icons: `shrink-0` present
+- All inline/list icons: `className="h-4 w-4 shrink-0"`
 - All form labels: shadcn `<Label>` (no raw `<label className="...">`)
 - All destructive AlertDialogAction: `buttonVariants({ variant: 'destructive' })`
-- Semantic color tokens everywhere: `text-success`, `bg-success`, `border-success` (no `[var(--terminal-log-success)]` in className)
+- Semantic color tokens everywhere: `text-success`, `bg-success`, `border-success`
 - All internal imports use `@/` alias
 - All clickable div lists have `role`/`aria-*`/`tabIndex`/`onKeyDown`
 - `CheckboxItem` shared component used in AppManager + PayloadDumper
 - `EmptyState` shared component used in AppManager
 
-### Backend (26 Tauri Commands)
+### Backend (28 Tauri Commands)
 
 | Category | Commands |
 |----------|----------|
@@ -67,9 +78,9 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 - Windows debug MSI and NSIS bundles build successfully
 - Platform-specific resource bundling configured
-- Platform-specific resource bundling configured
-- Native application icons generated for Windows (`.ico`), macOS (`.icns`), and Linux (`.png`) via Tauri CLI using `docs/original_icons.png` as the final source. ICO: 6 layers (32/16/24/48/64/256px, all 32bpp, 32px first). `public/logo.png` synced from `src-tauri/icons/icon.png`.
-- Mobile icon directories (`android/`, `ios/`) removed as they are out of project scope.
+- Native application icons: Windows (`.ico`), macOS (`.icns`), Linux (`.png`) via `pnpm tauri icon`
+- ICO: 6 layers (32/16/24/48/64/256px, all 32bpp). `public/logo.png` + `public/favicon.png` synced.
+- Mobile icon directories removed (out of scope)
 
 ### Tooling & Quality
 
@@ -85,14 +96,14 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 ```
 src-tauri/src/
-├── lib.rs (52 lines) — thin orchestrator
+├── lib.rs (~60 lines) — thin orchestrator
 ├── helpers.rs — shared utilities (binary resolution, command execution, device info)
 ├── commands/
 │   ├── mod.rs — re-exports
 │   ├── device.rs — get_devices, get_device_info, get_device_mode, get_fastboot_devices
 │   ├── adb.rs — wireless ADB, run_adb_host_command, run_shell_command
 │   ├── fastboot.rs — flash_partition, reboot, wipe_data, set_active_slot
-│   ├── files.rs — list_files, push_file, pull_file
+│   ├── files.rs — list_files, push_file, pull_file, delete_files, rename_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
 │   └── payload.rs — payload command wrappers
@@ -112,16 +123,17 @@ src-tauri/src/
 
 ## Performance Optimizations (Implemented)
 
-- ✅ Sparse zero handling: `Type::Zero` returns empty vec, seeks past region (instant vs minutes)
-- ✅ Position tracking: skips redundant seeks when already at target position
-- ✅ Block size from manifest: reads `block_size` field instead of hardcoding 4096
-- ✅ Async Tauri commands: `extract_payload` and `cleanup_payload_cache` run on Tokio runtime
-- ✅ Parallel partition extraction: `std::thread::scope` for concurrent extraction (4-8x faster)
+- ✅ Sparse zero handling: `Type::Zero` returns empty vec, seeks past region
+- ✅ Position tracking: skips redundant seeks
+- ✅ Block size from manifest: reads `block_size` field
+- ✅ Async Tauri commands: `extract_payload` and `cleanup_payload_cache` on Tokio
+- ✅ Parallel partition extraction: `std::thread::scope` (4-8x faster)
 
 ## Remaining Work
 
 | Priority | Task | Notes |
 |----------|------|-------|
+| Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form |
@@ -130,7 +142,7 @@ src-tauri/src/
 
 ## Risks / Known Issues
 
-- Large frontend bundle chunk warning during build (589KB JS)
+- Large frontend bundle chunk warning during build (~274 KB JS)
 - Bottom panel Shell tab needs manual verification with `pnpm tauri dev`
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
 
@@ -138,14 +150,15 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2026-03-26 | 0.1.0 | File Explorer multi-select + inline rename + delete + context menu + keyboard shortcuts; Checkbox + ContextMenu installed |
+| 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate; no single-click selection; Ctrl+Click/Ctrl+A/right-click→Select only; auto-exit on empty |
+| 2026-03-26 | 0.1.0 | File Explorer: checkbox column hidden until multi-select mode (isMultiSelectMode state); right-click Select menu item |
+| 2026-03-26 | 0.1.0 | File Explorer multi-select + inline rename + delete + context menu + keyboard shortcuts; Checkbox + ContextMenu shadcn components |
 | 2026-03-26 | 0.1.0 | File Explorer dual-pane: DirectoryTree, editable address bar, tree collapse, localStorage persistence, 5 edge case fixes |
-| 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, true PNG conversion, `pnpm tauri icon` cross-platform generation |
+| 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, `pnpm tauri icon` cross-platform generation |
 | 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |
-| 2026-03-23 | 0.1.0 | shadcn Sidebar migration: `AppSidebar.tsx`, grouped nav, `SidebarProvider`/`SidebarInset`, header bar with `SidebarTrigger`, `Ctrl+B` shortcut |
-| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption, shared components, semantic token fixes, models.ts interface migration |
-| 2026-03-23 | 0.1.0 | App Manager: virtualized list + user/system package filter |
-| 2026-03-23 | 0.1.0 | VS Code-style bottom panel overhaul (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |
+| 2026-03-23 | 0.1.0 | shadcn Sidebar migration: AppSidebar.tsx, grouped nav, SidebarProvider/SidebarInset, Ctrl+B shortcut |
+| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption, shared components, semantic token fixes |
+| 2026-03-23 | 0.1.0 | App Manager: virtualized list (TanStack Virtual) + user/system package filter |
+| 2026-03-23 | 0.1.0 | VS Code-style bottom panel (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |
 | 2026-03-22 | 0.1.0 | Payload dumper overhaul, dependency integration, debugging infrastructure |
-| 2026-03-22 | 0.1.0 | Dialog permission fix, Rust code refactoring, audit & performance research |
 | 2026-03-22 | 0.1.0 | Rust edition 2024, all clippy warnings fixed, dependencies verified |

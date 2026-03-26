@@ -6,191 +6,142 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
-### 2026-03-26 — File Explorer: Multi-Select, Delete & Rename
+### 2026-03-26 — File Explorer: Explicit Multi-Select Mode (Checkbox Gate)
 
-**Multi-item selection (Checkbox-first pattern):**
-- Checkbox column added to table header (select-all / indeterminate) and each row
-- `selectedNames: Set<string>` replaces the old `selectedFile: FileEntry | null` state
-- Click row → single-select (clears others); `Ctrl+Click` → toggle in set
-- Click checkbox → toggles without clearing other selections
-- `SelectionSummaryBar` extended with optional `actions` slot; appears when ≥1 item selected with item count + `Delete` button
+**Final selection model (after three iterations):**
+- **Plain click does NOT select** — no accidental selection, no SelectionSummaryBar on click
+- **Multi-select mode** (`isMultiSelectMode: boolean`) is an explicit gate that makes the checkbox column visible
+- `isMultiSelectMode` activates ONLY via:
+  - `Ctrl+Click` — toggles item in selection set, activates mode
+  - `Ctrl+A` — selects all items, activates mode  
+  - Right-click → **Select** — adds that item to selection, activates mode
+- `isMultiSelectMode` deactivates when:
+  - `Escape` key (clears selection + exits mode)
+  - Clear button in `SelectionSummaryBar`
+  - All checkboxes toggled off (`toggleCheckbox` auto-exits when set hits zero)
+  - Header checkbox deselect-all (`handleSelectAll` on already-all-selected exits mode)
+  - Navigating to a new directory (resets everything)
+- `SelectionSummaryBar` is gated on `isMultiSelectMode && selectedNames.size > 0`
 
-**Inline rename (desktop-native style):**
-- Click the name cell of the already-selected single item → enters inline edit mode in-place
-- `F2` key → same; `Enter` → confirm; `Escape` / blur → cancel
-- Validation: empty name, same name, forbidden chars `/ \ : * ? " < > |` shown as inline error
-- On success: `adb shell mv 'old' 'new'` via new `rename_file` Rust command
-- Post-rename: refreshes directory, keeps new name selected
+**Checkbox column behaviour:**
+- `isMultiSelectMode = false`: checkbox column is **completely absent from the DOM** (not just invisible)
+- `isMultiSelectMode = true`: header checkbox (select-all / indeterminate) + per-row checkboxes appear
+- Checkbox column absent during inline rename (`isBeingRenamed`)
 
-**Delete with confirmation:**
-- `SelectionSummaryBar` Delete button, context menu Delete, and `Del` key all open `AlertDialog`
-- Dialog lists up to 5 items with type icons (📁 📄 🔗), then "… and N more"
-- On confirm: `adb shell rm -rf 'p1' 'p2' ...` via new `delete_files` Rust command (single call, all paths quoted)
-- Post-delete: refreshes directory, clears selection
-
-**Right-click ContextMenu on every table row:**
-- `Open` (directories/symlinks only)
-- `Rename` (disabled when >1 selected or right-clicking unselected item that's in a multi-select)
-- `Delete` (shows count when multi-selected)
-- `Export` (disabled when not exactly 1 item selected in current row)
+**Context menu (right-click any row):**
+```
+☑ Select           ← always first; enters multi-select mode + adds item
+─────────────────
+📂 Open            ← directories/symlinks only
+─────────────────
+✏  Rename          ← disabled when >1 selected OR row is not the only selection
+🗑  Delete          ← smart label: "Delete 3 items" when multi-selecting
+─────────────────
+⬇  Export          ← disabled when not exactly 1 item selected
+```
 
 **Keyboard shortcuts:**
-- `Ctrl+A` — select all items
-- `F2` — start inline rename (single selection)
-- `Delete` — open delete confirmation (any selection)
-- `Escape` — cancel rename first, then clear selection
+- `Ctrl+Click` — toggle item, enter multi-select mode
+- `Ctrl+A` — select all, enter multi-select mode
+- `F2` — start inline rename (must be in multi-select mode with exactly 1 item selected)
+- `Delete` — open delete confirmation (any selection ≥1)
+- `Escape` — cancel rename → then exit multi-select mode + clear selection
 
-**New Rust commands (`commands/files.rs`):**
-- `delete_files(paths: Vec<String>)` — single `adb shell rm -rf` with all paths quoted
-- `rename_file(old_path, new_path)` — `adb shell mv` with both paths quoted
-- Both registered in `lib.rs` invoke_handler
+**Rename (inline — F2 or right-click only):**
+- No click-to-rename (removed — was tied to single-click selection which was removed)
+- F2 key → inline Input in place, Enter=confirm, Escape/blur=cancel
+- Validation: empty, same name, forbidden chars `/ \ : * ? " < > |`
+- On success: `adb shell mv 'old' 'new'` → refresh directory, keep new name selected
 
-**New frontend wrappers (`backend.ts`):**
-- `DeleteFiles(paths: string[])` → `delete_files`
-- `RenameFile(oldPath, newPath)` → `rename_file`
+**Delete (AlertDialog):**
+- Lists up to 5 items with type icons (📁 📄 🔗), then "… and N more"
+- On confirm: `adb shell rm -rf 'p1' 'p2' ...` — all paths quoted, single call
+- Post-delete: refresh directory, clear selection, exit multi-select mode
 
-**New shadcn components installed:** `Checkbox`, `ContextMenu` (via `pnpm dlx shadcn@latest add`)
+### 2026-03-26 — File Explorer: Dual-Pane Navigation + 5 Edge Case Fixes
 
-**Quality:** `pnpm format:check` ✅ | `pnpm lint:web` ✅ | `cargo clippy -D warnings` ✅ | `pnpm build` ✅
-
-
-**Dual-pane layout (`ViewFileExplorer.tsx` + new `DirectoryTree.tsx`):**
+**Dual-pane layout:**
 - New `DirectoryTree` component: lazy-loaded tree showing both files and directories
   - Lazy expansion via `loadDirEntries()` — fetches only when node is first expanded
-  - Auto-reveals current path: `expandToPath(currentPath)` runs on `currentPath` change, sequentially expands ancestors, fetches unloaded nodes
-  - `refreshTrigger` prop: incremented every time right pane refreshes → reloads stale tree node children
-  - Files shown in tree with `File` icon (no expand chevron); dirs with `Folder`/`FolderOpen` + chevron
-  - Clicking a file in tree navigates right pane to its parent directory
+  - Auto-reveals current path: `expandToPath(currentPath)` sequentially expands ancestors
+  - `refreshTrigger` prop: incremented every time right pane refreshes → reloads stale tree
   - Keyboard navigation: `ArrowRight`/`ArrowLeft` to expand/collapse, `Enter`/`Space` to navigate
-- `ViewFileExplorer` rewritten: resizable dual-pane (`MIN 180px / DEFAULT 180px / MAX 420px`), horizontal drag-to-resize with mouse capture overlay
-- **Editable address bar**: click path to edit as monospace Input, `Enter` to navigate, `Escape` to cancel, auto-normalizes trailing `/`
-- **Tree collapse**: `PanelLeftClose` button in tree header; `PanelLeft` restore button in toolbar when collapsed
+- Resizable dual-pane (`MIN 180px / DEFAULT 180px / MAX 420px`), horizontal drag-to-resize
+- **Editable address bar**: click path → edit as monospace Input, `Enter` navigate, `Escape` cancel
+- **Tree collapse**: `PanelLeftClose` in tree header; `PanelLeft` restore in toolbar
 
 **5 Edge Case Fixes:**
-1. **Device disconnect → stale data**: `loadFiles` catch now clears `fileList`, categorizes error (`permission_denied` / `no_device` / `unknown`), shows appropriate empty state (Lock / MonitorOff / AlertCircle icons)
-2. **Permission denied → silent empty**: `list_files` in Rust checks output for `"permission denied"` before parsing → returns `Err(...)` instead of silent `Ok([])`
-3. **Symlinks not navigable**: `Symlink` type treated as directory everywhere — tree (expandable), right-pane double-click (navigates), pull (allowed), shown with `Link` icon in table
-4. **Spaces in paths**: `list_files` wraps path in single-quotes for device shell (`'/sdcard/My Music/'`); escapes embedded single-quotes via `'\''` idiom
-5. **Narrow window / responsive**: tree collapse/expand toggle, action button labels hidden on narrow widths (`hidden sm:inline`)
+1. **Device disconnect → stale data**: `loadFiles` catch clears `fileList`, categorizes error
+2. **Permission denied → silent empty**: `list_files` Rust checks for `"permission denied"` before parsing
+3. **Symlinks as navigable**: `Symlink` type treated as directory everywhere (tree, double-click, pull)
+4. **Spaces in paths**: `list_files` wraps path in single-quotes; escapes embedded `'` via `'\''`
+5. **Narrow window / responsive**: tree collapse/expand; button labels hidden on `sm:` breakpoint
 
 **UI State Persistence (localStorage):**
-- `fe.currentPath` — saved on every successful `loadFiles`; restored via lazy `useState` initializer on mount
-- `fe.treeCollapsed` — saved on every toggle; restored same way
-- Both survive view switches and app restarts
-
-**Commits:** `49a2e30` (initial dual-pane), `32db232` (edge cases), latest (persistence)
-
-**Quality:** `pnpm lint` ✅ | `cargo clippy -D warnings` ✅ | `pnpm build` ✅
+- `fe.currentPath` — saved on every successful `loadFiles`; restored on mount
+- `fe.treeCollapsed` — saved on toggle; restored on mount
 
 ### 2026-03-23 — GitHub Readiness Audit & Fixes
 
-- **CSP fix**: Added `font-src: 'self' https://fonts.gstatic.com` and updated `style-src` to allow `https://fonts.googleapis.com` (Google Fonts loaded in `index.html` were blocked by CSP in bundled builds).
-- **`freezePrototype: true`**: Added to `tauri.conf.json` `security` section per Tauri 2 best practices — prevents prototype pollution XSS attacks.
-- **`README.md`**: Created comprehensive project README with features, architecture, prerequisites, getting started, development commands, project structure, platform support, and contributing guide.
-- **`LICENSE`**: MIT license added.
-- **`.github/workflows/publish.yml`**: Release CI/CD pipeline using official `tauri-apps/tauri-action@v0` — builds Windows + Linux, creates GitHub release with installer artifacts.
-- **`.github/workflows/ci.yml`**: Pull request CI — runs lint (ESLint + clippy), format check (Prettier + cargo fmt), and TypeScript + Vite build on both Windows and Linux.
-- **`.gitattributes`**: Added for LF line ending normalization and Git LFS tracking of bundled ADB/fastboot binaries (~30 MB).
-- **`.gitignore`**: Added `.agents/`, `.agent/`, `.claude/`, `.gemini/`, `memory-bank/`, `AGENTS.md`, `CLAUDE.md` — all local AI agent directories and config files.
-- **Verification**: `pnpm format:check` ✅ | `pnpm lint` ✅ | `pnpm build` ✅
+- CSP: `font-src` + `style-src` for Google Fonts
+- `freezePrototype: true` for prototype pollution protection
+- `README.md`, `LICENSE` (MIT), CI workflows (`.github/workflows/`)
+- `.gitattributes` for LF normalization + Git LFS for ADB binaries
+- `.gitignore` added agent/memory dirs
 
+### 2026-03-23 — App Icons & Branding
 
+- 1024×1024px source: `docs/original_icons.png` — 3D glassmorphic terminal icon
+- `pnpm tauri icon` → 17 platform icons; `public/logo.png` + `public/favicon.png` synced
+- `lib.rs` `.setup()` hook: `window.set_icon(app.default_window_icon())` for taskbar fix
 
-### 2026-03-23 — App Icons and Branding Update (Final)
+### 2026-03-23 — UI Consistency Audit (~72% → 95%)
 
-- Source icon: `docs/original_icons.png` — 1024×1024px RGBA, 3D glassmorphic terminal prompt (`>_`) with rainbow RGB border and "ADB GUI Next" label.
-- Ran `pnpm tauri icon docs/original_icons.png` to regenerate all 17 platform icons.
-- Synced `public/logo.png` from `src-tauri/icons/icon.png` (512×512 — used in WelcomeScreen, ViewAbout, AppSidebar header).
-- Created `public/favicon.png` from `src-tauri/icons/icon.png`; updated `index.html` to reference it (replaced default Vite `favicon.svg`).
-- Removed `android/` and `ios/` icon subdirectories (out of project scope).
-- ICO compliance confirmed: 6 layers (32/16/24/48/64/256px), all 32bpp, 32px first.
-- Added `.setup()` hook in `lib.rs` — calls `window.set_icon(app.default_window_icon())` at startup to fix small taskbar icon in dev mode (Tauri 2 has no JSON `icon` field in `WindowConfig`; the correct API is Rust `window.set_icon()`).
-- `bundle.icon` list includes `icon.png` (512px Linux) in addition to the Tauri docs canonical set.
-
-### 2026-03-23 — UI Consistency Audit & Fixes (Estimated score: ~72% → 95%)
-
-A comprehensive UI consistency audit was performed and all issues resolved:
-
-**P1 — Critical Fixes**
-- `ViewPayloadDumper`: 12 occurrences of raw `text/bg/border-[var(--terminal-log-success)]` → semantic `text-success` / `bg-success` / `border-success` tokens
-- All CardTitle icons standardized to `className="h-5 w-5"` (Dashboard, Flasher, AppManager had unsized icons or the `size={N}` prop)
-- All InfoItem list icons standardized to `className="h-4 w-4"` (Dashboard was using `size={18}`)
-- Raw `<label className="text-sm font-medium">` → shadcn `<Label>` (Flasher × 3, AppManager × 1)
-- Accessibility: `role="listbox"` + `role="option"` + `aria-selected` + `tabIndex` + `onKeyDown` on AppManager package list
-- Accessibility: `role="checkbox"` + `aria-checked` + `aria-disabled` + `tabIndex` + `onKeyDown` on PayloadDumper partition rows
-
-**P2 — Moderate Fixes**
-- Created `src/components/CheckboxItem.tsx` — shared checkbox indicator adopted in AppManager + PayloadDumper (replaced two independent hand-rolled SVG checkbox impls)
-- Created `src/components/EmptyState.tsx` — reusable empty-state component adopted in AppManager package list
-- `shrink-0` added to all in-button icons (Flasher, AppManager, Utilities) to prevent compression in narrow layouts
-- `buttonVariants({ variant: 'destructive' })` used uniformly in all `AlertDialogAction` destructive buttons (Flasher + Utilities)
-- `BottomPanel`: manual `<div w-px h-4>` divider → `<Separator orientation="vertical">` (added Separator import)
-- `ViewPayloadDumper`: merged double `@/lib/utils` import + fixed relative `../../lib/desktop/*` imports → `@/lib/desktop/*` alias
-- Removed unused `Check` import in PayloadDumper (CheckboxItem handles its own icon)
-
-**P3 — Polish Fixes**
-- `ViewAbout`: removed Tailwind `animate-in fade-in slide-in-from-bottom-4 duration-500` — view is already animated by the `motion.div` wrapper in MainLayout (prevented double-animation)
-- `ViewAbout`: `<a href="..." onClick={openLink}>` → `<button onClick={openLink}>` (prevented double browser-open on Tauri)
-- `MainLayout`: removed dead `cn()` conditional branch where both sides were identical `'p-4 sm:p-6'`
-- `ViewFileExplorer`: `w-12.5` → `w-12` (non-standard Tailwind value)
-
-**Sidebar Fast Refresh Fix**
-- Created `src/components/ui/sidebar-context.ts` — extracted non-component exports (constants `SIDEBAR_WIDTH`, `SIDEBAR_COOKIE_NAME`, etc.; `SidebarContextProps` type; `SidebarContext`; `useSidebar` hook) from `sidebar.tsx`
-- `sidebar.tsx` now exports only React components (fixes Vite Fast Refresh warning)
-
-**Verification:** `pnpm format:web` ✅ | `pnpm lint:web` ✅ (0 errors, 3 pre-existing warnings) | `pnpm lint:rust` ✅ (cargo clippy clean) | `pnpm build` ✅ (TypeScript + Vite clean)
-
-> **Known:** `cargo test` crashes at runtime on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process). Zero Rust files were touched in this session.
+- Semantic tokens: `text-success` / `bg-success` (replaced all `[var(--terminal-log-success)]`)
+- CardTitle icons: `className="h-5 w-5"` standardized
+- shadcn `<Label>` everywhere (removed raw `<label>`)
+- `buttonVariants({ variant: 'destructive' })` on all `AlertDialogAction`
+- Shared `CheckboxItem`, `EmptyState` components created
+- `sidebar-context.ts` extracted for Vite Fast Refresh compliance
+- Accessibility: `role`/`aria-*`/`tabIndex`/`onKeyDown` on clickable div lists
 
 ### 2026-03-23 — shadcn Sidebar Migration
 
-**Sidebar Component Overhaul**
-- Replaced ~150 lines of custom inline sidebar JSX in `MainLayout.tsx` with shadcn `Sidebar` component (`collapsible="icon"` mode)
-- Created `AppSidebar.tsx` — grouped navigation (Main: Dashboard/Apps/Files, Advanced: Flasher/Utilities/Payload), SidebarHeader with logo, SidebarFooter with About + ThemeToggle, SidebarRail for collapse
-- Refactored `MainLayout.tsx` from 426 → ~240 lines — uses `SidebarProvider`/`SidebarInset`
-- Moved toolbar buttons from floating `absolute` position to proper header bar with `SidebarTrigger`
-- Simplified `ThemeToggle.tsx` — uses `SidebarMenuButton` (auto tooltips + collapse handling)
-- New capabilities: `Ctrl+B` keyboard shortcut, grouped nav with labels, SidebarRail, automatic tooltips in icon mode, mobile sheet/drawer support
+- Replaced inline sidebar JSX with shadcn `Sidebar` (`collapsible="icon"`)
+- `AppSidebar.tsx` with grouped nav (Main/Advanced), SidebarRail, SidebarHeader, SidebarFooter
+- `MainLayout.tsx` refactored with `SidebarProvider` + `SidebarInset`
+- `Ctrl+B` keyboard shortcut, automatic icon-mode tooltips, mobile sheet support
 
-### 2026-03-23 — Comprehensive Codebase Quality Improvement
+### 2026-03-23 — VS Code-Style Bottom Panel
 
-- Dead code removal, P0 reactivity bug fix, shadcn component adoption (badge/progress/dialog/separator/skeleton)
-- Shared components extracted: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`
-- `models.ts` DTOs migrated from Wails-2 classes to plain TypeScript interfaces
-- Semantic token fixes across multiple views
+- `BottomPanel.tsx` + `LogsPanel.tsx` + `ShellPanel.tsx`
+- `logStore.ts` (ring buffer, filter, search), `shellStore.ts`
+- 12 terminal CSS variables in `global.css`
+- Shell moved from sidebar view to bottom panel tab
 
-### 2026-03-23 — VS Code-Style Bottom Panel Overhaul
-
-- Replaced right-side drawer with `BottomPanel.tsx` + `LogsPanel.tsx` + `ShellPanel.tsx`
-- `logStore.ts` + `shellStore.ts` created
-- 12 terminal CSS variables in `global.css` for light/dark
-- Shell is now in the bottom panel (not a sidebar view)
-
-### Previous Milestones
-- App Manager: virtualized package list (TanStack Virtual) + user/system filter
-- Payload Dumper: Arc<Mmap> + streaming ZIP + streaming decompression
-- Dependency Integration: Vitest, Zod, RHF, TanStack Query, Clipboard
-- Rust refactoring: `lib.rs` split into 8 focused files; `payload.rs` split into 4 modules
+---
 
 ## Current Verification Evidence
 
-Verified on `main` (2026-03-26):
+Verified on `main` (2026-03-26 — commits `0d11e84`, `d201f26`, `1beffa0`, `e544d37`):
 - `pnpm build` ✅ — TypeScript + Vite bundle
 - `pnpm format:check` ✅ — Prettier + cargo fmt clean
 - `pnpm lint:web` ✅ — ESLint (0 errors, 0 warnings)
 - `pnpm lint:rust` ✅ — cargo clippy -D warnings clean
-- `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL not available in bare test runtime)
-- `Checkbox` + `ContextMenu` shadcn components installed
+- `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL not available in bare test runtime; not a code bug)
+- shadcn components installed: `Checkbox`, `ContextMenu`
+
+---
 
 ## Architecture Status
 
 | Area | Status | Notes |
 |------|--------|-------|
 | Frontend | ✅ Complete | shadcn Sidebar (grouped nav, icon collapse) + 7 views + bottom panel (Logs/Shell tabs) |
-| File Explorer | ✅ Enhanced | Dual-pane + multi-select + inline rename + delete + context menu + keyboard shortcuts |
-| UI Consistency | ✅ Complete | ~95% consistency — semantic tokens, icon sizes, Label, aria roles, shared CheckboxItem/EmptyState |
-| Accessibility | ✅ Improved | role/aria/tabIndex/onKeyDown on all clickable div lists |
-| Backend | ✅ Complete | 26 Tauri commands, payload parser |
+| File Explorer | ✅ Enhanced | Dual-pane + explicit multi-select mode + inline rename + delete + context menu + keyboard shortcuts |
+| UI Consistency | ✅ Complete | ~95% — semantic tokens, icon sizes, Label, aria roles, shared CheckboxItem/EmptyState |
+| Accessibility | ✅ Improved | role/aria/tabIndex/onKeyDown on all interactive elements |
+| Backend | ✅ Complete | 28 Tauri commands (added delete_files, rename_file), payload parser |
 | IPC Layer | ✅ Complete | backend.ts, runtime.ts, models.ts |
 | Bottom Panel | ✅ Complete | VS Code-style with tabs, filter, search, follow, maximize |
 | Device Polling | ✅ Complete | TanStack Query replaces all manual setIntervals |
@@ -198,16 +149,17 @@ Verified on `main` (2026-03-26):
 | Linting | ✅ Complete | ESLint 10 flat config + typescript-eslint |
 | Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
 
-## Important Notes
+---
 
-- **Sidebar uses shadcn `Sidebar` component** with `collapsible="icon"` mode and `SidebarRail` for collapse.
-- **`sidebar-context.ts`** holds all non-component sidebar exports (context, hook, constants) — `sidebar.tsx` exports only React components.
-- **Shell is now in the bottom panel**, not a sidebar view. The sidebar "Terminal" nav item was removed.
-- **Icon pattern**: always use `className="h-5 w-5"` (CardTitle), `className="h-4 w-4"` (inline/list). Never use the `size={N}` prop.
-- **Form labels**: always use shadcn `<Label>` — never raw `<label className="...">`.
-- **`buttonVariants({ variant: 'destructive' })`** used in all AlertDialogAction buttons (never inline className).
-- **`shrink-0`**: required on all icons inside flex buttons.
-- **`@/` alias**: all internal imports must use `@/` alias except `../../lib/desktop/` (views can use relative).
-- **Infinite loop pattern to avoid**: never write `useEffect(() => { setX(queryData) }, [queryData, setX])` with a `= []` default.
-- Rust edition: 2024 (uses let_chains)
-- All clippy warnings resolved with -D warnings
+## Important Patterns & Gotchas
+
+- **`isMultiSelectMode`**: Always the checkbox-column gate. Never show selection UI unless this is `true`.
+- **`SelectionSummaryBar`**: Always gated on `isMultiSelectMode && selectedNames.size > 0 && !renamingName`.
+- **Plain click**: Does NOT modify `selectedNames`. This is intentional.
+- **`buttonVariants({ variant: 'destructive' })`** — used in all `AlertDialogAction` buttons (never inline className).
+- **Sidebar**: `sidebar-context.ts` holds all non-component exports — `sidebar.tsx` exports only React components.
+- **Shell**: Now in the bottom panel, not a sidebar view.
+- **Icon pattern**: `className="h-5 w-5"` (CardTitle), `className="h-4 w-4 shrink-0"` (inline/button).
+- **`@/` alias**: All internal imports except `../../lib/desktop/` from views.
+- **Rust Edition 2024**: let-chains in use; clippy `-D warnings` always passes.
+- **`cargo test` on Windows**: crashes with STATUS_ENTRYPOINT_NOT_FOUND (pre-existing Tauri DLL issue, not a bug in this code).
