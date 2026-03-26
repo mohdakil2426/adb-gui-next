@@ -227,17 +227,19 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const handleRowClick = useCallback(
     (file: FileEntry, e: React.MouseEvent) => {
       if (renamingName) return;
+      // Plain click does NOT select — only Ctrl+Click enters multi-select mode.
       if (e.ctrlKey || e.metaKey) {
         setIsMultiSelectMode(true);
         setSelectedNames((prev) => {
           const next = new Set(prev);
           if (next.has(file.name)) next.delete(file.name);
           else next.add(file.name);
+          // Auto-exit if nothing left selected
+          if (next.size === 0) setIsMultiSelectMode(false);
           return next;
         });
-      } else {
-        setSelectedNames(new Set([file.name]));
       }
+      // No else: plain click does nothing to selection state
     },
     [renamingName],
   );
@@ -257,6 +259,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
+      // Auto-exit multi-select mode when all checkboxes cleared
+      if (next.size === 0) setIsMultiSelectMode(false);
       return next;
     });
   }, []);
@@ -264,6 +268,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const handleSelectAll = useCallback(() => {
     if (allSelected) {
       setSelectedNames(new Set());
+      setIsMultiSelectMode(false); // exit mode when deselecting all
     } else {
       setSelectedNames(new Set(fileList.map((f) => f.name)));
     }
@@ -693,8 +698,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           </div>
         </div>
 
-        {/* Selection summary bar */}
-        {selectedNames.size > 0 && !renamingName && (
+        {/* Selection summary bar — only visible in multi-select mode */}
+        {isMultiSelectMode && selectedNames.size > 0 && !renamingName && (
           <SelectionSummaryBar
             count={selectedNames.size}
             label={selectedNames.size === 1 ? 'item selected' : 'items selected'}
@@ -773,7 +778,6 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                   const isSelected = selectedNames.has(file.name);
                   const isBeingRenamed = renamingName === file.name;
                   const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
-                  const isOnlySelected = isSelected && selectedNames.size === 1;
 
                   return (
                     <ContextMenu key={file.name}>
@@ -782,7 +786,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           data-state={isSelected ? 'selected' : ''}
                           onClick={(e) => handleRowClick(file, e)}
                           onDoubleClick={() => handleRowDoubleClick(file)}
-                          className="group cursor-pointer"
+                          className="cursor-pointer"
                         >
                           {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
                           {isMultiSelectMode && !isBeingRenamed && (
@@ -812,16 +816,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                             )}
                           </TableCell>
 
-                          {/* Name cell — click on already-selected single item triggers inline rename */}
-                          <TableCell
-                            className="font-medium"
-                            onClick={(e) => {
-                              if (isOnlySelected && !isBeingRenamed) {
-                                e.stopPropagation();
-                                startRename(file);
-                              }
-                            }}
-                          >
+                          {/* Name cell — rename is F2 or right-click only */}
+                          <TableCell className="font-medium">
                             {isBeingRenamed ? (
                               <div className="flex flex-col gap-0.5">
                                 <Input
@@ -854,12 +850,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 )}
                               </div>
                             ) : (
-                              <span
-                                className={cn(isOnlySelected && 'cursor-text')}
-                                title={isOnlySelected ? 'Click to rename, or press F2' : undefined}
-                              >
-                                {file.name}
-                              </span>
+                              <span>{file.name}</span>
                             )}
                           </TableCell>
 
