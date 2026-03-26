@@ -90,17 +90,16 @@ function loadDirEntries(path: string): Promise<TreeNode[]> {
   return ListFiles(path).then((entries) =>
     entries
       .sort((a, b) => {
-        if (a.type === 'Directory' && b.type !== 'Directory') return -1;
-        if (a.type !== 'Directory' && b.type === 'Directory') return 1;
+        const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
+        const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
         return a.name.localeCompare(b.name);
       })
-      .map((e) =>
-        makeNode(
-          e.type === 'Directory' ? `${path}${e.name}/` : `${path}${e.name}`,
-          e.name,
-          e.type === 'Directory',
-        ),
-      ),
+      .map((e) => {
+        const isDir = e.type === 'Directory' || e.type === 'Symlink';
+        return makeNode(isDir ? `${path}${e.name}/` : `${path}${e.name}`, e.name, isDir);
+      }),
   );
 }
 

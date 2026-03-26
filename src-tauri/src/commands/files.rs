@@ -17,10 +17,22 @@ pub struct FileEntry {
 
 #[tauri::command]
 pub fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
-    info!("Listing files at {}", path.trim());
-    let output = run_binary_command(&app, "adb", &["shell", "ls", "-lA", path.trim()])?;
+    let path = path.trim();
+    info!("Listing files at {}", path);
+
+    // Wrap in single quotes so spaces in paths are handled correctly by the device shell.
+    // Escape any literal single-quotes inside the path via the '' -> '\'' idiom.
+    let quoted = format!("'{}'", path.replace('\'', r"'\''"));
+    let output = run_binary_command(&app, "adb", &["shell", "ls", "-lA", &quoted])?;
+
+    // adb shell exits with 0 even when the shell command fails (e.g. permission denied).
+    // We have to inspect the output ourselves.
+    if output.to_lowercase().contains("permission denied") {
+        return Err(format!("Permission denied: cannot access '{path}'"));
+    }
+
     let entries = parse_file_entries(&output);
-    debug!("Found {} entries at {}", entries.len(), path.trim());
+    debug!("Found {} entries at {}", entries.len(), path);
     Ok(entries)
 }
 

@@ -35,24 +35,46 @@ import {
   Download,
   Folder,
   File,
+  Link,
   ArrowUp,
   FolderUp,
   Layers,
+  Lock,
+  MonitorOff,
+  AlertCircle,
+  PanelLeftClose,
+  PanelLeft,
 } from 'lucide-react';
 import { DirectoryTree } from '@/components/DirectoryTree';
 import { cn } from '@/lib/utils';
 
 type FileEntry = backend.FileEntry;
+type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
 
 const MIN_LEFT_WIDTH = 180;
 const MAX_LEFT_WIDTH = 420;
-const DEFAULT_LEFT_WIDTH = 240;
+const DEFAULT_LEFT_WIDTH = 180;
+
+function categorizeError(err: unknown): LoadError {
+  const msg = String(err).toLowerCase();
+  if (msg.includes('permission denied')) return 'permission_denied';
+  if (
+    msg.includes('no devices') ||
+    msg.includes('device not found') ||
+    msg.includes('no device') ||
+    msg.includes('adb: error') ||
+    msg.includes('unable to locate')
+  )
+    return 'no_device';
+  return 'unknown';
+}
 
 export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [fileList, setFileList] = useState<FileEntry[]>([]);
   const [currentPath, setCurrentPath] = useState('/sdcard/');
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<LoadError>(null);
   const [treeRefreshKey, setTreeRefreshKey] = useState(0);
 
   const [isPushingFile, setIsPushingFile] = useState(false);
@@ -61,6 +83,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
+  const [isTreeCollapsed, setIsTreeCollapsed] = useState(
+    () => localStorage.getItem('fe.treeCollapsed') === 'true',
+  );
   const [isEditingPath, setIsEditingPath] = useState(false);
   const [editPathValue, setEditPathValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,7 +95,12 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     currentPathRef.current = currentPath;
   }, [currentPath]);
 
-  // Horizontal resize logic
+  const toggleTree = useCallback((collapsed: boolean) => {
+    setIsTreeCollapsed(collapsed);
+    localStorage.setItem('fe.treeCollapsed', String(collapsed));
+  }, []);
+
+  // Horizontal resize
   const startResizing = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -104,26 +134,28 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       debugLog(`Listing files at: ${targetPath}`);
       const files = await ListFiles(targetPath);
 
-      if (!files) {
-        setFileList([]);
-        setCurrentPath(targetPath);
-        currentPathRef.current = targetPath;
-        return;
-      }
-
       files.sort((a, b) => {
-        if (a.type === 'Directory' && b.type !== 'Directory') return -1;
-        if (a.type !== 'Directory' && b.type === 'Directory') return 1;
+        const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
+        const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
+        if (aIsDir && !bIsDir) return -1;
+        if (!aIsDir && bIsDir) return 1;
         return a.name.localeCompare(b.name);
       });
 
       setFileList(files);
+      setLoadError(null);
       setCurrentPath(targetPath);
       currentPathRef.current = targetPath;
       setTreeRefreshKey((k) => k + 1);
     } catch (error) {
+      // Categorize and surface the error clearly; clear stale file list
+      const category = categorizeError(error);
+      setLoadError(category);
+      setFileList([]);
       handleError('List Files', error);
-      setCurrentPath(currentPathRef.current);
+      // Keep currentPath stable so the address bar still shows where the user tried to go
+      setCurrentPath(targetPath);
+      currentPathRef.current = targetPath;
     } finally {
       setIsLoading(false);
     }
@@ -140,7 +172,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   };
 
   const handleRowDoubleClick = (file: FileEntry) => {
-    if (file.type === 'Directory') {
+    // Treat Symlinks same as Directories — navigate into them; if it fails, toast shows error.
+    if (file.type === 'Directory' || file.type === 'Symlink') {
       const newPath = path.posix.join(currentPath, file.name) + '/';
       loadFiles(newPath);
     }
@@ -213,7 +246,12 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       toast.error('No file or folder selected to pull.');
       return;
     }
-    if (selectedFile.type !== 'File' && selectedFile.type !== 'Directory') {
+    // Allow pulling Symlinks in the same way as Dirs/Files
+    const isNavigable =
+      selectedFile.type === 'File' ||
+      selectedFile.type === 'Directory' ||
+      selectedFile.type === 'Symlink';
+    if (!isNavigable) {
       toast.error('Cannot export this item type.', {
         description: `Selected type: ${selectedFile.type}`,
       });
@@ -226,7 +264,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const remotePath = path.posix.join(currentPath, selectedFile.name);
       let localPath = '';
 
-      if (selectedFile.type === 'Directory') {
+      if (selectedFile.type === 'Directory' || selectedFile.type === 'Symlink') {
         toast.info('Select a folder to save the directory into.');
         localPath = await SelectDirectoryForPull();
       } else {
@@ -260,47 +298,79 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const isPullDisabled =
     isPulling ||
     !selectedFile ||
-    (selectedFile.type !== 'File' && selectedFile.type !== 'Directory');
+    (selectedFile.type !== 'File' &&
+      selectedFile.type !== 'Directory' &&
+      selectedFile.type !== 'Symlink');
 
   return (
     <div
       ref={containerRef}
       className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-lg border border-border"
     >
-      {/* Drag overlay */}
+      {/* Drag overlay — prevents text selection while resizing */}
       {isResizing && <div className="fixed inset-0 z-50 cursor-col-resize select-none" />}
 
-      {/* Left: Directory tree */}
-      <div
-        className="shrink-0 flex flex-col overflow-hidden"
-        style={{ width: `${leftWidth}px` }}
-      >
-        <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0 bg-muted/30">
-          <Layers className="size-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium text-muted-foreground">Device</span>
+      {/* Left: Directory tree (hidden when collapsed) */}
+      {!isTreeCollapsed && (
+        <div
+          className="shrink-0 flex flex-col overflow-hidden"
+          style={{ width: `${leftWidth}px` }}
+        >
+          <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0 bg-muted/30">
+            <Layers className="size-4 text-muted-foreground shrink-0" />
+            <span className="text-sm font-medium text-muted-foreground flex-1">Device</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+              onClick={() => toggleTree(true)}
+              title="Collapse tree panel"
+            >
+              <PanelLeftClose className="size-3.5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <DirectoryTree
+              currentPath={currentPath}
+              onNavigate={loadFiles}
+              refreshTrigger={treeRefreshKey}
+            />
+          </div>
         </div>
-        <div className="flex-1 overflow-hidden">
-          <DirectoryTree
-            currentPath={currentPath}
-            onNavigate={loadFiles}
-            refreshTrigger={treeRefreshKey}
-          />
-        </div>
-      </div>
+      )}
 
-      {/* Resize handle */}
-      <div
-        className={cn(
-          'w-px shrink-0 cursor-col-resize transition-colors bg-border hover:bg-primary/60 active:bg-primary',
-          isResizing && 'bg-primary',
-        )}
-        onMouseDown={startResizing}
-      />
+      {/* Resize handle — only visible when tree is open */}
+      {!isTreeCollapsed && (
+        <div
+          className={cn(
+            'w-px shrink-0 cursor-col-resize transition-colors bg-border hover:bg-primary/60 active:bg-primary',
+            isResizing && 'bg-primary',
+          )}
+          onMouseDown={startResizing}
+        />
+      )}
 
       {/* Right: File list */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0">
+        <div className="flex items-center gap-1 px-2 h-10 border-b border-border shrink-0">
+          {/* Show tree toggle when collapsed */}
+          {isTreeCollapsed && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+                onClick={() => toggleTree(false)}
+                title="Show tree panel"
+              >
+                <PanelLeft className="size-4" />
+              </Button>
+              <Separator orientation="vertical" className="h-4 mx-0.5" />
+            </>
+          )}
+
+          {/* Back + Address bar */}
           <div className="flex items-center gap-1 min-w-0 flex-1">
             <Button
               variant="ghost"
@@ -312,7 +382,6 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               <ArrowUp className="h-4 w-4 shrink-0" />
             </Button>
 
-            {/* Editable address bar */}
             {isEditingPath ? (
               <Input
                 value={editPathValue}
@@ -348,8 +417,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             )}
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1" />
+          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
 
+          {/* Action buttons */}
           <div className="flex items-center gap-1 shrink-0">
             <Button
               variant="ghost"
@@ -370,7 +440,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               ) : (
                 <Upload className="h-4 w-4 shrink-0" />
               )}
-              Import File
+              <span className="hidden sm:inline">Import File</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handlePushFolder} disabled={isBusy}>
               {isPushingFolder ? (
@@ -378,7 +448,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               ) : (
                 <FolderUp className="h-4 w-4 shrink-0" />
               )}
-              Import Folder
+              <span className="hidden sm:inline">Import Folder</span>
             </Button>
             <Button
               variant="outline"
@@ -391,38 +461,56 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               ) : (
                 <Download className="h-4 w-4 shrink-0" />
               )}
-              Export
+              <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>
 
-        {/* File table */}
+        {/* File table / empty / error states */}
         <ScrollArea className="flex-1">
-          <Table>
-            <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
-              <TableRow>
-                <TableHead className="w-10" />
-                <TableHead>Name</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : loadError === 'permission_denied' ? (
+            <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              <Lock className="h-8 w-8 opacity-40" />
+              <p className="text-sm font-medium">Access Denied</p>
+              <p className="text-xs opacity-60">
+                This location requires elevated permissions or root access.
+              </p>
+            </div>
+          ) : loadError === 'no_device' ? (
+            <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              <MonitorOff className="h-8 w-8 opacity-40" />
+              <p className="text-sm font-medium">No Device Connected</p>
+              <p className="text-xs opacity-60">
+                Connect a device via USB or wireless ADB and try again.
+              </p>
+            </div>
+          ) : loadError === 'unknown' ? (
+            <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              <AlertCircle className="h-8 w-8 opacity-40" />
+              <p className="text-sm font-medium">Failed to Load</p>
+              <p className="text-xs opacity-60">Check the logs panel for details.</p>
+            </div>
+          ) : fileList.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+              This directory is empty.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                  </TableCell>
+                  <TableHead className="w-10" />
+                  <TableHead>Name</TableHead>
+                  <TableHead>Size</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
                 </TableRow>
-              ) : fileList.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    This directory is empty.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                fileList.map((file) => (
+              </TableHeader>
+              <TableBody>
+                {fileList.map((file) => (
                   <TableRow
                     key={file.name}
                     onClick={() => handleRowClick(file)}
@@ -433,6 +521,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     <TableCell>
                       {file.type === 'Directory' ? (
                         <Folder className="h-4 w-4 shrink-0 text-primary" />
+                      ) : file.type === 'Symlink' ? (
+                        <Link className="h-4 w-4 shrink-0 text-primary/70" />
                       ) : (
                         <File className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
@@ -442,10 +532,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     <TableCell>{file.date}</TableCell>
                     <TableCell>{file.time}</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </ScrollArea>
       </div>
     </div>
