@@ -72,6 +72,7 @@ pub fn repo_resource_binary_path(repo_root: &Path, os_dir: &str, file_name: &str
 pub fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
     #[cfg(target_family = "unix")]
     {
+        use std::fs;
         use std::os::unix::fs::PermissionsExt;
 
         let metadata = fs::metadata(_path).map_err(|error| error.to_string())?;

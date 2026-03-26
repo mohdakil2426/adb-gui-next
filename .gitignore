@@ -34,6 +34,7 @@ dev-tauri.log
 Thumbs.db
 Desktop.ini
 
-# AI Agents
-.clinerules
+# AI Agents (local dev only — not for repo)
+.kilocode/
 .kilocode
+.clinerules

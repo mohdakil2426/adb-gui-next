@@ -1,0 +1,35 @@
+# Auto-detect text files and normalize line endings
+* text=auto eol=lf
+
+# Rust
+*.rs text eol=lf
+*.toml text eol=lf
+
+# Frontend
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary resources — Git LFS
+src-tauri/resources/**/*.exe filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/**/*.dll filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/adb filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/fastboot filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/etc1tool filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/hprof-conv filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/make_f2fs filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/make_f2fs_casefold filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/mke2fs filter=lfs diff=lfs merge=lfs -text
+src-tauri/resources/linux/sqlite3 filter=lfs diff=lfs merge=lfs -text
+
+# Icons
+*.ico binary
+*.icns binary
+*.png binary

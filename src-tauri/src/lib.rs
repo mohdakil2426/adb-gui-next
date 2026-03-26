@@ -25,6 +25,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(payload::PayloadCache::default())
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main")
+                && let Some(icon) = app.default_window_icon()
+            {
+                let _ = window.set_icon(icon.clone());
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::cleanup_payload_cache,
             commands::connect_wireless_adb,
@@ -38,7 +46,6 @@ pub fn run() {
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,
-            commands::greet,
             commands::install_package,
             commands::launch_device_manager,
             commands::launch_terminal,

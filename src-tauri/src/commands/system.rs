@@ -1,22 +1,16 @@
 use crate::CmdResult;
 use crate::helpers::{binary_working_directory, normalize_path};
-use log::{debug, info};
+use log::info;
 use std::{
     fs,
     path::PathBuf,
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
 const DEFAULT_LOG_PREFIX: &str = "adb_gui_next_log";
-
-#[tauri::command]
-pub fn greet(name: &str) -> String {
-    debug!("Greet called with name: {}", name);
-    format!("Hello {}, It's show time!", name)
-}
 
 #[tauri::command]
 pub fn launch_device_manager() -> CmdResult<()> {
@@ -63,8 +57,8 @@ pub fn open_folder(app: AppHandle, folder_path: String) -> CmdResult<()> {
 }
 
 #[tauri::command]
-pub fn save_log(content: String, prefix: String) -> CmdResult<String> {
-    let logs_dir = PathBuf::from("logs");
+pub fn save_log(app: AppHandle, content: String, prefix: String) -> CmdResult<String> {
+    let logs_dir = app.path().app_log_dir().map_err(|error| error.to_string())?;
     fs::create_dir_all(&logs_dir).map_err(|error| error.to_string())?;
 
     let prefix = if prefix.trim().is_empty() { DEFAULT_LOG_PREFIX } else { prefix.trim() };

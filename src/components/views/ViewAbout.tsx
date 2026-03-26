@@ -14,7 +14,7 @@ export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
       <div className="flex flex-col items-center justify-center text-center py-12 gap-4">
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-          <img src="/logo.png" alt="Logo" className="relative w-24 h-24 object-contain" />
+          <img src="/logo.png" alt="Logo" className="relative w-40 h-40 object-contain" />
         </div>
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">

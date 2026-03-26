@@ -259,7 +259,7 @@ export function MainLayout() {
                   </div>
                 </div>
               </div>
-              <BottomPanel />
+              {activeView !== VIEWS.ABOUT && <BottomPanel />}
             </div>
           </SidebarInset>
         </SidebarProvider>

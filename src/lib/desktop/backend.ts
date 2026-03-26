@@ -88,10 +88,6 @@ export function GetInstalledPackages(): Promise<Array<backend.InstalledPackage>>
   return call('get_installed_packages');
 }
 
-export function Greet(arg1: string): Promise<string> {
-  return call('greet', { name: arg1 });
-}
-
 export function InstallPackage(arg1: string): Promise<string> {
   return call('install_package', { path: arg1 });
 }

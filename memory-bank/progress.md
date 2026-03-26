@@ -66,6 +66,9 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 - Windows debug MSI and NSIS bundles build successfully
 - Platform-specific resource bundling configured
+- Platform-specific resource bundling configured
+- Native application icons generated for Windows (`.ico`), macOS (`.icns`), and Linux (`.png`) via Tauri CLI using `docs/original_icons.png` as the final source. ICO: 6 layers (32/16/24/48/64/256px, all 32bpp, 32px first). `public/logo.png` synced from `src-tauri/icons/icon.png`.
+- Mobile icon directories (`android/`, `ios/`) removed as they are out of project scope.
 
 ### Tooling & Quality
 
@@ -134,6 +137,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, true PNG conversion, `pnpm tauri icon` cross-platform generation |
 | 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |
 | 2026-03-23 | 0.1.0 | shadcn Sidebar migration: `AppSidebar.tsx`, grouped nav, `SidebarProvider`/`SidebarInset`, header bar with `SidebarTrigger`, `Ctrl+B` shortcut |
 | 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption, shared components, semantic token fixes, models.ts interface migration |

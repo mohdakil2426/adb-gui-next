@@ -12,15 +12,15 @@
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
-│  main.tsx → App.tsx → MainLayout (sidebar + view switch + log panel)   │
+│  main.tsx → App.tsx → MainLayout (sidebar + view switch + log panel)    │
 │  8 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
 │           Utilities │ PayloadDumper │ Shell │ About                     │
 │  Zustand Stores: deviceStore │ logStore │ payloadDumperStore            │
-│  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
+│  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
-│  backend.ts → core.invoke<T>(command, args) → Rust commands            │
-│  runtime.ts → event listeners, file drop, URL opener                   │
+│  backend.ts → core.invoke<T>(command, args) → Rust commands             │
+│  runtime.ts → event listeners, file drop, URL opener                    │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Backend (Rust — src-tauri/)                         │
 │  lib.rs (833 lines) — 26 Tauri commands + helpers                      │
@@ -290,6 +290,9 @@ Before closing any task, confirm ALL of the following:
 | ------------ | ------------------------------------------------------ |
 | **context7** | Tauri, React, Zustand, Rust, all non-Google libraries  |
 | **shadcn**   | shadcn/ui components, registries, styling, composition |
+
+https://github.com/tauri-apps/tauri-docs
+https://v2.tauri.app/
 
 ---
 

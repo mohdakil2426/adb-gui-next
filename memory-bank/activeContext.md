@@ -6,6 +6,31 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-23 — GitHub Readiness Audit & Fixes
+
+- **CSP fix**: Added `font-src: 'self' https://fonts.gstatic.com` and updated `style-src` to allow `https://fonts.googleapis.com` (Google Fonts loaded in `index.html` were blocked by CSP in bundled builds).
+- **`freezePrototype: true`**: Added to `tauri.conf.json` `security` section per Tauri 2 best practices — prevents prototype pollution XSS attacks.
+- **`README.md`**: Created comprehensive project README with features, architecture, prerequisites, getting started, development commands, project structure, platform support, and contributing guide.
+- **`LICENSE`**: MIT license added.
+- **`.github/workflows/publish.yml`**: Release CI/CD pipeline using official `tauri-apps/tauri-action@v0` — builds Windows + Linux, creates GitHub release with installer artifacts.
+- **`.github/workflows/ci.yml`**: Pull request CI — runs lint (ESLint + clippy), format check (Prettier + cargo fmt), and TypeScript + Vite build on both Windows and Linux.
+- **`.gitattributes`**: Added for LF line ending normalization and Git LFS tracking of bundled ADB/fastboot binaries (~30 MB).
+- **`.gitignore`**: Added `.agents/`, `.agent/`, `.claude/`, `.gemini/`, `memory-bank/`, `AGENTS.md`, `CLAUDE.md` — all local AI agent directories and config files.
+- **Verification**: `pnpm format:check` ✅ | `pnpm lint` ✅ | `pnpm build` ✅
+
+
+
+### 2026-03-23 — App Icons and Branding Update (Final)
+
+- Source icon: `docs/original_icons.png` — 1024×1024px RGBA, 3D glassmorphic terminal prompt (`>_`) with rainbow RGB border and "ADB GUI Next" label.
+- Ran `pnpm tauri icon docs/original_icons.png` to regenerate all 17 platform icons.
+- Synced `public/logo.png` from `src-tauri/icons/icon.png` (512×512 — used in WelcomeScreen, ViewAbout, AppSidebar header).
+- Created `public/favicon.png` from `src-tauri/icons/icon.png`; updated `index.html` to reference it (replaced default Vite `favicon.svg`).
+- Removed `android/` and `ios/` icon subdirectories (out of project scope).
+- ICO compliance confirmed: 6 layers (32/16/24/48/64/256px), all 32bpp, 32px first.
+- Added `.setup()` hook in `lib.rs` — calls `window.set_icon(app.default_window_icon())` at startup to fix small taskbar icon in dev mode (Tauri 2 has no JSON `icon` field in `WindowConfig`; the correct API is Rust `window.set_icon()`).
+- `bundle.icon` list includes `icon.png` (512px Linux) in addition to the Tauri docs canonical set.
+
 ### 2026-03-23 — UI Consistency Audit & Fixes (Estimated score: ~72% → 95%)
 
 A comprehensive UI consistency audit was performed and all issues resolved:
@@ -77,8 +102,9 @@ Verified on `main` (2026-03-23):
 - `pnpm build` ✅ — TypeScript + Vite bundle
 - `pnpm format:check` ✅ — Prettier + cargo fmt clean
 - `pnpm lint:web` ✅ — ESLint (0 errors, 3 pre-existing warnings)
-- `pnpm lint:rust` ✅ — cargo clippy -D warnings clean
-- `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL not available in bare test runtime, unrelated to codebase)
+- `pnpm lint:rust` ✅ — cargo clippy -D warnings clean (setup hook uses Rust 2024 let-chains)
+- `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL not available in bare test runtime)
+- Icons: ✅ Complete — `original_icons.png` source, 17 icon files, favicon.png, logo.png, setup hook, taskbar fix
 
 ## Architecture Status
 

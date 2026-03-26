@@ -2,6 +2,7 @@
 .agents/
 .agent/
 .claude/
+.kilocode/
 memory-bank/
 .clinerules
 dist/
