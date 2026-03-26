@@ -40,7 +40,10 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ### 2. State Management
 
 - **Zustand v5** for shared state (device, log, shell, payloadDumper)
-- **localStorage** for nickname persistence (no reactivity — `nicknameStore`)
+- **localStorage** for user preferences that must survive view switches and restarts:
+  - `nicknameStore` — device nicknames (no reactivity needed)
+  - `fe.currentPath` — last visited File Explorer path (lazy `useState` initializer)
+  - `fe.treeCollapsed` — File Explorer tree panel collapsed state
 - **No router** — `useState<ViewType>` + switch statement in MainLayout
 
 ### 3. Binary Resolution
@@ -121,6 +124,7 @@ src/components/
 ├── BottomPanel.tsx          # VS Code-style bottom panel (tabs, resize, actions)
 ├── LogsPanel.tsx            # Filtered log viewer with search highlight
 ├── ShellPanel.tsx           # Interactive ADB/fastboot terminal
+├── DirectoryTree.tsx        # Lazy-loaded file system tree for File Explorer dual-pane
 ├── WelcomeScreen.tsx        # 750ms animated splash with Progress
 ├── ConnectedDevicesCard.tsx # Shared device list (Dashboard, Flasher, Utilities)
 ├── EditNicknameDialog.tsx   # Shared nickname edit dialog

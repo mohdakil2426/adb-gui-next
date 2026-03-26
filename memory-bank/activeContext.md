@@ -6,6 +6,36 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-26 — File Explorer: Dual-Pane Navigation + 5 Edge Case Fixes
+
+**Dual-pane layout (`ViewFileExplorer.tsx` + new `DirectoryTree.tsx`):**
+- New `DirectoryTree` component: lazy-loaded tree showing both files and directories
+  - Lazy expansion via `loadDirEntries()` — fetches only when node is first expanded
+  - Auto-reveals current path: `expandToPath(currentPath)` runs on `currentPath` change, sequentially expands ancestors, fetches unloaded nodes
+  - `refreshTrigger` prop: incremented every time right pane refreshes → reloads stale tree node children
+  - Files shown in tree with `File` icon (no expand chevron); dirs with `Folder`/`FolderOpen` + chevron
+  - Clicking a file in tree navigates right pane to its parent directory
+  - Keyboard navigation: `ArrowRight`/`ArrowLeft` to expand/collapse, `Enter`/`Space` to navigate
+- `ViewFileExplorer` rewritten: resizable dual-pane (`MIN 180px / DEFAULT 180px / MAX 420px`), horizontal drag-to-resize with mouse capture overlay
+- **Editable address bar**: click path to edit as monospace Input, `Enter` to navigate, `Escape` to cancel, auto-normalizes trailing `/`
+- **Tree collapse**: `PanelLeftClose` button in tree header; `PanelLeft` restore button in toolbar when collapsed
+
+**5 Edge Case Fixes:**
+1. **Device disconnect → stale data**: `loadFiles` catch now clears `fileList`, categorizes error (`permission_denied` / `no_device` / `unknown`), shows appropriate empty state (Lock / MonitorOff / AlertCircle icons)
+2. **Permission denied → silent empty**: `list_files` in Rust checks output for `"permission denied"` before parsing → returns `Err(...)` instead of silent `Ok([])`
+3. **Symlinks not navigable**: `Symlink` type treated as directory everywhere — tree (expandable), right-pane double-click (navigates), pull (allowed), shown with `Link` icon in table
+4. **Spaces in paths**: `list_files` wraps path in single-quotes for device shell (`'/sdcard/My Music/'`); escapes embedded single-quotes via `'\''` idiom
+5. **Narrow window / responsive**: tree collapse/expand toggle, action button labels hidden on narrow widths (`hidden sm:inline`)
+
+**UI State Persistence (localStorage):**
+- `fe.currentPath` — saved on every successful `loadFiles`; restored via lazy `useState` initializer on mount
+- `fe.treeCollapsed` — saved on every toggle; restored same way
+- Both survive view switches and app restarts
+
+**Commits:** `49a2e30` (initial dual-pane), `32db232` (edge cases), latest (persistence)
+
+**Quality:** `pnpm lint` ✅ | `cargo clippy -D warnings` ✅ | `pnpm build` ✅
+
 ### 2026-03-23 — GitHub Readiness Audit & Fixes
 
 - **CSP fix**: Added `font-src: 'self' https://fonts.gstatic.com` and updated `style-src` to allow `https://fonts.googleapis.com` (Google Fonts loaded in `index.html` were blocked by CSP in bundled builds).
@@ -111,6 +141,7 @@ Verified on `main` (2026-03-23):
 | Area | Status | Notes |
 |------|--------|-------|
 | Frontend | ✅ Complete | shadcn Sidebar (grouped nav, icon collapse) + 7 views + bottom panel (Logs/Shell tabs) |
+| File Explorer | ✅ Enhanced | Dual-pane (tree + file list), editable address bar, tree collapse, localStorage persistence |
 | UI Consistency | ✅ Complete | ~95% consistency — semantic tokens, icon sizes, Label, aria roles, shared CheckboxItem/EmptyState |
 | Accessibility | ✅ Improved | role/aria/tabIndex/onKeyDown on all clickable div lists |
 | Backend | ✅ Complete | 26 Tauri commands, payload parser |

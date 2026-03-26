@@ -22,6 +22,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
+- **File Explorer (dual-pane)**: lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list; editable address bar; tree collapse/expand; `fe.currentPath` + `fe.treeCollapsed` persisted to localStorage; 5 edge cases fixed (permission denied, spaces in paths, symlinks, device disconnect, responsive)
 - Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
@@ -124,7 +125,7 @@ src-tauri/src/
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form |
-| Low | Adopt EmptyState in remaining views | FileExplorer empty dir, Dashboard empty device list |
+| Low | Adopt EmptyState in remaining views | Dashboard empty device list |
 | Low | Run device-backed parity tests | Need real Android devices |
 
 ## Risks / Known Issues
@@ -137,6 +138,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-26 | 0.1.0 | File Explorer dual-pane: DirectoryTree, editable address bar, tree collapse, localStorage persistence, 5 edge case fixes |
 | 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, true PNG conversion, `pnpm tauri icon` cross-platform generation |
 | 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |
 | 2026-03-23 | 0.1.0 | shadcn Sidebar migration: `AppSidebar.tsx`, grouped nav, `SidebarProvider`/`SidebarInset`, header bar with `SidebarTrigger`, `Ctrl+B` shortcut |
