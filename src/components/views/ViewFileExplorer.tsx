@@ -739,6 +739,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       onCheckedChange={handleSelectAll}
                       aria-label="Select all"
                       disabled={isBusy}
+                      className={cn(
+                        'transition-opacity',
+                        selectedNames.size === 0 && 'opacity-0 pointer-events-none',
+                      )}
                     />
                   </TableHead>
                   <TableHead className="w-10" />
@@ -762,22 +766,29 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           data-state={isSelected ? 'selected' : ''}
                           onClick={(e) => handleRowClick(file, e)}
                           onDoubleClick={() => handleRowDoubleClick(file)}
-                          className="cursor-pointer"
+                          className="group cursor-pointer"
                         >
-                          {/* Checkbox cell — click doesn't propagate to row */}
-                          <TableCell
-                            className="pl-3 pr-0 w-10"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleCheckbox(file.name);
-                            }}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              aria-label={`Select ${file.name}`}
-                              tabIndex={-1}
-                            />
-                          </TableCell>
+                          {/* Checkbox cell — hidden until hover or selection; absent while renaming */}
+                          {isBeingRenamed ? (
+                            <TableCell className="w-10 pl-3 pr-0" />
+                          ) : (
+                            <TableCell
+                              className={cn(
+                                'pl-3 pr-0 w-10 transition-opacity',
+                                isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCheckbox(file.name);
+                              }}
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                aria-label={`Select ${file.name}`}
+                                tabIndex={-1}
+                              />
+                            </TableCell>
+                          )}
 
                           {/* Type icon */}
                           <TableCell className="w-10">
