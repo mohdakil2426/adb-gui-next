@@ -77,6 +77,7 @@ import {
   PanelLeft,
   Trash2,
   Pencil,
+  SquareCheck,
 } from 'lucide-react';
 
 type FileEntry = backend.FileEntry;
@@ -112,6 +113,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [treeRefreshKey, setTreeRefreshKey] = useState(0);
 
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
+  // Controls whether the checkbox column is rendered at all.
+  // Activated by Ctrl+Click, Ctrl+A, or right-click → Select. Cleared on Escape/Clear.
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // ── Inline rename ────────────────────────────────────────────────────────
   const [renamingName, setRenamingName] = useState<string | null>(null);
@@ -186,6 +190,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const loadFiles = useCallback(async (targetPath: string) => {
     setIsLoading(true);
     setSelectedNames(new Set());
+    setIsMultiSelectMode(false);
     setRenamingName(null);
     try {
       debugLog(`Listing files at: ${targetPath}`);
@@ -223,6 +228,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     (file: FileEntry, e: React.MouseEvent) => {
       if (renamingName) return;
       if (e.ctrlKey || e.metaKey) {
+        setIsMultiSelectMode(true);
         setSelectedNames((prev) => {
           const next = new Set(prev);
           if (next.has(file.name)) next.delete(file.name);
@@ -265,6 +271,17 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const clearSelection = useCallback(() => {
     setSelectedNames(new Set());
+    setIsMultiSelectMode(false);
+  }, []);
+
+  // Activated from right-click → Select: adds item to selection and enters multi-select mode.
+  const handleSelectFromMenu = useCallback((name: string) => {
+    setIsMultiSelectMode(true);
+    setSelectedNames((prev) => {
+      const next = new Set(prev);
+      next.add(name);
+      return next;
+    });
   }, []);
 
   // ── Inline rename ────────────────────────────────────────────────────────
@@ -472,6 +489,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
+        setIsMultiSelectMode(true);
         setSelectedNames(new Set(fileList.map((f) => f.name)));
       }
     };
@@ -733,18 +751,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             <Table>
               <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                 <TableRow>
-                  <TableHead className="w-10 pl-3">
-                    <Checkbox
-                      checked={allSelected ? true : someSelected ? 'indeterminate' : false}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all"
-                      disabled={isBusy}
-                      className={cn(
-                        'transition-opacity',
-                        selectedNames.size === 0 && 'opacity-0 pointer-events-none',
-                      )}
-                    />
-                  </TableHead>
+                  {isMultiSelectMode && (
+                    <TableHead className="w-10 pl-3">
+                      <Checkbox
+                        checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all"
+                        disabled={isBusy}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-10" />
                   <TableHead>Name</TableHead>
                   <TableHead>Size</TableHead>
@@ -768,15 +784,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           onDoubleClick={() => handleRowDoubleClick(file)}
                           className="group cursor-pointer"
                         >
-                          {/* Checkbox cell — hidden until hover or selection; absent while renaming */}
-                          {isBeingRenamed ? (
-                            <TableCell className="w-10 pl-3 pr-0" />
-                          ) : (
+                          {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
+                          {isMultiSelectMode && !isBeingRenamed && (
                             <TableCell
-                              className={cn(
-                                'pl-3 pr-0 w-10 transition-opacity',
-                                isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
-                              )}
+                              className="pl-3 pr-0 w-10"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleCheckbox(file.name);
@@ -860,6 +871,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
                       {/* Right-click context menu */}
                       <ContextMenuContent>
+                        {/* Select — enters multi-select mode and adds this item */}
+                        <ContextMenuItem onClick={() => handleSelectFromMenu(file.name)}>
+                          <SquareCheck className="h-4 w-4 shrink-0" />
+                          Select
+                        </ContextMenuItem>
+
+                        <ContextMenuSeparator />
+
                         {isNavigable && (
                           <>
                             <ContextMenuItem
