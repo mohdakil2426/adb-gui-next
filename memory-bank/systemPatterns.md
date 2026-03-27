@@ -132,11 +132,16 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 - `selectedSerial` in store for multi-device switching (auto-select logic built-in)
 - Semantic status colors: emerald (adb), amber (fastboot), orange (bootloader), blue (recovery), violet (sideload), red (unauthorized), zinc (offline)
 
-### 9. Bottom Panel (VS Code-style)
+### 9. Bottom Panel (VS Code-style, Fixed Position)
 
-- `BottomPanel.tsx` — Container with vertical resize, tab bar (Logs/Shell), action buttons
-- `LogsPanel.tsx` — Filtered log viewer with search highlighting, auto-scroll detection
-- `ShellPanel.tsx` — Interactive ADB/fastboot terminal
+- `BottomPanel.tsx` — Fixed-position overlay (viewport-anchored, never scrolls); sidebar-aware `left` offset via `useSidebar()`
+- **DOM-first resize pattern**: `isResizingRef` (not state) + direct `panelRef.current.style.height` writes + `requestAnimationFrame` throttle (60fps cap) + `will-change: height` GPU hint. Single `setPanelHeight(h)` commit only on `mouseup`. Zero React re-renders during drag.
+- Slide-in/out `translateY` animation; `transition` ONLY on `transform` — never on `height` (conflicts with drag)
+- `min-h-0` on flex children + `ScrollArea` → fixes shell input hiding at minimum panel height
+- `paddingBottom` on main content scroll area = `panelHeight` when open (content stays reachable behind panel)
+- **3-state header toggle**: closed→open+tab | open+same-tab→close | open+other-tab→switch tab
+- `LogsPanel.tsx` — Filtered log viewer; uses `flex flex-col h-full` + `min-h-0` on `ScrollArea` (same layout as ShellPanel)
+- `ShellPanel.tsx` — Interactive ADB/fastboot terminal; same flex + `min-h-0` layout
 - `logStore.ts` — Ring buffer (1000 max), ISO timestamps, filter/search/panel state, unread count
 - `shellStore.ts` — Shell history + command history Zustand store
 - 12 terminal CSS variables in `global.css` for light/dark theme support
@@ -150,7 +155,7 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 | Inline/list icons | `className="h-4 w-4 shrink-0"` |
 | In-button icons | must include `shrink-0` |
 | Form labels | always `<Label>` (shadcn), never raw `<label className="...">` |
-| Destructive dialogs | `buttonVariants({ variant: 'destructive' })` on `AlertDialogAction` |
+| Destructive dialogs | `buttonVariants({ variant: 'destructive' })` on `AlertDialogAction` (includes glow) |
 | Semantic colors | `text-success`, `bg-success` etc. — never `text-[var(--terminal-log-success)]` |
 | Imports | `@/` alias for all internal imports |
 | Clickable div lists | must have `role`, `aria-*`, `tabIndex`, `onKeyDown` |
@@ -158,6 +163,7 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 | Empty states | use shared `<EmptyState>` |
 | Animations | use MainLayout's `motion.div` wrapper — do NOT add per-view `animate-in` classes |
 | Links that open URL | `<button onClick={openLink}>` — never `<a href>` with `onClick` (double-open on Tauri) |
+| Searchable lists | `<Command shouldFilter={false}>` + `<CommandInput>` — never hand-roll search icon+input |
 
 ## Component Architecture
 
@@ -182,7 +188,7 @@ src/components/
 ├── LoadingButton.tsx        # Shared button with loading spinner
 ├── SectionHeader.tsx        # Shared section sub-header (Utilities, PayloadDumper)
 ├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
-├── ui/                      # 22+ shadcn primitives (incl. Checkbox, ContextMenu)
+├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command)
 └── views/                   # 7 feature views (Dashboard, AppManager, FileExplorer,
                              #   Flasher, Utilities, PayloadDumper, About)
 ```
@@ -195,3 +201,6 @@ src/components/
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)
 - **Shift+Click range selection** is Phase 2 — currently deferred (needs `lastClickedIndex` tracking in `isMultiSelectMode` context)
+- **Tauri blocking commands = UI freeze**: `pub fn` commands calling `std::process::Command::output()` run on the main thread and block the WebView. Pattern: `pub async fn` + `tokio::task::spawn_blocking(move || ...)`. Applied to `install_package`, `uninstall_package`, `sideload_package`.
+- **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
+- **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.

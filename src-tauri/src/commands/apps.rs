@@ -36,11 +36,8 @@ pub fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>
     let packages: Vec<InstalledPackage> = parse_package_names(&all_output)
         .into_iter()
         .map(|name| {
-            let package_type = if user_names.contains(&name) {
-                "user".to_string()
-            } else {
-                "system".to_string()
-            };
+            let package_type =
+                if user_names.contains(&name) { "user".to_string() } else { "system".to_string() };
             InstalledPackage { name, package_type }
         })
         .collect();
@@ -96,10 +93,7 @@ fn install_apks(app: &AppHandle, apks_path: &str) -> CmdResult<String> {
 
     let temp_dir = std::env::temp_dir().join(format!(
         "adb-gui-next-apks-{}",
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|e| e.to_string())?
-            .as_millis()
+        SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis()
     ));
     fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
 

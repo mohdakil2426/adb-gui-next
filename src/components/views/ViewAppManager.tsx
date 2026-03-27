@@ -156,7 +156,6 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       }
     }
 
-
     if (failCount === 0) {
       toast.success(`Successfully installed ${successCount} APK(s)`, { id: toastId });
     } else {
@@ -395,10 +394,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
           <div className="flex flex-col gap-2">
             {/* Command: shadcn component with shouldFilter=false (we filter via useMemo) */}
-            <Command
-              shouldFilter={false}
-              className="rounded-lg border shadow-md overflow-hidden"
-            >
+            <Command shouldFilter={false} className="rounded-lg border shadow-md overflow-hidden">
               <CommandInput
                 placeholder="Search packages..."
                 value={searchQuery}

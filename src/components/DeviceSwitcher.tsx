@@ -183,15 +183,22 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                   const isSelected = device.serial === selectedSerial;
 
                   return (
-                    <button
+                    <div
                       key={device.serial}
-                      type="button"
+                      role="button"
+                      tabIndex={0}
                       className={cn(
-                        'group/device relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm',
+                        'group/device relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm cursor-pointer',
                         'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                         isSelected && 'bg-accent',
                       )}
                       onClick={() => handleSelect(device.serial)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelect(device.serial);
+                        }
+                      }}
                     >
                       {/* Selection indicator */}
                       <span
@@ -234,7 +241,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                       >
                         {config.label}
                       </Badge>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

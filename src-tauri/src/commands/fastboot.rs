@@ -5,15 +5,29 @@ use crate::helpers::{run_binary_command, split_args};
 use log::{error, info, warn};
 use tauri::AppHandle;
 
+/// Flashes an image to a device partition via fastboot.
+///
+/// Runs on a blocking thread to avoid freezing the WebView during large
+/// partition writes (system/super can take 1–2 minutes).
 #[tauri::command]
-pub fn flash_partition(app: AppHandle, partition: String, image_path: String) -> CmdResult<()> {
-    if partition.trim().is_empty() || image_path.trim().is_empty() {
+pub async fn flash_partition(
+    app: AppHandle,
+    partition: String,
+    image_path: String,
+) -> CmdResult<()> {
+    let partition = partition.trim().to_string();
+    let image_path = image_path.trim().to_string();
+    if partition.is_empty() || image_path.is_empty() {
         return Err("Partition and image path are required.".into());
     }
-    info!("Flashing partition {} with {}", partition.trim(), image_path.trim());
-    let _ = run_binary_command(&app, "fastboot", &["flash", partition.trim(), image_path.trim()])?;
-    info!("Partition {} flashed successfully", partition.trim());
-    Ok(())
+    info!("Flashing partition {} with {}", partition, image_path);
+    tokio::task::spawn_blocking(move || {
+        let _ = run_binary_command(&app, "fastboot", &["flash", &partition, &image_path])?;
+        info!("Partition flashed successfully");
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -65,10 +79,17 @@ pub fn set_active_slot(app: AppHandle, slot: String) -> CmdResult<()> {
     Ok(())
 }
 
+/// Wipes all user data (factory reset) via `fastboot -w`.
+///
+/// Runs on a blocking thread — this operation can take 30–60 seconds.
 #[tauri::command]
-pub fn wipe_data(app: AppHandle) -> CmdResult<()> {
+pub async fn wipe_data(app: AppHandle) -> CmdResult<()> {
     warn!("Wiping user data (factory reset)");
-    let _ = run_binary_command(&app, "fastboot", &["-w"])?;
-    info!("User data wiped successfully");
-    Ok(())
+    tokio::task::spawn_blocking(move || {
+        let _ = run_binary_command(&app, "fastboot", &["-w"])?;
+        info!("User data wiped successfully");
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

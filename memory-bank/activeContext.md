@@ -6,6 +6,52 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-27 — Bottom Panel Polish, AppManager Improvements, Async Fix
+
+**Bottom Panel (BottomPanel.tsx):**
+- Fixed position (viewport-anchored) — never scrolls with page content
+- Sidebar-aware `left` offset via `useSidebar()` — panel edge tracks sidebar expand/collapse with `200ms` CSS transition
+- **Fluid resize**: DOM-first, commit-last pattern — `isResizingRef` (not state), direct `panelRef.current.style.height` writes during drag, `requestAnimationFrame` throttle (60fps cap), `will-change: height` GPU hint; single `setPanelHeight` on mouseup. Zero React re-renders during drag.
+- Slide-in/out `translateY` animation on open/close. `transition` only on `transform` — never on `height` (would fight drag).
+- `min-h-0` on content wrapper + `ScrollArea` → fixes shell input hiding when panel resized to minimum
+- `MIN_HEIGHT` = 120px (panel chrome 40px + input row 44px + scroll buffer)
+- `paddingBottom` on main scroll area = `panelHeight` when open — content behind panel stays reachable
+
+**Header Tab Buttons (MainLayout.tsx):**
+- Smart 3-state toggle for both Shell `⌨` and Logs `≡` buttons:
+  - Panel closed → open + switch to that tab
+  - Panel open, same tab → close
+  - Panel open, other tab → switch tab only
+- Contextual tooltip text: `"Close Shell"` / `"Close Logs"` / `"Shell (Ctrl+\`)"` / `"Logs"`
+
+**LogsPanel.tsx:**
+- Wrapped `ScrollArea` in `flex flex-col h-full overflow-hidden` container
+- Added `min-h-0` to `ScrollArea` — matches ShellPanel layout, scroll now works correctly
+
+**AppManager — shadcn Command component:**
+- Replaced hand-rolled search UI (raw `div` + stripped `Input` + custom `Search` icon) with proper `Command` + `CommandInput` + `CommandEmpty`
+- `shouldFilter={false}` — disables cmdk's built-in filter; our `useMemo` + `@tanstack/react-virtual` pipeline handles filtering and rendering
+- Installed `@shadcn/command` (`cmdk` dependency)
+- Toolbar layout: package count moved to left, Filter dropdown + Refresh moved to right (`ml-auto`)
+
+**AppManager — Destructive button glow:**
+- Added ambient shadow glow + hover-expand to `destructive` variant in `button-variants.ts`
+- Uses `--destructive` CSS token with `color-mix(in_oklch)` — works in light/dark without hardcoded values
+- Rest: `shadow-[0_0_15px_..._40%]`; Hover: `shadow-[0_0_25px_3px_..._55%]`; `transition-shadow duration-300`
+- Applies globally to ALL destructive buttons
+
+**Rust — Fix UI freeze during batch APK install (`commands/apps.rs`):**
+- Root cause: `install_package`, `uninstall_package`, `sideload_package` were sync `fn` → ran on Tauri main thread → blocked WebView/IPC for 10-60s per APK
+- Fix: converted to `async fn` + wrapped `run_binary_command` calls in `tokio::task::spawn_blocking` → blocking work runs on OS thread pool, Tokio runtime + WebView stay free
+- `install_apks` (zip extraction + `adb install-multiple`) also offloaded via `spawn_blocking`
+- Frontend: event-loop yield (`await new Promise<void>(r => setTimeout(r, 0))`) between each install iteration so React flushes progress UI
+
+**Commits:**
+- `18fd2b1` — `feat(ui): floating bottom panel with fluid resize and shell/log UX fixes`
+- `069252e` — `fix(apps): non-blocking install/uninstall + destructive button glow`
+
+---
+
 ### 2026-03-27 — App Manager & Payload Dumper UI Overhaul
 
 **Reusable DropZone Component:**
@@ -198,10 +244,11 @@ A comprehensive upgrade of `ViewFileExplorer.tsx` (~1520 lines), `files.rs`, `mo
 
 ## Current Verification Evidence
 
-Verified (2026-03-26):
+Verified (2026-03-27):
+- `pnpm lint:web` ✅ — ESLint clean (exit 0)
+- `cargo clippy` ✅ — 0 errors, 0 warnings
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `pnpm format` ✅ — Prettier + cargo fmt clean
-- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings (0 errors, 0 warnings)
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 
 ---
@@ -211,9 +258,11 @@ Verified (2026-03-26):
 | Area | Status | Notes |
 |------|--------|-------|
 | Frontend | ✅ Complete | shadcn Sidebar + 7 views + bottom panel |
+| Bottom Panel | ✅ Polished | Fixed position, fluid resize (DOM-first/RAF), smart tab toggle, scroll fixed |
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlink targets, copy path |
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source, selectedSerial in store |
-| Backend | ✅ Complete | 30 Tauri commands (added `create_file`, `create_directory`) |
+| App Manager | ✅ Improved | shadcn Command search, toolbar layout, destructive glow, non-blocking install |
+| Backend | ✅ Complete | 30 Tauri commands; install/uninstall/sideload now async (spawn_blocking) |
 | IPC Layer | ✅ Complete | `backend.ts` + `models.ts` (FileEntry + linkTarget) |
 | Linting | ✅ Complete | ESLint 10 flat config + cargo clippy -D warnings |
 | Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
@@ -226,10 +275,13 @@ Verified (2026-03-26):
 - **`fileList.length === 0 && creatingType === null`** — the empty-state condition. Missing `creatingType === null` breaks inline creation in empty directories.
 - **`pushToHistory = false`** for refresh/back/forward; `true` (default) for user navigation.
 - **`isMultiSelectMode`**: Always the checkbox-column gate. Never show selection UI unless `true`.
-- **`buttonVariants({ variant: 'destructive' })`** — all `AlertDialogAction` buttons.
+- **`buttonVariants({ variant: 'destructive' })`** — all `AlertDialogAction` buttons. Now includes ambient glow + hover-expand.
 - **Sidebar**: `sidebar-context.ts` holds all non-component exports (Vite Fast Refresh).
 - **Shell**: In bottom panel, not a sidebar view.
 - **Icon pattern**: `h-5 w-5` (CardTitle), `h-4 w-4 shrink-0` (inline/button).
 - **`cargo test` on Windows**: STATUS_ENTRYPOINT_NOT_FOUND — pre-existing Tauri DLL issue, not a code bug.
 - **Device polling**: Single `useQuery(['allDevices'], 3s)` in MainLayout — never add per-view polling.
 - **`selectedSerial` auto-select**: disconnect → clear, single device → auto-select, user pick → persist.
+- **Bottom panel resize**: Use `panelRef` + RAF + `spawn_blocking` pattern. NEVER call `setPanelHeight` on mousemove (triggers re-renders every pixel).
+- **Tauri sync commands = main thread**: Any `pub fn` (not `pub async fn`) Tauri command that calls `std::process::Command::output()` BLOCKS the WebView. Always use `async fn` + `tokio::task::spawn_blocking` for any command that runs a subprocess.
+- **AppManager Command search**: `shouldFilter={false}` is mandatory — cmdk's built-in filter breaks the virtualizer by trying to render all items.

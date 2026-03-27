@@ -14,14 +14,19 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `sidebar-context.ts` holds non-component exports (constants, context, hook) — Fast Refresh clean
 - `Ctrl+B` keyboard shortcut for sidebar toggle
 - 7 sidebar views compile and build successfully
-- VS Code-style bottom panel with Logs and Shell tabs
+- VS Code-style **fixed-position** bottom panel with Logs and Shell tabs:
+  - Viewport-anchored (never scrolls with page); sidebar-aware left offset via `useSidebar()`
+  - Fluid resize: DOM-first + RAF throttle (60fps), zero re-renders during drag, `will-change` GPU hint
+  - Smart 3-state header button toggles (closed/open-same-tab/open-other-tab)
+  - `min-h-0` flex fix ensures shell input always visible at min resize height
+  - Main content `paddingBottom` = panel height when open (content reachable behind panel)
 - Sticky header bar with DeviceSwitcher pill + toolbar buttons (no view label)
 - shadcn/ui components (22+ primitives incl. Popover) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
-- App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, accessible Input search
+- App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking
 - **File Explorer (full-featured dual-pane)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
   - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
@@ -62,7 +67,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition`, `reboot`, `wipe_data`, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
-| Apps | `install_package`, `uninstall_package`, `sideload_package`, `get_installed_packages` |
+| Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
 
@@ -134,7 +139,8 @@ src-tauri/src/
 - ✅ Sparse zero handling: `Type::Zero` returns empty vec, seeks past region
 - ✅ Position tracking: skips redundant seeks
 - ✅ Block size from manifest: reads `block_size` field
-- ✅ Async Tauri commands: `extract_payload` and `cleanup_payload_cache` on Tokio
+- ✅ Async Tauri commands: `extract_payload`, `cleanup_payload_cache` on Tokio
+- ✅ `install_package`, `uninstall_package`, `sideload_package`: async + `tokio::task::spawn_blocking` (fixes UI freeze)
 - ✅ Parallel partition extraction: `std::thread::scope` (4-8x faster)
 
 ## Remaining Work
@@ -158,6 +164,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-27 | 0.1.0 | Bottom panel polish: fixed position, fluid resize (DOM-first/RAF), smart tab toggles, LogsPanel scroll fix. AppManager: shadcn Command search, toolbar swap, destructive button glow, non-blocking install/uninstall/sideload (spawn_blocking). |
 | 2026-03-27 | 0.1.0 | Global Device Switcher: header pill + popover, centralized device polling in MainLayout, `selectedSerial` in deviceStore, semantic status colors (7 states), removed ConnectedDevicesCard from Flasher + Utilities |
 | 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder (Ctrl+N/Ctrl+Shift+N), Back/Forward history (Alt+←/→), Search/Filter (Ctrl+F), sortable columns, human-readable sizes, symlink targets, Copy Path; infinite render loop fix; empty-dir creation fix |
 | 2026-03-26 | 0.1.0 | File Explorer: Import/Export context menu (context-aware push/pull); DRY executePull/executePush helpers |
