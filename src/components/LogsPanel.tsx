@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { useLogStore } from '@/lib/logStore';
 import type { LogEntry, LogLevel } from '@/lib/logStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 
 const LOG_LEVEL_CONFIG: Record<LogLevel, { label: string; icon: string; colorVar: string }> = {
   info: { label: 'INFO', icon: '›', colorVar: 'var(--terminal-log-info)' },
@@ -120,25 +119,26 @@ export function LogsPanel() {
   }, [isFollowing, setIsFollowing]);
 
   return (
-    <ScrollArea
-      className={cn('flex-1 w-full')}
-      ref={scrollRef}
+    <div
+      className="flex flex-col h-full overflow-hidden"
       style={{ backgroundColor: 'var(--terminal-bg)' }}
     >
-      <div className="flex flex-col py-1">
-        {filteredLogs.length === 0 ? (
-          <div
-            className="text-center py-8 text-sm italic opacity-40 select-none"
-            style={{ color: 'var(--terminal-fg)' }}
-          >
-            {logs.length === 0
-              ? 'No logs yet. Operations will appear here.'
-              : 'No logs match the current filter.'}
-          </div>
-        ) : (
-          filteredLogs.map((log) => <LogRow key={log.id} log={log} searchQuery={searchQuery} />)
-        )}
-      </div>
-    </ScrollArea>
+      <ScrollArea className="flex-1 min-h-0 w-full" ref={scrollRef}>
+        <div className="flex flex-col py-1">
+          {filteredLogs.length === 0 ? (
+            <div
+              className="text-center py-8 text-sm italic opacity-40 select-none"
+              style={{ color: 'var(--terminal-fg)' }}
+            >
+              {logs.length === 0
+                ? 'No logs yet. Operations will appear here.'
+                : 'No logs match the current filter.'}
+            </div>
+          ) : (
+            filteredLogs.map((log) => <LogRow key={log.id} log={log} searchQuery={searchQuery} />)
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 }

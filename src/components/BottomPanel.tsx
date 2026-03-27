@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
 import type { LogLevel } from '@/lib/logStore';
 import { LogsPanel } from './LogsPanel';
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useSidebar } from '@/components/ui/sidebar';
 import {
   Logs,
   Terminal,
@@ -27,7 +28,7 @@ import { SaveLog } from '@/lib/desktop/backend';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { useShellStore } from '@/lib/shellStore';
 
-const MIN_HEIGHT = 150;
+const MIN_HEIGHT = 120;
 const MAX_HEIGHT_RATIO = 0.7;
 const DEFAULT_HEIGHT = 300;
 
@@ -40,6 +41,11 @@ const FILTER_OPTIONS: { value: LogLevel | 'all'; label: string }[] = [
 ];
 
 export function BottomPanel() {
+  const { state: sidebarState } = useSidebar();
+  // Track sidebar expand/collapse so the fixed panel left edge follows the content area
+  const panelLeft =
+    sidebarState === 'expanded' ? 'var(--sidebar-width, 16rem)' : 'var(--sidebar-width-icon, 3rem)';
+
   const {
     logs,
     isOpen,
@@ -60,35 +66,63 @@ export function BottomPanel() {
   } = useLogStore();
 
   const { clearHistory } = useShellStore();
-  const [isResizing, setIsResizing] = useState(false);
+  // Drag state: all refs — zero listener re-registrations, zero re-renders during drag
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
+  const rafRef = useRef<number>(0);
+  // Only this triggers a re-render — purely for the cursor-lock overlay
+  const [showCursorOverlay, setShowCursorOverlay] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Vertical resize logic
+  // ── Fluid resize: DOM-first, commit-last ─────────────────────────────────────
+  // During drag: height updated via direct DOM style — NO React re-renders.
+  // On mouseup: single Zustand commit — one React re-render to sync.
   const startResizing = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    setIsResizing(true);
+    isResizingRef.current = true;
+    setShowCursorOverlay(true);
+    // Hint to GPU: this element's height will animate
+    if (panelRef.current) {
+      panelRef.current.style.willChange = 'height';
+      panelRef.current.style.userSelect = 'none';
+    }
   }, []);
 
   const stopResizing = useCallback(() => {
-    setIsResizing(false);
+    if (!isResizingRef.current) return;
+    isResizingRef.current = false;
+    cancelAnimationFrame(rafRef.current);
+    setShowCursorOverlay(false);
+    // Commit the final height to the store — single re-render after drag ends
+    if (panelRef.current) {
+      panelRef.current.style.willChange = '';
+      panelRef.current.style.userSelect = '';
+      const finalHeight = parseFloat(panelRef.current.style.height);
+      if (!isNaN(finalHeight)) {
+        setPanelHeight(finalHeight);
+      }
+    }
+  }, [setPanelHeight]);
+
+  const resize = useCallback((e: MouseEvent) => {
+    if (!isResizingRef.current) return;
+    // RAF throttle: skip frames the browser can't render anyway
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const maxHeight = window.innerHeight * MAX_HEIGHT_RATIO;
+      const rawHeight = window.innerHeight - e.clientY;
+      const clampedHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, rawHeight));
+      // Direct DOM write — bypasses React render pipeline entirely
+      if (panelRef.current) {
+        panelRef.current.style.height = `${clampedHeight}px`;
+      }
+    });
   }, []);
 
-  const resize = useCallback(
-    (e: MouseEvent) => {
-      if (isResizing) {
-        const maxHeight = window.innerHeight * MAX_HEIGHT_RATIO;
-        const newHeight = window.innerHeight - e.clientY;
-        if (newHeight >= MIN_HEIGHT && newHeight <= maxHeight) {
-          setPanelHeight(newHeight);
-        }
-      }
-    },
-    [isResizing, setPanelHeight],
-  );
-
+  // Register once — stable refs mean no listener churn
   useEffect(() => {
-    window.addEventListener('mousemove', resize);
+    window.addEventListener('mousemove', resize, { passive: true });
     window.addEventListener('mouseup', stopResizing);
     return () => {
       window.removeEventListener('mousemove', resize);
@@ -147,19 +181,55 @@ export function BottomPanel() {
     ? window.innerHeight * MAX_HEIGHT_RATIO
     : panelHeight || DEFAULT_HEIGHT;
 
-  if (!isOpen) return null;
+  // Animate in/out
+  const prevOpenRef = useRef(isOpen);
+  const [isVisible, setIsVisible] = useState(isOpen);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+  const [isAnimatingIn, setIsAnimatingIn] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && !prevOpenRef.current) {
+      setIsVisible(true);
+      setIsAnimatingIn(true);
+      // Allow one frame for display before starting transition
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsAnimatingIn(false));
+      });
+      prevOpenRef.current = isOpen;
+      return () => cancelAnimationFrame(frame);
+    } else if (!isOpen && prevOpenRef.current) {
+      setIsAnimatingOut(true);
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        setIsAnimatingOut(false);
+      }, 200);
+      prevOpenRef.current = isOpen;
+      return () => clearTimeout(timer);
+    }
+    prevOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  if (!isVisible) return null;
+
+  const translateY = isAnimatingOut || isAnimatingIn ? 'translateY(100%)' : 'translateY(0)';
 
   return (
     <>
-      {/* Resize overlay */}
-      {isResizing && <div className="fixed inset-0 z-50 cursor-ns-resize select-none" />}
+      {/* Cursor-lock overlay: blocks pointer events on content during drag */}
+      {showCursorOverlay && <div className="fixed inset-0 z-[60] cursor-ns-resize select-none" />}
 
       <div
-        className="flex flex-col shrink-0 border-t"
+        ref={panelRef}
+        className="fixed bottom-0 right-0 flex flex-col border-t shadow-2xl"
         style={{
+          left: panelLeft,
           height: `${computedHeight}px`,
+          zIndex: 40,
           borderColor: 'var(--terminal-border)',
           backgroundColor: 'var(--terminal-bg)',
+          transform: translateY,
+          // Only transition transform (open/close animation) — NOT height (would fight drag)
+          transition: 'transform 200ms cubic-bezier(0.4, 0, 0.2, 1), left 200ms ease-linear',
         }}
       >
         {/* Drag handle */}
@@ -446,8 +516,8 @@ export function BottomPanel() {
           </div>
         )}
 
-        {/* Panel content */}
-        <div className="flex-1 overflow-hidden">
+        {/* Panel content — min-h-0 prevents flex overflow that hides shell input on resize */}
+        <div className="flex-1 min-h-0 overflow-hidden">
           {activeTab === 'logs' ? <LogsPanel /> : <ShellPanel />}
         </div>
       </div>

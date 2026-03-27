@@ -127,7 +127,7 @@ export function ShellPanel() {
       className="flex flex-col h-full overflow-hidden"
       style={{ backgroundColor: 'var(--terminal-bg)' }}
     >
-      <ScrollArea className="flex-1 w-full" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 min-h-0 w-full" ref={scrollAreaRef}>
         <div className="p-3">
           <pre
             className="text-[12px] font-mono whitespace-pre-wrap break-words leading-5"

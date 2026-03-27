@@ -26,6 +26,7 @@ import {
 import { buttonVariants } from '@/components/ui/button-variants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Command, CommandEmpty, CommandInput } from '@/components/ui/command';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,15 +37,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { Loader2, Package, Trash2, FileUp, RefreshCw, Search, Filter } from 'lucide-react';
+import { Loader2, Package, Trash2, FileUp, RefreshCw, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import { getFileName } from '@/lib/utils';
 import { CheckboxItem } from '@/components/CheckboxItem';
-import { EmptyState } from '@/components/EmptyState';
 import { DropZone } from '@/components/DropZone';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
@@ -337,64 +336,71 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={loadPackages}
-              disabled={isLoadingPackages}
-            >
-              {isLoadingPackages ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 gap-1.5">
-                  <Filter className="h-3.5 w-3.5" />
-                  <span className="capitalize">
-                    {packageFilter === 'all' ? 'All Packages' : `${packageFilter} Apps`}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup
-                  value={packageFilter}
-                  onValueChange={(value) => setPackageFilter(value as 'all' | 'user' | 'system')}
-                >
-                  <DropdownMenuRadioItem value="all">All ({packages.length})</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="user">
-                    User ({packages.filter((p) => p.packageType === 'user').length})
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">
-                    System ({packages.filter((p) => p.packageType === 'system').length})
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <div className="flex-1 text-sm text-muted-foreground flex items-center justify-end">
+            {/* Package count — left side */}
+            <div className="text-sm text-muted-foreground">
               {isLoadingPackages
-                ? 'Loading packages...'
+                ? 'Loading...'
                 : `${filteredPackages.length} of ${packages.length} packages`}
+            </div>
+
+            {/* Filter + Refresh — right side */}
+            <div className="flex items-center gap-2 ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                    <Filter className="h-3.5 w-3.5" />
+                    <span className="capitalize">
+                      {packageFilter === 'all' ? 'All Packages' : `${packageFilter} Apps`}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={packageFilter}
+                    onValueChange={(value) => setPackageFilter(value as 'all' | 'user' | 'system')}
+                  >
+                    <DropdownMenuRadioItem value="all">
+                      All ({packages.length})
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="user">
+                      User ({packages.filter((p) => p.packageType === 'user').length})
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      System ({packages.filter((p) => p.packageType === 'system').length})
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={loadPackages}
+                disabled={isLoadingPackages}
+              >
+                {isLoadingPackages ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
-              <div className="flex items-center border-b px-3">
-                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                <Input
-                  className="h-10 border-none shadow-none focus-visible:ring-0 bg-transparent px-0"
-                  placeholder="Search packages..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            {/* Command: shadcn component with shouldFilter=false (we filter via useMemo) */}
+            <Command
+              shouldFilter={false}
+              className="rounded-lg border shadow-md overflow-hidden"
+            >
+              <CommandInput
+                placeholder="Search packages..."
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+              />
+              {/* Virtualizer scroll container — must be a plain div so the ref works */}
               <div
                 ref={packageListRef}
                 className="h-75 overflow-y-auto"
@@ -403,11 +409,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                 aria-multiselectable="true"
               >
                 {filteredPackages.length === 0 ? (
-                  <EmptyState
-                    description={
-                      searchQuery ? 'No packages match your search.' : 'No packages found.'
-                    }
-                  />
+                  <CommandEmpty>
+                    {searchQuery ? 'No packages match your search.' : 'No packages found.'}
+                  </CommandEmpty>
                 ) : (
                   <div
                     style={{
@@ -456,7 +460,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                   </div>
                 )}
               </div>
-            </div>
+            </Command>
           </div>
 
           <SelectionSummaryBar

@@ -49,7 +49,15 @@ export function MainLayout() {
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
-  const { togglePanel, isOpen: isLogOpen, setActiveTab, unreadCount, activeTab } = useLogStore();
+  const {
+    togglePanel,
+    isOpen: isLogOpen,
+    setActiveTab,
+    unreadCount,
+    activeTab,
+    panelHeight,
+    isPanelMaximized,
+  } = useLogStore();
   const { setDevices } = useDeviceStore();
 
   // ── Centralized device polling ─────────────────────────────────────────
@@ -86,11 +94,27 @@ export function MainLayout() {
     }
   };
 
+  // Smart panel toggle: closed→open+tab, open+same-tab→close, open+other-tab→switch
   const handleOpenShellPanel = () => {
     if (!isLogOpen) {
       togglePanel();
+      setActiveTab('shell');
+    } else if (activeTab === 'shell') {
+      togglePanel(); // already on shell tab — close
+    } else {
+      setActiveTab('shell'); // open on different tab — just switch
     }
-    setActiveTab('shell');
+  };
+
+  const handleOpenLogsPanel = () => {
+    if (!isLogOpen) {
+      togglePanel();
+      setActiveTab('logs');
+    } else if (activeTab === 'logs') {
+      togglePanel(); // already on logs tab — close
+    } else {
+      setActiveTab('logs'); // open on different tab — just switch
+    }
   };
 
   const renderActiveView = () => {
@@ -222,7 +246,9 @@ export function MainLayout() {
                       <Terminal className="size-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">Shell (Ctrl+`)</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {isLogOpen && activeTab === 'shell' ? 'Close Shell' : 'Shell (Ctrl+`)'}
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Logs panel toggle */}
@@ -235,7 +261,7 @@ export function MainLayout() {
                         'size-8 relative',
                         isLogOpen && activeTab === 'logs' && 'bg-accent text-accent-foreground',
                       )}
-                      onClick={togglePanel}
+                      onClick={handleOpenLogsPanel}
                     >
                       <Logs className="size-4" />
                       {!isLogOpen && unreadCount > 0 && (
@@ -245,33 +271,42 @@ export function MainLayout() {
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">{isLogOpen ? 'Close Logs' : 'Logs'}</TooltipContent>
+                  <TooltipContent side="bottom">
+                    {isLogOpen && activeTab === 'logs' ? 'Close Logs' : 'Logs'}
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </header>
 
-            {/* Main content area */}
-            <div className="flex flex-1 flex-col overflow-hidden">
-              <div className="flex-1 overflow-auto custom-scroll">
-                <div className="min-h-full min-w-(--content-min-width) p-4 sm:p-6">
-                  <div className="max-w-(--content-max-width) mx-auto">
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={activeView}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="w-full"
-                      >
-                        {renderActiveView()}
-                      </motion.div>
-                    </AnimatePresence>
-                  </div>
+            {/* Main content area — scroll area gets bottom padding so content under panel is reachable */}
+            <div
+              className="flex-1 overflow-auto custom-scroll"
+              style={{
+                paddingBottom:
+                  isLogOpen && activeView !== VIEWS.ABOUT
+                    ? `${isPanelMaximized ? window.innerHeight * 0.7 : panelHeight || 300}px`
+                    : undefined,
+              }}
+            >
+              <div className="min-h-full min-w-(--content-min-width) p-4 sm:p-6">
+                <div className="max-w-(--content-max-width) mx-auto">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeView}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="w-full"
+                    >
+                      {renderActiveView()}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </div>
-              {activeView !== VIEWS.ABOUT && <BottomPanel />}
             </div>
+            {/* BottomPanel: fixed to viewport, uses useSidebar() for left offset */}
+            {activeView !== VIEWS.ABOUT && <BottomPanel />}
           </SidebarInset>
         </SidebarProvider>
       </div>
