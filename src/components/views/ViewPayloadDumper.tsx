@@ -18,7 +18,6 @@ import {
 import { cn, getFileName } from '@/lib/utils';
 import { CheckboxItem } from '@/components/CheckboxItem';
 import { Progress } from '@/components/ui/progress';
-import { SectionHeader } from '@/components/SectionHeader';
 import { useLogStore } from '@/lib/logStore';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
@@ -134,6 +133,8 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
   const toExtractSize = selectedNotExtracted.reduce((acc, p) => acc + p.size, 0);
   const allSelected = partitions.length > 0 && partitions.every((p) => p.selected);
   const hasCompletedPartitions = completedPartitions.size > 0;
+  const isExtractionActive = status === 'extracting' || hasCompletedPartitions;
+  const totalPayloadSize = partitions.reduce((acc, p) => acc + p.size, 0);
 
   // Effective output path: use outputDir if already extracted, otherwise user-selected outputPath
   const effectiveOutputPath = outputDir || outputPath;
@@ -361,9 +362,9 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           </CardTitle>
           <CardDescription>Select payload file and output directory for extraction</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+        <CardContent className="flex flex-col gap-4">
           {!payloadPath ? (
-            /* Empty state — show DropZone */
+            /* ── State: Empty — DropZone ── */
             <DropZone
               onFilesDropped={handlePayloadDrop}
               onBrowse={handleSelectPayload}
@@ -375,236 +376,263 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
               sublabel="Accepts .bin and .zip files"
               disabled={status === 'extracting' || status === 'loading-partitions'}
             />
-          ) : (
-            /* Payload loaded — show file & output controls */
-            <div className="flex flex-col gap-3">
-              <SectionHeader>Input & Output</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Input File Button */}
-                <div className="flex gap-2 min-w-0">
-                  <Button
-                    variant="secondary"
-                    className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
-                    onClick={handleSelectPayload}
-                    disabled={status === 'extracting' || status === 'loading-partitions'}
-                  >
-                    {status === 'loading-partitions' ? (
-                      <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-                    ) : (
-                      <FileArchive className="mr-2 h-4 w-4 shrink-0" />
-                    )}
-                    <span className="truncate">{getFileName(payloadPath)}</span>
-                  </Button>
-                  {partitions.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={handleRefreshPartitions}
-                      disabled={status === 'loading-partitions' || status === 'extracting'}
-                      title="Refresh Partitions"
-                    >
-                      <RefreshCw
-                        className={cn('h-4 w-4', status === 'loading-partitions' && 'animate-spin')}
-                      />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Output Directory Button */}
-                <div className="flex gap-2 min-w-0">
-                  <Button
-                    variant="secondary"
-                    className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
-                    onClick={handleSelectOutput}
-                    disabled={status === 'extracting'}
-                  >
-                    <FolderOutput className="mr-2 h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {effectiveOutputPath ? getFileName(effectiveOutputPath) : 'Output (Auto)'}
-                    </span>
-                  </Button>
-                  {effectiveOutputPath && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="shrink-0"
-                      onClick={handleOpenOutputFolder}
-                      title="Open Output Folder"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  )}
+          ) : status === 'loading-partitions' && partitions.length === 0 ? (
+            /* ── State: Loading — stage indicator ── */
+            <div className="flex flex-col items-center justify-center gap-4 py-12">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                <div className="relative rounded-full bg-primary/10 p-5">
+                  <Loader2 className="size-8 text-primary animate-spin" />
                 </div>
               </div>
-
-              {/* Path hints */}
-              <div className="text-xs text-muted-foreground flex flex-col gap-1">
-                <p className="truncate" title={payloadPath}>
-                  <span className="font-medium">Input:</span> {payloadPath}
+              <div className="flex flex-col items-center gap-1.5 text-center">
+                <p className="text-sm font-medium">
+                  {payloadPath.toLowerCase().endsWith('.zip')
+                    ? 'Extracting payload from ZIP...'
+                    : 'Parsing partition manifest...'}
                 </p>
-                {effectiveOutputPath && (
-                  <p className="truncate" title={effectiveOutputPath}>
-                    <span className="font-medium">Output:</span>{' '}
-                    <span className={cn(outputDir && !outputPath && 'text-success')}>
-                      {effectiveOutputPath}
-                      {outputDir && !outputPath && ' (auto-generated)'}
-                    </span>
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground truncate max-w-xs">
+                  {getFileName(payloadPath)}
+                </p>
               </div>
             </div>
-          )}
-
-          {/* Partition Selection - Full Table View with Progress */}
-          {partitions.length > 0 && (
-            <div className="flex flex-col gap-3">
-              {/* Partition Header */}
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <SectionHeader>Partitions</SectionHeader>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    {selectedCount}/{partitions.length} selected
-                    {hasCompletedPartitions && ` • ${completedPartitions.size} extracted`}
-                    {toExtractCount > 0 && ` • ${formatBytes(toExtractSize)} to extract`}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleToggleAll}
-                    className="text-xs h-7"
-                    disabled={status === 'extracting'}
-                  >
-                    {allSelected ? 'Deselect All' : 'Select All'}
-                  </Button>
+          ) : (
+            /* ── State: Loaded — banner + table + footer ── */
+            <>
+              {/* Zone 1: File Info Banner */}
+              <div className="rounded-lg bg-muted/30 border p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileArchive className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="text-sm font-medium truncate">{getFileName(payloadPath)}</span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={handleSelectPayload}
+                      disabled={status === 'extracting' || status === 'loading-partitions'}
+                      title="Change Payload"
+                    >
+                      <FileArchive className="h-3.5 w-3.5" />
+                    </Button>
+                    {partitions.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleRefreshPartitions}
+                        disabled={status === 'loading-partitions' || status === 'extracting'}
+                        title="Refresh Partitions"
+                      >
+                        <RefreshCw
+                          className={cn(
+                            'h-3.5 w-3.5',
+                            status === 'loading-partitions' && 'animate-spin',
+                          )}
+                        />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={handleSelectOutput}
+                      disabled={status === 'extracting'}
+                      title={effectiveOutputPath || 'Select Output Directory'}
+                    >
+                      <FolderOutput className="h-3.5 w-3.5" />
+                    </Button>
+                    {effectiveOutputPath && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleOpenOutputFolder}
+                        title="Open Output Folder"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                  {partitions.length > 0 && (
+                    <span>
+                      {partitions.length} partitions &bull; {formatBytes(totalPayloadSize)} total
+                    </span>
+                  )}
+                  {effectiveOutputPath && (
+                    <>
+                      <span>&bull;</span>
+                      <span className={cn('truncate', outputDir && !outputPath && 'text-success')}>
+                        {getFileName(effectiveOutputPath)}
+                        {outputDir && !outputPath && ' (auto)'}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Partition Table */}
-              <div className="rounded-lg border bg-muted/30 overflow-hidden">
-                {/* Table Header */}
-                <div className="grid grid-cols-[28px_1fr_minmax(120px,1fr)_72px] gap-2 px-4 py-2.5 bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span></span>
-                  <span>Partition</span>
-                  <span className="text-center">Progress</span>
-                  <span className="text-right">Size</span>
-                </div>
+              {/* Zone 2: Partition Table (adaptive columns) */}
+              {partitions.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  {/* Summary + toggle */}
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {selectedCount}/{partitions.length} selected
+                      {hasCompletedPartitions && ` \u2022 ${completedPartitions.size} extracted`}
+                      {toExtractCount > 0 && ` \u2022 ${formatBytes(toExtractSize)} to extract`}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleToggleAll}
+                      className="text-xs h-7"
+                      disabled={status === 'extracting'}
+                    >
+                      {allSelected ? 'Deselect All' : 'Select All'}
+                    </Button>
+                  </div>
 
-                {/* Partition List */}
-                <div className="divide-y divide-border/50">
-                  {partitions.map((partition, index) => {
-                    const isExtracting = extractingPartitions.has(partition.name);
-                    const isCompleted = completedPartitions.has(partition.name);
-                    const progress = partitionProgress.get(partition.name);
-                    const realProgressPercent = progress?.percentage ?? 0;
+                  {/* Table */}
+                  <div className="rounded-lg border bg-muted/30 overflow-hidden">
+                    {/* Header — adaptive */}
+                    <div
+                      className={cn(
+                        'grid gap-2 px-4 py-2.5 bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+                        isExtractionActive
+                          ? 'grid-cols-[28px_1fr_minmax(100px,1fr)_72px]'
+                          : 'grid-cols-[28px_1fr_72px]',
+                      )}
+                    >
+                      <span></span>
+                      <span>Partition</span>
+                      {isExtractionActive && <span className="text-center">Progress</span>}
+                      <span className="text-right">Size</span>
+                    </div>
 
-                    return (
-                      <div
-                        key={partition.name}
-                        onClick={() =>
-                          status !== 'extracting' && !isCompleted && togglePartition(index)
-                        }
-                        role="checkbox"
-                        aria-checked={isCompleted ? true : partition.selected}
-                        aria-disabled={status === 'extracting' || isCompleted}
-                        tabIndex={isCompleted || status === 'extracting' ? -1 : 0}
-                        onKeyDown={(e) => {
-                          if (
-                            (e.key === ' ' || e.key === 'Enter') &&
-                            status !== 'extracting' &&
-                            !isCompleted
-                          ) {
-                            e.preventDefault();
-                            togglePartition(index);
-                          }
-                        }}
-                        className={cn(
-                          'grid grid-cols-[28px_1fr_minmax(120px,1fr)_72px] gap-2 px-4 py-3 text-sm transition-colors items-center',
-                          status !== 'extracting' &&
-                            !isCompleted &&
-                            'cursor-pointer hover:bg-muted/50',
-                          partition.selected && !isCompleted && 'bg-primary/5',
-                          isCompleted && 'bg-success/5',
-                        )}
-                      >
-                        {/* Status Icon (checkbox or completed icon) */}
-                        {isCompleted ? (
-                          <CheckCircle2 className="h-5 w-5 text-success" />
-                        ) : (
-                          <CheckboxItem
-                            checked={partition.selected}
-                            disabled={status === 'extracting'}
-                          />
-                        )}
+                    {/* Rows — scrollable */}
+                    <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
+                      {partitions.map((partition, index) => {
+                        const isRowExtracting = extractingPartitions.has(partition.name);
+                        const isRowCompleted = completedPartitions.has(partition.name);
+                        const progress = partitionProgress.get(partition.name);
+                        const realProgressPercent = progress?.percentage ?? 0;
 
-                        {/* Name with Icon */}
-                        <div className="flex items-center gap-2 min-w-0">
-                          {isExtracting && !isCompleted ? (
-                            <Loader2 className="h-4 w-4 shrink-0 text-primary animate-spin" />
-                          ) : (
-                            <HardDrive
-                              className={cn(
-                                'h-4 w-4 shrink-0',
-                                isCompleted
-                                  ? 'text-success'
-                                  : partition.selected
-                                    ? 'text-primary'
-                                    : 'text-muted-foreground',
-                              )}
-                            />
-                          )}
-                          <span
+                        return (
+                          <div
+                            key={partition.name}
+                            onClick={() =>
+                              status !== 'extracting' && !isRowCompleted && togglePartition(index)
+                            }
+                            role="checkbox"
+                            aria-checked={isRowCompleted ? true : partition.selected}
+                            aria-disabled={status === 'extracting' || isRowCompleted}
+                            tabIndex={isRowCompleted || status === 'extracting' ? -1 : 0}
+                            onKeyDown={(e) => {
+                              if (
+                                (e.key === ' ' || e.key === 'Enter') &&
+                                status !== 'extracting' &&
+                                !isRowCompleted
+                              ) {
+                                e.preventDefault();
+                                togglePartition(index);
+                              }
+                            }}
                             className={cn(
-                              'font-medium truncate',
-                              isCompleted
-                                ? 'text-success'
-                                : partition.selected
-                                  ? 'text-foreground'
-                                  : 'text-muted-foreground',
+                              'grid gap-2 px-4 py-3 text-sm transition-colors items-center',
+                              isExtractionActive
+                                ? 'grid-cols-[28px_1fr_minmax(100px,1fr)_72px]'
+                                : 'grid-cols-[28px_1fr_72px]',
+                              status !== 'extracting' &&
+                                !isRowCompleted &&
+                                'cursor-pointer hover:bg-muted/50',
+                              partition.selected && !isRowCompleted && 'bg-primary/5',
+                              isRowCompleted && 'bg-success/5',
                             )}
                           >
-                            {partition.name}
-                          </span>
-                        </div>
+                            {/* Checkbox / completed */}
+                            {isRowCompleted ? (
+                              <CheckCircle2 className="h-5 w-5 text-success" />
+                            ) : (
+                              <CheckboxItem
+                                checked={partition.selected}
+                                disabled={status === 'extracting'}
+                              />
+                            )}
 
-                        {/* Progress Bar - Centered */}
-                        <div className="flex items-center justify-center">
-                          <ExtractionProgressBar
-                            isExtracting={isExtracting}
-                            isCompleted={isCompleted}
-                            realProgress={realProgressPercent}
-                          />
-                        </div>
+                            {/* Name */}
+                            <div className="flex items-center gap-2 min-w-0">
+                              {isRowExtracting && !isRowCompleted ? (
+                                <Loader2 className="h-4 w-4 shrink-0 text-primary animate-spin" />
+                              ) : (
+                                <HardDrive
+                                  className={cn(
+                                    'h-4 w-4 shrink-0',
+                                    isRowCompleted
+                                      ? 'text-success'
+                                      : partition.selected
+                                        ? 'text-primary'
+                                        : 'text-muted-foreground',
+                                  )}
+                                />
+                              )}
+                              <span
+                                className={cn(
+                                  'font-medium truncate',
+                                  isRowCompleted
+                                    ? 'text-success'
+                                    : partition.selected
+                                      ? 'text-foreground'
+                                      : 'text-muted-foreground',
+                                )}
+                              >
+                                {partition.name}
+                              </span>
+                            </div>
 
-                        {/* Size */}
-                        <span
-                          className={cn(
-                            'text-xs tabular-nums text-right',
-                            isCompleted ? 'text-success font-medium' : 'text-muted-foreground',
-                          )}
-                        >
-                          {formatBytes(partition.size)}
-                        </span>
-                      </div>
-                    );
-                  })}
+                            {/* Progress — only when extraction active */}
+                            {isExtractionActive && (
+                              <div className="flex items-center justify-center">
+                                <ExtractionProgressBar
+                                  isExtracting={isRowExtracting}
+                                  isCompleted={isRowCompleted}
+                                  realProgress={realProgressPercent}
+                                />
+                              </div>
+                            )}
+
+                            {/* Size */}
+                            <span
+                              className={cn(
+                                'text-xs tabular-nums text-right',
+                                isRowCompleted
+                                  ? 'text-success font-medium'
+                                  : 'text-muted-foreground',
+                              )}
+                            >
+                              {formatBytes(partition.size)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Action Buttons — only when payload loaded */}
-          {payloadPath && (
-            <div className="flex flex-col gap-3">
-              <SectionHeader>Actions</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Zone 3: Action Footer */}
+              <div className="flex items-center justify-between border-t pt-4">
                 <Button
-                  variant="outline"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleReset}
                   disabled={status === 'extracting'}
-                  className="justify-start pl-4"
+                  className="text-muted-foreground"
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
                   Reset
                 </Button>
                 <Button
@@ -615,7 +643,6 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     status === 'loading-partitions' ||
                     toExtractCount === 0
                   }
-                  className="justify-start pl-4"
                 >
                   {status === 'extracting' ? (
                     <>
@@ -626,7 +653,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     <>
                       <Download className="mr-2 h-4 w-4" />
                       {toExtractCount > 0
-                        ? `Extract (${toExtractCount})`
+                        ? `Extract (${toExtractCount}) \u2014 ${formatBytes(toExtractSize)}`
                         : selectedCount > 0
                           ? 'Already Extracted'
                           : 'Select Partitions'}
@@ -634,7 +661,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                   )}
                 </Button>
               </div>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
