@@ -142,6 +142,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       toast.loading(`Installing (${i + 1}/${apkPaths.length}): ${fileName}`, { id: toastId });
       setInstallProgress({ current: i + 1, total: apkPaths.length });
 
+      // Yield to the event loop so React flushes progress UI before the next await
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+
       try {
         await InstallPackage(path);
         successCount++;
@@ -152,6 +155,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
         failCount++;
       }
     }
+
 
     if (failCount === 0) {
       toast.success(`Successfully installed ${successCount} APK(s)`, { id: toastId });
