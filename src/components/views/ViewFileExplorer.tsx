@@ -103,6 +103,7 @@ const DEFAULT_LEFT_WIDTH = 180;
 const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
+const RESPONSIVE_COLLAPSE_WIDTH = 1024;
 
 /** Format raw byte count string into human-readable size. */
 function formatBytes(raw: string): string {
@@ -221,6 +222,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const currentPathRef = useRef(localStorage.getItem('fe.currentPath') ?? '/sdcard/');
+  // Tracks whether the tree was auto-collapsed by responsive resize (not by user).
+  // When true, expanding the window past the threshold will auto-restore the tree.
+  const wasResponsiveCollapsedRef = useRef(false);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -245,6 +249,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Tree toggle ──────────────────────────────────────────────────────────
   const toggleTree = useCallback((collapsed: boolean) => {
+    wasResponsiveCollapsedRef.current = false; // user took manual control
     setIsTreeCollapsed(collapsed);
     localStorage.setItem('fe.treeCollapsed', String(collapsed));
   }, []);
@@ -272,6 +277,40 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       window.removeEventListener('mouseup', stopResizing);
     };
   }, [resize, stopResizing]);
+
+  // ── Responsive tree collapse on window resize ───────────────────────────
+  // Auto-collapses tree when window width ≤ RESPONSIVE_COLLAPSE_WIDTH,
+  // auto-restores when window grows past the threshold — only if the collapse
+  // was triggered by resize (not by the user's manual toggle).
+  useEffect(() => {
+    let prevWasSmall = window.innerWidth <= RESPONSIVE_COLLAPSE_WIDTH;
+
+    // Initial check: if window is already small on mount, auto-collapse
+    if (prevWasSmall && localStorage.getItem('fe.treeCollapsed') !== 'true') {
+      wasResponsiveCollapsedRef.current = true;
+      setIsTreeCollapsed(true);
+    }
+
+    const onWindowResize = () => {
+      const isSmall = window.innerWidth <= RESPONSIVE_COLLAPSE_WIDTH;
+
+      // Only act on threshold crossings, not every resize pixel
+      if (isSmall && !prevWasSmall) {
+        // Window just shrank below threshold → auto-collapse
+        wasResponsiveCollapsedRef.current = true;
+        setIsTreeCollapsed(true);
+      } else if (!isSmall && prevWasSmall && wasResponsiveCollapsedRef.current) {
+        // Window just grew above threshold and we were the ones who collapsed it → restore
+        wasResponsiveCollapsedRef.current = false;
+        setIsTreeCollapsed(false);
+      }
+
+      prevWasSmall = isSmall;
+    };
+
+    window.addEventListener('resize', onWindowResize);
+    return () => window.removeEventListener('resize', onWindowResize);
+  }, []);
 
   // ── Load files ───────────────────────────────────────────────────────────
   // `pushToHistory` = true for user navigation, false for refresh-in-place.
@@ -1344,7 +1383,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 )}
                               </TableCell>
 
-                              <TableCell className="tabular-nums text-right pr-4 text-muted-foreground text-xs">
+                              <TableCell className="tabular-nums text-muted-foreground text-xs">
                                 {file.type === 'Directory' ? '—' : formatBytes(file.size)}
                               </TableCell>
                               <TableCell>{file.date}</TableCell>
