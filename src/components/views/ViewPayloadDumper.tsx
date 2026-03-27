@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -13,7 +13,6 @@ import {
   HardDrive,
   FolderOutput,
   FileDown,
-  Upload,
   ExternalLink,
 } from 'lucide-react';
 import { cn, getFileName } from '@/lib/utils';
@@ -32,7 +31,8 @@ import {
   OpenFolder,
   CleanupPayloadCache,
 } from '@/lib/desktop/backend';
-import { OnFileDrop, OnFileDropOff, EventsOn, EventsOff } from '@/lib/desktop/runtime';
+import { EventsOn, EventsOff } from '@/lib/desktop/runtime';
+import { DropZone } from '@/components/DropZone';
 
 // Format bytes to human-readable size
 const formatBytes = (bytes: number): string => {
@@ -103,10 +103,6 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     clearPartitionProgress,
     reset,
   } = usePayloadDumperStore();
-
-  // Drag and drop state
-  const [isDragging, setIsDragging] = useState(false);
-  const dropTargetRef = useRef<HTMLDivElement>(null);
 
   // Subscribe to real-time progress events from backend
   useEffect(() => {
@@ -183,25 +179,13 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     [setStatus, setErrorMessage, setPartitions],
   );
 
-  // Handle file dropped via Wails runtime
-  const handleFileDrop = useCallback(
-    async (x: number, y: number, paths: string[]) => {
-      setIsDragging(false);
-
-      if (status === 'extracting' || status === 'loading-partitions') {
-        return;
-      }
-
+  // Handle payload file dropped via DropZone
+  const handlePayloadDrop = useCallback(
+    async (paths: string[]) => {
+      if (status === 'extracting' || status === 'loading-partitions') return;
       if (paths.length === 0) return;
 
       const filePath = paths[0];
-      const fileName = filePath.toLowerCase();
-
-      // Check if it's a valid file type
-      if (!fileName.endsWith('.bin') && !fileName.endsWith('.zip')) {
-        toast.error('Please drop a payload.bin or .zip file');
-        return;
-      }
 
       // Clean up any previously extracted temp files
       await CleanupPayloadCache();
@@ -213,53 +197,6 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     },
     [status, setPayloadPath, loadPartitions],
   );
-
-  // Set up Wails drag and drop listener
-  useEffect(() => {
-    // Register the file drop handler with Wails runtime
-    OnFileDrop(handleFileDrop, false);
-
-    // Clean up when component unmounts
-    return () => {
-      OnFileDropOff();
-    };
-  }, [handleFileDrop]);
-
-  // Handle native drag events for visual feedback
-  const handleDragEnter = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // Only show overlay if no payload is selected and not busy
-      if (!payloadPath && status !== 'extracting' && status !== 'loading-partitions') {
-        setIsDragging(true);
-      }
-    },
-    [payloadPath, status],
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Only reset if leaving the container (not entering a child)
-    const rect = dropTargetRef.current?.getBoundingClientRect();
-    if (rect) {
-      const { clientX, clientY } = e;
-      if (
-        clientX < rect.left ||
-        clientX > rect.right ||
-        clientY < rect.top ||
-        clientY > rect.bottom
-      ) {
-        setIsDragging(false);
-      }
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
 
   const handleSelectPayload = async () => {
     try {
@@ -398,13 +335,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
   };
 
   return (
-    <div
-      ref={dropTargetRef}
-      className="flex flex-col gap-6 pb-10"
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-    >
+    <div className="flex flex-col gap-6 pb-10">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="relative">
@@ -422,12 +353,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       </div>
 
       {/* Main Card */}
-      <Card
-        className={cn(
-          'transition-all duration-200 relative',
-          isDragging && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-        )}
-      >
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileArchive className="h-5 w-5" />
@@ -436,88 +362,87 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
           <CardDescription>Select payload file and output directory for extraction</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {/* Drag & Drop Zone (shown when dragging and no payload selected) */}
-          {isDragging && !payloadPath && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
-              <div className="flex flex-col items-center gap-3 text-primary">
-                <Upload className="h-12 w-12" />
-                <p className="text-lg font-medium">Drop payload.bin here</p>
-              </div>
-            </div>
-          )}
-
-          {/* File Selection Section */}
-          <div className="flex flex-col gap-3">
-            <SectionHeader>Input & Output</SectionHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Input File Button */}
-              <div className="flex gap-2 min-w-0">
-                <Button
-                  variant="secondary"
-                  className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
-                  onClick={handleSelectPayload}
-                  disabled={status === 'extracting' || status === 'loading-partitions'}
-                >
-                  {status === 'loading-partitions' ? (
-                    <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
-                  ) : (
-                    <FileArchive className="mr-2 h-4 w-4 shrink-0" />
+          {!payloadPath ? (
+            /* Empty state — show DropZone */
+            <DropZone
+              onFilesDropped={handlePayloadDrop}
+              onBrowse={handleSelectPayload}
+              acceptExtensions={['.bin', '.zip']}
+              rejectMessage="Only payload.bin or .zip files are accepted"
+              icon={FileArchive}
+              label="Drop payload.bin or OTA zip here"
+              browseLabel="Select Payload File"
+              sublabel="Accepts .bin and .zip files"
+              disabled={status === 'extracting' || status === 'loading-partitions'}
+            />
+          ) : (
+            /* Payload loaded — show file & output controls */
+            <div className="flex flex-col gap-3">
+              <SectionHeader>Input & Output</SectionHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Input File Button */}
+                <div className="flex gap-2 min-w-0">
+                  <Button
+                    variant="secondary"
+                    className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
+                    onClick={handleSelectPayload}
+                    disabled={status === 'extracting' || status === 'loading-partitions'}
+                  >
+                    {status === 'loading-partitions' ? (
+                      <Loader2 className="mr-2 h-4 w-4 shrink-0 animate-spin" />
+                    ) : (
+                      <FileArchive className="mr-2 h-4 w-4 shrink-0" />
+                    )}
+                    <span className="truncate">{getFileName(payloadPath)}</span>
+                  </Button>
+                  {partitions.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={handleRefreshPartitions}
+                      disabled={status === 'loading-partitions' || status === 'extracting'}
+                      title="Refresh Partitions"
+                    >
+                      <RefreshCw
+                        className={cn('h-4 w-4', status === 'loading-partitions' && 'animate-spin')}
+                      />
+                    </Button>
                   )}
-                  <span className="truncate">
-                    {payloadPath ? getFileName(payloadPath) : 'Select or Drop Payload'}
-                  </span>
-                </Button>
-                {payloadPath && partitions.length > 0 && (
+                </div>
+
+                {/* Output Directory Button */}
+                <div className="flex gap-2 min-w-0">
                   <Button
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={handleRefreshPartitions}
-                    disabled={status === 'loading-partitions' || status === 'extracting'}
-                    title="Refresh Partitions"
+                    variant="secondary"
+                    className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
+                    onClick={handleSelectOutput}
+                    disabled={status === 'extracting'}
                   >
-                    <RefreshCw
-                      className={cn('h-4 w-4', status === 'loading-partitions' && 'animate-spin')}
-                    />
+                    <FolderOutput className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {effectiveOutputPath ? getFileName(effectiveOutputPath) : 'Output (Auto)'}
+                    </span>
                   </Button>
-                )}
+                  {effectiveOutputPath && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0"
+                      onClick={handleOpenOutputFolder}
+                      title="Open Output Folder"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
-              {/* Output Directory Button */}
-              <div className="flex gap-2 min-w-0">
-                <Button
-                  variant="secondary"
-                  className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
-                  onClick={handleSelectOutput}
-                  disabled={status === 'extracting'}
-                >
-                  <FolderOutput className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="truncate">
-                    {effectiveOutputPath ? getFileName(effectiveOutputPath) : 'Output (Auto)'}
-                  </span>
-                </Button>
-                {effectiveOutputPath && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0"
-                    onClick={handleOpenOutputFolder}
-                    title="Open Output Folder"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Path hints */}
-            {(payloadPath || effectiveOutputPath) && (
+              {/* Path hints */}
               <div className="text-xs text-muted-foreground flex flex-col gap-1">
-                {payloadPath && (
-                  <p className="truncate" title={payloadPath}>
-                    <span className="font-medium">Input:</span> {payloadPath}
-                  </p>
-                )}
+                <p className="truncate" title={payloadPath}>
+                  <span className="font-medium">Input:</span> {payloadPath}
+                </p>
                 {effectiveOutputPath && (
                   <p className="truncate" title={effectiveOutputPath}>
                     <span className="font-medium">Output:</span>{' '}
@@ -528,8 +453,8 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                   </p>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Partition Selection - Full Table View with Progress */}
           {partitions.length > 0 && (
