@@ -101,7 +101,16 @@ export function EventsOffAll(): void {
   });
 }
 
-export function OnFileDrop(callback: FileDropCallback, _useDropTarget: boolean): void {
+export interface DragDropHandler {
+  onDrop: (paths: string[], x: number, y: number) => void;
+  onHover?: (x: number, y: number) => void;
+  onCancel?: () => void;
+}
+
+export function OnFileDrop(
+  callbackOrHandler: FileDropCallback | DragDropHandler,
+  _useDropTarget?: boolean,
+): void {
   if (fileDropCleanup) {
     fileDropCleanup();
     fileDropCleanup = null;
@@ -109,15 +118,26 @@ export function OnFileDrop(callback: FileDropCallback, _useDropTarget: boolean):
 
   const registrationId = ++fileDropRegistrationId;
 
+  // Normalize to DragDropHandler
+  const handler: DragDropHandler =
+    typeof callbackOrHandler === 'function'
+      ? { onDrop: (paths, x, y) => callbackOrHandler(x, y, paths) }
+      : callbackOrHandler;
+
   void getCurrentWebview()
     .onDragDropEvent((event: any) => {
       const payload = event.payload;
-      if (payload?.type !== 'drop' || !Array.isArray(payload.paths)) {
-        return;
-      }
+      if (!payload?.type) return;
 
-      const position = payload.position ?? { x: 0, y: 0 };
-      callback(position.x ?? 0, position.y ?? 0, payload.paths);
+      if (payload.type === 'over') {
+        const pos = payload.position ?? { x: 0, y: 0 };
+        handler.onHover?.(pos.x ?? 0, pos.y ?? 0);
+      } else if (payload.type === 'drop' && Array.isArray(payload.paths)) {
+        const pos = payload.position ?? { x: 0, y: 0 };
+        handler.onDrop(payload.paths, pos.x ?? 0, pos.y ?? 0);
+      } else if (payload.type === 'cancel') {
+        handler.onCancel?.();
+      }
     })
     .then((cleanup: Unlisten) => {
       if (registrationId !== fileDropRegistrationId) {

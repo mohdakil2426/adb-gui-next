@@ -41,7 +41,7 @@ export function DropZone({
   className,
 }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Filter files by extension
   const filterFiles = useCallback(
@@ -55,101 +55,92 @@ export function DropZone({
     [acceptExtensions],
   );
 
-  // Tauri file drop handler
-  const handleFileDrop = useCallback(
-    (_x: number, _y: number, paths: string[]) => {
-      setIsDragging(false);
-      if (disabled || paths.length === 0) return;
-
-      const valid = filterFiles(paths);
-      if (valid.length === 0) {
-        toast.error(rejectMessage || `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
-        return;
-      }
-
-      onFilesDropped(valid);
-    },
-    [disabled, filterFiles, onFilesDropped, rejectMessage, acceptExtensions],
-  );
-
-  // Register/unregister Tauri drag-drop handler
+  // Register Tauri native drag-drop handler with all 3 events
   useEffect(() => {
     if (disabled) return;
-    OnFileDrop(handleFileDrop, false);
+
+    OnFileDrop({
+      onHover: () => {
+        // Tauri fires 'over' continuously while hovering — debounce the state
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsDragging(true);
+
+        // Auto-hide if no events for 150ms (cursor left window)
+        hoverTimeoutRef.current = setTimeout(() => setIsDragging(false), 150);
+      },
+
+      onDrop: (paths) => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsDragging(false);
+
+        if (paths.length === 0) return;
+
+        const valid = filterFiles(paths);
+        if (valid.length === 0) {
+          toast.error(rejectMessage || `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
+          return;
+        }
+
+        onFilesDropped(valid);
+      },
+
+      onCancel: () => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsDragging(false);
+      },
+    });
+
     return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
       OnFileDropOff();
     };
-  }, [handleFileDrop, disabled]);
-
-  // HTML5 drag events — visual feedback only
-  const handleDragEnter = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!disabled) setIsDragging(true);
-    },
-    [disabled],
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (rect) {
-      const { clientX, clientY } = e;
-      if (
-        clientX < rect.left ||
-        clientX > rect.right ||
-        clientY < rect.top ||
-        clientY > rect.bottom
-      ) {
-        setIsDragging(false);
-      }
-    }
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
+  }, [disabled, filterFiles, onFilesDropped, rejectMessage, acceptExtensions]);
 
   return (
     <div
-      ref={containerRef}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
       className={cn(
         'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
         isDragging
-          ? 'border-primary bg-primary/5 scale-[1.01]'
+          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_rgba(var(--primary-rgb,59,130,246),0.15)]'
           : 'border-muted-foreground/25 hover:border-muted-foreground/40',
         disabled && 'pointer-events-none opacity-50',
         className,
       )}
     >
-      {/* Drag overlay */}
+      {/* Drag-over overlay */}
       {isDragging && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[1px]">
-          <div className="flex flex-col items-center gap-2 text-primary">
-            <Upload className="size-10 animate-bounce" />
-            <p className="text-sm font-medium">Drop to add</p>
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
+          <div className="flex flex-col items-center gap-2 text-primary animate-in fade-in zoom-in-95 duration-150">
+            <div className="rounded-full bg-primary/10 p-4">
+              <Upload className="size-8 animate-bounce" />
+            </div>
+            <p className="text-sm font-semibold">Drop to add files</p>
           </div>
         </div>
       )}
 
-      <Icon className="size-10 text-muted-foreground/40" />
+      {/* Default state */}
+      <div
+        className={cn(
+          'flex flex-col items-center gap-3 transition-opacity duration-150',
+          isDragging && 'opacity-0',
+        )}
+      >
+        <div className="rounded-full bg-muted p-3">
+          <Icon className="size-6 text-muted-foreground/50" />
+        </div>
 
-      <div className="flex flex-col items-center gap-1">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="text-xs text-muted-foreground/60">or</p>
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground/50">or</p>
+        </div>
+
+        <Button variant="outline" size="sm" onClick={onBrowse} disabled={disabled}>
+          {browseLabel}
+        </Button>
+
+        {sublabel && <p className="text-xs text-muted-foreground/40">{sublabel}</p>}
       </div>
-
-      <Button variant="outline" size="sm" onClick={onBrowse} disabled={disabled}>
-        {browseLabel}
-      </Button>
-
-      {sublabel && <p className="text-xs text-muted-foreground/50">{sublabel}</p>}
     </div>
   );
 }
