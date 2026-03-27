@@ -45,6 +45,7 @@ import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import { getFileName } from '@/lib/utils';
 import { CheckboxItem } from '@/components/CheckboxItem';
 import { EmptyState } from '@/components/EmptyState';
+import { DropZone } from '@/components/DropZone';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const [apkPaths, setApkPaths] = useState<string[]>([]);
@@ -226,90 +227,101 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleSelectApk}
-            disabled={isInstalling}
-          >
-            <FileUp className="mr-2 h-4 w-4" />
-            Select App Files
-          </Button>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <Label>Selected Apk</Label>
-            </div>
-
-            <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
-              <div className="max-h-75 overflow-y-auto">
-                {apkPaths.length === 0 ? (
-                  <div className="py-6 text-center text-sm text-muted-foreground">
-                    No files selected.
-                  </div>
-                ) : (
-                  <div className="p-1">
-                    {apkPaths.map((path, idx) => (
-                      <div
-                        key={idx}
-                        className="group relative flex items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <div className="flex items-center min-w-0 flex-1 mr-2">
-                          <Package className="mr-2 h-4 w-4 opacity-70 shrink-0" />
-                          <span className="truncate">{path.split(/[/\\]/).pop()}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-transparent"
-                          onClick={() => {
-                            const newPaths = [...apkPaths];
-                            newPaths.splice(idx, 1);
-                            setApkPaths(newPaths);
-                          }}
-                          disabled={isInstalling}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          {apkPaths.length === 0 ? (
+            /* Empty state — show drop zone */
+            <DropZone
+              onFilesDropped={(paths) => {
+                setApkPaths((prev) => [...prev, ...paths]);
+                toast.info(`${paths.length} file(s) added`);
+              }}
+              onBrowse={handleSelectApk}
+              acceptExtensions={['.apk', '.apks']}
+              rejectMessage="Only .apk and .apks files are accepted"
+              icon={FileUp}
+              label="Drop APK files here"
+              browseLabel="Select App Files"
+              sublabel="Accepts .apk and .apks files"
+              disabled={isInstalling}
+            />
+          ) : (
+            /* Files selected — show list + install */
+            <>
+              <div className="flex items-center justify-between">
+                <Label>Selected APK</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={handleSelectApk}
+                  disabled={isInstalling}
+                >
+                  <FileUp className="h-3.5 w-3.5" />
+                  Add More
+                </Button>
               </div>
-            </div>
-          </div>
 
-          <SelectionSummaryBar
-            count={apkPaths.length}
-            label="file(s)"
-            onClear={() => setApkPaths([])}
-            disabled={isInstalling}
-          />
+              <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
+                <div className="max-h-75 overflow-y-auto p-1">
+                  {apkPaths.map((path, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative flex items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <div className="flex items-center min-w-0 flex-1 mr-2">
+                        <Package className="mr-2 h-4 w-4 opacity-70 shrink-0" />
+                        <span className="truncate">{path.split(/[/\\]/).pop()}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-transparent"
+                        onClick={() => {
+                          const newPaths = [...apkPaths];
+                          newPaths.splice(idx, 1);
+                          setApkPaths(newPaths);
+                        }}
+                        disabled={isInstalling}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          <Button
-            variant="default"
-            className="w-full relative overflow-hidden"
-            disabled={isInstalling || apkPaths.length === 0}
-            onClick={handleInstall}
-          >
-            {isInstalling && installProgress && (
-              <div
-                className="absolute inset-0 bg-primary/20 transition-all duration-300 left-0"
-                style={{ width: `${(installProgress.current / installProgress.total) * 100}%` }}
+              <SelectionSummaryBar
+                count={apkPaths.length}
+                label="file(s)"
+                onClear={() => setApkPaths([])}
+                disabled={isInstalling}
               />
-            )}
 
-            <span className="relative z-10 flex items-center">
-              {isInstalling ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-              ) : (
-                <Package className="mr-2 h-4 w-4 shrink-0" />
-              )}
-              {isInstalling
-                ? `Installing ${installProgress?.current}/${installProgress?.total}...`
-                : `Install ${apkPaths.length > 0 ? `(${apkPaths.length})` : ''}`}
-            </span>
-          </Button>
+              <Button
+                variant="default"
+                className="w-full relative overflow-hidden"
+                disabled={isInstalling}
+                onClick={handleInstall}
+              >
+                {isInstalling && installProgress && (
+                  <div
+                    className="absolute inset-0 bg-primary/20 transition-all duration-300 left-0"
+                    style={{ width: `${(installProgress.current / installProgress.total) * 100}%` }}
+                  />
+                )}
+
+                <span className="relative z-10 flex items-center">
+                  {isInstalling ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                  ) : (
+                    <Package className="mr-2 h-4 w-4 shrink-0" />
+                  )}
+                  {isInstalling
+                    ? `Installing ${installProgress?.current}/${installProgress?.total}...`
+                    : `Install (${apkPaths.length})`}
+                </span>
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
 
