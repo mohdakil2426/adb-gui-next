@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
+import { useDeviceStore } from '@/lib/deviceStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import { getFileName } from '@/lib/utils';
 import { partitionSchema } from '@/lib/schemas';
-import { queryKeys, fetchAllDevices } from '@/lib/queries';
+
 import {
   WipeData,
   FlashPartition,
@@ -32,40 +32,16 @@ import {
 import { buttonVariants } from '@/components/ui/button-variants';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, FileUp, Trash2, Package } from 'lucide-react';
-import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
-import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 
-export function ViewFlasher({ activeView }: { activeView: string }) {
+export function ViewFlasher({ activeView: _activeView }: { activeView: string }) {
   const [partition, setPartition] = useState('');
   const [filePath, setFilePath] = useState('');
   const [sideloadFilePath, setSideloadFilePath] = useState('');
   const [isFlashing, setIsFlashing] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
   const [isSideloading, setIsSideloading] = useState(false);
-  // Nickname Editing State
-  const [editingSerial, setEditingSerial] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
-  const {
-    data: queriedDevices = [],
-    isFetching: isRefreshing,
-    refetch: refetchDevices,
-  } = useQuery({
-    queryKey: queryKeys.allDevices(),
-    queryFn: fetchAllDevices,
-    refetchInterval: activeView === 'flasher' ? 4000 : false,
-    enabled: activeView === 'flasher',
-    // Keep previous list visible during background refetch (anti-flicker)
-    placeholderData: (prev) => prev,
-  });
-
-  const refreshDevices = () => void refetchDevices();
-
-  useEffect(() => {
-    if (activeView === 'flasher') {
-      void refetchDevices();
-    }
-  }, [activeView, refetchDevices]);
+  const { devices: queriedDevices } = useDeviceStore();
 
   const hasFastbootDevice = queriedDevices.some(
     (d) => d.status === 'fastboot' || d.status === 'bootloader',
@@ -177,27 +153,6 @@ export function ViewFlasher({ activeView }: { activeView: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ConnectedDevicesCard
-        devices={queriedDevices.map((d) => ({
-          serial: d.serial,
-          status: d.status,
-        }))}
-        isLoading={isRefreshing}
-        onRefresh={() => refreshDevices()}
-        onEdit={(serial) => {
-          setEditingSerial(serial);
-          setIsEditing(true);
-        }}
-        emptyText={isRefreshing ? 'Scanning for devices...' : 'No devices detected.'}
-      />
-
-      <EditNicknameDialog
-        isOpen={isEditing}
-        onOpenChange={setIsEditing}
-        serial={editingSerial}
-        onSaved={() => refreshDevices()}
-      />
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

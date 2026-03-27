@@ -123,9 +123,14 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 - View switching via `useState<ViewType>` + switch statement (no router)
 - `sidebar-context.ts` — holds all non-component exports (constants, context, `useSidebar` hook) so `sidebar.tsx` exports only React components (Vite Fast Refresh requirement)
 
-### 8. Device Polling
+### 8. Device Polling & Switcher
 
-**TanStack Query v5** — `useQuery({ refetchInterval: 3000 })` in Dashboard, Flasher, and Utilities.
+**Centralized polling** — Single `useQuery(['allDevices'], 3s)` in `MainLayout` replaces per-view polling.
+- `MainLayout` fetches all devices (ADB + fastboot) and syncs to `deviceStore.setDevices()`
+- All views read from `deviceStore` — no per-view `useQuery` for devices
+- `DeviceSwitcher` component in sticky header: pill button + Popover with device list
+- `selectedSerial` in store for multi-device switching (auto-select logic built-in)
+- Semantic status colors: emerald (adb), amber (fastboot), orange (bootloader), blue (recovery), violet (sideload), red (unauthorized), zinc (offline)
 
 ### 9. Bottom Panel (VS Code-style)
 
@@ -167,7 +172,8 @@ src/components/
 ├── ShellPanel.tsx           # Interactive ADB/fastboot terminal
 ├── DirectoryTree.tsx        # Lazy-loaded file system tree for File Explorer left pane
 ├── WelcomeScreen.tsx        # 750ms animated splash with Progress
-├── ConnectedDevicesCard.tsx # Shared device list (Dashboard, Flasher, Utilities)
+├── ConnectedDevicesCard.tsx # Device list card (Dashboard only)
+├── DeviceSwitcher.tsx       # Global header device pill + popover dropdown
 ├── EditNicknameDialog.tsx   # Shared nickname edit dialog
 ├── CheckboxItem.tsx         # Shared checkbox indicator (AppManager, PayloadDumper)
 ├── EmptyState.tsx           # Shared empty-state component
@@ -184,7 +190,8 @@ src/components/
 ## Known Architectural Notes
 
 - `src-tauri/src/lib.rs` split into helpers + 7 command modules (28 total commands)
-- Device polling centralized via TanStack Query v5 (`useQuery` with `refetchInterval`)
+- Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
+- `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)
 - **Shift+Click range selection** is Phase 2 — currently deferred (needs `lastClickedIndex` tracking in `isMultiSelectMode` context)

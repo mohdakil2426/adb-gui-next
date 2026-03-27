@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import '@/styles/global.css';
 import { Cpu, Terminal, Logs, SquareTerminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,9 @@ import { ViewAbout } from './views/ViewAbout';
 import { Toaster } from '@/components/ui/sonner';
 import { BottomPanel } from './BottomPanel';
 import { useLogStore } from '@/lib/logStore';
+import { useDeviceStore } from '@/lib/deviceStore';
+import { DeviceSwitcher } from './DeviceSwitcher';
+import { queryKeys, fetchAllDevices } from '@/lib/queries';
 
 import { ThemeProvider } from './ThemeProvider';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -40,22 +44,29 @@ type ViewType = (typeof VIEWS)[keyof typeof VIEWS];
 
 const LOADING_DURATION = 750;
 
-const VIEW_LABELS: Record<ViewType, string> = {
-  dashboard: 'Dashboard',
-  apps: 'Applications',
-  files: 'File Explorer',
-  flasher: 'Flasher',
-  utils: 'Utilities',
-  payload: 'Payload Dumper',
-  about: 'About',
-};
-
 export function MainLayout() {
   const [activeView, setActiveView] = useState<ViewType>(VIEWS.DASHBOARD);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
 
   const { togglePanel, isOpen: isLogOpen, setActiveTab, unreadCount, activeTab } = useLogStore();
+  const { setDevices } = useDeviceStore();
+
+  // ── Centralized device polling ─────────────────────────────────────────
+  // Single global query replaces per-view polling in Dashboard/Flasher/Utilities.
+  const { isFetching: isDeviceRefreshing, refetch: refetchDevices } = useQuery({
+    queryKey: queryKeys.allDevices(),
+    queryFn: async () => {
+      const devices = await fetchAllDevices();
+      setDevices(devices);
+      return devices;
+    },
+    refetchInterval: 3000,
+  });
+
+  const refreshDevices = useCallback(() => {
+    void refetchDevices();
+  }, [refetchDevices]);
 
   const handleLaunchDeviceManager = async () => {
     try {
@@ -154,12 +165,12 @@ export function MainLayout() {
           />
           <SidebarInset>
             {/* Header bar with sidebar trigger and toolbar */}
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/50 px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
+            <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background/95 backdrop-blur-sm px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-              <span className="text-sm font-medium text-muted-foreground">
-                {VIEW_LABELS[activeView]}
-              </span>
+
+              {/* Device Switcher — global device status + multi-device dropdown */}
+              <DeviceSwitcher isRefreshing={isDeviceRefreshing} onRefresh={refreshDevices} />
 
               {/* Toolbar — pushed to the right */}
               <div className="ml-auto flex items-center gap-1.5">

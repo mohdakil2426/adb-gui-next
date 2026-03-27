@@ -15,8 +15,8 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `Ctrl+B` keyboard shortcut for sidebar toggle
 - 7 sidebar views compile and build successfully
 - VS Code-style bottom panel with Logs and Shell tabs
-- Proper header bar with SidebarTrigger + toolbar buttons
-- shadcn/ui components (20+ primitives) with Tailwind CSS v4
+- Sticky header bar with DeviceSwitcher pill + toolbar buttons (no view label)
+- shadcn/ui components (22+ primitives incl. Popover) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
@@ -38,7 +38,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
   - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
   - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
-- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard`, `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`
+- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 
@@ -153,6 +153,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-27 | 0.1.0 | Global Device Switcher: header pill + popover, centralized device polling in MainLayout, `selectedSerial` in deviceStore, semantic status colors (7 states), removed ConnectedDevicesCard from Flasher + Utilities |
 | 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder (Ctrl+N/Ctrl+Shift+N), Back/Forward history (Alt+←/→), Search/Filter (Ctrl+F), sortable columns, human-readable sizes, symlink targets, Copy Path; infinite render loop fix; empty-dir creation fix |
 | 2026-03-26 | 0.1.0 | File Explorer: Import/Export context menu (context-aware push/pull); DRY executePull/executePush helpers |
 | 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate; no single-click selection |

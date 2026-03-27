@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   GetDeviceInfo,
@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import { wirelessAdbSchema, type WirelessAdbValues } from '@/lib/schemas';
-import { queryKeys, fetchDevices } from '@/lib/queries';
+import { queryKeys } from '@/lib/queries';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,8 @@ import { CopyButton } from '@/components/CopyButton';
 type Device = backend.Device;
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
-  const { deviceInfo, setDeviceInfo } = useDeviceStore();
+  const { devices: queriedDevices, deviceInfo, setDeviceInfo } = useDeviceStore();
+  const queryClient = useQueryClient();
   const [isRefreshingInfo, setIsRefreshingInfo] = useState(false);
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -60,20 +61,11 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   });
   const watchedIp = wirelessForm.watch('ip');
 
-  const {
-    data: queriedDevices = [],
-    isFetching: isRefreshingDevices,
-    refetch: refetchDevices,
-  } = useQuery({
-    queryKey: queryKeys.devices(),
-    queryFn: fetchDevices,
-    refetchInterval: activeView === 'dashboard' ? 3000 : false,
-    enabled: activeView === 'dashboard',
-  });
+  const isRefreshingDevices = false; // Polling handled centrally in MainLayout
 
   const refreshDevices = useCallback(() => {
-    void refetchDevices();
-  }, [refetchDevices]);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
+  }, [queryClient]);
 
   const refreshInfo = useCallback(async () => {
     if (queriedDevices.length === 0) {
@@ -96,10 +88,10 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   }, [queriedDevices.length, setDeviceInfo]);
 
   useEffect(() => {
-    if (activeView === 'dashboard') {
-      refreshDevices();
+    if (activeView === 'dashboard' && queriedDevices.length > 0 && !deviceInfo) {
+      void refreshInfo();
     }
-  }, [activeView, refreshDevices]);
+  }, [activeView, queriedDevices.length, deviceInfo, refreshInfo]);
 
   useEffect(() => {
     if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {

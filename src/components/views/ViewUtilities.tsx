@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { debugLog } from '@/lib/debug';
-import { queryKeys, fetchAllDevices } from '@/lib/queries';
+import { queryKeys } from '@/lib/queries';
 
 import {
   Reboot,
@@ -30,7 +30,7 @@ import {
   Save,
 } from 'lucide-react';
 import { useLogStore } from '@/lib/logStore';
-import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
+import { useDeviceStore } from '@/lib/deviceStore';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 import {
   Dialog,
@@ -58,9 +58,8 @@ import { buttonVariants } from '@/components/ui/button-variants';
 type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
 type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
 
-export function ViewUtilities({ activeView }: { activeView: string }) {
+export function ViewUtilities({ activeView: _activeView }: { activeView: string }) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
   // GetVar Dialog State
   const [showGetVarDialog, setShowGetVarDialog] = useState(false);
@@ -68,25 +67,17 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
 
   // Nickname Editing State
   const [isEditing, setIsEditing] = useState(false);
-  const [nicknameVersion, setNicknameVersion] = useState(0);
 
-  const {
-    data: allDevices = [],
-    isFetching: isCheckingStatus,
-    refetch: refetchDevices,
-  } = useQuery({
-    queryKey: queryKeys.allDevices(),
-    queryFn: fetchAllDevices,
-    refetchInterval: activeView === 'utils' ? 3000 : false,
-    enabled: activeView === 'utils',
-  });
+  const { devices: allDevices } = useDeviceStore();
+  const queryClient = useQueryClient();
 
-  const { deviceMode, deviceSerial, deviceStatus } = useMemo(() => {
+  const refetchDevices = () => queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
+
+  const { deviceMode, deviceSerial } = useMemo(() => {
     if (!allDevices.length)
       return {
         deviceMode: 'unknown' as DeviceConnectionMode,
         deviceSerial: null,
-        deviceStatus: '',
       };
     const adb = allDevices.find((d) => d.status === 'device' || d.status === 'recovery');
     if (adb) {
@@ -94,7 +85,6 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
       return {
         deviceMode: 'adb' as DeviceConnectionMode,
         deviceSerial: adb.serial,
-        deviceStatus: adb.status,
       };
     }
     const fb = allDevices.find((d) => d.status === 'fastboot' || d.status === 'bootloader');
@@ -103,23 +93,10 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
       return {
         deviceMode: 'fastboot' as DeviceConnectionMode,
         deviceSerial: fb.serial,
-        deviceStatus: 'fastboot',
       };
     }
-    return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null, deviceStatus: '' };
+    return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
   }, [allDevices]);
-
-  const handleManualRefresh = async () => {
-    setIsManualRefreshing(true);
-    await refetchDevices();
-    setIsManualRefreshing(false);
-  };
-
-  useEffect(() => {
-    if (activeView === 'utils') {
-      void refetchDevices();
-    }
-  }, [activeView, refetchDevices]);
 
   const handleReboot = async (mode: string, modeId: RebootMode) => {
     if (loadingAction) return;
@@ -229,35 +206,11 @@ export function ViewUtilities({ activeView }: { activeView: string }) {
 
   return (
     <div className="flex flex-col gap-6 pb-10">
-      {/* Header / Status Bar - Mirrored from Dashboard */}
-      <ConnectedDevicesCard
-        key={nicknameVersion}
-        devices={
-          deviceSerial
-            ? [
-                {
-                  serial: deviceSerial,
-                  status: deviceMode === 'adb' ? deviceStatus : 'fastboot',
-                },
-              ]
-            : []
-        }
-        isLoading={isManualRefreshing}
-        isRefreshDisabled={isGlobalLoading}
-        onRefresh={handleManualRefresh}
-        onEdit={() => setIsEditing(true)}
-        emptyText={
-          isCheckingStatus
-            ? 'Scanning for devices...'
-            : 'No device detected. Ensure USB Debugging is enabled.'
-        }
-      />
-
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         serial={deviceSerial}
-        onSaved={() => setNicknameVersion((v) => v + 1)}
+        onSaved={() => void refetchDevices()}
       />
 
       <div className="flex flex-col gap-6">

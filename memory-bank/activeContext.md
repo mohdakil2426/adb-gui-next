@@ -6,7 +6,54 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
-### 2026-03-26 — File Explorer: Major UX Enhancements + Bug Fixes
+### 2026-03-27 — Global Device Switcher (Header Pill + Popover)
+
+Centralized device management: moved `ConnectedDevicesCard` out of Flasher and Utilities into a **global header pill** with a rich popover dropdown.
+
+#### Key Changes
+
+**New Component: `DeviceSwitcher.tsx`**
+- Compact pill button in the sticky header: `[🟢 device-name  adb  ▾]`
+- Popover with full device list, radio-style selection, inline nickname editing
+- Semantic traffic-light status colors per device state (emerald/amber/orange/blue/violet/red/zinc)
+- Reads from centralized `deviceStore` — no local polling
+
+**Centralized Device Polling:**
+- Single `useQuery(['allDevices'], 3s)` in `MainLayout` replaces 3 independent polls
+- Dashboard, Flasher, Utilities all read from `deviceStore` (no per-view queries)
+
+**deviceStore Changes:**
+- Added `selectedSerial: string | null` with auto-select logic
+- Auto-select: single device → select; disconnect → clear; new device → auto-select
+
+**Header Cleanup:**
+- Removed redundant view label (sidebar highlights active page)
+- Made header `sticky` with `backdrop-blur-sm` for scroll persistence
+- Added `shadcn Popover` component
+
+**Status Colors (Option A — Semantic Traffic Light):**
+| Status | Color | Meaning |
+|--------|-------|----------|
+| `device` (adb) | Emerald-400 | Connected, ready |
+| `recovery` | Blue-400 | Special mode |
+| `sideload` | Violet-400 | Transfer mode |
+| `fastboot` | Amber-400 | Bootloader-level |
+| `bootloader` | Orange-400 | Low-level |
+| `unauthorized` | Red-400 | Blocked |
+| `offline` | Zinc-500 | Unreachable |
+
+**Files Changed:**
+- `src/components/DeviceSwitcher.tsx` — NEW
+- `src/components/ui/popover.tsx` — NEW (shadcn)
+- `src/lib/deviceStore.ts` — `selectedSerial` + auto-select
+- `src/components/MainLayout.tsx` — centralized polling, sticky header, DeviceSwitcher
+- `src/components/ConnectedDevicesCard.tsx` — semantic badge colors, pencil icon inline
+- `src/components/views/ViewDashboard.tsx` — uses shared store, no own polling
+- `src/components/views/ViewFlasher.tsx` — removed ConnectedDevicesCard + polling
+- `src/components/views/ViewUtilities.tsx` — removed ConnectedDevicesCard + polling
+- `docs/device-switcher-design.md` — design doc with 3 approaches
+
+---
 
 A comprehensive upgrade of `ViewFileExplorer.tsx` (~1520 lines), `files.rs`, `models.ts`, and `backend.ts`.
 
@@ -135,6 +182,7 @@ Verified (2026-03-26):
 |------|--------|-------|
 | Frontend | ✅ Complete | shadcn Sidebar + 7 views + bottom panel |
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlink targets, copy path |
+| Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source, selectedSerial in store |
 | Backend | ✅ Complete | 30 Tauri commands (added `create_file`, `create_directory`) |
 | IPC Layer | ✅ Complete | `backend.ts` + `models.ts` (FileEntry + linkTarget) |
 | Linting | ✅ Complete | ESLint 10 flat config + cargo clippy -D warnings |
@@ -153,3 +201,5 @@ Verified (2026-03-26):
 - **Shell**: In bottom panel, not a sidebar view.
 - **Icon pattern**: `h-5 w-5` (CardTitle), `h-4 w-4 shrink-0` (inline/button).
 - **`cargo test` on Windows**: STATUS_ENTRYPOINT_NOT_FOUND — pre-existing Tauri DLL issue, not a code bug.
+- **Device polling**: Single `useQuery(['allDevices'], 3s)` in MainLayout — never add per-view polling.
+- **`selectedSerial` auto-select**: disconnect → clear, single device → auto-select, user pick → persist.
