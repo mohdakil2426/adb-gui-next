@@ -593,47 +593,49 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3">
-            <SectionHeader>Actions</SectionHeader>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleReset}
-                disabled={status === 'extracting'}
-                className="justify-start pl-4"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Reset
-              </Button>
-              <Button
-                onClick={handleExtract}
-                disabled={
-                  !payloadPath ||
-                  status === 'extracting' ||
-                  status === 'loading-partitions' ||
-                  toExtractCount === 0
-                }
-                className="justify-start pl-4"
-              >
-                {status === 'extracting' ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Extracting...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    {toExtractCount > 0
-                      ? `Extract (${toExtractCount})`
-                      : selectedCount > 0
-                        ? 'Already Extracted'
-                        : 'Select Partitions'}
-                  </>
-                )}
-              </Button>
+          {/* Action Buttons — only when payload loaded */}
+          {payloadPath && (
+            <div className="flex flex-col gap-3">
+              <SectionHeader>Actions</SectionHeader>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleReset}
+                  disabled={status === 'extracting'}
+                  className="justify-start pl-4"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Reset
+                </Button>
+                <Button
+                  onClick={handleExtract}
+                  disabled={
+                    !payloadPath ||
+                    status === 'extracting' ||
+                    status === 'loading-partitions' ||
+                    toExtractCount === 0
+                  }
+                  className="justify-start pl-4"
+                >
+                  {status === 'extracting' ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Extracting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      {toExtractCount > 0
+                        ? `Extract (${toExtractCount})`
+                        : selectedCount > 0
+                          ? 'Already Extracted'
+                          : 'Select Partitions'}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
