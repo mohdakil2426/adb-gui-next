@@ -45,10 +45,6 @@ import {
   X,
 } from 'lucide-react';
 
-/**
- * Common Android partition names shown as datalist suggestions.
- * Users can still type any partition name — this just aids discovery.
- */
 const COMMON_PARTITIONS = [
   'boot',
   'vendor_boot',
@@ -71,7 +67,23 @@ const COMMON_PARTITIONS = [
   'userdata',
 ] as const;
 
-// ─── Visual-only drop area (no event listeners — page-level handler routes) ──
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function isImgFile(path: string): boolean {
+  return path.toLowerCase().endsWith('.img');
+}
+
+function isZipFile(path: string): boolean {
+  return path.toLowerCase().endsWith('.zip');
+}
+
+function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+type DragTarget = 'none' | 'flash' | 'sideload';
+
+// ─── Visual-only drop area ───────────────────────────────────────────────────
 
 interface DropAreaProps {
   isDragging: boolean;
@@ -102,7 +114,6 @@ function DropArea({
         disabled && 'pointer-events-none opacity-50',
       )}
     >
-      {/* Drag-over overlay */}
       {isDragging && (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
           <div className="flex flex-col items-center gap-2 text-primary animate-in fade-in zoom-in-95 duration-150">
@@ -114,7 +125,6 @@ function DropArea({
         </div>
       )}
 
-      {/* Default state */}
       <div
         className={cn(
           'flex flex-col items-center gap-3 transition-opacity duration-150',
@@ -124,16 +134,13 @@ function DropArea({
         <div className="rounded-full bg-muted p-3">
           <Icon className="size-6 text-muted-foreground/50" />
         </div>
-
         <div className="flex flex-col items-center gap-1">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <p className="text-xs text-muted-foreground/50">or</p>
         </div>
-
         <Button variant="outline" size="sm" onClick={onBrowse} disabled={disabled}>
           {browseLabel}
         </Button>
-
         <p className="text-xs text-muted-foreground/40">{sublabel}</p>
       </div>
     </div>
@@ -147,8 +154,12 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
   const [filePath, setFilePath] = useState('');
   const [sideloadFilePath, setSideloadFilePath] = useState('');
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [dragTarget, setDragTarget] = useState<DragTarget>('none');
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Refs for position-based hit-testing
+  const flashSectionRef = useRef<HTMLDivElement>(null);
+  const sideloadSectionRef = useRef<HTMLDivElement>(null);
 
   const { devices } = useDeviceStore();
 
@@ -164,39 +175,78 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
 
   const isGlobalLoading = !!loadingAction;
 
-  // ─── Page-level drag-drop handler — routes files by extension ────
+  // ─── Page-level drag-drop with position + extension hit-testing ───
 
   useEffect(() => {
     OnFileDrop({
-      onHover: () => {
+      onHover: (x, y, paths) => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsDragging(true);
-        hoverTimeoutRef.current = setTimeout(() => setIsDragging(false), 150);
+
+        let target: DragTarget = 'none';
+
+        // 1. Position check: which section is the cursor over?
+        const flashRect = flashSectionRef.current?.getBoundingClientRect();
+        const sideloadRect = sideloadSectionRef.current?.getBoundingClientRect();
+        const overFlash = flashRect ? isPointInRect(x, y, flashRect) : false;
+        const overSideload = sideloadRect ? isPointInRect(x, y, sideloadRect) : false;
+
+        // 2. Extension check: does the file type match the hovered section?
+        //    If paths unavailable, allow position-only highlighting.
+        if (overFlash) {
+          const extensionOk = !paths || paths.length === 0 || paths.some(isImgFile);
+          if (extensionOk) target = 'flash';
+        } else if (overSideload) {
+          const extensionOk = !paths || paths.length === 0 || paths.some(isZipFile);
+          if (extensionOk) target = 'sideload';
+        }
+
+        setDragTarget(target);
+        hoverTimeoutRef.current = setTimeout(() => setDragTarget('none'), 150);
       },
 
       onDrop: (paths) => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsDragging(false);
+        setDragTarget('none');
+
+        if (paths.length === 0) return;
+
+        let lastImg = '';
+        let lastZip = '';
+        let rejectedCount = 0;
 
         for (const p of paths) {
-          const lower = p.toLowerCase();
-          if (lower.endsWith('.img')) {
-            setFilePath(p);
-            toast.info(`Image selected: ${getFileName(p)}`);
-          } else if (lower.endsWith('.zip')) {
-            setSideloadFilePath(p);
-            toast.info(`ZIP selected: ${getFileName(p)}`);
+          if (isImgFile(p)) {
+            lastImg = p;
+          } else if (isZipFile(p)) {
+            lastZip = p;
           } else {
-            toast.error('Unsupported file type', {
-              description: 'Only .img and .zip files are accepted.',
-            });
+            rejectedCount++;
           }
+        }
+
+        if (lastImg) {
+          setFilePath(lastImg);
+          toast.info(`Image selected: ${getFileName(lastImg)}`);
+        }
+        if (lastZip) {
+          setSideloadFilePath(lastZip);
+          toast.info(`ZIP selected: ${getFileName(lastZip)}`);
+        }
+
+        if (rejectedCount > 0 && !lastImg && !lastZip) {
+          toast.error('Unsupported file type', {
+            description: 'Only .img (flash) and .zip (sideload) files are accepted.',
+          });
+        } else if (rejectedCount > 0) {
+          toast.warning(`${rejectedCount} unsupported file(s) skipped`, {
+            description: 'Only .img and .zip files are accepted.',
+          });
         }
       },
 
       onCancel: () => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsDragging(false);
+        setDragTarget('none');
       },
     });
 
@@ -307,151 +357,154 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
   return (
     <div className="flex flex-col gap-6">
       {/* ── Flash Partition ─────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HardDrive className="h-5 w-5" />
-            Flash Partition
-          </CardTitle>
-          <CardDescription>Flash an image file to a device partition via fastboot.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {/* Partition name with datalist suggestions */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="flasher-partition">Partition Name</Label>
-            <Input
-              id="flasher-partition"
-              list="partition-suggestions"
-              placeholder="e.g., boot, recovery, vendor_boot"
-              value={partition}
-              onChange={(e) => setPartition(e.target.value)}
-              disabled={isGlobalLoading}
-            />
-            <datalist id="partition-suggestions">
-              {COMMON_PARTITIONS.map((p) => (
-                <option key={p} value={p} />
-              ))}
-            </datalist>
-          </div>
+      <div ref={flashSectionRef}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5" />
+              Flash Partition
+            </CardTitle>
+            <CardDescription>
+              Flash an image file to a device partition via fastboot.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="flasher-partition">Partition Name</Label>
+              <Input
+                id="flasher-partition"
+                list="partition-suggestions"
+                placeholder="e.g., boot, recovery, vendor_boot"
+                value={partition}
+                onChange={(e) => setPartition(e.target.value)}
+                disabled={isGlobalLoading}
+              />
+              <datalist id="partition-suggestions">
+                {COMMON_PARTITIONS.map((p) => (
+                  <option key={p} value={p} />
+                ))}
+              </datalist>
+            </div>
 
-          {/* Image file: DropArea when empty, FileSelector when populated */}
-          {!filePath ? (
-            <DropArea
-              isDragging={isDragging}
-              icon={FileUp}
-              label="Drop an image file here"
-              sublabel="Accepted: .img files"
-              browseLabel="Browse Image"
-              onBrowse={handleSelectImageFile}
-              disabled={isGlobalLoading}
-            />
-          ) : (
-            <FileSelector
-              label="Image File"
-              path={filePath}
-              onSelect={handleSelectImageFile}
-              icon={<FileUp className="h-4 w-4" />}
-              disabled={isGlobalLoading}
-              trailingAction={
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setFilePath('')}
-                      disabled={isGlobalLoading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Clear selection</TooltipContent>
-                </Tooltip>
-              }
-            />
-          )}
-
-          <Button
-            className="w-full"
-            disabled={isGlobalLoading || !partition || !filePath || !hasFastbootDevice}
-            onClick={handleFlash}
-          >
-            {loadingAction === 'flash' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+            {!filePath ? (
+              <DropArea
+                isDragging={dragTarget === 'flash'}
+                icon={FileUp}
+                label="Drop an image file here"
+                sublabel="Accepted: .img files only"
+                browseLabel="Browse Image"
+                onBrowse={handleSelectImageFile}
+                disabled={isGlobalLoading}
+              />
             ) : (
-              <FileUp className="mr-2 h-4 w-4 shrink-0" />
+              <FileSelector
+                label="Image File"
+                path={filePath}
+                onSelect={handleSelectImageFile}
+                icon={<FileUp className="h-4 w-4" />}
+                disabled={isGlobalLoading}
+                trailingAction={
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setFilePath('')}
+                        disabled={isGlobalLoading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Clear selection</TooltipContent>
+                  </Tooltip>
+                }
+              />
             )}
-            Flash Partition
-          </Button>
-        </CardContent>
-      </Card>
+
+            <Button
+              className="w-full"
+              disabled={isGlobalLoading || !partition || !filePath || !hasFastbootDevice}
+              onClick={handleFlash}
+            >
+              {loadingAction === 'flash' ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+              ) : (
+                <FileUp className="mr-2 h-4 w-4 shrink-0" />
+              )}
+              Flash Partition
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ── Recovery Sideload ───────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Recovery Sideload
-          </CardTitle>
-          <CardDescription>
-            Send a flashable ZIP via adb sideload while your device is in recovery.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {/* Sideload file: DropArea when empty, FileSelector when populated */}
-          {!sideloadFilePath ? (
-            <DropArea
-              isDragging={isDragging}
-              icon={Package}
-              label="Drop a flashable ZIP here"
-              sublabel="Accepted: .zip files"
-              browseLabel="Browse ZIP"
-              onBrowse={handleSelectSideloadFile}
-              disabled={isGlobalLoading}
-            />
-          ) : (
-            <FileSelector
-              label="Flashable ZIP"
-              path={sideloadFilePath}
-              onSelect={handleSelectSideloadFile}
-              placeholder="Select a flashable .zip file..."
-              icon={<Package className="h-4 w-4" />}
-              disabled={isGlobalLoading}
-              trailingAction={
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => setSideloadFilePath('')}
-                      disabled={isGlobalLoading}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Clear selection</TooltipContent>
-                </Tooltip>
-              }
-            />
-          )}
-
-          <p className="text-sm text-muted-foreground">
-            Ensure the device shows &quot;sideload&quot; mode in recovery before starting.
-          </p>
-
-          <Button
-            className="w-full"
-            disabled={isGlobalLoading || !sideloadFilePath || !hasSideloadDevice}
-            onClick={handleSideload}
-          >
-            {loadingAction === 'sideload' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+      <div ref={sideloadSectionRef}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Recovery Sideload
+            </CardTitle>
+            <CardDescription>
+              Send a flashable ZIP via adb sideload while your device is in recovery.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {!sideloadFilePath ? (
+              <DropArea
+                isDragging={dragTarget === 'sideload'}
+                icon={Package}
+                label="Drop a flashable ZIP here"
+                sublabel="Accepted: .zip files only"
+                browseLabel="Browse ZIP"
+                onBrowse={handleSelectSideloadFile}
+                disabled={isGlobalLoading}
+              />
             ) : (
-              <Package className="mr-2 h-4 w-4 shrink-0" />
+              <FileSelector
+                label="Flashable ZIP"
+                path={sideloadFilePath}
+                onSelect={handleSelectSideloadFile}
+                placeholder="Select a flashable .zip file..."
+                icon={<Package className="h-4 w-4" />}
+                disabled={isGlobalLoading}
+                trailingAction={
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setSideloadFilePath('')}
+                        disabled={isGlobalLoading}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Clear selection</TooltipContent>
+                  </Tooltip>
+                }
+              />
             )}
-            Sideload Package
-          </Button>
-        </CardContent>
-      </Card>
+
+            <p className="text-sm text-muted-foreground">
+              Ensure the device shows &quot;sideload&quot; mode in recovery before starting.
+            </p>
+
+            <Button
+              className="w-full"
+              disabled={isGlobalLoading || !sideloadFilePath || !hasSideloadDevice}
+              onClick={handleSideload}
+            >
+              {loadingAction === 'sideload' ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+              ) : (
+                <Package className="mr-2 h-4 w-4 shrink-0" />
+              )}
+              Sideload Package
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* ── Danger Zone ─────────────────────────────────────────────── */}
       <Card className="border-destructive">

@@ -103,7 +103,9 @@ export function EventsOffAll(): void {
 
 export interface DragDropHandler {
   onDrop: (paths: string[], x: number, y: number) => void;
-  onHover?: (x: number, y: number) => void;
+  /** Called continuously while files are dragged over the window. `paths` may
+   *  be available on some platforms / Tauri versions — always treat as optional. */
+  onHover?: (x: number, y: number, paths?: string[]) => void;
   onCancel?: () => void;
 }
 
@@ -131,7 +133,8 @@ export function OnFileDrop(
 
       if (payload.type === 'over') {
         const pos = payload.position ?? { x: 0, y: 0 };
-        handler.onHover?.(pos.x ?? 0, pos.y ?? 0);
+        const paths = Array.isArray(payload.paths) ? payload.paths : undefined;
+        handler.onHover?.(pos.x ?? 0, pos.y ?? 0, paths);
       } else if (payload.type === 'drop' && Array.isArray(payload.paths)) {
         const pos = payload.position ?? { x: 0, y: 0 };
         handler.onDrop(payload.paths, pos.x ?? 0, pos.y ?? 0);

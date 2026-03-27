@@ -28,6 +28,11 @@ interface DropZoneProps {
   className?: string;
 }
 
+/** Check if a point (x, y) falls within a DOMRect. */
+function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
 export function DropZone({
   onFilesDropped,
   acceptExtensions = [],
@@ -42,6 +47,7 @@ export function DropZone({
 }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Filter files by extension
   const filterFiles = useCallback(
@@ -55,15 +61,18 @@ export function DropZone({
     [acceptExtensions],
   );
 
-  // Register Tauri native drag-drop handler with all 3 events
+  // Register Tauri native drag-drop handler with position-based hit-testing
   useEffect(() => {
     if (disabled) return;
 
     OnFileDrop({
-      onHover: () => {
-        // Tauri fires 'over' continuously while hovering — debounce the state
+      onHover: (x, y) => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsDragging(true);
+
+        // Only highlight when cursor is physically over this component
+        const rect = containerRef.current?.getBoundingClientRect();
+        const isOver = rect ? isPointInRect(x, y, rect) : false;
+        setIsDragging(isOver);
 
         // Auto-hide if no events for 150ms (cursor left window)
         hoverTimeoutRef.current = setTimeout(() => setIsDragging(false), 150);
@@ -98,6 +107,7 @@ export function DropZone({
 
   return (
     <div
+      ref={containerRef}
       className={cn(
         'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
         isDragging
