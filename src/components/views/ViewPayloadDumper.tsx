@@ -16,6 +16,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { cn, getFileName } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { CheckboxItem } from '@/components/CheckboxItem';
 import { Progress } from '@/components/ui/progress';
 import { useLogStore } from '@/lib/logStore';
@@ -407,53 +408,71 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     <span className="text-sm font-medium truncate">{getFileName(payloadPath)}</span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={handleSelectPayload}
-                      disabled={status === 'extracting' || status === 'loading-partitions'}
-                      title="Change Payload"
-                    >
-                      <FileArchive className="h-3.5 w-3.5" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={handleSelectPayload}
+                          disabled={status === 'extracting' || status === 'loading-partitions'}
+                        >
+                          <FileArchive className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">Change Payload</TooltipContent>
+                    </Tooltip>
                     {partitions.length > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={handleRefreshPartitions}
-                        disabled={status === 'loading-partitions' || status === 'extracting'}
-                        title="Refresh Partitions"
-                      >
-                        <RefreshCw
-                          className={cn(
-                            'h-3.5 w-3.5',
-                            status === 'loading-partitions' && 'animate-spin',
-                          )}
-                        />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={handleRefreshPartitions}
+                            disabled={status === 'loading-partitions' || status === 'extracting'}
+                          >
+                            <RefreshCw
+                              className={cn(
+                                'h-3.5 w-3.5',
+                                status === 'loading-partitions' && 'animate-spin',
+                              )}
+                            />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Refresh Partitions</TooltipContent>
+                      </Tooltip>
                     )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={handleSelectOutput}
-                      disabled={status === 'extracting'}
-                      title={effectiveOutputPath || 'Select Output Directory'}
-                    >
-                      <FolderOutput className="h-3.5 w-3.5" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={handleSelectOutput}
+                          disabled={status === 'extracting'}
+                        >
+                          <FolderOutput className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {effectiveOutputPath || 'Select Output Directory'}
+                      </TooltipContent>
+                    </Tooltip>
                     {effectiveOutputPath && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={handleOpenOutputFolder}
-                        title="Open Output Folder"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={handleOpenOutputFolder}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Open Output Folder</TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                 </div>
@@ -503,7 +522,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                       className={cn(
                         'grid gap-2 px-4 py-2.5 bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground',
                         isExtractionActive
-                          ? 'grid-cols-[28px_1fr_minmax(100px,1fr)_72px]'
+                          ? 'grid-cols-[28px_0.8fr_5fr_72px]'
                           : 'grid-cols-[28px_1fr_72px]',
                       )}
                     >
@@ -544,7 +563,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                             className={cn(
                               'grid gap-2 px-4 py-3 text-sm transition-colors items-center',
                               isExtractionActive
-                                ? 'grid-cols-[28px_1fr_minmax(100px,1fr)_72px]'
+                                ? 'grid-cols-[28px_0.8fr_5fr_72px]'
                                 : 'grid-cols-[28px_1fr_72px]',
                               status !== 'extracting' &&
                                 !isRowCompleted &&
@@ -709,15 +728,19 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                       >
                         {outputDir}
                       </code>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={handleOpenOutputFolder}
-                        className="h-9 w-9 shrink-0"
-                        title="Open in File Explorer"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={handleOpenOutputFolder}
+                            className="h-9 w-9 shrink-0"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">Open in File Explorer</TooltipContent>
+                      </Tooltip>
                     </div>
                   </div>
                 )}

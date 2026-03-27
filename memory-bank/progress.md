@@ -38,7 +38,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
   - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
   - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
-- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`
+- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 
@@ -76,6 +76,11 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - Real-time per-operation `payload:progress` Tauri events from inside threads
 - SHA-256 operation checksum verification
 - Cleans up cached temp files on demand
+- **UI**: 3-zone layout (file banner + adaptive partition table + sticky action footer)
+- **Adaptive columns**: 3-col pre-extraction, 4-col during/after extraction (`[28px_0.8fr_5fr_72px]`)
+- **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
+- **Tooltips**: shadcn `Tooltip` component (not native `title=`) for all icon buttons
+- **DropZone**: shared reusable component with native Tauri drag-drop events
 
 ### Packaging
 

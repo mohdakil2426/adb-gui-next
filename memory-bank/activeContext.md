@@ -6,6 +6,36 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-27 — App Manager & Payload Dumper UI Overhaul
+
+**Reusable DropZone Component:**
+- `src/components/DropZone.tsx` — shared drag-and-drop component with native Tauri events
+- Features: file extension filtering, animated drag-over overlay (bounce icon, primary border glow, backdrop blur), fallback Browse button
+- Uses `getCurrentWebview().onDragDropEvent` (over/drop/cancel) — replaces unreliable HTML5 drag events
+- 150ms debounce on continuous `over` events for smooth visual transitions
+
+**`runtime.ts` Extended:**
+- `OnFileDrop` now supports `DragDropHandler` interface (`onHover`, `onDrop`, `onCancel`)
+
+**AppManager Refactor:**
+- Install APK section: DropZone when empty, file list + "Add More" when populated
+
+**PayloadDumper UI Overhaul (3 improvements):**
+1. **Adaptive columns** — 3-col table (checkbox + name + size) pre-extraction; dynamically expands to 4-col (+ progress) during/after extraction. Grid: `[28px_0.8fr_5fr_72px]` for centered progress.
+2. **Loading overlay** — full centered stage indicator ("Extracting payload from ZIP..." / "Parsing partition manifest...") replaces tiny spinner during ZIP processing
+3. **File info banner + sticky footer** — compact banner (filename, partition count, total size, icon buttons), scrollable partition list (`max-h-400px`), always-visible Extract button with size info ("Extract (11) — 6.83 GB"), ghost Reset
+
+**Tooltip Consistency:**
+- All icon buttons use shadcn `Tooltip/TooltipTrigger/TooltipContent` (not native `title=`)
+
+**Files Changed:**
+- `src/components/DropZone.tsx` — NEW
+- `src/components/views/ViewAppManager.tsx` — DropZone integration
+- `src/components/views/ViewPayloadDumper.tsx` — full UI overhaul
+- `src/lib/desktop/runtime.ts` — DragDropHandler support
+
+---
+
 ### 2026-03-27 — Global Device Switcher (Header Pill + Popover)
 
 Centralized device management: moved `ConnectedDevicesCard` out of Flasher and Utilities into a **global header pill** with a rich popover dropdown.
