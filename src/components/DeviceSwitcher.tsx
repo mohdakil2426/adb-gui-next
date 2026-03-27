@@ -19,60 +19,50 @@ import {
 
 type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; variant: BadgeVariant; color: string; badgeClass: string }
-> = {
-  device: {
-    label: 'adb',
-    variant: 'default',
-    color: 'bg-emerald-400',
-    badgeClass: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/30',
-  },
-  fastboot: {
-    label: 'fastboot',
-    variant: 'outline',
-    color: 'bg-amber-400',
-    badgeClass: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-  },
-  bootloader: {
-    label: 'bootloader',
-    variant: 'outline',
-    color: 'bg-orange-400',
-    badgeClass: 'bg-orange-400/15 text-orange-400 border-orange-400/30',
-  },
-  recovery: {
-    label: 'recovery',
-    variant: 'outline',
-    color: 'bg-blue-400',
-    badgeClass: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
-  },
-  sideload: {
-    label: 'sideload',
-    variant: 'outline',
-    color: 'bg-violet-400',
-    badgeClass: 'bg-violet-400/15 text-violet-400 border-violet-400/30',
-  },
-  unauthorized: {
-    label: 'unauthorized',
-    variant: 'destructive',
-    color: 'bg-red-400',
-    badgeClass: 'bg-red-400/15 text-red-400 border-red-400/30',
-  },
-  offline: {
-    label: 'offline',
-    variant: 'destructive',
-    color: 'bg-zinc-500',
-    badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
-  },
-};
+const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeClass: string }> =
+  {
+    device: {
+      label: 'adb',
+      variant: 'default',
+      badgeClass: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/30',
+    },
+    fastboot: {
+      label: 'fastboot',
+      variant: 'outline',
+      badgeClass: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+    },
+    bootloader: {
+      label: 'bootloader',
+      variant: 'outline',
+      badgeClass: 'bg-orange-400/15 text-orange-400 border-orange-400/30',
+    },
+    recovery: {
+      label: 'recovery',
+      variant: 'outline',
+      badgeClass: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+    },
+    sideload: {
+      label: 'sideload',
+      variant: 'outline',
+      badgeClass: 'bg-violet-400/15 text-violet-400 border-violet-400/30',
+    },
+    unauthorized: {
+      label: 'unauthorized',
+      variant: 'destructive',
+      badgeClass: 'bg-red-400/15 text-red-400 border-red-400/30',
+    },
+    offline: {
+      label: 'offline',
+      variant: 'destructive',
+      badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
+    },
+  };
 
 function getStatusConfig(status: string) {
   return (
     STATUS_CONFIG[status.toLowerCase()] ?? {
       label: status.toLowerCase(),
       variant: 'outline' as BadgeVariant,
-      color: 'bg-muted-foreground',
       badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
     }
   );
@@ -123,10 +113,6 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
               >
                 {selectedDevice ? (
                   <>
-                    <span
-                      className={cn('size-2 shrink-0 rounded-full', statusConfig?.color)}
-                      aria-hidden
-                    />
                     <span className="max-w-[120px] truncate">{displayName}</span>
                     <Badge
                       variant={statusConfig?.variant}
@@ -210,10 +196,10 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                       {/* Selection indicator */}
                       <span
                         className={cn(
-                          'size-2 shrink-0 rounded-full ring-2',
+                          'size-2 shrink-0 rounded-full',
                           isSelected
-                            ? cn(config.color, 'ring-foreground/20')
-                            : 'bg-transparent ring-muted-foreground/30',
+                            ? 'bg-foreground'
+                            : 'bg-transparent ring-2 ring-muted-foreground/30',
                         )}
                         aria-hidden
                       />
