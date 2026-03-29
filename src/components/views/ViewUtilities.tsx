@@ -54,12 +54,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { buttonVariants } from '@/components/ui/button-variants';
+import { ActionButton } from '@/components/ActionButton';
 
 type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
 type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
 
 export function ViewUtilities({ activeView: _activeView }: { activeView: string }) {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [sentAction, setSentAction] = useState<string | null>(null);
 
   // GetVar Dialog State
   const [showGetVarDialog, setShowGetVarDialog] = useState(false);
@@ -98,17 +100,21 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
     return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
   }, [allDevices]);
 
-  const handleReboot = async (mode: string, modeId: RebootMode) => {
-    if (loadingAction) return;
+  const handleReboot = async (mode: string, modeId: RebootMode, actionId: string) => {
+    if (loadingAction || sentAction) return;
 
-    setLoadingAction(modeId);
+    setLoadingAction(actionId);
+    const toastId = toast.loading(`Sending reboot command...`);
     try {
       await Reboot(mode);
+      toast.success(`Reboot to ${modeId || 'system'} initiated`, { id: toastId });
       useLogStore.getState().addLog(`Rebooting to ${modeId || 'system'}...`, 'info');
-      toast.info(`Rebooting device...`);
+      setSentAction(actionId);
+      setTimeout(() => setSentAction(null), 2000);
     } catch (error) {
       console.error(`Error rebooting to ${modeId}:`, error);
       toast.error('Failed to send reboot command', {
+        id: toastId,
         description: String(error),
       });
       useLogStore.getState().addLog(`Reboot failed: ${error}`, 'error');
@@ -119,6 +125,7 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
   };
 
   const handleRestartServer = async () => {
+    if (loadingAction || sentAction) return;
     setLoadingAction('restart_server');
     const toastId = toast.loading('Restarting ADB Server...');
     try {
@@ -126,6 +133,8 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
       await RunAdbHostCommand('start-server');
       toast.success('ADB Server Restarted', { id: toastId });
       useLogStore.getState().addLog('ADB Server restarted', 'success');
+      setSentAction('restart_server');
+      setTimeout(() => setSentAction(null), 2000);
       void refetchDevices();
     } catch (error) {
       toast.error('Failed to restart server', { id: toastId, description: String(error) });
@@ -135,25 +144,32 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
   };
 
   const handleKillServer = async () => {
+    if (loadingAction || sentAction) return;
     setLoadingAction('kill_server');
+    const toastId = toast.loading('Killing ADB Server...');
     try {
       await RunAdbHostCommand('kill-server');
-      toast.success('ADB Server Killed');
+      toast.success('ADB Server Killed', { id: toastId });
       useLogStore.getState().addLog('ADB Server killed', 'warning');
+      setSentAction('kill_server');
+      setTimeout(() => setSentAction(null), 2000);
       void refetchDevices();
     } catch (error) {
-      toast.error('Failed to kill server', { description: String(error) });
+      toast.error('Failed to kill server', { id: toastId, description: String(error) });
     }
     setLoadingAction(null);
   };
 
   const handleSetActiveSlot = async (slot: string) => {
+    if (loadingAction || sentAction) return;
     setLoadingAction(`set_active_${slot}`);
     const toastId = toast.loading(`Setting active slot to ${slot.toUpperCase()}...`);
     try {
       await RunFastbootHostCommand(`--set-active=${slot}`);
       toast.success(`Active slot set to ${slot.toUpperCase()}`, { id: toastId });
       useLogStore.getState().addLog(`Set active slot to ${slot}`, 'success');
+      setSentAction(`set_active_${slot}`);
+      setTimeout(() => setSentAction(null), 2000);
     } catch (error) {
       toast.error(`Failed to set slot ${slot}`, { id: toastId, description: String(error) });
       useLogStore.getState().addLog(`Failed to set active slot ${slot}: ${error}`, 'error');
@@ -162,12 +178,15 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
   };
 
   const handleFastbootGetVars = async () => {
+    if (loadingAction || sentAction) return;
     setLoadingAction('get_vars');
     try {
       const output = await RunFastbootHostCommand('getvar all');
       setGetVarContent(output);
       setShowGetVarDialog(true);
       useLogStore.getState().addLog('Fetched fastboot variables', 'success');
+      setSentAction('get_vars');
+      setTimeout(() => setSentAction(null), 2000);
     } catch (error) {
       toast.error('Failed to get variables', { description: String(error) });
       useLogStore.getState().addLog(`Failed to get fastboot vars: ${error}`, 'error');
@@ -201,8 +220,7 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
     setLoadingAction(null);
   };
 
-  const isActionLoading = (action: string) => loadingAction === action;
-  const isGlobalLoading = !!loadingAction;
+  const isGlobalLoading = !!loadingAction || !!sentAction;
 
   return (
     <div className="flex flex-col gap-6 pb-10">
@@ -227,74 +245,77 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
             <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
+                <ActionButton
+                  actionId="adb_system"
+                  icon={Power}
+                  label="Reboot System"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('', 'system', 'adb_system')}
+                  disabled={deviceMode !== 'adb'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('', 'system')}
-                  disabled={isGlobalLoading || deviceMode !== 'adb'}
-                >
-                  <Power className="h-5 w-5" />
-                  Reboot System
-                </Button>
-                <Button
+                  tall
+                />
+                <ActionButton
+                  actionId="adb_recovery"
+                  icon={RotateCw}
+                  label="Reboot Recovery"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('recovery', 'recovery', 'adb_recovery')}
+                  disabled={deviceMode !== 'adb'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('recovery', 'recovery')}
-                  disabled={isGlobalLoading || deviceMode !== 'adb'}
-                >
-                  <RotateCw className="h-5 w-5" />
-                  Reboot Recovery
-                </Button>
-                <Button
+                  tall
+                />
+                <ActionButton
+                  actionId="adb_bootloader"
+                  icon={Terminal}
+                  label="Reboot Bootloader"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('bootloader', 'bootloader', 'adb_bootloader')}
+                  disabled={deviceMode !== 'adb'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('bootloader', 'bootloader')}
-                  disabled={isGlobalLoading || deviceMode !== 'adb'}
-                >
-                  <Terminal className="h-5 w-5" />
-                  Reboot Bootloader
-                </Button>
-                <Button
+                  tall
+                />
+                <ActionButton
+                  actionId="adb_fastboot"
+                  icon={Zap}
+                  label="Reboot Fastbootd"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('fastboot', 'fastboot', 'adb_fastboot')}
+                  disabled={deviceMode !== 'adb'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('fastboot', 'fastboot')}
-                  disabled={isGlobalLoading || deviceMode !== 'adb'}
-                >
-                  <Zap className="h-5 w-5" />
-                  Reboot Fastbootd
-                </Button>
+                  tall
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <SectionHeader>Server Control</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
-                  variant="secondary"
+                <ActionButton
+                  actionId="restart_server"
+                  icon={RefreshCw}
+                  label="Restart ADB Server"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
                   onClick={handleRestartServer}
-                  disabled={isGlobalLoading}
-                  className="justify-start pl-4"
-                >
-                  {isActionLoading('restart_server') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4 shrink-0" />
-                  )}
-                  Restart ADB Server
-                </Button>
-                <Button
                   variant="secondary"
+                  justifyStart
+                />
+                <ActionButton
+                  actionId="kill_server"
+                  icon={Server}
+                  label="Kill ADB Server"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
                   onClick={handleKillServer}
-                  disabled={isGlobalLoading}
-                  className="justify-start pl-4 hover:bg-destructive/10 hover:text-destructive"
-                >
-                  {isActionLoading('kill_server') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                  ) : (
-                    <Server className="mr-2 h-4 w-4 shrink-0" />
-                  )}
-                  Kill ADB Server
-                </Button>
+                  variant="secondary"
+                  justifyStart
+                  className="hover:bg-destructive/10 hover:text-destructive"
+                />
               </div>
             </div>
           </CardContent>
@@ -313,96 +334,102 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
             <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
+                <ActionButton
+                  actionId="fb_system"
+                  icon={Power}
+                  label="Reboot System"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('', 'system', 'fb_system')}
+                  disabled={deviceMode !== 'fastboot'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('', 'system')}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                >
-                  <Power className="h-5 w-5" />
-                  Reboot System
-                </Button>
-                <Button
+                  tall
+                />
+                <ActionButton
+                  actionId="fb_bootloader"
+                  icon={Terminal}
+                  label="Reboot Bootloader"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('bootloader', 'bootloader', 'fb_bootloader')}
+                  disabled={deviceMode !== 'fastboot'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2"
-                  onClick={() => handleReboot('bootloader', 'bootloader')}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                >
-                  <Terminal className="h-5 w-5" />
-                  Reboot Bootloader
-                </Button>
-                <Button
+                  tall
+                />
+                <ActionButton
+                  actionId="fb_recovery"
+                  icon={RotateCw}
+                  label="Reboot Recovery"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
+                  onClick={() => handleReboot('recovery', 'recovery', 'fb_recovery')}
+                  disabled={deviceMode !== 'fastboot'}
                   variant="outline"
-                  className="h-20 flex flex-col items-center justify-center gap-2 col-span-2"
-                  onClick={() => handleReboot('recovery', 'recovery')}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                >
-                  <RotateCw className="h-5 w-5" />
-                  Reboot Recovery
-                </Button>
+                  tall
+                  wrapperClassName="col-span-1 sm:col-span-2"
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <SectionHeader>Slot Management</SectionHeader>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Button
-                  variant="secondary"
+                <ActionButton
+                  actionId="set_active_a"
+                  icon={Zap}
+                  label="Activate Slot A"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
                   onClick={() => handleSetActiveSlot('a')}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                  className="justify-start pl-4"
-                >
-                  {isActionLoading('set_active_a') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                  ) : (
-                    <Zap className="mr-2 h-4 w-4 shrink-0" />
-                  )}
-                  Activate Slot A
-                </Button>
-                <Button
+                  disabled={deviceMode !== 'fastboot'}
                   variant="secondary"
+                  justifyStart
+                />
+                <ActionButton
+                  actionId="set_active_b"
+                  icon={Zap}
+                  label="Activate Slot B"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
                   onClick={() => handleSetActiveSlot('b')}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                  className="justify-start pl-4"
-                >
-                  {isActionLoading('set_active_b') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                  ) : (
-                    <Zap className="mr-2 h-4 w-4 shrink-0" />
-                  )}
-                  Activate Slot B
-                </Button>
+                  disabled={deviceMode !== 'fastboot'}
+                  variant="secondary"
+                  justifyStart
+                />
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <SectionHeader>Device Operations</SectionHeader>
               <div className="grid grid-cols-1 gap-3">
-                <Button
-                  variant="secondary"
+                <ActionButton
+                  actionId="get_vars"
+                  icon={Info}
+                  label="Get Device Variables (GetVar All)"
+                  loadingAction={loadingAction}
+                  sentAction={sentAction}
                   onClick={handleFastbootGetVars}
-                  disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                  className="justify-start pl-4"
-                >
-                  {isActionLoading('get_vars') ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
-                  ) : (
-                    <Info className="mr-2 h-4 w-4 shrink-0" />
-                  )}
-                  Get Device Variables (GetVar All)
-                </Button>
+                  disabled={deviceMode !== 'fastboot'}
+                  variant="secondary"
+                  justifyStart
+                />
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="destructive"
                       disabled={isGlobalLoading || deviceMode !== 'fastboot'}
-                      className="justify-start pl-4"
+                      className="w-full justify-start pl-4"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
+                      {loadingAction === 'wipe_data' ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                      ) : (
+                        <Trash2 className="mr-2 h-4 w-4" />
+                      )}
                       Wipe User Data (Factory Reset)
                     </Button>
                   </AlertDialogTrigger>
+
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -456,7 +483,7 @@ export function ViewUtilities({ activeView: _activeView }: { activeView: string 
               </div>
             </div>
           </DialogHeader>
-          <div className="rounded-md border bg-muted/50 p-4 max-h-[60vh] overflow-y-auto">
+          <div className="rounded-md border bg-muted/50 p-4 max-h-[60vh] overflow-y-auto w-full">
             <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
               {getVarContent || 'No output received.'}
             </pre>

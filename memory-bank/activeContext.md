@@ -6,6 +6,52 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-29 — Utilities Micro-Animations & UI Consistency
+
+**ActionButton Component (`ActionButton.tsx`):**
+- Created a standalone, reusable button component that manages a strict 4-state lifecycle: Idle ➔ Loading (spinner) ➔ Sent (success checkmark) ➔ Disabled.
+- Added tactile feedback via `active:scale-[0.97]` for immediate click response.
+- Uses `framer-motion` `<AnimatePresence>` to smoothly crossfade icons without layout shifts.
+- Integrates the project's semantic `--success` token to render a glowing green border (`ring-success/50` + `shadow`) when an action succeeds.
+
+**Utilities View Overhaul (`ViewUtilities.tsx`):**
+- Refactored 11 distinct power, server, and fastboot buttons to use the new `<ActionButton>`.
+- Replaced manual toast/loading tracking with proper `toast.loading` ➔ `toast.success` flows integrated with the 2-second "Sent!" UI timer.
+- Fixed a Tailwind CSS Grid issue where `<span>` wrappers used for tooltips broke `col-span-2` grid layouts (buttons now force `w-full` and use `wrapperClassName`).
+- Removed unnecessary tooltips on disabled buttons as requested by user to keep the UI extremely clean.
+- Namespaced `actionId`s (e.g. `adb_bootloader` vs `fb_bootloader`) so that equivalent actions in separate UI sections don't incorrectly trigger each other's success animations.
+
+---
+
+### 2026-03-27 — Flasher View Overhaul + Position-Based Drag-Drop Hit-Testing
+
+**Rust — Async Fastboot Commands (P0 UI Freeze Fix):**
+- `flash_partition` and `wipe_data` converted from sync `pub fn` → `pub async fn` + `tokio::task::spawn_blocking`
+- Matches proven pattern from `apps.rs` — prevents WebView freezing during 1-2 min partition flashes and 30-60s factory resets
+
+**ViewFlasher.tsx — Complete UX Overhaul:**
+- Two visual DropArea components (Flash: .img, Sideload: .zip) with position-based hit-testing
+- Page-level `OnFileDrop` handler routes files by extension (single global handler, no conflicts)
+- Partition name suggestions via HTML5 `<datalist>` (20 common Android partitions)
+- `FileSelector` with Tooltip'd clear button when file is selected
+- Loading mutex (`loadingAction`) prevents concurrent flash/sideload/wipe operations
+- Centralized error handling via `handleError()` from `errorHandler.ts`
+- Fixed import paths to `@/` alias; uses `deviceStore` for device awareness
+- `AlertDialog` confirmation for destructive Wipe Data operation
+
+**Position-Based Drag-Drop Hit-Testing (Project-Wide Fix):**
+- Root cause: Tauri `onDragDropEvent` fires at the window level — all drop zones activated when dragging anywhere on the page
+- Fix: Use cursor `(x, y)` coordinates from the drag event + `getBoundingClientRect()` to hit-test each drop zone
+- `DropZone.tsx`: Added `containerRef` + `isPointInRect(x, y, rect)` — only highlights when cursor is physically over the component (fixes AppManager, PayloadDumper)
+- `ViewFlasher.tsx`: `flashSectionRef` + `sideloadSectionRef` — combines position hit-test with extension validation (drag .zip over flash = no highlight)
+- `runtime.ts`: Extended `DragDropHandler.onHover` to pass `paths?: string[]` (optional, backward-compatible)
+
+**Commits:**
+- `e6d061e` — `feat(flasher): async fastboot commands + UX overhaul with drag-and-drop`
+- `e912623` — `fix(drag-drop): position-based hit-testing for drop zones`
+
+---
+
 ### 2026-03-27 — Bottom Panel Polish, AppManager Improvements, Async Fix
 
 **Bottom Panel (BottomPanel.tsx):**
@@ -262,7 +308,8 @@ Verified (2026-03-27):
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlink targets, copy path |
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source, selectedSerial in store |
 | App Manager | ✅ Improved | shadcn Command search, toolbar layout, destructive glow, non-blocking install |
-| Backend | ✅ Complete | 30 Tauri commands; install/uninstall/sideload now async (spawn_blocking) |
+| Flasher | ✅ Overhauled | Async flash/wipe (spawn_blocking), DropArea with position hit-testing, partition suggestions, loading mutex |
+| Backend | ✅ Complete | 30 Tauri commands; flash/wipe/install/uninstall/sideload all async (spawn_blocking) |
 | IPC Layer | ✅ Complete | `backend.ts` + `models.ts` (FileEntry + linkTarget) |
 | Linting | ✅ Complete | ESLint 10 flat config + cargo clippy -D warnings |
 | Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
@@ -285,3 +332,5 @@ Verified (2026-03-27):
 - **Bottom panel resize**: Use `panelRef` + RAF + `spawn_blocking` pattern. NEVER call `setPanelHeight` on mousemove (triggers re-renders every pixel).
 - **Tauri sync commands = main thread**: Any `pub fn` (not `pub async fn`) Tauri command that calls `std::process::Command::output()` BLOCKS the WebView. Always use `async fn` + `tokio::task::spawn_blocking` for any command that runs a subprocess.
 - **AppManager Command search**: `shouldFilter={false}` is mandatory — cmdk's built-in filter breaks the virtualizer by trying to render all items.
+- **Drag-drop hit-testing**: Tauri's `onDragDropEvent` is window-level. Always use `getBoundingClientRect()` + cursor `(x, y)` coordinates to determine which drop zone the cursor is over. Never show drag-over animation globally. `DropZone.tsx` has this built in via `containerRef`. For pages with multiple drop areas (e.g. Flasher), register ONE `OnFileDrop` handler and hit-test each section's ref.
+- **One `OnFileDrop` per page**: Calling `OnFileDrop()` replaces the previous handler. Pages with multiple drop areas must register a single handler and route internally (ViewFlasher pattern).

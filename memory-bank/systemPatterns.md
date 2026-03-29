@@ -34,10 +34,51 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 
 `src/lib/desktop/` wraps every Tauri command:
 - `backend.ts` — All `invoke<T>()` wrappers (including `DeleteFiles`, `RenameFile`)
-- `runtime.ts` — Event listeners, file drop, URL opener
+- `runtime.ts` — Event listeners, file drop (with position-aware `DragDropHandler`), URL opener
 - `models.ts` — DTO interfaces matching Rust structs
 
-### 2. State Management
+### 2. Drag-and-Drop (Position-Based Hit-Testing)
+
+Tauri's `onDragDropEvent` fires at the **window level** — it doesn't know which DOM element the cursor is over. All drop zones would activate simultaneously without hit-testing.
+
+**Pattern:** Use cursor `(x, y)` from the hover event + `getBoundingClientRect()` to determine which drop zone is under the cursor.
+
+```ts
+// DropZone.tsx — single drop zone per page
+const containerRef = useRef<HTMLDivElement>(null);
+OnFileDrop({
+  onHover: (x, y) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    const isOver = rect ? isPointInRect(x, y, rect) : false;
+    setIsDragging(isOver); // only highlight when cursor is over THIS component
+  },
+});
+```
+
+```ts
+// ViewFlasher — multiple drop areas on one page
+// Register ONE handler, hit-test each section's ref
+const flashRef = useRef<HTMLDivElement>(null);
+const sideloadRef = useRef<HTMLDivElement>(null);
+OnFileDrop({
+  onHover: (x, y, paths) => {
+    const overFlash = isPointInRect(x, y, flashRef.current?.getBoundingClientRect()!);
+    const overSideload = isPointInRect(x, y, sideloadRef.current?.getBoundingClientRect()!);
+    // Combine position + extension validation
+    if (overFlash && paths?.some(isImgFile)) setDragTarget('flash');
+    else if (overSideload && paths?.some(isZipFile)) setDragTarget('sideload');
+    else setDragTarget('none');
+  },
+});
+```
+
+**Rules:**
+- ONE `OnFileDrop()` per page (calling it replaces the previous handler)
+- Pages with multiple drop areas: single handler + hit-test per ref
+- `DragDropHandler.onHover` receives optional `paths?: string[]` for extension filtering
+- Always use 150ms timeout to auto-clear drag state (cursor left window)
+
+### 3. State Management
 
 - **Zustand v5** for shared state (device, log, shell, payloadDumper)
 - **localStorage** for user preferences that must survive view switches and restarts:
@@ -201,6 +242,6 @@ src/components/
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)
 - **Shift+Click range selection** is Phase 2 — currently deferred (needs `lastClickedIndex` tracking in `isMultiSelectMode` context)
-- **Tauri blocking commands = UI freeze**: `pub fn` commands calling `std::process::Command::output()` run on the main thread and block the WebView. Pattern: `pub async fn` + `tokio::task::spawn_blocking(move || ...)`. Applied to `install_package`, `uninstall_package`, `sideload_package`.
+- **Tauri blocking commands = UI freeze**: `pub fn` commands calling `std::process::Command::output()` run on the main thread and block the WebView. Pattern: `pub async fn` + `tokio::task::spawn_blocking(move || ...)`. Applied to `install_package`, `uninstall_package`, `sideload_package`, `flash_partition`, `wipe_data`.
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
 - **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.

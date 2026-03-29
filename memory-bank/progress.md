@@ -43,7 +43,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
   - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
   - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
-- Shared components: `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone`
+- Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing)
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 
@@ -65,7 +65,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 |----------|----------|
 | Device | `get_devices`, `get_device_info`, `get_device_mode`, `get_fastboot_devices` |
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
-| Fastboot | `flash_partition`, `reboot`, `wipe_data`, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
+| Fastboot | `flash_partition` *(async)*, `reboot`, `wipe_data` *(async)*, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
 | Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
@@ -85,7 +85,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - **Adaptive columns**: 3-col pre-extraction, 4-col during/after extraction (`[28px_0.8fr_5fr_72px]`)
 - **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
 - **Tooltips**: shadcn `Tooltip` component (not native `title=`) for all icon buttons
-- **DropZone**: shared reusable component with native Tauri drag-drop events
+- **DropZone**: shared reusable component with native Tauri drag-drop events + position-based hit-testing (`containerRef` + `getBoundingClientRect`)
 
 ### Packaging
 
@@ -141,6 +141,8 @@ src-tauri/src/
 - ✅ Block size from manifest: reads `block_size` field
 - ✅ Async Tauri commands: `extract_payload`, `cleanup_payload_cache` on Tokio
 - ✅ `install_package`, `uninstall_package`, `sideload_package`: async + `tokio::task::spawn_blocking` (fixes UI freeze)
+- ✅ `flash_partition`, `wipe_data`: async + `tokio::task::spawn_blocking` (fixes 1-2 min UI freeze during flashing)
+- ✅ Drag-drop position hit-testing: `getBoundingClientRect()` + cursor (x,y) — drop zones only highlight when cursor is physically over them
 - ✅ Parallel partition extraction: `std::thread::scope` (4-8x faster)
 
 ## Remaining Work
@@ -150,7 +152,7 @@ src-tauri/src/
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
-| Low | Extend RHF to ViewFlasher | partition/file form |
+| Low | Extend RHF to ViewFlasher | partition/file form (datalist approach works well for now) |
 | Low | Adopt EmptyState in remaining views | Dashboard empty device list |
 | Low | Run device-backed parity tests | Need real Android devices |
 
@@ -164,6 +166,8 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-29 | 0.1.0 | Utilities View UX Overhaul: `ActionButton` component with 4-state lifecycle (idle, loading, sent, disabled), framer-motion micro-animations, semantic success glows, press scale. Centralized and namespaced `actionId`s for separated ADB/Fastboot rendering. UI grid bugfixes and tooltip cleanups. |
+| 2026-03-27 | 0.1.0 | Flasher overhaul: async flash_partition/wipe_data (spawn_blocking), DropArea with position-based hit-testing, partition datalist suggestions, loading mutex, centralized error handling. DropZone.tsx: position-aware hit-testing fix (project-wide). runtime.ts: onHover now passes file paths. |
 | 2026-03-27 | 0.1.0 | Bottom panel polish: fixed position, fluid resize (DOM-first/RAF), smart tab toggles, LogsPanel scroll fix. AppManager: shadcn Command search, toolbar swap, destructive button glow, non-blocking install/uninstall/sideload (spawn_blocking). |
 | 2026-03-27 | 0.1.0 | Global Device Switcher: header pill + popover, centralized device polling in MainLayout, `selectedSerial` in deviceStore, semantic status colors (7 states), removed ConnectedDevicesCard from Flasher + Utilities |
 | 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder (Ctrl+N/Ctrl+Shift+N), Back/Forward history (Alt+←/→), Search/Filter (Ctrl+F), sortable columns, human-readable sizes, symlink targets, Copy Path; infinite render loop fix; empty-dir creation fix |
