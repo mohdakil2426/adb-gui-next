@@ -73,7 +73,7 @@ export const useLogStore = create<LogStore>((set) => ({
     })),
 
   setPanelOpen: (isOpen: boolean) =>
-    set({ isOpen, unreadCount: isOpen ? 0 : undefined } as Partial<LogStore>),
+    set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount })),
 
   setFilter: (filter: LogLevel | 'all') => set({ filter }),
   setSearchQuery: (query: string) => set({ searchQuery: query }),

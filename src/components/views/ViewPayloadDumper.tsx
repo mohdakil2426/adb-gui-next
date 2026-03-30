@@ -31,7 +31,7 @@ import {
   OpenFolder,
   CleanupPayloadCache,
 } from '@/lib/desktop/backend';
-import { EventsOn, EventsOff } from '@/lib/desktop/runtime';
+import { EventsOn } from '@/lib/desktop/runtime';
 import { DropZone } from '@/components/DropZone';
 
 // Format bytes to human-readable size
@@ -106,7 +106,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
 
   // Subscribe to real-time progress events from backend
   useEffect(() => {
-    EventsOn(
+    const unlisten = EventsOn(
       'payload:progress',
       (data: { partitionName: string; current: number; total: number; completed: boolean }) => {
         // Update progress
@@ -119,9 +119,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       },
     );
 
-    return () => {
-      EventsOff('payload:progress');
-    };
+    return unlisten;
   }, [updatePartitionProgress, markPartitionCompleted]);
 
   // Calculate selected partitions that are NOT already extracted
@@ -294,7 +292,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       if (result.success) {
         // Add new files to existing extracted files
         const newFiles = result.extractedFiles || [];
-        setExtractedFiles([...extractedFiles, ...newFiles]);
+        setExtractedFiles([...usePayloadDumperStore.getState().extractedFiles, ...newFiles]);
         setOutputDir(result.outputDir || '');
         setStatus('success');
 
@@ -533,7 +531,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     </div>
 
                     {/* Rows — scrollable */}
-                    <div className="divide-y divide-border/50 max-h-[400px] overflow-y-auto">
+                    <div className="divide-y divide-border/50 max-h-100 overflow-y-auto">
                       {partitions.map((partition, index) => {
                         const isRowExtracting = extractingPartitions.has(partition.name);
                         const isRowCompleted = completedPartitions.has(partition.name);
