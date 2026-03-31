@@ -29,6 +29,7 @@ import { ThemeProvider } from './ThemeProvider';
 import { WelcomeScreen } from './WelcomeScreen';
 import { LaunchDeviceManager, LaunchTerminal } from '@/lib/desktop/backend';
 import { toast } from 'sonner';
+import { ErrorBoundary } from './ErrorBoundary';
 
 const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -299,7 +300,9 @@ export function MainLayout() {
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       className="w-full"
                     >
-                      {renderActiveView()}
+                      <ErrorBoundary key={activeView} viewName={activeView}>
+                        {renderActiveView()}
+                      </ErrorBoundary>
                     </motion.div>
                   </AnimatePresence>
                 </div>

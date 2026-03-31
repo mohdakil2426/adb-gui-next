@@ -1,8 +1,11 @@
 import * as eventApi from '@tauri-apps/api/event';
+import type { Event } from '@tauri-apps/api/event';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
+import type { DragDropEvent } from '@tauri-apps/api/webview';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
-type EventCallback = (...data: any[]) => void;
+// Generic event callback — T is the event payload type.
+type EventCallback<T = unknown> = (data: T) => void;
 type Unlisten = () => void;
 type FileDropCallback = (x: number, y: number, paths: string[]) => void;
 
@@ -26,7 +29,10 @@ function removeListener(eventName: string, entry: ListenerEntry): void {
   }
 }
 
-function registerEventListener(eventName: string, callback: EventCallback): () => void {
+function registerEventListener<T = unknown>(
+  eventName: string,
+  callback: EventCallback<T>,
+): () => void {
   const current = eventListeners.get(eventName) ?? new Set<ListenerEntry>();
   eventListeners.set(eventName, current);
 
@@ -51,7 +57,7 @@ function registerEventListener(eventName: string, callback: EventCallback): () =
   current.add(entry);
 
   void eventApi
-    .listen(eventName, (event: any) => {
+    .listen<T>(eventName, (event: Event<T>) => {
       if (active) {
         callback(event.payload);
       }
@@ -80,8 +86,8 @@ export function BrowserOpenURL(url: string | URL): void {
   void openUrl(url);
 }
 
-export function EventsOn(eventName: string, callback: EventCallback): () => void {
-  return registerEventListener(eventName, callback);
+export function EventsOn<T = unknown>(eventName: string, callback: EventCallback<T>): () => void {
+  return registerEventListener<T>(eventName, callback);
 }
 
 export function EventsOff(eventName: string, ...additionalEventNames: string[]): void {
@@ -127,18 +133,19 @@ export function OnFileDrop(
       : callbackOrHandler;
 
   void getCurrentWebview()
-    .onDragDropEvent((event: any) => {
+    .onDragDropEvent((event: Event<DragDropEvent>) => {
       const payload = event.payload;
       if (!payload?.type) return;
 
-      if (payload.type === 'over') {
+      if (payload.type === 'enter' || payload.type === 'over') {
         const pos = payload.position ?? { x: 0, y: 0 };
-        const paths = Array.isArray(payload.paths) ? payload.paths : undefined;
+        const paths =
+          'paths' in payload && Array.isArray(payload.paths) ? payload.paths : undefined;
         handler.onHover?.(pos.x ?? 0, pos.y ?? 0, paths);
-      } else if (payload.type === 'drop' && Array.isArray(payload.paths)) {
+      } else if (payload.type === 'drop' && 'paths' in payload && Array.isArray(payload.paths)) {
         const pos = payload.position ?? { x: 0, y: 0 };
         handler.onDrop(payload.paths, pos.x ?? 0, pos.y ?? 0);
-      } else if (payload.type === 'cancel') {
+      } else if (payload.type === 'leave') {
         handler.onCancel?.();
       }
     })

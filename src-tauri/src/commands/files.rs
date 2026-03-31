@@ -18,82 +18,123 @@ pub struct FileEntry {
     pub link_target: String,
 }
 
+/// Lists files at `path` on the connected ADB device.
+///
+/// Runs on a blocking thread — `adb shell ls` blocks until the device responds.
 #[tauri::command]
-pub fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
-    let path = path.trim();
+pub async fn list_files(app: AppHandle, path: String) -> CmdResult<Vec<FileEntry>> {
+    let path = path.trim().to_string();
     info!("Listing files at {}", path);
+    tokio::task::spawn_blocking(move || {
+        // Wrap in single quotes so spaces in paths are handled correctly.
+        // Escape any literal single-quotes via the '' -> '\'' idiom.
+        let quoted = format!("'{}'", path.replace('\'', r"'\''"));
+        let output = run_binary_command(&app, "adb", &["shell", "ls", "-lA", &quoted])?;
 
-    // Wrap in single quotes so spaces in paths are handled correctly by the device shell.
-    // Escape any literal single-quotes inside the path via the '' -> '\'' idiom.
-    let quoted = format!("'{}'", path.replace('\'', r"'\''"));
-    let output = run_binary_command(&app, "adb", &["shell", "ls", "-lA", &quoted])?;
+        // adb shell exits with 0 even when the shell command fails.
+        if output.to_lowercase().contains("permission denied") {
+            return Err(format!("Permission denied: cannot access '{path}'"));
+        }
 
-    // adb shell exits with 0 even when the shell command fails (e.g. permission denied).
-    // We have to inspect the output ourselves.
-    if output.to_lowercase().contains("permission denied") {
-        return Err(format!("Permission denied: cannot access '{path}'"));
-    }
-
-    let entries = parse_file_entries(&output);
-    debug!("Found {} entries at {}", entries.len(), path);
-    Ok(entries)
+        let entries = parse_file_entries(&output);
+        debug!("Found {} entries at {}", entries.len(), path);
+        Ok(entries)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn pull_file(app: AppHandle, remote_path: String, local_path: String) -> CmdResult<String> {
-    info!("Pulling {} to {}", remote_path.trim(), local_path.trim());
-    run_binary_command(&app, "adb", &["pull", "-a", remote_path.trim(), local_path.trim()])
+pub async fn pull_file(
+    app: AppHandle,
+    remote_path: String,
+    local_path: String,
+) -> CmdResult<String> {
+    let remote = remote_path.trim().to_string();
+    let local = local_path.trim().to_string();
+    info!("Pulling {} to {}", remote, local);
+    tokio::task::spawn_blocking(move || {
+        run_binary_command(&app, "adb", &["pull", "-a", &remote, &local])
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn push_file(app: AppHandle, local_path: String, remote_path: String) -> CmdResult<String> {
-    info!("Pushing {} to {}", local_path.trim(), remote_path.trim());
-    run_binary_command(&app, "adb", &["push", local_path.trim(), remote_path.trim()])
+pub async fn push_file(
+    app: AppHandle,
+    local_path: String,
+    remote_path: String,
+) -> CmdResult<String> {
+    let local = local_path.trim().to_string();
+    let remote = remote_path.trim().to_string();
+    info!("Pushing {} to {}", local, remote);
+    tokio::task::spawn_blocking(move || run_binary_command(&app, "adb", &["push", &local, &remote]))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn delete_files(app: AppHandle, paths: Vec<String>) -> CmdResult<String> {
+pub async fn delete_files(app: AppHandle, paths: Vec<String>) -> CmdResult<String> {
     if paths.is_empty() {
         return Err("No paths provided".into());
     }
     let count = paths.len();
     info!("Deleting {} item(s)", count);
-
-    // Build a single shell command: rm -rf 'path1' 'path2' ...
-    // Each path is single-quoted with the '' -> '\'' escape idiom for embedded quotes.
-    let quoted: Vec<String> =
-        paths.iter().map(|p| format!("'{}'", p.trim().replace('\'', r"'\''"))).collect();
-    let cmd = format!("rm -rf {}", quoted.join(" "));
-    run_binary_command(&app, "adb", &["shell", &cmd])?;
-    Ok(format!("Deleted {} item(s)", count))
+    tokio::task::spawn_blocking(move || {
+        // Build a single shell command: rm -rf 'path1' 'path2' ...
+        let quoted: Vec<String> =
+            paths.iter().map(|p| format!("'{}'", p.trim().replace('\'', r"'\''"))).collect();
+        let cmd = format!("rm -rf {}", quoted.join(" "));
+        run_binary_command(&app, "adb", &["shell", &cmd])?;
+        Ok(format!("Deleted {} item(s)", count))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn rename_file(app: AppHandle, old_path: String, new_path: String) -> CmdResult<String> {
-    info!("Renaming '{}' to '{}'", old_path.trim(), new_path.trim());
-    let old_q = format!("'{}'", old_path.trim().replace('\'', r"'\''"));
-    let new_q = format!("'{}'", new_path.trim().replace('\'', r"'\''"));
-    let cmd = format!("mv {} {}", old_q, new_q);
-    run_binary_command(&app, "adb", &["shell", &cmd])?;
-    Ok(format!("Renamed to {}", new_path.trim()))
+pub async fn rename_file(app: AppHandle, old_path: String, new_path: String) -> CmdResult<String> {
+    let old = old_path.trim().to_string();
+    let new = new_path.trim().to_string();
+    info!("Renaming '{}' to '{}'", old, new);
+    tokio::task::spawn_blocking(move || {
+        let old_q = format!("'{}'", old.replace('\'', r"'\''"));
+        let new_q = format!("'{}'", new.replace('\'', r"'\''"));
+        let cmd = format!("mv {old_q} {new_q}");
+        run_binary_command(&app, "adb", &["shell", &cmd])?;
+        Ok(format!("Renamed to {new}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn create_file(app: AppHandle, path: String) -> CmdResult<String> {
-    info!("Creating file: {}", path.trim());
-    let quoted = format!("'{}'", path.trim().replace('\'', r"'\''"));
-    let cmd = format!("touch {quoted}");
-    run_binary_command(&app, "adb", &["shell", &cmd])?;
-    Ok(format!("Created file: {}", path.trim()))
+pub async fn create_file(app: AppHandle, path: String) -> CmdResult<String> {
+    let p = path.trim().to_string();
+    info!("Creating file: {}", p);
+    tokio::task::spawn_blocking(move || {
+        let quoted = format!("'{}'", p.replace('\'', r"'\''"));
+        let cmd = format!("touch {quoted}");
+        run_binary_command(&app, "adb", &["shell", &cmd])?;
+        Ok(format!("Created file: {p}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn create_directory(app: AppHandle, path: String) -> CmdResult<String> {
-    info!("Creating directory: {}", path.trim());
-    let quoted = format!("'{}'", path.trim().replace('\'', r"'\''"));
-    let cmd = format!("mkdir -p {quoted}");
-    run_binary_command(&app, "adb", &["shell", &cmd])?;
-    Ok(format!("Created directory: {}", path.trim()))
+pub async fn create_directory(app: AppHandle, path: String) -> CmdResult<String> {
+    let p = path.trim().to_string();
+    info!("Creating directory: {}", p);
+    tokio::task::spawn_blocking(move || {
+        let quoted = format!("'{}'", p.replace('\'', r"'\''"));
+        let cmd = format!("mkdir -p {quoted}");
+        run_binary_command(&app, "adb", &["shell", &cmd])?;
+        Ok(format!("Created directory: {p}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 fn parse_file_entries(output: &str) -> Vec<FileEntry> {

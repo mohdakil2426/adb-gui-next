@@ -6,7 +6,39 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
-### 2026-03-29 — Utilities Micro-Animations & UI Consistency
+### 2026-03-31 — Frontend Hardening (Audit P1–P4)
+
+**ErrorBoundary (C1):**
+- Created `src/components/ErrorBoundary.tsx` — class-based boundary, retry button, `viewName` prop
+- Wrapped `renderActiveView()` in `MainLayout.tsx` inside `<ErrorBoundary key={activeView}>` — renders crash UI instead of white screen; retry remounts the view
+
+**Shared deviceStatus.ts (C3+H8):**
+- Created `src/lib/deviceStatus.ts` — single source of truth for `StatusConfig`, `getStatusConfig()`
+- Removed the duplicate `STATUS_CONFIG` block (~50 lines each) from `DeviceSwitcher.tsx` and `ConnectedDevicesCard.tsx`
+
+**runtime.ts type safety (C2):**
+- `EventCallback<T = unknown>` and `registerEventListener<T>` are now generic
+- `EventsOn<T>` passes `Event<T>` to listeners — no more `any`
+- `onDragDropEvent` callback typed with Tauri's actual `DragDropEvent` import; `'enter'` handled alongside `'over'`; `'leave'` used instead of `'cancel'` (matching actual Tauri v2 API)
+
+**loadFiles race condition (H1):**
+- Added `loadRequestIdRef = useRef(0)` to `ViewFileExplorer.tsx`
+- Each `loadFiles` call stamps `requestId = ++loadRequestIdRef.current`; results are discarded if a newer call has already been dispatch ed
+
+**Full Rust async migration (D3):**
+- `device.rs`: `get_devices`, `get_fastboot_devices`, `get_device_info`, `get_device_mode` → `async fn + spawn_blocking`
+- `adb.rs`: `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb`, `run_adb_host_command`, `run_shell_command` → `async fn + spawn_blocking`
+- `fastboot.rs`: `get_bootloader_variables`, `reboot`, `run_fastboot_host_command`, `set_active_slot` → `async fn + spawn_blocking`; stray `}` + unused `error` import removed
+- `files.rs`: all 7 commands (list/pull/push/delete/rename/create_file/create_directory) → `async fn + spawn_blocking`
+- `apps.rs`: `get_installed_packages` → `async fn + spawn_blocking`
+- `payload.rs`: `list_payload_partitions` + `list_payload_partitions_with_details` → `async fn + block_in_place` (State<'_> cannot be 'static)
+- `split_args` calls moved **inside** blocking closures so `Vec<&str>` borrows from the closure-owned `String` (not crossed spawn boundary)
+
+**Verification (2026-03-31):**
+- `pnpm format:check` ✅, `pnpm lint:web` ✅, `pnpm lint:rust` ✅, `pnpm build` ✅, `cargo check` ✅
+- `cargo test` ⚠️ pre-existing `STATUS_ENTRYPOINT_NOT_FOUND` — Windows Tauri DLL issue, not a code bug
+
+---
 
 **ActionButton Component (`ActionButton.tsx`):**
 - Created a standalone, reusable button component that manages a strict 4-state lifecycle: Idle ➔ Loading (spinner) ➔ Sent (success checkmark) ➔ Disabled.
@@ -290,11 +322,12 @@ A comprehensive upgrade of `ViewFileExplorer.tsx` (~1520 lines), `files.rs`, `mo
 
 ## Current Verification Evidence
 
-Verified (2026-03-27):
+Verified (2026-03-31):
 - `pnpm lint:web` ✅ — ESLint clean (exit 0)
-- `cargo clippy` ✅ — 0 errors, 0 warnings
+- `pnpm lint:rust` ✅ — cargo clippy -D warnings clean
+- `cargo check` ✅ — all Rust types valid
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
-- `pnpm format` ✅ — Prettier + cargo fmt clean
+- `pnpm format:check` ✅ — Prettier + cargo fmt clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 
 ---
@@ -309,8 +342,11 @@ Verified (2026-03-27):
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source, selectedSerial in store |
 | App Manager | ✅ Improved | shadcn Command search, toolbar layout, destructive glow, non-blocking install |
 | Flasher | ✅ Overhauled | Async flash/wipe (spawn_blocking), DropArea with position hit-testing, partition suggestions, loading mutex |
-| Backend | ✅ Complete | 30 Tauri commands; flash/wipe/install/uninstall/sideload all async (spawn_blocking) |
+| Backend | ✅ Complete | All 30+ Tauri commands fully async (spawn_blocking / block_in_place) |
 | IPC Layer | ✅ Complete | `backend.ts` + `models.ts` (FileEntry + linkTarget) |
+| Error Boundary | ✅ Complete | `ErrorBoundary.tsx` wraps every view in MainLayout |
+| Type Safety | ✅ Complete | runtime.ts generics, DragDropEvent typed |
+| Shared Utils | ✅ Complete | `deviceStatus.ts` — single STATUS_CONFIG source of truth |
 | Linting | ✅ Complete | ESLint 10 flat config + cargo clippy -D warnings |
 | Formatting | ✅ Complete | Prettier (web) + cargo fmt (Rust) |
 
@@ -334,3 +370,9 @@ Verified (2026-03-27):
 - **AppManager Command search**: `shouldFilter={false}` is mandatory — cmdk's built-in filter breaks the virtualizer by trying to render all items.
 - **Drag-drop hit-testing**: Tauri's `onDragDropEvent` is window-level. Always use `getBoundingClientRect()` + cursor `(x, y)` coordinates to determine which drop zone the cursor is over. Never show drag-over animation globally. `DropZone.tsx` has this built in via `containerRef`. For pages with multiple drop areas (e.g. Flasher), register ONE `OnFileDrop` handler and hit-test each section's ref.
 - **One `OnFileDrop` per page**: Calling `OnFileDrop()` replaces the previous handler. Pages with multiple drop areas must register a single handler and route internally (ViewFlasher pattern).
+- **ErrorBoundary**: Class-based, keyed to `activeView` so navigating away + back resets the boundary. Wrap `renderActiveView()` in MainLayout — never individual views themselves.
+- **Tauri `DragDropEvent` API**: `type` is `'enter' | 'over' | 'drop' | 'leave'` — NOT `'cancel'`. Import `DragDropEvent` from `@tauri-apps/api/webview` for correct typing.
+- **`split_args` in spawn_blocking**: `helpers::split_args` returns `Vec<&str>` borrowing from input. MUST be called **inside** the `spawn_blocking` closure where the owned `String` lives — never before (lifetime crosses 'static boundary).
+- **`State<'_, T>` in async Tauri commands**: Cannot use `spawn_blocking` (needs `'static`). Use `tokio::task::block_in_place` instead — see `payload.rs` list commands.
+- **`deviceStatus.ts`**: Single source of truth for all device badge labels/colors. Import `getStatusConfig()` from `@/lib/deviceStatus` — never define STATUS_CONFIG locally in components.
+- **`loadFiles` request sequencing**: Uses `loadRequestIdRef = useRef(0)`. Each call: `const requestId = ++loadRequestIdRef.current`. After `await`, check `if (requestId !== loadRequestIdRef.current) return` before any state updates.

@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getStatusConfig } from '@/lib/deviceStatus';
 import {
   ChevronDown,
   Pencil,
@@ -16,57 +17,6 @@ import {
   Smartphone,
   MonitorSmartphone,
 } from 'lucide-react';
-
-type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
-
-const STATUS_CONFIG: Record<string, { label: string; variant: BadgeVariant; badgeClass: string }> =
-  {
-    device: {
-      label: 'adb',
-      variant: 'default',
-      badgeClass: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/30',
-    },
-    fastboot: {
-      label: 'fastboot',
-      variant: 'outline',
-      badgeClass: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
-    },
-    bootloader: {
-      label: 'bootloader',
-      variant: 'outline',
-      badgeClass: 'bg-orange-400/15 text-orange-400 border-orange-400/30',
-    },
-    recovery: {
-      label: 'recovery',
-      variant: 'outline',
-      badgeClass: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
-    },
-    sideload: {
-      label: 'sideload',
-      variant: 'outline',
-      badgeClass: 'bg-violet-400/15 text-violet-400 border-violet-400/30',
-    },
-    unauthorized: {
-      label: 'unauthorized',
-      variant: 'destructive',
-      badgeClass: 'bg-red-400/15 text-red-400 border-red-400/30',
-    },
-    offline: {
-      label: 'offline',
-      variant: 'destructive',
-      badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
-    },
-  };
-
-function getStatusConfig(status: string) {
-  return (
-    STATUS_CONFIG[status.toLowerCase()] ?? {
-      label: status.toLowerCase(),
-      variant: 'outline' as BadgeVariant,
-      badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
-    }
-  );
-}
 
 interface DeviceSwitcherProps {
   isRefreshing: boolean;

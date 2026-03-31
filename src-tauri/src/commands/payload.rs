@@ -61,21 +61,27 @@ pub async fn extract_payload(
 }
 
 #[tauri::command]
-pub fn list_payload_partitions(
-    payload_cache: State<PayloadCache>,
+pub async fn list_payload_partitions(
+    payload_cache: State<'_, PayloadCache>,
     payload_path: String,
 ) -> CmdResult<Vec<String>> {
     info!("Listing payload partitions from {}", payload_path.trim());
-    payload::list_payload_partitions(Path::new(payload_path.trim()), &payload_cache)
-        .map_err(|error| error.to_string())
+    let path = payload_path.trim().to_string();
+    tokio::task::block_in_place(|| {
+        payload::list_payload_partitions(std::path::Path::new(&path), &payload_cache)
+            .map_err(|error| error.to_string())
+    })
 }
 
 #[tauri::command]
-pub fn list_payload_partitions_with_details(
-    payload_cache: State<PayloadCache>,
+pub async fn list_payload_partitions_with_details(
+    payload_cache: State<'_, PayloadCache>,
     payload_path: String,
 ) -> CmdResult<Vec<PartitionDetail>> {
     info!("Listing payload partitions with details from {}", payload_path.trim());
-    payload::list_payload_partitions_with_details(Path::new(payload_path.trim()), &payload_cache)
-        .map_err(|error| error.to_string())
+    let path = payload_path.trim().to_string();
+    tokio::task::block_in_place(|| {
+        payload::list_payload_partitions_with_details(std::path::Path::new(&path), &payload_cache)
+            .map_err(|error| error.to_string())
+    })
 }

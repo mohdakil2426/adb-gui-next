@@ -225,6 +225,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // Tracks whether the tree was auto-collapsed by responsive resize (not by user).
   // When true, expanding the window past the threshold will auto-restore the tree.
   const wasResponsiveCollapsedRef = useRef(false);
+  // Request sequencing — incremented on each loadFiles call; stale responses are dropped.
+  const loadRequestIdRef = useRef(0);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -316,6 +318,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // `pushToHistory` = true for user navigation, false for refresh-in-place.
   const loadFiles = useCallback(
     async (targetPath: string, pushToHistory = true) => {
+      const requestId = ++loadRequestIdRef.current;
       setIsLoading(true);
       setSelectedNames(new Set());
       setIsMultiSelectMode(false);
@@ -328,6 +331,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       try {
         debugLog(`Listing files at: ${targetPath}`);
         const files = await ListFiles(targetPath);
+        // Discard stale results — a newer request has already been dispatched.
+        if (requestId !== loadRequestIdRef.current) return;
         // Raw sort only for initial load; table may re-sort via sortField/sortDir
         files.sort((a, b) => {
           const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
@@ -358,13 +363,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           setHistoryIndex(newIdx); // schedule React state update
         }
       } catch (error) {
+        if (requestId !== loadRequestIdRef.current) return;
         setLoadError(categorizeError(error));
         setFileList([]);
         handleError('List Files', error);
         setCurrentPath(targetPath);
         currentPathRef.current = targetPath;
       } finally {
-        setIsLoading(false);
+        if (requestId === loadRequestIdRef.current) {
+          setIsLoading(false);
+        }
       }
     },
     [], // stable — all mutable values accessed via refs, not closure

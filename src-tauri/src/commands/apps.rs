@@ -25,25 +25,32 @@ fn parse_package_names(output: &str) -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
+pub async fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPackage>> {
     info!("Getting installed packages");
+    tokio::task::spawn_blocking(move || {
+        let user_output =
+            run_binary_command(&app, "adb", &["shell", "pm", "list", "packages", "-3"])?;
+        let user_names: std::collections::HashSet<String> =
+            parse_package_names(&user_output).into_iter().collect();
 
-    let user_output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages", "-3"])?;
-    let user_names: std::collections::HashSet<String> =
-        parse_package_names(&user_output).into_iter().collect();
+        let all_output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages"])?;
+        let packages: Vec<InstalledPackage> = parse_package_names(&all_output)
+            .into_iter()
+            .map(|name| {
+                let package_type = if user_names.contains(&name) {
+                    "user".to_string()
+                } else {
+                    "system".to_string()
+                };
+                InstalledPackage { name, package_type }
+            })
+            .collect();
 
-    let all_output = run_binary_command(&app, "adb", &["shell", "pm", "list", "packages"])?;
-    let packages: Vec<InstalledPackage> = parse_package_names(&all_output)
-        .into_iter()
-        .map(|name| {
-            let package_type =
-                if user_names.contains(&name) { "user".to_string() } else { "system".to_string() };
-            InstalledPackage { name, package_type }
-        })
-        .collect();
-
-    debug!("Found {} installed packages", packages.len());
-    Ok(packages)
+        debug!("Found {} installed packages", packages.len());
+        Ok(packages)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

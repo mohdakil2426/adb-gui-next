@@ -274,28 +274,46 @@ These are actually two distinct issues:
 
 ---
 
-## Project Health Dashboard
+## Project Health Dashboard (Updated 2026-03-31 — Session 2)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Architecture             ✅  Clean, modular, correct       │
 │  Heavy ops (async)        ✅  flash/wipe/install/extract    │
+│  Light ops (async)        ✅  ALL commands async (D3 done)  │
 │  Device polling           ✅  Centralized in MainLayout     │
-│  Drag-drop               ✅  Position-based, correct        │
-│  Light ops (async)        ⚠️  device/adb/files still SYNC   │
-│  Type safety              ⚠️  3 any usages in runtime.ts    │
-│  Error boundary           ❌  None — white screen risk       │
-│  Duplicate code           ❌  STATUS_CONFIG × 2 files        │
-│  Type bug                 ❌  logStore undefined → number    │
-│  Event cleanup bug        ❌  PayloadDumper nukes listeners  │
-│  Stale closure bug        ❌  handleExtract extractedFiles   │
+│  Drag-drop                ✅  Position-based, correct       │
+│  Type safety              ✅  runtime.ts fully typed (C2)   │
+│  Error boundary           ✅  ErrorBoundary in MainLayout   │
+│  Duplicate code           ✅  Shared deviceStatus.ts (C3)   │
+│  Type bug                 ✅  logStore fixed (session 1)    │
+│  Event cleanup bug        ✅  PayloadDumper unlisten (H11)  │
+│  Stale closure bug        ✅  handleExtract getState() (H10)│
+│  Race condition           ✅  loadFiles sequencing (H1)     │
 └─────────────────────────────────────────────────────────────┘
 
-Overall: B  (Strong foundation, 3 small bugs to fix immediately)
+Overall: A-  (All P1–P4 resolved; H16 Spinner + H7 decompose deferred)
 ```
+
+### Fixed This Session
+
+| ID | Fix | Files |
+|----|-----|-------|
+| C1 | `ErrorBoundary` class component keyed to `activeView` | `ErrorBoundary.tsx` (NEW), `MainLayout.tsx` |
+| C2 | Generic `EventCallback<T>`, `DragDropEvent` import, `'leave'` not `'cancel'` | `runtime.ts` |
+| C3+H8 | `getStatusConfig()` extracted to shared `deviceStatus.ts` | `deviceStatus.ts` (NEW), `DeviceSwitcher.tsx`, `ConnectedDevicesCard.tsx` |
+| H1 | `loadRequestIdRef` counter — stale results dropped post-await | `ViewFileExplorer.tsx` |
+| D3 | All 16 sync commands → `async fn + spawn_blocking` | `device.rs`, `adb.rs`, `fastboot.rs`, `files.rs`, `apps.rs`, `payload.rs` |
+
+### Deferred (by design)
+
+| ID | Issue | Rationale |
+|----|-------|-----------|
+| H16 | Loader2 → shared `<Spinner>` (~28 instances) | Non-functional; safe to defer |
+| H7 | Decompose ViewFileExplorer (1567 lines) | Works correctly; 2–3h refactor |
 
 ---
 
-_Report generated: 2026-03-31_  
-_Supersedes: `frontend-audit-report.md` (2026-03-28) — stale, discard_  
+_Report updated: 2026-03-31 (session 2 complete)_
+_Supersedes: `frontend-audit-report.md` (2026-03-28) — stale, discard_
 _Based on: D1 (`frontend-comprehensive-audit-2026-03-30.md`) — canonical audit_
