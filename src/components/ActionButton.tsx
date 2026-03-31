@@ -52,7 +52,7 @@ export function ActionButton({
         isSent &&
           'ring-2 ring-success/50 shadow-[0_0_12px_color-mix(in_oklch,var(--success)_40%,transparent)]',
         className,
-        wrapperClassName
+        wrapperClassName,
       )}
       onClick={onClick}
       disabled={isDisabled}

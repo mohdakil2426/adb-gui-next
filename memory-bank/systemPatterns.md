@@ -188,7 +188,58 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 - 12 terminal CSS variables in `global.css` for light/dark theme support
 - Keyboard shortcut: `Ctrl+\`` to toggle panel
 
-### 10. UI Consistency Rules (Enforced)
+### 10. Action Queue Pattern (Bootloop Recovery)
+
+For operations that require a device in a specific mode (fastboot/sideload), users may need to queue actions while waiting for a bootlooping device to appear briefly. The pattern enables immediate execution when the device connects.
+
+**Pattern:**
+```tsx
+interface QueuedAction {
+  type: 'flash' | 'sideload';
+  partition?: string;  // for flash only
+  filePath: string;
+}
+
+const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
+
+// Button enabled when file is set, NOT when device is connected
+<Button disabled={!file || !partition} onClick={handleFlash}>
+
+// Handler queues if device not ready
+const handleFlash = () => {
+  if (hasFastbootDevice) {
+    executeFlash(partition, filePath);
+  } else {
+    setQueuedAction({ type: 'flash', partition, filePath });
+    toast.info('Waiting for fastboot device...');
+  }
+};
+
+// Auto-execute when device connects
+useEffect(() => {
+  if (!queuedAction || isGlobalLoading) return;
+  const isReady = queuedAction.type === 'flash' ? hasFastbootDevice : hasSideloadDevice;
+  if (isReady) {
+    const action = queuedAction;
+    setQueuedAction(null);
+    if (action.type === 'flash') executeFlash(action.partition!, action.filePath);
+    else executeSideload(action.filePath);
+  }
+}, [queuedAction, hasFastbootDevice, hasSideloadDevice, isGlobalLoading]);
+
+// Clear queue on file clear
+onClick={() => {
+  setFilePath('');
+  if (queuedAction?.type === 'flash') setQueuedAction(null);
+}}
+```
+
+**Visual Feedback:**
+- Button shows `Clock` icon + "Waiting for Device..." when action is queued
+- Button shows `Loader2` spinner when action is executing
+- Button shows default icon + text when ready
+
+### 11. UI Consistency Rules (Enforced)
 
 | Rule | Pattern |
 |------|---------|

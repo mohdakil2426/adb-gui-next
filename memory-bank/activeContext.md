@@ -6,6 +6,29 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-03-31 — Flasher: Queued Actions for Bootloop Recovery
+
+**Problem:** Users with bootlooping devices need to flash immediately when a device briefly appears in fastboot/sideload mode. Previously, the Flash and Sideload buttons were disabled until a device was connected, making rapid flashing impossible.
+
+**Solution:** Action queue system that lets users prepare operations while waiting for device connection.
+
+**ViewFlasher.tsx changes:**
+- Added `QueuedAction` interface with `type`, `partition?`, `filePath`
+- Added `queuedAction` state to track pending operations
+- Split handlers: `executeFlash()`/`executeSideload()` perform the action, `handleFlash()`/`handleSideload()` check device and queue if needed
+- Added `useEffect` that watches device connection and auto-executes queued actions
+- Button states: enabled when file is set (removed `!hasDevice` from disabled condition)
+- Visual feedback: `Clock` icon + "Waiting for Device..." text when action is queued
+- Clear queue on file selection clear
+
+**UX Flow:**
+1. User selects file → button becomes clickable
+2. Click without device → toast: "Waiting for fastboot device..." + button shows waiting state
+3. Device connects → queued action executes automatically
+4. User can cancel by clearing file selection
+
+---
+
 ### 2026-03-31 — Frontend Hardening (Audit P1–P4)
 
 **ErrorBoundary (C1):**

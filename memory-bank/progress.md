@@ -166,6 +166,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-03-31 | 0.1.0 | Flasher: Action queue system for bootloop recovery — buttons enabled when file selected, actions queue and auto-execute when device connects. Visual feedback with Clock icon + "Waiting for Device..." text. Clear queue on file clear. |
 | 2026-03-29 | 0.1.0 | Utilities View UX Overhaul: `ActionButton` component with 4-state lifecycle (idle, loading, sent, disabled), framer-motion micro-animations, semantic success glows, press scale. Centralized and namespaced `actionId`s for separated ADB/Fastboot rendering. UI grid bugfixes and tooltip cleanups. |
 | 2026-03-27 | 0.1.0 | Flasher overhaul: async flash_partition/wipe_data (spawn_blocking), DropArea with position-based hit-testing, partition datalist suggestions, loading mutex, centralized error handling. DropZone.tsx: position-aware hit-testing fix (project-wide). runtime.ts: onHover now passes file paths. |
 | 2026-03-27 | 0.1.0 | Bottom panel polish: fixed position, fluid resize (DOM-first/RAF), smart tab toggles, LogsPanel scroll fix. AppManager: shadcn Command search, toolbar swap, destructive button glow, non-blocking install/uninstall/sideload (spawn_blocking). |

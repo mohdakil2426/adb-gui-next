@@ -43,6 +43,7 @@ import {
   HardDrive,
   Upload,
   X,
+  Clock,
 } from 'lucide-react';
 
 const COMMON_PARTITIONS = [
@@ -82,6 +83,14 @@ function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
 }
 
 type DragTarget = 'none' | 'flash' | 'sideload';
+
+// ─── Queued action for device connection ────────────────────────────────────
+
+interface QueuedAction {
+  type: 'flash' | 'sideload';
+  partition?: string;
+  filePath: string;
+}
 
 // ─── Visual-only drop area ───────────────────────────────────────────────────
 
@@ -155,6 +164,7 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
   const [sideloadFilePath, setSideloadFilePath] = useState('');
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget>('none');
+  const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs for position-based hit-testing
@@ -284,9 +294,65 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
     }
   }, []);
 
+  // ─── Queued action execution when device connects ───────────────────────
+
+  useEffect(() => {
+    if (!queuedAction || isGlobalLoading) return;
+
+    const isReady = queuedAction.type === 'flash' ? hasFastbootDevice : hasSideloadDevice;
+
+    if (isReady) {
+      const action = queuedAction;
+      setQueuedAction(null);
+
+      if (action.type === 'flash') {
+        executeFlash(action.partition!, action.filePath);
+      } else {
+        executeSideload(action.filePath);
+      }
+    }
+  }, [queuedAction, hasFastbootDevice, hasSideloadDevice, isGlobalLoading]);
+
   // ─── Action handlers ───────────────────────────────────────────────
 
-  const handleFlash = async () => {
+  const executeFlash = async (partitionName: string, imgPath: string) => {
+    setLoadingAction('flash');
+    const toastId = toast.loading(`Flashing ${partitionName} partition...`);
+
+    try {
+      await FlashPartition(partitionName, imgPath);
+      toast.success('Flash Complete', {
+        description: `${partitionName} flashed successfully.`,
+        id: toastId,
+      });
+      useLogStore.getState().addLog(`Flashed partition ${partitionName}: Success`, 'success');
+    } catch (error) {
+      toast.dismiss(toastId);
+      handleError('Flash Partition', error);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const executeSideload = async (zipPath: string) => {
+    const fileName = getFileName(zipPath);
+    setLoadingAction('sideload');
+    const toastId = toast.loading(`Sideloading ${fileName}...`);
+
+    try {
+      const output = await SideloadPackage(zipPath);
+      const description = output || `${fileName} sideloaded successfully.`;
+      toast.success('Sideload Complete', { description, id: toastId });
+      useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
+    } catch (error) {
+      toast.dismiss(toastId);
+      handleError('Recovery Sideload', error);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleFlash = () => {
     const parsed = partitionSchema.safeParse(partition);
     if (!parsed.success) {
       toast.error('Invalid partition name', { description: parsed.error.issues[0].message });
@@ -297,44 +363,29 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
       return;
     }
 
-    setLoadingAction('flash');
-    const toastId = toast.loading(`Flashing ${partition} partition...`);
-
-    try {
-      await FlashPartition(partition, filePath);
-      toast.success('Flash Complete', {
-        description: `${partition} flashed successfully.`,
-        id: toastId,
+    if (hasFastbootDevice) {
+      executeFlash(partition, filePath);
+    } else {
+      setQueuedAction({ type: 'flash', partition, filePath });
+      toast.info('Waiting for fastboot device...', {
+        description: 'Action will execute automatically when a fastboot device connects.',
       });
-      useLogStore.getState().addLog(`Flashed partition ${partition}: Success`, 'success');
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Flash Partition', error);
-    } finally {
-      setLoadingAction(null);
     }
   };
 
-  const handleSideload = async () => {
+  const handleSideload = () => {
     if (!sideloadFilePath) {
       toast.error('No update package selected.');
       return;
     }
 
-    const fileName = getFileName(sideloadFilePath);
-    setLoadingAction('sideload');
-    const toastId = toast.loading(`Sideloading ${fileName}...`);
-
-    try {
-      const output = await SideloadPackage(sideloadFilePath);
-      const description = output || `${fileName} sideloaded successfully.`;
-      toast.success('Sideload Complete', { description, id: toastId });
-      useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Recovery Sideload', error);
-    } finally {
-      setLoadingAction(null);
+    if (hasSideloadDevice) {
+      executeSideload(sideloadFilePath);
+    } else {
+      setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
+      toast.info('Waiting for sideload device...', {
+        description: 'Action will execute automatically when a sideload/recovery device connects.',
+      });
     }
   };
 
@@ -409,7 +460,10 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setFilePath('')}
+                        onClick={() => {
+                          setFilePath('');
+                          if (queuedAction?.type === 'flash') setQueuedAction(null);
+                        }}
                         disabled={isGlobalLoading}
                       >
                         <X className="h-4 w-4" />
@@ -423,15 +477,19 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
 
             <Button
               className="w-full"
-              disabled={isGlobalLoading || !partition || !filePath || !hasFastbootDevice}
+              disabled={isGlobalLoading || !partition || !filePath}
               onClick={handleFlash}
             >
               {loadingAction === 'flash' ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+              ) : queuedAction?.type === 'flash' ? (
+                <Clock className="mr-2 h-4 w-4 shrink-0" />
               ) : (
                 <FileUp className="mr-2 h-4 w-4 shrink-0" />
               )}
-              Flash Partition
+              {queuedAction?.type === 'flash' && loadingAction !== 'flash'
+                ? 'Waiting for Device...'
+                : 'Flash Partition'}
             </Button>
           </CardContent>
         </Card>
@@ -474,7 +532,10 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => setSideloadFilePath('')}
+                        onClick={() => {
+                          setSideloadFilePath('');
+                          if (queuedAction?.type === 'sideload') setQueuedAction(null);
+                        }}
                         disabled={isGlobalLoading}
                       >
                         <X className="h-4 w-4" />
@@ -492,15 +553,19 @@ export function ViewFlasher({ activeView: _activeView }: { activeView: string })
 
             <Button
               className="w-full"
-              disabled={isGlobalLoading || !sideloadFilePath || !hasSideloadDevice}
+              disabled={isGlobalLoading || !sideloadFilePath}
               onClick={handleSideload}
             >
               {loadingAction === 'sideload' ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+              ) : queuedAction?.type === 'sideload' ? (
+                <Clock className="mr-2 h-4 w-4 shrink-0" />
               ) : (
                 <Package className="mr-2 h-4 w-4 shrink-0" />
               )}
-              Sideload Package
+              {queuedAction?.type === 'sideload' && loadingAction !== 'sideload'
+                ? 'Waiting for Device...'
+                : 'Sideload Package'}
             </Button>
           </CardContent>
         </Card>
