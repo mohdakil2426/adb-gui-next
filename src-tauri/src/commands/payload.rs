@@ -4,6 +4,18 @@ use log::{error, info};
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, State};
 
+#[cfg(feature = "remote_zip")]
+use serde::Serialize;
+
+/// Information about a remote payload file obtained via HEAD request.
+#[cfg(feature = "remote_zip")]
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemotePayloadInfo {
+    pub content_length: u64,
+    pub supports_ranges: bool,
+}
+
 #[tauri::command]
 pub async fn cleanup_payload_cache(payload_cache: State<'_, PayloadCache>) -> CmdResult<()> {
     info!("Cleaning up payload cache");
@@ -84,4 +96,30 @@ pub async fn list_payload_partitions_with_details(
         payload::list_payload_partitions_with_details(std::path::Path::new(&path), &payload_cache)
             .map_err(|error| error.to_string())
     })
+}
+
+// =============================================================================
+// Remote URL Payload Commands (feature: remote_zip)
+// =============================================================================
+
+/// Check if a remote URL supports HTTP range requests and get file size.
+#[cfg(feature = "remote_zip")]
+#[tauri::command]
+pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
+    info!("Checking remote payload URL: {}", url.trim());
+    let reader =
+        payload::HttpPayloadReader::new(url.trim().to_string()).await.map_err(|e| e.to_string())?;
+
+    Ok(RemotePayloadInfo {
+        content_length: reader.content_length(),
+        supports_ranges: reader.supports_ranges(),
+    })
+}
+
+/// List partitions from a remote payload URL.
+#[cfg(feature = "remote_zip")]
+#[tauri::command]
+pub async fn list_remote_payload_partitions(url: String) -> CmdResult<Vec<PartitionDetail>> {
+    info!("Listing remote payload partitions from {}", url.trim());
+    payload::list_remote_payload_partitions(url.trim().to_string()).await.map_err(|e| e.to_string())
 }

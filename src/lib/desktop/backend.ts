@@ -261,3 +261,23 @@ export function UninstallPackage(arg1: string): Promise<string> {
 export function WipeData(): Promise<void> {
   return call('wipe_data');
 }
+
+// =============================================================================
+// Remote URL Payload Commands
+// =============================================================================
+
+/**
+ * Check if a remote URL supports HTTP range requests and get file size.
+ * Returns error if the server doesn't support range requests.
+ */
+export function CheckRemotePayload(url: string): Promise<backend.RemotePayloadInfo> {
+  return call('check_remote_payload', { url });
+}
+
+/**
+ * List partition names and sizes from a remote payload URL.
+ * Downloads the payload manifest via HTTP range requests.
+ */
+export function ListRemotePayloadPartitions(url: string): Promise<Array<backend.PartitionDetail>> {
+  return call('list_remote_payload_partitions', { url });
+}

@@ -67,7 +67,12 @@ pub fn run() {
             commands::set_active_slot,
             commands::sideload_package,
             commands::uninstall_package,
-            commands::wipe_data
+            commands::wipe_data,
+            // Remote URL payload commands (feature: remote_zip)
+            #[cfg(feature = "remote_zip")]
+            commands::check_remote_payload,
+            #[cfg(feature = "remote_zip")]
+            commands::list_remote_payload_partitions
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

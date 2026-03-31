@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useCallback } from 'react';
+import React, { useEffect, useMemo, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Package,
@@ -14,6 +15,7 @@ import {
   FolderOutput,
   FileDown,
   ExternalLink,
+  Globe,
 } from 'lucide-react';
 import { cn, getFileName } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -30,9 +32,12 @@ import {
   ExtractPayload,
   OpenFolder,
   CleanupPayloadCache,
+  CheckRemotePayload,
+  ListRemotePayloadPartitions,
 } from '@/lib/desktop/backend';
 import { EventsOn } from '@/lib/desktop/runtime';
 import { DropZone } from '@/components/DropZone';
+import { RemoteUrlPanel, type ConnectionStatus } from '@/components/RemoteUrlPanel';
 
 // Format bytes to human-readable size
 const formatBytes = (bytes: number): string => {
@@ -103,6 +108,13 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     clearPartitionProgress,
     reset,
   } = usePayloadDumperStore();
+
+  // Remote URL state
+  const [mode, setMode] = useState<'local' | 'remote'>('local');
+  const [remoteUrl, setRemoteUrl] = useState('');
+  const [prefetch, setPrefetch] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
+  const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
 
   // Subscribe to real-time progress events from backend
   useEffect(() => {
@@ -178,6 +190,68 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     },
     [setStatus, setErrorMessage, setPartitions],
   );
+
+  // Handle remote URL connection check
+  const handleCheckUrl = useCallback(async () => {
+    if (!remoteUrl.trim()) return;
+
+    setConnectionStatus('checking');
+    setEstimatedSize(null);
+
+    try {
+      debugLog(`Checking remote URL: ${remoteUrl}`);
+      const info = await CheckRemotePayload(remoteUrl.trim());
+      if (info.supportsRanges) {
+        setConnectionStatus('ready');
+        setEstimatedSize(formatBytes(info.contentLength));
+        toast.success('URL verified - range requests supported');
+        useLogStore.getState().addLog(`URL verified: ${formatBytes(info.contentLength)}`, 'info');
+      } else {
+        setConnectionStatus('error');
+        toast.error('Server does not support range requests');
+        useLogStore.getState().addLog('Server does not support range requests', 'error');
+      }
+    } catch (error) {
+      setConnectionStatus('error');
+      toast.error(`Failed to check URL: ${error}`);
+      handleError('Check Remote URL', error);
+    }
+  }, [remoteUrl]);
+
+  // Load partitions from remote URL
+  const loadRemotePartitions = useCallback(async () => {
+    if (!remoteUrl.trim()) return;
+
+    setStatus('loading-partitions');
+    setErrorMessage('');
+    useLogStore.getState().addLog('Loading partitions from remote URL...', 'info');
+
+    try {
+      debugLog(`Loading remote partitions from: ${remoteUrl}`);
+      const partitionList = await ListRemotePayloadPartitions(remoteUrl.trim());
+      if (partitionList && partitionList.length > 0) {
+        setPartitions(
+          partitionList.map((p) => ({
+            name: p.name,
+            size: p.size,
+            selected: true,
+          })),
+        );
+        setPayloadPath(remoteUrl.trim()); // Store URL as payload path for remote mode
+        setStatus('ready');
+        toast.success(`Found ${partitionList.length} partitions`);
+        handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
+      } else {
+        setErrorMessage('No partitions found in remote payload');
+        setStatus('error');
+        useLogStore.getState().addLog('No partitions found in remote payload', 'error');
+      }
+    } catch (error) {
+      setErrorMessage(String(error));
+      setStatus('error');
+      handleError('Load Remote Partitions', error);
+    }
+  }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage]);
 
   // Handle payload file dropped via DropZone
   const handlePayloadDrop = useCallback(
@@ -331,6 +405,11 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
 
   const handleReset = () => {
     reset();
+    setMode('local');
+    setRemoteUrl('');
+    setPrefetch(false);
+    setConnectionStatus('idle');
+    setEstimatedSize(null);
     useLogStore.getState().addLog('Payload Dumper reset', 'info');
   };
 
@@ -363,18 +442,69 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {!payloadPath ? (
-            /* ── State: Empty — DropZone ── */
-            <DropZone
-              onFilesDropped={handlePayloadDrop}
-              onBrowse={handleSelectPayload}
-              acceptExtensions={['.bin', '.zip']}
-              rejectMessage="Only payload.bin or .zip files are accepted"
-              icon={FileArchive}
-              label="Drop payload.bin or OTA zip here"
-              browseLabel="Select Payload File"
-              sublabel="Accepts .bin and .zip files"
-              disabled={status === 'extracting' || status === 'loading-partitions'}
-            />
+            /* ── State: Empty — Tabs for Local/Remote ── */
+            <Tabs
+              value={mode}
+              onValueChange={(v) => setMode(v as 'local' | 'remote')}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="local" className="flex items-center gap-2">
+                  <FileArchive className="h-4 w-4" />
+                  Local File
+                </TabsTrigger>
+                <TabsTrigger value="remote" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Remote URL
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="local" className="mt-4">
+                <DropZone
+                  onFilesDropped={handlePayloadDrop}
+                  onBrowse={handleSelectPayload}
+                  acceptExtensions={['.bin', '.zip']}
+                  rejectMessage="Only payload.bin or .zip files are accepted"
+                  icon={FileArchive}
+                  label="Drop payload.bin or OTA zip here"
+                  browseLabel="Select Payload File"
+                  sublabel="Accepts .bin and .zip files"
+                  disabled={status === 'extracting' || status === 'loading-partitions'}
+                />
+              </TabsContent>
+
+              <TabsContent value="remote" className="mt-4">
+                <RemoteUrlPanel
+                  url={remoteUrl}
+                  onUrlChange={setRemoteUrl}
+                  prefetch={prefetch}
+                  onPrefetchChange={setPrefetch}
+                  connectionStatus={connectionStatus}
+                  estimatedSize={estimatedSize}
+                  onCheckUrl={handleCheckUrl}
+                  disabled={status === 'extracting' || status === 'loading-partitions'}
+                />
+                {connectionStatus === 'ready' && (
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={loadRemotePartitions}
+                    disabled={status === 'loading-partitions'}
+                  >
+                    {status === 'loading-partitions' ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading Partitions...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="mr-2 h-4 w-4" />
+                        Load Partitions from URL
+                      </>
+                    )}
+                  </Button>
+                )}
+              </TabsContent>
+            </Tabs>
           ) : status === 'loading-partitions' && partitions.length === 0 ? (
             /* ── State: Loading — stage indicator ── */
             <div className="flex flex-col items-center justify-center gap-4 py-12">
@@ -386,12 +516,14 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
               </div>
               <div className="flex flex-col items-center gap-1.5 text-center">
                 <p className="text-sm font-medium">
-                  {payloadPath.toLowerCase().endsWith('.zip')
-                    ? 'Extracting payload from ZIP...'
-                    : 'Parsing partition manifest...'}
+                  {mode === 'remote'
+                    ? 'Connecting to remote URL...'
+                    : payloadPath.toLowerCase().endsWith('.zip')
+                      ? 'Extracting payload from ZIP...'
+                      : 'Parsing partition manifest...'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate max-w-xs">
-                  {getFileName(payloadPath)}
+                  {mode === 'remote' ? remoteUrl : getFileName(payloadPath)}
                 </p>
               </div>
             </div>
@@ -402,8 +534,14 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
               <div className="rounded-lg bg-muted/30 border p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <FileArchive className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="text-sm font-medium truncate">{getFileName(payloadPath)}</span>
+                    {mode === 'remote' ? (
+                      <Globe className="h-4 w-4 shrink-0 text-primary" />
+                    ) : (
+                      <FileArchive className="h-4 w-4 shrink-0 text-primary" />
+                    )}
+                    <span className="text-sm font-medium truncate">
+                      {mode === 'remote' ? remoteUrl : getFileName(payloadPath)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <Tooltip>

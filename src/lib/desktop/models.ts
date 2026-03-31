@@ -46,4 +46,10 @@ export namespace backend {
     name: string;
     size: number;
   }
+
+  /** Information about a remote payload file obtained via HEAD request. */
+  export interface RemotePayloadInfo {
+    contentLength: number;
+    supportsRanges: boolean;
+  }
 }

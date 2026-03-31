@@ -107,7 +107,7 @@ pub fn list_payload_partitions_with_details(
 ///
 /// `mmap` is an `Arc`-wrapped memory map of the raw `payload.bin` file.
 /// Cloning is O(1) — all threads share the same OS page cache backing.
-pub(super) struct LoadedPayload {
+pub struct LoadedPayload {
     /// Memory-mapped view of `payload.bin`. Shared across extraction threads via `Arc::clone`.
     /// Derefs to `&[u8]`, so slice indexing works identically to the old `Vec<u8>` field.
     pub mmap: Arc<Mmap>,

@@ -11,9 +11,21 @@ mod extractor;
 mod parser;
 mod zip;
 
+#[cfg(feature = "remote_zip")]
+pub mod http;
+
+#[cfg(feature = "remote_zip")]
+pub mod remote;
+
 #[cfg(test)]
 mod tests;
 
 pub use extractor::{ExtractPayloadResult, PartitionDetail, extract_payload};
-pub use parser::{list_payload_partitions, list_payload_partitions_with_details};
+pub use parser::{LoadedPayload, list_payload_partitions, list_payload_partitions_with_details};
 pub use zip::PayloadCache;
+
+#[cfg(feature = "remote_zip")]
+pub use http::HttpPayloadReader;
+
+#[cfg(feature = "remote_zip")]
+pub use remote::{list_remote_payload_partitions, load_remote_payload};
