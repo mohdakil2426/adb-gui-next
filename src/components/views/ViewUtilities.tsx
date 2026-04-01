@@ -59,7 +59,7 @@ import { ActionButton } from '@/components/ActionButton';
 type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
 type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
 
-export function ViewUtilities({ activeView: _activeView }: { activeView: string }) {
+export function ViewUtilities() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [sentAction, setSentAction] = useState<string | null>(null);
 

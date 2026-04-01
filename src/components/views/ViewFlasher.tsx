@@ -158,7 +158,7 @@ function DropArea({
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
-export function ViewFlasher({ activeView: _activeView }: { activeView: string }) {
+export function ViewFlasher() {
   const [partition, setPartition] = useState('');
   const [filePath, setFilePath] = useState('');
   const [sideloadFilePath, setSideloadFilePath] = useState('');

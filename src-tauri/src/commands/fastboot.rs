@@ -74,6 +74,10 @@ pub async fn reboot(app: AppHandle, mode: String) -> CmdResult<()> {
 
 #[tauri::command]
 pub async fn run_fastboot_host_command(app: AppHandle, command: String) -> CmdResult<String> {
+    let command = command.trim().to_string();
+    if command.is_empty() {
+        return Err("Fastboot host command is empty.".into());
+    }
     info!("Running fastboot command: {}", command);
     tokio::task::spawn_blocking(move || {
         let args = split_args(&command);

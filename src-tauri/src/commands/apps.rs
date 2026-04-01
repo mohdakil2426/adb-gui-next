@@ -2,11 +2,7 @@ use crate::CmdResult;
 use crate::helpers::run_binary_command;
 use log::{debug, info};
 use serde::Serialize;
-use std::{
-    fs, io,
-    path::Path,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::{fs, io, path::Path};
 use tauri::AppHandle;
 
 #[derive(Debug, Serialize, Default)]
@@ -98,11 +94,9 @@ fn install_apks(app: &AppHandle, apks_path: &str) -> CmdResult<String> {
     let file = fs::File::open(apks_path).map_err(|e| e.to_string())?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
 
-    let temp_dir = std::env::temp_dir().join(format!(
-        "adb-gui-next-apks-{}",
-        SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis()
-    ));
-    fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+    // Use tempfile::TempDir for crash-safe cleanup
+    let temp_dir = tempfile::TempDir::new().map_err(|e| e.to_string())?;
+    let temp_path = temp_dir.path().to_path_buf();
 
     let mut extracted = Vec::new();
 
@@ -116,7 +110,7 @@ fn install_apks(app: &AppHandle, apks_path: &str) -> CmdResult<String> {
             .file_name()
             .and_then(|v| v.to_str())
             .ok_or_else(|| "Invalid APK entry name.".to_string())?;
-        let target = temp_dir.join(file_name);
+        let target = temp_path.join(file_name);
         let mut output = fs::File::create(&target).map_err(|e| e.to_string())?;
         io::copy(&mut entry, &mut output).map_err(|e| e.to_string())?;
         extracted.push(target);
@@ -131,6 +125,7 @@ fn install_apks(app: &AppHandle, apks_path: &str) -> CmdResult<String> {
     let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
 
     let result = run_binary_command(app, "adb", &arg_refs);
-    let _ = fs::remove_dir_all(&temp_dir);
+    // TempDir auto-cleans on drop (when temp_dir goes out of scope)
+    drop(temp_dir);
     result
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
@@ -264,9 +264,9 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
 
               <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
                 <div className="max-h-75 overflow-y-auto p-1">
-                  {apkPaths.map((path, idx) => (
+                  {apkPaths.map((path) => (
                     <div
-                      key={idx}
+                      key={path}
                       className="group relative flex items-center justify-between rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
                     >
                       <div className="flex items-center min-w-0 flex-1 mr-2">
@@ -278,9 +278,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                         size="icon"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive hover:bg-transparent"
                         onClick={() => {
-                          const newPaths = [...apkPaths];
-                          newPaths.splice(idx, 1);
-                          setApkPaths(newPaths);
+                          setApkPaths((prev) => prev.filter((p) => p !== path));
                         }}
                         disabled={isInstalling}
                       >

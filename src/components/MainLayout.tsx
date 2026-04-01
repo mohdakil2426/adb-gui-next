@@ -127,13 +127,13 @@ export function MainLayout() {
       case VIEWS.FILES:
         return <ViewFileExplorer activeView={activeView} />;
       case VIEWS.FLASHER:
-        return <ViewFlasher activeView={activeView} />;
+        return <ViewFlasher />;
       case VIEWS.UTILS:
-        return <ViewUtilities activeView={activeView} />;
+        return <ViewUtilities />;
       case VIEWS.PAYLOAD:
-        return <ViewPayloadDumper activeView={activeView} />;
+        return <ViewPayloadDumper />;
       case VIEWS.ABOUT:
-        return <ViewAbout activeView={activeView} />;
+        return <ViewAbout />;
       default:
         return <ViewDashboard activeView={activeView} />;
     }

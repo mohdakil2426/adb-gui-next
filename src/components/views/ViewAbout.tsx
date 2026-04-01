@@ -1,9 +1,8 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Globe, Heart, Code2, Rocket, Smartphone } from 'lucide-react';
 import { BrowserOpenURL } from '../../lib/desktop/runtime';
 
-export function ViewAbout({ activeView: _activeView }: { activeView: string }) {
+export function ViewAbout() {
   const openLink = (url: string) => {
     BrowserOpenURL(url);
   };

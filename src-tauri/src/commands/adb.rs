@@ -5,6 +5,21 @@ use tauri::AppHandle;
 
 const DEFAULT_ADB_PORT: &str = "5555";
 
+/// Shell metacharacters that can chain commands or inject code.
+const SHELL_METACHARACTERS: &[char] =
+    &[';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', '\n', '\r'];
+
+/// Validate a shell command string for dangerous metacharacters.
+/// Returns an error if the command contains characters that could enable command injection.
+fn validate_shell_command(command: &str) -> CmdResult<()> {
+    if let Some(ch) = command.chars().find(|c| SHELL_METACHARACTERS.contains(c)) {
+        return Err(format!(
+            "Shell command contains potentially dangerous character '{ch}'. For safety, command chaining (;, |, &&, etc.) is not permitted through this interface."
+        ));
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn connect_wireless_adb(app: AppHandle, ip: String, port: String) -> CmdResult<String> {
     let address = format!("{}:{}", ip.trim(), default_if_empty(&port, DEFAULT_ADB_PORT));
@@ -56,6 +71,10 @@ pub async fn enable_wireless_adb(app: AppHandle, port: String) -> CmdResult<Stri
 /// Runs on a blocking thread — user shell commands can run indefinitely.
 #[tauri::command]
 pub async fn run_adb_host_command(app: AppHandle, command: String) -> CmdResult<String> {
+    let command = command.trim().to_string();
+    if command.is_empty() {
+        return Err("ADB host command is empty.".into());
+    }
     info!("Running ADB host command: {}", command);
     tokio::task::spawn_blocking(move || {
         let args = crate::helpers::split_args(&command);
@@ -74,6 +93,7 @@ pub async fn run_shell_command(app: AppHandle, command: String) -> CmdResult<Str
     if command.is_empty() {
         return Err("Shell command is empty.".into());
     }
+    validate_shell_command(&command)?;
     info!("Running shell command: {}", command);
     tokio::task::spawn_blocking(move || run_binary_command(&app, "adb", &["shell", &command]))
         .await

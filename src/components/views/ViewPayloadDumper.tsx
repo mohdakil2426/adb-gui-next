@@ -38,15 +38,7 @@ import {
 import { EventsOn } from '@/lib/desktop/runtime';
 import { DropZone } from '@/components/DropZone';
 import { RemoteUrlPanel, type ConnectionStatus } from '@/components/RemoteUrlPanel';
-
-// Format bytes to human-readable size
-const formatBytes = (bytes: number): string => {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+import { formatBytesNum } from '@/lib/utils';
 
 // Extraction progress indicator using shadcn Progress
 function ExtractionProgressBar({
@@ -79,7 +71,7 @@ function ExtractionProgressBar({
   );
 }
 
-export function ViewPayloadDumper({ activeView: _activeView }: { activeView: string }) {
+export function ViewPayloadDumper() {
   // Use Zustand store for state persistence
   const {
     payloadPath,
@@ -203,9 +195,11 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
       const info = await CheckRemotePayload(remoteUrl.trim());
       if (info.supportsRanges) {
         setConnectionStatus('ready');
-        setEstimatedSize(formatBytes(info.contentLength));
+        setEstimatedSize(formatBytesNum(info.contentLength));
         toast.success('URL verified - range requests supported');
-        useLogStore.getState().addLog(`URL verified: ${formatBytes(info.contentLength)}`, 'info');
+        useLogStore
+          .getState()
+          .addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
       } else {
         setConnectionStatus('error');
         toast.error('Server does not support range requests');
@@ -620,7 +614,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                 <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                   {partitions.length > 0 && (
                     <span>
-                      {partitions.length} partitions &bull; {formatBytes(totalPayloadSize)} total
+                      {partitions.length} partitions &bull; {formatBytesNum(totalPayloadSize)} total
                     </span>
                   )}
                   {effectiveOutputPath && (
@@ -643,7 +637,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     <span className="text-xs text-muted-foreground">
                       {selectedCount}/{partitions.length} selected
                       {hasCompletedPartitions && ` \u2022 ${completedPartitions.size} extracted`}
-                      {toExtractCount > 0 && ` \u2022 ${formatBytes(toExtractSize)} to extract`}
+                      {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
                     </span>
                     <Button
                       variant="ghost"
@@ -773,7 +767,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                                   : 'text-muted-foreground',
                               )}
                             >
-                              {formatBytes(partition.size)}
+                              {formatBytesNum(partition.size)}
                             </span>
                           </div>
                         );
@@ -813,7 +807,7 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
                     <>
                       <Download className="mr-2 h-4 w-4" />
                       {toExtractCount > 0
-                        ? `Extract (${toExtractCount}) \u2014 ${formatBytes(toExtractSize)}`
+                        ? `Extract (${toExtractCount}) \u2014 ${formatBytesNum(toExtractSize)}`
                         : selectedCount > 0
                           ? 'Already Extracted'
                           : 'Select Partitions'}

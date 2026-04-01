@@ -61,8 +61,6 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   });
   const watchedIp = wirelessForm.watch('ip');
 
-  const isRefreshingDevices = false; // Polling handled centrally in MainLayout
-
   const refreshDevices = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
   }, [queryClient]);
@@ -170,7 +168,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           serial: device.serial,
           status: device.status,
         }))}
-        isLoading={isRefreshingDevices}
+        isLoading={false}
         onRefresh={refreshDevices}
         onEdit={(serial) => {
           const device = queriedDevices.find((d) => d.serial === serial);

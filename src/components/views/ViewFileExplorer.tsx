@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
@@ -58,7 +58,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import { DirectoryTree } from '@/components/DirectoryTree';
-import { cn } from '@/lib/utils';
+import { cn, formatBytes } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   Loader2,
@@ -104,17 +104,6 @@ const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
-
-/** Format raw byte count string into human-readable size. */
-function formatBytes(raw: string): string {
-  const n = parseInt(raw, 10);
-  if (isNaN(n) || raw === '') return raw;
-  if (n === 0) return '0 B';
-  if (n < 1_024) return `${n} B`;
-  if (n < 1_048_576) return `${(n / 1_024).toFixed(1)} KB`;
-  if (n < 1_073_741_824) return `${(n / 1_048_576).toFixed(1)} MB`;
-  return `${(n / 1_073_741_824).toFixed(1)} GB`;
-}
 
 /** Sort a file list by field + direction, always keeping dirs before files. */
 function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir): FileEntry[] {
@@ -334,14 +323,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         // Discard stale results — a newer request has already been dispatched.
         if (requestId !== loadRequestIdRef.current) return;
         // Raw sort only for initial load; table may re-sort via sortField/sortDir
-        files.sort((a, b) => {
+        const sorted = [...files].sort((a, b) => {
           const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
           const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
           if (aIsDir && !bIsDir) return -1;
           if (!aIsDir && bIsDir) return 1;
           return a.name.localeCompare(b.name);
         });
-        setFileList(files);
+        setFileList(sorted);
         setLoadError(null);
         setCurrentPath(targetPath);
         currentPathRef.current = targetPath;
