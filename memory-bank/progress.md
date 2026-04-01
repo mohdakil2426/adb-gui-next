@@ -43,7 +43,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
   - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
   - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
-- Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing)
+- Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing), `RemoteUrlPanel`
 - `getFileName()` utility in `utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 
@@ -59,7 +59,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `CheckboxItem` shared component used in AppManager + PayloadDumper
 - `EmptyState` shared component used in AppManager
 
-### Backend (28 Tauri Commands)
+### Backend (30 Tauri Commands)
 
 | Category | Commands |
 |----------|----------|
@@ -70,6 +70,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
+| Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)* — now in default features |
 
 ### Payload Dumper
 
@@ -81,6 +82,13 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - Real-time per-operation `payload:progress` Tauri events from inside threads
 - SHA-256 operation checksum verification
 - Cleans up cached temp files on demand
+- **Remote URL support** (now in default features, no feature flag required):
+  - HTTP range requests for efficient partial downloads
+  - `HttpPayloadReader` with retry logic (3 retries, exponential backoff)
+  - Remote URL panel with connection status display
+  - Tabs UI for Local/Remote mode switching
+  - **Prefetch mode** (`prefetch=true`): download full file, then mmap extract — best for slow/high-latency connections
+  - **Direct mode** (`prefetch=false`): fetch manifest + HTTP ranges on-demand — starts extraction immediately
 - **UI**: 3-zone layout (file banner + adaptive partition table + sticky action footer)
 - **Adaptive columns**: 3-col pre-extraction, 4-col during/after extraction (`[28px_0.8fr_5fr_72px]`)
 - **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
@@ -119,18 +127,21 @@ src-tauri/src/
 │   ├── files.rs — list_files, push_file, pull_file, delete_files, rename_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
-│   └── payload.rs — payload command wrappers
+│   └── payload.rs — payload command wrappers + remote URL commands
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
     ├── parser.rs — CrAU header parsing, protobuf decoding
     ├── extractor.rs — partition extraction with SHA-256 verification
     ├── zip.rs — ZIP payload handling and caching
+    ├── http.rs — HTTP range request support (remote_zip feature)
+    ├── remote.rs — Remote payload loading (remote_zip feature)
     └── tests.rs — 5 payload tests
 ```
 
 ## Documentation
 
 - `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
+- `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
 - `docs/rust-audit-report.md` — Code quality audit
 - `docs/rust-performance-research.md` — Performance optimization research
 
@@ -151,6 +162,7 @@ src-tauri/src/
 |----------|------|-------|
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
+| Medium | Test remote URL extraction with real URLs | Need to verify HTTP range requests work |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form (datalist approach works well for now) |
 | Low | Adopt EmptyState in remaining views | Dashboard empty device list |
@@ -166,6 +178,9 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation in `commands/payload.rs`, unreachable fixes in `http.rs`, `impl ToString` param, field docs in `remote.rs`, clippy cast cleanup, `remote_zip` added to default feature in `Cargo.toml`. All feature-gated code now active by default. |
+| 2026-04-01 | 0.1.0 | Payload Audit: Fixed temp file leak in `extract_remote_prefetch()`. `PayloadCache::read_payload()` marked `#[allow(dead_code)]`. Audit vs `payload-dumper-rust` reference confirmed full Remote URL, Prefetch, Retry, Parallel extraction implementation. |
+| 2026-04-01 | 0.1.0 | Payload Dumper: Remote URL extraction with HTTP range requests. Optional `remote_zip` feature flag. Tabs UI for Local/Remote mode. Connection status display. |
 | 2026-03-31 | 0.1.0 | Flasher: Action queue system for bootloop recovery — buttons enabled when file selected, actions queue and auto-execute when device connects. Visual feedback with Clock icon + "Waiting for Device..." text. Clear queue on file clear. |
 | 2026-03-29 | 0.1.0 | Utilities View UX Overhaul: `ActionButton` component with 4-state lifecycle (idle, loading, sent, disabled), framer-motion micro-animations, semantic success glows, press scale. Centralized and namespaced `actionId`s for separated ADB/Fastboot rendering. UI grid bugfixes and tooltip cleanups. |
 | 2026-03-27 | 0.1.0 | Flasher overhaul: async flash_partition/wipe_data (spawn_blocking), DropArea with position-based hit-testing, partition datalist suggestions, loading mutex, centralized error handling. DropZone.tsx: position-aware hit-testing fix (project-wide). runtime.ts: onHover now passes file paths. |

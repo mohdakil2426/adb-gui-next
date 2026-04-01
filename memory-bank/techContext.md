@@ -49,6 +49,8 @@
 | which | 8.x | Binary lookup |
 | tempfile | 3.x | Streaming ZIP extraction to temp files |
 | anyhow | 1.x | Error handling |
+| reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking` features (default feature: remote_zip) |
+| futures-util | 0.3 | Async utilities (default feature: remote_zip) |
 
 ## Tooling
 
@@ -177,4 +179,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-03-26 (File Explorer multi-select, delete_files, rename_file commands)
+- **Last Updated**: 2026-04-01 (Remote URL payload extraction, HTTP range requests)

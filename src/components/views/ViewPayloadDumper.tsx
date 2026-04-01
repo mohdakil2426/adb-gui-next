@@ -361,7 +361,12 @@ export function ViewPayloadDumper({ activeView: _activeView }: { activeView: str
     try {
       // Use previously created outputDir if available, otherwise use user-selected outputPath
       const targetOutputPath = outputDir || outputPath;
-      const result = await ExtractPayload(payloadPath, targetOutputPath, partitionsToExtract);
+      const result = await ExtractPayload(
+        payloadPath,
+        targetOutputPath,
+        partitionsToExtract,
+        mode === 'remote' ? prefetch : undefined,
+      );
 
       if (result.success) {
         // Add new files to existing extracted files

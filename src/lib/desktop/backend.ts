@@ -52,11 +52,13 @@ export function ExtractPayload(
   arg1: string,
   arg2: string,
   arg3: Array<string>,
+  prefetch?: boolean,
 ): Promise<backend.ExtractPayloadResult> {
   return call('extract_payload', {
     payloadPath: arg1,
     outputDir: arg2,
     selectedPartitions: arg3,
+    prefetch: prefetch ?? null,
   });
 }
 

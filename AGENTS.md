@@ -5,7 +5,7 @@
 
 **Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read ALL files for deep project understanding. **NEVER SKIP THIS STEP.**
 
-**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standard and best practice documented below. No exceptions, no shortcuts, no lazy work, full efforts. Respect project patterns, shared contracts, and existing code style consistency.
+**RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standard and best practice documented below. No exceptions, no shortcuts, no lazy work, full comprehensive efforts. Respect project patterns, shared contracts, and existing code, ui, colors, patterns style consistency.
 
 ## Architecture (Tauri 2 + React + Rust)
 

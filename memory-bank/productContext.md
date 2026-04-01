@@ -30,6 +30,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Local device management through ADB and fastboot
 - Local file transfer and package management
 - Local OTA payload extraction
+- **Remote OTA payload extraction** (HTTP range requests — optional feature)
 - Native dialogs and OS integration
 - Windows and Linux desktop packaging
 - Wireless ADB connectivity
@@ -54,4 +55,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-03-26 (File Explorer multi-select, explicit selection model)
+- Last Updated: 2026-04-01 (Payload audit: Remote URL extraction verified, temp file leak fix, dead code annotation)

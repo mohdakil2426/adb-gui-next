@@ -137,16 +137,29 @@ Three-tier fallback for ADB/fastboot binaries:
 
 ### 5. Payload Extraction
 
-`src-tauri/src/payload/` handles OTA payload.bin (4 modules):
+`src-tauri/src/payload/` handles OTA payload.bin (7 modules):
 - `parser.rs` — CrAU header parsing, protobuf manifest decoding; returns `LoadedPayload { mmap: Arc<Mmap>, manifest, data_offset }`
 - `extractor.rs` — Streaming decompression (XZ/BZ2/Zstd/Replace) with 256 KiB stack buffer; SHA-256 verification; parallel extraction via `std::thread::scope`
 - `zip.rs` — Streaming ZIP extraction to `NamedTempFile`; caches path only (not bytes)
+- `http.rs` — HTTP range request support; `HttpPayloadReader` with async + sync range reads; `Clone`; lazy blocking client; retry logic (remote_zip feature)
+- `remote.rs` — Remote payload loading and extraction (remote_zip feature):
+  - `extract_remote_prefetch()` — download full → mmap extract (best for slow connections)
+  - `extract_remote_direct()` — manifest + HTTP ranges on-demand (starts immediately)
+  - `list_remote_payload_partitions()` — manifest-only fetch for partition listing
 - `tests.rs` — 5 payload tests
 
 **Memory model:**
 - `Arc<memmap2::Mmap>` — each thread gets an 8-byte Arc clone (not a 4–6 GB Vec clone)
 - ZIP streamed to disk via `std::io::copy` + `NamedTempFile` — never buffered in RAM
 - `Option<AppHandle>` — tests pass `None`; production passes `Some(app)` for live events
+
+**Remote URL (remote_zip feature):**
+- `HttpPayloadReader` — HEAD request to check range support, GET with Range header for partial downloads
+- `read_range_sync()` — synchronous HTTP range reads for extraction threads (uses `reqwest::blocking`)
+- `extract_remote_prefetch` — download full payload to temp, then mmap + parallel extraction
+- `extract_remote_direct` — fetch manifest + HTTP ranges per-operation on-demand
+- Retry logic: 3 retries with exponential backoff (1s, 2s, 4s delays)
+- Feature flag: `pnpm tauri build --features remote_zip`
 
 ### 6. Error Handling
 
@@ -280,7 +293,8 @@ src/components/
 ├── LoadingButton.tsx        # Shared button with loading spinner
 ├── SectionHeader.tsx        # Shared section sub-header (Utilities, PayloadDumper)
 ├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
-├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command)
+├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
+├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command, Tabs)
 └── views/                   # 7 feature views (Dashboard, AppManager, FileExplorer,
                              #   Flasher, Utilities, PayloadDumper, About)
 ```

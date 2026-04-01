@@ -76,8 +76,7 @@ impl PayloadCache {
 
     /// Legacy helper used by tests and `parser.rs` listing functions.
     ///
-    /// Resolves the payload path and reads its raw bytes. Prefer `get_payload_path` for
-    /// extraction flows where the mmap approach is used.
+    #[allow(dead_code)]
     pub fn read_payload(&self, payload_path: &Path) -> Result<Vec<u8>> {
         let path = self.get_payload_path(payload_path)?;
         fs::read(&path).map_err(|e| anyhow::anyhow!("failed to read payload: {e}"))

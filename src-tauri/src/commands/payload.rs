@@ -1,7 +1,7 @@
 use crate::CmdResult;
 use crate::payload::{self, ExtractPayloadResult, PartitionDetail, PayloadCache};
 use log::{error, info};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tauri::{AppHandle, State};
 
 #[cfg(feature = "remote_zip")]
@@ -29,25 +29,93 @@ pub async fn extract_payload(
     payload_path: String,
     output_dir: String,
     selected_partitions: Vec<String>,
+    #[allow(unused_variables)] prefetch: Option<bool>,
 ) -> CmdResult<ExtractPayloadResult> {
+    let payload_path = payload_path.trim();
+    let output_dir = if output_dir.trim().is_empty() {
+        None
+    } else {
+        let dir = PathBuf::from(output_dir.trim());
+        // Ensure the output directory exists, then canonicalize to prevent
+        // path traversal (e.g., writing outside the intended directory).
+        std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create output dir: {e}"))?;
+        Some(dir.canonicalize().map_err(|e| format!("Cannot resolve output dir: {e}"))?)
+    };
+
+    #[cfg(feature = "remote_zip")]
+    {
+        // Remote URL — route to dedicated remote extraction
+        if payload_path.starts_with("http://") || payload_path.starts_with("https://") {
+            let is_prefetch = prefetch.unwrap_or(false);
+            info!(
+                "Extracting from remote URL (prefetch={}): {} (partitions: {})",
+                is_prefetch,
+                payload_path,
+                selected_partitions.join(", ")
+            );
+
+            let result = if is_prefetch {
+                payload::extract_remote_prefetch(
+                    payload_path.to_string(),
+                    output_dir.as_deref(),
+                    &selected_partitions,
+                    Some(app),
+                )
+                .await
+            } else {
+                payload::extract_remote_direct(
+                    payload_path.to_string(),
+                    output_dir.as_deref(),
+                    &selected_partitions,
+                    Some(app),
+                )
+                .await
+            };
+
+            return match result {
+                Ok(result) => {
+                    info!("Remote extraction completed: {} files", result.extracted_files.len());
+                    Ok(result)
+                }
+                Err(e) => {
+                    error!("Remote extraction failed: {}", e);
+                    Ok(ExtractPayloadResult {
+                        success: false,
+                        output_dir: String::new(),
+                        extracted_files: Vec::new(),
+                        error: Some(e.to_string()),
+                    })
+                }
+            };
+        }
+    }
+
+    // Local file path
     info!(
         "Extracting payload from {} (partitions: {})",
-        payload_path.trim(),
+        payload_path,
         selected_partitions.join(", ")
     );
-    let output_dir = (!output_dir.trim().is_empty()).then(|| PathBuf::from(output_dir.trim()));
 
-    // Use `block_in_place` to run the synchronous extraction on the current async thread
-    // without starving the Tokio runtime. This is preferred over `spawn_blocking` here
-    // because `State<'_, PayloadCache>` does not have a `'static` bound.
+    // For local paths, validate and canonicalize before passing to extractor
+    let local_path = std::path::Path::new(payload_path);
+    if !local_path.exists() {
+        return Ok(ExtractPayloadResult {
+            success: false,
+            output_dir: String::new(),
+            extracted_files: Vec::new(),
+            error: Some(format!("File not found: {payload_path}")),
+        });
+    }
+
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
-            Path::new(payload_path.trim()),
+            local_path,
             output_dir.as_deref(),
             &selected_partitions,
             &payload_cache,
             Some(app),
-            |_, _, _, _| {}, // Per-partition completion emitted via AppHandle inside threads
+            |_, _, _, _| {},
         )
     });
 
@@ -60,13 +128,13 @@ pub async fn extract_payload(
             );
             Ok(result)
         }
-        Err(error) => {
-            error!("Payload extraction failed: {}", error);
+        Err(e) => {
+            error!("Payload extraction failed: {}", e);
             Ok(ExtractPayloadResult {
                 success: false,
                 output_dir: String::new(),
                 extracted_files: Vec::new(),
-                error: Some(error.to_string()),
+                error: Some(e.to_string()),
             })
         }
     }

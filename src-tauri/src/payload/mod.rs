@@ -28,4 +28,6 @@ pub use zip::PayloadCache;
 pub use http::HttpPayloadReader;
 
 #[cfg(feature = "remote_zip")]
-pub use remote::{list_remote_payload_partitions, load_remote_payload};
+pub use remote::{
+    RemotePayload, extract_remote_direct, extract_remote_prefetch, list_remote_payload_partitions,
+};

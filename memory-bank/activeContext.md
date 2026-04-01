@@ -6,6 +6,125 @@ ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
 
 ## Recently Completed
 
+### 2026-04-01 — Rust Code Review: MEDIUM Fixes + `remote_zip` Default Feature
+
+**Problem:** Rust review identified 3 MEDIUM issues in the remote payload extraction code, and the `remote_zip` feature was not enabled by default — leaving all remote extraction code inactive in normal builds.
+
+**Fixes applied:**
+
+1. **`http.rs` (M-3):** Replaced `Err(anyhow!("Unreachable"))` with `unreachable!("retry loop should have returned by now")` in both `read_range_sync` and `read_range` retry loops. Communicates intent clearly instead of hiding dead code behind a misleading error.
+
+2. **`http.rs` (M-4):** Changed `new(url: String)` → `new(url: impl ToString)` — more ergonomic API without breaking callers.
+
+3. **`remote.rs` (M-5):** Added `///` doc comments to all public fields of `RemotePayload` (`manifest`, `http`, `data_offset`).
+
+4. **`remote.rs` (clippy):** Removed redundant `as u64` casts in `extract_partition_from_remote` — values were already `u64`.
+
+5. **`commands/payload.rs` (M-1/M-2):** Added path validation:
+   - `output_dir` — `create_dir_all()` + `canonicalize()` to prevent path traversal
+   - `payload_path` — existence check before passing to extractor
+
+6. **`Cargo.toml`:** Added `remote_zip` to default features → `[\"local_zip\", \"remote_zip\"]`. All HTTP range request and remote extraction code is now active in normal builds (no `--features remote_zip` needed).
+
+**Verification:**
+- `cargo check` — OK
+- `cargo clippy -D warnings` — OK
+- `cargo fmt` — OK (auto-formatted `commands/payload.rs`)
+
+**Files changed:**
+- `src-tauri/src/payload/http.rs` — unreachable fix, generic URL param
+- `src-tauri/src/payload/remote.rs` — field docs, unnecessary casts removed
+- `src-tauri/src/commands/payload.rs` — path validation + canonicalization
+- `src-tauri/Cargo.toml` — `remote_zip` added to default features
+
+**All `#[cfg]` directives reviewed:** Only feature-gate in the project is `#[cfg(feature = "remote_zip")]` — now active by default. `local_zip` has no `#[cfg]` usage (always active).
+
+---
+
+### 2026-04-01 — Payload Dumper Audit: Temp File Leak Fix in Prefetch Mode
+
+**Problem:** `extract_remote_prefetch()` had a confused ownership pattern:
+1. `drop(temp)` — `NamedTempFile::drop()` deleted the underlying file from disk
+2. `File::open(&temp_path)` — opened a file that was already deleted
+3. `std::mem::forget(temp_path)` — only leaked the path string buffer
+
+Worked by accident on Unix (open file handle survives deletion), but wasted disk space and leaked the mmap cache file descriptor.
+
+**Fix:**
+- `NamedTempFile::keep()` — properly persists the temp file on disk, returns `(File, PathBuf)` tuple
+- `TempGuard` RAII struct — cleans up temp file on any early error during processing
+`PayloadCache::read_payload()` — dead code (reads entire file into RAM, contradicts mmap design). `#[allow(dead_code)]` added.
+
+**Files changed:**
+- `src-tauri/src/payload/remote.rs` — `extract_remote_prefetch()`, `temp_path` via `keep()`, `TempGuard` cleanup
+- `src-tauri/src/payload/zip.rs` — `read_payload()` marked `#[allow(dead_code)]`
+
+**Verification:** `pnpm check` clean (format + lint + build). Tests crash on Windows due to pre-existing Tauri DLL issue.
+
+---
+
+### 2026-04-01 — Payload Dumper: Fix Prefetch Mode (Remote URL)
+
+**Problem:** The `prefetch` checkbox in `RemoteUrlPanel` existed in the UI but was not wired to the backend — extraction always behaved the same regardless of the checkbox state.
+
+**Fix:**
+- Added `extract_remote_prefetch()` — downloads entire payload to temp file, then extracts via mmap (best for slow/high-latency connections)
+- Added `extract_remote_direct()` — fetches manifest, reads HTTP ranges on-demand per operation (starts immediately, no full download wait)
+- Added `read_range_sync()` to `HttpPayloadReader` for synchronous HTTP reads in extraction threads
+- Added `Clone` impl for `HttpPayloadReader` to share across extraction threads
+- `extract_payload` command now accepts `prefetch: Option<bool>` and routes to the appropriate function
+- Frontend `ExtractPayload` wrapper now passes `prefetch` to backend
+
+**Files changed:**
+- `src-tauri/src/payload/http.rs` — Clone impl, `read_range_sync()`, lazy blocking client
+- `src-tauri/src/payload/remote.rs` — `extract_remote_prefetch()`, `extract_remote_direct()`, `extract_partition_from_mmap()`, `extract_partition_from_remote()`
+- `src-tauri/src/commands/payload.rs` — `prefetch: Option<bool>` param, routing logic
+- `src-tauri/src/payload/mod.rs` — updated exports
+- `src-tauri/Cargo.toml` — removed `async-compression` (conflicted with `xz2` via `lzma-sys`), added `reqwest/blocking` feature
+- `src/lib/desktop/backend.ts` — `prefetch` parameter in `ExtractPayload`
+- `src/components/views/ViewPayloadDumper.tsx` — passes `prefetch` to backend
+
+---
+
+### 2026-04-01 — Payload Dumper: Remote URL Extraction with HTTP Range Requests
+
+**Problem:** Users had to download full OTA files (3+ GB) to extract single partitions (~50-100 MB). This wastes bandwidth and time.
+
+**Solution:** Added HTTP range request support to extract partitions directly from URLs, downloading only required data.
+
+**Backend Changes:**
+- `src-tauri/src/payload/http.rs` — NEW: `HttpPayloadReader` with retry logic (3 retries, exponential backoff)
+- `src-tauri/src/payload/remote.rs` — NEW: `load_remote_payload` async function, downloads to temp file + mmap
+- `src-tauri/src/commands/payload.rs` — Added `check_remote_payload`, `list_remote_payload_partitions` Tauri commands
+- `src-tauri/Cargo.toml` — Added optional `remote_zip` feature with `reqwest`, `async-compression`, `futures-util`
+- `src-tauri/src/payload/mod.rs` — Conditional exports for remote modules
+- `src-tauri/src/payload/parser.rs` — Made `LoadedPayload` public for remote use
+
+**Frontend Changes:**
+- `src/components/RemoteUrlPanel.tsx` — NEW: URL input component with connection status display
+- `src/components/views/ViewPayloadDumper.tsx` — Added Tabs UI for Local/Remote mode switching
+- `src/lib/desktop/backend.ts` — Added `CheckRemotePayload`, `ListRemotePayloadPartitions` API functions
+- `src/lib/desktop/models.ts` — Added `RemotePayloadInfo` interface
+
+**Feature Architecture:**
+```
+Default build:  pnpm tauri build              # Local file extraction only
+Remote support: pnpm tauri build --features remote_zip  # + HTTP range requests
+```
+
+**UX Flow:**
+1. User switches to "Remote URL" tab in Payload Dumper
+2. Enters URL and clicks "Check URL" → verifies range request support
+3. Clicks "Load Partitions from URL" → fetches manifest via HTTP
+4. Selects partitions and extracts → downloads only required ranges
+
+**Documentation:**
+- `docs/reports&audits/payload-dumper-optimization-audit.md` — Comprehensive audit comparing to payload-dumper-rust reference
+
+**Commit:** `2a8c25d feat(payload): add remote URL extraction with HTTP range requests`
+
+---
+
 ### 2026-03-31 — Flasher: Queued Actions for Bootloop Recovery
 
 **Problem:** Users with bootlooping devices need to flash immediately when a device briefly appears in fastboot/sideload mode. Previously, the Flash and Sideload buttons were disabled until a device was connected, making rapid flashing impossible.

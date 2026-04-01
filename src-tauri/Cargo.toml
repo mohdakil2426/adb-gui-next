@@ -37,14 +37,13 @@ zip = "8.4.0"
 tauri-plugin-clipboard-manager = "2"
 
 # Optional: Remote URL support for payload extraction
-reqwest = { version = "0.12", features = ["rustls-tls-webpki-roots", "stream", "http2"], optional = true }
-async-compression = { version = "0.4", features = ["zstd", "xz", "bzip2", "tokio"], optional = true }
+reqwest = { version = "0.13", features = ["rustls", "stream", "http2", "blocking"], optional = true }
 futures-util = { version = "0.3", optional = true }
 
 [features]
-default = ["local_zip"]
+default = ["local_zip", "remote_zip"]
 local_zip = []
-remote_zip = ["dep:reqwest", "dep:async-compression", "dep:futures-util"]
+remote_zip = ["dep:reqwest", "dep:futures-util"]
 
 [profile.dev]
 incremental = true
