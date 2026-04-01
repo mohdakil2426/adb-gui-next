@@ -107,6 +107,8 @@ export function ViewPayloadDumper() {
   const [prefetch, setPrefetch] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
+  // Ref to track if loading should be cancelled (avoids stale closure issues)
+  const cancelLoadingRef = React.useRef(false);
 
   // Subscribe to real-time progress events from backend
   useEffect(() => {
@@ -216,6 +218,7 @@ export function ViewPayloadDumper() {
   const loadRemotePartitions = useCallback(async () => {
     if (!remoteUrl.trim()) return;
 
+    cancelLoadingRef.current = false;
     setStatus('loading-partitions');
     setErrorMessage('');
     useLogStore.getState().addLog('Loading partitions from remote URL...', 'info');
@@ -223,7 +226,19 @@ export function ViewPayloadDumper() {
     try {
       debugLog(`Loading remote partitions from: ${remoteUrl}`);
       const partitionList = await ListRemotePayloadPartitions(remoteUrl.trim());
+
+      // Check if user cancelled during the async operation
+      if (cancelLoadingRef.current) {
+        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
+        setStatus('idle');
+        return;
+      }
+
       if (partitionList && partitionList.length > 0) {
+        // setPayloadPath must come BEFORE setPartitions: the store action resets
+        // partitions: [] as a side-effect (designed for new-file selection). Calling
+        // it after setPartitions would immediately wipe the list we just loaded.
+        setPayloadPath(remoteUrl.trim()); // Store URL as payload path for remote mode
         setPartitions(
           partitionList.map((p) => ({
             name: p.name,
@@ -231,7 +246,6 @@ export function ViewPayloadDumper() {
             selected: true,
           })),
         );
-        setPayloadPath(remoteUrl.trim()); // Store URL as payload path for remote mode
         setStatus('ready');
         toast.success(`Found ${partitionList.length} partitions`);
         handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
@@ -241,11 +255,25 @@ export function ViewPayloadDumper() {
         useLogStore.getState().addLog('No partitions found in remote payload', 'error');
       }
     } catch (error) {
+      // Don't show error if user cancelled
+      if (cancelLoadingRef.current) {
+        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
+        return;
+      }
       setErrorMessage(String(error));
       setStatus('error');
       handleError('Load Remote Partitions', error);
+    } finally {
+      cancelLoadingRef.current = false;
     }
   }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage]);
+
+  // Cancel loading partitions from remote URL
+  const handleCancelLoadPartitions = useCallback(() => {
+    cancelLoadingRef.current = true;
+    setStatus('idle');
+    useLogStore.getState().addLog('Cancelling partition loading...', 'info');
+  }, [setStatus]);
 
   // Handle payload file dropped via DropZone
   const handlePayloadDrop = useCallback(
@@ -314,7 +342,15 @@ export function ViewPayloadDumper() {
   };
 
   const handleRefreshPartitions = async () => {
-    if (payloadPath) {
+    if (!payloadPath) return;
+    // Remote mode: payloadPath holds the URL — use the remote loader
+    if (
+      mode === 'remote' ||
+      payloadPath.startsWith('http://') ||
+      payloadPath.startsWith('https://')
+    ) {
+      await loadRemotePartitions();
+    } else {
       await loadPartitions(payloadPath);
     }
   };
@@ -409,6 +445,7 @@ export function ViewPayloadDumper() {
     setPrefetch(false);
     setConnectionStatus('idle');
     setEstimatedSize(null);
+    cancelLoadingRef.current = false;
     useLogStore.getState().addLog('Payload Dumper reset', 'info');
   };
 
@@ -484,23 +521,23 @@ export function ViewPayloadDumper() {
                   disabled={status === 'extracting' || status === 'loading-partitions'}
                 />
                 {connectionStatus === 'ready' && (
-                  <Button
-                    className="mt-4 w-full"
-                    onClick={loadRemotePartitions}
-                    disabled={status === 'loading-partitions'}
-                  >
+                  <div className="mt-4 flex gap-2">
                     {status === 'loading-partitions' ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Loading Partitions...
-                      </>
+                      <Button
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={handleCancelLoadPartitions}
+                      >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Cancel Loading...
+                      </Button>
                     ) : (
-                      <>
+                      <Button className="w-full" onClick={loadRemotePartitions}>
                         <Globe className="mr-2 h-4 w-4" />
                         Load Partitions from URL
-                      </>
+                      </Button>
                     )}
-                  </Button>
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
