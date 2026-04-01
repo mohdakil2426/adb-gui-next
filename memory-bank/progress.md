@@ -26,7 +26,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - Toast notifications via sonner
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
-- App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking
+- App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking, stable React keys for removable APK list
 - **File Explorer (full-featured dual-pane)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
   - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
@@ -39,13 +39,16 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - **Back/Forward history**: `navHistory` stack (50 max), `Alt+←`/`Alt+→`; `historyIndexRef` prevents infinite loop
   - **Search/Filter**: `Ctrl+F` to focus, client-side filter, `Escape` to clear
   - **Sortable columns**: Name/Size/Date clickable headers; dirs always float above files
-  - **Human-readable sizes**: `formatBytes()` — `14.0 MB`, dirs show `—`
+  - **Human-readable sizes**: `formatBytes()` from `lib/utils.ts` — `14.0 MB`, dirs show `—`
   - **Symlink target display**: `→ /target` subtitle from parsed `ls -lA` output
   - **Right-click ContextMenu**: Select / Copy Path / Open / Rename / Delete / Import / Export
   - **Import/Export**: Context-aware context menu; `executePull/executePush` shared helpers (DRY)
+  - **No in-place array mutation** — all sorts use spread copy
 - Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing), `RemoteUrlPanel`
-- `getFileName()` utility in `utils.ts`
+- `getFileName()`, `formatBytes()`, `formatBytesNum()` utilities in `lib/utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
+- No unused React imports (all cleaned up)
+- No dead `_activeView` props (removed from 4 views)
 
 ### UI Consistency (~95%)
 
@@ -163,6 +166,7 @@ src-tauri/src/
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote URL extraction with real URLs | Need to verify HTTP range requests work |
+| Medium | Shell command validation UX | Current metacharacter block is strict — consider confirmation dialog approach for power users |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form (datalist approach works well for now) |
 | Low | Adopt EmptyState in remaining views | Dashboard empty device list |
@@ -173,11 +177,13 @@ src-tauri/src/
 - Large frontend bundle chunk warning during build (~274 KB JS)
 - Bottom panel Shell tab needs manual verification with `pnpm tauri dev`
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
+- `cargo clippy` blocked on Windows when `AdbWinApi.dll` is locked by another process (pre-existing)
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-01 | 0.1.0 | Full Codebase Review Fixes: Shell metacharacter validation (C-01), ADB/fastboot host command guards (H-01/H-02), SSRF prevention with private IP blocklist (H-03), path canonicalization for open_folder (H-04), TempDir for APKS extraction (M-01), save_log prefix sanitization (M-02), Content-Length validation in HTTP ranges (NEW-07), in-place sort mutation fix (M-04), stable React keys in AppManager (L-02), formatBytes consolidation, 11 unused React imports removed, dead isRefreshingDevices removed, 4 unused _activeView props removed. Added `url` crate dependency. |
 | 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation in `commands/payload.rs`, unreachable fixes in `http.rs`, `impl ToString` param, field docs in `remote.rs`, clippy cast cleanup, `remote_zip` added to default feature in `Cargo.toml`. All feature-gated code now active by default. |
 | 2026-04-01 | 0.1.0 | Payload Audit: Fixed temp file leak in `extract_remote_prefetch()`. `PayloadCache::read_payload()` marked `#[allow(dead_code)]`. Audit vs `payload-dumper-rust` reference confirmed full Remote URL, Prefetch, Retry, Parallel extraction implementation. |
 | 2026-04-01 | 0.1.0 | Payload Dumper: Remote URL extraction with HTTP range requests. Optional `remote_zip` feature flag. Tabs UI for Local/Remote mode. Connection status display. |

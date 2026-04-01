@@ -159,6 +159,8 @@ Three-tier fallback for ADB/fastboot binaries:
 - `extract_remote_prefetch` — download full payload to temp, then mmap + parallel extraction
 - `extract_remote_direct` — fetch manifest + HTTP ranges per-operation on-demand
 - Retry logic: 3 retries with exponential backoff (1s, 2s, 4s delays)
+- SSRF prevention: private IP blocklist, localhost domain blocking, HTTP/HTTPS only
+- Content-Length validation: verifies returned bytes match requested range length
 - Feature flag: `pnpm tauri build --features remote_zip`
 
 ### 6. Error Handling
@@ -166,6 +168,14 @@ Three-tier fallback for ADB/fastboot binaries:
 - **Frontend**: `handleError()` in `errorHandler.ts` → toast + log + tauri log
 - **Rust**: `CmdResult<T> = Result<T, String>` — all commands return this
 - **Structured Logging**: `tauri-plugin-log` with Stdout + LogDir + Webview targets
+
+### 6b. Security Patterns
+
+- **Shell command validation**: `validate_shell_command()` blocks metacharacters (`;`, `|`, `&`, `$`, backticks, etc.) from `run_shell_command`
+- **SSRF prevention**: `is_private_url()` blocks loopback, private, link-local, CGNAT, and unspecified IP ranges
+- **Path canonicalization**: `open_folder` verifies path exists, is a directory, and canonicalizes before opening
+- **TempDir RAII**: `tempfile::TempDir` auto-cleans on any exit path (APKS extraction)
+- **Prefix sanitization**: `save_log` filters prefix to alphanumeric + `-`/`_` only, max 50 chars
 
 ### 7. Sidebar (shadcn)
 

@@ -266,7 +266,7 @@ export function MainLayout() {
                     >
                       <Logs className="size-4" />
                       {!isLogOpen && unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                        <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-destructive text-white text-[9px] font-bold flex items-center justify-center px-0.5">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}

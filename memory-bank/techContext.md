@@ -48,6 +48,7 @@
 | serde_json | 1.x | JSON handling |
 | which | 8.x | Binary lookup |
 | tempfile | 3.x | Streaming ZIP extraction to temp files |
+| url | 2.x | URL parsing + SSRF prevention (private IP blocklist) |
 | anyhow | 1.x | Error handling |
 | reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking` features (default feature: remote_zip) |
 | futures-util | 0.3 | Async utilities (default feature: remote_zip) |

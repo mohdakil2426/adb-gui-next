@@ -2,9 +2,57 @@
 
 ## Current State
 
-ADB GUI Next is a working Tauri 2 desktop application on `main` branch.
+ADB GUI Next is a working Tauri 2 desktop application on `main` branch. All codebase review findings have been addressed and committed.
 
 ## Recently Completed
+
+### 2026-04-01 — Full Codebase Review: Security Hardening + Code Quality Cleanup
+
+**Problem:** Comprehensive codebase review identified 13 security issues (1 CRITICAL, 4 HIGH, 4 MEDIUM, 2 LOW) and 15+ code quality issues across both Rust backend and TypeScript frontend.
+
+**Security fixes applied (Rust backend):**
+
+1. **C-01: Shell command injection prevention** — Added `validate_shell_command()` in `commands/adb.rs` that blocks shell metacharacters (`;`, `|`, `&`, `$`, backticks, parentheses, braces, angle brackets, newlines) from `run_shell_command`. Prevents arbitrary command execution on connected Android devices.
+
+2. **H-01/H-02: ADB/Fastboot host command guards** — Added empty-string validation for `run_adb_host_command` and `run_fastboot_host_command`.
+
+3. **H-03: SSRF prevention** — Added `is_private_url()` in `payload/http.rs` that blocks loopback (127.0.0.0/8, ::1), private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), link-local (169.254.0.0/16, fe80::/10), CGNAT (100.64.0.0/10), and unspecified (0.0.0.0, ::) IP ranges. Only HTTP/HTTPS URLs allowed. Localhost domain names also blocked.
+
+4. **H-04: Path canonicalization** — `open_folder` in `commands/system.rs` now verifies path exists, is a directory, and canonicalizes before opening to prevent path traversal.
+
+5. **M-01: TempDir for APKS extraction** — Replaced manual temp directory with `tempfile::TempDir` in `commands/apps.rs` for crash-safe auto-cleanup on any exit path.
+
+6. **M-02: Prefix sanitization** — `save_log` in `commands/system.rs` now filters prefix to alphanumeric + `-`/`_` only, max 50 chars, preventing path traversal via crafted filenames.
+
+7. **NEW-07: Content-Length validation** — Both `read_range` and `read_range_sync` in `payload/http.rs` now verify returned byte count matches requested range length, preventing silent data corruption from malicious servers.
+
+**Code quality fixes (Frontend):**
+
+8. **M-04: In-place sort mutation** — `files.sort()` → `[...files].sort()` in `ViewFileExplorer.tsx` — no longer mutates backend response array.
+
+9. **L-02: Stable React keys** — `key={idx}` → `key={path}` in `ViewAppManager.tsx` — uses file path as stable unique key for dynamically removable list items.
+
+10. **Duplicate `formatBytes` consolidation** — Moved both implementations (string-input and number-input) into `lib/utils.ts` as `formatBytes()` and `formatBytesNum()`. Removed local copies from `ViewFileExplorer.tsx` and `ViewPayloadDumper.tsx`.
+
+11. **11 unused React imports removed** — Cleaned up `import React from 'react'` from 11 component files (kept `main.tsx` for StrictMode).
+
+12. **Dead code removal** — Removed `isRefreshingDevices` (always-false variable) from `ViewDashboard.tsx`. Removed unused `_activeView` props from 4 views (About, Flasher, PayloadDumper, Utilities) and updated `MainLayout.tsx` to not pass them.
+
+**Dependency changes:**
+- Added `url` crate to `Cargo.toml` for URL parsing and SSRF prevention.
+
+**Verification:**
+- `pnpm format:check` — ✅ Clean
+- `pnpm lint:web` — ✅ 0 errors, 0 warnings
+- `cargo check` — ✅ Clean
+- `pnpm build` — ✅ Clean
+- `cargo clippy` — ⚠️ Blocked by pre-existing Windows DLL lock (`AdbWinApi.dll` in use)
+
+**Commit:** `3618a30` — `fix: address codebase review findings — security hardening + code quality cleanup`
+
+**Files changed:** 32 files (6 Rust, 14 TypeScript, 12 deleted agent files, 1 new report)
+
+---
 
 ### 2026-04-01 — Rust Code Review: MEDIUM Fixes + `remote_zip` Default Feature
 
