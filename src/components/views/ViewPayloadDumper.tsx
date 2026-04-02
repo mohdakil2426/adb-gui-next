@@ -26,6 +26,7 @@ export function ViewPayloadDumper() {
     partitionProgress,
     remoteUrl,
     activeMode,
+    remoteMetadata,
     setRemoteUrl,
     setActiveMode,
     togglePartition,
@@ -36,6 +37,7 @@ export function ViewPayloadDumper() {
   const [prefetch, setPrefetch] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Subscribe to progress events
   usePayloadEvents();
@@ -138,6 +140,10 @@ export function ViewPayloadDumper() {
                 onRefreshPartitions={actions.handleRefreshPartitions}
                 onSelectOutput={actions.handleSelectOutput}
                 onOpenOutputFolder={actions.handleOpenOutputFolder}
+                remoteMetadata={remoteMetadata}
+                isDetailsOpen={isDetailsOpen}
+                onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
+                prefetch={prefetch}
               />
 
               {/* Zone 2: Partition Table */}

@@ -95,6 +95,190 @@ pub async fn list_remote_payload_partitions(
         .collect())
 }
 
+/// Gather full metadata (HTTP + ZIP + OTA manifest + OTA package info) from a remote URL.
+///
+/// Downloads only enough data to parse the manifest header (~1 MB) and reads
+/// `META-INF/com/android/metadata` + `payload_properties.txt` from the ZIP for
+/// device/build info.
+#[cfg(feature = "remote_zip")]
+pub async fn get_remote_payload_metadata(
+    url: String,
+) -> Result<super::extractor::RemotePayloadMetadata> {
+    use super::extractor::{DynamicGroupInfo, RemotePayloadMetadata};
+    use super::http_zip::read_text_file_from_zip;
+
+    let reader = HttpPayloadReader::new(&url).await?;
+
+    // HTTP layer — captured from the HEAD response
+    let content_length = reader.content_length();
+    let content_type = reader.content_type().map(String::from);
+    let last_modified = reader.last_modified().map(String::from);
+    let server = reader.server().map(String::from);
+    let etag = reader.etag().map(String::from);
+
+    let is_zip = is_zip_url(&url);
+
+    // ZIP layer + manifest parse
+    let (manifest_bytes, zip_info) = if is_zip {
+        let zi = find_payload_in_zip(&reader).await?;
+        let header_data =
+            read_from_zip_or_direct(&reader, &Some(zi.clone()), 0, 1024 * 1024).await?;
+        let (manifest, _) = parse_header(&header_data)?;
+        (manifest, Some(zi))
+    } else {
+        let header_data = reader.read_range(0, 1024 * 1024).await?;
+        let (manifest, _) = parse_header(&header_data)?;
+        (manifest, None)
+    };
+
+    let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
+
+    // ZIP metadata
+    let zip_payload_offset = zip_info.as_ref().map(|z| z.offset);
+    let zip_compressed_size = zip_info.as_ref().map(|z| z.compressed_size);
+    let zip_uncompressed_size = zip_info.as_ref().map(|z| z.uncompressed_size);
+    let zip_compression_method = zip_info.as_ref().map(|z| match z.compression_method {
+        0 => "Stored".to_string(),
+        8 => "Deflate".to_string(),
+        other => format!("Unknown ({other})"),
+    });
+
+    // OTA manifest metadata
+    let block_size = manifest.block_size.unwrap_or(4096);
+    let minor_version = manifest.minor_version;
+    let security_patch_level = manifest.security_patch_level.clone();
+    let max_timestamp = manifest.max_timestamp;
+    let partial_update = manifest.partial_update;
+    let partition_count = manifest.partitions.len();
+    let total_size: u64 = manifest
+        .partitions
+        .iter()
+        .map(|p| p.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or_default())
+        .sum();
+
+    let dynamic_groups = manifest
+        .dynamic_partition_metadata
+        .as_ref()
+        .map(|meta| {
+            meta.groups
+                .iter()
+                .map(|g| DynamicGroupInfo {
+                    name: g.name.clone(),
+                    size: g.size,
+                    partitions: g.partition_names.clone(),
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // =========================================================================
+    // OTA Package metadata — read from ZIP entries (best-effort, never fails)
+    // =========================================================================
+    let (
+        ota_type,
+        pre_device,
+        post_build,
+        post_build_incremental,
+        post_sdk_level,
+        post_security_patch_level,
+        post_timestamp,
+        ota_version,
+        wipe,
+    ) = if is_zip {
+        // Read META-INF/com/android/metadata
+        let android_metadata =
+            read_text_file_from_zip(&reader, "META-INF/com/android/metadata").await.ok().flatten();
+
+        if let Some(ref text) = android_metadata {
+            let props = parse_kv_text(text);
+            (
+                props.get("ota-type").cloned(),
+                props.get("pre-device").cloned(),
+                props.get("post-build").cloned(),
+                props.get("post-build-incremental").cloned(),
+                props.get("post-sdk-level").cloned(),
+                props.get("post-security-patch-level").cloned(),
+                props.get("post-timestamp").cloned(),
+                props.get("ota_version").or_else(|| props.get("ota-id")).cloned(),
+                props.get("wipe").map(|v| v == "1" || v.eq_ignore_ascii_case("true")),
+            )
+        } else {
+            (None, None, None, None, None, None, None, None, None)
+        }
+    } else {
+        (None, None, None, None, None, None, None, None, None)
+    };
+
+    let (file_hash, file_size_prop, metadata_hash, metadata_size_prop) = if is_zip {
+        let props_text =
+            read_text_file_from_zip(&reader, "payload_properties.txt").await.ok().flatten();
+
+        if let Some(ref text) = props_text {
+            let props = parse_kv_text(text);
+            (
+                props.get("FILE_HASH").cloned(),
+                props.get("FILE_SIZE").and_then(|v| v.parse::<u64>().ok()),
+                props.get("METADATA_HASH").cloned(),
+                props.get("METADATA_SIZE").and_then(|v| v.parse::<u64>().ok()),
+            )
+        } else {
+            (None, None, None, None)
+        }
+    } else {
+        (None, None, None, None)
+    };
+
+    Ok(RemotePayloadMetadata {
+        content_length,
+        content_type,
+        last_modified,
+        server,
+        etag,
+        is_zip,
+        zip_payload_offset,
+        zip_compressed_size,
+        zip_uncompressed_size,
+        zip_compression_method,
+        block_size,
+        payload_version: 2, // CrAU header is always version 2
+        minor_version,
+        security_patch_level,
+        max_timestamp,
+        partial_update,
+        dynamic_groups,
+        partition_count,
+        total_size,
+        // OTA Package metadata
+        ota_type,
+        pre_device,
+        post_build,
+        post_build_incremental,
+        post_sdk_level,
+        post_security_patch_level,
+        post_timestamp,
+        ota_version,
+        wipe,
+        file_hash,
+        file_size: file_size_prop,
+        metadata_hash,
+        metadata_size: metadata_size_prop,
+    })
+}
+
+/// Parse a `key=value` text file into a HashMap. Skips blank lines and trims whitespace.
+fn parse_kv_text(text: &str) -> std::collections::HashMap<String, String> {
+    text.lines()
+        .filter_map(|line| {
+            let line = line.trim();
+            if line.is_empty() {
+                return None;
+            }
+            let (key, value) = line.split_once('=')?;
+            Some((key.trim().to_string(), value.trim().to_string()))
+        })
+        .collect()
+}
+
 /// Prefetch mode: Download entire payload to temp file, then extract via mmap.
 ///
 /// Best for slow/high-latency connections — extraction is fast after download.

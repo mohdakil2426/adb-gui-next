@@ -180,4 +180,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-04-01 (Remote URL payload extraction, HTTP range requests)
+- **Last Updated**: 2026-04-03 (Remote payload metadata UI, ZIP text file reading)

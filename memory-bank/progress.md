@@ -82,7 +82,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
-| Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)* — now in default features |
+| Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
 
 ### Payload Dumper
 
@@ -108,6 +108,15 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
 - **Tooltips**: shadcn `Tooltip` component (not native `title=`) for all icon buttons
 - **DropZone**: shared reusable component with native Tauri drag-drop events + position-based hit-testing (`containerRef` + `getBoundingClientRect`)
+- **Remote Metadata UI**: collapsible details panel (Framer Motion `AnimatePresence`) in `FileBanner` with 7 sections:
+  - OTA Package (from `META-INF/com/android/metadata`): device, Android version, build, fingerprint, OTA type badge, security patch, version, wipe
+  - Payload Properties (from `payload_properties.txt`): SHA-256 hashes (copyable), file/metadata sizes
+  - HTTP: full URL (copyable), content-type, server, last-modified, ETag
+  - ZIP Archive: compression method, payload offset (hex), uncompressed size
+  - OTA Manifest: CrAU version, block size, update type, timestamp, partial update
+  - Dynamic Groups: group names, sizes, partition lists
+  - Extraction: mode (prefetch/direct), output path
+- **URL persistence**: `remoteUrl` in Zustand store survives view navigation
 
 ### Packaging
 
@@ -148,7 +157,7 @@ src-tauri/src/
     ├── extractor.rs — partition extraction with SHA-256 verification
     ├── zip.rs — ZIP payload handling and caching
     ├── http.rs — HTTP range request support (remote_zip feature)
-    ├── http_zip.rs — Remote ZIP parsing via HTTP range requests (EOCD/CD parsing)
+    ├── http_zip.rs — Remote ZIP parsing via HTTP range requests (EOCD/CD parsing, text file reading)
     ├── remote.rs — Remote payload loading (direct + ZIP URLs, remote_zip feature)
     └── tests.rs — 13 payload tests (5 local + 8 HTTP ZIP)
 ```
@@ -194,6 +203,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections (OTA Package, Payload Properties, HTTP, ZIP, OTA Manifest, Dynamic Groups, Extraction). New `read_text_file_from_zip()` for reading `META-INF/com/android/metadata` + `payload_properties.txt` from ZIP. New `get_remote_payload_metadata` Tauri command. `FileBannerDetails.tsx` component with SDK→Android mapping, copyable hashes, OTA type badge. Fire-and-forget metadata fetch after partition load. |
 | 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div + `SidebarProvider` `min-h-svh` → `h-full`. Header structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area. No `position: sticky` needed. |
 | 2026-04-03 | 0.1.0 | Adaptive hardening: `overflow-x-hidden` on SidebarProvider + Inset, viewport-relative heights in AppManager (`max-h-[30vh]` APK list, `h-[40vh]` virtualizer), `min-w-0 flex-1 + truncate` on ConnectedDevicesCard device info, `min-w-0` on FileSelector. |
 | 2026-04-03 | 0.1.0 | App-wide responsive layout: 7 root causes fixed — SidebarContent/Inset overflow axis, `scrollbar-gutter` scoped to `.main-scroll-area`, `--content-min-width` removed, PartitionTable viewport-relative height, PayloadSourceTabs remote `overflow-hidden`, FileBanner URL truncation defense. |

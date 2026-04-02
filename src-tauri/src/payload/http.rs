@@ -57,6 +57,11 @@ pub struct HttpPayloadReader {
     url: String,
     content_length: u64,
     supports_ranges: bool,
+    /// HTTP headers captured from the HEAD response.
+    content_type: Option<String>,
+    last_modified: Option<String>,
+    server: Option<String>,
+    etag: Option<String>,
     /// Pre-built blocking client for synchronous extraction threads.
     /// Lazily initialized via `get_blocking_client()`.
     blocking_client: std::sync::Mutex<Option<reqwest::blocking::Client>>,
@@ -69,6 +74,10 @@ impl Clone for HttpPayloadReader {
             url: self.url.clone(),
             content_length: self.content_length,
             supports_ranges: self.supports_ranges,
+            content_type: self.content_type.clone(),
+            last_modified: self.last_modified.clone(),
+            server: self.server.clone(),
+            etag: self.etag.clone(),
             blocking_client: std::sync::Mutex::new(None),
         }
     }
@@ -126,11 +135,24 @@ impl HttpPayloadReader {
             .and_then(|v| v.parse::<u64>().ok())
             .ok_or_else(|| anyhow!("Could not determine content length"))?;
 
+        // Capture optional HTTP headers for metadata display
+        let content_type =
+            response.headers().get("content-type").and_then(|v| v.to_str().ok()).map(String::from);
+        let last_modified =
+            response.headers().get("last-modified").and_then(|v| v.to_str().ok()).map(String::from);
+        let server =
+            response.headers().get("server").and_then(|v| v.to_str().ok()).map(String::from);
+        let etag = response.headers().get("etag").and_then(|v| v.to_str().ok()).map(String::from);
+
         Ok(Self {
             client,
             url: url_str,
             content_length,
             supports_ranges: true,
+            content_type,
+            last_modified,
+            server,
+            etag,
             blocking_client: std::sync::Mutex::new(None),
         })
     }
@@ -243,5 +265,25 @@ impl HttpPayloadReader {
     /// Check if the server supports range requests.
     pub fn supports_ranges(&self) -> bool {
         self.supports_ranges
+    }
+
+    /// Get the Content-Type header from the HEAD response.
+    pub fn content_type(&self) -> Option<&str> {
+        self.content_type.as_deref()
+    }
+
+    /// Get the Last-Modified header from the HEAD response.
+    pub fn last_modified(&self) -> Option<&str> {
+        self.last_modified.as_deref()
+    }
+
+    /// Get the Server header from the HEAD response.
+    pub fn server(&self) -> Option<&str> {
+        self.server.as_deref()
+    }
+
+    /// Get the ETag header from the HEAD response.
+    pub fn etag(&self) -> Option<&str> {
+        self.etag.as_deref()
     }
 }

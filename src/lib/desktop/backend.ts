@@ -283,3 +283,11 @@ export function CheckRemotePayload(url: string): Promise<backend.RemotePayloadIn
 export function ListRemotePayloadPartitions(url: string): Promise<Array<backend.PartitionDetail>> {
   return call('list_remote_payload_partitions', { url });
 }
+
+/**
+ * Get full metadata (HTTP headers + ZIP structure + OTA manifest) for a remote payload.
+ * Call after partitions are loaded — re-reads the manifest to extract metadata fields.
+ */
+export function GetRemotePayloadMetadata(url: string): Promise<backend.RemotePayloadMetadata> {
+  return call('get_remote_payload_metadata', { url });
+}

@@ -46,6 +46,58 @@ pub struct ExtractPayloadResult {
     pub error: Option<String>,
 }
 
+/// Full metadata about a remote OTA payload — HTTP, ZIP, and OTA manifest layers.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemotePayloadMetadata {
+    // HTTP layer
+    pub content_length: u64,
+    pub content_type: Option<String>,
+    pub last_modified: Option<String>,
+    pub server: Option<String>,
+    pub etag: Option<String>,
+    // ZIP layer
+    pub is_zip: bool,
+    pub zip_payload_offset: Option<u64>,
+    pub zip_compressed_size: Option<u64>,
+    pub zip_uncompressed_size: Option<u64>,
+    pub zip_compression_method: Option<String>,
+    // OTA Manifest layer (from protobuf)
+    pub block_size: u32,
+    pub payload_version: u32,
+    pub minor_version: Option<u32>,
+    pub security_patch_level: Option<String>,
+    pub max_timestamp: Option<i64>,
+    pub partial_update: Option<bool>,
+    pub dynamic_groups: Vec<DynamicGroupInfo>,
+    pub partition_count: usize,
+    pub total_size: u64,
+    // OTA Package metadata (from META-INF/com/android/metadata)
+    pub ota_type: Option<String>,
+    pub pre_device: Option<String>,
+    pub post_build: Option<String>,
+    pub post_build_incremental: Option<String>,
+    pub post_sdk_level: Option<String>,
+    pub post_security_patch_level: Option<String>,
+    pub post_timestamp: Option<String>,
+    pub ota_version: Option<String>,
+    pub wipe: Option<bool>,
+    // payload_properties.txt
+    pub file_hash: Option<String>,
+    pub file_size: Option<u64>,
+    pub metadata_hash: Option<String>,
+    pub metadata_size: Option<u64>,
+}
+
+/// Dynamic partition group info from the OTA manifest.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DynamicGroupInfo {
+    pub name: String,
+    pub size: Option<u64>,
+    pub partitions: Vec<String>,
+}
+
 /// Extract selected partitions from a payload file.
 ///
 /// # Arguments

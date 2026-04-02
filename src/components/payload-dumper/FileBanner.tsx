@@ -1,7 +1,17 @@
-import { FileArchive, FolderOutput, ExternalLink, RefreshCw, Globe } from 'lucide-react';
+import {
+  FileArchive,
+  FolderOutput,
+  ExternalLink,
+  RefreshCw,
+  Globe,
+  ChevronDown,
+} from 'lucide-react';
 import { cn, getFileName, formatBytesNum } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileBannerDetails } from '@/components/payload-dumper/FileBannerDetails';
+import type { backend } from '@/lib/desktop/models';
 
 interface FileBannerProps {
   payloadPath: string;
@@ -17,6 +27,10 @@ interface FileBannerProps {
   onRefreshPartitions: () => void;
   onSelectOutput: () => void;
   onOpenOutputFolder: () => void;
+  remoteMetadata: backend.RemotePayloadMetadata | null;
+  isDetailsOpen: boolean;
+  onToggleDetails: () => void;
+  prefetch: boolean;
 }
 
 /**
@@ -37,6 +51,10 @@ export function FileBanner({
   onRefreshPartitions,
   onSelectOutput,
   onOpenOutputFolder,
+  remoteMetadata,
+  isDetailsOpen,
+  onToggleDetails,
+  prefetch,
 }: FileBannerProps) {
   const displayName = isRemote ? remoteUrl : getFileName(payloadPath);
   const isDisabled = status === 'extracting' || status === 'loading-partitions';
@@ -143,6 +161,47 @@ export function FileBanner({
           </>
         )}
       </div>
+
+      {/* Collapsible details toggle — only for remote payloads with metadata */}
+      {isRemote && remoteMetadata && (
+        <>
+          <button
+            onClick={onToggleDetails}
+            className={cn(
+              'flex items-center justify-center gap-1.5 w-full py-1',
+              'text-xs text-muted-foreground hover:text-foreground transition-colors',
+              'cursor-pointer rounded-md hover:bg-muted/50',
+            )}
+          >
+            <motion.span
+              animate={{ rotate: isDetailsOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="size-3.5" />
+            </motion.span>
+            {isDetailsOpen ? 'Hide Details' : 'Show Details'}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {isDetailsOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                className="overflow-hidden"
+              >
+                <FileBannerDetails
+                  metadata={remoteMetadata}
+                  remoteUrl={remoteUrl}
+                  prefetch={prefetch}
+                  outputPath={effectiveOutputPath}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }

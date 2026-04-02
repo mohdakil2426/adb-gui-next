@@ -72,6 +72,8 @@ pub fn run() {
             #[cfg(feature = "remote_zip")]
             commands::check_remote_payload,
             #[cfg(feature = "remote_zip")]
+            commands::get_remote_payload_metadata,
+            #[cfg(feature = "remote_zip")]
             commands::list_remote_payload_partitions
         ])
         .build(tauri::generate_context!())

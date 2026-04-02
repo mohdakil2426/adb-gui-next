@@ -1,5 +1,7 @@
 use crate::CmdResult;
-use crate::payload::{self, ExtractPayloadResult, PartitionDetail, PayloadCache};
+use crate::payload::{
+    self, ExtractPayloadResult, PartitionDetail, PayloadCache, RemotePayloadMetadata,
+};
 use log::{error, info};
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
@@ -14,6 +16,10 @@ use serde::Serialize;
 pub struct RemotePayloadInfo {
     pub content_length: u64,
     pub supports_ranges: bool,
+    pub content_type: Option<String>,
+    pub last_modified: Option<String>,
+    pub server: Option<String>,
+    pub etag: Option<String>,
 }
 
 #[tauri::command]
@@ -181,7 +187,24 @@ pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
     Ok(RemotePayloadInfo {
         content_length: reader.content_length(),
         supports_ranges: reader.supports_ranges(),
+        content_type: reader.content_type().map(String::from),
+        last_modified: reader.last_modified().map(String::from),
+        server: reader.server().map(String::from),
+        etag: reader.etag().map(String::from),
     })
+}
+
+/// Get full metadata (HTTP headers + ZIP structure + OTA manifest) for a remote payload.
+#[cfg(feature = "remote_zip")]
+#[tauri::command]
+pub async fn get_remote_payload_metadata(url: String) -> CmdResult<RemotePayloadMetadata> {
+    info!("Fetching remote payload metadata for: {}", url.trim());
+    let metadata =
+        payload::get_remote_payload_metadata(url.trim().to_string()).await.map_err(|e| {
+            error!("Failed to fetch metadata: {}", e);
+            e.to_string()
+        })?;
+    Ok(metadata)
 }
 
 /// List partitions from a remote payload URL.

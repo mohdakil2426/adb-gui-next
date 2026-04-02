@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { backend } from '@/lib/desktop/models';
 
 interface PartitionInfo {
   name: string;
@@ -46,6 +47,9 @@ interface PayloadDumperState {
   // Real-time progress per partition
   partitionProgress: Map<string, PartitionProgress>;
 
+  // Remote payload metadata (HTTP + ZIP + OTA manifest)
+  remoteMetadata: backend.RemotePayloadMetadata | null;
+
   // Actions
   setPayloadPath: (path: string) => void;
   setOutputPath: (path: string) => void;
@@ -69,6 +73,7 @@ interface PayloadDumperState {
     completed?: boolean,
   ) => void;
   clearPartitionProgress: () => void;
+  setRemoteMetadata: (metadata: backend.RemotePayloadMetadata | null) => void;
   reset: () => void;
   clearExtractionState: () => void;
 }
@@ -86,6 +91,7 @@ const initialState = {
   extractingPartitions: new Set<string>(),
   completedPartitions: new Set<string>(),
   partitionProgress: new Map<string, PartitionProgress>(),
+  remoteMetadata: null as backend.RemotePayloadMetadata | null,
 };
 
 export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
@@ -102,6 +108,7 @@ export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
       outputDir: '',
       extractingPartitions: new Set<string>(),
       completedPartitions: new Set<string>(),
+      remoteMetadata: null,
     }),
 
   setOutputPath: (path) => set({ outputPath: path }),
@@ -190,12 +197,15 @@ export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
   // Clear all partition progress (after extraction completes)
   clearPartitionProgress: () => set({ partitionProgress: new Map() }),
 
+  setRemoteMetadata: (metadata) => set({ remoteMetadata: metadata }),
+
   reset: () =>
     set({
       ...initialState,
       extractingPartitions: new Set<string>(),
       completedPartitions: new Set<string>(),
       partitionProgress: new Map(),
+      remoteMetadata: null,
     }),
 
   // Clear only extraction state but keep file and partitions

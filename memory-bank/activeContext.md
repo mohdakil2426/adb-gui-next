@@ -9,6 +9,36 @@ All responsive layout fixes, sticky header, and adaptive hardening are complete.
 
 ## Recently Completed
 
+### 2026-04-03 — Remote Payload Metadata UI (Collapsible Details Panel)
+
+**Feature:** Implemented a collapsible "Show Details / Hide Details" panel inside the `FileBanner`
+component for remote OTA payloads. When partitions load from a remote URL, the banner shows a
+chevron toggle that expands to reveal 7 metadata sections.
+
+**Data sources — 3 layers of metadata aggregation:**
+
+| Section | Source | Data |
+|---|---|---|
+| OTA Package | `META-INF/com/android/metadata` (ZIP entry) | Device, Android version, build fingerprint, OTA type, security patch, build date, version, wipe flag |
+| Payload Properties | `payload_properties.txt` (ZIP entry) | File SHA-256 hash, file size, metadata hash, metadata size |
+| HTTP | HEAD response headers | Content-length, content-type, server, last-modified, ETag |
+| ZIP Archive | EOCD/CD binary parsing | Compression method, payload.bin offset, uncompressed size |
+| OTA Manifest | CrAU protobuf header | CrAU version, block size, update type, timestamp, dynamic groups |
+| Extraction | Frontend state | Mode (prefetch/direct), output path |
+
+**Key implementation details:**
+- **`read_text_file_from_zip()`** in `http_zip.rs` — reads any named file from a remote ZIP via
+  Central Directory scanning + HTTP range request. Returns `Ok(None)` when file missing (best-effort).
+- **`parse_kv_text()`** helper — parses `key=value` text files into HashMap
+- **`FileBannerDetails.tsx`** — 7-section metadata display with SDK→Android version mapping,
+  copyable hashes, OTA type badge, conditional section rendering
+- **Fire-and-forget metadata fetch** — non-blocking after partition load; silent on failure
+- **Zustand persistence** — metadata survives view navigation, cleared on reset
+
+**Files changed:** 9 (5 Rust + 4 TypeScript)
+
+---
+
 ### 2026-04-03 — Sticky Header Root Fix (Viewport Height Boundary)
 
 **Problem:** The header was still scrollable despite being `shrink-0` inside a flex-col
@@ -148,9 +178,9 @@ Any missing link causes overflow to escape upward, widening the viewport.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-03**
+Last verified: **2026-04-03** (after remote metadata UI)
 - `pnpm format:check` ✅ — Prettier + cargo fmt clean
-- `pnpm lint:web` ✅ — ESLint 0 errors
+- `pnpm lint` ✅ — ESLint + cargo clippy clean
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 
@@ -164,7 +194,7 @@ Last verified: **2026-04-03**
 | Responsive | ✅ Fixed | All 7 views — min-w-0 chain complete, no horizontal overflow |
 | Header | ✅ Fixed | Structurally pinned via flex-col — never scrolls regardless of content |
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
-| Payload Dumper | ✅ Fixed | Viewport-relative heights, URL truncation, TabsContent containment |
+| Payload Dumper | ✅ Enhanced | Remote metadata panel (7 sections), URL persistence, viewport-relative heights |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |

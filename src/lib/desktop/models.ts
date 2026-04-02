@@ -51,5 +51,57 @@ export namespace backend {
   export interface RemotePayloadInfo {
     contentLength: number;
     supportsRanges: boolean;
+    contentType: string | null;
+    lastModified: string | null;
+    server: string | null;
+    etag: string | null;
+  }
+
+  /** Full metadata about a remote OTA payload — HTTP, ZIP, and OTA manifest layers. */
+  export interface RemotePayloadMetadata {
+    // HTTP layer
+    contentLength: number;
+    contentType: string | null;
+    lastModified: string | null;
+    server: string | null;
+    etag: string | null;
+    // ZIP layer
+    isZip: boolean;
+    zipPayloadOffset: number | null;
+    zipCompressedSize: number | null;
+    zipUncompressedSize: number | null;
+    zipCompressionMethod: string | null;
+    // OTA Manifest layer (from protobuf)
+    blockSize: number;
+    payloadVersion: number;
+    minorVersion: number | null;
+    securityPatchLevel: string | null;
+    maxTimestamp: number | null;
+    partialUpdate: boolean | null;
+    dynamicGroups: DynamicGroupInfo[];
+    partitionCount: number;
+    totalSize: number;
+    // OTA Package metadata (from META-INF/com/android/metadata)
+    otaType: string | null;
+    preDevice: string | null;
+    postBuild: string | null;
+    postBuildIncremental: string | null;
+    postSdkLevel: string | null;
+    postSecurityPatchLevel: string | null;
+    postTimestamp: string | null;
+    otaVersion: string | null;
+    wipe: boolean | null;
+    // payload_properties.txt
+    fileHash: string | null;
+    fileSize: number | null;
+    metadataHash: string | null;
+    metadataSize: number | null;
+  }
+
+  /** Dynamic partition group info from the OTA manifest. */
+  export interface DynamicGroupInfo {
+    name: string;
+    size: number | null;
+    partitions: string[];
   }
 }

@@ -163,6 +163,26 @@ Three-tier fallback for ADB/fastboot binaries:
 - Content-Length validation: verifies returned bytes match requested range length
 - Feature flag: `pnpm tauri build --features remote_zip`
 
+### 5b. Remote Payload Metadata (OTA Package Info)
+
+`get_remote_payload_metadata()` in `remote.rs` aggregates metadata from **3 sources** into a single `RemotePayloadMetadata` struct:
+
+1. **HTTP headers** — `content-type`, `last-modified`, `server`, `etag` (captured during `HttpPayloadReader::new()`)
+2. **ZIP entries** — `read_text_file_from_zip()` reads `META-INF/com/android/metadata` and `payload_properties.txt` as key=value text files
+3. **CrAU protobuf manifest** — block size, minor version, security patch, dynamic groups
+
+**Key design principles:**
+- **Best-effort** — ZIP entry reads return `Ok(None)` when files don't exist; the function never fails due to missing metadata
+- **Separate command** — metadata fetch is a dedicated Tauri command, not bundled into partition listing (keeps existing APIs clean)
+- **Fire-and-forget** — frontend triggers metadata fetch after partition load completes; failure is logged silently
+- **Zustand persistence** — `remoteMetadata` survives view navigation; cleared on `reset()` or `setPayloadPath()`
+
+**Frontend rendering** (`FileBannerDetails.tsx`):
+- OTA Package section is primary (device, Android version, build fingerprint, OTA type badge)
+- Conditional sections — ZIP and Dynamic Groups hidden when not applicable
+- SDK→Android version mapping (SDK 29 → "Android 10")
+- Copyable hashes via clipboard API with visual feedback
+
 ### 6. Error Handling
 
 - **Frontend**: `handleError()` in `errorHandler.ts` → toast + log + tauri log

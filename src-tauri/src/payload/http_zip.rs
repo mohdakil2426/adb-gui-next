@@ -158,6 +158,113 @@ pub async fn find_payload_in_zip(reader: &HttpPayloadReader) -> Result<ZipPayloa
     })
 }
 
+/// Read a named text file from a remote ZIP (e.g. `META-INF/com/android/metadata`).
+///
+/// Scans the Central Directory for the given filename and returns its contents as a string.
+/// Returns `Ok(None)` if the file is not found in the archive (not an error — many OTAs
+/// may lack certain metadata files).
+///
+/// Only works for small files (< 1 MB) stored uncompressed or deflated.
+pub async fn read_text_file_from_zip(
+    reader: &HttpPayloadReader,
+    target_name: &str,
+) -> Result<Option<String>> {
+    let content_length = reader.content_length();
+
+    // Reuse the same EOCD/CD parsing strategy as find_payload_in_zip
+    let tail_size = std::cmp::min(EOCD_MAX_SIZE as u64, content_length);
+    let tail_offset = content_length - tail_size;
+    let tail_data = reader.read_range(tail_offset, tail_size).await?;
+
+    let eocd_pos = match find_eocd(&tail_data) {
+        Some(pos) => pos,
+        None => return Ok(None),
+    };
+    let eocd_abs_pos = tail_offset + eocd_pos as u64;
+    let eocd_data = &tail_data[eocd_pos..];
+    if eocd_data.len() < 22 {
+        return Ok(None);
+    }
+
+    let cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
+    let cd_size = eocd_abs_pos.saturating_sub(cd_offset);
+    if cd_size == 0 {
+        return Ok(None);
+    }
+
+    let cd_data = reader.read_range(cd_offset, cd_size).await?;
+
+    let mut parse_pos = 0;
+    while parse_pos + 46 <= cd_data.len() {
+        let sig = u32::from_le_bytes(cd_data[parse_pos..parse_pos + 4].try_into()?);
+        if sig != CD_SIG {
+            break;
+        }
+
+        let compression_method =
+            u16::from_le_bytes(cd_data[parse_pos + 10..parse_pos + 12].try_into()?);
+        let compressed_size =
+            u32::from_le_bytes(cd_data[parse_pos + 20..parse_pos + 24].try_into()?) as u64;
+        let uncompressed_size =
+            u32::from_le_bytes(cd_data[parse_pos + 24..parse_pos + 28].try_into()?) as u64;
+        let filename_len =
+            u16::from_le_bytes(cd_data[parse_pos + 28..parse_pos + 30].try_into()?) as usize;
+        let extra_len =
+            u16::from_le_bytes(cd_data[parse_pos + 30..parse_pos + 32].try_into()?) as usize;
+        let comment_len =
+            u16::from_le_bytes(cd_data[parse_pos + 32..parse_pos + 34].try_into()?) as usize;
+        let local_header_offset =
+            u32::from_le_bytes(cd_data[parse_pos + 42..parse_pos + 46].try_into()?) as u64;
+
+        let entry_start = parse_pos + 46;
+        if entry_start + filename_len > cd_data.len() {
+            break;
+        }
+        let filename = String::from_utf8_lossy(&cd_data[entry_start..entry_start + filename_len]);
+
+        if filename == target_name {
+            // Safety: skip files > 1 MB to avoid memory issues
+            if uncompressed_size > 1024 * 1024 {
+                return Ok(None);
+            }
+
+            // Read local file header to get data offset
+            let local_header = reader.read_range(local_header_offset, 30).await?;
+            let local_sig = u32::from_le_bytes(local_header[0..4].try_into()?);
+            if local_sig != LOCAL_SIG {
+                return Ok(None);
+            }
+
+            let local_filename_len = u16::from_le_bytes(local_header[26..28].try_into()?) as usize;
+            let local_extra_len = u16::from_le_bytes(local_header[28..30].try_into()?) as usize;
+            let data_offset =
+                local_header_offset + 30 + local_filename_len as u64 + local_extra_len as u64;
+
+            // Read the file data
+            let raw_data = reader.read_range(data_offset, compressed_size).await?;
+
+            let text = if compression_method == 0 {
+                // Stored — raw UTF-8
+                String::from_utf8_lossy(&raw_data).to_string()
+            } else if compression_method == 8 {
+                // Deflate
+                let mut decoder = flate2::read::DeflateDecoder::new(&raw_data[..]);
+                let mut decompressed = Vec::with_capacity(uncompressed_size as usize);
+                std::io::Read::read_to_end(&mut decoder, &mut decompressed)?;
+                String::from_utf8_lossy(&decompressed).to_string()
+            } else {
+                return Ok(None); // Unknown compression
+            };
+
+            return Ok(Some(text));
+        }
+
+        parse_pos += 46 + filename_len + extra_len + comment_len;
+    }
+
+    Ok(None) // File not found
+}
+
 /// Find EOCD signature in data buffer (search backwards from end)
 pub(super) fn find_eocd(data: &[u8]) -> Option<usize> {
     if data.len() < 4 {

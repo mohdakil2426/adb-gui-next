@@ -13,6 +13,7 @@ import {
   CleanupPayloadCache,
   CheckRemotePayload,
   ListRemotePayloadPartitions,
+  GetRemotePayloadMetadata,
 } from '@/lib/desktop/backend';
 import { formatBytesNum } from '@/lib/utils';
 import type { ExtractionStatus } from '@/lib/payloadDumperStore';
@@ -73,6 +74,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setExtractingPartitions,
     addCompletedPartitions,
     clearPartitionProgress,
+    setRemoteMetadata,
     reset,
   } = usePayloadDumperStore();
 
@@ -174,6 +176,17 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
         setStatus('ready');
         toast.success(`Found ${partitionList.length} partitions`);
         handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
+
+        // Fire-and-forget metadata fetch — non-blocking, failure logged silently
+        GetRemotePayloadMetadata(remoteUrl.trim())
+          .then((metadata) => {
+            setRemoteMetadata(metadata);
+            debugLog('Remote payload metadata loaded');
+          })
+          .catch((err) => {
+            debugLog(`Metadata fetch failed (non-blocking): ${err}`);
+            useLogStore.getState().addLog(`Metadata fetch failed: ${err}`, 'warning');
+          });
       } else {
         setErrorMessage('No partitions found in remote payload');
         setStatus('error');
@@ -190,7 +203,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     } finally {
       cancelLoadingRef.current = false;
     }
-  }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage]);
+  }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage, setRemoteMetadata]);
 
   const handleCancelLoadPartitions = useCallback(() => {
     cancelLoadingRef.current = true;
@@ -366,9 +379,18 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setPrefetch(false);
     setConnectionStatus('idle');
     setEstimatedSize(null);
+    setRemoteMetadata(null);
     cancelLoadingRef.current = false;
     useLogStore.getState().addLog('Payload Dumper reset', 'info');
-  }, [reset, setMode, setRemoteUrl, setPrefetch, setConnectionStatus, setEstimatedSize]);
+  }, [
+    reset,
+    setMode,
+    setRemoteUrl,
+    setPrefetch,
+    setConnectionStatus,
+    setEstimatedSize,
+    setRemoteMetadata,
+  ]);
 
   return {
     handleCheckUrl,
