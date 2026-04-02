@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bzip2",
+ "flate2",
  "futures-util",
  "log",
  "memmap2",

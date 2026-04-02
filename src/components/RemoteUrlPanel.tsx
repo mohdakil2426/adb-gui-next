@@ -34,20 +34,20 @@ export function RemoteUrlPanel({
   const isError = connectionStatus === 'error';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       {/* URL Input */}
       <div className="space-y-2">
         <Label htmlFor="remote-url" className="flex items-center gap-2">
           <Globe className="h-4 w-4" />
           Payload URL
         </Label>
-        <div className="flex gap-2">
+        <div className="flex gap-2 min-w-0">
           <Input
             id="remote-url"
             placeholder="https://example.com/ota.zip"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-w-0"
             disabled={disabled}
           />
           {url && !disabled && (
@@ -96,8 +96,14 @@ export function RemoteUrlPanel({
 
       {/* Connection Status */}
       {connectionStatus !== 'idle' && (
-        <Card className={cn(isReady && 'border-success/50', isError && 'border-destructive/50')}>
-          <CardContent className="pt-4 space-y-2">
+        <Card
+          className={cn(
+            isReady && 'border-success/50',
+            isError && 'border-destructive/50',
+            'min-w-0',
+          )}
+        >
+          <CardContent className="pt-4 space-y-2 min-w-0">
             {isChecking && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />

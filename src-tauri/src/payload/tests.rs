@@ -245,3 +245,93 @@ fn write_zip_with_payload(zip_path: &std::path::Path, payload_path: &std::path::
     zip.write_all(&fs::read(payload_path).expect("read payload")).expect("write payload entry");
     zip.finish().expect("finish zip");
 }
+
+// =============================================================================
+// Tests for HTTP ZIP functionality
+// =============================================================================
+
+#[cfg(feature = "remote_zip")]
+mod http_zip_tests {
+    use super::*;
+    use crate::payload::http_zip::{find_eocd, is_zip_url};
+
+    #[test]
+    fn test_is_zip_url_detects_zip_extensions() {
+        assert!(is_zip_url("https://example.com/ota.zip"));
+        assert!(is_zip_url("https://example.com/factory-image-123.zip"));
+        assert!(is_zip_url("http://server.com/path/file.ZIP"));
+    }
+
+    #[test]
+    fn test_is_zip_url_detects_zip_with_query_params() {
+        assert!(is_zip_url("https://example.com/download?file=ota.zip"));
+        assert!(is_zip_url("https://example.com/api/v1/ota.zip?token=abc"));
+    }
+
+    #[test]
+    fn test_is_zip_url_detects_zip_with_fragment() {
+        assert!(is_zip_url("https://example.com/download#ota.zip"));
+    }
+
+    #[test]
+    fn test_is_zip_url_rejects_non_zip() {
+        assert!(!is_zip_url("https://example.com/payload.bin"));
+        assert!(!is_zip_url("https://example.com/image.img"));
+        assert!(!is_zip_url("https://example.com/download"));
+        assert!(!is_zip_url("https://example.com/file.zipx"));
+    }
+
+    #[test]
+    fn test_find_eocd_finds_signature() {
+        // EOCD signature: 0x06054b50 = [0x50, 0x4b, 0x05, 0x06] in little-endian
+        let mut data = vec![0u8; 100];
+        data[90] = 0x50;
+        data[91] = 0x4b;
+        data[92] = 0x05;
+        data[93] = 0x06;
+
+        let pos = find_eocd(&data);
+        assert_eq!(pos, Some(90));
+    }
+
+    #[test]
+    fn test_find_eocd_returns_none_when_not_found() {
+        let data = vec![0u8; 100];
+        let pos = find_eocd(&data);
+        assert_eq!(pos, None);
+    }
+
+    #[test]
+    fn test_find_eocd_finds_last_occurrence() {
+        // Multiple EOCD signatures - should find the last one (closest to end)
+        let mut data = vec![0u8; 200];
+        data[50] = 0x50;
+        data[51] = 0x4b;
+        data[52] = 0x05;
+        data[53] = 0x06;
+        data[190] = 0x50;
+        data[191] = 0x4b;
+        data[192] = 0x05;
+        data[193] = 0x06;
+
+        let pos = find_eocd(&data);
+        assert_eq!(pos, Some(190));
+    }
+
+    #[test]
+    fn test_zip_roundtrip_with_payload() {
+        // Create a test payload.bin
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+        let zip_path = temp.path().join("ota.zip");
+        write_test_payload(&payload_path, "system", 4096, &[7; 4096]);
+        write_zip_with_payload(&zip_path, &payload_path);
+
+        // Verify the ZIP contains payload.bin
+        let zip_file = fs::File::open(&zip_path).expect("open zip");
+        let mut archive = ::zip::ZipArchive::new(zip_file).expect("read zip");
+        assert_eq!(archive.len(), 1);
+        let entry = archive.by_index(0).expect("get entry");
+        assert_eq!(entry.name(), "payload.bin");
+    }
+}

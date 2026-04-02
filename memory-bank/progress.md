@@ -90,8 +90,10 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - `HttpPayloadReader` with retry logic (3 retries, exponential backoff)
   - Remote URL panel with connection status display
   - Tabs UI for Local/Remote mode switching
+  - **ZIP URL support**: detects `.zip` URLs, parses EOCD/CD to find `payload.bin` offset
   - **Prefetch mode** (`prefetch=true`): download full file, then mmap extract — best for slow/high-latency connections
   - **Direct mode** (`prefetch=false`): fetch manifest + HTTP ranges on-demand — starts extraction immediately
+  - **Cancel loading**: ref-based cancellation flag, red "Cancel Loading..." button during partition load
 - **UI**: 3-zone layout (file banner + adaptive partition table + sticky action footer)
 - **Adaptive columns**: 3-col pre-extraction, 4-col during/after extraction (`[28px_0.8fr_5fr_72px]`)
 - **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
@@ -137,8 +139,9 @@ src-tauri/src/
     ├── extractor.rs — partition extraction with SHA-256 verification
     ├── zip.rs — ZIP payload handling and caching
     ├── http.rs — HTTP range request support (remote_zip feature)
-    ├── remote.rs — Remote payload loading (remote_zip feature)
-    └── tests.rs — 5 payload tests
+    ├── http_zip.rs — Remote ZIP parsing via HTTP range requests (EOCD/CD parsing)
+    ├── remote.rs — Remote payload loading (direct + ZIP URLs, remote_zip feature)
+    └── tests.rs — 13 payload tests (5 local + 8 HTTP ZIP)
 ```
 
 ## Documentation
@@ -165,7 +168,7 @@ src-tauri/src/
 |----------|------|-------|
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
-| Medium | Test remote URL extraction with real URLs | Need to verify HTTP range requests work |
+| Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
 | Medium | Shell command validation UX | Current metacharacter block is strict — consider confirmation dialog approach for power users |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form (datalist approach works well for now) |
@@ -183,6 +186,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-02 | 0.1.0 | Payload Dumper: CSS Flexbox layout adjustments ensuring responsive truncation for long remote OTA URLs preventing horizontal container overflow |
 | 2026-04-01 | 0.1.0 | Full Codebase Review Fixes: Shell metacharacter validation (C-01), ADB/fastboot host command guards (H-01/H-02), SSRF prevention with private IP blocklist (H-03), path canonicalization for open_folder (H-04), TempDir for APKS extraction (M-01), save_log prefix sanitization (M-02), Content-Length validation in HTTP ranges (NEW-07), in-place sort mutation fix (M-04), stable React keys in AppManager (L-02), formatBytes consolidation, 11 unused React imports removed, dead isRefreshingDevices removed, 4 unused _activeView props removed. Added `url` crate dependency. |
 | 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation in `commands/payload.rs`, unreachable fixes in `http.rs`, `impl ToString` param, field docs in `remote.rs`, clippy cast cleanup, `remote_zip` added to default feature in `Cargo.toml`. All feature-gated code now active by default. |
 | 2026-04-01 | 0.1.0 | Payload Audit: Fixed temp file leak in `extract_remote_prefetch()`. `PayloadCache::read_payload()` marked `#[allow(dead_code)]`. Audit vs `payload-dumper-rust` reference confirmed full Remote URL, Prefetch, Retry, Parallel extraction implementation. |

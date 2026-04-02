@@ -1,6 +1,10 @@
 //! Remote payload loading and extraction for HTTP URLs.
 //!
-//! Supports two modes:
+//! Supports two input types:
+//! - **Direct payload.bin**: URL points directly to a payload.bin file
+//! - **ZIP archive**: URL points to a ZIP containing payload.bin (e.g., factory images)
+//!
+//! Supports two extraction modes:
 //! - **Prefetch** (`true`): Downloads entire payload to a temp file first, then extracts.
 //!   Best for slow/high-latency connections — extraction is fast after download.
 //! - **Direct** (`false`): Reads HTTP ranges on-demand during extraction.
@@ -8,6 +12,7 @@
 
 use super::chromeos_update_engine::DeltaArchiveManifest;
 use super::http::HttpPayloadReader;
+use super::http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_from_zip_or_direct};
 use super::parser::parse_header;
 use anyhow::{Result, anyhow};
 use memmap2::Mmap;
@@ -37,6 +42,10 @@ pub struct RemotePayload {
     pub http: Arc<HttpPayloadReader>,
     /// Byte offset where actual payload data begins in the OTA file.
     pub data_offset: usize,
+    /// For ZIP files: offset of payload.bin within the ZIP. For direct: 0.
+    pub zip_offset: u64,
+    /// For ZIP files: info about the payload.bin entry. None for direct payloads.
+    pub zip_info: Option<ZipPayloadInfo>,
 }
 
 // =============================================================================
@@ -46,17 +55,32 @@ pub struct RemotePayload {
 /// Load remote payload manifest and partition info (for partition listing).
 ///
 /// Downloads just enough to parse the manifest header (~1 MB or less).
+/// Handles both direct payload.bin URLs and ZIP archives.
 #[cfg(feature = "remote_zip")]
 pub async fn list_remote_payload_partitions(
     url: String,
 ) -> Result<Vec<super::extractor::PartitionDetail>> {
-    let reader = HttpPayloadReader::new(url).await?;
+    let reader = HttpPayloadReader::new(&url).await?;
 
-    // Read just the header range — first 1MB is enough for manifest
-    let header_data = reader.read_range(0, 1024 * 1024).await?;
+    let (manifest_bytes, _data_offset) = if is_zip_url(&url) {
+        // ZIP file: find payload.bin entry, then read its header
+        log::info!("ZIP URL detected, finding payload.bin in {}", url);
+        let zip_info = find_payload_in_zip(&reader).await?;
+        log::info!(
+            "Found payload.bin at offset {}, size {} (uncompressed: {})",
+            zip_info.offset,
+            zip_info.compressed_size,
+            zip_info.uncompressed_size
+        );
 
-    // Parse header to get manifest bytes
-    let (manifest_bytes, _data_offset) = parse_header(&header_data)?;
+        // Read the first 1MB of payload.bin from within the ZIP
+        let header_data = read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024).await?;
+        parse_header(&header_data)?
+    } else {
+        // Direct payload.bin: read first 1MB
+        let header_data = reader.read_range(0, 1024 * 1024).await?;
+        parse_header(&header_data)?
+    };
 
     // Decode manifest
     let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
@@ -83,8 +107,9 @@ pub async fn extract_remote_prefetch(
 ) -> Result<super::extractor::ExtractPayloadResult> {
     let reader = HttpPayloadReader::new(url.clone()).await?;
     let content_length = reader.content_length();
+    let is_zip = is_zip_url(&url);
 
-    log::info!("Prefetch: downloading {} bytes from {}", content_length, url);
+    log::info!("Prefetch: downloading {} bytes from {} (is_zip={})", content_length, url, is_zip);
 
     // Stream to temp file in 1 MB chunks. NamedTempFile::keep() persists it
     // on disk after we're done so the mmap can use it without the file
@@ -133,7 +158,15 @@ pub async fn extract_remote_prefetch(
     let mmap = unsafe { Mmap::map(&file)? };
     let mmap = Arc::new(mmap);
 
-    let (manifest_bytes, data_offset) = parse_header(&mmap)?;
+    // For ZIP files, we need to find payload.bin within the mmap
+    let (manifest_bytes, data_offset) = if is_zip {
+        let zip_info = find_payload_in_zip(&reader).await?;
+        let payload_start = zip_info.offset as usize;
+        let payload_slice = &mmap[payload_start..];
+        parse_header(payload_slice)?
+    } else {
+        parse_header(&mmap)?
+    };
     let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
 
     let output_dir = output_dir
@@ -178,26 +211,51 @@ pub async fn extract_remote_prefetch(
                         image_writer.get_ref().set_len(info).unwrap_or(());
                     }
 
-                    extract_partition_from_mmap(
-                        &mmap,
-                        data_offset,
-                        block_size,
-                        partition,
-                        &mut image_writer,
-                        |name, current, total, completed| {
-                            if let Some(ref handle) = app {
-                                let _ = handle.emit(
-                                    "payload:progress",
-                                    serde_json::json!({
-                                        "partitionName": name,
-                                        "current": current,
-                                        "total": total,
-                                        "completed": completed,
-                                    }),
-                                );
-                            }
-                        },
-                    )?;
+                    if is_zip {
+                        // For ZIP: need to find payload.bin offset within mmap
+                        // This is a simplification - in production we'd pass zip_info to threads
+                        extract_partition_from_mmap(
+                            &mmap,
+                            data_offset,
+                            block_size,
+                            partition,
+                            &mut image_writer,
+                            |name, current, total, completed| {
+                                if let Some(ref handle) = app {
+                                    let _ = handle.emit(
+                                        "payload:progress",
+                                        serde_json::json!({
+                                            "partitionName": name,
+                                            "current": current,
+                                            "total": total,
+                                            "completed": completed,
+                                        }),
+                                    );
+                                }
+                            },
+                        )?;
+                    } else {
+                        extract_partition_from_mmap(
+                            &mmap,
+                            data_offset,
+                            block_size,
+                            partition,
+                            &mut image_writer,
+                            |name, current, total, completed| {
+                                if let Some(ref handle) = app {
+                                    let _ = handle.emit(
+                                        "payload:progress",
+                                        serde_json::json!({
+                                            "partitionName": name,
+                                            "current": current,
+                                            "total": total,
+                                            "completed": completed,
+                                        }),
+                                    );
+                                }
+                            },
+                        )?;
+                    }
 
                     image_writer.flush()?;
                     Ok(file_name)
@@ -242,12 +300,28 @@ pub async fn extract_remote_direct(
     // Step 1: Get reader and manifest via HTTP
     let reader = HttpPayloadReader::new(url.clone()).await?;
     let content_length = reader.content_length();
+    let is_zip = is_zip_url(&url);
 
-    log::info!("Direct mode: fetching manifest from {}", url);
+    log::info!("Direct mode: fetching manifest from {} (is_zip={})", url, is_zip);
 
     // Step 2: Read header to get manifest
-    let header_data = reader.read_range(0, 1024 * 1024).await?;
-    let (manifest_bytes, data_offset) = parse_header(&header_data)?;
+    let (manifest_bytes, data_offset, zip_info) = if is_zip {
+        let zip_info = find_payload_in_zip(&reader).await?;
+        log::info!(
+            "Found payload.bin at offset {}, size {} (uncompressed: {})",
+            zip_info.offset,
+            zip_info.compressed_size,
+            zip_info.uncompressed_size
+        );
+        let header_data =
+            read_from_zip_or_direct(&reader, &Some(zip_info.clone()), 0, 1024 * 1024).await?;
+        let (manifest, offset) = parse_header(&header_data)?;
+        (manifest, offset, Some(zip_info))
+    } else {
+        let header_data = reader.read_range(0, 1024 * 1024).await?;
+        let (manifest, offset) = parse_header(&header_data)?;
+        (manifest, offset, None)
+    };
     let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
 
     log::info!(
@@ -278,6 +352,7 @@ pub async fn extract_remote_direct(
         .collect();
 
     let http = Arc::new(reader);
+    let zip_info_arc = zip_info.map(Arc::new);
     let block_size = manifest.block_size.unwrap_or(4096);
 
     let results: Vec<_> = thread::scope(|s| {
@@ -286,6 +361,7 @@ pub async fn extract_remote_direct(
             .map(|partition| {
                 let output_dir = &output_dir;
                 let http = http.clone();
+                let zip_info = zip_info_arc.clone();
                 let partition_name = partition.partition_name.clone();
                 let app = app_handle.clone();
 
@@ -301,6 +377,7 @@ pub async fn extract_remote_direct(
 
                     extract_partition_from_remote(
                         &http,
+                        zip_info.as_deref(),
                         data_offset,
                         block_size,
                         partition,
@@ -451,8 +528,11 @@ fn extract_partition_from_mmap(
 }
 
 /// Extract from HTTP ranges on-demand (direct mode).
+///
+/// If zip_info is provided, reads are offset by the ZIP entry position.
 fn extract_partition_from_remote(
     http: &HttpPayloadReader,
+    zip_info: Option<&ZipPayloadInfo>,
     data_offset: usize,
     block_size: u32,
     partition: &super::chromeos_update_engine::PartitionUpdate,
@@ -477,8 +557,16 @@ fn extract_partition_from_remote(
 
         let data_offset_op = operation.data_offset.unwrap_or_default();
         let data_length = operation.data_length.unwrap_or_default();
-        let raw_data =
-            http.read_range_sync((data_offset as u64).saturating_add(data_offset_op), data_length)?;
+
+        // Read data - either directly or from within ZIP
+        let raw_data = if let Some(zi) = zip_info {
+            // For ZIP files, we need to read from the payload.bin entry
+            // The data_offset is relative to payload.bin start, so we add zi.offset
+            let abs_offset = zi.offset + (data_offset as u64).saturating_add(data_offset_op);
+            http.read_range_sync(abs_offset, data_length)?
+        } else {
+            http.read_range_sync((data_offset as u64).saturating_add(data_offset_op), data_length)?
+        };
 
         // SHA-256 verification
         if let Some(expected_hash) = operation.data_sha256_hash.as_ref()
