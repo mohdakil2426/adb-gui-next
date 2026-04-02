@@ -66,9 +66,9 @@ export function ConnectedDevicesCard({
                   key={device.serial}
                   className="flex items-center justify-between p-3 bg-muted rounded-lg group"
                 >
-                  <div className="flex flex-col">
+                  <div className="flex flex-col min-w-0 flex-1">
                     <div className="flex items-center gap-1">
-                      <span className="font-semibold text-lg">{displayName}</span>
+                      <span className="font-semibold text-lg truncate">{displayName}</span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -79,7 +79,9 @@ export function ConnectedDevicesCard({
                       </Button>
                     </div>
                     {description && (
-                      <span className="font-mono text-xs text-muted-foreground">{description}</span>
+                      <span className="font-mono text-xs text-muted-foreground truncate">
+                        {description}
+                      </span>
                     )}
                   </div>
 

@@ -20,7 +20,16 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - Smart 3-state header button toggles (closed/open-same-tab/open-other-tab)
   - `min-h-0` flex fix ensures shell input always visible at min resize height
   - Main content `paddingBottom` = panel height when open (content reachable behind panel)
-- Sticky header bar with DeviceSwitcher pill + toolbar buttons (no view label)
+- **Pinned header bar** with DeviceSwitcher pill + toolbar buttons:
+  - Viewport-locked via `h-svh overflow-hidden` boundary on outer wrapper
+  - Structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area
+  - No `position: sticky` — header never moves regardless of content height or window size
+  - `SidebarProvider` uses `h-full` (fills boundary); `SidebarInset` uses `overflow-x-hidden min-w-0`
+- **Responsive layout (fully hardened across all 7 views)**:
+  - No horizontal overflow from any view — `min-w-0` chain intact from root to text nodes
+  - Viewport-relative scroll container heights (`max-h-[40vh]`, `h-[40vh]`) replace all fixed px heights
+  - `scrollbar-gutter: stable` scoped to `.main-scroll-area` class only (no phantom sidebar gutters)
+  - Long device serials, file paths, URLs, package names all truncate correctly
 - shadcn/ui components (22+ primitives incl. Popover) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
@@ -177,15 +186,17 @@ src-tauri/src/
 
 ## Risks / Known Issues
 
-- Large frontend bundle chunk warning during build (~274 KB JS)
-- Bottom panel Shell tab needs manual verification with `pnpm tauri dev`
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
 - `cargo clippy` blocked on Windows when `AdbWinApi.dll` is locked by another process (pre-existing)
+- Large frontend bundle chunk warning during build (~274 KB JS)
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div + `SidebarProvider` `min-h-svh` → `h-full`. Header structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area. No `position: sticky` needed. |
+| 2026-04-03 | 0.1.0 | Adaptive hardening: `overflow-x-hidden` on SidebarProvider + Inset, viewport-relative heights in AppManager (`max-h-[30vh]` APK list, `h-[40vh]` virtualizer), `min-w-0 flex-1 + truncate` on ConnectedDevicesCard device info, `min-w-0` on FileSelector. |
+| 2026-04-03 | 0.1.0 | App-wide responsive layout: 7 root causes fixed — SidebarContent/Inset overflow axis, `scrollbar-gutter` scoped to `.main-scroll-area`, `--content-min-width` removed, PartitionTable viewport-relative height, PayloadSourceTabs remote `overflow-hidden`, FileBanner URL truncation defense. |
 | 2026-04-02 | 0.1.0 | Payload Dumper: CSS Flexbox layout adjustments ensuring responsive truncation for long remote OTA URLs preventing horizontal container overflow |
 | 2026-04-01 | 0.1.0 | Full Codebase Review Fixes: Shell metacharacter validation (C-01), ADB/fastboot host command guards (H-01/H-02), SSRF prevention with private IP blocklist (H-03), path canonicalization for open_folder (H-04), TempDir for APKS extraction (M-01), save_log prefix sanitization (M-02), Content-Length validation in HTTP ranges (NEW-07), in-place sort mutation fix (M-04), stable React keys in AppManager (L-02), formatBytes consolidation, 11 unused React imports removed, dead isRefreshingDevices removed, 4 unused _activeView props removed. Added `url` crate dependency. |
 | 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation in `commands/payload.rs`, unreachable fixes in `http.rs`, `impl ToString` param, field docs in `remote.rs`, clippy cast cleanup, `remote_zip` added to default feature in `Cargo.toml`. All feature-gated code now active by default. |

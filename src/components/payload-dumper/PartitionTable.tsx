@@ -79,7 +79,7 @@ export function PartitionTable({
         </div>
 
         {/* Rows — scrollable */}
-        <div className="divide-y divide-border/50 max-h-100 overflow-y-auto">
+        <div className="divide-y divide-border/50 max-h-[40vh] min-h-[120px] overflow-y-auto overflow-x-hidden">
           {partitions.map((partition, index) => {
             const isRowExtracting = extractingPartitions.has(partition.name);
             const isRowCompleted = completedPartitions.has(partition.name);

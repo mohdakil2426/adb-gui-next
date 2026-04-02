@@ -180,6 +180,7 @@ export function MainLayout() {
       </AnimatePresence>
       <div
         className={cn(
+          'h-svh overflow-hidden',
           isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 ease-in-out',
         )}
       >
@@ -189,8 +190,8 @@ export function MainLayout() {
             onViewChange={(view) => setActiveView(view as ViewType)}
           />
           <SidebarInset>
-            {/* Header bar with sidebar trigger and toolbar */}
-            <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border/50 bg-background/95 backdrop-blur-sm px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
+            {/* Header bar — sits above scroll area in the flex-col SidebarInset, never scrolls */}
+            <header className="shrink-0 z-10 flex h-12 items-center gap-2 border-b border-border/50 bg-background/95 backdrop-blur-sm px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-10">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
 
@@ -281,7 +282,7 @@ export function MainLayout() {
 
             {/* Main content area — scroll area gets bottom padding so content under panel is reachable */}
             <div
-              className="flex-1 overflow-auto custom-scroll"
+              className="flex-1 overflow-y-auto overflow-x-hidden custom-scroll main-scroll-area"
               style={{
                 paddingBottom:
                   isLogOpen && activeView !== VIEWS.ABOUT
@@ -289,7 +290,7 @@ export function MainLayout() {
                     : undefined,
               }}
             >
-              <div className="min-h-full min-w-(--content-min-width) p-4 sm:p-6">
+              <div className="min-h-full w-full p-4 sm:p-6">
                 <div className="max-w-(--content-max-width) mx-auto">
                   <AnimatePresence mode="wait">
                     <motion.div

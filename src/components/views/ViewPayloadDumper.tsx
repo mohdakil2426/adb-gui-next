@@ -24,13 +24,15 @@ export function ViewPayloadDumper() {
     extractingPartitions,
     completedPartitions,
     partitionProgress,
+    remoteUrl,
+    activeMode,
+    setRemoteUrl,
+    setActiveMode,
     togglePartition,
     toggleAll,
   } = usePayloadDumperStore();
 
-  // Local UI state
-  const [mode, setMode] = useState<'local' | 'remote'>('local');
-  const [remoteUrl, setRemoteUrl] = useState('');
+  // Local UI state — transient, doesn't need to survive view switches
   const [prefetch, setPrefetch] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
@@ -40,12 +42,12 @@ export function ViewPayloadDumper() {
 
   // All action handlers
   const actions = usePayloadActions({
-    mode,
+    mode: activeMode,
     remoteUrl,
     prefetch,
     setConnectionStatus,
     setEstimatedSize,
-    setMode,
+    setMode: setActiveMode,
     setRemoteUrl,
     setPrefetch,
     status,
@@ -64,7 +66,9 @@ export function ViewPayloadDumper() {
   const totalPayloadSize = partitions.reduce((acc, p) => acc + p.size, 0);
   const effectiveOutputPath = outputDir || outputPath;
   const isRemote =
-    mode === 'remote' || payloadPath.startsWith('http://') || payloadPath.startsWith('https://');
+    activeMode === 'remote' ||
+    payloadPath.startsWith('http://') ||
+    payloadPath.startsWith('https://');
 
   return (
     <div className="flex flex-col gap-6 pb-10 w-full min-w-0">
@@ -97,8 +101,8 @@ export function ViewPayloadDumper() {
           {!payloadPath ? (
             /* State: Empty — Tabs for Local/Remote */
             <PayloadSourceTabs
-              mode={mode}
-              onModeChange={setMode}
+              mode={activeMode}
+              onModeChange={setActiveMode}
               remoteUrl={remoteUrl}
               onUrlChange={setRemoteUrl}
               prefetch={prefetch}
@@ -115,7 +119,7 @@ export function ViewPayloadDumper() {
             />
           ) : status === 'loading-partitions' && partitions.length === 0 ? (
             /* State: Loading — stage indicator */
-            <LoadingState mode={mode} remoteUrl={remoteUrl} payloadPath={payloadPath} />
+            <LoadingState mode={activeMode} remoteUrl={remoteUrl} payloadPath={payloadPath} />
           ) : (
             /* State: Loaded — banner + table + footer */
             <>

@@ -16,6 +16,7 @@ dev-tauri.log
 *.log
 *.tmp
 *.temp
+oppo_decrypt-master
 
 # Environment overrides
 .env

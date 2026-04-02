@@ -22,6 +22,8 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Light/dark/system theme support
 - ~95% UI consistency: semantic tokens, standardized icons, accessible clickable lists, shared components
 - File management: dual-pane explorer, multi-select, inline rename, delete with confirmation
+- **Pinned header bar**: always visible regardless of content height (viewport-locked layout via `h-svh` boundary)
+- **Responsive layout**: all views adapt to window resize with no horizontal overflow, no phantom scrollbars
 
 ## Product Boundaries
 
@@ -55,4 +57,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-01 (Payload audit: Remote URL extraction verified, temp file leak fix, dead code annotation)
+- Last Updated: 2026-04-03 (Responsive layout + sticky header fully resolved; `h-svh` boundary pattern established)

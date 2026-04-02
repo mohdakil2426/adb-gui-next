@@ -74,7 +74,7 @@ export function PayloadSourceTabs({
         />
       </TabsContent>
 
-      <TabsContent value="remote" className="mt-4 min-w-0">
+      <TabsContent value="remote" className="mt-4 min-w-0 overflow-hidden">
         <RemoteUrlPanel
           url={remoteUrl}
           onUrlChange={onUrlChange}

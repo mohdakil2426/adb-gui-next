@@ -62,7 +62,7 @@
   --radius: 0.625rem;
 
   /* Layout constants for responsive design */
-  --content-min-width: 400px;
+  --content-min-width: 0px;
   --content-max-width: 1280px;
 
   --background: oklch(1 0 0);
@@ -200,6 +200,10 @@ html,
 body {
   scrollbar-width: thin;
   scrollbar-color: oklch(0 0 0 / 20%) transparent;
+}
+
+/* Only the main content scroll area gets a stable gutter to prevent layout shift */
+.main-scroll-area {
   scrollbar-gutter: stable;
 }
 

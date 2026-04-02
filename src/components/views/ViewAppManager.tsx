@@ -263,7 +263,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               </div>
 
               <div className="rounded-lg border shadow-md bg-popover text-popover-foreground overflow-hidden">
-                <div className="max-h-75 overflow-y-auto p-1">
+                <div className="max-h-[30vh] min-h-[100px] overflow-y-auto overflow-x-hidden p-1">
                   {apkPaths.map((path) => (
                     <div
                       key={path}
@@ -401,7 +401,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               {/* Virtualizer scroll container — must be a plain div so the ref works */}
               <div
                 ref={packageListRef}
-                className="h-75 overflow-y-auto"
+                className="h-[40vh] min-h-[150px] overflow-y-auto overflow-x-hidden"
                 role="listbox"
                 aria-label="Installed packages"
                 aria-multiselectable="true"

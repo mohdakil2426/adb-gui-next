@@ -280,6 +280,59 @@ onClick={() => {
 | Links that open URL | `<button onClick={openLink}>` — never `<a href>` with `onClick` (double-open on Tauri) |
 | Searchable lists | `<Command shouldFilter={false}>` + `<CommandInput>` — never hand-roll search icon+input |
 
+### 12. Layout & Containment (Viewport-Locked Desktop Pattern)
+
+This is a Tauri desktop app — the window is viewport-locked. The layout tree must respect this.
+
+**Viewport height boundary (MANDATORY):**
+```tsx
+// MainLayout.tsx — outer wrapper
+<div className={cn('h-svh overflow-hidden', isLoading ? 'opacity-0' : 'opacity-100 ...')}>
+  <SidebarProvider>  {/* uses h-full, NOT min-h-svh */}
+    <AppSidebar />
+    <SidebarInset>  {/* flex-1 flex-col overflow-x-hidden min-w-0 */}
+      <header className="shrink-0 ...">  {/* PINNED — never scrolls */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden main-scroll-area">  {/* SCROLLER */}
+        {activeView}
+```
+
+**Rules:**
+- `h-svh overflow-hidden` on the outer wrapper = hard viewport boundary. Without it, `flex-1` resolves to ∞ and everything scrolls at body level.
+- `SidebarProvider` wrapper: `h-full` (not `min-h-svh`). `min-h-svh` is a web page pattern — it allows growing beyond the viewport.
+- Header is `shrink-0` flex sibling above the scroll area. **No `position: sticky` needed or used.**
+- Scroll only happens inside `flex-1 overflow-y-auto` — never at the body level.
+- `position: fixed` children (BottomPanel, Toaster) reference the viewport, not the container. They are unaffected by `overflow-x-hidden` (only CSS `transform` would re-contain them).
+
+**`overflow-x-hidden` vs `overflow-hidden`:**
+- `overflow-x-hidden` on layout containers = clips horizontal escapes, preserves vertical flex flow.
+- `overflow-hidden` on layout containers = breaks `position: sticky` by terminating the scroll-ancestor search AND clips vertical overflow unexpectedly.
+- Rule: Use `overflow-x-hidden` on `SidebarProvider` wrapper and `SidebarInset`. Use `overflow-hidden` only on leaf components (tooltips, dropdowns, image crops).
+
+**`min-w-0` propagation chain:**
+```
+SidebarProvider (overflow-x-hidden)
+  SidebarInset (min-w-0 overflow-x-hidden)
+    scroll div (w-full)
+      content wrapper (w-full)
+        Card (min-w-0 where needed)
+          flex row (min-w-0)
+            <p className="truncate">  ← WORKS
+```
+Any missing `min-w-0` in a flex ancestor allows the child to dictate its own width, breaking truncation for all descendant text.
+
+**Scrollbar gutter:**
+- `scrollbar-gutter: stable` is applied ONLY via `.main-scroll-area` class on the main content scroll div.
+- Never apply globally to `html`/`body` — it creates phantom gutters in sidebar nav, nested scroll areas, and dialog overlays.
+
+**Viewport-relative heights for scroll lists:**
+```tsx
+// DO: viewport-relative with floor
+className="max-h-[40vh] min-h-[120px] overflow-y-auto"
+
+// DON'T: fixed pixel heights
+className="max-h-100"  // 400px — too small on large monitors, too large on small windows
+```
+
 ## Component Architecture
 
 ```text
@@ -320,3 +373,6 @@ src/components/
 - **Tauri blocking commands = UI freeze**: `pub fn` commands calling `std::process::Command::output()` run on the main thread and block the WebView. Pattern: `pub async fn` + `tokio::task::spawn_blocking(move || ...)`. Applied to `install_package`, `uninstall_package`, `sideload_package`, `flash_partition`, `wipe_data`.
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
 - **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.
+- **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.
+- **`overflow-x-hidden` not `overflow-hidden` on layout containers**: `overflow-hidden` terminates the scroll-ancestor chain (breaks sticky) and clips both axes. `overflow-x-hidden` clips only horizontal escapes, leaving vertical flex flow intact.
+- **No `position: sticky` in this app**: Header is pinned structurally as a `shrink-0` sibling to the `flex-1 overflow-y-auto` scroll area inside the bounded `SidebarInset`.

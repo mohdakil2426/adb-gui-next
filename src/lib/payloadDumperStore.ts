@@ -26,6 +26,10 @@ interface PayloadDumperState {
   payloadPath: string;
   outputPath: string;
 
+  // Remote mode
+  remoteUrl: string;
+  activeMode: 'local' | 'remote';
+
   // Partitions
   partitions: PartitionInfo[];
 
@@ -45,6 +49,8 @@ interface PayloadDumperState {
   // Actions
   setPayloadPath: (path: string) => void;
   setOutputPath: (path: string) => void;
+  setRemoteUrl: (url: string) => void;
+  setActiveMode: (mode: 'local' | 'remote') => void;
   setPartitions: (partitions: PartitionInfo[]) => void;
   togglePartition: (index: number) => void;
   toggleAll: (selected: boolean) => void;
@@ -70,6 +76,8 @@ interface PayloadDumperState {
 const initialState = {
   payloadPath: '',
   outputPath: '',
+  remoteUrl: '',
+  activeMode: 'local' as 'local' | 'remote',
   partitions: [] as PartitionInfo[],
   status: 'idle' as ExtractionStatus,
   extractedFiles: [] as string[],
@@ -97,6 +105,10 @@ export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
     }),
 
   setOutputPath: (path) => set({ outputPath: path }),
+
+  setRemoteUrl: (url) => set({ remoteUrl: url }),
+
+  setActiveMode: (mode) => set({ activeMode: mode }),
 
   setPartitions: (partitions) => set({ partitions }),
 

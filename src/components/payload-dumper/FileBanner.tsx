@@ -51,7 +51,7 @@ export function FileBanner({
             <FileArchive className="h-4 w-4 shrink-0 text-primary" />
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate" title={displayName}>
+            <p className="text-sm font-medium truncate min-w-0 max-w-full" title={displayName}>
               {displayName}
             </p>
           </div>
