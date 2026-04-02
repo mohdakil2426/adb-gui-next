@@ -13,7 +13,7 @@ interface PartitionProgress {
   percentage: number;
 }
 
-type ExtractionStatus =
+export type ExtractionStatus =
   | 'idle'
   | 'loading-partitions'
   | 'ready'

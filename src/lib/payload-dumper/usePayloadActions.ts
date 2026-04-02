@@ -14,20 +14,21 @@ import {
   CheckRemotePayload,
   ListRemotePayloadPartitions,
 } from '@/lib/desktop/backend';
-import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
 import { formatBytesNum } from '@/lib/utils';
+import type { ExtractionStatus } from '@/lib/payloadDumperStore';
+
+type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
 
 interface UsePayloadActionsOptions {
   mode: 'local' | 'remote';
   remoteUrl: string;
   prefetch: boolean;
-  connectionStatus: ConnectionStatus;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setEstimatedSize: (size: string | null) => void;
   setMode: (mode: 'local' | 'remote') => void;
   setRemoteUrl: (url: string) => void;
   setPrefetch: (prefetch: boolean) => void;
-  status: string;
+  status: ExtractionStatus;
 }
 
 interface PayloadActions {
@@ -48,7 +49,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     mode,
     remoteUrl,
     prefetch,
-    connectionStatus: _connectionStatus,
     setConnectionStatus,
     setEstimatedSize,
     setMode,
