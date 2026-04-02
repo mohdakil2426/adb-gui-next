@@ -17,7 +17,7 @@ import {
 import { formatBytesNum } from '@/lib/utils';
 import type { ExtractionStatus } from '@/lib/payloadDumperStore';
 
-type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
+import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
 
 interface UsePayloadActionsOptions {
   mode: 'local' | 'remote';

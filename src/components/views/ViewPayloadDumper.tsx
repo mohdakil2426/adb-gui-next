@@ -165,13 +165,15 @@ export function ViewPayloadDumper() {
       </Card>
 
       {/* Status / Results Card */}
-      <ExtractionStatusCard
-        status={status as 'success' | 'error'}
-        extractedFiles={extractedFiles}
-        outputDir={outputDir}
-        errorMessage={errorMessage}
-        onOpenOutputFolder={actions.handleOpenOutputFolder}
-      />
+      {(status === 'success' || status === 'error') && extractedFiles.length > 0 && (
+        <ExtractionStatusCard
+          status={status}
+          extractedFiles={extractedFiles}
+          outputDir={outputDir}
+          errorMessage={errorMessage}
+          onOpenOutputFolder={actions.handleOpenOutputFolder}
+        />
+      )}
     </div>
   );
 }
