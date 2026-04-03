@@ -159,9 +159,9 @@ src-tauri/src/
 ├── marketplace/ — modular provider architecture
 │   ├── mod.rs — module root, shared reqwest::Client
 │   ├── types.rs — MarketplaceApp, MarketplaceAppDetail, VersionInfo DTOs
-│   ├── fdroid.rs — F-Droid Meilisearch + v1 API
-│   ├── izzy.rs — IzzyOnDroid API v1
-│   ├── github.rs — GitHub-Store model (search + releases + APK filter + trending)
+│   ├── fdroid.rs       # F-Droid search API (search.f-droid.org/api/search_apps) + detail enrichment
+│   ├── izzy.rs         # IzzyOnDroid cross-reference (checks F-Droid results against packages API)
+│   ├── github.rs       # GitHub Search API (proper URL encoding + PAT + APK filter + trending)
 │   └── aptoide.rs — Aptoide ws75 API (TRUSTED-only, OBB/module skip)
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
@@ -207,7 +207,6 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|-------|
-| Medium | Marketplace: GitHub PAT management UI | Prompt user for PAT when rate-limited; settings dialog for token management |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -227,6 +226,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-04 | 0.1.0 | Marketplace Bug Fixes: 4 critical bugs fixed — F-Droid response key `hits` → `apps`, IzzyOnDroid broken search replaced with cross-reference approach, GitHub query encoding `+` → `%20`, trending query too restrictive. New Settings dialog (`MarketplaceSettings.tsx`) with provider toggles, GitHub PAT input, results-per-provider preference. `github_token` added to `SearchFilters` and passed through all API calls. Debounce 400ms → 600ms, min 2-char query. SearchBar settings icon. All quality gates pass. |
 | 2026-04-03 | 0.1.0 | Marketplace V2 "Unified Discovery": Complete overhaul from 3-provider flat list to Design B with 4 providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). New `src-tauri/src/marketplace/` modular provider architecture (6 files). 7 new frontend components (SearchBar, FilterBar, AppCard, AppListItem, MarketplaceEmptyState, ProviderBadge, AttributionFooter). ViewMarketplace and AppDetailDialog rewritten. Zustand store with provider filters, view modes, search history. 2 new commands (marketplace_get_trending, marketplace_list_versions). GitHub-Store model with APK-only filtering. Aptoide TRUSTED-only malware filter. Uptodown removed. 15 pre-existing clippy warnings fixed across OPS/OFP modules. All quality gates (format + lint + build) pass. |
 | 2026-04-03 | 0.1.0 | App Marketplace (original): 3-provider search (F-Droid, IzzyOnDroid, GitHub) with concurrent `tokio::join!`, app detail dialog, download + ADB install. 4 new Tauri commands in `commands/marketplace.rs`. Frontend: `ViewMarketplace.tsx`, `AppDetailDialog.tsx`, `marketplaceStore.ts`. Sidebar nav in Main group with Store icon. Dependencies: `urlencoding`, reqwest `json` feature, tokio `macros` feature. |
 | 2026-04-03 | 0.1.0 | OPS Decryption Bug Fixes: 3 critical bugs fixed — sbox array size `[u32; 512]` to `[u32; 2048]` with byte-value entries, XML validation on padded buffer, missing `<Image>` element parsing. XML offset corrected to compute from end of file. BOM/NUL/FFFD stripping. 62 partitions verified from OnePlus 8 Pro firmware. |

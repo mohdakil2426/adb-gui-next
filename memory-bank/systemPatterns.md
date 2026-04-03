@@ -407,12 +407,13 @@ src/components/
 ├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
 ├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
 ├── AppDetailDialog.tsx      # Marketplace app detail dialog (download + install + versions)
-├── marketplace/             # 7 marketplace UI components
-│   ├── SearchBar.tsx        # Ctrl+K shortcut, debounced search
+├── marketplace/             # 8 marketplace UI components
+│   ├── SearchBar.tsx        # Ctrl+K shortcut, 600ms debounced search, settings icon
 │   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
 │   ├── AppCard.tsx          # Grid card with icon, provider badge, install
 │   ├── AppListItem.tsx      # Compact list row
 │   ├── MarketplaceEmptyState.tsx  # Hero, popular chips, trending GitHub apps
+│   ├── MarketplaceSettings.tsx    # Settings dialog: providers, GitHub PAT, preferences
 │   ├── ProviderBadge.tsx    # Color-coded source badges (F-Droid/Izzy/GitHub/Aptoide)
 │   └── AttributionFooter.tsx  # "Powered by" provider links
 ├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command, Tabs)
@@ -423,7 +424,7 @@ src/components/
 ## Known Architectural Notes
 
 - `src-tauri/src/lib.rs` split into helpers + 8 command modules (38 total commands)
-- `src-tauri/src/marketplace/` — modular provider architecture (fdroid, izzy, github, aptoide, types) with concurrent `tokio::join!` search
+- `src-tauri/src/marketplace/` — modular provider architecture (fdroid, izzy, github, aptoide, types) with concurrent `tokio::join!` search; IzzyOnDroid uses cross-reference (no search API — checks F-Droid results against packages endpoint); GitHub uses proper URL encoding (`%20` not `+`) with optional PAT for rate limit increase
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab

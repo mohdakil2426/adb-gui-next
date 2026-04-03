@@ -312,21 +312,37 @@ export function MarketplaceSearch(
 export function MarketplaceGetAppDetail(
   packageName: string,
   source: string,
+  githubToken?: string | null,
 ): Promise<backend.MarketplaceAppDetail> {
-  return call('marketplace_get_app_detail', { packageName, source });
+  return call('marketplace_get_app_detail', {
+    packageName,
+    source,
+    githubToken: githubToken ?? null,
+  });
 }
 
 /** Fetch trending/popular Android apps from GitHub. */
-export function MarketplaceGetTrending(sort?: string): Promise<Array<backend.MarketplaceApp>> {
-  return call('marketplace_get_trending', { sort: sort ?? null });
+export function MarketplaceGetTrending(
+  sort?: string,
+  githubToken?: string | null,
+): Promise<Array<backend.MarketplaceApp>> {
+  return call('marketplace_get_trending', {
+    sort: sort ?? null,
+    githubToken: githubToken ?? null,
+  });
 }
 
 /** List version history for a specific app. */
 export function MarketplaceListVersions(
   packageName: string,
   source: string,
+  githubToken?: string | null,
 ): Promise<Array<backend.VersionInfo>> {
-  return call('marketplace_list_versions', { packageName, source });
+  return call('marketplace_list_versions', {
+    packageName,
+    source,
+    githubToken: githubToken ?? null,
+  });
 }
 
 /** Download an APK from a URL to a temp directory. Returns the local file path. */

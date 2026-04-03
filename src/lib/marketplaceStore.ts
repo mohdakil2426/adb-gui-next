@@ -30,6 +30,11 @@ interface MarketplaceState {
   // Search history
   searchHistory: string[];
 
+  // Settings
+  isSettingsOpen: boolean;
+  githubPat: string;
+  resultsPerProvider: number;
+
   // Actions
   setQuery: (q: string) => void;
   setResults: (r: MarketplaceApp[]) => void;
@@ -44,6 +49,10 @@ interface MarketplaceState {
   setIsTrendingLoading: (v: boolean) => void;
   addToSearchHistory: (q: string) => void;
   clearSearchHistory: () => void;
+  openSettings: () => void;
+  closeSettings: () => void;
+  setGithubPat: (pat: string) => void;
+  setResultsPerProvider: (n: number) => void;
   reset: () => void;
 }
 
@@ -80,6 +89,9 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   trendingApps: [],
   isTrendingLoading: false,
   searchHistory: loadFromStorage<string[]>('marketplace_history', []),
+  isSettingsOpen: false,
+  githubPat: loadFromStorage<string>('marketplace_github_pat', ''),
+  resultsPerProvider: loadFromStorage<number>('marketplace_results_per_provider', 15),
 
   setQuery: (query) => set({ query }),
   setResults: (results) => set({ results }),
@@ -140,6 +152,19 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   clearSearchHistory: () => {
     saveToStorage('marketplace_history', []);
     set({ searchHistory: [] });
+  },
+
+  openSettings: () => set({ isSettingsOpen: true }),
+  closeSettings: () => set({ isSettingsOpen: false }),
+
+  setGithubPat: (githubPat) => {
+    saveToStorage('marketplace_github_pat', githubPat);
+    set({ githubPat });
+  },
+
+  setResultsPerProvider: (resultsPerProvider) => {
+    saveToStorage('marketplace_results_per_provider', resultsPerProvider);
+    set({ resultsPerProvider });
   },
 
   reset: () =>

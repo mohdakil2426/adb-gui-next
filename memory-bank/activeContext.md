@@ -5,11 +5,48 @@
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
 Marketplace V2 "Unified Discovery" (4-provider app search + install with Design B UI) is implemented.
+**Marketplace Bug Fixes** — All 4 providers now return search results. F-Droid, IzzyOnDroid, and GitHub were broken; fixed with response key correction, cross-reference search, and query encoding fix. Settings dialog added with GitHub PAT support.
 All quality gates pass: format, lint (ESLint + clippy -D warnings), and build.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-04 — Marketplace Bug Fixes: All 4 Providers Working + Settings Dialog
+
+**Bugs Found & Fixed (4 critical):**
+
+| # | Provider | Root Cause | Fix |
+|---|----------|-----------|-----|
+| 1 | F-Droid | Response key `hits` → API returns `apps` | Updated deserialization to `apps[]`, new field mappings (`name`, `summary`, `icon` as full URL, `url` for package name extraction) |
+| 2 | IzzyOnDroid | Search endpoint `?search=X` returns HTTP 400 — **NO search API exists** | Cross-reference approach: check F-Droid results against IzzyOnDroid packages API |
+| 3 | GitHub | `+` literal between qualifiers was double-encoded → 0 results | Use `urlencoding::encode()` with spaces between qualifiers (converts to `%20`) |
+| 4 | GitHub | Trending query `topic:app` too restrictive (207 results) | Removed `topic:app`, lowered stars to >50, added recency filter |
+
+**Additional fixes:**
+- IzzyOnDroid `versionCode` parsing: API returns STRING not integer
+- F-Droid detail enrichment: search API cross-queried for name/description (v1 only returns versions)
+- Removed `NOT topic:library` qualifier (too restrictive)
+- Added `X-GitHub-Api-Version: 2022-11-28` header (GitHub-Store best practice)
+- GitHub PAT passed through all API calls (search, detail, trending, versions)
+- Per-provider result count logging for debugging
+
+**New Feature — Settings Dialog (`MarketplaceSettings.tsx`):**
+- Provider enable/disable toggles with checkboxes
+- GitHub PAT input with show/hide toggle + save confirmation
+- Results per provider preference (5/10/15/25)
+- Search history clear button
+- All settings persisted via localStorage with `marketplace_` prefix
+
+**UX Improvements:**
+- Debounce increased from 400ms → 600ms (fewer API calls)
+- Minimum 2-character query length (prevents empty searches)
+- Settings gear icon (⚙️) added to SearchBar right side
+- Search history saved and browsable (10 max)
+
+**Files changed:** 11 (5 Rust + 5 TypeScript + 1 new TypeScript)
+
+---
 
 ### 2026-04-03 — Marketplace V2: "Unified Discovery" (4-Provider Modular Architecture)
 
@@ -20,38 +57,39 @@ All quality gates pass: format, lint (ESLint + clippy -D warnings), and build.
 | Module | Purpose |
 |---------|---------|
 | `mod.rs` | Module root, shared `reqwest::Client` |
-| `types.rs` | Shared DTOs: `MarketplaceApp`, `MarketplaceAppDetail`, `VersionInfo` |
-| `fdroid.rs` | F-Droid Meilisearch search + v1 API detail + version history |
-| `izzy.rs` | IzzyOnDroid API v1 search + detail |
-| `github.rs` | GitHub-Store model: Search API with `topic:android+fork:false+NOT+topic:library`, APK-only asset filter (`is_apk_asset()`), PAT support, trending feed |
+| `types.rs` | Shared DTOs: `MarketplaceApp`, `MarketplaceAppDetail`, `VersionInfo`, `SearchFilters` (with `github_token`) |
+| `fdroid.rs` | F-Droid search API (`search.f-droid.org/api/search_apps`) + detail enrichment |
+| `izzy.rs` | IzzyOnDroid cross-reference (checks F-Droid results against `/api/v1/packages/`) |
+| `github.rs` | GitHub Search API with proper URL encoding, APK-only asset filter, PAT support, trending feed |
 | `aptoide.rs` | Aptoide ws75 API: TRUSTED-only malware filter, OBB/module skip, screenshots |
 
 **New Tauri commands:**
-- `marketplace_get_trending` — Trending GitHub Android apps (stars > 100)
+- `marketplace_get_trending` — Trending GitHub Android apps (stars > 50, recently pushed)
 - `marketplace_list_versions` — GitHub release history with APK assets
 
-**Frontend: 7 new marketplace components + view/dialog rewrite:**
+**Frontend: 8 marketplace components + view/dialog rewrite:**
 
 | Component | Purpose |
 |------|---------|
-| `SearchBar.tsx` | Ctrl+K shortcut, 400ms debounce, search state |
+| `SearchBar.tsx` | Ctrl+K shortcut, 600ms debounce, settings gear icon |
 | `FilterBar.tsx` | Provider toggle chips (F-Droid/IzzyOnDroid/GitHub/Aptoide), grid/list toggle, result count |
 | `AppCard.tsx` | Grid card with icon, provider badge, rating, inline install |
 | `AppListItem.tsx` | Compact list row for list view |
 | `MarketplaceEmptyState.tsx` | Hero, popular app chips, trending GitHub feed |
 | `ProviderBadge.tsx` | Color-coded source badges |
 | `AttributionFooter.tsx` | "Powered by" provider links |
+| `MarketplaceSettings.tsx` | Settings dialog: providers, GitHub PAT, preferences, cache |
 | `ViewMarketplace.tsx` | Complete rewrite: search card + provider filters + grid/list results + empty state |
 | `AppDetailDialog.tsx` | Enhanced: screenshots, GitHub stats, expand/collapse description, version history with per-version install, copyable package name |
-| `marketplaceStore.ts` | Rewritten: provider filters, view mode, search history, trending state — all persisted in localStorage |
+| `marketplaceStore.ts` | Rewritten: provider filters, view mode, search history, trending, GitHub PAT, settings state — all persisted in localStorage |
 
 **Key design decisions:**
 - **Uptodown removed** — scraping is fragile and ToS-grey
 - **APK-only filtering** — GitHub assets filtered via `is_apk_asset()`, Aptoide skips OBB entries
 - **Malware filtering** — Aptoide shows only TRUSTED rank by default
-- **Concurrent search** — `tokio::join!` fires all enabled providers simultaneously
-- **GitHub-Store model** — Search API with topic qualifiers, NOT code search
-- **State persistence** — View mode, provider filters, search history saved to localStorage
+- **Concurrent search** — `tokio::join!` fires F-Droid + GitHub + Aptoide simultaneously; IzzyOnDroid runs after F-Droid (cross-reference)
+- **GitHub-Store model** — Search API with topic qualifiers, proper URL encoding, PAT support
+- **State persistence** — View mode, provider filters, search history, GitHub PAT saved to localStorage
 
 **Pre-existing clippy fixes (bonus):** Fixed 15 warnings across OPS/OFP modules:
 - `crypto.rs`: needless_range_loop, manual_rotate, redundant_closure, sliced_string_as_bytes
@@ -183,13 +221,12 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-03** (after Marketplace V2 Unified Discovery)
+Last verified: **2026-04-04** (after Marketplace Bug Fixes + Settings Dialog)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
-- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings (all 15 pre-existing warnings fixed)
-- `pnpm format` ✅ — Formatting clean
-- `cargo check` ✅ — Rust compilation clean (with features `local_zip,remote_zip`)
-- `pnpm tauri dev` ✅ — App launches and runs successfully
-- OPS integration test ✅ — 62 partitions from OnePlus 8 Pro firmware
+- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
+- `pnpm format:check` ✅ — Formatting clean
+- `pnpm check:fast` ✅ — All fast gates pass
+- `cargo check` ✅ — Rust compilation clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 
 ---
@@ -204,7 +241,7 @@ Last verified: **2026-04-03** (after Marketplace V2 Unified Discovery)
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
-| Marketplace | ✅ Working | 4-provider Unified Discovery (F-Droid, IzzyOnDroid, GitHub, Aptoide), modular backend, grid/list views, provider filtering, detail dialog |
+| Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |

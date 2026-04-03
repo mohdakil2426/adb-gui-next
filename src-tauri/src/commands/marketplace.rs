@@ -14,6 +14,9 @@ fn is_provider_enabled(filters: &SearchFilters, provider: &str) -> bool {
 // ─── Commands ────────────────────────────────────────────────────────────────
 
 /// Search across all enabled providers simultaneously.
+///
+/// IzzyOnDroid uses cross-referencing: F-Droid results are checked against
+/// the IzzyOnDroid packages API since Izzy has no native search endpoint.
 #[tauri::command]
 pub async fn marketplace_search(
     query: String,
@@ -27,9 +30,10 @@ pub async fn marketplace_search(
     info!("Marketplace search: {query}");
     let client = marketplace::http_client()?;
     let filters = filters.unwrap_or_default();
+    let github_token = filters.github_token.clone();
 
-    // Launch all enabled provider searches concurrently
-    let (fdroid, izzy, github, aptoide) = tokio::join!(
+    // Launch F-Droid, GitHub, and Aptoide concurrently
+    let (fdroid, github, aptoide) = tokio::join!(
         async {
             if is_provider_enabled(&filters, "F-Droid") {
                 marketplace::fdroid::search(&client, &query).await
@@ -38,15 +42,8 @@ pub async fn marketplace_search(
             }
         },
         async {
-            if is_provider_enabled(&filters, "IzzyOnDroid") {
-                marketplace::izzy::search(&client, &query).await
-            } else {
-                vec![]
-            }
-        },
-        async {
             if is_provider_enabled(&filters, "GitHub") {
-                marketplace::github::search(&client, &query, &None, "stars", 10).await
+                marketplace::github::search(&client, &query, &github_token, "stars", 10).await
             } else {
                 vec![]
             }
@@ -60,14 +57,29 @@ pub async fn marketplace_search(
         },
     );
 
-    let capacity = fdroid.len() + izzy.len() + github.len() + aptoide.len();
+    // IzzyOnDroid cross-reference: check F-Droid results against Izzy's packages API
+    let izzy = if is_provider_enabled(&filters, "IzzyOnDroid") && !fdroid.is_empty() {
+        marketplace::izzy::search_via_fdroid(&client, &fdroid).await
+    } else {
+        vec![]
+    };
+
+    let fdroid_count = fdroid.len();
+    let izzy_count = izzy.len();
+    let github_count = github.len();
+    let aptoide_count = aptoide.len();
+
+    let capacity = fdroid_count + izzy_count + github_count + aptoide_count;
     let mut results: Vec<MarketplaceApp> = Vec::with_capacity(capacity);
     results.extend(fdroid);
     results.extend(izzy);
     results.extend(github);
     results.extend(aptoide);
 
-    debug!("Marketplace search '{}' returned {} results", query, results.len());
+    debug!(
+        "Marketplace search '{}' → F-Droid:{}, Izzy:{}, GitHub:{}, Aptoide:{}",
+        query, fdroid_count, izzy_count, github_count, aptoide_count,
+    );
     Ok(results)
 }
 
@@ -76,6 +88,7 @@ pub async fn marketplace_search(
 pub async fn marketplace_get_app_detail(
     package_name: String,
     source: String,
+    github_token: Option<String>,
 ) -> CmdResult<MarketplaceAppDetail> {
     info!("Marketplace detail: {package_name} from {source}");
     let client = marketplace::http_client()?;
@@ -83,7 +96,7 @@ pub async fn marketplace_get_app_detail(
     match source.as_str() {
         "F-Droid" => marketplace::fdroid::get_detail(&client, &package_name).await,
         "IzzyOnDroid" => marketplace::izzy::get_detail(&client, &package_name).await,
-        "GitHub" => marketplace::github::get_detail(&client, &package_name, &None).await,
+        "GitHub" => marketplace::github::get_detail(&client, &package_name, &github_token).await,
         "Aptoide" => marketplace::aptoide::get_detail(&client, &package_name).await,
         _ => Err(format!("Unknown source: {source}")),
     }
@@ -91,10 +104,13 @@ pub async fn marketplace_get_app_detail(
 
 /// Fetch trending/popular Android apps from GitHub.
 #[tauri::command]
-pub async fn marketplace_get_trending(sort: Option<String>) -> CmdResult<Vec<MarketplaceApp>> {
+pub async fn marketplace_get_trending(
+    sort: Option<String>,
+    github_token: Option<String>,
+) -> CmdResult<Vec<MarketplaceApp>> {
     let client = marketplace::http_client()?;
     let sort = sort.as_deref().unwrap_or("stars");
-    Ok(marketplace::github::get_trending(&client, &None, sort).await)
+    Ok(marketplace::github::get_trending(&client, &github_token, sort).await)
 }
 
 /// List version history for a specific app.
@@ -102,13 +118,13 @@ pub async fn marketplace_get_trending(sort: Option<String>) -> CmdResult<Vec<Mar
 pub async fn marketplace_list_versions(
     package_name: String,
     source: String,
+    github_token: Option<String>,
 ) -> CmdResult<Vec<VersionInfo>> {
     let client = marketplace::http_client()?;
 
     match source.as_str() {
-        "GitHub" => marketplace::github::list_releases(&client, &package_name, &None).await,
+        "GitHub" => marketplace::github::list_releases(&client, &package_name, &github_token).await,
         // F-Droid and IzzyOnDroid return versions in their detail response
-        // For now, fetch detail and extract versions
         "F-Droid" => {
             let detail = marketplace::fdroid::get_detail(&client, &package_name).await?;
             Ok(detail.versions)

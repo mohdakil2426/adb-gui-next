@@ -9,7 +9,9 @@ fn auth_headers(
     builder: reqwest::RequestBuilder,
     token: &Option<String>,
 ) -> reqwest::RequestBuilder {
-    let builder = builder.header("Accept", "application/vnd.github+json");
+    let builder = builder
+        .header("Accept", "application/vnd.github+json")
+        .header("X-GitHub-Api-Version", "2022-11-28");
     match token {
         Some(t) if !t.is_empty() => builder.header("Authorization", format!("Bearer {t}")),
         _ => builder,
@@ -26,52 +28,8 @@ fn is_apk_asset(name: &str) -> bool {
         && !lower.ends_with(".apks")
 }
 
-/// Search GitHub repos with Android topics + APK releases (GitHub-Store model).
-///
-/// Uses the Search API with qualifiers to find repos that are likely
-/// installable Android apps (not libraries), mirroring the approach from
-/// <https://github.com/OpenHub-Store/GitHub-Store>.
-pub async fn search(
-    client: &Client,
-    query: &str,
-    token: &Option<String>,
-    sort: &str,
-    per_page: u32,
-) -> Vec<MarketplaceApp> {
-    // Build search query: combine user query with Android qualifiers
-    // Exclude libraries, archived repos, and forks
-    let q = format!(
-        "{}+topic:android+fork:false+NOT+topic:library+archived:false",
-        urlencoding::encode(query)
-    );
-    let url =
-        format!("https://api.github.com/search/repositories?q={q}&sort={sort}&per_page={per_page}");
-
-    let response = match auth_headers(client.get(&url), token).send().await {
-        Ok(resp) => resp,
-        Err(e) => {
-            warn!("GitHub search failed: {e}");
-            return vec![];
-        }
-    };
-
-    // Check for rate-limit errors
-    if response.status().as_u16() == 403 || response.status().as_u16() == 429 {
-        warn!("GitHub rate limit hit — consider adding a Personal Access Token");
-        return vec![];
-    }
-
-    let body: serde_json::Value = match response.json().await {
-        Ok(v) => v,
-        Err(e) => {
-            warn!("GitHub parse failed: {e}");
-            return vec![];
-        }
-    };
-
-    let empty = vec![];
-    let items = body["items"].as_array().unwrap_or(&empty);
-
+/// Parse GitHub search items into MarketplaceApp vec.
+fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
     items
         .iter()
         .filter_map(|repo| {
@@ -104,6 +62,59 @@ pub async fn search(
             })
         })
         .collect()
+}
+
+/// Search GitHub repos with Android topics + APK releases (GitHub-Store model).
+///
+/// Uses the Search API with qualifiers to find repos that are likely
+/// installable Android apps. Uses reqwest's `.query()` to properly encode
+/// the search string (spaces between qualifiers, not `+`).
+pub async fn search(
+    client: &Client,
+    query: &str,
+    token: &Option<String>,
+    sort: &str,
+    per_page: u32,
+) -> Vec<MarketplaceApp> {
+    // Build query with spaces between qualifiers.
+    // urlencoding::encode converts spaces to %20 which GitHub handles correctly.
+    let q = format!("{query} topic:android fork:false archived:false");
+    let url = format!(
+        "https://api.github.com/search/repositories?q={}&sort={sort}&per_page={per_page}",
+        urlencoding::encode(&q)
+    );
+
+    let response = match auth_headers(client.get(&url), token).send().await {
+        Ok(resp) => resp,
+        Err(e) => {
+            warn!("GitHub search failed: {e}");
+            return vec![];
+        }
+    };
+
+    // Check for rate-limit errors
+    let status = response.status().as_u16();
+    if status == 403 || status == 429 {
+        warn!("GitHub rate limit hit — consider adding a Personal Access Token");
+        return vec![];
+    }
+    if !response.status().is_success() {
+        warn!("GitHub search returned HTTP {status}");
+        return vec![];
+    }
+
+    let body: serde_json::Value = match response.json().await {
+        Ok(v) => v,
+        Err(e) => {
+            warn!("GitHub parse failed: {e}");
+            return vec![];
+        }
+    };
+
+    let empty = vec![];
+    let items = body["items"].as_array().unwrap_or(&empty);
+
+    parse_repo_items(items)
 }
 
 /// Get detailed metadata for a GitHub repo including latest release APK assets.
@@ -219,14 +230,20 @@ pub async fn list_releases(
     Ok(versions)
 }
 
-/// Fetch trending Android repos from GitHub (empty query, sorted by stars).
+/// Fetch trending Android repos from GitHub (no user query, sorted by stars).
+///
+/// Uses a broad query to catch real Android apps, not just repos tagged `app`.
 pub async fn get_trending(
     client: &Client,
     token: &Option<String>,
     sort: &str,
 ) -> Vec<MarketplaceApp> {
-    let q = "topic:android+topic:app+fork:false+archived:false+stars:>100";
-    let url = format!("https://api.github.com/search/repositories?q={q}&sort={sort}&per_page=12");
+    // Broad query: Android repos with decent stars, recently active
+    let q = "topic:android fork:false archived:false stars:>50 pushed:>2025-01-01";
+    let url = format!(
+        "https://api.github.com/search/repositories?q={}&sort={sort}&per_page=12",
+        urlencoding::encode(q)
+    );
 
     let response = match auth_headers(client.get(&url), token).send().await {
         Ok(resp) => resp,
@@ -252,26 +269,5 @@ pub async fn get_trending(
     let empty = vec![];
     let items = body["items"].as_array().unwrap_or(&empty);
 
-    items
-        .iter()
-        .filter_map(|repo| {
-            let full_name = repo["full_name"].as_str()?.to_string();
-            let name = repo["name"].as_str().unwrap_or("").to_string();
-            let summary = repo["description"].as_str().unwrap_or("GitHub repository").to_string();
-            let html_url = repo["html_url"].as_str().unwrap_or("").to_string();
-            let stars = repo["stargazers_count"].as_u64().unwrap_or(0);
-
-            Some(MarketplaceApp {
-                name,
-                package_name: full_name,
-                version: format!("★ {stars}"),
-                summary,
-                icon_url: repo["owner"]["avatar_url"].as_str().map(|s| s.to_string()),
-                source: "GitHub".into(),
-                repo_url: Some(html_url),
-                downloads_count: Some(stars),
-                ..Default::default()
-            })
-        })
-        .collect()
+    parse_repo_items(items)
 }

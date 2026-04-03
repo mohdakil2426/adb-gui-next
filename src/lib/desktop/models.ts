@@ -175,5 +175,6 @@ export namespace backend {
   export interface MarketplaceSearchFilters {
     providers: ProviderSource[];
     sortBy: 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
+    githubToken?: string | null;
   }
 }

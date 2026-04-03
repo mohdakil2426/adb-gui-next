@@ -11,8 +11,10 @@ import { AppListItem } from '@/components/marketplace/AppListItem';
 import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
 import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
 import { AppDetailDialog } from '@/components/AppDetailDialog';
+import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
 
-const DEBOUNCE_MS = 400;
+const DEBOUNCE_MS = 600;
+const MIN_QUERY_LENGTH = 2;
 
 export function ViewMarketplace() {
   const {
@@ -21,11 +23,13 @@ export function ViewMarketplace() {
     isSearching,
     viewMode,
     activeProviders,
+    githubPat,
     setQuery,
     setResults,
     setIsSearching,
     addToSearchHistory,
     openDetail,
+    openSettings,
   } = useMarketplaceStore();
 
   const [localQuery, setLocalQuery] = useState(query);
@@ -36,7 +40,7 @@ export function ViewMarketplace() {
   const performSearch = useCallback(
     async (searchQuery: string) => {
       const trimmed = searchQuery.trim();
-      if (!trimmed) {
+      if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
         setResults([]);
         setIsSearching(false);
         return;
@@ -50,6 +54,7 @@ export function ViewMarketplace() {
         const apps = await MarketplaceSearch(trimmed, {
           providers: activeProviders,
           sortBy: 'relevance',
+          githubToken: githubPat || null,
         });
         setResults(apps);
       } catch (error) {
@@ -59,7 +64,7 @@ export function ViewMarketplace() {
         setIsSearching(false);
       }
     },
-    [setQuery, setResults, setIsSearching, addToSearchHistory, activeProviders],
+    [setQuery, setResults, setIsSearching, addToSearchHistory, activeProviders, githubPat],
   );
 
   const handleInputChange = useCallback(
@@ -68,7 +73,7 @@ export function ViewMarketplace() {
 
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
-      if (!value.trim()) {
+      if (!value.trim() || value.trim().length < MIN_QUERY_LENGTH) {
         setResults([]);
         setIsSearching(false);
         return;
@@ -99,7 +104,7 @@ export function ViewMarketplace() {
 
   // Re-search when provider filters change (if there's an active query)
   useEffect(() => {
-    if (query.trim()) {
+    if (query.trim() && query.trim().length >= MIN_QUERY_LENGTH) {
       void performSearch(query);
     }
     // Only re-run when activeProviders changes, not query
@@ -116,7 +121,7 @@ export function ViewMarketplace() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   const hasResults = results.length > 0;
-  const hasQuery = !!localQuery.trim();
+  const hasQuery = !!localQuery.trim() && localQuery.trim().length >= MIN_QUERY_LENGTH;
 
   return (
     <div className="flex flex-col gap-4">
@@ -136,6 +141,7 @@ export function ViewMarketplace() {
             value={localQuery}
             onChange={handleInputChange}
             onClear={handleClear}
+            onSettings={openSettings}
             isSearching={isSearching}
           />
           <FilterBar resultCount={results.length} />
@@ -196,6 +202,9 @@ export function ViewMarketplace() {
 
       {/* Attribution footer */}
       <AttributionFooter />
+
+      {/* Settings Dialog */}
+      <MarketplaceSettings />
 
       {/* App Detail Dialog */}
       <AppDetailDialog />

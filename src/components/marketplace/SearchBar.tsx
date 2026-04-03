@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, Loader2, X, Settings } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -7,6 +7,7 @@ interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   onClear: () => void;
+  onSettings: () => void;
   isSearching: boolean;
   placeholder?: string;
 }
@@ -15,6 +16,7 @@ export function SearchBar({
   value,
   onChange,
   onClear,
+  onSettings,
   isSearching,
   placeholder = 'Search apps across F-Droid, IzzyOnDroid, GitHub, Aptoide...',
 }: SearchBarProps) {
@@ -41,7 +43,7 @@ export function SearchBar({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="pl-9 pr-24 h-10"
+        className="pl-9 pr-32 h-10"
       />
       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
         {isSearching && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -54,6 +56,15 @@ export function SearchBar({
             <span className="text-xs">⌘</span>K
           </kbd>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+          onClick={onSettings}
+          title="Marketplace Settings"
+        >
+          <Settings className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );

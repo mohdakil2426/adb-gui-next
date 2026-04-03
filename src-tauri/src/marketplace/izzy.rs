@@ -1,70 +1,96 @@
-use log::warn;
+use log::debug;
 use reqwest::Client;
 
 use super::types::{MarketplaceApp, MarketplaceAppDetail, VersionInfo};
 use crate::CmdResult;
 
-/// Search IzzyOnDroid via their F-Droid-compatible API v1.
-pub async fn search(client: &Client, query: &str) -> Vec<MarketplaceApp> {
-    let url = format!(
-        "https://apt.izzysoft.de/fdroid/api/v1/packages?search={}",
-        urlencoding::encode(query)
+/// Check if a list of packages are available on IzzyOnDroid.
+///
+/// IzzyOnDroid has NO search API — the `?search=` parameter returns HTTP 400.
+/// Instead we cross-reference: given package names (usually from F-Droid search),
+/// check each against the IzzyOnDroid packages endpoint.
+pub async fn check_packages(client: &Client, package_names: &[String]) -> Vec<MarketplaceApp> {
+    let mut results = Vec::new();
+
+    for package_name in package_names.iter().take(8) {
+        // Limit concurrent checks
+        let url = format!("https://apt.izzysoft.de/fdroid/api/v1/packages/{package_name}");
+
+        let resp = match client.get(&url).send().await {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+
+        if !resp.status().is_success() {
+            continue;
+        }
+
+        let body: serde_json::Value = match resp.json().await {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+
+        // IzzyOnDroid returns versionCode as STRING, not integer
+        let package = body["packageName"].as_str().unwrap_or(package_name).to_string();
+        let version_code_str = body["suggestedVersionCode"]
+            .as_str()
+            .or_else(|| body["suggestedVersionCode"].as_i64().map(|_| "0").or(Some("0")))
+            .unwrap_or("0");
+        let version_code: i64 = version_code_str.parse().unwrap_or(0);
+
+        let version = body["packages"]
+            .as_array()
+            .and_then(|pkgs| {
+                pkgs.first().and_then(|p| p["versionName"].as_str().map(|s| s.to_string()))
+            })
+            .unwrap_or_default();
+
+        let download_url = if version_code > 0 {
+            Some(format!("https://apt.izzysoft.de/fdroid/repo/{package}_{version_code}.apk"))
+        } else {
+            None
+        };
+
+        let icon_url =
+            Some(format!("https://apt.izzysoft.de/fdroid/repo/{package}/en-US/icon.png"));
+
+        results.push(MarketplaceApp {
+            name: package.clone(), // We don't have the display name from this API
+            package_name: package,
+            version,
+            icon_url,
+            source: "IzzyOnDroid".into(),
+            download_url,
+            ..Default::default()
+        });
+    }
+
+    debug!(
+        "IzzyOnDroid cross-reference: checked {} packages, found {} available",
+        package_names.len().min(8),
+        results.len()
     );
 
-    let response = match client.get(&url).send().await {
-        Ok(resp) => resp,
-        Err(e) => {
-            warn!("IzzyOnDroid search failed: {e}");
-            return vec![];
-        }
-    };
+    results
+}
 
-    let items: Vec<serde_json::Value> = match response.json().await {
-        Ok(v) => v,
-        Err(e) => {
-            warn!("IzzyOnDroid parse failed: {e}");
-            return vec![];
-        }
-    };
+/// Search IzzyOnDroid by cross-referencing common Android apps.
+///
+/// Since IzzyOnDroid has no search endpoint, we search F-Droid first
+/// and then check which results are also available on IzzyOnDroid.
+/// This is called from the marketplace command after F-Droid search completes.
+pub async fn search_via_fdroid(
+    client: &Client,
+    fdroid_results: &[MarketplaceApp],
+) -> Vec<MarketplaceApp> {
+    if fdroid_results.is_empty() {
+        return vec![];
+    }
 
-    items
-        .into_iter()
-        .filter_map(|item| {
-            let package_name = item["packageName"].as_str()?.to_string();
-            let name = item["name"].as_str().unwrap_or(&package_name).to_string();
-            let summary = item["summary"].as_str().unwrap_or("").to_string();
-            let version = item["suggestedVersionName"].as_str().unwrap_or("").to_string();
-            let version_code = item["suggestedVersionCode"].as_i64().unwrap_or(0);
+    let package_names: Vec<String> =
+        fdroid_results.iter().map(|app| app.package_name.clone()).collect();
 
-            let icon_url = item["icon"].as_str().map(|i| {
-                if i.starts_with("http") {
-                    i.to_string()
-                } else {
-                    format!("https://apt.izzysoft.de/fdroid/repo/{}/en-US/icon.png", package_name)
-                }
-            });
-
-            let download_url = if version_code > 0 {
-                Some(format!(
-                    "https://apt.izzysoft.de/fdroid/repo/{}_{}.apk",
-                    package_name, version_code
-                ))
-            } else {
-                None
-            };
-
-            Some(MarketplaceApp {
-                name,
-                package_name,
-                version,
-                summary,
-                icon_url,
-                source: "IzzyOnDroid".into(),
-                download_url,
-                ..Default::default()
-            })
-        })
-        .collect()
+    check_packages(client, &package_names).await
 }
 
 /// Get detailed metadata for a single IzzyOnDroid package.
@@ -79,7 +105,10 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
         .await
         .map_err(|e| e.to_string())?;
 
-    let version_code = resp["suggestedVersionCode"].as_i64().unwrap_or(0);
+    // IzzyOnDroid returns versionCode as STRING
+    let version_code_str = resp["suggestedVersionCode"].as_str().unwrap_or("0");
+    let version_code: i64 = version_code_str.parse().unwrap_or(0);
+
     let download_url = if version_code > 0 {
         Some(format!("https://apt.izzysoft.de/fdroid/repo/{package}_{version_code}.apk"))
     } else {
@@ -91,7 +120,9 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
         .map(|pkgs| {
             pkgs.iter()
                 .filter_map(|p| {
-                    let vc = p["versionCode"].as_i64()?;
+                    // versionCode is STRING in IzzyOnDroid
+                    let vc_str = p["versionCode"].as_str().unwrap_or("0");
+                    let vc: i64 = vc_str.parse().ok()?;
                     Some(VersionInfo {
                         version_name: p["versionName"].as_str().unwrap_or("").to_string(),
                         version_code: vc,
@@ -107,10 +138,18 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
         })
         .unwrap_or_default();
 
+    // Try to enrich name from the F-Droid search if we only have the package name
+    let name = resp["name"].as_str().unwrap_or(package).to_string();
+
     Ok(MarketplaceAppDetail {
-        name: resp["name"].as_str().unwrap_or(package).to_string(),
+        name,
         package_name: package.to_string(),
-        version: resp["suggestedVersionName"].as_str().unwrap_or("").to_string(),
+        version: resp["packages"]
+            .as_array()
+            .and_then(|pkgs| {
+                pkgs.first().and_then(|p| p["versionName"].as_str().map(|s| s.to_string()))
+            })
+            .unwrap_or_default(),
         description: resp["description"]
             .as_str()
             .or_else(|| resp["summary"].as_str())

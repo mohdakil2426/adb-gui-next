@@ -66,6 +66,8 @@ pub struct SearchFilters {
     pub providers: Vec<String>,
     #[serde(default = "default_sort")]
     pub sort_by: String,
+    #[serde(default)]
+    pub github_token: Option<String>,
 }
 
 fn default_sort() -> String {
