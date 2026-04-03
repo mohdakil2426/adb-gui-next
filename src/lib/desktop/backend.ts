@@ -325,10 +325,12 @@ export function MarketplaceGetAppDetail(
 export function MarketplaceGetTrending(
   sort?: string,
   githubToken?: string | null,
+  limit?: number,
 ): Promise<Array<backend.MarketplaceApp>> {
   return call('marketplace_get_trending', {
     sort: sort ?? null,
     githubToken: githubToken ?? null,
+    limit: limit ?? null,
   });
 }
 
@@ -342,6 +344,33 @@ export function MarketplaceListVersions(
     packageName,
     source,
     githubToken: githubToken ?? null,
+  });
+}
+
+/** Clear backend marketplace caches. */
+export function MarketplaceClearCache(): Promise<string> {
+  return call('marketplace_clear_cache');
+}
+
+/** Start GitHub device-flow authentication. */
+export function MarketplaceGithubDeviceStart(
+  clientId: string,
+  scopes: string[] = [],
+): Promise<backend.GithubDeviceFlowChallenge> {
+  return call('marketplace_github_device_start', {
+    clientId,
+    scopes,
+  });
+}
+
+/** Poll GitHub device-flow authentication. */
+export function MarketplaceGithubDevicePoll(
+  clientId: string,
+  deviceCode: string,
+): Promise<backend.GithubDeviceFlowPollResult> {
+  return call('marketplace_github_device_poll', {
+    clientId,
+    deviceCode,
   });
 }
 

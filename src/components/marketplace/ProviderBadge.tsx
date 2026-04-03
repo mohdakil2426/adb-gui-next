@@ -1,32 +1,28 @@
-import type { backend } from '@/lib/desktop/models';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import type { backend } from '@/lib/desktop/models';
+import { GitBranch, Package, ShieldCheck, Store } from 'lucide-react';
 
 type ProviderSource = backend.ProviderSource;
 
-const PROVIDER_CONFIG: Record<ProviderSource, { label: string; className: string; icon: string }> =
-  {
-    'F-Droid': {
-      label: 'F-Droid',
-      className: 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/20',
-      icon: '🟦',
-    },
-    IzzyOnDroid: {
-      label: 'Izzy',
-      className: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
-      icon: '🟩',
-    },
-    GitHub: {
-      label: 'GitHub',
-      className: 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/20',
-      icon: '🟪',
-    },
-    Aptoide: {
-      label: 'Aptoide',
-      className: 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/20',
-      icon: '🟧',
-    },
-  };
+const PROVIDER_CONFIG: Record<ProviderSource, { label: string; icon: typeof GitBranch }> = {
+  'F-Droid': {
+    label: 'F-Droid',
+    icon: Package,
+  },
+  IzzyOnDroid: {
+    label: 'IzzyOnDroid',
+    icon: ShieldCheck,
+  },
+  GitHub: {
+    label: 'GitHub',
+    icon: GitBranch,
+  },
+  Aptoide: {
+    label: 'Aptoide',
+    icon: Store,
+  },
+};
 
 interface ProviderBadgeProps {
   source: string;
@@ -39,18 +35,24 @@ export function ProviderBadge({ source, compact = false, className }: ProviderBa
 
   if (!config) {
     return (
-      <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', className)}>
+      <Badge variant="outline" className={cn('gap-1 px-2 py-0.5 text-[10px]', className)}>
         {source}
       </Badge>
     );
   }
 
+  const Icon = config.icon;
+
   return (
     <Badge
       variant="outline"
-      className={cn('text-[10px] px-1.5 py-0 font-medium border', config.className, className)}
+      className={cn(
+        'gap-1 rounded-full border-border/70 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground',
+        className,
+      )}
     >
-      {compact ? config.icon : config.label}
+      <Icon className="size-3" />
+      {!compact && <span>{config.label}</span>}
     </Badge>
   );
 }

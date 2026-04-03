@@ -4,7 +4,16 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+Marketplace now has a stronger discovery-first UX, backend search/detail/trending caches, result dedupe/sort infrastructure, and optional GitHub OAuth device-flow sign-in (session-only token handling).
+
 ## What Works
+
+### TypeScript Toolchain
+
+- TypeScript upgraded to **6.0.2**
+- `tsconfig.json` no longer uses deprecated `compilerOptions.baseUrl`
+- `@/*` alias continues to work via `paths` without `baseUrl`
+- `pnpm exec tsc --noEmit` passes on TypeScript 6.0.2
 
 ### Frontend
 
@@ -83,7 +92,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
-| Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)* |
+| Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* |
 
 ### Payload Dumper
 
@@ -220,12 +229,15 @@ src-tauri/src/
 
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
 - `cargo clippy` blocked on Windows when `AdbWinApi.dll` is locked by another process (pre-existing)
+- `pnpm tauri build --debug` succeeds when the debug executable is not already running; Windows file locking can still block it if `src-tauri/target/debug/adb-gui-next.exe` is open
 - Large frontend bundle chunk warning during build (~274 KB JS)
 
 ## Version History
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-04 | 0.1.0 | Marketplace UX overhaul: new frontend hooks (`useMarketplaceSearch`, `useMarketplaceHome`, `useMarketplaceAuth`), redesigned SearchBar/FilterBar/EmptyState/Settings/AppDetailDialog, Lucide-based provider badges, recent-view persistence, Rust marketplace `auth.rs` + `cache.rs` + `ranking.rs` + `service.rs`, cache-aware search/detail/trending, `marketplace_clear_cache`, GitHub OAuth device-flow start/poll commands, result dedupe + sort support, and session-only GitHub token handling. Verified `pnpm check:fast`, `pnpm test`, `pnpm exec tsc --noEmit`, `pnpm build`, `cargo check`, and `pnpm tauri build --debug` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
+| 2026-04-04 | 0.1.0 | TypeScript toolchain upgrade: `typescript` 5.9.3 → 6.0.2. Removed deprecated `baseUrl` from `tsconfig.json` and kept `@/*` alias via `paths` only. Verified `pnpm exec tsc --noEmit`, `pnpm format:check`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). `pnpm tauri build --debug` currently blocked by a running `adb-gui-next.exe` locking the target binary. |
 | 2026-04-04 | 0.1.0 | Marketplace Bug Fixes: 4 critical bugs fixed — F-Droid response key `hits` → `apps`, IzzyOnDroid broken search replaced with cross-reference approach, GitHub query encoding `+` → `%20`, trending query too restrictive. New Settings dialog (`MarketplaceSettings.tsx`) with provider toggles, GitHub PAT input, results-per-provider preference. `github_token` added to `SearchFilters` and passed through all API calls. Debounce 400ms → 600ms, min 2-char query. SearchBar settings icon. All quality gates pass. |
 | 2026-04-03 | 0.1.0 | Marketplace V2 "Unified Discovery": Complete overhaul from 3-provider flat list to Design B with 4 providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). New `src-tauri/src/marketplace/` modular provider architecture (6 files). 7 new frontend components (SearchBar, FilterBar, AppCard, AppListItem, MarketplaceEmptyState, ProviderBadge, AttributionFooter). ViewMarketplace and AppDetailDialog rewritten. Zustand store with provider filters, view modes, search history. 2 new commands (marketplace_get_trending, marketplace_list_versions). GitHub-Store model with APK-only filtering. Aptoide TRUSTED-only malware filter. Uptodown removed. 15 pre-existing clippy warnings fixed across OPS/OFP modules. All quality gates (format + lint + build) pass. |
 | 2026-04-03 | 0.1.0 | App Marketplace (original): 3-provider search (F-Droid, IzzyOnDroid, GitHub) with concurrent `tokio::join!`, app detail dialog, download + ADB install. 4 new Tauri commands in `commands/marketplace.rs`. Frontend: `ViewMarketplace.tsx`, `AppDetailDialog.tsx`, `marketplaceStore.ts`. Sidebar nav in Main group with Store icon. Dependencies: `urlencoding`, reqwest `json` feature, tokio `macros` feature. |

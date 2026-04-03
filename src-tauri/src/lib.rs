@@ -26,6 +26,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(payload::PayloadCache::default())
+        .manage(marketplace::ManagedMarketplaceCache::default())
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main")
                 && let Some(icon) = app.default_window_icon()
@@ -69,20 +70,20 @@ pub fn run() {
             commands::sideload_package,
             commands::uninstall_package,
             commands::wipe_data,
-            // Remote URL payload commands (feature: remote_zip)
             #[cfg(feature = "remote_zip")]
             commands::check_remote_payload,
             #[cfg(feature = "remote_zip")]
             commands::get_remote_payload_metadata,
             #[cfg(feature = "remote_zip")]
             commands::list_remote_payload_partitions,
-            // OPS/OFP firmware format commands
             commands::get_ops_metadata,
-            // Marketplace commands
             commands::marketplace_search,
             commands::marketplace_get_app_detail,
             commands::marketplace_get_trending,
             commands::marketplace_list_versions,
+            commands::marketplace_clear_cache,
+            commands::marketplace_github_device_start,
+            commands::marketplace_github_device_poll,
             commands::marketplace_download_apk,
             commands::marketplace_install_apk,
         ])

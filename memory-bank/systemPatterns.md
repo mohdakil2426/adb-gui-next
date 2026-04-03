@@ -12,7 +12,7 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │           Utilities │ PayloadDumper │ Marketplace │ About                │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
 │  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
-│                 marketplaceStore                                        │
+│                 marketplaceStore + marketplace hooks                    │
 │  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
@@ -23,9 +23,9 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  lib.rs (~60 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
 │  commands/ — 8 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload, marketplace) — 38 total commands           │
-│  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)            │
-│  marketplace/ — 4 provider modules (fdroid, izzy, github, aptoide)     │
+│              system, payload, marketplace) — 41 total commands           │
+│  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)              │
+│  marketplace/ — provider modules + auth/cache/ranking/service layers    │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -84,6 +84,26 @@ OnFileDrop({
 
 - **Zustand v5** for shared state (device, log, shell, payloadDumper)
 - **localStorage** for user preferences that must survive view switches and restarts:
+### 3a. Marketplace Feature Split
+
+Marketplace now follows a hybrid state/orchestration pattern:
+- `marketplaceStore.ts` keeps durable UI state and persisted preferences (providers, sort, view mode, history, OAuth client ID, PAT fallback)
+- `src/lib/marketplace/useMarketplaceSearch.ts` owns debounce + stale-response protection + request orchestration
+- `src/lib/marketplace/useMarketplaceHome.ts` loads zero-query discovery sections (trending + fresh releases)
+- `src/lib/marketplace/useMarketplaceAuth.ts` manages optional GitHub OAuth device-flow state in the frontend
+- `src/lib/marketplace/install.ts` centralizes APK download/install toast workflow for cards and dialogs
+
+### 3b. Marketplace Backend Service Layer
+
+Marketplace command wrappers are now intentionally thin:
+- `commands/marketplace.rs` handles Tauri command surfaces only
+- `marketplace/service.rs` handles provider orchestration and cache-key construction
+- `marketplace/cache.rs` provides in-memory TTL caches for search/detail/trending
+- `marketplace/ranking.rs` handles dedupe/grouping and deterministic sort/relevance rules
+- `marketplace/auth.rs` handles GitHub OAuth device-flow start/poll and signed-in metadata fetch
+
+This keeps provider-specific parsing isolated in `fdroid.rs`, `izzy.rs`, `github.rs`, and `aptoide.rs` while shared policies live outside command wrappers.
+
   - `nicknameStore` — device nicknames (no reactivity needed)
   - `fe.currentPath` — last visited File Explorer path (lazy `useState` initializer)
   - `fe.treeCollapsed` — File Explorer tree panel collapsed state

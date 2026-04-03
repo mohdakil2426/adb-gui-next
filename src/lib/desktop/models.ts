@@ -59,19 +59,16 @@ export namespace backend {
 
   /** Full metadata about a remote OTA payload — HTTP, ZIP, and OTA manifest layers. */
   export interface RemotePayloadMetadata {
-    // HTTP layer
     contentLength: number;
     contentType: string | null;
     lastModified: string | null;
     server: string | null;
     etag: string | null;
-    // ZIP layer
     isZip: boolean;
     zipPayloadOffset: number | null;
     zipCompressedSize: number | null;
     zipUncompressedSize: number | null;
     zipCompressionMethod: string | null;
-    // OTA Manifest layer (from protobuf)
     blockSize: number;
     payloadVersion: number;
     minorVersion: number | null;
@@ -81,7 +78,6 @@ export namespace backend {
     dynamicGroups: DynamicGroupInfo[];
     partitionCount: number;
     totalSize: number;
-    // OTA Package metadata (from META-INF/com/android/metadata)
     otaType: string | null;
     preDevice: string | null;
     postBuild: string | null;
@@ -91,21 +87,18 @@ export namespace backend {
     postTimestamp: string | null;
     otaVersion: string | null;
     wipe: boolean | null;
-    // payload_properties.txt
     fileHash: string | null;
     fileSize: number | null;
     metadataHash: string | null;
     metadataSize: number | null;
   }
 
-  /** Dynamic partition group info from the OTA manifest. */
   export interface DynamicGroupInfo {
     name: string;
     size: number | null;
     partitions: string[];
   }
 
-  /** Metadata about an OPS/OFP firmware file. */
   export interface OpsMetadata {
     format: string;
     projectId: string | null;
@@ -120,10 +113,9 @@ export namespace backend {
 
   // ─── Marketplace ─────────────────────────────────────────────────────────
 
-  /** Provider source for marketplace results. */
   export type ProviderSource = 'F-Droid' | 'IzzyOnDroid' | 'GitHub' | 'Aptoide';
+  export type MarketplaceSortBy = 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
 
-  /** An app result from the marketplace search. */
   export interface MarketplaceApp {
     name: string;
     packageName: string;
@@ -131,6 +123,7 @@ export namespace backend {
     summary: string;
     iconUrl: string | null;
     source: string;
+    availableSources: string[];
     downloadUrl: string | null;
     repoUrl: string | null;
     size: number | null;
@@ -138,9 +131,10 @@ export namespace backend {
     downloadsCount: number | null;
     malwareStatus: string | null;
     categories: string[];
+    updatedAt: string | null;
+    installable: boolean;
   }
 
-  /** Detailed metadata for a single marketplace app. */
   export interface MarketplaceAppDetail {
     name: string;
     packageName: string;
@@ -149,6 +143,7 @@ export namespace backend {
     iconUrl: string | null;
     source: string;
     downloadUrl: string | null;
+    repoUrl: string | null;
     size: number | null;
     license: string | null;
     author: string | null;
@@ -160,9 +155,9 @@ export namespace backend {
     repoForks: number | null;
     rating: number | null;
     downloadsCount: number | null;
+    updatedAt: string | null;
   }
 
-  /** Version entry with download URL. */
   export interface VersionInfo {
     versionName: string;
     versionCode: number;
@@ -171,10 +166,40 @@ export namespace backend {
     publishedAt: string | null;
   }
 
-  /** Search filters passed to the backend. */
+  export interface GithubRateLimitSummary {
+    limit: number;
+    remaining: number;
+    resetAt: string | null;
+  }
+
+  export interface GithubUserSummary {
+    login: string;
+    avatarUrl: string | null;
+    profileUrl: string | null;
+  }
+
+  export interface GithubDeviceFlowChallenge {
+    deviceCode: string;
+    userCode: string;
+    verificationUri: string;
+    verificationUriComplete: string | null;
+    expiresIn: number;
+    interval: number;
+  }
+
+  export interface GithubDeviceFlowPollResult {
+    status: string;
+    accessToken: string | null;
+    interval: number | null;
+    message: string | null;
+    user: GithubUserSummary | null;
+    rateLimit: GithubRateLimitSummary | null;
+  }
+
   export interface MarketplaceSearchFilters {
     providers: ProviderSource[];
-    sortBy: 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
+    sortBy: MarketplaceSortBy;
     githubToken?: string | null;
+    resultsPerProvider?: number;
   }
 }

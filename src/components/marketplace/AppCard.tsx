@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { Download, Loader2, Check, Package, Star } from 'lucide-react';
+import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ProviderBadge } from './ProviderBadge';
+import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
 import type { backend } from '@/lib/desktop/models';
 
 type MarketplaceApp = backend.MarketplaceApp;
@@ -15,130 +15,119 @@ interface AppCardProps {
 }
 
 export function AppCard({ app, onSelect }: AppCardProps) {
-  const [installState, setInstallState] = useState<'idle' | 'downloading' | 'installing' | 'done'>(
-    'idle',
-  );
+  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
 
-  const handleInstall = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleInstall = async (event: React.MouseEvent) => {
+    event.stopPropagation();
 
     if (!app.downloadUrl) {
       onSelect();
       return;
     }
 
-    setInstallState('downloading');
-    const toastId = toast.loading(`Downloading ${app.name}...`);
-
     try {
-      const { MarketplaceDownloadApk, MarketplaceInstallApk } =
-        await import('@/lib/desktop/backend');
-
-      const localPath = await MarketplaceDownloadApk(app.downloadUrl);
-
-      setInstallState('installing');
-      toast.loading(`Installing ${app.name}...`, { id: toastId });
-
-      await MarketplaceInstallApk(localPath);
-
+      setInstallState('running');
+      await installMarketplacePackage(app.name, app.downloadUrl);
       setInstallState('done');
-      toast.success(`${app.name} installed!`, { id: toastId });
-      setTimeout(() => setInstallState('idle'), 3000);
-    } catch (error) {
+      setTimeout(() => setInstallState('idle'), 2000);
+    } catch {
       setInstallState('idle');
-      toast.error(`Failed to install ${app.name}`, {
-        id: toastId,
-        description: String(error),
-      });
     }
   };
 
+  const downloadLabel = formatDownloadCount(app.downloadsCount);
+
   return (
     <Card
-      className="group cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/20"
+      className="group cursor-pointer border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-md"
       onClick={onSelect}
     >
-      <CardContent className="p-4">
-        {/* Icon + Source badge row */}
-        <div className="flex items-start gap-3 mb-3">
-          <div className="size-10 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+      <CardContent className="space-y-4 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
             {app.iconUrl ? (
               <img
                 src={app.iconUrl}
                 alt=""
-                className="size-10 rounded-lg object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                  (e.target as HTMLImageElement).parentElement!.innerHTML =
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-muted-foreground"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>';
+                className="size-12 object-cover"
+                onError={(event) => {
+                  (event.target as HTMLImageElement).style.display = 'none';
                 }}
               />
             ) : (
-              <Package className="h-5 w-5 text-muted-foreground" />
+              <Package className="size-5 text-muted-foreground" />
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-sm font-semibold truncate">{app.name}</span>
+
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="truncate text-sm font-semibold leading-none">{app.name}</h3>
               <ProviderBadge source={app.source} />
+              {app.availableSources.length > 1 && (
+                <span className="text-[10px] text-muted-foreground">
+                  +{app.availableSources.length - 1} more source
+                  {app.availableSources.length > 2 ? 's' : ''}
+                </span>
+              )}
             </div>
-            <span className="text-xs text-muted-foreground">{app.version}</span>
+            <p className="text-xs text-muted-foreground">
+              {app.version || 'Version info unavailable'}
+            </p>
+            <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {app.summary || 'No description available yet.'}
+            </p>
           </div>
         </div>
 
-        {/* Summary */}
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-3 min-h-[2rem]">
-          {app.summary || 'No description available'}
-        </p>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          {app.rating != null && app.rating > 0 && (
+            <span className="flex items-center gap-1">
+              <Star className="size-3.5 fill-current text-foreground" />
+              {app.rating.toFixed(1)}
+            </span>
+          )}
+          {downloadLabel && <span>{downloadLabel}</span>}
+          {app.updatedAt && <span>{new Date(app.updatedAt).toLocaleDateString()}</span>}
+          {!app.installable && app.repoUrl && (
+            <span className="inline-flex items-center gap-1">
+              <ExternalLink className="size-3.5" />
+              Repo only
+            </span>
+          )}
+        </div>
 
-        {/* Footer: rating/downloads + install button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {app.rating != null && app.rating > 0 && (
-              <span className="flex items-center gap-0.5">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                {app.rating.toFixed(1)}
-              </span>
-            )}
-            {app.downloadsCount != null && app.downloadsCount > 0 && (
-              <span>{formatDownloads(app.downloadsCount)}</span>
-            )}
-          </div>
-
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] text-muted-foreground">
+            {app.installable ? 'Ready to install over ADB' : 'Open details to inspect this source'}
+          </p>
           <Button
             variant={installState === 'done' ? 'default' : 'outline'}
             size="sm"
-            className={cn(
-              'h-7 text-xs shrink-0',
-              installState === 'done' && 'bg-emerald-600 text-white hover:bg-emerald-700',
-            )}
+            className={cn('h-8 shrink-0 gap-1.5', installState === 'done' && 'pointer-events-none')}
             onClick={handleInstall}
-            disabled={installState === 'downloading' || installState === 'installing'}
+            disabled={installState === 'running'}
           >
-            {installState === 'downloading' && (
-              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+            {installState === 'done' ? (
+              <Check className="size-3.5" />
+            ) : installState === 'idle' ? (
+              app.downloadUrl ? (
+                <Download className="size-3.5" />
+              ) : (
+                <ExternalLink className="size-3.5" />
+              )
+            ) : (
+              <Loader2 className="size-3.5 animate-spin" />
             )}
-            {installState === 'installing' && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-            {installState === 'done' && <Check className="h-3.5 w-3.5 mr-1" />}
-            {installState === 'idle' && <Download className="h-3.5 w-3.5 mr-1" />}
-            {installState === 'downloading'
-              ? 'Get...'
-              : installState === 'installing'
-                ? 'Installing'
-                : installState === 'done'
-                  ? 'Done'
-                  : app.downloadUrl
-                    ? 'Install'
-                    : 'View'}
+            {installState === 'running'
+              ? 'Installing'
+              : installState === 'done'
+                ? 'Installed'
+                : app.downloadUrl
+                  ? 'Install'
+                  : 'View details'}
           </Button>
         </div>
       </CardContent>
     </Card>
   );
-}
-
-function formatDownloads(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return String(n);
 }

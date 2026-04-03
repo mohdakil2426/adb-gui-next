@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { Download, Loader2, Check, Package, ExternalLink, Star } from 'lucide-react';
+import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ProviderBadge } from './ProviderBadge';
+import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
 import type { backend } from '@/lib/desktop/models';
 
 type MarketplaceApp = backend.MarketplaceApp;
@@ -14,120 +14,106 @@ interface AppListItemProps {
 }
 
 export function AppListItem({ app, onSelect }: AppListItemProps) {
-  const [installState, setInstallState] = useState<'idle' | 'downloading' | 'installing' | 'done'>(
-    'idle',
-  );
+  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
 
-  const handleInstall = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleInstall = async (event: React.MouseEvent) => {
+    event.stopPropagation();
 
     if (!app.downloadUrl) {
       onSelect();
       return;
     }
 
-    setInstallState('downloading');
-    const toastId = toast.loading(`Downloading ${app.name}...`);
-
     try {
-      const { MarketplaceDownloadApk, MarketplaceInstallApk } =
-        await import('@/lib/desktop/backend');
-
-      const localPath = await MarketplaceDownloadApk(app.downloadUrl);
-
-      setInstallState('installing');
-      toast.loading(`Installing ${app.name}...`, { id: toastId });
-
-      await MarketplaceInstallApk(localPath);
-
+      setInstallState('running');
+      await installMarketplacePackage(app.name, app.downloadUrl);
       setInstallState('done');
-      toast.success(`${app.name} installed!`, { id: toastId });
-      setTimeout(() => setInstallState('idle'), 3000);
-    } catch (error) {
+      setTimeout(() => setInstallState('idle'), 2000);
+    } catch {
       setInstallState('idle');
-      toast.error(`Failed to install ${app.name}`, {
-        id: toastId,
-        description: String(error),
-      });
     }
   };
 
+  const downloadsLabel = formatDownloadCount(app.downloadsCount);
+
   return (
     <div
-      className="flex items-center gap-3 px-2 py-2.5 rounded-md cursor-pointer hover:bg-accent/50 transition-colors"
+      className="grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-accent/50"
       onClick={onSelect}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
           onSelect();
         }
       }}
     >
-      {/* App icon */}
-      <div className="size-9 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
         {app.iconUrl ? (
           <img
             src={app.iconUrl}
             alt=""
-            className="size-9 rounded-lg object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
+            className="size-10 object-cover"
+            onError={(event) => {
+              (event.target as HTMLImageElement).style.display = 'none';
             }}
           />
         ) : (
-          <Package className="h-4 w-4 text-muted-foreground" />
+          <Package className="size-4 text-muted-foreground" />
         )}
       </div>
 
-      {/* App info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium truncate">{app.name}</span>
+      <div className="min-w-0 space-y-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="truncate text-sm font-medium">{app.name}</span>
           <ProviderBadge source={app.source} />
+          {app.availableSources.length > 1 && (
+            <span className="text-[10px] text-muted-foreground">
+              +{app.availableSources.length - 1} source{app.availableSources.length > 2 ? 's' : ''}
+            </span>
+          )}
         </div>
-        <p className="text-xs text-muted-foreground truncate">{app.summary}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {app.summary || 'No description available yet.'}
+        </p>
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+          <span>{app.version || 'Unknown version'}</span>
+          {app.rating != null && app.rating > 0 && (
+            <span className="inline-flex items-center gap-1">
+              <Star className="size-3.5 fill-current" />
+              {app.rating.toFixed(1)}
+            </span>
+          )}
+          {downloadsLabel && <span>{downloadsLabel}</span>}
+        </div>
       </div>
 
-      {/* Rating (if available) */}
-      {app.rating != null && app.rating > 0 && (
-        <span className="hidden md:flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
-          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-          {app.rating.toFixed(1)}
-        </span>
-      )}
-
-      {/* Version */}
-      <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">{app.version}</span>
-
-      {/* Install button */}
       <Button
         variant={installState === 'done' ? 'default' : 'outline'}
         size="sm"
-        className={cn(
-          'h-7 shrink-0',
-          installState === 'done' && 'bg-emerald-600 text-white hover:bg-emerald-700',
-        )}
+        className={cn('h-8 gap-1.5', installState === 'done' && 'pointer-events-none')}
         onClick={handleInstall}
-        disabled={installState === 'downloading' || installState === 'installing'}
+        disabled={installState === 'running'}
       >
-        {installState === 'downloading' && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-        {installState === 'installing' && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
-        {installState === 'done' && <Check className="h-3.5 w-3.5 mr-1" />}
-        {installState === 'idle' && !app.downloadUrl && (
-          <ExternalLink className="h-3.5 w-3.5 mr-1" />
+        {installState === 'done' ? (
+          <Check className="size-3.5" />
+        ) : installState === 'idle' ? (
+          app.downloadUrl ? (
+            <Download className="size-3.5" />
+          ) : (
+            <ExternalLink className="size-3.5" />
+          )
+        ) : (
+          <Loader2 className="size-3.5 animate-spin" />
         )}
-        {installState === 'idle' && app.downloadUrl && <Download className="h-3.5 w-3.5 mr-1" />}
-        {installState === 'downloading'
-          ? 'Get...'
-          : installState === 'installing'
-            ? 'Install'
-            : installState === 'done'
-              ? 'Done'
-              : app.downloadUrl
-                ? 'Install'
-                : 'View'}
+        {installState === 'running'
+          ? 'Installing'
+          : installState === 'done'
+            ? 'Installed'
+            : app.downloadUrl
+              ? 'Install'
+              : 'Details'}
       </Button>
     </div>
   );

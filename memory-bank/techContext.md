@@ -7,7 +7,7 @@
 | Package | Version | Notes |
 |---------|---------|-------|
 | React | ^19.2.4 | Latest |
-| TypeScript | ~5.9.3 | Latest |
+| TypeScript | ^6.0.2 | Latest stable |
 | Vite | ^8.0.1 | Latest |
 | Tailwind CSS | ^4.2.2 | CSS-first config (v4) |
 | Zustand | ^5.0.12 | State management |
@@ -48,11 +48,11 @@
 | serde_json | 1.x | JSON handling |
 | which | 8.x | Binary lookup |
 | tempfile | 3.x | Streaming ZIP extraction to temp files |
+| urlencoding | 2.x | URL/form encoding for marketplace API queries + GitHub device-flow requests |
 | url | 2.x | URL parsing + SSRF prevention (private IP blocklist) |
 | anyhow | 1.x | Error handling |
 | reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking`, `json` features (default feature: remote_zip) |
 | futures-util | 0.3 | Async utilities (default feature: remote_zip) |
-| urlencoding | 3.x | URL parameter encoding (marketplace API queries) |
 | aes | 0.8 | AES-128 block cipher (OFP firmware decryption) |
 | cfb-mode | 0.8 | CFB stream cipher mode (OFP-QC/MTK AES decryption) |
 | md-5 | 0.10 | MD5 digest (OFP key derivation) |
@@ -99,7 +99,7 @@
 ```text
 ├── package.json                  # Frontend deps + scripts
 ├── vite.config.ts                # Vite config with Tailwind plugin
-├── tsconfig.json                 # TypeScript config (strict mode)
+├── tsconfig.json                 # TypeScript config (strict mode, `paths` alias without `baseUrl`)
 ├── eslint.config.mjs             # ESLint flat config
 ├── .prettierrc.json              # Prettier config
 ├── components.json               # shadcn/ui config
@@ -107,6 +107,11 @@
 ├── src/
 │   ├── main.tsx                  # Entry point
 │   ├── App.tsx                   # Root component
+│   ├── lib/marketplace/          # Marketplace hooks + install helper
+│   │   ├── useMarketplaceSearch.ts
+│   │   ├── useMarketplaceHome.ts
+│   │   ├── useMarketplaceAuth.ts
+│   │   └── install.ts
 │   ├── components/               # UI components
 │   │   ├── MainLayout.tsx        # App shell (sidebar + views + bottom panel)
 │   │   ├── AppSidebar.tsx        # shadcn Sidebar (grouped nav, header, footer, rail)
@@ -198,5 +203,5 @@
 ## Edition
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
-- **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-04-03 (Marketplace V2 Unified Discovery with 4 providers, OPS/OFP firmware, remote metadata UI)
+- **TypeScript**: 6.0.2 (strict mode)
+- **Last Updated**: 2026-04-04 (TypeScript 6.0.2 upgrade, `baseUrl` deprecation migration)

@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Store, Package } from 'lucide-react';
+import { Store, UserRound } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { handleError } from '@/lib/errorHandler';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
-import { MarketplaceSearch } from '@/lib/desktop/backend';
+import { Badge } from '@/components/ui/badge';
 import { SearchBar } from '@/components/marketplace/SearchBar';
 import { FilterBar } from '@/components/marketplace/FilterBar';
 import { AppCard } from '@/components/marketplace/AppCard';
@@ -12,173 +9,99 @@ import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmpty
 import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
 import { AppDetailDialog } from '@/components/AppDetailDialog';
 import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
-
-const DEBOUNCE_MS = 600;
-const MIN_QUERY_LENGTH = 2;
+import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
 
 export function ViewMarketplace() {
+  const { openDetail, openSettings, viewMode, searchHistory, githubSession } =
+    useMarketplaceStore();
   const {
-    query,
+    localQuery,
     results,
     isSearching,
-    viewMode,
-    activeProviders,
-    githubPat,
-    setQuery,
-    setResults,
-    setIsSearching,
-    addToSearchHistory,
-    openDetail,
-    openSettings,
-  } = useMarketplaceStore();
-
-  const [localQuery, setLocalQuery] = useState(query);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ── Search logic ─────────────────────────────────────────────────────────
-
-  const performSearch = useCallback(
-    async (searchQuery: string) => {
-      const trimmed = searchQuery.trim();
-      if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
-        setResults([]);
-        setIsSearching(false);
-        return;
-      }
-
-      setIsSearching(true);
-      setQuery(trimmed);
-      addToSearchHistory(trimmed);
-
-      try {
-        const apps = await MarketplaceSearch(trimmed, {
-          providers: activeProviders,
-          sortBy: 'relevance',
-          githubToken: githubPat || null,
-        });
-        setResults(apps);
-      } catch (error) {
-        handleError('Marketplace Search', error);
-        setResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    },
-    [setQuery, setResults, setIsSearching, addToSearchHistory, activeProviders, githubPat],
-  );
-
-  const handleInputChange = useCallback(
-    (value: string) => {
-      setLocalQuery(value);
-
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-
-      if (!value.trim() || value.trim().length < MIN_QUERY_LENGTH) {
-        setResults([]);
-        setIsSearching(false);
-        return;
-      }
-
-      setIsSearching(true);
-      debounceRef.current = setTimeout(() => {
-        void performSearch(value);
-      }, DEBOUNCE_MS);
-    },
-    [performSearch, setResults, setIsSearching],
-  );
-
-  const handleClear = useCallback(() => {
-    setLocalQuery('');
-    setQuery('');
-    setResults([]);
-    setIsSearching(false);
-  }, [setQuery, setResults, setIsSearching]);
-
-  const handleQuickSearch = useCallback(
-    (q: string) => {
-      setLocalQuery(q);
-      void performSearch(q);
-    },
-    [performSearch],
-  );
-
-  // Re-search when provider filters change (if there's an active query)
-  useEffect(() => {
-    if (query.trim() && query.trim().length >= MIN_QUERY_LENGTH) {
-      void performSearch(query);
-    }
-    // Only re-run when activeProviders changes, not query
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProviders]);
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  // ── Render ───────────────────────────────────────────────────────────────
+    hasQuery,
+    handleInputChange,
+    handleClear,
+    handleQuickSearch,
+  } = useMarketplaceSearch();
 
   const hasResults = results.length > 0;
-  const hasQuery = !!localQuery.trim() && localQuery.trim().length >= MIN_QUERY_LENGTH;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Search Header */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2">
-            <Store className="h-5 w-5" />
-            App Marketplace
-          </CardTitle>
-          <CardDescription>
-            Discover and install apps from F-Droid, IzzyOnDroid, GitHub, and Aptoide
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+        <CardHeader className="gap-4 pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Store className="size-5" />
+                Marketplace
+              </CardTitle>
+              <CardDescription>
+                Discover Android apps from trusted open-source and community sources, then install
+                them directly over ADB.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge
+                variant="outline"
+                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground"
+              >
+                4 providers
+              </Badge>
+              <Badge
+                variant="outline"
+                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground"
+              >
+                {githubSession.user ? (
+                  <span className="inline-flex items-center gap-1">
+                    <UserRound className="size-3.5" />
+                    {githubSession.user.login}
+                  </span>
+                ) : (
+                  'Anonymous mode'
+                )}
+              </Badge>
+            </div>
+          </div>
           <SearchBar
             value={localQuery}
             onChange={handleInputChange}
             onClear={handleClear}
             onSettings={openSettings}
+            onSelectHistory={handleQuickSearch}
             isSearching={isSearching}
+            searchHistory={searchHistory}
           />
           <FilterBar resultCount={results.length} />
-        </CardContent>
+        </CardHeader>
       </Card>
 
-      {/* Results / Empty State */}
       {hasResults ? (
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-base">
-                <Package className="h-5 w-5" />
-                Results
-              </span>
-              <span className="text-sm font-normal text-muted-foreground">
-                {results.length} app{results.length !== 1 ? 's' : ''} found
-              </span>
-            </CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Search results</CardTitle>
+            <CardDescription>
+              Browse grouped provider results, then open details or install an available APK.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="max-h-[60vh] min-h-[150px] overflow-y-auto overflow-x-hidden -mx-1 px-1">
+            <div className="max-h-[62vh] overflow-y-auto">
               {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {results.map((app, i) => (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {results.map((app) => (
                     <AppCard
-                      key={`${app.source}-${app.packageName}-${i}`}
+                      key={`${app.source}-${app.packageName}`}
                       app={app}
                       onSelect={() => openDetail(app)}
                     />
                   ))}
                 </div>
               ) : (
-                <div className="flex flex-col divide-y divide-border/50">
-                  {results.map((app, i) => (
+                <div className="space-y-1">
+                  {results.map((app) => (
                     <AppListItem
-                      key={`${app.source}-${app.packageName}-${i}`}
+                      key={`${app.source}-${app.packageName}`}
                       app={app}
                       onSelect={() => openDetail(app)}
                     />
@@ -200,13 +123,8 @@ export function ViewMarketplace() {
         </Card>
       )}
 
-      {/* Attribution footer */}
       <AttributionFooter />
-
-      {/* Settings Dialog */}
       <MarketplaceSettings />
-
-      {/* App Detail Dialog */}
       <AppDetailDialog />
     </div>
   );

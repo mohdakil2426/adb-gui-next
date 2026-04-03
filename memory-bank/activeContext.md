@@ -4,13 +4,96 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace V2 "Unified Discovery" (4-provider app search + install with Design B UI) is implemented.
-**Marketplace Bug Fixes** — All 4 providers now return search results. F-Droid, IzzyOnDroid, and GitHub were broken; fixed with response key correction, cross-reference search, and query encoding fix. Settings dialog added with GitHub PAT support.
-All quality gates pass: format, lint (ESLint + clippy -D warnings), and build.
+Marketplace now includes a stronger discovery-first UX: zero-query home sections, grouped search improvements, cleaner result/detail layouts, Rust-side cache/ranking infrastructure, and optional GitHub OAuth device-flow sign-in with PAT fallback.
+All core quality gates pass: format, lint (ESLint + clippy -D warnings), tests, build, cargo check, and debug Tauri packaging. `cargo test` still has the pre-existing Windows harness crash (`0xc0000139`).
 
 ---
 
 ## Recently Completed
+
+### 2026-04-04 — Marketplace UX Overhaul + GitHub Device Flow
+
+**Change:** Implemented a major Marketplace execution pass focused on professional UX, search/filter quality, zero-query discovery, Rust architecture, and optional GitHub OAuth device-flow sign-in.
+
+**Frontend changes:**
+- `ViewMarketplace.tsx` now acts as a cleaner shell with stronger search/header hierarchy
+- New marketplace hooks under `src/lib/marketplace/`:
+  - `useMarketplaceSearch.ts` — debounced search + stale-response protection
+  - `useMarketplaceHome.ts` — zero-query section loading (trending + fresh releases)
+  - `useMarketplaceAuth.ts` — optional GitHub device-flow session handling
+  - `install.ts` — shared APK install helper
+- `SearchBar.tsx` redesigned with recent-search popover, tooltip-based actions, better shortcut hint
+- `FilterBar.tsx` redesigned with sort control + active filter summary + cleaner view toggle
+- `MarketplaceEmptyState.tsx` replaced hero-only empty state with discovery sections:
+  - Continue exploring
+  - Browse by collection
+  - Trending
+  - Fresh releases
+  - GitHub sign-in CTA/status card
+- `ProviderBadge.tsx` moved from emoji/color-coded presentation to consistent Lucide badge treatment
+- `AppCard.tsx` / `AppListItem.tsx` upgraded for hierarchy, grouped-source hints, and shared install behavior
+- `AppDetailDialog.tsx` restructured into actions/details/media/version sections and now uses `BrowserOpenURL()` instead of `window.open()`
+- `MarketplaceSettings.tsx` upgraded from PAT-first UX to OAuth-client-ID + device-flow sign-in, cache clearing, and advanced PAT fallback
+- `marketplaceStore.ts` expanded with:
+  - sort persistence
+  - recent viewed apps
+  - GitHub session state (in-memory token only)
+  - GitHub OAuth client ID persistence
+  - recent release/trending section state
+
+**Backend changes:**
+- Added Rust marketplace submodules:
+  - `auth.rs` — GitHub OAuth device-flow start/poll helpers + user/rate-limit fetch
+  - `cache.rs` — in-memory TTL caches for search/detail/trending
+  - `ranking.rs` — result dedupe + sort/relevance rules
+  - `service.rs` — orchestration layer so `commands/marketplace.rs` stays thin
+- `types.rs` expanded with:
+  - `available_sources`, `updated_at`, `installable`, `results_per_provider`
+  - GitHub device-flow/user/rate-limit DTOs
+- `commands/marketplace.rs` now supports:
+  - cache-aware search/detail/trending
+  - `marketplace_clear_cache`
+  - `marketplace_github_device_start`
+  - `marketplace_github_device_poll`
+- `lib.rs` now manages `ManagedMarketplaceCache`
+- Provider modules updated with richer metadata (`repo_url`, `updated_at`, `installable`, explicit source availability)
+
+**Verification:**
+- `pnpm check:fast` ✅
+- `pnpm test` ✅ (24 tests)
+- `pnpm exec tsc --noEmit` ✅
+- `pnpm build` ✅
+- `cargo check` ✅
+- `cargo test` ⚠️ pre-existing Windows abnormal exit (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`)
+- `pnpm tauri build --debug` ✅ (MSI + NSIS produced successfully in this session)
+
+---
+
+### 2026-04-04 — TypeScript 6 Upgrade + `baseUrl` Deprecation Migration
+
+**Change:** Upgraded frontend toolchain from TypeScript 5.9.3 to **6.0.2** and removed deprecated
+`compilerOptions.baseUrl` from `tsconfig.json`.
+
+**Why:**
+- TypeScript 6.0 deprecates `baseUrl`; warning states it will stop functioning in TypeScript 7.0
+- This repo only used `baseUrl` to support the `@/*` alias, but `paths` no longer requires
+  `baseUrl`
+
+**Config migration:**
+- `package.json`: `typescript` `~5.9.3` → `^6.0.2`
+- `tsconfig.json`: removed `"baseUrl": "."`
+- Kept alias mapping: `"@/*": ["./src/*"]`
+
+**Verification:**
+- `pnpm exec tsc --noEmit` ✅
+- `pnpm format:check` ✅
+- `pnpm lint` ✅
+- `pnpm test` ✅
+- `pnpm build` ✅
+- `cargo test` ⚠️ pre-existing Windows abnormal exit (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`)
+- `pnpm tauri build --debug` ⚠️ blocked by running `adb-gui-next.exe` locking `src-tauri/target/debug/adb-gui-next.exe`
+
+---
 
 ### 2026-04-04 — Marketplace Bug Fixes: All 4 Providers Working + Settings Dialog
 
@@ -226,6 +309,8 @@ Last verified: **2026-04-04** (after Marketplace Bug Fixes + Settings Dialog)
 - `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
 - `pnpm format:check` ✅ — Formatting clean
 - `pnpm check:fast` ✅ — All fast gates pass
+- `pnpm test` ✅ — Vitest clean after TypeScript 6 upgrade
+- `pnpm exec tsc --noEmit` ✅ — TypeScript 6.0.2 clean
 - `cargo check` ✅ — Rust compilation clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 

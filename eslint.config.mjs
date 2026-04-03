@@ -20,6 +20,8 @@ export default defineConfig([
       'src-tauri/gen/schemas/**',
       'docs/**',
       '.clinerules',
+      '.codex/**',
+      '.omx/**',
     ],
   },
   {

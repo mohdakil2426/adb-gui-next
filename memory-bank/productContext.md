@@ -39,7 +39,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Native dialogs and OS integration
 - Windows and Linux desktop packaging
 - Wireless ADB connectivity
-- **App marketplace** — Unified Discovery: search and install apps from F-Droid, IzzyOnDroid, GitHub, and Aptoide with provider filtering, grid/list views, and app detail dialogs
+- **App marketplace** — Discovery-first marketplace: zero-query browsing, grouped search results, provider-aware install flows, optional GitHub sign-in, and installs from F-Droid, IzzyOnDroid, GitHub, and Aptoide
 
 ### Out of Scope
 
@@ -61,4 +61,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-03 (Marketplace V2 Unified Discovery; OPS/OFP firmware; responsive layout)
+- Last Updated: 2026-04-04 (Marketplace UX overhaul + optional GitHub device flow; OPS/OFP firmware; responsive layout)

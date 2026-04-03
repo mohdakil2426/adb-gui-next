@@ -1,12 +1,11 @@
-import { useEffect } from 'react';
-import { Store, TrendingUp, Loader2, Search } from 'lucide-react';
+import { Clock3, Compass, Loader2, Search, Sparkles, TrendingUp, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { useMarketplaceStore } from '@/lib/marketplaceStore';
-import { MarketplaceGetTrending } from '@/lib/desktop/backend';
-import { handleError } from '@/lib/errorHandler';
+import { useMarketplaceHome } from '@/lib/marketplace/useMarketplaceHome';
 import { AppCard } from './AppCard';
 
-const POPULAR_QUERIES = ['NewPipe', 'Signal', 'VLC', 'Bitwarden', 'K-9 Mail', 'Termux'];
+const COLLECTIONS = ['Privacy', 'Media', 'Developer Tools', 'File Tools', 'Messaging', 'Browsers'];
 
 interface MarketplaceEmptyStateProps {
   isSearching: boolean;
@@ -14,112 +13,106 @@ interface MarketplaceEmptyStateProps {
   onQuickSearch: (query: string) => void;
 }
 
+function SectionHeader({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: typeof Clock3;
+  title: string;
+  description?: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Icon className="size-4 text-muted-foreground" />
+          <span>{title}</span>
+        </div>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+    </div>
+  );
+}
+
 export function MarketplaceEmptyState({
   isSearching,
   hasQuery,
   onQuickSearch,
 }: MarketplaceEmptyStateProps) {
-  const { trendingApps, isTrendingLoading, setTrendingApps, setIsTrendingLoading, openDetail } =
-    useMarketplaceStore();
+  const {
+    trendingApps,
+    isTrendingLoading,
+    recentReleaseApps,
+    isRecentReleaseLoading,
+    searchHistory,
+    recentlyViewedApps,
+    githubSession,
+    githubOauthClientId,
+    openDetail,
+    openSettings,
+  } = useMarketplaceStore();
 
-  // Load trending on first mount
-  useEffect(() => {
-    if (trendingApps.length > 0 || isTrendingLoading || hasQuery) return;
+  useMarketplaceHome(hasQuery);
 
-    let cancelled = false;
-    setIsTrendingLoading(true);
-
-    MarketplaceGetTrending('stars')
-      .then((apps) => {
-        if (!cancelled) setTrendingApps(apps);
-      })
-      .catch((err) => {
-        if (!cancelled) handleError('Trending', err);
-      })
-      .finally(() => {
-        if (!cancelled) setIsTrendingLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hasQuery, trendingApps.length, isTrendingLoading, setTrendingApps, setIsTrendingLoading]);
-
-  // Loading state
   if (isSearching) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin mb-3" />
-        <p className="text-sm">Searching across providers...</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+        <Loader2 className="mb-3 size-8 animate-spin" />
+        <p className="text-sm font-medium">Searching across your selected sources…</p>
+        <p className="mt-1 text-xs">Results update as soon as the latest request completes.</p>
       </div>
     );
   }
 
-  // No results for query
   if (hasQuery) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <Search className="h-8 w-8 mb-3 opacity-50" />
-        <p className="text-sm font-medium">No apps found</p>
-        <p className="text-xs mt-1">Try a different search term or adjust provider filters</p>
+      <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+        <Search className="mb-3 size-8 opacity-60" />
+        <p className="text-sm font-medium">No apps matched that search</p>
+        <p className="mt-1 text-xs">Try a different term, open more sources, or change the sort.</p>
       </div>
     );
   }
 
-  // First visit — show popular queries + trending
   return (
-    <div className="space-y-6">
-      {/* Hero */}
-      <div className="flex flex-col items-center text-center py-8">
-        <div className="size-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-4">
-          <Store className="h-7 w-7 text-primary" />
-        </div>
-        <h3 className="text-lg font-semibold mb-1">App Marketplace</h3>
-        <p className="text-sm text-muted-foreground max-w-md">
-          Discover and install open-source apps from F-Droid, IzzyOnDroid, GitHub, and Aptoide —
-          directly via ADB.
-        </p>
-      </div>
-
-      {/* Quick search chips */}
+    <div className="space-y-8">
       <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Popular apps
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {POPULAR_QUERIES.map((q) => (
-            <Button
-              key={q}
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs rounded-full"
-              onClick={() => onQuickSearch(q)}
-            >
-              {q}
-            </Button>
-          ))}
+        <div className="flex items-center gap-2 text-lg font-semibold">
+          <Compass className="size-5 text-muted-foreground" />
+          Discover Android apps faster
         </div>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Search when you know what you want, or start with recent activity, curated collections,
+          and trusted sources when you are exploring.
+        </p>
       </div>
 
-      {/* Trending from GitHub */}
-      {(isTrendingLoading || trendingApps.length > 0) && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Trending on GitHub
-            </p>
+      {(searchHistory.length > 0 || recentlyViewedApps.length > 0) && (
+        <div className="space-y-4">
+          <SectionHeader
+            icon={Clock3}
+            title="Continue exploring"
+            description="Jump back into recent searches or reopen apps you inspected earlier."
+          />
+          <div className="flex flex-wrap gap-2">
+            {searchHistory.slice(0, 6).map((entry) => (
+              <Button
+                key={entry}
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-full"
+                onClick={() => onQuickSearch(entry)}
+              >
+                {entry}
+              </Button>
+            ))}
           </div>
-
-          {isTrendingLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {trendingApps.slice(0, 6).map((app, i) => (
+          {recentlyViewedApps.length > 0 && (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {recentlyViewedApps.slice(0, 3).map((app) => (
                 <AppCard
-                  key={`${app.source}-${app.packageName}-${i}`}
+                  key={`${app.source}-${app.packageName}`}
                   app={app}
                   onSelect={() => openDetail(app)}
                 />
@@ -128,6 +121,121 @@ export function MarketplaceEmptyState({
           )}
         </div>
       )}
+
+      <div className="space-y-4">
+        <SectionHeader
+          icon={Sparkles}
+          title="Browse by collection"
+          description="Use these quick-launch collections as starting points when you are not searching for one exact package."
+        />
+        <div className="flex flex-wrap gap-2">
+          {COLLECTIONS.map((collection) => (
+            <Button
+              key={collection}
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-full"
+              onClick={() => onQuickSearch(collection)}
+            >
+              {collection}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <SectionHeader
+              icon={TrendingUp}
+              title="Trending right now"
+              description="Popular GitHub Android projects, cached for faster loading."
+            />
+            {isTrendingLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {trendingApps.slice(0, 6).map((app) => (
+                  <AppCard
+                    key={`${app.source}-${app.packageName}`}
+                    app={app}
+                    onSelect={() => openDetail(app)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <SectionHeader
+              icon={Sparkles}
+              title="Fresh releases"
+              description="Recently updated Android projects to help you discover what changed lately."
+            />
+            {isRecentReleaseLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {recentReleaseApps.slice(0, 3).map((app) => (
+                  <AppCard
+                    key={`${app.source}-${app.packageName}`}
+                    app={app}
+                    onSelect={() => openDetail(app)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-muted/20 p-4">
+          <div className="space-y-3">
+            <SectionHeader
+              icon={UserRound}
+              title={
+                githubSession.user
+                  ? `Signed in as ${githubSession.user.login}`
+                  : 'Optional GitHub sign-in'
+              }
+              description={
+                githubSession.user
+                  ? 'Signed-in sessions can help with GitHub rate limits and richer discovery.'
+                  : 'Sign in with GitHub to improve rate limits and future GitHub-powered discovery features.'
+              }
+            />
+            {githubSession.rateLimit && (
+              <div className="rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
+                <p>
+                  API remaining:{' '}
+                  <span className="font-medium text-foreground">
+                    {githubSession.rateLimit.remaining}
+                  </span>{' '}
+                  / {githubSession.rateLimit.limit}
+                </p>
+              </div>
+            )}
+            <Separator />
+            <Button
+              className="w-full"
+              variant={githubSession.user ? 'outline' : 'default'}
+              onClick={openSettings}
+            >
+              {githubSession.user
+                ? 'Manage GitHub session'
+                : githubOauthClientId
+                  ? 'Configure GitHub sign-in'
+                  : 'Add GitHub OAuth client ID'}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Anonymous browsing remains available even if you do not sign in.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

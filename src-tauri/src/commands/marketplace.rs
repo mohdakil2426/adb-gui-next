@@ -1,26 +1,18 @@
-use log::{debug, info};
-use tauri::AppHandle;
+use log::info;
+use tauri::{AppHandle, State};
 
 use crate::CmdResult;
 use crate::helpers::run_binary_command;
-use crate::marketplace::{self, MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
+use crate::marketplace::cache::ManagedMarketplaceCache;
+use crate::marketplace::service;
+use crate::marketplace::{self, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult};
+use crate::marketplace::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
 
-// ─── Provider check helpers ──────────────────────────────────────────────────
-
-fn is_provider_enabled(filters: &SearchFilters, provider: &str) -> bool {
-    filters.providers.is_empty() || filters.providers.iter().any(|p| p == provider)
-}
-
-// ─── Commands ────────────────────────────────────────────────────────────────
-
-/// Search across all enabled providers simultaneously.
-///
-/// IzzyOnDroid uses cross-referencing: F-Droid results are checked against
-/// the IzzyOnDroid packages API since Izzy has no native search endpoint.
 #[tauri::command]
 pub async fn marketplace_search(
     query: String,
     filters: Option<SearchFilters>,
+    cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<Vec<MarketplaceApp>> {
     let query = query.trim().to_string();
     if query.is_empty() {
@@ -30,90 +22,76 @@ pub async fn marketplace_search(
     info!("Marketplace search: {query}");
     let client = marketplace::http_client()?;
     let filters = filters.unwrap_or_default();
-    let github_token = filters.github_token.clone();
+    let search_key = service::search_cache_key(&query, &filters);
 
-    // Launch F-Droid, GitHub, and Aptoide concurrently
-    let (fdroid, github, aptoide) = tokio::join!(
-        async {
-            if is_provider_enabled(&filters, "F-Droid") {
-                marketplace::fdroid::search(&client, &query).await
-            } else {
-                vec![]
-            }
-        },
-        async {
-            if is_provider_enabled(&filters, "GitHub") {
-                marketplace::github::search(&client, &query, &github_token, "stars", 10).await
-            } else {
-                vec![]
-            }
-        },
-        async {
-            if is_provider_enabled(&filters, "Aptoide") {
-                marketplace::aptoide::search(&client, &query, 15).await
-            } else {
-                vec![]
-            }
-        },
-    );
+    {
+        let mut cache =
+            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        if let Some(cached) = cache.get_search(&search_key) {
+            return Ok(cached);
+        }
+    }
 
-    // IzzyOnDroid cross-reference: check F-Droid results against Izzy's packages API
-    let izzy = if is_provider_enabled(&filters, "IzzyOnDroid") && !fdroid.is_empty() {
-        marketplace::izzy::search_via_fdroid(&client, &fdroid).await
-    } else {
-        vec![]
-    };
+    let results = service::fetch_search_apps(&client, &query, &filters).await;
 
-    let fdroid_count = fdroid.len();
-    let izzy_count = izzy.len();
-    let github_count = github.len();
-    let aptoide_count = aptoide.len();
-
-    let capacity = fdroid_count + izzy_count + github_count + aptoide_count;
-    let mut results: Vec<MarketplaceApp> = Vec::with_capacity(capacity);
-    results.extend(fdroid);
-    results.extend(izzy);
-    results.extend(github);
-    results.extend(aptoide);
-
-    debug!(
-        "Marketplace search '{}' → F-Droid:{}, Izzy:{}, GitHub:{}, Aptoide:{}",
-        query, fdroid_count, izzy_count, github_count, aptoide_count,
-    );
+    let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+    cache.insert_search(search_key, results.clone());
     Ok(results)
 }
 
-/// Get detailed info about a specific app from a specific provider.
 #[tauri::command]
 pub async fn marketplace_get_app_detail(
     package_name: String,
     source: String,
     github_token: Option<String>,
+    cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<MarketplaceAppDetail> {
     info!("Marketplace detail: {package_name} from {source}");
     let client = marketplace::http_client()?;
+    let detail_key = service::detail_cache_key(&package_name, &source, &github_token);
 
-    match source.as_str() {
-        "F-Droid" => marketplace::fdroid::get_detail(&client, &package_name).await,
-        "IzzyOnDroid" => marketplace::izzy::get_detail(&client, &package_name).await,
-        "GitHub" => marketplace::github::get_detail(&client, &package_name, &github_token).await,
-        "Aptoide" => marketplace::aptoide::get_detail(&client, &package_name).await,
-        _ => Err(format!("Unknown source: {source}")),
+    {
+        let mut cache =
+            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        if let Some(cached) = cache.get_detail(&detail_key) {
+            return Ok(cached);
+        }
     }
+
+    let detail = service::fetch_app_detail(&client, &package_name, &source, &github_token).await?;
+
+    let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+    cache.insert_detail(detail_key, detail.clone());
+    Ok(detail)
 }
 
-/// Fetch trending/popular Android apps from GitHub.
 #[tauri::command]
 pub async fn marketplace_get_trending(
     sort: Option<String>,
     github_token: Option<String>,
+    limit: Option<u32>,
+    cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<Vec<MarketplaceApp>> {
     let client = marketplace::http_client()?;
-    let sort = sort.as_deref().unwrap_or("stars");
-    Ok(marketplace::github::get_trending(&client, &github_token, sort).await)
+    let sort = sort.unwrap_or_else(|| "stars".to_string());
+    let limit = limit.unwrap_or(12).max(4);
+    let trending_key = service::trending_cache_key(&sort, &github_token, limit);
+
+    {
+        let mut cache =
+            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        if let Some(cached) = cache.get_trending(&trending_key) {
+            return Ok(cached);
+        }
+    }
+
+    let results = service::fetch_trending(&client, &sort, &github_token, limit).await;
+
+    let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+    cache.insert_trending(trending_key, results.clone());
+    Ok(results)
 }
 
-/// List version history for a specific app.
 #[tauri::command]
 pub async fn marketplace_list_versions(
     package_name: String,
@@ -121,28 +99,46 @@ pub async fn marketplace_list_versions(
     github_token: Option<String>,
 ) -> CmdResult<Vec<VersionInfo>> {
     let client = marketplace::http_client()?;
-
-    match source.as_str() {
-        "GitHub" => marketplace::github::list_releases(&client, &package_name, &github_token).await,
-        // F-Droid and IzzyOnDroid return versions in their detail response
-        "F-Droid" => {
-            let detail = marketplace::fdroid::get_detail(&client, &package_name).await?;
-            Ok(detail.versions)
-        }
-        "IzzyOnDroid" => {
-            let detail = marketplace::izzy::get_detail(&client, &package_name).await?;
-            Ok(detail.versions)
-        }
-        "Aptoide" => {
-            // Aptoide getMeta doesn't expose version history easily
-            Ok(vec![])
-        }
-        _ => Err(format!("Unknown source for versions: {source}")),
-    }
+    service::list_versions(&client, &package_name, &source, &github_token).await
 }
 
-/// Download an APK from a URL to a temporary file on disk.
-/// Returns the local temp file path.
+#[tauri::command]
+pub fn marketplace_clear_cache(cache: State<'_, ManagedMarketplaceCache>) -> CmdResult<String> {
+    let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+    cache.clear();
+    Ok("Marketplace cache cleared".to_string())
+}
+
+#[tauri::command]
+pub async fn marketplace_github_device_start(
+    client_id: String,
+    scopes: Option<Vec<String>>,
+) -> CmdResult<GithubDeviceFlowChallenge> {
+    if client_id.trim().is_empty() {
+        return Err("GitHub OAuth client ID is required".to_string());
+    }
+
+    let client = marketplace::http_client()?;
+    marketplace::auth::start_device_flow(&client, client_id.trim(), &scopes.unwrap_or_default())
+        .await
+}
+
+#[tauri::command]
+pub async fn marketplace_github_device_poll(
+    client_id: String,
+    device_code: String,
+) -> CmdResult<GithubDeviceFlowPollResult> {
+    if client_id.trim().is_empty() {
+        return Err("GitHub OAuth client ID is required".to_string());
+    }
+    if device_code.trim().is_empty() {
+        return Err("GitHub device code is required".to_string());
+    }
+
+    let client = marketplace::http_client()?;
+    marketplace::auth::poll_device_flow(&client, client_id.trim(), device_code.trim()).await
+}
+
 #[tauri::command]
 pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
     info!("Downloading APK: {url}");
@@ -160,7 +156,6 @@ pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
         return Err("Downloaded file is empty — server may have returned an error".to_string());
     }
 
-    // Write to temp file — keep() prevents auto-cleanup so the file persists until install
     let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
     let dir_path = temp_dir.keep();
     let file_path = dir_path.join("marketplace_download.apk");
@@ -173,7 +168,6 @@ pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
     Ok(path_str)
 }
 
-/// Install a downloaded APK via ADB. Reuses existing install logic.
 #[tauri::command]
 pub async fn marketplace_install_apk(app: AppHandle, apk_path: String) -> CmdResult<String> {
     info!("Installing marketplace APK: {apk_path}");
