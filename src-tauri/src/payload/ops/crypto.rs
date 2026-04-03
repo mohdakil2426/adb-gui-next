@@ -234,16 +234,16 @@ pub fn ops_decrypt(inp: &[u8], variant: MboxVariant) -> Vec<u8> {
 
             if pos < 0x10 {
                 let slen = ((0xf - pos) >> 2) + 1; // = 4 when pos=0
-                for j in 0..slen {
+                for (j, rkey_slot) in rkey.iter_mut().enumerate().take(slen) {
                     let offset = pos + j * 4 + ptr;
                     if offset + 4 <= inp.len() {
                         let inp_word = u32::from_le_bytes(
                             inp[offset..offset + 4].try_into().unwrap_or([0; 4]),
                         );
-                        let dec = rkey[j] ^ inp_word;
+                        let dec = *rkey_slot ^ inp_word;
                         outp.extend_from_slice(&dec.to_le_bytes());
                         // In decrypt mode: rkey = input words (not decrypted)
-                        rkey[j] = inp_word;
+                        *rkey_slot = inp_word;
                     }
                 }
             }
@@ -324,8 +324,7 @@ impl OfpCipher {
 
 /// Rotate left by n bits in an 8-bit value.
 fn rol8(x: u8, n: u32) -> u8 {
-    let n = n % 8;
-    (x << n) | (x >> (8 - n))
+    x.rotate_left(n)
 }
 
 /// Swap nibbles: ((ch & 0xF) << 4) + ((ch & 0xF0) >> 4)
@@ -430,9 +429,8 @@ pub fn try_ofp_qc_keys(encrypted_xml: &[u8]) -> Option<(OfpCipher, Vec<u8>)> {
     };
 
     // Try V1 first, then all V2 key sets
-    let all_ciphers: Vec<OfpCipher> = std::iter::once(v1_cipher)
-        .chain(OFP_QC_KEYS.iter().map(|t| derive_ofp_qc_cipher(t)))
-        .collect();
+    let all_ciphers: Vec<OfpCipher> =
+        std::iter::once(v1_cipher).chain(OFP_QC_KEYS.iter().map(derive_ofp_qc_cipher)).collect();
 
     for cipher in all_ciphers {
         let dec = cipher.decrypt(encrypted_xml);
@@ -518,7 +516,7 @@ pub fn try_ofp_mtk_keys(first_16: &[u8]) -> Option<OfpCipher> {
             mtk_shuffle2(&obskey, &mut enciv);
             let key_hex = md5_hex(&enckey);
             let iv_hex = md5_hex(&enciv);
-            (key_hex[..16].as_bytes().to_vec(), iv_hex[..16].as_bytes().to_vec())
+            (key_hex.as_bytes()[..16].to_vec(), iv_hex.as_bytes()[..16].to_vec())
         } else {
             (keyset[0].as_bytes().to_vec(), keyset[1].as_bytes().to_vec())
         };

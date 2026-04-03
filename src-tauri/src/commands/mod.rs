@@ -3,6 +3,7 @@ mod apps;
 mod device;
 mod fastboot;
 mod files;
+mod marketplace;
 mod payload;
 mod system;
 
@@ -11,5 +12,6 @@ pub use apps::*;
 pub use device::*;
 pub use fastboot::*;
 pub use files::*;
+pub use marketplace::*;
 pub use payload::*;
 pub use system::*;

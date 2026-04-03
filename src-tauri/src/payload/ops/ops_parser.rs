@@ -150,19 +150,18 @@ fn parse_manifest_xml(xml: &str) -> Result<Vec<OpsPartitionEntry>> {
                 }
 
                 // Parse File elements (used in SAHARA, UFS_PROVISION)
-                if tag == "File" {
-                    if let Some(entry) = parse_file_element(&e, &current_section) {
-                        partitions.push(entry);
-                    }
+                if tag == "File"
+                    && let Some(entry) = parse_file_element(&e, &current_section)
+                {
+                    partitions.push(entry);
                 }
 
                 // Parse Image elements (used in Program sections)
-                if tag == "Image" {
-                    if let Some(entry) =
+                if tag == "Image"
+                    && let Some(entry) =
                         parse_image_element(&e, &current_section, &current_program_label)
-                    {
-                        partitions.push(entry);
-                    }
+                {
+                    partitions.push(entry);
                 }
             }
             Ok(Event::End(e)) => {
@@ -218,9 +217,9 @@ fn parse_file_element(
 
     Some(OpsPartitionEntry {
         name,
-        offset: offset * SECTOR_SIZE as u64, // Convert sector offset to byte offset
+        offset: offset * SECTOR_SIZE, // Convert sector offset to byte offset
         size,
-        sector_size: sector_size * SECTOR_SIZE as u64,
+        sector_size: sector_size * SECTOR_SIZE,
         encrypted,
         sha256,
         md5: String::new(),
@@ -274,9 +273,9 @@ fn parse_image_element(
 
     Some(OpsPartitionEntry {
         name,
-        offset: offset * SECTOR_SIZE as u64,
+        offset: offset * SECTOR_SIZE,
         size,
-        sector_size: sector_size * SECTOR_SIZE as u64,
+        sector_size: sector_size * SECTOR_SIZE,
         encrypted,
         sha256,
         md5: String::new(),

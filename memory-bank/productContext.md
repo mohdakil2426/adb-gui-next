@@ -11,6 +11,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Centralizes Android maintenance tasks in one desktop app
 - Provides OTA payload extraction inside the app
 - Provides OnePlus OPS and Oppo OFP firmware decryption and extraction
+- Enables app discovery and installation from open-source and curated repositories (F-Droid, IzzyOnDroid, GitHub, Aptoide)
 - Preserves advanced operations without requiring a terminal-first workflow
 
 ## User Experience Goals
@@ -38,6 +39,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Native dialogs and OS integration
 - Windows and Linux desktop packaging
 - Wireless ADB connectivity
+- **App marketplace** — Unified Discovery: search and install apps from F-Droid, IzzyOnDroid, GitHub, and Aptoide with provider filtering, grid/list views, and app detail dialogs
 
 ### Out of Scope
 
@@ -59,4 +61,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-03 (OPS/OFP firmware support; responsive layout + sticky header fully resolved)
+- Last Updated: 2026-04-03 (Marketplace V2 Unified Discovery; OPS/OFP firmware; responsive layout)

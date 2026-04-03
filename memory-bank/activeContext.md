@@ -4,10 +4,63 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
+Marketplace V2 "Unified Discovery" (4-provider app search + install with Design B UI) is implemented.
+All quality gates pass: format, lint (ESLint + clippy -D warnings), and build.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-03 — Marketplace V2: "Unified Discovery" (4-Provider Modular Architecture)
+
+**Feature:** Complete overhaul of the Marketplace from a 3-provider flat list to a "Unified Discovery" experience (Design B) with 4 providers, modular Rust backend, and rich frontend components.
+
+**Backend: New `src-tauri/src/marketplace/` module system (6 files):**
+
+| Module | Purpose |
+|---------|---------|
+| `mod.rs` | Module root, shared `reqwest::Client` |
+| `types.rs` | Shared DTOs: `MarketplaceApp`, `MarketplaceAppDetail`, `VersionInfo` |
+| `fdroid.rs` | F-Droid Meilisearch search + v1 API detail + version history |
+| `izzy.rs` | IzzyOnDroid API v1 search + detail |
+| `github.rs` | GitHub-Store model: Search API with `topic:android+fork:false+NOT+topic:library`, APK-only asset filter (`is_apk_asset()`), PAT support, trending feed |
+| `aptoide.rs` | Aptoide ws75 API: TRUSTED-only malware filter, OBB/module skip, screenshots |
+
+**New Tauri commands:**
+- `marketplace_get_trending` — Trending GitHub Android apps (stars > 100)
+- `marketplace_list_versions` — GitHub release history with APK assets
+
+**Frontend: 7 new marketplace components + view/dialog rewrite:**
+
+| Component | Purpose |
+|------|---------|
+| `SearchBar.tsx` | Ctrl+K shortcut, 400ms debounce, search state |
+| `FilterBar.tsx` | Provider toggle chips (F-Droid/IzzyOnDroid/GitHub/Aptoide), grid/list toggle, result count |
+| `AppCard.tsx` | Grid card with icon, provider badge, rating, inline install |
+| `AppListItem.tsx` | Compact list row for list view |
+| `MarketplaceEmptyState.tsx` | Hero, popular app chips, trending GitHub feed |
+| `ProviderBadge.tsx` | Color-coded source badges |
+| `AttributionFooter.tsx` | "Powered by" provider links |
+| `ViewMarketplace.tsx` | Complete rewrite: search card + provider filters + grid/list results + empty state |
+| `AppDetailDialog.tsx` | Enhanced: screenshots, GitHub stats, expand/collapse description, version history with per-version install, copyable package name |
+| `marketplaceStore.ts` | Rewritten: provider filters, view mode, search history, trending state — all persisted in localStorage |
+
+**Key design decisions:**
+- **Uptodown removed** — scraping is fragile and ToS-grey
+- **APK-only filtering** — GitHub assets filtered via `is_apk_asset()`, Aptoide skips OBB entries
+- **Malware filtering** — Aptoide shows only TRUSTED rank by default
+- **Concurrent search** — `tokio::join!` fires all enabled providers simultaneously
+- **GitHub-Store model** — Search API with topic qualifiers, NOT code search
+- **State persistence** — View mode, provider filters, search history saved to localStorage
+
+**Pre-existing clippy fixes (bonus):** Fixed 15 warnings across OPS/OFP modules:
+- `crypto.rs`: needless_range_loop, manual_rotate, redundant_closure, sliced_string_as_bytes
+- `ops_parser.rs`/`ofp_qc.rs`/`detect.rs`: collapsible_if, unnecessary_cast
+- `extractor.rs`: redundant_locals
+
+**Files changed:** 17 (6 new Rust + 7 new TypeScript + 4 modified TypeScript + 7 modified Rust)
+
+---
 
 ### 2026-04-03 — OPS Decryption Bug Fixes (3 Critical Bugs)
 
@@ -130,14 +183,14 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-03** (after OPS decryption bug fixes + documentation)
-- `cargo check` ✅ — Rust compilation clean (including all OPS modules)
+Last verified: **2026-04-03** (after Marketplace V2 Unified Discovery)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
-- `pnpm lint:web` ✅ — ESLint clean
-- `pnpm format:check` ✅ — Formatting clean
+- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings (all 15 pre-existing warnings fixed)
+- `pnpm format` ✅ — Formatting clean
+- `cargo check` ✅ — Rust compilation clean (with features `local_zip,remote_zip`)
+- `pnpm tauri dev` ✅ — App launches and runs successfully
 - OPS integration test ✅ — 62 partitions from OnePlus 8 Pro firmware
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
-- `cargo clippy` ⚠️ — blocked by Windows DLL file lock (pre-existing)
 
 ---
 
@@ -146,21 +199,22 @@ Last verified: **2026-04-03** (after OPS decryption bug fixes + documentation)
 | Area | Status | Notes |
 |------|--------|-------|
 | Layout | ✅ Fixed | h-svh boundary, flex-col pinned header, overflow-x-hidden containment |
-| Responsive | ✅ Fixed | All 7 views — min-w-0 chain complete, no horizontal overflow |
+| Responsive | ✅ Fixed | All 8 views — min-w-0 chain complete, no horizontal overflow |
 | Header | ✅ Fixed | Structurally pinned via flex-col — never scrolls regardless of content |
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
+| Marketplace | ✅ Working | 4-provider Unified Discovery (F-Droid, IzzyOnDroid, GitHub, Aptoide), modular backend, grid/list views, provider filtering, detail dialog |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
-| Frontend | ✅ Complete | shadcn Sidebar + 7 views + bottom panel |
+| Frontend | ✅ Complete | shadcn Sidebar + 8 views + bottom panel |
 | Bottom Panel | ✅ Polished | Fixed position, fluid resize (DOM-first/RAF), smart tab toggle |
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlinks |
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source |
 | App Manager | ✅ Improved | shadcn Command search, destructive glow, non-blocking install |
 | Flasher | ✅ Overhauled | Async flash/wipe, DropArea with position hit-testing, queue actions |
-| Backend | ✅ Complete | All 30+ Tauri commands fully async |
+| Backend | ✅ Complete | All 36 Tauri commands fully async |
 | Security | ✅ Hardened | Shell injection, SSRF, path traversal, content-length validation |
 
 ---

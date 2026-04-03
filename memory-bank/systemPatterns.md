@@ -8,10 +8,11 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
 │  main.tsx → App.tsx → MainLayout (SidebarProvider → AppSidebar + views) │
-│  7 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
-│           Utilities │ PayloadDumper │ About                             │
+│  8 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
+│           Utilities │ PayloadDumper │ Marketplace │ About                │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
 │  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
+│                 marketplaceStore                                        │
 │  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
@@ -21,9 +22,10 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │                     Backend (Rust — src-tauri/)                         │
 │  lib.rs (~60 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
-│  commands/ — 7 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload) — 31 total commands                       │
+│  commands/ — 8 focused modules (device, adb, fastboot, files, apps,    │
+│              system, payload, marketplace) — 38 total commands           │
 │  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)            │
+│  marketplace/ — 4 provider modules (fdroid, izzy, github, aptoide)     │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -404,14 +406,24 @@ src/components/
 ├── SectionHeader.tsx        # Shared section sub-header (Utilities, PayloadDumper)
 ├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
 ├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
+├── AppDetailDialog.tsx      # Marketplace app detail dialog (download + install + versions)
+├── marketplace/             # 7 marketplace UI components
+│   ├── SearchBar.tsx        # Ctrl+K shortcut, debounced search
+│   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
+│   ├── AppCard.tsx          # Grid card with icon, provider badge, install
+│   ├── AppListItem.tsx      # Compact list row
+│   ├── MarketplaceEmptyState.tsx  # Hero, popular chips, trending GitHub apps
+│   ├── ProviderBadge.tsx    # Color-coded source badges (F-Droid/Izzy/GitHub/Aptoide)
+│   └── AttributionFooter.tsx  # "Powered by" provider links
 ├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command, Tabs)
-└── views/                   # 7 feature views (Dashboard, AppManager, FileExplorer,
-                             #   Flasher, Utilities, PayloadDumper, About)
+└── views/                   # 8 feature views (Dashboard, AppManager, FileExplorer,
+                             #   Flasher, Utilities, PayloadDumper, Marketplace, About)
 ```
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` split into helpers + 7 command modules (31 total commands)
+- `src-tauri/src/lib.rs` split into helpers + 8 command modules (38 total commands)
+- `src-tauri/src/marketplace/` — modular provider architecture (fdroid, izzy, github, aptoide, types) with concurrent `tokio::join!` search
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab

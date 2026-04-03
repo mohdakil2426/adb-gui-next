@@ -124,7 +124,6 @@ pub fn extract_ops_partitions(
                 let app = app_handle.clone();
                 let mbox = mbox_variant;
                 let cipher = ofp_cipher.clone();
-                let format = format;
                 let part = (*partition).clone();
 
                 s.spawn(move || -> Result<String> {

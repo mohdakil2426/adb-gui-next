@@ -86,10 +86,8 @@ pub fn detect_format(data: &[u8]) -> Result<FirmwareFormat> {
 
     // 5. Try MTK detection: brute-force first 16 bytes with known keys
     // If AES-CFB decrypt produces "MMM" prefix, it's MTK
-    if file_size >= 0x6C + 16 {
-        if super::ofp_mtk::detect_mtk(data) {
-            return Ok(FirmwareFormat::OfpMediaTek);
-        }
+    if file_size >= 0x6C + 16 && super::ofp_mtk::detect_mtk(data) {
+        return Ok(FirmwareFormat::OfpMediaTek);
     }
 
     bail!("Unrecognized firmware format. Expected CrAU (payload.bin), OPS, OFP, or ZIP container.")

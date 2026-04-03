@@ -118,10 +118,10 @@ fn parse_ofp_qc_xml(xml: &str, pagesize: u64) -> Result<Vec<OpsPartitionEntry>> 
                     current_section = tag.clone();
                 }
 
-                if tag == "File" {
-                    if let Some(entry) = parse_ofp_qc_file_element(&e, &current_section, pagesize) {
-                        partitions.push(entry);
-                    }
+                if tag == "File"
+                    && let Some(entry) = parse_ofp_qc_file_element(&e, &current_section, pagesize)
+                {
+                    partitions.push(entry);
                 }
             }
             Ok(Event::Eof) => break,
@@ -173,7 +173,7 @@ fn parse_ofp_qc_file_element(
         name,
         offset: offset * pagesize,
         size,
-        sector_size: sector_size * SECTOR_SIZE as u64,
+        sector_size: sector_size * SECTOR_SIZE,
         encrypted: true, // OFP-QC partitions have partial encryption
         sha256,
         md5,

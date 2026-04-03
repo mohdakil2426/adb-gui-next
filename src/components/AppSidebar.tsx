@@ -1,5 +1,14 @@
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Box, FolderOpen, Zap, Settings, Info, Package } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Box,
+  FolderOpen,
+  Zap,
+  Settings,
+  Info,
+  Package,
+  Store,
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +25,15 @@ import {
 } from '@/components/ui/sidebar';
 import { ThemeToggle } from './ThemeToggle';
 
-type ViewType = 'dashboard' | 'apps' | 'files' | 'flasher' | 'utils' | 'payload' | 'about';
+type ViewType =
+  | 'dashboard'
+  | 'apps'
+  | 'files'
+  | 'marketplace'
+  | 'flasher'
+  | 'utils'
+  | 'payload'
+  | 'about';
 
 interface NavItem {
   id: ViewType;
@@ -36,6 +53,7 @@ const NAV_GROUPS: NavGroup[] = [
       { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
       { id: 'apps', icon: Box, label: 'Applications' },
       { id: 'files', icon: FolderOpen, label: 'File Explorer' },
+      { id: 'marketplace', icon: Store, label: 'Marketplace' },
     ],
   },
   {

@@ -17,6 +17,7 @@ import { ViewFileExplorer } from './views/ViewFileExplorer';
 import { ViewFlasher } from './views/ViewFlasher';
 import { ViewUtilities } from './views/ViewUtilities';
 import { ViewPayloadDumper } from './views/ViewPayloadDumper';
+import { ViewMarketplace } from './views/ViewMarketplace';
 import { ViewAbout } from './views/ViewAbout';
 import { Toaster } from '@/components/ui/sonner';
 import { BottomPanel } from './BottomPanel';
@@ -35,6 +36,7 @@ const VIEWS = {
   DASHBOARD: 'dashboard',
   APPS: 'apps',
   FILES: 'files',
+  MARKETPLACE: 'marketplace',
   FLASHER: 'flasher',
   UTILS: 'utils',
   PAYLOAD: 'payload',
@@ -126,6 +128,8 @@ export function MainLayout() {
         return <ViewAppManager activeView={activeView} />;
       case VIEWS.FILES:
         return <ViewFileExplorer activeView={activeView} />;
+      case VIEWS.MARKETPLACE:
+        return <ViewMarketplace />;
       case VIEWS.FLASHER:
         return <ViewFlasher />;
       case VIEWS.UTILS:

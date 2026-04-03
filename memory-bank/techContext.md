@@ -34,7 +34,7 @@
 | tauri-plugin-dialog | 2.6.0 | Native dialogs |
 | tauri-plugin-opener | 2.5.3 | URL/file opener |
 | tauri-plugin-clipboard-manager | 2.3.2 | Clipboard read/write |
-| tokio | 1.x | Async runtime (block_in_place for extraction) |
+| tokio | 1.x | Async runtime (block_in_place for extraction, macros for join!) |
 | log | 0.4 | Logging facade |
 | Prost | 0.14 | Protobuf (payload manifest) |
 | memmap2 | 0.9 | Zero-copy memory-mapped payload reading |
@@ -50,8 +50,9 @@
 | tempfile | 3.x | Streaming ZIP extraction to temp files |
 | url | 2.x | URL parsing + SSRF prevention (private IP blocklist) |
 | anyhow | 1.x | Error handling |
-| reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking` features (default feature: remote_zip) |
+| reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking`, `json` features (default feature: remote_zip) |
 | futures-util | 0.3 | Async utilities (default feature: remote_zip) |
+| urlencoding | 3.x | URL parameter encoding (marketplace API queries) |
 | aes | 0.8 | AES-128 block cipher (OFP firmware decryption) |
 | cfb-mode | 0.8 | CFB stream cipher mode (OFP-QC/MTK AES decryption) |
 | md-5 | 0.10 | MD5 digest (OFP key derivation) |
@@ -122,22 +123,23 @@
 │   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
 │   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
 │   │   ├── ui/                   # 22+ shadcn primitives (incl. Checkbox, ContextMenu)
-│   │   └── views/                # 7 feature views
+│   │   └── views/                # 8 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
 │   │   ├── logStore.ts           # Log panel state (ring buffer, filter, search)
 │   │   ├── shellStore.ts         # Shell history state
 │   │   ├── deviceStore.ts        # Device state
 │   │   ├── payloadDumperStore.ts # Payload dumper state
+│   │   ├── marketplaceStore.ts   # Marketplace search/detail state
 │   │   └── desktop/              # Tauri abstraction layer
 │   └── styles/
 │       └── global.css            # Tailwind v4 config + theme + terminal tokens
 └── src-tauri/
     ├── Cargo.toml                # Rust deps (edition 2024)
     ├── src/
-    │   ├── lib.rs                # Thin orchestrator (52 lines)
+    │   ├── lib.rs                # Thin orchestrator (~95 lines)
     │   ├── helpers.rs            # Shared utilities
-    │   ├── commands/             # 7 command modules
+    │   ├── commands/             # 8 command modules
     │   │   ├── mod.rs
     │   │   ├── device.rs
     │   │   ├── adb.rs
@@ -145,7 +147,13 @@
     │   │   ├── files.rs
     │   │   ├── apps.rs
     │   │   ├── system.rs
-    │   │   └── payload.rs
+    │   │   ├── payload.rs
+    │   │   └── marketplace.rs    # App marketplace command wrappers (search, detail, download, install, trending, versions)
+    │   ├── marketplace/       # 4 provider modules + shared types
+    │   │   ├── mod.rs, types.rs  # Shared DTOs, HTTP client
+    │   │   ├── fdroid.rs, izzy.rs  # F-Droid + IzzyOnDroid providers
+    │   │   ├── github.rs        # GitHub-Store model (search + releases + APK filter)
+    │   │   └── aptoide.rs       # Aptoide ws75 API (TRUSTED-only, OBB skip)
     │   ├── payload/              # OTA payload parser + OPS/OFP firmware
     │   │   ├── mod.rs
     │   │   ├── parser.rs
@@ -191,4 +199,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-04-03 (OPS/OFP firmware support, remote metadata UI)
+- **Last Updated**: 2026-04-03 (Marketplace V2 Unified Discovery with 4 providers, OPS/OFP firmware, remote metadata UI)

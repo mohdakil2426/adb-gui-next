@@ -117,4 +117,63 @@ export namespace backend {
     totalSize: number;
     sections: string[];
   }
+
+  // ─── Marketplace ─────────────────────────────────────────────────────────
+
+  /** Provider source for marketplace results. */
+  export type ProviderSource = 'F-Droid' | 'IzzyOnDroid' | 'GitHub' | 'Aptoide';
+
+  /** An app result from the marketplace search. */
+  export interface MarketplaceApp {
+    name: string;
+    packageName: string;
+    version: string;
+    summary: string;
+    iconUrl: string | null;
+    source: string;
+    downloadUrl: string | null;
+    repoUrl: string | null;
+    size: number | null;
+    rating: number | null;
+    downloadsCount: number | null;
+    malwareStatus: string | null;
+    categories: string[];
+  }
+
+  /** Detailed metadata for a single marketplace app. */
+  export interface MarketplaceAppDetail {
+    name: string;
+    packageName: string;
+    version: string;
+    description: string;
+    iconUrl: string | null;
+    source: string;
+    downloadUrl: string | null;
+    size: number | null;
+    license: string | null;
+    author: string | null;
+    sourcesAvailable: string[];
+    screenshots: string[];
+    changelog: string | null;
+    versions: VersionInfo[];
+    repoStars: number | null;
+    repoForks: number | null;
+    rating: number | null;
+    downloadsCount: number | null;
+  }
+
+  /** Version entry with download URL. */
+  export interface VersionInfo {
+    versionName: string;
+    versionCode: number;
+    size: number | null;
+    downloadUrl: string | null;
+    publishedAt: string | null;
+  }
+
+  /** Search filters passed to the backend. */
+  export interface MarketplaceSearchFilters {
+    providers: ProviderSource[];
+    sortBy: 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
+  }
 }

@@ -1,5 +1,6 @@
 mod commands;
 mod helpers;
+pub mod marketplace;
 pub mod payload;
 
 use tauri::Manager;
@@ -76,7 +77,14 @@ pub fn run() {
             #[cfg(feature = "remote_zip")]
             commands::list_remote_payload_partitions,
             // OPS/OFP firmware format commands
-            commands::get_ops_metadata
+            commands::get_ops_metadata,
+            // Marketplace commands
+            commands::marketplace_search,
+            commands::marketplace_get_app_detail,
+            commands::marketplace_get_trending,
+            commands::marketplace_list_versions,
+            commands::marketplace_download_apk,
+            commands::marketplace_install_apk,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

@@ -295,3 +295,46 @@ export function ListRemotePayloadPartitions(url: string): Promise<Array<backend.
 export function GetRemotePayloadMetadata(url: string): Promise<backend.RemotePayloadMetadata> {
   return call('get_remote_payload_metadata', { url });
 }
+
+// =============================================================================
+// Marketplace Commands
+// =============================================================================
+
+/** Search apps across all marketplace providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). */
+export function MarketplaceSearch(
+  query: string,
+  filters?: backend.MarketplaceSearchFilters,
+): Promise<Array<backend.MarketplaceApp>> {
+  return call('marketplace_search', { query, filters: filters ?? null });
+}
+
+/** Get detailed info about a single app from a specific provider. */
+export function MarketplaceGetAppDetail(
+  packageName: string,
+  source: string,
+): Promise<backend.MarketplaceAppDetail> {
+  return call('marketplace_get_app_detail', { packageName, source });
+}
+
+/** Fetch trending/popular Android apps from GitHub. */
+export function MarketplaceGetTrending(sort?: string): Promise<Array<backend.MarketplaceApp>> {
+  return call('marketplace_get_trending', { sort: sort ?? null });
+}
+
+/** List version history for a specific app. */
+export function MarketplaceListVersions(
+  packageName: string,
+  source: string,
+): Promise<Array<backend.VersionInfo>> {
+  return call('marketplace_list_versions', { packageName, source });
+}
+
+/** Download an APK from a URL to a temp directory. Returns the local file path. */
+export function MarketplaceDownloadApk(url: string): Promise<string> {
+  return call('marketplace_download_apk', { url });
+}
+
+/** Install a downloaded APK via ADB. */
+export function MarketplaceInstallApk(apkPath: string): Promise<string> {
+  return call('marketplace_install_apk', { apkPath });
+}

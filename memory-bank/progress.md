@@ -13,7 +13,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail
 - `sidebar-context.ts` holds non-component exports (constants, context, hook) — Fast Refresh clean
 - `Ctrl+B` keyboard shortcut for sidebar toggle
-- 7 sidebar views compile and build successfully
+- 8 sidebar views compile and build successfully
 - VS Code-style **fixed-position** bottom panel with Logs and Shell tabs:
   - Viewport-anchored (never scrolls with page); sidebar-aware left offset via `useSidebar()`
   - Fluid resize: DOM-first + RAF throttle (60fps), zero re-renders during drag, `will-change` GPU hint
@@ -71,10 +71,10 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 - `CheckboxItem` shared component used in AppManager + PayloadDumper
 - `EmptyState` shared component used in AppManager
 
-### Backend (30 Tauri Commands)
+### Backend (38 Tauri Commands)
 
 | Category | Commands |
-|----------|----------|
+|----------|-----------|
 | Device | `get_devices`, `get_device_info`, `get_device_mode`, `get_fastboot_devices` |
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition` *(async)*, `reboot`, `wipe_data` *(async)*, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
@@ -83,6 +83,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
+| Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)* |
 
 ### Payload Dumper
 
@@ -143,7 +144,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 ```
 src-tauri/src/
-├── lib.rs (~60 lines) — thin orchestrator
+├── lib.rs (~95 lines) — thin orchestrator
 ├── helpers.rs — shared utilities (binary resolution, command execution, device info)
 ├── commands/
 │   ├── mod.rs — re-exports
@@ -153,7 +154,15 @@ src-tauri/src/
 │   ├── files.rs — list_files, push_file, pull_file, delete_files, rename_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
-│   └── payload.rs — payload command wrappers + remote URL commands + OPS dispatch
+│   ├── payload.rs — payload command wrappers + remote URL commands + OPS dispatch
+│   └── marketplace.rs — thin wrappers for search, detail, download, install, trending, versions
+├── marketplace/ — modular provider architecture
+│   ├── mod.rs — module root, shared reqwest::Client
+│   ├── types.rs — MarketplaceApp, MarketplaceAppDetail, VersionInfo DTOs
+│   ├── fdroid.rs — F-Droid Meilisearch + v1 API
+│   ├── izzy.rs — IzzyOnDroid API v1
+│   ├── github.rs — GitHub-Store model (search + releases + APK filter + trending)
+│   └── aptoide.rs — Aptoide ws75 API (TRUSTED-only, OBB/module skip)
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
     ├── parser.rs — CrAU header parsing, protobuf decoding
@@ -198,6 +207,7 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|-------|
+| Medium | Marketplace: GitHub PAT management UI | Prompt user for PAT when rate-limited; settings dialog for token management |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -217,7 +227,8 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
-| 2026-04-03 | 0.1.0 | OPS/OFP Technical Guide: Comprehensive documentation in `docs/guides/ops-ofp-firmware-extraction.md` covering architecture, cryptography, parsing, extraction pipeline, frontend integration, testing, 8 common pitfalls, and debugging checklist. |
+| 2026-04-03 | 0.1.0 | Marketplace V2 "Unified Discovery": Complete overhaul from 3-provider flat list to Design B with 4 providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). New `src-tauri/src/marketplace/` modular provider architecture (6 files). 7 new frontend components (SearchBar, FilterBar, AppCard, AppListItem, MarketplaceEmptyState, ProviderBadge, AttributionFooter). ViewMarketplace and AppDetailDialog rewritten. Zustand store with provider filters, view modes, search history. 2 new commands (marketplace_get_trending, marketplace_list_versions). GitHub-Store model with APK-only filtering. Aptoide TRUSTED-only malware filter. Uptodown removed. 15 pre-existing clippy warnings fixed across OPS/OFP modules. All quality gates (format + lint + build) pass. |
+| 2026-04-03 | 0.1.0 | App Marketplace (original): 3-provider search (F-Droid, IzzyOnDroid, GitHub) with concurrent `tokio::join!`, app detail dialog, download + ADB install. 4 new Tauri commands in `commands/marketplace.rs`. Frontend: `ViewMarketplace.tsx`, `AppDetailDialog.tsx`, `marketplaceStore.ts`. Sidebar nav in Main group with Store icon. Dependencies: `urlencoding`, reqwest `json` feature, tokio `macros` feature. |
 | 2026-04-03 | 0.1.0 | OPS Decryption Bug Fixes: 3 critical bugs fixed — sbox array size `[u32; 512]` to `[u32; 2048]` with byte-value entries, XML validation on padded buffer, missing `<Image>` element parsing. XML offset corrected to compute from end of file. BOM/NUL/FFFD stripping. 62 partitions verified from OnePlus 8 Pro firmware. |
 | 2026-04-03 | 0.1.0 | OPS/OFP Firmware Support: Native decryption + extraction for OnePlus `.ops` (custom S-box cipher, 3 mbox variants), Oppo `.ofp` Qualcomm (AES-128-CFB, 7 key sets), Oppo `.ofp` MediaTek (mtk_shuffle, 9 key sets). Android sparse image un-sparsing. Unified dispatch via file extension. 9 new Rust files in `payload/ops/`. 4 new Cargo deps (`aes`, `cfb-mode`, `md-5`, `quick-xml`). Frontend: file picker + DropZone accept `.ops`/`.ofp`, `OpsMetadata` interface, `GetOpsMetadata()` API, `get_ops_metadata` Tauri command. |
 | 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections (OTA Package, Payload Properties, HTTP, ZIP, OTA Manifest, Dynamic Groups, Extraction). New `read_text_file_from_zip()` for reading `META-INF/com/android/metadata` + `payload_properties.txt` from ZIP. New `get_remote_payload_metadata` Tauri command. `FileBannerDetails.tsx` component with SDK→Android mapping, copyable hashes, OTA type badge. Fire-and-forget metadata fetch after partition load. |
