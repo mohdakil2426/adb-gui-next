@@ -9,6 +9,29 @@ All responsive layout fixes, sticky header, and adaptive hardening are complete.
 
 ## Recently Completed
 
+### 2026-04-03 — OPS Decryption Bug Fixes (3 Critical Bugs)
+
+**Problem:** OPS firmware loading showed an error toast — decryption was failing silently.
+
+**Root Causes Found & Fixed:**
+
+| Bug | File | Issue | Fix |
+|-----|------|-------|-----|
+| 1. **mbox treated as packed u32** | `crypto.rs` | `sbox_as_u32_array()` was `[u32; 512]` — too small, and `key_update` was XORing with packed u32 values instead of byte values | Changed to `[u32; 2048]` with one byte-value per entry |
+| 2. **XML validation on full buffer** | `crypto.rs` | `try_decrypt_ops_xml()` checked entire padded buffer as UTF-8 — padding bytes are invalid UTF-8 | Check only first 256 bytes for `b"xml "`, return `String::from_utf8_lossy()` |
+| 3. **Missing `<Image>` elements** | `ops_parser.rs` | Parser only handled `<File>` tags — actual firmware is in `<Image>` inside `<program>` | Added `<Image>` element parsing with program label tracking |
+
+**Additional fixes:**
+- XML offset now computed from end of file (matching Python reference), not `config_offset * 0x200`
+- BOM stripping (`\u{FEFF}`) and replacement character cleanup before XML parsing
+- Updated unit tests for real XML structure with `<Image>` elements
+
+**Verification:** 62 partitions found from OnePlus 8 Pro `.ops` file (was 4 before fixes).
+
+**Documentation:** Comprehensive technical guide written in `docs/guides/ops-ofp-firmware-extraction.md`.
+
+---
+
 ### 2026-04-03 — OPS/OFP Firmware Format Support (Backend + Frontend Integration)
 
 **Feature:** Added native decryption and extraction support for OnePlus `.ops` and Oppo `.ofp`
@@ -101,131 +124,18 @@ can't establish a scroll boundary.
 | `MainLayout.tsx` | Outer `<div>`: added `h-svh overflow-hidden` | Creates hard viewport-height boundary |
 | `sidebar.tsx` | `SidebarProvider` wrapper: `min-h-svh` → `h-full` | Fills boundary instead of overriding it |
 
-**Final working layout tree:**
-```
-<div h-svh overflow-hidden>                 ← BOUNDARY: exactly 100svh
-  <SidebarProvider h-full>                  ← FILL: uses the boundary
-    <AppSidebar />                          ← sidebar (fixed width, full height)
-    <SidebarInset flex-1 flex-col overflow-x-hidden min-w-0>
-      <header shrink-0>                     ← PINNED: 48px, never moves
-      <div flex-1 overflow-y-auto overflow-x-hidden main-scroll-area>
-        <div w-full p-4 sm:p-6>
-          <div max-w-(--content-max-width) mx-auto>
-            {activeView}                    ← ONLY THIS SCROLLS
-```
-
 **All gates:** `pnpm format:check` ✅ → `pnpm lint:web` ✅ → `pnpm build` ✅
-
----
-
-### 2026-04-03 — Sticky Header Architecture + App-Wide Adaptive Hardening
-
-**Problem:** After adding `overflow-hidden` to `SidebarInset`, `position: sticky` on the header
-stopped working. `overflow: hidden` terminates the scroll-ancestor search that sticky needs.
-
-**Architectural decision:** Don't use `position: sticky` at all. In a viewport-locked desktop app
-(Tauri), the correct pattern is a flex-column layout where the header is structurally above the
-scroll container — it never moves because it's a sibling to the scroller, not inside it.
-
-**Overflow axis precision:**
-Both `SidebarProvider` wrapper and `SidebarInset` use `overflow-x-hidden` (not `overflow-hidden`):
-- Clips horizontal overflow (the original overflow bug)
-- Preserves vertical flex flow for flex-col children (header + scroll area)
-- `position: fixed` children (BottomPanel, Toaster) are unaffected — fixed elements use the
-  viewport as their containing block, only re-contained by transformed ancestors (none here)
-
-**Adaptive improvements applied across all views:**
-
-| File | Change | Reason |
-|---|---|---|
-| `sidebar.tsx` | `SidebarContent`: `overflow-auto` → `overflow-y-auto overflow-x-hidden` | Eliminate phantom sidebar scrollbar gutter |
-| `sidebar.tsx` | `SidebarInset`: `overflow-hidden` → `overflow-x-hidden` | Allow vertical flex flow |
-| `MainLayout.tsx` | Header: `sticky top-0` removed → `shrink-0` | Structural pinning, not CSS sticky |
-| `MainLayout.tsx` | Scroll div: `overflow-auto` → `overflow-y-auto overflow-x-hidden` | Explicit axis control |
-| `ViewAppManager.tsx` | APK list: `max-h-75` → `max-h-[30vh] min-h-[100px] overflow-x-hidden` | Viewport-relative |
-| `ViewAppManager.tsx` | Package virtualizer: `h-75` → `h-[40vh] min-h-[150px] overflow-x-hidden` | Viewport-relative |
-| `ConnectedDevicesCard.tsx` | Device info div: `flex flex-col` → `flex flex-col min-w-0 flex-1` + `truncate` on spans | Serial/name overflow |
-| `FileSelector.tsx` | Root div: added `min-w-0` | Completes truncation chain for file path `<p>` |
-
-**All gates:** `pnpm format:check` ✅ → `pnpm lint:web` ✅ → `pnpm build` ✅
-
----
-
-### 2026-04-03 — App-Wide Responsive Layout Fixes (7 Root Causes)
-
-**Problem:** 7 responsive/adaptive layout issues — content clipping behind sidebar, phantom sidebar
-scrollbar, horizontal overflow from long remote OTA URLs, fixed partition table heights.
-
-**Systemic root causes fixed:**
-
-1. **`SidebarContent`** — `overflow-auto` → `overflow-y-auto overflow-x-hidden`
-   (stops horizontal scrollbar gutter in sidebar nav)
-
-2. **`SidebarInset`** — Added `min-w-0` to enable flex shrink participation
-   (systemic fix for all 7 views — content no longer clips behind sidebar)
-
-3. **`global.css`** — `scrollbar-gutter: stable` scoped to `.main-scroll-area` class only;
-   removed from global `html`/`body` (phantom gutter eliminated from sidebar and nested containers)
-
-4. **`global.css`** — `--content-min-width: 400px` → `0px` (removed rigid 656px total minimum
-   that forced horizontal scrolling on narrow windows: 256px sidebar + 400px content)
-
-5. **`MainLayout.tsx`** — `min-w-(--content-min-width)` → `w-full` on content wrapper;
-   `main-scroll-area` class added to scroll div for scoped `scrollbar-gutter`
-
-6. **`PartitionTable.tsx`** — `max-h-100` (fixed 400px) → `max-h-[40vh] min-h-[120px] overflow-x-hidden`
-
-7. **`PayloadSourceTabs.tsx`** — `overflow-hidden` added to remote `<TabsContent>`
-   (completes containment chain for the URL input)
-
-8. **`FileBanner.tsx`** — `min-w-0 max-w-full` added to URL `<p>` (defense-in-depth)
-
-**Key insight:** The `min-w-0` propagation chain must be unbroken from root to leaf:
-`SidebarProvider` → `SidebarInset` → content wrapper → card → component → text element.
-Any missing link causes overflow to escape upward, widening the viewport.
-
-**All gates:** `pnpm format:check` ✅ → `pnpm lint:web` ✅ → `pnpm build` ✅
-
----
-
-### 2026-04-01 — Full Codebase Review: Security Hardening + Code Quality Cleanup
-
-**Security fixes (Rust):**
-1. `validate_shell_command()` — blocks shell metacharacters from `run_shell_command`
-2. Empty-string guards on `run_adb_host_command` and `run_fastboot_host_command`
-3. `is_private_url()` — SSRF prevention (loopback, private, link-local, CGNAT ranges blocked)
-4. `open_folder` — path canonicalization + directory verification
-5. `tempfile::TempDir` for APKS extraction (crash-safe cleanup)
-6. `save_log` prefix sanitization (alphanumeric + `-`/`_`, max 50 chars)
-7. Content-Length validation in HTTP range reads
-
-**Code quality (Frontend):**
-- `files.sort()` → `[...files].sort()` (no in-place mutation of backend response)
-- `key={idx}` → `key={path}` in APK list (stable React keys)
-- `formatBytes`/`formatBytesNum` consolidated into `lib/utils.ts`
-- 11 unused React imports removed
-- Dead code: `isRefreshingDevices`, unused `_activeView` props removed
-
-**Commit:** `3618a30`
-
----
-
-### 2026-04-01 — Rust Fixes: remote_zip Default Feature + Code Quality
-
-- `remote_zip` added to default features in `Cargo.toml` — remote extraction always active
-- `unreachable!()` macro replaces `Err(anyhow!("Unreachable"))` in retry loops
-- `new(url: impl ToString)` — more ergonomic API
-- Field docs added to `RemotePayload`; redundant `as u64` casts removed
-- `commands/payload.rs` — `output_dir` canonicalization + `payload_path` existence check
 
 ---
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-03** (after OPS/OFP firmware support)
-- `cargo check` ✅ — Rust compilation clean (including all new OPS modules)
+Last verified: **2026-04-03** (after OPS decryption bug fixes + documentation)
+- `cargo check` ✅ — Rust compilation clean (including all OPS modules)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `pnpm lint:web` ✅ — ESLint clean
+- `pnpm format:check` ✅ — Formatting clean
+- OPS integration test ✅ — 62 partitions from OnePlus 8 Pro firmware
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 - `cargo clippy` ⚠️ — blocked by Windows DLL file lock (pre-existing)
 
@@ -240,6 +150,7 @@ Last verified: **2026-04-03** (after OPS/OFP firmware support)
 | Header | ✅ Fixed | Structurally pinned via flex-col — never scrolls regardless of content |
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
+| OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
@@ -266,6 +177,15 @@ Last verified: **2026-04-03** (after OPS/OFP firmware support)
 - **`min-w-0` chain must be unbroken**: Every flex ancestor between the scroll boundary and a `truncate` text element must have `min-w-0`. Missing one link = overflow escapes upward.
 - **`scrollbar-gutter: stable` must be scoped**: Applied via `.main-scroll-area` class only. Global application causes phantom gutters in sidebar and nested scroll containers.
 - **Viewport-relative heights for scroll lists**: Use `max-h-[40vh]` not `max-h-100` (400px). Always pair with a `min-h-[Npx]` so lists don't collapse to zero on tall windows.
+
+### OPS/OFP Porting
+
+- **mbox is a list of byte-values, NOT packed u32**: Each `mbox[i]` is 0-255. Never use `u32::from_le_bytes()` to pack adjacent bytes.
+- **XML uses `<Image>` in `<program>` tags**: Not just `<File>` elements. Missing `<Image>` parsing loses 90%+ of partitions.
+- **XML offset is from END of file**: `file_size - 0x200 - aligned_xml_length`, not `config_offset * 0x200`.
+- **Decrypted XML has BOM + NUL padding**: Must strip `\u{FEFF}`, `\0`, and `\u{FFFD}` before parsing.
+- **sbox_as_u32_array must be [u32; 2048]**: One entry per byte of sbox.bin, not 512.
+- **mtk_shuffle ≠ mtk_shuffle2**: Operation order (XOR vs nibble-swap) is reversed.
 
 ### React & State
 

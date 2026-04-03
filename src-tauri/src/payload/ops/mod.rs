@@ -16,6 +16,9 @@ pub mod ofp_qc;
 pub mod ops_parser;
 pub mod sparse;
 
+#[cfg(test)]
+mod test_ops_decrypt;
+
 pub use detect::FirmwareFormat;
 pub use extractor::{extract_ops_partitions, list_ops_partitions};
 

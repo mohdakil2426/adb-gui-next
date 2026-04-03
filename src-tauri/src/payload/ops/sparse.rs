@@ -19,8 +19,7 @@ const CHUNK_TYPE_CRC32: u16 = 0xCAC4;
 
 /// Check if data starts with the sparse image magic.
 pub fn is_sparse(data: &[u8]) -> bool {
-    data.len() >= 4
-        && u32::from_le_bytes(data[..4].try_into().unwrap_or([0; 4])) == SPARSE_MAGIC
+    data.len() >= 4 && u32::from_le_bytes(data[..4].try_into().unwrap_or([0; 4])) == SPARSE_MAGIC
 }
 
 /// Un-sparse an Android sparse image, writing the raw output to `writer`.

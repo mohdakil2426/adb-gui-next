@@ -177,6 +177,7 @@ src-tauri/src/
 
 ## Documentation
 
+- `docs/guides/ops-ofp-firmware-extraction.md` — Comprehensive OPS/OFP firmware extraction technical guide (2026-04-03)
 - `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
 - `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
 - `docs/rust-audit-report.md` — Code quality audit
@@ -216,6 +217,8 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-03 | 0.1.0 | OPS/OFP Technical Guide: Comprehensive documentation in `docs/guides/ops-ofp-firmware-extraction.md` covering architecture, cryptography, parsing, extraction pipeline, frontend integration, testing, 8 common pitfalls, and debugging checklist. |
+| 2026-04-03 | 0.1.0 | OPS Decryption Bug Fixes: 3 critical bugs fixed — sbox array size `[u32; 512]` to `[u32; 2048]` with byte-value entries, XML validation on padded buffer, missing `<Image>` element parsing. XML offset corrected to compute from end of file. BOM/NUL/FFFD stripping. 62 partitions verified from OnePlus 8 Pro firmware. |
 | 2026-04-03 | 0.1.0 | OPS/OFP Firmware Support: Native decryption + extraction for OnePlus `.ops` (custom S-box cipher, 3 mbox variants), Oppo `.ofp` Qualcomm (AES-128-CFB, 7 key sets), Oppo `.ofp` MediaTek (mtk_shuffle, 9 key sets). Android sparse image un-sparsing. Unified dispatch via file extension. 9 new Rust files in `payload/ops/`. 4 new Cargo deps (`aes`, `cfb-mode`, `md-5`, `quick-xml`). Frontend: file picker + DropZone accept `.ops`/`.ofp`, `OpsMetadata` interface, `GetOpsMetadata()` API, `get_ops_metadata` Tauri command. |
 | 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections (OTA Package, Payload Properties, HTTP, ZIP, OTA Manifest, Dynamic Groups, Extraction). New `read_text_file_from_zip()` for reading `META-INF/com/android/metadata` + `payload_properties.txt` from ZIP. New `get_remote_payload_metadata` Tauri command. `FileBannerDetails.tsx` component with SDK→Android mapping, copyable hashes, OTA type badge. Fire-and-forget metadata fetch after partition load. |
 | 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div + `SidebarProvider` `min-h-svh` → `h-full`. Header structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area. No `position: sticky` needed. |

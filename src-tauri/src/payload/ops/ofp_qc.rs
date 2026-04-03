@@ -3,8 +3,8 @@
 //! Detects page size (0x200 or 0x1000), brute-forces AES key, decrypts XML manifest,
 //! and produces `OpsPartitionEntry` list.
 
-use super::{OPS_MAGIC, OpsMetadata, OpsPartitionEntry, SECTOR_SIZE};
 use super::crypto::{OfpCipher, try_ofp_qc_keys};
+use super::{OPS_MAGIC, OpsMetadata, OpsPartitionEntry, SECTOR_SIZE};
 use anyhow::{Result, bail};
 use quick_xml::Reader;
 use quick_xml::events::Event;
@@ -13,9 +13,7 @@ use quick_xml::events::Event;
 const OFP_QC_ENC_LENGTH: u64 = 0x40000; // 256 KiB
 
 /// Parse an OFP (Qualcomm) file.
-pub fn parse_ofp_qc(
-    data: &[u8],
-) -> Result<(Vec<OpsPartitionEntry>, OpsMetadata, OfpCipher)> {
+pub fn parse_ofp_qc(data: &[u8]) -> Result<(Vec<OpsPartitionEntry>, OpsMetadata, OfpCipher)> {
     let file_size = data.len() as u64;
     let pagesize = detect_page_size(data, file_size)?;
 
@@ -40,15 +38,14 @@ pub fn parse_ofp_qc(
     let encrypted_xml = &data[xml_byte_offset as usize..xml_end];
 
     // Try all known key sets
-    let (cipher, decrypted_xml) = try_ofp_qc_keys(encrypted_xml)
-        .ok_or_else(|| anyhow::anyhow!(
+    let (cipher, decrypted_xml) = try_ofp_qc_keys(encrypted_xml).ok_or_else(|| {
+        anyhow::anyhow!(
             "OFP-QC: Failed to decrypt XML manifest. None of the known AES key sets produced \
              valid XML. This firmware may use an unsupported encryption key."
-        ))?;
+        )
+    })?;
 
-    let xml_str = String::from_utf8_lossy(&decrypted_xml)
-        .trim_end_matches('\0')
-        .to_string();
+    let xml_str = String::from_utf8_lossy(&decrypted_xml).trim_end_matches('\0').to_string();
 
     let partitions = parse_ofp_qc_xml(&xml_str, pagesize)?;
 
@@ -87,9 +84,8 @@ fn detect_page_size(data: &[u8], file_size: u64) -> Result<u64> {
         }
         let offset = (file_size - ps) as usize;
         if offset + 0x14 <= data.len() {
-            let magic = u32::from_le_bytes(
-                data[offset + 0x10..offset + 0x14].try_into().unwrap_or([0; 4]),
-            );
+            let magic =
+                u32::from_le_bytes(data[offset + 0x10..offset + 0x14].try_into().unwrap_or([0; 4]));
             if magic == OPS_MAGIC {
                 return Ok(ps);
             }
@@ -111,17 +107,19 @@ fn parse_ofp_qc_xml(xml: &str, pagesize: u64) -> Result<Vec<OpsPartitionEntry>> 
 
                 if matches!(
                     tag.as_str(),
-                    "Sahara" | "Config" | "Provision" | "ChainedTableOfDigests"
-                        | "DigestsToSign" | "Firmware"
+                    "Sahara"
+                        | "Config"
+                        | "Provision"
+                        | "ChainedTableOfDigests"
+                        | "DigestsToSign"
+                        | "Firmware"
                 ) || tag.starts_with("Program")
                 {
                     current_section = tag.clone();
                 }
 
                 if tag == "File" {
-                    if let Some(entry) =
-                        parse_ofp_qc_file_element(&e, &current_section, pagesize)
-                    {
+                    if let Some(entry) = parse_ofp_qc_file_element(&e, &current_section, pagesize) {
                         partitions.push(entry);
                     }
                 }

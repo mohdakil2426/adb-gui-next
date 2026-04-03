@@ -38,13 +38,7 @@ pub fn list_ops_partitions(path: &Path) -> Result<Vec<PartitionDetail>> {
         _ => anyhow::bail!("Not an OPS/OFP file"),
     };
 
-    Ok(partitions
-        .into_iter()
-        .map(|p| PartitionDetail {
-            name: p.name,
-            size: p.size,
-        })
-        .collect())
+    Ok(partitions.into_iter().map(|p| PartitionDetail { name: p.name, size: p.size }).collect())
 }
 
 /// Get metadata from an OPS/OFP file.
@@ -114,11 +108,7 @@ pub fn extract_ops_partitions(
 
     let partitions_to_extract: Vec<&OpsPartitionEntry> = all_partitions
         .iter()
-        .filter(|p| {
-            selected_set
-                .as_ref()
-                .is_none_or(|s| s.contains(p.name.as_str()))
-        })
+        .filter(|p| selected_set.as_ref().is_none_or(|s| s.contains(p.name.as_str())))
         .collect();
 
     let total = partitions_to_extract.len();
@@ -144,7 +134,12 @@ pub fn extract_ops_partitions(
                     let mut writer = BufWriter::with_capacity(1024 * 1024, image_file);
 
                     extract_single_partition(
-                        &mmap, &part, &mut writer, format, mbox, cipher.as_ref(),
+                        &mmap,
+                        &part,
+                        &mut writer,
+                        format,
+                        mbox,
+                        cipher.as_ref(),
                     )?;
 
                     writer.flush()?;
@@ -343,11 +338,7 @@ fn default_output_dir(path: &Path) -> PathBuf {
 fn sanitize_output_name(name: &str) -> String {
     let cleaned = name.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
     // If name doesn't have an extension, add .img
-    if !cleaned.contains('.') {
-        format!("{cleaned}.img")
-    } else {
-        cleaned
-    }
+    if !cleaned.contains('.') { format!("{cleaned}.img") } else { cleaned }
 }
 
 /// Check if a path should be handled by the OPS/OFP pipeline.

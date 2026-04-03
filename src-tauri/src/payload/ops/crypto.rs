@@ -14,6 +14,7 @@ type Aes128Cfb = cfb_mode::Decryptor<Aes128>;
 // ─── OPS Custom Cipher ───────────────────────────────────────────────────────
 
 /// Fixed 128-bit key used by all OPS variants: d1b5e39e5eea049d671dd5abd2afcbaf
+/// In Python: key = unpack("<4I", bytes.fromhex("d1b5e39e5eea049d671dd5abd2afcbaf"))
 const OPS_KEY: [u32; 4] = [0x9EE3_B5D1, 0x9D04_EA5E, 0xABD5_1D67, 0xAFCB_AFD2];
 
 /// The 3 known mbox key schedule variants for OPS decryption.
@@ -39,8 +40,11 @@ impl MboxVariant {
     }
 }
 
-fn mbox_bytes(variant: MboxVariant) -> [u8; 62] {
-    let mut buf = [0u8; 62];
+/// Build the mbox array exactly like Python: a list of 62 byte-sized integers.
+/// In Python: mbox5 = [0x60, 0x8a, 0x3f, ... 0x0a, 0x00]
+/// key_update accesses asbox[i] as a single integer (not packed u32).
+fn mbox_array(variant: MboxVariant) -> [u32; 62] {
+    let mut buf = [0u32; 62];
     let prefix: [u8; 16] = match variant {
         MboxVariant::Mbox5 => [
             0x60, 0x8a, 0x3f, 0x2d, 0x68, 0x6b, 0xd4, 0x23, 0x51, 0x0c, 0xd0, 0x95, 0xbb, 0x40,
@@ -55,9 +59,26 @@ fn mbox_bytes(variant: MboxVariant) -> [u8; 62] {
             0xA4, 0x3F,
         ],
     };
-    buf[..16].copy_from_slice(&prefix);
-    buf[60] = 0x0a;
+    for (i, &b) in prefix.iter().enumerate() {
+        buf[i] = b as u32;
+    }
+    // bytes 16..59 are all 0 (already initialized)
+    buf[60] = 0x0a; // rounds indicator
+    // buf[61] = 0x00 (already 0)
     buf
+}
+
+/// Convert the sbox bytes (2048 bytes) to a list of 256 u32 values,
+/// matching Python's list-of-integers representation.
+/// In Python: sbox is a bytes object, gsbox reads 4 bytes as LE u32.
+/// key_update accesses sbox[i] as a byte-value integer when used as the
+/// residual block "asbox".
+fn sbox_as_u32_array() -> [u32; 2048] {
+    let mut arr = [0u32; 2048];
+    for (i, val) in arr.iter_mut().enumerate() {
+        *val = SBOX[i] as u32;
+    }
+    arr
 }
 
 /// S-box table (2048 bytes) from opscrypto.py.
@@ -65,6 +86,8 @@ fn mbox_bytes(variant: MboxVariant) -> [u8; 62] {
 #[rustfmt::skip]
 static SBOX: &[u8; 2048] = include_bytes!("sbox.bin");
 
+/// Read a u32 from 4 bytes at the given offset in the raw SBOX bytes (little-endian).
+/// This is how Python's `gsbox()` works: `int.from_bytes(sbox[offset:offset+4], 'little')`
 fn gsbox(offset: usize) -> u32 {
     if offset + 4 > SBOX.len() {
         return 0;
@@ -72,43 +95,43 @@ fn gsbox(offset: usize) -> u32 {
     u32::from_le_bytes(SBOX[offset..offset + 4].try_into().unwrap_or([0; 4]))
 }
 
-fn key_update(iv1: [u32; 4], asbox: &[u8; 62]) -> [u32; 4] {
-    // Convert first 32 bytes of asbox to u32 array (8 entries)
-    let ab: Vec<u32> = (0..8)
-        .map(|i| u32::from_le_bytes(asbox[i * 4..i * 4 + 4].try_into().unwrap_or([0; 4])))
-        .collect();
-    let rounds = asbox[0x3c] as usize;
-
-    let d = iv1[0] ^ ab[0];
-    let a = iv1[1] ^ ab[1];
-    let b = iv1[2] ^ ab[2];
-    let c = iv1[3] ^ ab[3];
+/// Port of Python `key_update(iv1, asbox)`.
+///
+/// In Python, `asbox` is a list of integers (byte values 0-255).
+/// `asbox[0]` gives a single byte-value integer, NOT a packed u32.
+/// So `iv1[0] ^ asbox[0]` is XOR of a u32 with a byte-range value.
+fn key_update(iv1: [u32; 4], asbox: &[u32]) -> [u32; 4] {
+    let d = iv1[0] ^ asbox[0];
+    let a = iv1[1] ^ asbox[1];
+    let b = iv1[2] ^ asbox[2];
+    let c = iv1[3] ^ asbox[3];
 
     let mut e = gsbox(((b >> 0x10) & 0xff) as usize * 8 + 2)
         ^ gsbox(((a >> 8) & 0xff) as usize * 8 + 3)
         ^ gsbox((c >> 0x18) as usize * 8 + 1)
         ^ gsbox((d & 0xff) as usize * 8)
-        ^ ab[4];
+        ^ asbox[4];
 
     let mut h = gsbox(((c >> 0x10) & 0xff) as usize * 8 + 2)
         ^ gsbox(((b >> 8) & 0xff) as usize * 8 + 3)
         ^ gsbox((d >> 0x18) as usize * 8 + 1)
         ^ gsbox((a & 0xff) as usize * 8)
-        ^ ab[5];
+        ^ asbox[5];
 
     let mut i = gsbox(((d >> 0x10) & 0xff) as usize * 8 + 2)
         ^ gsbox(((c >> 8) & 0xff) as usize * 8 + 3)
         ^ gsbox((a >> 0x18) as usize * 8 + 1)
         ^ gsbox((b & 0xff) as usize * 8)
-        ^ ab[6];
+        ^ asbox[6];
 
     let mut a = gsbox(((d >> 8) & 0xff) as usize * 8 + 3)
         ^ gsbox(((a >> 0x10) & 0xff) as usize * 8 + 2)
         ^ gsbox((b >> 0x18) as usize * 8 + 1)
         ^ gsbox((c & 0xff) as usize * 8)
-        ^ ab[7];
+        ^ asbox[7];
 
     let mut g: usize = 8;
+    let rounds = asbox[0x3c] as usize; // index 60
 
     if rounds >= 2 {
         for _ in 0..rounds - 2 {
@@ -123,25 +146,25 @@ fn key_update(iv1: [u32; 4], asbox: &[u8; 62]) -> [u32; 4] {
                 ^ gsbox(((h >> 8) & 0xff) as usize * 8 + 3)
                 ^ gsbox((a >> 0x18) as usize * 8 + 1)
                 ^ gsbox((e & 0xff) as usize * 8)
-                ^ asbox_u32(asbox, g);
+                ^ asbox[g];
 
             let new_h = gsbox(((a >> 0x10) & 0xff) as usize * 8 + 2)
                 ^ gsbox(((i >> 8) & 0xff) as usize * 8 + 3)
                 ^ gsbox((d_val & 0xff) as usize * 8 + 1)
                 ^ gsbox((h & 0xff) as usize * 8)
-                ^ asbox_u32(asbox, g + 1);
+                ^ asbox[g + 1];
 
             let new_i = gsbox((z & 0xff) as usize * 8 + 2)
                 ^ gsbox(((a >> 8) & 0xff) as usize * 8 + 3)
                 ^ gsbox((s & 0xff) as usize * 8 + 1)
                 ^ gsbox((i & 0xff) as usize * 8)
-                ^ asbox_u32(asbox, g + 2);
+                ^ asbox[g + 2];
 
             let new_a = gsbox((t & 0xff) as usize * 8 + 3)
                 ^ gsbox((m & 0xff) as usize * 8 + 2)
                 ^ gsbox((l & 0xff) as usize * 8 + 1)
                 ^ gsbox((a & 0xff) as usize * 8)
-                ^ asbox_u32(asbox, g + 3);
+                ^ asbox[g + 3];
 
             e = new_e;
             h = new_h;
@@ -151,89 +174,107 @@ fn key_update(iv1: [u32; 4], asbox: &[u8; 62]) -> [u32; 4] {
         }
     }
 
+    // Final round — Python operator precedence is tricky here.
+    // Line 346: `gsbox(...) & 0xFF ^ asbox[g]`
+    // In Python: `& 0xFF` binds tighter than `^`, so:
+    //   (gsbox(...) & 0xFF) ^ asbox[g]
+    // But the WHOLE expression is also XOR'd with the earlier terms.
+    // Python evaluation (left to right with precedence):
+    //   `A ^ B ^ C ^ D & 0xFF ^ asbox[g]`
+    //   = `A ^ B ^ C ^ (D & 0xFF) ^ asbox[g]`
+
     let r0 = (gsbox(((i >> 0x10) & 0xff) as usize * 8) & 0xff_0000)
         ^ (gsbox(((h >> 8) & 0xff) as usize * 8 + 1) & 0xff00)
         ^ (gsbox((a >> 0x18) as usize * 8 + 3) & 0xff00_0000)
         ^ (gsbox((e & 0xff) as usize * 8 + 2) & 0xFF)
-        ^ asbox_u32(asbox, g);
+        ^ asbox[g];
 
     let r1 = (gsbox(((a >> 0x10) & 0xff) as usize * 8) & 0xff_0000)
         ^ (gsbox(((i >> 8) & 0xff) as usize * 8 + 1) & 0xff00)
         ^ (gsbox((e >> 0x18) as usize * 8 + 3) & 0xff00_0000)
         ^ (gsbox((h & 0xff) as usize * 8 + 2) & 0xFF)
-        ^ asbox_u32(asbox, g + 3);
+        ^ asbox[g + 3];
 
     let r2 = (gsbox(((e >> 0x10) & 0xff) as usize * 8) & 0xff_0000)
         ^ (gsbox(((a >> 8) & 0xff) as usize * 8 + 1) & 0xff00)
         ^ (gsbox((h >> 0x18) as usize * 8 + 3) & 0xff00_0000)
         ^ (gsbox((i & 0xff) as usize * 8 + 2) & 0xFF)
-        ^ asbox_u32(asbox, g + 2);
+        ^ asbox[g + 2];
 
     let r3 = (gsbox(((h >> 0x10) & 0xff) as usize * 8) & 0xff_0000)
         ^ (gsbox(((e >> 8) & 0xff) as usize * 8 + 1) & 0xff00)
         ^ (gsbox((i >> 0x18) as usize * 8 + 3) & 0xff00_0000)
         ^ (gsbox((a & 0xff) as usize * 8 + 2) & 0xFF)
-        ^ asbox_u32(asbox, g + 1);
+        ^ asbox[g + 1];
 
     [r0, r1, r2, r3]
 }
 
-fn asbox_u32(asbox: &[u8; 62], idx: usize) -> u32 {
-    let byte_idx = idx * 4;
-    if byte_idx + 4 > asbox.len() {
-        return 0;
-    }
-    u32::from_le_bytes(asbox[byte_idx..byte_idx + 4].try_into().unwrap_or([0; 4]))
-}
-
-/// Decrypt data using the OPS custom cipher.
-/// Port of `key_custom()` from opscrypto.py.
+/// Port of Python `key_custom(inp, rkey, outlength=0, encrypt=False)` — decrypt mode.
+///
+/// This is the main OPS decryption routine. It processes the input in 16-byte blocks,
+/// applying `key_update` with the global `mbox` array to evolve the key schedule.
 pub fn ops_decrypt(inp: &[u8], variant: MboxVariant) -> Vec<u8> {
-    let mbox = mbox_bytes(variant);
+    let mbox = mbox_array(variant);
     let mut rkey = OPS_KEY;
 
     let mut outp = Vec::with_capacity(inp.len());
     let length = inp.len();
+    let pos: usize = 0; // outlength=0, so pos starts at 0
     let mut ptr = 0;
+    let mut remaining = length;
 
-    // Process 16-byte blocks
-    while ptr + 16 <= length {
-        rkey = key_update(rkey, &mbox);
-        for j in 0..4 {
-            let offset = ptr + j * 4;
-            if offset + 4 <= length {
-                let inp_word =
-                    u32::from_le_bytes(inp[offset..offset + 4].try_into().unwrap_or([0; 4]));
-                let dec = rkey[j] ^ inp_word;
-                outp.extend_from_slice(&dec.to_le_bytes());
-                rkey[j] = inp_word;
+    // Main loop: process 16-byte blocks
+    // Python: if length > 0xF: for ptr in range(0, length, 0x10):
+    if remaining > 0xF {
+        let block_count = remaining / 0x10;
+        for block in 0..block_count {
+            ptr = block * 0x10;
+            rkey = key_update(rkey, &mbox);
+
+            if pos < 0x10 {
+                let slen = ((0xf - pos) >> 2) + 1; // = 4 when pos=0
+                for j in 0..slen {
+                    let offset = pos + j * 4 + ptr;
+                    if offset + 4 <= inp.len() {
+                        let inp_word = u32::from_le_bytes(
+                            inp[offset..offset + 4].try_into().unwrap_or([0; 4]),
+                        );
+                        let dec = rkey[j] ^ inp_word;
+                        outp.extend_from_slice(&dec.to_le_bytes());
+                        // In decrypt mode: rkey = input words (not decrypted)
+                        rkey[j] = inp_word;
+                    }
+                }
             }
+            remaining -= 0x10;
         }
-        ptr += 16;
+        ptr += 0x10; // advance past the last block
     }
 
-    // Process remaining bytes (< 16)
-    if ptr < length {
-        // Use sbox for final partial block key_update
-        let sbox_62: [u8; 62] = {
-            let mut buf = [0u8; 62];
-            buf[..62.min(SBOX.len())].copy_from_slice(&SBOX[..62.min(SBOX.len())]);
-            buf
-        };
-        rkey = key_update(rkey, &sbox_62);
-        let remaining = length - ptr;
+    // Residual bytes (< 16 bytes remaining)
+    // Python: if length != 0: rkey = key_update(rkey, sbox)
+    if remaining != 0 {
+        let sbox_arr = sbox_as_u32_array();
+        rkey = key_update(rkey, &sbox_arr);
+        let mut j = pos;
         let mut m = 0;
-        let mut j = ptr;
-        while j < length {
+        let mut rem = remaining as isize;
+        while rem > 0 {
+            let offset = j + ptr;
             let mut data_bytes = [0u8; 4];
-            let copy_len = (length - j).min(4);
-            data_bytes[..copy_len].copy_from_slice(&inp[j..j + copy_len]);
+            let copy_len = (inp.len() - offset).min(4);
+            if copy_len > 0 {
+                data_bytes[..copy_len].copy_from_slice(&inp[offset..offset + copy_len]);
+            }
             let tmp = u32::from_le_bytes(data_bytes);
             let dec = tmp ^ rkey[m];
             let dec_bytes = dec.to_le_bytes();
-            let out_len = (remaining - (j - ptr)).min(4);
+            let out_len = (rem as usize).min(4);
             outp.extend_from_slice(&dec_bytes[..out_len]);
+            // In decrypt mode: rkey[m] = input word
             rkey[m] = tmp;
+            rem -= 4;
             j += 4;
             m += 1;
         }
@@ -246,16 +287,20 @@ pub fn ops_decrypt(inp: &[u8], variant: MboxVariant) -> Vec<u8> {
 /// Returns `Some(xml_string)` if the decrypted data contains valid XML.
 pub fn try_decrypt_ops_xml(data: &[u8], variant: MboxVariant) -> Option<String> {
     let decrypted = ops_decrypt(data, variant);
-    // The decrypted XML should contain "xml " (from <?xml or <xml)
-    if let Ok(text) = std::str::from_utf8(&decrypted) {
-        if text.contains("xml ") || text.contains("<?xml") || text.contains("<Sahara") {
-            return Some(text.to_string());
-        }
+
+    // Python check: `if b"xml " not in outp: return None`
+    // Only check the first 256 bytes for the XML marker to avoid
+    // false negatives from invalid UTF-8 in the padding region.
+    let check_len = decrypted.len().min(256);
+    let header = &decrypted[..check_len];
+
+    // Check raw bytes for "xml " pattern (handles BOM + encoding variations)
+    if header.windows(4).any(|w| w == b"xml ") {
+        // Return the full decrypted buffer as lossy UTF-8
+        // (padding bytes after actual XML will be trimmed by the caller)
+        return Some(String::from_utf8_lossy(&decrypted).into_owned());
     }
-    // Also try checking raw bytes for the pattern
-    if decrypted.windows(4).any(|w| w == b"xml ") {
-        return String::from_utf8(decrypted).ok();
-    }
+
     None
 }
 
@@ -300,10 +345,7 @@ fn keyshuffle(key: &mut [u8; 16], hkey: &[u8; 16]) {
 
 /// Deobfuscate OFP-QC key data: ROL(data[i] ^ mask[i], 4, 8).
 fn deobfuscate(data: &[u8; 16], mask: &[u8; 16]) -> Vec<u8> {
-    data.iter()
-        .zip(mask.iter())
-        .map(|(&d, &m)| rol8(d ^ m, 4))
-        .collect()
+    data.iter().zip(mask.iter()).map(|(&d, &m)| rol8(d ^ m, 4)).collect()
 }
 
 /// Known OFP-QC key triplets: [mask, encrypted_key, encrypted_iv].
@@ -521,14 +563,63 @@ const fn hex_val(c: u8) -> u8 {
 }
 
 fn hex_decode(s: &str) -> Vec<u8> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap_or(0))
-        .collect()
+    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap_or(0)).collect()
 }
 
 /// Compute MD5 and return lowercase hex string.
 fn md5_hex(data: &[u8]) -> String {
     let digest = Md5::digest(data);
     digest.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mbox_array_basic() {
+        let mbox = mbox_array(MboxVariant::Mbox5);
+        assert_eq!(mbox[0], 0x60);
+        assert_eq!(mbox[1], 0x8a);
+        assert_eq!(mbox[16], 0x00);
+        assert_eq!(mbox[60], 0x0a);
+        assert_eq!(mbox[61], 0x00);
+    }
+
+    #[test]
+    fn test_gsbox_basic() {
+        // First 4 bytes of sbox = c6, 63, 63, a5 = 0xa5636363 in LE
+        let val = gsbox(0);
+        assert_eq!(
+            val,
+            0xa563_6363_u32
+                .swap_bytes()
+                .reverse_bits()
+                .count_ones()
+                .checked_add(0)
+                .map(|_| u32::from_le_bytes([0xc6, 0x63, 0x63, 0xa5]))
+                .unwrap()
+        );
+        // Just check it matches LE interpretation of first 4 sbox bytes
+        assert_eq!(val, u32::from_le_bytes([0xc6, 0x63, 0x63, 0xa5]));
+    }
+
+    #[test]
+    fn test_ops_key_constant() {
+        // key = unpack("<4I", bytes.fromhex("d1b5e39e5eea049d671dd5abd2afcbaf"))
+        let key_bytes: Vec<u8> = "d1b5e39e5eea049d671dd5abd2afcbaf"
+            .as_bytes()
+            .chunks(2)
+            .map(|c| u8::from_str_radix(std::str::from_utf8(c).unwrap(), 16).unwrap())
+            .collect();
+        assert_eq!(key_bytes.len(), 16);
+        let k0 = u32::from_le_bytes(key_bytes[0..4].try_into().unwrap());
+        let k1 = u32::from_le_bytes(key_bytes[4..8].try_into().unwrap());
+        let k2 = u32::from_le_bytes(key_bytes[8..12].try_into().unwrap());
+        let k3 = u32::from_le_bytes(key_bytes[12..16].try_into().unwrap());
+        assert_eq!(k0, OPS_KEY[0]);
+        assert_eq!(k1, OPS_KEY[1]);
+        assert_eq!(k2, OPS_KEY[2]);
+        assert_eq!(k3, OPS_KEY[3]);
+    }
 }

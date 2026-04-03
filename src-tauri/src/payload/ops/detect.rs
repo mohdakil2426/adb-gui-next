@@ -61,9 +61,7 @@ pub fn detect_format(data: &[u8]) -> Result<FirmwareFormat> {
         let footer_offset = file_size - 0x200;
         if footer_offset + 0x14 <= file_size {
             let magic = u32::from_le_bytes(
-                data[footer_offset + 0x10..footer_offset + 0x14]
-                    .try_into()
-                    .unwrap_or([0; 4]),
+                data[footer_offset + 0x10..footer_offset + 0x14].try_into().unwrap_or([0; 4]),
             );
             if magic == super::OPS_MAGIC {
                 // Could be OPS or OFP-QC with pagesize=0x200
@@ -78,9 +76,7 @@ pub fn detect_format(data: &[u8]) -> Result<FirmwareFormat> {
         let footer_offset = file_size - 0x1000;
         if footer_offset + 0x14 <= file_size {
             let magic = u32::from_le_bytes(
-                data[footer_offset + 0x10..footer_offset + 0x14]
-                    .try_into()
-                    .unwrap_or([0; 4]),
+                data[footer_offset + 0x10..footer_offset + 0x14].try_into().unwrap_or([0; 4]),
             );
             if magic == super::OPS_MAGIC {
                 return Ok(FirmwareFormat::OfpQualcomm);
@@ -96,16 +92,12 @@ pub fn detect_format(data: &[u8]) -> Result<FirmwareFormat> {
         }
     }
 
-    bail!(
-        "Unrecognized firmware format. Expected CrAU (payload.bin), OPS, OFP, or ZIP container."
-    )
+    bail!("Unrecognized firmware format. Expected CrAU (payload.bin), OPS, OFP, or ZIP container.")
 }
 
 /// Check if a file path has an OPS/OFP extension.
 pub fn is_ops_or_ofp_path(path: &std::path::Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
-        .is_some_and(|ext| {
-            ext.eq_ignore_ascii_case("ops") || ext.eq_ignore_ascii_case("ofp")
-        })
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("ops") || ext.eq_ignore_ascii_case("ofp"))
 }

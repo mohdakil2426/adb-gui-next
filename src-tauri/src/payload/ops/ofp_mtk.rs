@@ -3,8 +3,8 @@
 //! Reads the mtk_shuffle-obfuscated binary header and entry table
 //! at the end of the file.
 
-use super::{OpsMetadata, OpsPartitionEntry};
 use super::crypto::{OfpCipher, mtk_shuffle, try_ofp_mtk_keys};
+use super::{OpsMetadata, OpsPartitionEntry};
 use anyhow::{Result, bail};
 
 /// Primary header size at end of file.
@@ -35,17 +35,16 @@ struct MtkHeader {
 }
 
 /// Parse an OFP (MediaTek) file.
-pub fn parse_ofp_mtk(
-    data: &[u8],
-) -> Result<(Vec<OpsPartitionEntry>, OpsMetadata, OfpCipher)> {
+pub fn parse_ofp_mtk(data: &[u8]) -> Result<(Vec<OpsPartitionEntry>, OpsMetadata, OfpCipher)> {
     let file_size = data.len();
 
     // Detect correct AES cipher from first 16 bytes
-    let cipher = try_ofp_mtk_keys(&data[..16.min(file_size)])
-        .ok_or_else(|| anyhow::anyhow!(
+    let cipher = try_ofp_mtk_keys(&data[..16.min(file_size)]).ok_or_else(|| {
+        anyhow::anyhow!(
             "OFP-MTK: Failed to detect encryption key. \
              None of the known MTK key sets matched."
-        ))?;
+        )
+    })?;
 
     let header = parse_mtk_header(data, file_size)?;
     let partitions = parse_mtk_entries(data, file_size, &header, &cipher)?;
@@ -88,23 +87,13 @@ fn parse_mtk_header(data: &[u8], file_size: usize) -> Result<MtkHeader> {
         0
     };
 
-    let project_info = if hdr.len() >= 104 {
-        read_nul(&hdr[72..104])
-    } else {
-        String::new()
-    };
+    let project_info = if hdr.len() >= 104 { read_nul(&hdr[72..104]) } else { String::new() };
 
     if entry_count == 0 || entry_count > 500 {
         bail!("OFP-MTK: suspicious entry count: {entry_count}");
     }
 
-    Ok(MtkHeader {
-        project_name,
-        cpu,
-        flash_type,
-        entry_count,
-        project_info,
-    })
+    Ok(MtkHeader { project_name, cpu, flash_type, entry_count, project_info })
 }
 
 /// Parse the entry table (hdr2) above the primary header.
@@ -147,11 +136,7 @@ fn parse_mtk_entries(
         let _ = cipher; // Cipher is stored for extraction use
 
         partitions.push(OpsPartitionEntry {
-            name: if filename.is_empty() {
-                format!("{name}.img")
-            } else {
-                filename
-            },
+            name: if filename.is_empty() { format!("{name}.img") } else { filename },
             offset: start_offset,
             size: total_length,
             sector_size: total_length,
