@@ -2,6 +2,7 @@ use crate::CmdResult;
 use crate::payload::{
     self, ExtractPayloadResult, PartitionDetail, PayloadCache, RemotePayloadMetadata,
 };
+use crate::payload::ops;
 use log::{error, info};
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
@@ -114,6 +115,36 @@ pub async fn extract_payload(
         });
     }
 
+    // Route OPS/OFP files to the dedicated pipeline
+    if ops::extractor::should_use_ops_pipeline(local_path) {
+        info!("Detected OPS/OFP file, using OPS extraction pipeline");
+        let result = tokio::task::block_in_place(|| {
+            ops::extract_ops_partitions(
+                local_path,
+                output_dir.as_deref(),
+                &selected_partitions,
+                Some(app),
+                |_, _, _, _| {},
+            )
+        });
+
+        return match result {
+            Ok(result) => {
+                info!("OPS extraction completed: {} files", result.extracted_files.len());
+                Ok(result)
+            }
+            Err(e) => {
+                error!("OPS extraction failed: {}", e);
+                Ok(ExtractPayloadResult {
+                    success: false,
+                    output_dir: String::new(),
+                    extracted_files: Vec::new(),
+                    error: Some(e.to_string()),
+                })
+            }
+        };
+    }
+
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
             local_path,
@@ -166,9 +197,28 @@ pub async fn list_payload_partitions_with_details(
 ) -> CmdResult<Vec<PartitionDetail>> {
     info!("Listing payload partitions with details from {}", payload_path.trim());
     let path = payload_path.trim().to_string();
+    let file_path = std::path::Path::new(&path);
+
+    // Route OPS/OFP files to the dedicated pipeline
+    if ops::extractor::should_use_ops_pipeline(file_path) {
+        info!("Detected OPS/OFP file, using OPS partition listing");
+        return tokio::task::block_in_place(|| {
+            ops::list_ops_partitions(file_path).map_err(|error| error.to_string())
+        });
+    }
+
     tokio::task::block_in_place(|| {
-        payload::list_payload_partitions_with_details(std::path::Path::new(&path), &payload_cache)
+        payload::list_payload_partitions_with_details(file_path, &payload_cache)
             .map_err(|error| error.to_string())
+    })
+}
+
+#[tauri::command]
+pub async fn get_ops_metadata(path: String) -> CmdResult<ops::OpsMetadata> {
+    info!("Getting OPS/OFP metadata from {}", path.trim());
+    let file_path = std::path::Path::new(path.trim());
+    tokio::task::block_in_place(|| {
+        ops::extractor::get_ops_metadata(file_path).map_err(|error| error.to_string())
     })
 }
 

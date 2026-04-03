@@ -85,7 +85,7 @@ export function ViewPayloadDumper() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold">Payload Dumper</h1>
           <p className="text-sm text-muted-foreground">
-            Extract partition images from Android OTA payload.bin files
+            Extract partition images from Android OTA, OnePlus OPS, and Oppo OFP files
           </p>
         </div>
       </div>

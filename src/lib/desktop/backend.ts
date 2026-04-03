@@ -225,10 +225,14 @@ export function SelectPayloadFile(): Promise<string> {
     filters: [
       {
         name: 'Payload files',
-        extensions: ['bin', 'zip'],
+        extensions: ['bin', 'zip', 'ops', 'ofp'],
       },
     ],
   });
+}
+
+export function GetOpsMetadata(path: string): Promise<backend.OpsMetadata> {
+  return call('get_ops_metadata', { path });
 }
 
 export function SelectSaveDirectory(arg1: string): Promise<string> {

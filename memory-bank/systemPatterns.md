@@ -22,8 +22,8 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  lib.rs (~60 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
 │  commands/ — 7 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload) — 28 total commands                       │
-│  payload/ — 4 modules (parser, extractor, zip, tests)                  │
+│              system, payload) — 31 total commands                       │
+│  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)            │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -182,6 +182,33 @@ Three-tier fallback for ADB/fastboot binaries:
 - Conditional sections — ZIP and Dynamic Groups hidden when not applicable
 - SDK→Android version mapping (SDK 29 → "Android 10")
 - Copyable hashes via clipboard API with visual feedback
+
+### 5c. OPS/OFP Firmware Extraction (Unified Dispatch)
+
+`src-tauri/src/payload/ops/` handles OnePlus OPS and Oppo OFP firmware containers (9 modules):
+
+**Dispatch flow:**
+```
+extract_payload(path) / list_payload_partitions_with_details(path)
+  → check extension (.ops/.ofp) → should_use_ops_pipeline()
+  → detect_format(mmap) → match CrAU | Ops | OfpQualcomm | OfpMediaTek | ...
+  → parse_ops() / parse_ofp_qc() / parse_ofp_mtk() → Vec<OpsPartitionEntry>
+  → map to Vec<PartitionDetail> (same type as CrAU) → transparent to frontend
+```
+
+**Cryptographic pipeline:**
+- **OPS**: Custom S-box cipher with 3 mbox key schedule variants (mbox4/5/6). Brute-forces all variants to find one that produces valid XML.
+- **OFP-QC**: AES-128-CFB with 7 key triplets. Keys derived via ROL/nibble-swap deobfuscation + MD5 hex truncation. Also tries V1 keyshuffle method.
+- **OFP-MTK**: 9 key sets with mtk_shuffle2 nibble-swap obfuscation. Binary header/entry table format (not XML).
+
+**Sparse image support:**
+- After extraction, checks if output file has Android sparse magic (`0xED26FF3A`)
+- Un-sparses in-place: reads 4 chunk types (Raw, Fill, Don't Care, CRC32), writes raw image, replaces original file
+
+**Key types:**
+- `OpsPartitionEntry`: name, offset, size, sector_size, encrypted, encrypted_length, sha256, sparse
+- `OpsMetadata`: format, project_id, firmware_name, cpu, flash_type, encryption, total_partitions, total_size, sections
+- `FirmwareFormat`: PayloadBin, ZipOfp, Ops, OfpQualcomm, OfpMediaTek
 
 ### 6. Error Handling
 
@@ -384,7 +411,7 @@ src/components/
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` split into helpers + 7 command modules (28 total commands)
+- `src-tauri/src/lib.rs` split into helpers + 7 command modules (31 total commands)
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab

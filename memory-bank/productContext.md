@@ -10,6 +10,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Makes destructive workflows more visible and deliberate
 - Centralizes Android maintenance tasks in one desktop app
 - Provides OTA payload extraction inside the app
+- Provides OnePlus OPS and Oppo OFP firmware decryption and extraction
 - Preserves advanced operations without requiring a terminal-first workflow
 
 ## User Experience Goals
@@ -32,6 +33,7 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 - Local device management through ADB and fastboot
 - Local file transfer and package management
 - Local OTA payload extraction
+- **OnePlus OPS and Oppo OFP firmware extraction** (encrypted containers, AES-CFB, custom ciphers)
 - **Remote OTA payload extraction** (HTTP range requests — optional feature)
 - Native dialogs and OS integration
 - Windows and Linux desktop packaging
@@ -57,4 +59,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-03 (Responsive layout + sticky header fully resolved; `h-svh` boundary pattern established)
+- Last Updated: 2026-04-03 (OPS/OFP firmware support; responsive layout + sticky header fully resolved)

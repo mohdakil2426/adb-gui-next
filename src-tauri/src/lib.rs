@@ -74,7 +74,9 @@ pub fn run() {
             #[cfg(feature = "remote_zip")]
             commands::get_remote_payload_metadata,
             #[cfg(feature = "remote_zip")]
-            commands::list_remote_payload_partitions
+            commands::list_remote_payload_partitions,
+            // OPS/OFP firmware format commands
+            commands::get_ops_metadata
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

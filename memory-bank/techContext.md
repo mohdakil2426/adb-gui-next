@@ -52,6 +52,10 @@
 | anyhow | 1.x | Error handling |
 | reqwest | 0.13 | HTTP client with `rustls`, `stream`, `http2`, `blocking` features (default feature: remote_zip) |
 | futures-util | 0.3 | Async utilities (default feature: remote_zip) |
+| aes | 0.8 | AES-128 block cipher (OFP firmware decryption) |
+| cfb-mode | 0.8 | CFB stream cipher mode (OFP-QC/MTK AES decryption) |
+| md-5 | 0.10 | MD5 digest (OFP key derivation) |
+| quick-xml | 0.37 | XML parsing (OPS manifest parsing) |
 
 ## Tooling
 
@@ -142,12 +146,19 @@
     │   │   ├── apps.rs
     │   │   ├── system.rs
     │   │   └── payload.rs
-    │   ├── payload/              # OTA payload parser (4 modules)
+    │   ├── payload/              # OTA payload parser + OPS/OFP firmware
     │   │   ├── mod.rs
     │   │   ├── parser.rs
     │   │   ├── extractor.rs
     │   │   ├── zip.rs
-    │   │   └── tests.rs
+    │   │   ├── http.rs
+    │   │   ├── http_zip.rs
+    │   │   ├── remote.rs
+    │   │   ├── tests.rs
+    │   │   └── ops/             # OPS/OFP firmware support (9 files)
+    │   │       ├── mod.rs, detect.rs, crypto.rs, sbox.bin
+    │   │       ├── ops_parser.rs, ofp_qc.rs, ofp_mtk.rs
+    │   │       ├── sparse.rs, extractor.rs
     │   └── generated/            # Protobuf types
     ├── build.rs                  # prost-build + tauri-build
     ├── tauri.conf.json           # Main Tauri config
@@ -180,4 +191,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 5.9.3 (strict mode)
-- **Last Updated**: 2026-04-03 (Remote payload metadata UI, ZIP text file reading)
+- **Last Updated**: 2026-04-03 (OPS/OFP firmware support, remote metadata UI)

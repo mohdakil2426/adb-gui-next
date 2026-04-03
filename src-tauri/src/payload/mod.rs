@@ -9,6 +9,7 @@ pub mod chromeos_update_engine {
 
 mod extractor;
 mod parser;
+pub mod ops;
 mod zip;
 
 #[cfg(feature = "remote_zip")]

@@ -104,4 +104,17 @@ export namespace backend {
     size: number | null;
     partitions: string[];
   }
+
+  /** Metadata about an OPS/OFP firmware file. */
+  export interface OpsMetadata {
+    format: string;
+    projectId: string | null;
+    firmwareName: string | null;
+    cpu: string | null;
+    flashType: string | null;
+    encryption: string;
+    totalPartitions: number;
+    totalSize: number;
+    sections: string[];
+  }
 }

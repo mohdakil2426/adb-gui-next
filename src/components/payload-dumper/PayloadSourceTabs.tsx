@@ -64,12 +64,12 @@ export function PayloadSourceTabs({
         <DropZone
           onFilesDropped={onPayloadDrop}
           onBrowse={onSelectPayload}
-          acceptExtensions={['.bin', '.zip']}
-          rejectMessage="Only payload.bin or .zip files are accepted"
+          acceptExtensions={['.bin', '.zip', '.ops', '.ofp']}
+          rejectMessage="Only payload.bin, .zip, .ops, or .ofp files are accepted"
           icon={FileArchive}
-          label="Drop payload.bin or OTA zip here"
+          label="Drop payload.bin, OTA zip, or firmware file here"
           browseLabel="Select Payload File"
-          sublabel="Accepts .bin and .zip files"
+          sublabel="Accepts .bin, .zip, .ops, and .ofp files"
           disabled={disabled}
         />
       </TabsContent>

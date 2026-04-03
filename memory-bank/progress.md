@@ -81,7 +81,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
 | Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
-| Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache` |
+| Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
 
 ### Payload Dumper
@@ -117,6 +117,9 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
   - Dynamic Groups: group names, sizes, partition lists
   - Extraction: mode (prefetch/direct), output path
 - **URL persistence**: `remoteUrl` in Zustand store survives view navigation
+- **OPS/OFP support**: OnePlus `.ops` (custom S-box cipher, 3 mbox variants) and Oppo `.ofp` (Qualcomm AES-128-CFB with 7 key sets, MediaTek with mtk_shuffle + 9 key sets)
+- **Android sparse image un-sparsing**: 4 chunk types (Raw, Fill, Don't Care, CRC32)
+- **Unified dispatch**: `.ops`/`.ofp` files auto-detected by extension and routed to dedicated pipeline—same `PartitionDetail` output as CrAU
 
 ### Packaging
 
@@ -150,16 +153,26 @@ src-tauri/src/
 │   ├── files.rs — list_files, push_file, pull_file, delete_files, rename_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
-│   └── payload.rs — payload command wrappers + remote URL commands
+│   └── payload.rs — payload command wrappers + remote URL commands + OPS dispatch
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
     ├── parser.rs — CrAU header parsing, protobuf decoding
     ├── extractor.rs — partition extraction with SHA-256 verification
     ├── zip.rs — ZIP payload handling and caching
     ├── http.rs — HTTP range request support (remote_zip feature)
-    ├── http_zip.rs — Remote ZIP parsing via HTTP range requests (EOCD/CD parsing, text file reading)
+    ├── http_zip.rs — Remote ZIP parsing via HTTP range requests
     ├── remote.rs — Remote payload loading (direct + ZIP URLs, remote_zip feature)
-    └── tests.rs — 13 payload tests (5 local + 8 HTTP ZIP)
+    ├── tests.rs — 13 payload tests (5 local + 8 HTTP ZIP)
+    └── ops/ — OPS/OFP firmware format support (9 files)
+        ├── mod.rs — shared types, constants, re-exports
+        ├── detect.rs — format detection (CrAU, ZIP, 0x7CEF footer, MTK brute-force)
+        ├── crypto.rs — OPS S-box cipher + OFP AES-128-CFB + MTK shuffle
+        ├── sbox.bin — 2048-byte S-box lookup table
+        ├── ops_parser.rs — footer + XML manifest parsing
+        ├── ofp_qc.rs — OFP Qualcomm parser
+        ├── ofp_mtk.rs — OFP MediaTek parser
+        ├── sparse.rs — Android sparse image un-sparsing
+        └── extractor.rs — unified extraction + parallel dispatch
 ```
 
 ## Documentation
@@ -203,6 +216,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-03 | 0.1.0 | OPS/OFP Firmware Support: Native decryption + extraction for OnePlus `.ops` (custom S-box cipher, 3 mbox variants), Oppo `.ofp` Qualcomm (AES-128-CFB, 7 key sets), Oppo `.ofp` MediaTek (mtk_shuffle, 9 key sets). Android sparse image un-sparsing. Unified dispatch via file extension. 9 new Rust files in `payload/ops/`. 4 new Cargo deps (`aes`, `cfb-mode`, `md-5`, `quick-xml`). Frontend: file picker + DropZone accept `.ops`/`.ofp`, `OpsMetadata` interface, `GetOpsMetadata()` API, `get_ops_metadata` Tauri command. |
 | 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections (OTA Package, Payload Properties, HTTP, ZIP, OTA Manifest, Dynamic Groups, Extraction). New `read_text_file_from_zip()` for reading `META-INF/com/android/metadata` + `payload_properties.txt` from ZIP. New `get_remote_payload_metadata` Tauri command. `FileBannerDetails.tsx` component with SDK→Android mapping, copyable hashes, OTA type badge. Fire-and-forget metadata fetch after partition load. |
 | 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div + `SidebarProvider` `min-h-svh` → `h-full`. Header structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area. No `position: sticky` needed. |
 | 2026-04-03 | 0.1.0 | Adaptive hardening: `overflow-x-hidden` on SidebarProvider + Inset, viewport-relative heights in AppManager (`max-h-[30vh]` APK list, `h-[40vh]` virtualizer), `min-w-0 flex-1 + truncate` on ConnectedDevicesCard device info, `min-w-0` on FileSelector. |

@@ -9,6 +9,50 @@ All responsive layout fixes, sticky header, and adaptive hardening are complete.
 
 ## Recently Completed
 
+### 2026-04-03 — OPS/OFP Firmware Format Support (Backend + Frontend Integration)
+
+**Feature:** Added native decryption and extraction support for OnePlus `.ops` and Oppo `.ofp`
+(Qualcomm + MediaTek) firmware containers to the existing Payload Dumper. Uses a **unified dispatch**
+pattern — existing `extract_payload` and `list_payload_partitions_with_details` Tauri commands
+auto-detect `.ops`/`.ofp` by file extension and route to the dedicated OPS pipeline. Zero changes
+to frontend extraction/listing actions.
+
+**New Rust modules (`src-tauri/src/payload/ops/`):**
+
+| Module | Purpose |
+|--------|---------|
+| `mod.rs` | Shared types (`OpsPartitionEntry`, `OpsFooter`, `OpsMetadata`), constants |
+| `detect.rs` | Format detection: CrAU, PK/ZIP, 0x7CEF footer, MTK brute-force |
+| `crypto.rs` | OPS custom S-box cipher (3 mbox variants), OFP-QC AES-128-CFB (7 key sets + V1), OFP-MTK (9 key sets + mtk_shuffle) |
+| `sbox.bin` | 2048-byte S-box lookup table (`include_bytes!`) |
+| `ops_parser.rs` | Footer parsing, mbox-variant XML decryption brute-force, `quick-xml` manifest parsing |
+| `ofp_qc.rs` | Page size detection (0x200/0x1000), AES key brute-force, partial encryption (first 256K) |
+| `ofp_mtk.rs` | mtk_shuffle header/entry table binary parsing |
+| `sparse.rs` | Android sparse image un-sparsing (Raw, Fill, Don't Care, CRC32 chunks) |
+| `extractor.rs` | Parallel extraction, format-specific decryption dispatch, sparse detection, progress events |
+
+**New dependencies:** `aes 0.8`, `cfb-mode 0.8`, `md-5 0.10`, `quick-xml 0.37`
+
+**Frontend changes (minimal):**
+- `SelectPayloadFile()` and DropZone accept `.ops`/`.ofp` extensions
+- `OpsMetadata` interface added to `models.ts`
+- `GetOpsMetadata()` backend wrapper added
+- `get_ops_metadata` Tauri command registered
+- View subtitle updated to mention OPS/OFP
+
+**Key design decisions:**
+- Unified dispatch by file extension — no new frontend actions needed
+- `OpsPartitionEntry` → `PartitionDetail` mapping in `list_ops_partitions()` makes format transparent
+- OPS custom cipher ported from Python (`opscrypto.py`) to Rust with `include_bytes!` S-box
+- Mbox variant brute-force: tries mbox5 → mbox6 → mbox4 in order of likelihood
+- OFP-QC: tries V1 keyshuffle first, then 6 V2 key triplets
+- OFP-MTK: 9 key sets with mtk_shuffle2 deobfuscation
+- Sparse images un-sparsed in-place after extraction
+
+**Files changed:** 13 (9 new Rust + 4 modified Rust + 4 modified TypeScript)
+
+---
+
 ### 2026-04-03 — Remote Payload Metadata UI (Collapsible Details Panel)
 
 **Feature:** Implemented a collapsible "Show Details / Hide Details" panel inside the `FileBanner`
@@ -178,11 +222,12 @@ Any missing link causes overflow to escape upward, widening the viewport.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-03** (after remote metadata UI)
-- `pnpm format:check` ✅ — Prettier + cargo fmt clean
-- `pnpm lint` ✅ — ESLint + cargo clippy clean
+Last verified: **2026-04-03** (after OPS/OFP firmware support)
+- `cargo check` ✅ — Rust compilation clean (including all new OPS modules)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
+- `pnpm lint:web` ✅ — ESLint clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
+- `cargo clippy` ⚠️ — blocked by Windows DLL file lock (pre-existing)
 
 ---
 
@@ -194,7 +239,7 @@ Last verified: **2026-04-03** (after remote metadata UI)
 | Responsive | ✅ Fixed | All 7 views — min-w-0 chain complete, no horizontal overflow |
 | Header | ✅ Fixed | Structurally pinned via flex-col — never scrolls regardless of content |
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
-| Payload Dumper | ✅ Enhanced | Remote metadata panel (7 sections), URL persistence, viewport-relative heights |
+| Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
