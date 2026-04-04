@@ -15,6 +15,9 @@ Marketplace now has a stronger discovery-first UX, backend search/detail/trendin
 - `@/*` alias continues to work via `paths` without `baseUrl`
 - `pnpm exec tsc --noEmit` passes on TypeScript 6.0.2
 
+### Authentication
+- GitHub OAuth Device Flow successfully tested and integrated. Backend `auth.rs` correctly extracts and propagates `error_description` from HTTP 4xx responses (e.g., `device_flow_disabled`), greatly streamlining developer onboarding.
+
 ### Frontend
 
 - App shell loads under Vite/React with Strict Mode enabled

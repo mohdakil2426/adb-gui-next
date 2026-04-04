@@ -1,28 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MarketplaceGetTrending } from '@/lib/desktop/backend';
 import { handleError } from '@/lib/errorHandler';
 import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
 
 export function useMarketplaceHome(hasQuery: boolean) {
-  const {
-    trendingApps,
-    isTrendingLoading,
-    recentReleaseApps,
-    isRecentReleaseLoading,
-    setTrendingApps,
-    setIsTrendingLoading,
-    setRecentReleaseApps,
-    setIsRecentReleaseLoading,
-  } = useMarketplaceStore();
-  const githubToken = getMarketplaceEffectiveGithubToken(useMarketplaceStore());
+  const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);
+  const setIsTrendingLoading = useMarketplaceStore((state) => state.setIsTrendingLoading);
+  const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
+  const setIsRecentReleaseLoading = useMarketplaceStore((state) => state.setIsRecentReleaseLoading);
+  
+  const trendingLength = useMarketplaceStore((state) => state.trendingApps.length);
+  const recentLength = useMarketplaceStore((state) => state.recentReleaseApps.length);
+  const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
+  
+  const fetchedTokenRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    setTrendingApps([]);
-    setRecentReleaseApps([]);
+    // If the token changes, we clear the apps so they fetch again
+    if (fetchedTokenRef.current !== undefined && fetchedTokenRef.current !== githubToken) {
+      setTrendingApps([]);
+      setRecentReleaseApps([]);
+    }
+    fetchedTokenRef.current = githubToken;
   }, [githubToken, setRecentReleaseApps, setTrendingApps]);
 
   useEffect(() => {
-    if (hasQuery || trendingApps.length > 0 || isTrendingLoading) {
+    if (hasQuery || trendingLength > 0) {
       return;
     }
 
@@ -31,35 +34,22 @@ export function useMarketplaceHome(hasQuery: boolean) {
 
     MarketplaceGetTrending('stars', githubToken, 6)
       .then((apps) => {
-        if (!cancelled) {
-          setTrendingApps(apps);
-        }
+        if (!cancelled) setTrendingApps(apps);
       })
       .catch((error) => {
-        if (!cancelled) {
-          handleError('Marketplace Trending', error);
-        }
+        if (!cancelled) handleError('Marketplace Trending', error);
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsTrendingLoading(false);
-        }
+        if (!cancelled) setIsTrendingLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [
-    githubToken,
-    hasQuery,
-    isTrendingLoading,
-    setIsTrendingLoading,
-    setTrendingApps,
-    trendingApps.length,
-  ]);
+  }, [githubToken, hasQuery, trendingLength, setTrendingApps, setIsTrendingLoading]);
 
   useEffect(() => {
-    if (hasQuery || recentReleaseApps.length > 0 || isRecentReleaseLoading) {
+    if (hasQuery || recentLength > 0) {
       return;
     }
 
@@ -68,30 +58,17 @@ export function useMarketplaceHome(hasQuery: boolean) {
 
     MarketplaceGetTrending('updated', githubToken, 6)
       .then((apps) => {
-        if (!cancelled) {
-          setRecentReleaseApps(apps);
-        }
+        if (!cancelled) setRecentReleaseApps(apps);
       })
       .catch((error) => {
-        if (!cancelled) {
-          handleError('Marketplace Recent Releases', error);
-        }
+        if (!cancelled) handleError('Marketplace Recent Releases', error);
       })
       .finally(() => {
-        if (!cancelled) {
-          setIsRecentReleaseLoading(false);
-        }
+        if (!cancelled) setIsRecentReleaseLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [
-    githubToken,
-    hasQuery,
-    isRecentReleaseLoading,
-    recentReleaseApps.length,
-    setIsRecentReleaseLoading,
-    setRecentReleaseApps,
-  ]);
+  }, [githubToken, hasQuery, recentLength, setRecentReleaseApps, setIsRecentReleaseLoading]);
 }

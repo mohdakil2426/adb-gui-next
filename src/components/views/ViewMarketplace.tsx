@@ -7,13 +7,13 @@ import { AppCard } from '@/components/marketplace/AppCard';
 import { AppListItem } from '@/components/marketplace/AppListItem';
 import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
 import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
-import { AppDetailDialog } from '@/components/AppDetailDialog';
+import { AppDetailView } from '@/components/marketplace/AppDetailView';
 import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
 import { useMarketplaceStore } from '@/lib/marketplaceStore';
 import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
 
 export function ViewMarketplace() {
-  const { openDetail, openSettings, viewMode, searchHistory, githubSession } =
+  const { openDetail, openSettings, viewMode, searchHistory, githubSession, selectedApp, isDetailOpen } =
     useMarketplaceStore();
   const {
     localQuery,
@@ -28,42 +28,52 @@ export function ViewMarketplace() {
   const hasResults = results.length > 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader className="gap-4 pb-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="space-y-1">
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Store className="size-5" />
-                Marketplace
-              </CardTitle>
-              <CardDescription>
-                Discover Android apps from trusted open-source and community sources, then install
-                them directly over ADB.
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-col lg:flex-row gap-6 relative">
+      {/* Left Sidebar */}
+      <div className="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64 lg:sticky lg:top-2 h-fit z-10">
+        <Card>
+          <CardHeader className="gap-2 pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Store className="size-5" />
+              Marketplace
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Discover and install Android apps directly over ADB.
+            </CardDescription>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge
                 variant="outline"
-                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground"
+                className="rounded-full px-2 py-0 text-[10px] text-muted-foreground"
               >
                 4 providers
               </Badge>
               <Badge
                 variant="outline"
-                className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground"
+                className="rounded-full px-2 py-0 text-[10px] text-muted-foreground"
               >
                 {githubSession.user ? (
-                  <span className="inline-flex items-center gap-1">
-                    <UserRound className="size-3.5" />
+                  <span className="flex items-center gap-1">
+                    <UserRound className="size-3" />
                     {githubSession.user.login}
                   </span>
                 ) : (
-                  'Anonymous mode'
+                  'Anonymous'
                 )}
               </Badge>
             </div>
-          </div>
+          </CardHeader>
+        </Card>
+
+        <Card className="flex-1 shadow-sm">
+          <CardContent className="p-4">
+            <FilterBar resultCount={results.length} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Right Content */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pb-4 pt-1 -mx-2 px-2">
           <SearchBar
             value={localQuery}
             onChange={handleInputChange}
@@ -73,59 +83,60 @@ export function ViewMarketplace() {
             isSearching={isSearching}
             searchHistory={searchHistory}
           />
-          <FilterBar resultCount={results.length} />
-        </CardHeader>
-      </Card>
+        </div>
 
-      {hasResults ? (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Search results</CardTitle>
-            <CardDescription>
-              Browse grouped provider results, then open details or install an available APK.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="max-h-[62vh] overflow-y-auto">
-              {viewMode === 'grid' ? (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {results.map((app) => (
-                    <AppCard
-                      key={`${app.source}-${app.packageName}`}
-                      app={app}
-                      onSelect={() => openDetail(app)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {results.map((app) => (
-                    <AppListItem
-                      key={`${app.source}-${app.packageName}`}
-                      app={app}
-                      onSelect={() => openDetail(app)}
-                    />
-                  ))}
-                </div>
-              )}
+        {selectedApp && isDetailOpen ? (
+          <AppDetailView />
+        ) : hasResults ? (
+          <div className="flex flex-col gap-4 pb-12 mt-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">Search Results</h3>
+              <span className="text-xs text-muted-foreground">Showing {results.length} apps</span>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
+            
+            {viewMode === 'grid' ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                {results.map((app) => (
+                  <AppCard
+                    key={`${app.source}-${app.packageName}`}
+                    app={app}
+                    onSelect={() => openDetail(app)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {results.map((app) => (
+                  <AppListItem
+                    key={`${app.source}-${app.packageName}`}
+                    app={app}
+                    onSelect={() => openDetail(app)}
+                  />
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-8">
+              <AttributionFooter />
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 pb-12 mt-2">
             <MarketplaceEmptyState
               isSearching={isSearching}
               hasQuery={hasQuery}
               onQuickSearch={handleQuickSearch}
             />
-          </CardContent>
-        </Card>
-      )}
+            {!hasQuery && !isSearching && (
+              <div className="mt-12">
+                <AttributionFooter />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-      <AttributionFooter />
       <MarketplaceSettings />
-      <AppDetailDialog />
     </div>
   );
 }

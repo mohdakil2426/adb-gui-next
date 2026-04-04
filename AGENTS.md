@@ -289,7 +289,6 @@ Before closing any task, confirm ALL of the following:
 | Server       | Covers                                                 |
 | ------------ | ------------------------------------------------------ |
 | **context7** | Tauri, React, Zustand, Rust, all non-Google libraries  |
-| **shadcn**   | shadcn/ui components, registries, styling, composition |
 
 https://github.com/tauri-apps/tauri-docs
 https://v2.tauri.app/

@@ -42,7 +42,7 @@ Marketplace now includes a stronger discovery-first UX plus a hardening pass: se
 
 **Backend changes:**
 - Added Rust marketplace submodules:
-  - `auth.rs` — GitHub OAuth device-flow start/poll helpers + user/rate-limit fetch
+  - `auth.rs` — GitHub OAuth device-flow start/poll helpers + user/rate-limit fetch (surfaces detailed `error_description` on HTTP 4xx)
   - `cache.rs` — in-memory TTL caches for search/detail/trending
   - `ranking.rs` — result dedupe + sort/relevance rules
   - `service.rs` — orchestration layer so `commands/marketplace.rs` stays thin
