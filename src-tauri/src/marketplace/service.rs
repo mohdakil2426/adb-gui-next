@@ -30,11 +30,11 @@ pub fn search_cache_key(query: &str, filters: &SearchFilters) -> String {
 }
 
 pub fn detail_cache_key(package_name: &str, source: &str, github_token: &Option<String>) -> String {
-    format!("detail:{package_name}|{source}|{}", github_token.as_deref().unwrap_or("anon"))
+    format!("detail:{package_name}|{source}|{}", token_scope(github_token))
 }
 
 pub fn trending_cache_key(sort: &str, github_token: &Option<String>, limit: u32) -> String {
-    format!("trending:{sort}|{}|{limit}", github_token.as_deref().unwrap_or("anon"))
+    format!("trending:{sort}|{}|{limit}", token_scope(github_token))
 }
 
 pub async fn fetch_search_apps(
@@ -129,5 +129,44 @@ pub async fn list_versions(
         "IzzyOnDroid" => Ok(izzy::get_detail(client, package_name).await?.versions),
         "Aptoide" => Ok(vec![]),
         _ => Err(format!("Unknown source for versions: {source}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{detail_cache_key, search_cache_key, trending_cache_key};
+    use crate::marketplace::types::SearchFilters;
+
+    #[test]
+    fn search_cache_key_sorts_providers_and_hides_token_value() {
+        let filters_a = SearchFilters {
+            providers: vec!["GitHub".into(), "F-Droid".into()],
+            github_token: Some("secret-token".into()),
+            ..SearchFilters::default()
+        };
+
+        let filters_b = SearchFilters {
+            providers: vec!["F-Droid".into(), "GitHub".into()],
+            github_token: Some("another-token".into()),
+            ..SearchFilters::default()
+        };
+
+        let key_a = search_cache_key("term", &filters_a);
+        let key_b = search_cache_key("term", &filters_b);
+
+        assert_eq!(key_a, key_b);
+        assert!(!key_a.contains("secret-token"));
+        assert!(key_a.contains("auth"));
+    }
+
+    #[test]
+    fn detail_and_trending_keys_do_not_embed_raw_tokens() {
+        let detail_key = detail_cache_key("pkg", "GitHub", &Some("secret-token".into()));
+        let trending_key = trending_cache_key("stars", &Some("secret-token".into()), 12);
+
+        assert!(!detail_key.contains("secret-token"));
+        assert!(!trending_key.contains("secret-token"));
+        assert!(detail_key.ends_with("auth"));
+        assert!(trending_key.contains("|auth|"));
     }
 }

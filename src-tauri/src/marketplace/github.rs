@@ -117,25 +117,29 @@ pub async fn get_detail(
     token: &Option<String>,
 ) -> CmdResult<MarketplaceAppDetail> {
     let repo_url = format!("https://api.github.com/repos/{full_name}");
-    let repo: serde_json::Value = auth_headers(client.get(&repo_url), token)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
+    let repo_response =
+        auth_headers(client.get(&repo_url), token).send().await.map_err(|e| e.to_string())?;
+
+    if !repo_response.status().is_success() {
+        return Err(format!("GitHub repository lookup failed: HTTP {}", repo_response.status()));
+    }
+
+    let repo: serde_json::Value = repo_response.json().await.map_err(|e| e.to_string())?;
 
     let release_url = format!("https://api.github.com/repos/{full_name}/releases/latest");
-    let release: serde_json::Value = auth_headers(client.get(&release_url), token)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
+    let release_response =
+        auth_headers(client.get(&release_url), token).send().await.map_err(|e| e.to_string())?;
+
+    let release = if release_response.status() == reqwest::StatusCode::NOT_FOUND {
+        None
+    } else if !release_response.status().is_success() {
+        return Err(format!("GitHub release lookup failed: HTTP {}", release_response.status()));
+    } else {
+        Some(release_response.json::<serde_json::Value>().await.map_err(|e| e.to_string())?)
+    };
 
     let empty = vec![];
-    let assets = release["assets"].as_array().unwrap_or(&empty);
+    let assets = release.as_ref().and_then(|value| value["assets"].as_array()).unwrap_or(&empty);
     let apk_assets: Vec<&serde_json::Value> =
         assets.iter().filter(|asset| asset["name"].as_str().is_some_and(is_apk_asset)).collect();
 
@@ -144,28 +148,36 @@ pub async fn get_detail(
         .and_then(|asset| asset["browser_download_url"].as_str())
         .map(|value| value.to_string());
     let size = first_apk.and_then(|asset| asset["size"].as_u64());
-    let changelog =
-        release["body"].as_str().filter(|value| !value.is_empty()).map(|value| value.to_string());
+    let changelog = release.as_ref().and_then(|value| {
+        value["body"].as_str().filter(|body| !body.is_empty()).map(|body| body.to_string())
+    });
 
     let versions: Vec<VersionInfo> = apk_assets
         .iter()
         .map(|asset| VersionInfo {
             version_name: format!(
                 "{} ({})",
-                release["tag_name"].as_str().unwrap_or("unknown"),
+                release.as_ref().and_then(|value| value["tag_name"].as_str()).unwrap_or("unknown"),
                 asset["name"].as_str().unwrap_or("asset")
             ),
             version_code: 0,
             size: asset["size"].as_u64(),
             download_url: asset["browser_download_url"].as_str().map(|value| value.to_string()),
-            published_at: release["published_at"].as_str().map(|value| value.to_string()),
+            published_at: release
+                .as_ref()
+                .and_then(|value| value["published_at"].as_str())
+                .map(|value| value.to_string()),
         })
         .collect();
 
     Ok(MarketplaceAppDetail {
         name: repo["name"].as_str().unwrap_or(full_name).to_string(),
         package_name: full_name.to_string(),
-        version: release["tag_name"].as_str().unwrap_or("unknown").to_string(),
+        version: release
+            .as_ref()
+            .and_then(|value| value["tag_name"].as_str())
+            .unwrap_or("Repo only")
+            .to_string(),
         description: repo["description"].as_str().unwrap_or("").to_string(),
         icon_url: repo["owner"]["avatar_url"].as_str().map(|value| value.to_string()),
         source: "GitHub".into(),
@@ -191,13 +203,13 @@ pub async fn list_releases(
 ) -> CmdResult<Vec<VersionInfo>> {
     let url = format!("https://api.github.com/repos/{full_name}/releases?per_page=20");
 
-    let releases: Vec<serde_json::Value> = auth_headers(client.get(&url), token)
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
+    let response = auth_headers(client.get(&url), token).send().await.map_err(|e| e.to_string())?;
+
+    if !response.status().is_success() {
+        return Err(format!("GitHub releases lookup failed: HTTP {}", response.status()));
+    }
+
+    let releases: Vec<serde_json::Value> = response.json().await.map_err(|e| e.to_string())?;
 
     let versions = releases
         .iter()

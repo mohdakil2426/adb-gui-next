@@ -61,4 +61,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-04 (Marketplace UX overhaul + optional GitHub device flow; OPS/OFP firmware; responsive layout)
+- Last Updated: 2026-04-04 (marketplace hardening pass: safer download/install flow, session-only PAT fallback, safer external URL opening, improved accessibility; OPS/OFP firmware; responsive layout)

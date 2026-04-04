@@ -34,7 +34,7 @@ describe('marketplaceStore', () => {
     });
   });
 
-  it('prefers an active oauth session token over the persisted PAT', () => {
+  it('prefers an active oauth session token over the session PAT fallback', () => {
     useMarketplaceStore.setState({
       githubPat: 'pat-token',
       githubSession: {
@@ -45,6 +45,13 @@ describe('marketplaceStore', () => {
     });
 
     expect(getMarketplaceEffectiveGithubToken(useMarketplaceStore.getState())).toBe('oauth-token');
+  });
+
+  it('keeps the PAT fallback in memory without persisting it to localStorage', () => {
+    useMarketplaceStore.getState().setGithubPat('pat-token');
+
+    expect(useMarketplaceStore.getState().githubPat).toBe('pat-token');
+    expect(localStorage.getItem('marketplace_github_pat')).toBeNull();
   });
 
   it('records recent apps without duplicates and keeps the newest first', () => {

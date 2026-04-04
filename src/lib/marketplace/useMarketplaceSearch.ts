@@ -26,6 +26,13 @@ export function useMarketplaceSearch() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
 
+  const clearPendingDebounce = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  }, []);
+
   const performSearch = useCallback(
     async (searchQuery: string) => {
       const trimmed = searchQuery.trim();
@@ -79,10 +86,7 @@ export function useMarketplaceSearch() {
   const handleInputChange = useCallback(
     (value: string) => {
       setLocalQuery(value);
-
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      clearPendingDebounce();
 
       if (!value.trim() || value.trim().length < MIN_QUERY_LENGTH) {
         requestIdRef.current += 1;
@@ -97,23 +101,25 @@ export function useMarketplaceSearch() {
         void performSearch(value);
       }, DEBOUNCE_MS);
     },
-    [performSearch, setIsSearching, setQuery, setResults],
+    [clearPendingDebounce, performSearch, setIsSearching, setQuery, setResults],
   );
 
   const handleClear = useCallback(() => {
+    clearPendingDebounce();
     requestIdRef.current += 1;
     setLocalQuery('');
     setQuery('');
     setResults([]);
     setIsSearching(false);
-  }, [setIsSearching, setQuery, setResults]);
+  }, [clearPendingDebounce, setIsSearching, setQuery, setResults]);
 
   const handleQuickSearch = useCallback(
     (quickQuery: string) => {
+      clearPendingDebounce();
       setLocalQuery(quickQuery);
       void performSearch(quickQuery);
     },
-    [performSearch],
+    [clearPendingDebounce, performSearch],
   );
 
   useEffect(() => {
@@ -126,11 +132,9 @@ export function useMarketplaceSearch() {
 
   useEffect(
     () => () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      clearPendingDebounce();
     },
-    [],
+    [clearPendingDebounce],
   );
 
   return {

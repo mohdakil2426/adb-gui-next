@@ -1,5 +1,7 @@
 use log::info;
+use reqwest::{Client, redirect::Policy};
 use tauri::{AppHandle, State};
+use tempfile::NamedTempFile;
 
 use crate::CmdResult;
 use crate::helpers::run_binary_command;
@@ -7,6 +9,66 @@ use crate::marketplace::cache::ManagedMarketplaceCache;
 use crate::marketplace::service;
 use crate::marketplace::{self, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult};
 use crate::marketplace::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
+use crate::payload::http::{resolve_redirect_url, validate_outbound_url};
+
+const MARKETPLACE_DOWNLOAD_DIR: &str = "adb-gui-next-marketplace";
+const MAX_DOWNLOAD_REDIRECTS: usize = 5;
+
+fn marketplace_download_root() -> CmdResult<std::path::PathBuf> {
+    let path = std::env::temp_dir().join(MARKETPLACE_DOWNLOAD_DIR);
+    std::fs::create_dir_all(&path)
+        .map_err(|e| format!("Failed to prepare marketplace temp dir: {e}"))?;
+    Ok(path)
+}
+
+fn is_owned_marketplace_download(path: &std::path::Path) -> bool {
+    let Ok(root) = marketplace_download_root() else {
+        return false;
+    };
+    let Ok(root) = root.canonicalize() else {
+        return false;
+    };
+    let Ok(candidate) = path.canonicalize() else {
+        return false;
+    };
+    candidate.starts_with(root)
+}
+
+async fn download_with_validated_redirects(
+    client: &Client,
+    initial_url: url::Url,
+) -> CmdResult<reqwest::Response> {
+    let mut current_url = initial_url;
+
+    for _ in 0..=MAX_DOWNLOAD_REDIRECTS {
+        let response = client
+            .get(current_url.clone())
+            .send()
+            .await
+            .map_err(|e| format!("Download failed: {e}"))?;
+
+        if response.status().is_redirection() {
+            let location = response
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|value| value.to_str().ok())
+                .ok_or_else(|| "Download redirect missing Location header".to_string())?;
+            let next_url =
+                resolve_redirect_url(&current_url, location).map_err(|e| e.to_string())?;
+            validate_outbound_url(&next_url, true).map_err(|e| e.to_string())?;
+            current_url = next_url;
+            continue;
+        }
+
+        if response.status().is_success() {
+            return Ok(response);
+        }
+
+        return Err(format!("Download failed: HTTP {}", response.status()));
+    }
+
+    Err(format!("Download failed: too many redirects (max {})", MAX_DOWNLOAD_REDIRECTS))
+}
 
 #[tauri::command]
 pub async fn marketplace_search(
@@ -141,24 +203,28 @@ pub async fn marketplace_github_device_poll(
 
 #[tauri::command]
 pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
-    info!("Downloading APK: {url}");
-    let client = marketplace::http_client()?;
+    let parsed = url::Url::parse(url.trim()).map_err(|e| format!("Invalid download URL: {e}"))?;
+    validate_outbound_url(&parsed, true).map_err(|e| e.to_string())?;
 
-    let response = client.get(&url).send().await.map_err(|e| format!("Download failed: {e}"))?;
+    info!("Downloading marketplace APK from {}", parsed.host_str().unwrap_or("unknown-host"));
+    let client = Client::builder()
+        .user_agent("ADB-GUI-Next/2.1")
+        .timeout(std::time::Duration::from_secs(300))
+        .connect_timeout(std::time::Duration::from_secs(30))
+        .redirect(Policy::none())
+        .build()
+        .map_err(|e| format!("Failed to create download client: {e}"))?;
 
-    if !response.status().is_success() {
-        return Err(format!("Download failed: HTTP {}", response.status()));
-    }
-
+    let response = download_with_validated_redirects(&client, parsed).await?;
     let bytes = response.bytes().await.map_err(|e| format!("Failed to read download: {e}"))?;
 
     if bytes.is_empty() {
         return Err("Downloaded file is empty — server may have returned an error".to_string());
     }
 
-    let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
-    let dir_path = temp_dir.keep();
-    let file_path = dir_path.join("marketplace_download.apk");
+    let temp = NamedTempFile::new_in(marketplace_download_root()?).map_err(|e| e.to_string())?;
+    let (_, file_path) = temp.keep().map_err(|e| format!("Failed to persist temp APK: {e}"))?;
+
     tokio::fs::write(&file_path, &bytes)
         .await
         .map_err(|e: std::io::Error| format!("Failed to write APK: {e}"))?;
@@ -171,9 +237,16 @@ pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
 #[tauri::command]
 pub async fn marketplace_install_apk(app: AppHandle, apk_path: String) -> CmdResult<String> {
     info!("Installing marketplace APK: {apk_path}");
-    tokio::task::spawn_blocking(move || {
-        run_binary_command(&app, "adb", &["install", "-r", &apk_path])
+    let install_path = apk_path.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        run_binary_command(&app, "adb", &["install", "-r", &install_path])
     })
     .await
-    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())?;
+
+    let apk_path_ref = std::path::Path::new(&apk_path);
+    if is_owned_marketplace_download(apk_path_ref) {
+        let _ = tokio::fs::remove_file(apk_path_ref).await;
+    }
+    result
 }

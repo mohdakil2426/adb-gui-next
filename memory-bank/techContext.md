@@ -204,4 +204,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-04 (TypeScript 6.0.2 upgrade, `baseUrl` deprecation migration)
+- **Last Updated**: 2026-04-04 (marketplace hardening pass, TypeScript 6.0.2 upgrade, `baseUrl` deprecation migration)

@@ -4,7 +4,7 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
-Marketplace now has a stronger discovery-first UX, backend search/detail/trending caches, result dedupe/sort infrastructure, and optional GitHub OAuth device-flow sign-in (session-only token handling).
+Marketplace now has a stronger discovery-first UX, backend search/detail/trending caches, result dedupe/sort infrastructure, safer external/open/install handling, and optional GitHub OAuth device-flow sign-in with session-only token handling.
 
 ## What Works
 
@@ -236,6 +236,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-04 | 0.1.0 | Marketplace hardening pass: APK downloads now reject non-HTTP(S) and private/internal targets, GitHub cache keys no longer embed token values, GitHub detail/release flows now fail on non-success HTTP responses, GitHub PAT fallback is session-only, device-flow polling keeps the original client ID, stale debounced searches are cancelled before quick-search/filter/auth reruns, external URL opening is validated, AppCard keyboard activation avoids nested interactive controls, and FilterBar view toggles expose accessible labels/state. Verified `pnpm test`, `pnpm lint`, `pnpm build`, `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo fmt --check --manifest-path src-tauri/Cargo.toml`, and `pnpm tauri build --debug` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
 | 2026-04-04 | 0.1.0 | Marketplace UX overhaul: new frontend hooks (`useMarketplaceSearch`, `useMarketplaceHome`, `useMarketplaceAuth`), redesigned SearchBar/FilterBar/EmptyState/Settings/AppDetailDialog, Lucide-based provider badges, recent-view persistence, Rust marketplace `auth.rs` + `cache.rs` + `ranking.rs` + `service.rs`, cache-aware search/detail/trending, `marketplace_clear_cache`, GitHub OAuth device-flow start/poll commands, result dedupe + sort support, and session-only GitHub token handling. Verified `pnpm check:fast`, `pnpm test`, `pnpm exec tsc --noEmit`, `pnpm build`, `cargo check`, and `pnpm tauri build --debug` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
 | 2026-04-04 | 0.1.0 | TypeScript toolchain upgrade: `typescript` 5.9.3 → 6.0.2. Removed deprecated `baseUrl` from `tsconfig.json` and kept `@/*` alias via `paths` only. Verified `pnpm exec tsc --noEmit`, `pnpm format:check`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). `pnpm tauri build --debug` currently blocked by a running `adb-gui-next.exe` locking the target binary. |
 | 2026-04-04 | 0.1.0 | Marketplace Bug Fixes: 4 critical bugs fixed — F-Droid response key `hits` → `apps`, IzzyOnDroid broken search replaced with cross-reference approach, GitHub query encoding `+` → `%20`, trending query too restrictive. New Settings dialog (`MarketplaceSettings.tsx`) with provider toggles, GitHub PAT input, results-per-provider preference. `github_token` added to `SearchFilters` and passed through all API calls. Debounce 400ms → 600ms, min 2-char query. SearchBar settings icon. All quality gates pass. |

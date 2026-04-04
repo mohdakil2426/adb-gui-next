@@ -210,7 +210,7 @@ export function MarketplaceSettings() {
                   <div className="rounded-lg border bg-background/80 p-3 text-xs text-muted-foreground">
                     <p className="font-medium text-foreground">Verification code</p>
                     <p className="mt-1 font-mono text-sm tracking-[0.2em] text-foreground">
-                      {githubDeviceChallenge.userCode}
+                      {githubDeviceChallenge.challenge.userCode}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
@@ -218,8 +218,8 @@ export function MarketplaceSettings() {
                         variant="outline"
                         onClick={() =>
                           BrowserOpenURL(
-                            githubDeviceChallenge.verificationUriComplete ??
-                              githubDeviceChallenge.verificationUri,
+                            githubDeviceChallenge.challenge.verificationUriComplete ??
+                              githubDeviceChallenge.challenge.verificationUri,
                           )
                         }
                       >
@@ -291,8 +291,8 @@ export function MarketplaceSettings() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Personal access tokens remain optional for power users, but the preferred UX is GitHub
-              sign-in above.
+              Personal access tokens are optional session-only fallbacks. They are kept in memory
+              for the current app session and are not saved after reload or restart.
             </p>
           </section>
 

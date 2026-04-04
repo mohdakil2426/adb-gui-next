@@ -41,7 +41,7 @@ export function useMarketplaceAuth() {
 
       try {
         const challenge = await MarketplaceGithubDeviceStart(resolvedClientId, AUTH_SCOPES);
-        setGithubDeviceChallenge(challenge);
+        setGithubDeviceChallenge({ challenge, clientId: resolvedClientId });
         BrowserOpenURL(challenge.verificationUriComplete ?? challenge.verificationUri);
         toast.success('GitHub verification started', {
           description: `Enter code ${challenge.userCode} in your browser if the page did not open automatically.`,
@@ -70,11 +70,11 @@ export function useMarketplaceAuth() {
 
     let cancelled = false;
 
-    const poll = async (intervalMs: number) => {
+    const poll = async () => {
       try {
         const result = await MarketplaceGithubDevicePoll(
-          githubOauthClientId.trim(),
-          githubDeviceChallenge.deviceCode,
+          githubDeviceChallenge.clientId,
+          githubDeviceChallenge.challenge.deviceCode,
         );
 
         if (cancelled) {
@@ -94,16 +94,20 @@ export function useMarketplaceAuth() {
         }
 
         if (result.status === 'authorization_pending') {
+          const nextIntervalMs =
+            (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000;
           timeoutRef.current = setTimeout(() => {
-            void poll((result.interval ?? githubDeviceChallenge.interval) * 1000);
-          }, intervalMs);
+            void poll();
+          }, nextIntervalMs);
           return;
         }
 
         if (result.status === 'slow_down') {
+          const nextIntervalMs =
+            (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000 + SLOW_DOWN_MS;
           timeoutRef.current = setTimeout(() => {
-            void poll((result.interval ?? githubDeviceChallenge.interval) * 1000 + SLOW_DOWN_MS);
-          }, intervalMs + SLOW_DOWN_MS);
+            void poll();
+          }, nextIntervalMs);
           return;
         }
 
@@ -138,8 +142,8 @@ export function useMarketplaceAuth() {
     };
 
     timeoutRef.current = setTimeout(() => {
-      void poll(githubDeviceChallenge.interval * 1000);
-    }, githubDeviceChallenge.interval * 1000);
+      void poll();
+    }, githubDeviceChallenge.challenge.interval * 1000);
 
     return () => {
       cancelled = true;

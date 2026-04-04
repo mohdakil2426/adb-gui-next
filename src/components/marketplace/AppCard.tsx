@@ -38,68 +38,82 @@ export function AppCard({ app, onSelect }: AppCardProps) {
   const downloadLabel = formatDownloadCount(app.downloadsCount);
 
   return (
-    <Card
-      className="group cursor-pointer border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-md"
-      onClick={onSelect}
-    >
+    <Card className="group border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-md">
       <CardContent className="space-y-4 p-4">
-        <div className="flex items-start gap-3">
-          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
-            {app.iconUrl ? (
-              <img
-                src={app.iconUrl}
-                alt=""
-                className="size-12 object-cover"
-                onError={(event) => {
-                  (event.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : (
-              <Package className="size-5 text-muted-foreground" />
+        <div
+          className="cursor-pointer space-y-4"
+          onClick={onSelect}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              onSelect();
+            }
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
+              {app.iconUrl ? (
+                <img
+                  src={app.iconUrl}
+                  alt=""
+                  className="size-12 object-cover"
+                  onError={(event) => {
+                    (event.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Package className="size-5 text-muted-foreground" />
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <h3 className="truncate text-sm font-semibold leading-none">{app.name}</h3>
+                <ProviderBadge source={app.source} />
+                {app.availableSources.length > 1 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    +{app.availableSources.length - 1} more source
+                    {app.availableSources.length > 2 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {app.version || 'Version info unavailable'}
+              </p>
+              <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                {app.summary || 'No description available yet.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            {app.rating != null && app.rating > 0 && (
+              <span className="flex items-center gap-1">
+                <Star className="size-3.5 fill-current text-foreground" />
+                {app.rating.toFixed(1)}
+              </span>
+            )}
+            {downloadLabel && <span>{downloadLabel}</span>}
+            {app.updatedAt && <span>{new Date(app.updatedAt).toLocaleDateString()}</span>}
+            {!app.installable && app.repoUrl && (
+              <span className="inline-flex items-center gap-1">
+                <ExternalLink className="size-3.5" />
+                Repo only
+              </span>
             )}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate text-sm font-semibold leading-none">{app.name}</h3>
-              <ProviderBadge source={app.source} />
-              {app.availableSources.length > 1 && (
-                <span className="text-[10px] text-muted-foreground">
-                  +{app.availableSources.length - 1} more source
-                  {app.availableSources.length > 2 ? 's' : ''}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {app.version || 'Version info unavailable'}
-            </p>
-            <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-              {app.summary || 'No description available yet.'}
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-muted-foreground">
+              {app.installable
+                ? 'Ready to install over ADB'
+                : 'Open details to inspect this source'}
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-          {app.rating != null && app.rating > 0 && (
-            <span className="flex items-center gap-1">
-              <Star className="size-3.5 fill-current text-foreground" />
-              {app.rating.toFixed(1)}
-            </span>
-          )}
-          {downloadLabel && <span>{downloadLabel}</span>}
-          {app.updatedAt && <span>{new Date(app.updatedAt).toLocaleDateString()}</span>}
-          {!app.installable && app.repoUrl && (
-            <span className="inline-flex items-center gap-1">
-              <ExternalLink className="size-3.5" />
-              Repo only
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] text-muted-foreground">
-            {app.installable ? 'Ready to install over ADB' : 'Open details to inspect this source'}
-          </p>
+        <div className="flex justify-end">
           <Button
             variant={installState === 'done' ? 'default' : 'outline'}
             size="sm"

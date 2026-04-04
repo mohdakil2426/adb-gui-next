@@ -3,6 +3,7 @@ import type { Event } from '@tauri-apps/api/event';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import type { DragDropEvent } from '@tauri-apps/api/webview';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { toast } from 'sonner';
 
 // Generic event callback — T is the event payload type.
 type EventCallback<T = unknown> = (data: T) => void;
@@ -82,8 +83,32 @@ function registerEventListener<T = unknown>(
   return entry.dispose;
 }
 
+function toSafeExternalUrl(url: string | URL): string | null {
+  try {
+    const parsed = url instanceof URL ? url : new URL(String(url).trim());
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return null;
+    }
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function BrowserOpenURL(url: string | URL): void {
-  void openUrl(url);
+  const safeUrl = toSafeExternalUrl(url);
+  if (!safeUrl) {
+    toast.error('Unable to open link', {
+      description: 'Only valid HTTP/HTTPS URLs are allowed.',
+    });
+    return;
+  }
+
+  void openUrl(safeUrl).catch((error) => {
+    toast.error('Unable to open link', {
+      description: String(error),
+    });
+  });
 }
 
 export function EventsOn<T = unknown>(eventName: string, callback: EventCallback<T>): () => void {

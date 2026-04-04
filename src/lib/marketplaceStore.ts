@@ -18,6 +18,11 @@ interface GithubSessionState {
   rateLimit: GithubRateLimitSummary | null;
 }
 
+interface ActiveGithubDeviceChallenge {
+  challenge: GithubDeviceFlowChallenge;
+  clientId: string;
+}
+
 interface MarketplaceState {
   query: string;
   results: MarketplaceApp[];
@@ -38,7 +43,7 @@ interface MarketplaceState {
   githubOauthClientId: string;
   resultsPerProvider: number;
   githubSession: GithubSessionState;
-  githubDeviceChallenge: GithubDeviceFlowChallenge | null;
+  githubDeviceChallenge: ActiveGithubDeviceChallenge | null;
   isGithubAuthenticating: boolean;
 
   setQuery: (query: string) => void;
@@ -63,7 +68,7 @@ interface MarketplaceState {
   setResultsPerProvider: (resultsPerProvider: number) => void;
   setGithubSession: (session: Partial<GithubSessionState>) => void;
   clearGithubSession: () => void;
-  setGithubDeviceChallenge: (challenge: GithubDeviceFlowChallenge | null) => void;
+  setGithubDeviceChallenge: (challenge: ActiveGithubDeviceChallenge | null) => void;
   setIsGithubAuthenticating: (isGithubAuthenticating: boolean) => void;
   reset: () => void;
 }
@@ -136,7 +141,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   searchHistory: loadFromStorage<string[]>('marketplace_history', []),
   recentlyViewedApps: loadFromStorage<MarketplaceApp[]>('marketplace_recently_viewed', []),
   isSettingsOpen: false,
-  githubPat: loadFromStorage<string>('marketplace_github_pat', ''),
+  githubPat: '',
   githubOauthClientId: loadFromStorage<string>('marketplace_github_client_id', ''),
   resultsPerProvider: loadFromStorage<number>('marketplace_results_per_provider', 12),
   githubSession: {
@@ -212,7 +217,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   closeSettings: () => set({ isSettingsOpen: false }),
 
   setGithubPat: (githubPat) => {
-    saveToStorage('marketplace_github_pat', githubPat);
     set({ githubPat });
   },
 

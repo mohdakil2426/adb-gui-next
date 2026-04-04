@@ -4,8 +4,7 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace now includes a stronger discovery-first UX: zero-query home sections, grouped search improvements, cleaner result/detail layouts, Rust-side cache/ranking infrastructure, and optional GitHub OAuth device-flow sign-in with PAT fallback.
-All core quality gates pass: format, lint (ESLint + clippy -D warnings), tests, build, cargo check, and debug Tauri packaging. `cargo test` still has the pre-existing Windows harness crash (`0xc0000139`).
+Marketplace now includes a stronger discovery-first UX plus a hardening pass: session-only GitHub PAT fallback, frozen device-flow client ID polling, safer external URL opening, stale-search cancellation, improved keyboard accessibility, safer cache keys, GitHub status checks, and guarded APK download URLs. All core quality gates pass: format, lint (ESLint + clippy -D warnings), tests, build, cargo check, and debug Tauri packaging. `cargo test` still has the pre-existing Windows harness crash (`0xc0000139`).
 
 ---
 

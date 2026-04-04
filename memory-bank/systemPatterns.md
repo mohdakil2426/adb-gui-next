@@ -87,10 +87,10 @@ OnFileDrop({
 ### 3a. Marketplace Feature Split
 
 Marketplace now follows a hybrid state/orchestration pattern:
-- `marketplaceStore.ts` keeps durable UI state and persisted preferences (providers, sort, view mode, history, OAuth client ID, PAT fallback)
-- `src/lib/marketplace/useMarketplaceSearch.ts` owns debounce + stale-response protection + request orchestration
+- `marketplaceStore.ts` keeps durable UI state and persisted preferences (providers, sort, view mode, history, OAuth client ID). GitHub PAT fallback is session-only and must not be persisted.
+- `src/lib/marketplace/useMarketplaceSearch.ts` owns debounce cancellation + stale-response protection + request orchestration
 - `src/lib/marketplace/useMarketplaceHome.ts` loads zero-query discovery sections (trending + fresh releases)
-- `src/lib/marketplace/useMarketplaceAuth.ts` manages optional GitHub OAuth device-flow state in the frontend
+- `src/lib/marketplace/useMarketplaceAuth.ts` manages optional GitHub OAuth device-flow state in the frontend and polls using the exact client ID captured at challenge start
 - `src/lib/marketplace/install.ts` centralizes APK download/install toast workflow for cards and dialogs
 
 ### 3b. Marketplace Backend Service Layer
@@ -396,7 +396,7 @@ Any missing `min-w-0` in a flex ancestor allows the child to dictate its own wid
 **Viewport-relative heights for scroll lists:**
 ```tsx
 // DO: viewport-relative with floor
-className="max-h-[40vh] min-h-[120px] overflow-y-auto"
+className="max-h-[40vh] min-h-30 overflow-y-auto"
 
 // DON'T: fixed pixel heights
 className="max-h-100"  // 400px — too small on large monitors, too large on small windows

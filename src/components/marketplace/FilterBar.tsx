@@ -112,6 +112,8 @@ export function FilterBar({ resultCount }: FilterBarProps) {
               size="icon"
               className={cn('size-7', viewMode === 'grid' && 'bg-background shadow-sm')}
               onClick={() => setViewMode('grid')}
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
             >
               <LayoutGrid className="size-3.5" />
             </Button>
@@ -120,6 +122,8 @@ export function FilterBar({ resultCount }: FilterBarProps) {
               size="icon"
               className={cn('size-7', viewMode === 'list' && 'bg-background shadow-sm')}
               onClick={() => setViewMode('list')}
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
             >
               <List className="size-3.5" />
             </Button>
