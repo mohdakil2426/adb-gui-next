@@ -6,8 +6,6 @@ use serde::{Deserialize, Serialize};
 pub enum ProviderSource {
     #[serde(rename = "F-Droid")]
     FDroid,
-    #[serde(rename = "IzzyOnDroid")]
-    IzzyOnDroid,
     #[serde(rename = "GitHub")]
     GitHub,
     #[serde(rename = "Aptoide")]
@@ -18,7 +16,6 @@ impl ProviderSource {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::FDroid => "F-Droid",
-            Self::IzzyOnDroid => "IzzyOnDroid",
             Self::GitHub => "GitHub",
             Self::Aptoide => "Aptoide",
         }

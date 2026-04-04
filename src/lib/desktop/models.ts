@@ -113,7 +113,7 @@ export namespace backend {
 
   // ─── Marketplace ─────────────────────────────────────────────────────────
 
-  export type ProviderSource = 'F-Droid' | 'IzzyOnDroid' | 'GitHub' | 'Aptoide';
+  export type ProviderSource = 'F-Droid' | 'GitHub' | 'Aptoide';
   export type MarketplaceSortBy = 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
 
   export interface MarketplaceApp {

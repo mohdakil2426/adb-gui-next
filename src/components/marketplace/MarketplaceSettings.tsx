@@ -34,11 +34,6 @@ type ProviderSource = backend.ProviderSource;
 const PROVIDERS: { id: ProviderSource; label: string; description: string }[] = [
   { id: 'F-Droid', label: 'F-Droid', description: 'Free and open-source Android apps' },
   {
-    id: 'IzzyOnDroid',
-    label: 'IzzyOnDroid',
-    description: 'F-Droid-compatible repo with more niche Android packages',
-  },
-  {
     id: 'GitHub',
     label: 'GitHub Releases',
     description: 'Open-source repositories with release assets',

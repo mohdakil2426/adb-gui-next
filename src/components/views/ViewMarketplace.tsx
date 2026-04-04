@@ -13,8 +13,15 @@ import { useMarketplaceStore } from '@/lib/marketplaceStore';
 import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
 
 export function ViewMarketplace() {
-  const { openDetail, openSettings, viewMode, searchHistory, githubSession, selectedApp, isDetailOpen } =
-    useMarketplaceStore();
+  const {
+    openDetail,
+    openSettings,
+    viewMode,
+    searchHistory,
+    githubSession,
+    selectedApp,
+    isDetailOpen,
+  } = useMarketplaceStore();
   const {
     localQuery,
     results,
@@ -93,7 +100,7 @@ export function ViewMarketplace() {
               <h3 className="text-sm font-medium">Search Results</h3>
               <span className="text-xs text-muted-foreground">Showing {results.length} apps</span>
             </div>
-            
+
             {viewMode === 'grid' ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                 {results.map((app) => (
@@ -115,7 +122,7 @@ export function ViewMarketplace() {
                 ))}
               </div>
             )}
-            
+
             <div className="mt-8">
               <AttributionFooter />
             </div>

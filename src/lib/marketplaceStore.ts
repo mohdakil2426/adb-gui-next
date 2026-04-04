@@ -8,7 +8,7 @@ type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
 
-const ALL_PROVIDERS: ProviderSource[] = ['F-Droid', 'IzzyOnDroid', 'GitHub', 'Aptoide'];
+const ALL_PROVIDERS: ProviderSource[] = ['F-Droid', 'GitHub', 'Aptoide'];
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
 

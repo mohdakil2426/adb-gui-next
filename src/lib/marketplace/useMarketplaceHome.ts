@@ -8,11 +8,11 @@ export function useMarketplaceHome(hasQuery: boolean) {
   const setIsTrendingLoading = useMarketplaceStore((state) => state.setIsTrendingLoading);
   const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
   const setIsRecentReleaseLoading = useMarketplaceStore((state) => state.setIsRecentReleaseLoading);
-  
+
   const trendingLength = useMarketplaceStore((state) => state.trendingApps.length);
   const recentLength = useMarketplaceStore((state) => state.recentReleaseApps.length);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
-  
+
   const fetchedTokenRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {

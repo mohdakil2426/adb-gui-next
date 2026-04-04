@@ -286,9 +286,9 @@ Before closing any task, confirm ALL of the following:
 
 > **MANDATORY — Query BEFORE writing any code, every time, no exceptions.**
 
-| Server       | Covers                                                 |
-| ------------ | ------------------------------------------------------ |
-| **context7** | Tauri, React, Zustand, Rust, all non-Google libraries  |
+| Server       | Covers                                                |
+| ------------ | ----------------------------------------------------- |
+| **context7** | Tauri, React, Zustand, Rust, all non-Google libraries |
 
 https://github.com/tauri-apps/tauri-docs
 https://v2.tauri.app/

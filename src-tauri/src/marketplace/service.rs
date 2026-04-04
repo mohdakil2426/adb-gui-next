@@ -3,7 +3,6 @@ use reqwest::Client;
 use super::aptoide;
 use super::fdroid;
 use super::github;
-use super::izzy;
 use super::ranking::{dedupe_results, sort_results};
 use super::types::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
 use crate::CmdResult;
@@ -74,15 +73,8 @@ pub async fn fetch_search_apps(
         },
     );
 
-    let izzy_results = if is_provider_enabled("IzzyOnDroid") && !fdroid_results.is_empty() {
-        izzy::search_via_fdroid(client, &fdroid_results).await
-    } else {
-        vec![]
-    };
-
     let mut results: Vec<MarketplaceApp> = Vec::new();
     results.extend(fdroid_results);
-    results.extend(izzy_results);
     results.extend(github_results);
     results.extend(aptoide_results);
 
@@ -99,7 +91,6 @@ pub async fn fetch_app_detail(
 ) -> CmdResult<MarketplaceAppDetail> {
     match source {
         "F-Droid" => fdroid::get_detail(client, package_name).await,
-        "IzzyOnDroid" => izzy::get_detail(client, package_name).await,
         "GitHub" => github::get_detail(client, package_name, github_token).await,
         "Aptoide" => aptoide::get_detail(client, package_name).await,
         _ => Err(format!("Unknown source: {source}")),
@@ -126,7 +117,6 @@ pub async fn list_versions(
     match source {
         "GitHub" => github::list_releases(client, package_name, github_token).await,
         "F-Droid" => Ok(fdroid::get_detail(client, package_name).await?.versions),
-        "IzzyOnDroid" => Ok(izzy::get_detail(client, package_name).await?.versions),
         "Aptoide" => Ok(vec![]),
         _ => Err(format!("Unknown source for versions: {source}")),
     }

@@ -5,7 +5,6 @@ export function AttributionFooter() {
 
   const providerLinks: Record<string, string> = {
     'F-Droid': 'https://f-droid.org',
-    IzzyOnDroid: 'https://apt.izzysoft.de/fdroid/',
     GitHub: 'https://github.com',
     Aptoide: 'https://www.aptoide.com',
   };

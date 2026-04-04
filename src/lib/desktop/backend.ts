@@ -300,7 +300,7 @@ export function GetRemotePayloadMetadata(url: string): Promise<backend.RemotePay
 // Marketplace Commands
 // =============================================================================
 
-/** Search apps across all marketplace providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). */
+/** Search apps across all marketplace providers (F-Droid, GitHub, Aptoide). */
 export function MarketplaceSearch(
   query: string,
   filters?: backend.MarketplaceSearchFilters,

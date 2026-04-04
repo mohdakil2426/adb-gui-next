@@ -6,7 +6,6 @@ use super::types::MarketplaceApp;
 fn provider_priority(source: &str) -> u32 {
     match source {
         "F-Droid" => 40,
-        "IzzyOnDroid" => 35,
         "Aptoide" => 25,
         "GitHub" => 20,
         _ => 10,
@@ -168,7 +167,7 @@ mod tests {
     fn dedupe_merges_available_sources() {
         let results = vec![
             build_app("Signal", "org.signal", "F-Droid", 100),
-            build_app("Signal", "org.signal", "IzzyOnDroid", 80),
+            build_app("Signal", "org.signal", "GitHub", 80),
         ];
 
         let deduped = dedupe_results(results);

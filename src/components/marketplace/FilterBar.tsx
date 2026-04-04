@@ -19,7 +19,6 @@ type MarketplaceSortBy = backend.MarketplaceSortBy;
 
 const PROVIDERS: { id: ProviderSource; label: string }[] = [
   { id: 'F-Droid', label: 'F-Droid' },
-  { id: 'IzzyOnDroid', label: 'IzzyOnDroid' },
   { id: 'GitHub', label: 'GitHub' },
   { id: 'Aptoide', label: 'Aptoide' },
 ];
@@ -76,7 +75,10 @@ export function FilterBar({ resultCount }: FilterBarProps) {
                 key={provider.id}
                 variant={isActive ? 'secondary' : 'ghost'}
                 size="sm"
-                className={cn('w-full justify-start text-xs font-medium', !isActive && 'text-muted-foreground')}
+                className={cn(
+                  'w-full justify-start text-xs font-medium',
+                  !isActive && 'text-muted-foreground',
+                )}
                 onClick={() => toggleProvider(provider.id)}
               >
                 {provider.label}
@@ -94,7 +96,12 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn('flex-1 h-8 gap-2 hover:bg-transparent', viewMode === 'grid' ? 'bg-background shadow-sm hover:bg-background' : 'text-muted-foreground hover:text-foreground')}
+            className={cn(
+              'flex-1 h-8 gap-2 hover:bg-transparent',
+              viewMode === 'grid'
+                ? 'bg-background shadow-sm hover:bg-background'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
             onClick={() => setViewMode('grid')}
             aria-label="Grid view"
             aria-pressed={viewMode === 'grid'}
@@ -105,7 +112,12 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           <Button
             variant="ghost"
             size="sm"
-            className={cn('flex-1 h-8 gap-2 hover:bg-transparent', viewMode === 'list' ? 'bg-background shadow-sm hover:bg-background' : 'text-muted-foreground hover:text-foreground')}
+            className={cn(
+              'flex-1 h-8 gap-2 hover:bg-transparent',
+              viewMode === 'list'
+                ? 'bg-background shadow-sm hover:bg-background'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
             onClick={() => setViewMode('list')}
             aria-label="List view"
             aria-pressed={viewMode === 'list'}
@@ -122,7 +134,11 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         </h4>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="w-full justify-start gap-2 text-xs text-muted-foreground font-normal">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 text-xs text-muted-foreground font-normal"
+            >
               <ArrowDownWideNarrow className="size-3.5 text-foreground" />
               <span className="text-foreground font-medium">
                 {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}

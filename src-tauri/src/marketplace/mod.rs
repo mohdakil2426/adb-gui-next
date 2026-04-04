@@ -3,7 +3,6 @@ pub mod auth;
 pub mod cache;
 pub mod fdroid;
 pub mod github;
-pub mod izzy;
 pub mod ranking;
 pub mod service;
 pub mod types;

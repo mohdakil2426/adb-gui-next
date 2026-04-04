@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
-import { GitBranch, Package, ShieldCheck, Store } from 'lucide-react';
+import { GitBranch, Package, Store } from 'lucide-react';
 
 type ProviderSource = backend.ProviderSource;
 
@@ -9,10 +9,6 @@ const PROVIDER_CONFIG: Record<ProviderSource, { label: string; icon: typeof GitB
   'F-Droid': {
     label: 'F-Droid',
     icon: Package,
-  },
-  IzzyOnDroid: {
-    label: 'IzzyOnDroid',
-    icon: ShieldCheck,
   },
   GitHub: {
     label: 'GitHub',

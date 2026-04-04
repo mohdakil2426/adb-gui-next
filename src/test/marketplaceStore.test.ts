@@ -15,7 +15,7 @@ describe('marketplaceStore', () => {
       isSearching: false,
       selectedApp: null,
       isDetailOpen: false,
-      activeProviders: ['F-Droid', 'IzzyOnDroid', 'GitHub', 'Aptoide'],
+      activeProviders: ['F-Droid', 'GitHub', 'Aptoide'],
       sortBy: 'relevance',
       viewMode: 'grid',
       trendingApps: [],

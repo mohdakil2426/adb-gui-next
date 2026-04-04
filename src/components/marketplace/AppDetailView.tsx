@@ -241,9 +241,7 @@ export function AppDetailView() {
               <MetadataItem label="Version" value={detail?.version || selectedApp.version} />
               <MetadataItem
                 label="Updated"
-                value={
-                  detail?.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : null
-                }
+                value={detail?.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : null}
               />
               <MetadataItem label="License" value={detail?.license} />
               <MetadataItem label="Author" value={detail?.author} />
@@ -296,9 +294,7 @@ export function AppDetailView() {
                       className="flex flex-col gap-2 rounded-xl border bg-muted/10 p-3"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="truncate text-sm font-medium">
-                          {version.versionName}
-                        </span>
+                        <span className="truncate text-sm font-medium">{version.versionName}</span>
                         {version.publishedAt && (
                           <span className="text-xs text-muted-foreground">
                             {new Date(version.publishedAt).toLocaleDateString()}
