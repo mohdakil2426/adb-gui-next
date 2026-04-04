@@ -27,6 +27,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(payload::PayloadCache::default())
         .manage(marketplace::ManagedMarketplaceCache::default())
+        .manage(marketplace::ManagedHttpClient::default())
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main")
                 && let Some(icon) = app.default_window_icon()

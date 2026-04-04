@@ -443,8 +443,14 @@ src/components/
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` split into helpers + 8 command modules (38 total commands)
-- `src-tauri/src/marketplace/` — modular provider architecture (fdroid, izzy, github, aptoide, types) with concurrent `tokio::join!` search; IzzyOnDroid uses cross-reference (no search API — checks F-Droid results against packages endpoint); GitHub uses proper URL encoding (`%20` not `+`) with optional PAT for rate limit increase
+- `src-tauri/src/lib.rs` split into helpers + 8 command modules (41 total commands)
+- `src-tauri/src/marketplace/` — modular provider architecture (fdroid, github, aptoide, types) with managed state:
+  - **`ManagedHttpClient`** — singleton `reqwest::Client` registered as Tauri state; all marketplace commands share one connection-pooled client via `State<ManagedHttpClient>`. Download command uses a separate client (300s timeout, no auto-redirect).
+  - **APK verification** — `verify_apk_availability()` in `github.rs` scans last 5 releases per repo using `JoinSet` + `Semaphore(5)` for bounded concurrent verification. Gracefully skips on 403/429 rate-limit. Called by both `search()` and `get_trending()`.
+  - **Heuristic ranking** — 8-signal weighted scoring: string match (1000), installability (200), topic boost (80 for "android"), language bias (40 for Kotlin/Java), freshness (40 for recent), provider priority, engagement cap (250), rating. Uses `sort_by_cached_key` for O(n) scoring.
+  - **Bounded cache** — max capacity (200 search, 500 detail, 50 trending) with lazy eviction on insert only (O(1) reads). Strategy: sweep expired → evict oldest if still full.
+  - **Language extraction** — GitHub `language` field parsed and stored in `MarketplaceApp.language`, used for ranking and displayed as UI badge.
+  - `reqwest` is a **required** (non-optional) dependency since marketplace is core functionality.
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab

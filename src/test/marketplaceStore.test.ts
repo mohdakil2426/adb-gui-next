@@ -72,6 +72,7 @@ describe('marketplaceStore', () => {
       categories: [],
       updatedAt: null,
       installable: false,
+      language: null,
     } satisfies backend.MarketplaceApp;
 
     const beta = { ...alpha, name: 'Beta', packageName: 'app.beta' };

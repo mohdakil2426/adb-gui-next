@@ -86,6 +86,11 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
             </span>
           )}
           {downloadsLabel && <span>{downloadsLabel}</span>}
+          {app.language && (
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+              {app.language}
+            </span>
+          )}
         </div>
       </div>
 

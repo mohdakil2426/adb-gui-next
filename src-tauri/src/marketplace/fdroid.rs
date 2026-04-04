@@ -75,7 +75,7 @@ pub async fn search(client: &Client, query: &str) -> Vec<MarketplaceApp> {
                 source: "F-Droid".into(),
                 available_sources: vec!["F-Droid".into()],
                 repo_url,
-                installable: false,
+                installable: true, // F-Droid packages always have APK downloads
                 ..Default::default()
             })
         })

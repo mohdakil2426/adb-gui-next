@@ -133,6 +133,7 @@ export namespace backend {
     categories: string[];
     updatedAt: string | null;
     installable: boolean;
+    language: string | null;
   }
 
   export interface MarketplaceAppDetail {

@@ -43,6 +43,8 @@ pub struct MarketplaceApp {
     pub categories: Vec<String>,
     pub updated_at: Option<String>,
     pub installable: bool,
+    /// Primary programming language (from GitHub API). Used for heuristic ranking.
+    pub language: Option<String>,
 }
 
 // ─── Detailed metadata (detail dialog) ───────────────────────────────────────

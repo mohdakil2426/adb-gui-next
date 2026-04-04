@@ -7,7 +7,9 @@ use crate::CmdResult;
 use crate::helpers::run_binary_command;
 use crate::marketplace::cache::ManagedMarketplaceCache;
 use crate::marketplace::service;
-use crate::marketplace::{self, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult};
+use crate::marketplace::{
+    GithubDeviceFlowChallenge, GithubDeviceFlowPollResult, ManagedHttpClient,
+};
 use crate::marketplace::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
 use crate::payload::http::{resolve_redirect_url, validate_outbound_url};
 
@@ -74,6 +76,7 @@ async fn download_with_validated_redirects(
 pub async fn marketplace_search(
     query: String,
     filters: Option<SearchFilters>,
+    http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<Vec<MarketplaceApp>> {
     let query = query.trim().to_string();
@@ -82,19 +85,18 @@ pub async fn marketplace_search(
     }
 
     info!("Marketplace search: {query}");
-    let client = marketplace::http_client()?;
+    let client = &http.0;
     let filters = filters.unwrap_or_default();
     let search_key = service::search_cache_key(&query, &filters);
 
     {
-        let mut cache =
-            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        let cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
         if let Some(cached) = cache.get_search(&search_key) {
             return Ok(cached);
         }
     }
 
-    let results = service::fetch_search_apps(&client, &query, &filters).await;
+    let results = service::fetch_search_apps(client, &query, &filters).await;
 
     let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
     cache.insert_search(search_key, results.clone());
@@ -106,21 +108,21 @@ pub async fn marketplace_get_app_detail(
     package_name: String,
     source: String,
     github_token: Option<String>,
+    http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<MarketplaceAppDetail> {
     info!("Marketplace detail: {package_name} from {source}");
-    let client = marketplace::http_client()?;
+    let client = &http.0;
     let detail_key = service::detail_cache_key(&package_name, &source, &github_token);
 
     {
-        let mut cache =
-            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        let cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
         if let Some(cached) = cache.get_detail(&detail_key) {
             return Ok(cached);
         }
     }
 
-    let detail = service::fetch_app_detail(&client, &package_name, &source, &github_token).await?;
+    let detail = service::fetch_app_detail(client, &package_name, &source, &github_token).await?;
 
     let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
     cache.insert_detail(detail_key, detail.clone());
@@ -132,22 +134,22 @@ pub async fn marketplace_get_trending(
     sort: Option<String>,
     github_token: Option<String>,
     limit: Option<u32>,
+    http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
 ) -> CmdResult<Vec<MarketplaceApp>> {
-    let client = marketplace::http_client()?;
+    let client = &http.0;
     let sort = sort.unwrap_or_else(|| "stars".to_string());
     let limit = limit.unwrap_or(12).max(4);
     let trending_key = service::trending_cache_key(&sort, &github_token, limit);
 
     {
-        let mut cache =
-            cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
+        let cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
         if let Some(cached) = cache.get_trending(&trending_key) {
             return Ok(cached);
         }
     }
 
-    let results = service::fetch_trending(&client, &sort, &github_token, limit).await;
+    let results = service::fetch_trending(client, &sort, &github_token, limit).await;
 
     let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
     cache.insert_trending(trending_key, results.clone());
@@ -159,9 +161,10 @@ pub async fn marketplace_list_versions(
     package_name: String,
     source: String,
     github_token: Option<String>,
+    http: State<'_, ManagedHttpClient>,
 ) -> CmdResult<Vec<VersionInfo>> {
-    let client = marketplace::http_client()?;
-    service::list_versions(&client, &package_name, &source, &github_token).await
+    let client = &http.0;
+    service::list_versions(client, &package_name, &source, &github_token).await
 }
 
 #[tauri::command]
@@ -175,20 +178,26 @@ pub fn marketplace_clear_cache(cache: State<'_, ManagedMarketplaceCache>) -> Cmd
 pub async fn marketplace_github_device_start(
     client_id: String,
     scopes: Option<Vec<String>>,
+    http: State<'_, ManagedHttpClient>,
 ) -> CmdResult<GithubDeviceFlowChallenge> {
     if client_id.trim().is_empty() {
         return Err("GitHub OAuth client ID is required".to_string());
     }
 
-    let client = marketplace::http_client()?;
-    marketplace::auth::start_device_flow(&client, client_id.trim(), &scopes.unwrap_or_default())
-        .await
+    let client = &http.0;
+    crate::marketplace::auth::start_device_flow(
+        client,
+        client_id.trim(),
+        &scopes.unwrap_or_default(),
+    )
+    .await
 }
 
 #[tauri::command]
 pub async fn marketplace_github_device_poll(
     client_id: String,
     device_code: String,
+    http: State<'_, ManagedHttpClient>,
 ) -> CmdResult<GithubDeviceFlowPollResult> {
     if client_id.trim().is_empty() {
         return Err("GitHub OAuth client ID is required".to_string());
@@ -197,8 +206,8 @@ pub async fn marketplace_github_device_poll(
         return Err("GitHub device code is required".to_string());
     }
 
-    let client = marketplace::http_client()?;
-    marketplace::auth::poll_device_flow(&client, client_id.trim(), device_code.trim()).await
+    let client = &http.0;
+    crate::marketplace::auth::poll_device_flow(client, client_id.trim(), device_code.trim()).await
 }
 
 #[tauri::command]
@@ -207,8 +216,10 @@ pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
     validate_outbound_url(&parsed, true).map_err(|e| e.to_string())?;
 
     info!("Downloading marketplace APK from {}", parsed.host_str().unwrap_or("unknown-host"));
+
+    // Separate client for downloads: longer timeout, no auto-redirect (manual validation)
     let client = Client::builder()
-        .user_agent("ADB-GUI-Next/2.1")
+        .user_agent(concat!("ADB-GUI-Next/", env!("CARGO_PKG_VERSION")))
         .timeout(std::time::Duration::from_secs(300))
         .connect_timeout(std::time::Duration::from_secs(30))
         .redirect(Policy::none())

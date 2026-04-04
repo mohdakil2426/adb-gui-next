@@ -1,0 +1,25 @@
+warning: in the working copy of 'memory-bank/activeContext.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'memory-bank/progress.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'memory-bank/systemPatterns.md', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src-tauri/src/lib.rs', CRLF will be replaced by LF the next time Git touches it
+warning: in the working copy of 'src-tauri/src/marketplace/types.rs', CRLF will be replaced by LF the next time Git touches it
+ memory-bank/activeContext.md               |  38 +++++-
+ memory-bank/progress.md                    |   4 +-
+ memory-bank/systemPatterns.md              |  10 +-
+ package.json                               |   4 +-
+ pnpm-lock.yaml                             | 172 +++++++++++++-------------
+ src-tauri/Cargo.lock                       |  29 +++--
+ src-tauri/Cargo.toml                       |   8 +-
+ src-tauri/src/commands/marketplace.rs      |  53 ++++----
+ src-tauri/src/lib.rs                       |   1 +
+ src-tauri/src/marketplace/cache.rs         | 117 ++++++++++++++++--
+ src-tauri/src/marketplace/fdroid.rs        |   2 +-
+ src-tauri/src/marketplace/github.rs        | 189 ++++++++++++++++++++++++++++-
+ src-tauri/src/marketplace/mod.rs           |  32 +++--
+ src-tauri/src/marketplace/ranking.rs       | 137 +++++++++++++++++++--
+ src-tauri/src/marketplace/types.rs         |   2 +
+ src/components/marketplace/AppCard.tsx     |   5 +
+ src/components/marketplace/AppListItem.tsx |   5 +
+ src/lib/desktop/models.ts                  |   1 +
+ src/test/marketplaceStore.test.ts          |   1 +
+ 19 files changed, 650 insertions(+), 160 deletions(-)

@@ -4,7 +4,7 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
-Marketplace now has a stronger discovery-first UX, backend search/detail/trending caches, result dedupe/sort infrastructure, safer external/open/install handling, and optional GitHub OAuth device-flow sign-in with session-only token handling.
+Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
 ## What Works
 
@@ -201,6 +201,7 @@ src-tauri/src/
 - `docs/guides/ops-ofp-firmware-extraction.md` — Comprehensive OPS/OFP firmware extraction technical guide (2026-04-03)
 - `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
 - `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
+- `docs/reports&audits/marketplace_architecture_audit.md` — Marketplace architecture audit, research, and improvement strategy (2026-04-05)
 - `docs/rust-audit-report.md` — Code quality audit
 - `docs/rust-performance-research.md` — Performance optimization research
 
@@ -239,6 +240,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-05 | 0.1.0 | Marketplace Architecture Audit: Deep-dive analysis of `GitHub-Store` reference architecture and research into Rust-native marketplace improvements. Proposed a three-stage roadmap: (1) Core Verification Engine with concurrent release-scanning, (2) Intelligence layer with weighted scoring heuristics and auto-pagination, (3) Security layer with Sigstore/Attestation verification. Created `docs/reports/marketplace_architecture_audit.md`. |
 | 2026-04-04 | 0.1.0 | Marketplace hardening pass: APK downloads now reject non-HTTP(S) and private/internal targets, GitHub cache keys no longer embed token values, GitHub detail/release flows now fail on non-success HTTP responses, GitHub PAT fallback is session-only, device-flow polling keeps the original client ID, stale debounced searches are cancelled before quick-search/filter/auth reruns, external URL opening is validated, AppCard keyboard activation avoids nested interactive controls, and FilterBar view toggles expose accessible labels/state. Verified `pnpm test`, `pnpm lint`, `pnpm build`, `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo fmt --check --manifest-path src-tauri/Cargo.toml`, and `pnpm tauri build --debug` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
 | 2026-04-04 | 0.1.0 | Marketplace UX overhaul: new frontend hooks (`useMarketplaceSearch`, `useMarketplaceHome`, `useMarketplaceAuth`), redesigned SearchBar/FilterBar/EmptyState/Settings/AppDetailDialog, Lucide-based provider badges, recent-view persistence, Rust marketplace `auth.rs` + `cache.rs` + `ranking.rs` + `service.rs`, cache-aware search/detail/trending, `marketplace_clear_cache`, GitHub OAuth device-flow start/poll commands, result dedupe + sort support, and session-only GitHub token handling. Verified `pnpm check:fast`, `pnpm test`, `pnpm exec tsc --noEmit`, `pnpm build`, `cargo check`, and `pnpm tauri build --debug` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
 | 2026-04-04 | 0.1.0 | TypeScript toolchain upgrade: `typescript` 5.9.3 → 6.0.2. Removed deprecated `baseUrl` from `tsconfig.json` and kept `@/*` alias via `paths` only. Verified `pnpm exec tsc --noEmit`, `pnpm format:check`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). `pnpm tauri build --debug` currently blocked by a running `adb-gui-next.exe` locking the target binary. |

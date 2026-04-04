@@ -4,11 +4,47 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace now includes a stronger discovery-first UX plus a hardening pass: session-only GitHub PAT fallback, frozen device-flow client ID polling, safer external URL opening, stale-search cancellation, improved keyboard accessibility, safer cache keys, GitHub status checks, and guarded APK download URLs. All core quality gates pass: format, lint (ESLint + clippy -D warnings), tests, build, cargo check, and debug Tauri packaging. `cargo test` still has the pre-existing Windows harness crash (`0xc0000139`).
+Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. All core quality gates pass: format, lint (ESLint), tsc build, cargo check (lib + tests). `cargo clippy`/`cargo test` still blocked by pre-existing Windows `AdbWinApi.dll` file lock.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-05 — Marketplace Architecture Phase 1 (High-Performance Refactor)
+
+**Change:** Implemented all critical and medium findings from the architecture audit across 10 files (7 Rust, 3 TypeScript). 11 new unit tests added.
+
+**Key Changes:**
+
+| Module | Change | Finding |
+|:---|:---|:---:|
+| `mod.rs` | `ManagedHttpClient` singleton — Tauri managed state, connection pooling | F-01, CMD-01 |
+| `github.rs` | APK verification engine — `JoinSet` + `Semaphore(5)`, scans last 5 releases | G-01, G-02 🔴 |
+| `github.rs` | `language` field extraction from GitHub API | T-02 |
+| `github.rs` | Dynamic trending cutoff date (6 months ago, no chrono dep) | G-06 |
+| `fdroid.rs` | `installable: true` — F-Droid always has APK downloads | FD-01 🔴 |
+| `ranking.rs` | Heuristic scoring: topics (+80), language (+40), freshness (+40), installability (+200) | R-01, R-02, R-05 🔴 |
+| `cache.rs` | Bounded cache with max capacity eviction (200/500/50), O(1) reads | C-01, C-02 |
+| `types.rs` | Added `language: Option<String>` to `MarketplaceApp` | T-02 |
+| `commands/marketplace.rs` | All commands use `State<ManagedHttpClient>` instead of per-call client creation | CMD-01 |
+| `Cargo.toml` | `reqwest` now a required (non-optional) dependency | F-01 |
+| `models.ts` | Added `language: string | null` to frontend DTO | T-02 |
+| `AppCard.tsx`, `AppListItem.tsx` | Language badge pill in metadata row | UI |
+| `marketplaceStore.test.ts` | Test mock updated for new `language` field | Test |
+
+**Deferred to Phase 2:**
+- ETag conditional requests (G-03)
+- Rate limit header tracking (G-04)
+- Provider-level timeout + JoinSet for multi-provider (S-01, S-02)
+- Per-provider error reporting to UI (S-03)
+
+---
+
+### 2026-04-05 — Marketplace Architecture Audit Revision 2 (Deep Analysis)
+
+**Change:** Exhaustive code-level analysis of all 9 marketplace Rust modules (1,418 lines) + command layer. Benchmarked against GitHub-Store (10.5k★ KMP app) and GitHub API best practices. Full report rewritten from 103 lines → 508 lines.
+
+---
 
 ### 2026-04-04 — Marketplace UX Overhaul + GitHub Device Flow
 
