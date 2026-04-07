@@ -5,7 +5,6 @@ use crate::{
         models::{AvdRootState, AvdSummary},
         runtime, sdk,
     },
-    helpers::run_binary_command,
 };
 use std::{
     collections::BTreeMap,
@@ -61,7 +60,10 @@ pub fn resolve_system_image_dir(
     sdk_roots: &[PathBuf],
 ) -> Option<PathBuf> {
     let raw = config.image_sysdir.as_deref()?.trim().trim_matches('"');
-    let relative = raw.trim_end_matches(['/', '\\']);
+    // Normalize Windows backslashes to forward slashes so PathBuf::join works
+    // correctly on all platforms. Android Studio writes mixed-slash paths on Windows.
+    let normalized = raw.replace('\\', "/");
+    let relative = normalized.trim_end_matches('/');
     let as_path = PathBuf::from(relative);
 
     if as_path.is_absolute() {
@@ -111,17 +113,43 @@ fn avd_root_state(
     }
 }
 
+/// Scans `avd_home` for `*.ini` files and returns the stem of each as an AVD name.
+/// This avoids a hard dependency on the `emulator` binary just to enumerate AVDs.
+fn scan_avd_names(avd_home: &Path) -> Vec<String> {
+    let Ok(entries) = fs::read_dir(avd_home) else {
+        return Vec::new();
+    };
+
+    let mut names: Vec<String> = entries
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let path = entry.path();
+            if path.extension()?.to_str()? == "ini" {
+                path.file_stem()?.to_str().map(String::from)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    names.sort();
+    names
+}
+
 pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
-    let roster_output = run_binary_command(app, "emulator", &["-list-avds"])?;
     let avd_home = sdk::resolve_avd_home().ok_or_else(|| {
-        "Unable to resolve the Android AVD home directory. Set ANDROID_AVD_HOME or HOME/USERPROFILE.".to_string()
+        "Unable to resolve Android AVD home directory. Set ANDROID_AVD_HOME or HOME/USERPROFILE."
+            .to_string()
     })?;
     let sdk_roots = sdk::sdk_roots_from_current_env();
     let runtime_avd_names = runtime::runtime_avd_names(app).unwrap_or_default();
 
+    // Scan *.ini files directly — no dependency on `emulator -list-avds`.
+    let names = scan_avd_names(&avd_home);
     let mut avds = Vec::new();
 
-    for name in roster_output.lines().map(str::trim).filter(|line| !line.is_empty()) {
+    for name in &names {
+        let name: &str = name.as_str();
         let ini_path = avd_home.join(format!("{name}.ini"));
         let ini_contents = fs::read_to_string(&ini_path).unwrap_or_default();
         let avd_path = parse_avd_ini_path(&ini_contents)

@@ -112,9 +112,13 @@ export function ViewEmulatorManager() {
         if (!cancelled) {
           setRestorePlan(plan);
         }
-      } catch {
+      } catch (error) {
         if (!cancelled) {
           setRestorePlan(null);
+          appendActivity({
+            level: 'warning',
+            message: `Could not load restore plan for ${selectedAvd.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          });
         }
       } finally {
         if (!cancelled) {
@@ -128,7 +132,7 @@ export function ViewEmulatorManager() {
     return () => {
       cancelled = true;
     };
-  }, [selectedAvd, setRestorePlan]);
+  }, [selectedAvd, setRestorePlan, appendActivity]);
 
   async function refreshAvds(logMessage?: string) {
     const result = await refetch();

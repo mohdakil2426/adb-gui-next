@@ -1,6 +1,6 @@
 use crate::{
     CmdResult,
-    emulator::models::EmulatorLaunchOptions,
+    emulator::{models::EmulatorLaunchOptions, sdk},
     helpers::{
         binary_working_directory, resolve_binary_path, run_binary_command,
         run_binary_command_allow_output_on_failure,
@@ -140,16 +140,42 @@ pub fn launch_avd(
     avd_name: &str,
     options: &EmulatorLaunchOptions,
 ) -> CmdResult<String> {
-    let binary = resolve_binary_path(app, "emulator")?;
-    let mut command = Command::new(binary);
+    // Prefer the SDK-installed emulator over the Tauri-bundled binary (emulator is not bundled).
+    // Falls back to resolve_binary_path (PATH) if the SDK location cannot be determined.
+    let binary = sdk::resolve_emulator_binary_from_current_env()
+        .or_else(|| resolve_binary_path(app, "emulator").ok())
+        .ok_or_else(|| {
+            "Android emulator not found. Install Android Studio SDK or add emulator/ to PATH."
+                .to_string()
+        })?;
+
+    let mut command = Command::new(&binary);
     command.args(build_launch_args(avd_name, options));
 
-    if let Some(workdir) = binary_working_directory(Some(app)) {
+    // Use the emulator binary's own directory as the working directory.
+    // The emulator binary requires its siblings (e.g. qemu-system-x86_64) to be present.
+    if let Some(workdir) = binary.parent() {
+        command.current_dir(workdir);
+    } else if let Some(workdir) = binary_working_directory(Some(app)) {
         command.current_dir(workdir);
     }
 
-    command.spawn().map_err(|error| error.to_string())?;
-    Ok(format!("Launched {avd_name}"))
+    let mut child = command.spawn().map_err(|error| error.to_string())?;
+
+    // Give the emulator 1 second to detect immediate startup failures
+    // (wrong API, missing HAXM, corrupt AVD, etc.).
+    std::thread::sleep(std::time::Duration::from_millis(1000));
+    match child.try_wait() {
+        Ok(Some(status)) => {
+            return Err(format!(
+                "Emulator exited immediately (exit status: {status}). Check AVD config or BIOS virtualisation settings."
+            ));
+        }
+        Ok(None) => {} // still running — good
+        Err(_) => {}   // try_wait failed — ignore, process state unknown
+    }
+
+    Ok(format!("Launched emulator for AVD: {avd_name}"))
 }
 
 pub fn stop_avd(app: &AppHandle, serial: &str) -> CmdResult<String> {

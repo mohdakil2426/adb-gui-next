@@ -71,6 +71,27 @@ pub fn resolve_avd_home() -> Option<PathBuf> {
     resolve_avd_home_from_env(&current_env())
 }
 
+/// Resolves the `emulator` binary from the Android SDK installation.
+/// Looks inside `$SDK/emulator/emulator[.exe]` across all candidate SDK roots.
+/// Does NOT require `emulator` to be on the system PATH.
+pub fn resolve_emulator_binary(env: &EmulatorEnv) -> Option<PathBuf> {
+    let sdk_roots = sdk_roots_from_env(env);
+
+    #[cfg(target_os = "windows")]
+    let binary_name = "emulator.exe";
+    #[cfg(not(target_os = "windows"))]
+    let binary_name = "emulator";
+
+    sdk_roots
+        .iter()
+        .map(|root| root.join("emulator").join(binary_name))
+        .find(|candidate| candidate.exists())
+}
+
+pub fn resolve_emulator_binary_from_current_env() -> Option<PathBuf> {
+    resolve_emulator_binary(&current_env())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
