@@ -57,10 +57,10 @@ pub async fn start_device_flow(
 
     if !response.status().is_success() {
         let status = response.status();
-        if let Ok(error_payload) = response.json::<serde_json::Value>().await {
-            if let Some(desc) = error_payload.get("error_description").and_then(|v| v.as_str()) {
-                return Err(format!("GitHub API Error: {desc}"));
-            }
+        if let Ok(error_payload) = response.json::<serde_json::Value>().await
+            && let Some(desc) = error_payload.get("error_description").and_then(|v| v.as_str())
+        {
+            return Err(format!("GitHub API Error: {desc}"));
         }
         return Err(format!("GitHub device flow request failed: HTTP {status}"));
     }

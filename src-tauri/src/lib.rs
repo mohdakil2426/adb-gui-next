@@ -1,4 +1,5 @@
 mod commands;
+pub mod emulator;
 mod helpers;
 pub mod marketplace;
 pub mod payload;
@@ -45,6 +46,7 @@ pub fn run() {
             commands::disconnect_wireless_adb,
             commands::enable_wireless_adb,
             commands::extract_payload,
+            commands::finalize_avd_root,
             commands::flash_partition,
             commands::get_bootloader_variables,
             commands::get_device_info,
@@ -52,23 +54,29 @@ pub fn run() {
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,
+            commands::get_avd_restore_plan,
             commands::install_package,
             commands::launch_device_manager,
+            commands::launch_avd,
             commands::launch_terminal,
+            commands::list_avds,
             commands::list_files,
             commands::list_payload_partitions,
             commands::list_payload_partitions_with_details,
             commands::open_folder,
+            commands::prepare_avd_root,
             commands::pull_file,
             commands::push_file,
             commands::rename_file,
             commands::reboot,
+            commands::restore_avd_backups,
             commands::run_adb_host_command,
             commands::run_fastboot_host_command,
             commands::run_shell_command,
             commands::save_log,
             commands::set_active_slot,
             commands::sideload_package,
+            commands::stop_avd,
             commands::uninstall_package,
             commands::wipe_data,
             #[cfg(feature = "remote_zip")]

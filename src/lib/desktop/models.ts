@@ -1,4 +1,67 @@
 export namespace backend {
+  export type AvdRootState = 'stock' | 'rooted' | 'modified' | 'unknown';
+
+  export interface AvdSummary {
+    name: string;
+    iniPath: string;
+    avdPath: string;
+    target: string | null;
+    apiLevel: number | null;
+    abi: string | null;
+    deviceName: string | null;
+    ramdiskPath: string | null;
+    hasBackups: boolean;
+    rootState: AvdRootState;
+    isRunning: boolean;
+    serial: string | null;
+    warnings: string[];
+  }
+
+  export interface EmulatorLaunchOptions {
+    wipeData: boolean;
+    writableSystem: boolean;
+    headless: boolean;
+    coldBoot: boolean;
+    noSnapshotLoad: boolean;
+    noSnapshotSave: boolean;
+    noBootAnim: boolean;
+    netSpeed: string | null;
+    netDelay: string | null;
+  }
+
+  export interface BackupEntry {
+    originalPath: string;
+    backupPath: string;
+  }
+
+  export interface RestorePlan {
+    entries: BackupEntry[];
+    createdAt: string;
+    source: string;
+  }
+
+  export interface RootPreparationRequest {
+    avdName: string;
+    serial: string;
+    rootPackagePath: string;
+  }
+
+  export interface RootPreparationResult {
+    normalizedPackagePath: string;
+    fakeBootRemotePath: string;
+    instructions: string[];
+  }
+
+  export interface RootFinalizeRequest {
+    avdName: string;
+    serial: string;
+  }
+
+  export interface RootFinalizeResult {
+    restoredFiles: string[];
+    nextBootRecommendation: string;
+  }
+
   export interface Device {
     serial: string;
     status: string;

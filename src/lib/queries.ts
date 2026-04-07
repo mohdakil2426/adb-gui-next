@@ -1,7 +1,8 @@
-import { GetDevices, GetFastbootDevices, GetInstalledPackages } from './desktop/backend';
+import { GetDevices, GetFastbootDevices, GetInstalledPackages, ListAvds } from './desktop/backend';
 import type { backend } from './desktop/models';
 
 type Device = backend.Device;
+type AvdSummary = backend.AvdSummary;
 
 // ---------------------------------------------------------------------------
 // Query key factory — single source of truth for all TanStack Query keys.
@@ -11,6 +12,7 @@ export const queryKeys = {
   fastbootDevices: () => ['fastbootDevices'] as const,
   allDevices: () => ['allDevices'] as const,
   packages: () => ['packages'] as const,
+  avds: () => ['avds'] as const,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -49,3 +51,5 @@ export const fetchAllDevices = async (): Promise<Device[]> => {
 };
 
 export const fetchPackages = () => GetInstalledPackages();
+
+export const fetchAvds = (): Promise<AvdSummary[]> => ListAvds();

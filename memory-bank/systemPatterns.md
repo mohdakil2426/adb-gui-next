@@ -8,11 +8,11 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
 │  main.tsx → App.tsx → MainLayout (SidebarProvider → AppSidebar + views) │
-│  8 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
-│           Utilities │ PayloadDumper │ Marketplace │ About                │
+│  9 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
+│           Utilities │ PayloadDumper │ Marketplace │ Emulator │ About     │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
 │  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
-│                 marketplaceStore + marketplace hooks                    │
+│                 marketplaceStore │ emulatorManagerStore + hooks          │
 │  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
@@ -22,10 +22,12 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │                     Backend (Rust — src-tauri/)                         │
 │  lib.rs (~60 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
-│  commands/ — 8 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload, marketplace) — 41 total commands           │
+│  commands/ — 9 focused modules (device, adb, fastboot, files, apps,    │
+│              system, payload, marketplace, emulator) — 54 registered    │
+│              commands                                                    │
 │  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)              │
 │  marketplace/ — provider modules + auth/cache/ranking/service layers    │
+│  emulator/ — sdk/avd/runtime/backup/root domain modules                 │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -103,6 +105,15 @@ Marketplace command wrappers are now intentionally thin:
 - `marketplace/auth.rs` handles GitHub OAuth device-flow start/poll and signed-in metadata fetch
 
 This keeps provider-specific parsing isolated in `fdroid.rs`, `izzy.rs`, `github.rs`, and `aptoide.rs` while shared policies live outside command wrappers.
+
+### 3c. Emulator Manager Feature Split
+
+Emulator Manager follows the same thin-command + focused-domain pattern as Marketplace:
+- `src-tauri/src/emulator/` owns AVD discovery, SDK path resolution, runtime mapping, backup planning, and assisted root/restore orchestration.
+- `src-tauri/src/commands/emulator.rs` exposes only the Tauri command surface (`list_avds`, `launch_avd`, `stop_avd`, `get_avd_restore_plan`, `restore_avd_backups`, `prepare_avd_root`, `finalize_avd_root`).
+- `src/lib/desktop/models.ts` and `backend.ts` define the typed DTO/IPC contract for the new view.
+- `src/lib/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
+- `src/components/views/ViewEmulatorManager.tsx` is the orchestration shell. Feature components under `src/components/emulator-manager/` stay presentational and callback-driven.
 
   - `nicknameStore` — device nicknames (no reactivity needed)
   - `fe.currentPath` — last visited File Explorer path (lazy `useState` initializer)
@@ -427,6 +438,14 @@ src/components/
 ├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
 ├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
 ├── AppDetailDialog.tsx      # Marketplace app detail dialog (download + install + versions)
+├── emulator-manager/        # Emulator Manager UI surface
+│   ├── AvdRoster.tsx        # Existing AVD roster with running/root/backup badges
+│   ├── EmulatorHeaderCard.tsx
+│   ├── EmulatorQuickActions.tsx
+│   ├── EmulatorLaunchTab.tsx
+│   ├── EmulatorRootTab.tsx
+│   ├── EmulatorRestoreTab.tsx
+│   └── EmulatorActivityCard.tsx
 ├── marketplace/             # 8 marketplace UI components
 │   ├── SearchBar.tsx        # Ctrl+K shortcut, 600ms debounced search, settings icon
 │   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
@@ -437,8 +456,8 @@ src/components/
 │   ├── ProviderBadge.tsx    # Color-coded source badges (F-Droid/Izzy/GitHub/Aptoide)
 │   └── AttributionFooter.tsx  # "Powered by" provider links
 ├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command, Tabs)
-└── views/                   # 8 feature views (Dashboard, AppManager, FileExplorer,
-                             #   Flasher, Utilities, PayloadDumper, Marketplace, About)
+└── views/                   # 9 feature views (Dashboard, AppManager, FileExplorer,
+                             #   Flasher, Utilities, PayloadDumper, Marketplace, Emulator, About)
 ```
 
 ## Known Architectural Notes
@@ -451,6 +470,12 @@ src/components/
   - **Bounded cache** — max capacity (200 search, 500 detail, 50 trending) with lazy eviction on insert only (O(1) reads). Strategy: sweep expired → evict oldest if still full.
   - **Language extraction** — GitHub `language` field parsed and stored in `MarketplaceApp.language`, used for ranking and displayed as UI badge.
   - `reqwest` is a **required** (non-optional) dependency since marketplace is core functionality.
+- `src-tauri/src/emulator/` — dedicated AVD domain architecture:
+  - **`sdk.rs`** resolves `ANDROID_SDK_ROOT`, `ANDROID_HOME`, platform defaults, and AVD home.
+  - **`avd.rs`** reads `emulator -list-avds`, enriches from `.ini` + `config.ini`, resolves ramdisk paths, and synthesizes conservative root state.
+  - **`runtime.rs`** builds launch args, maps running emulators back to AVD names via `adb emu avd name`, and stops emulators with `adb emu kill`.
+  - **`backup.rs`** creates sidecar `.backup` files, restore plans, and restore operations for AVD artifacts.
+  - **`root.rs`** implements an assisted fake-boot workflow: local package normalization, host-built fake boot image, staged patch flow, patched ramdisk extraction, and local ramdisk replacement.
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab

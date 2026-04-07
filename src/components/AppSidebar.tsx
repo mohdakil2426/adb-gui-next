@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  Bot,
   LayoutDashboard,
   Box,
   FolderOpen,
@@ -33,6 +34,7 @@ type ViewType =
   | 'flasher'
   | 'utils'
   | 'payload'
+  | 'emulator'
   | 'about';
 
 interface NavItem {
@@ -61,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'flasher', icon: Zap, label: 'Flasher' },
       { id: 'utils', icon: Settings, label: 'Utilities' },
+      { id: 'emulator', icon: Bot, label: 'Emulator Manager' },
       { id: 'payload', icon: Package, label: 'Payload Dumper' },
     ],
   },

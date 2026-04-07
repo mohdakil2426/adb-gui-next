@@ -36,6 +36,12 @@ export function CleanupPayloadCache(): Promise<void> {
   return call('cleanup_payload_cache');
 }
 
+export function FinalizeAvdRoot(
+  request: backend.RootFinalizeRequest,
+): Promise<backend.RootFinalizeResult> {
+  return call('finalize_avd_root', { request });
+}
+
 export function ConnectWirelessAdb(arg1: string, arg2: string): Promise<string> {
   return call('connect_wireless_adb', { ip: arg1, port: arg2 });
 }
@@ -70,6 +76,10 @@ export function GetBootloaderVariables(): Promise<string> {
   return call('get_bootloader_variables');
 }
 
+export function GetAvdRestorePlan(avdName: string): Promise<backend.RestorePlan> {
+  return call('get_avd_restore_plan', { avdName });
+}
+
 export function GetDeviceInfo(): Promise<backend.DeviceInfo> {
   return call('get_device_info');
 }
@@ -94,12 +104,23 @@ export function InstallPackage(arg1: string): Promise<string> {
   return call('install_package', { path: arg1 });
 }
 
+export function LaunchAvd(
+  avdName: string,
+  options: backend.EmulatorLaunchOptions,
+): Promise<string> {
+  return call('launch_avd', { avdName, options });
+}
+
 export function LaunchDeviceManager(): Promise<void> {
   return call('launch_device_manager');
 }
 
 export function LaunchTerminal(): Promise<void> {
   return call('launch_terminal');
+}
+
+export function ListAvds(): Promise<Array<backend.AvdSummary>> {
+  return call('list_avds');
 }
 
 export function ListFiles(arg1: string): Promise<Array<backend.FileEntry>> {
@@ -124,6 +145,12 @@ export function PullFile(arg1: string, arg2: string): Promise<string> {
   return call('pull_file', { remotePath: arg1, localPath: arg2 });
 }
 
+export function PrepareAvdRoot(
+  request: backend.RootPreparationRequest,
+): Promise<backend.RootPreparationResult> {
+  return call('prepare_avd_root', { request });
+}
+
 export function PushFile(arg1: string, arg2: string): Promise<string> {
   return call('push_file', { localPath: arg1, remotePath: arg2 });
 }
@@ -146,6 +173,10 @@ export function RenameFile(arg1: string, arg2: string): Promise<string> {
 
 export function Reboot(arg1: string): Promise<void> {
   return call('reboot', { mode: arg1 });
+}
+
+export function RestoreAvdBackups(avdName: string): Promise<string> {
+  return call('restore_avd_backups', { avdName });
 }
 
 export function RunAdbHostCommand(arg1: string): Promise<string> {
@@ -260,8 +291,23 @@ export function SideloadPackage(arg1: string): Promise<string> {
   return call('sideload_package', { path: arg1 });
 }
 
+export function SelectRootPackageFile(): Promise<string> {
+  return selectFile({
+    filters: [
+      {
+        name: 'Root packages',
+        extensions: ['apk', 'zip'],
+      },
+    ],
+  });
+}
+
 export function UninstallPackage(arg1: string): Promise<string> {
   return call('uninstall_package', { packageName: arg1 });
+}
+
+export function StopAvd(serial: string): Promise<string> {
+  return call('stop_avd', { serial });
 }
 
 export function WipeData(): Promise<void> {

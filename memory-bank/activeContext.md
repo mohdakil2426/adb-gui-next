@@ -5,10 +5,37 @@
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
 Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. All core quality gates pass: format, lint (ESLint), tsc build, cargo check (lib + tests). `cargo clippy`/`cargo test` still blocked by pre-existing Windows `AdbWinApi.dll` file lock.
+Emulator Manager is now implemented as a new Advanced view. The app can discover existing official Android Studio AVDs, show runtime/config health, launch and stop emulators, assist local-package root flows with a fake-boot staging path, and restore backed-up ramdisk state. Verification is green for `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check`. `cargo test` still exits abnormally on Windows with `0xc0000139` and `pnpm tauri build --debug` was blocked in this session by a locked `src-tauri/target/debug/adb-gui-next.exe`.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-05 — Emulator Manager Implementation (Advanced AVD Control)
+
+**Change:** Implemented the planned Emulator Manager feature end-to-end across Rust backend modules, Tauri commands, typed frontend wrappers, Zustand state, and a new Advanced view. Added frontend store tests and view tests.
+
+**Key Changes:**
+
+| Area | Change |
+|:---|:---|
+| `src-tauri/src/emulator/` | New domain layer: `sdk.rs`, `avd.rs`, `runtime.rs`, `backup.rs`, `root.rs`, `models.rs` |
+| `src-tauri/src/commands/emulator.rs` | Thin async Tauri command surface for AVD discovery, launch/stop, restore plan, restore, prepare root, finalize root |
+| `src/lib/desktop/` | Added typed Emulator Manager DTOs and backend wrappers |
+| `src/lib/emulatorManagerStore.ts` | New Zustand store for selected AVD, active tab, page-scoped activity log, restore plan, and root session |
+| `src/components/views/ViewEmulatorManager.tsx` | New hybrid manager page with roster, summary header, quick actions, tabs, and activity log |
+| `src/components/emulator-manager/` | Added `AvdRoster`, `EmulatorHeaderCard`, `EmulatorQuickActions`, `EmulatorLaunchTab`, `EmulatorRootTab`, `EmulatorRestoreTab`, `EmulatorActivityCard` |
+| Navigation | Added `Emulator Manager` under Advanced in `AppSidebar` and routed it in `MainLayout` |
+| Tests | Added `emulatorManagerStore.test.ts` and `ViewEmulatorManager.test.tsx` |
+
+**Verification:**
+- `pnpm test` ✅
+- `pnpm build` ✅
+- `pnpm lint` ✅
+- `pnpm format:check` ✅
+- `cargo check --manifest-path src-tauri/Cargo.toml` ✅
+- `cargo test --manifest-path src-tauri/Cargo.toml` ⚠️ pre-existing Windows abnormal exit (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`)
+- `pnpm tauri build --debug` ⚠️ blocked by locked `src-tauri/target/debug/adb-gui-next.exe` (`os error 5`)
 
 ### 2026-04-05 — Marketplace Architecture Phase 1 (High-Performance Refactor)
 
@@ -339,15 +366,15 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-04** (after Marketplace Bug Fixes + Settings Dialog)
+Last verified: **2026-04-05** (after Emulator Manager implementation)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
 - `pnpm format:check` ✅ — Formatting clean
-- `pnpm check:fast` ✅ — All fast gates pass
 - `pnpm test` ✅ — Vitest clean after TypeScript 6 upgrade
 - `pnpm exec tsc --noEmit` ✅ — TypeScript 6.0.2 clean
 - `cargo check` ✅ — Rust compilation clean
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
+- `pnpm tauri build --debug` ⚠️ — blocked in this session by locked `src-tauri/target/debug/adb-gui-next.exe`
 
 ---
 
@@ -362,6 +389,7 @@ Last verified: **2026-04-04** (after Marketplace Bug Fixes + Settings Dialog)
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
+| Emulator Manager | ✅ Working | Existing-AVD discovery, runtime health, quick launch/stop controls, advanced launch flags, assisted fake-boot root flow, and backup-based restore/unroot for official Android Studio emulators. |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
@@ -412,6 +440,7 @@ Last verified: **2026-04-04** (after Marketplace Bug Fixes + Settings Dialog)
 - **`State<'_, T>` in async commands**: Cannot use `spawn_blocking` (needs `'static`). Use `block_in_place` instead.
 - **`split_args` in spawn_blocking**: Must be called **inside** the `spawn_blocking` closure — borrows from the closure-owned String, not across 'static boundary.
 - **`cargo test` on Windows**: STATUS_ENTRYPOINT_NOT_FOUND — pre-existing Tauri DLL issue, not a code bug.
+- **`pnpm tauri build --debug` can fail with `os error 5`**: If `src-tauri/target/debug/adb-gui-next.exe` is still running or locked by another process, packaging fails until the lock is released.
 
 ### Component Patterns
 

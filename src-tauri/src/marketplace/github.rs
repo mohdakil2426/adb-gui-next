@@ -77,7 +77,7 @@ fn format_epoch_date(epoch_secs: u64) -> String {
 }
 
 const fn is_leap_year(y: u32) -> bool {
-    y % 4 == 0 && (y % 100 != 0 || y % 400 == 0)
+    y.is_multiple_of(4) && (!y.is_multiple_of(100) || y.is_multiple_of(400))
 }
 
 fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {

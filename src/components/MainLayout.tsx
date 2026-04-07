@@ -18,6 +18,7 @@ import { ViewFlasher } from './views/ViewFlasher';
 import { ViewUtilities } from './views/ViewUtilities';
 import { ViewPayloadDumper } from './views/ViewPayloadDumper';
 import { ViewMarketplace } from './views/ViewMarketplace';
+import { ViewEmulatorManager } from './views/ViewEmulatorManager';
 import { ViewAbout } from './views/ViewAbout';
 import { Toaster } from '@/components/ui/sonner';
 import { BottomPanel } from './BottomPanel';
@@ -40,6 +41,7 @@ const VIEWS = {
   FLASHER: 'flasher',
   UTILS: 'utils',
   PAYLOAD: 'payload',
+  EMULATOR: 'emulator',
   ABOUT: 'about',
 } as const;
 
@@ -136,6 +138,8 @@ export function MainLayout() {
         return <ViewUtilities />;
       case VIEWS.PAYLOAD:
         return <ViewPayloadDumper />;
+      case VIEWS.EMULATOR:
+        return <ViewEmulatorManager />;
       case VIEWS.ABOUT:
         return <ViewAbout />;
       default:

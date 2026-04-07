@@ -279,16 +279,3 @@ Before closing any task, confirm ALL of the following:
 | **type errors**        | Fix TypeScript types. Never use `any` without explicit justification.           |
 | **test failures**      | Fix the failing test or the code. Never skip or delete tests to pass CI.        |
 | **`lib.rs` too large** | When adding commands, consider whether they belong in `lib.rs` or a new module. |
-
----
-
-## MCP Tools
-
-> **MANDATORY — Query BEFORE writing any code, every time, no exceptions.**
-
-| Server       | Covers                                                |
-| ------------ | ----------------------------------------------------- |
-| **context7** | Tauri, React, Zustand, Rust, all non-Google libraries |
-
-https://github.com/tauri-apps/tauri-docs
-https://v2.tauri.app/

@@ -6,6 +6,8 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
+Emulator Manager is now implemented as an Advanced view for official Android Studio AVDs only. It discovers existing AVDs, surfaces runtime/config health, supports quick launch presets plus advanced flags, assists local-package root workflows through a fake-boot staging flow, and restores stock state from app-created backups without depending on `rootAVD` or `EMU.bat` at runtime.
+
 ## What Works
 
 ### TypeScript Toolchain
@@ -25,7 +27,15 @@ Marketplace now has Phase 1 architecture refactor complete: singleton HTTP clien
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail
 - `sidebar-context.ts` holds non-component exports (constants, context, hook) — Fast Refresh clean
 - `Ctrl+B` keyboard shortcut for sidebar toggle
-- 8 sidebar views compile and build successfully
+- 9 sidebar views compile and build successfully
+- **Emulator Manager**:
+  - Advanced `Emulator Manager` route under the sidebar Advanced group
+  - Hybrid manager layout with left AVD roster, summary header, quick actions, `Overview`/`Launch`/`Root`/`Restore` tabs, and page-scoped activity log
+  - Existing-AVD discovery UI with runtime/root/backup badges and warnings
+  - Quick actions for Launch, Cold Boot, Headless, Stop, Open AVD Folder, and Refresh
+  - Advanced launch tab with gated `wipeData` and `writableSystem` confirmations
+  - Assisted root tab with local `.apk`/`.zip` package picker, staged instructions, and finalize action
+  - Restore tab with explicit restore plan entries and backup-based restore/unroot action
 - VS Code-style **fixed-position** bottom panel with Logs and Shell tabs:
   - Viewport-anchored (never scrolls with page); sidebar-aware left offset via `useSidebar()`
   - Fluid resize: DOM-first + RAF throttle (60fps), zero re-renders during drag, `will-change` GPU hint
@@ -83,7 +93,7 @@ Marketplace now has Phase 1 architecture refactor complete: singleton HTTP clien
 - `CheckboxItem` shared component used in AppManager + PayloadDumper
 - `EmptyState` shared component used in AppManager
 
-### Backend (38 Tauri Commands)
+### Backend (Emulator Manager Added)
 
 | Category | Commands |
 |----------|-----------|
@@ -96,6 +106,7 @@ Marketplace now has Phase 1 architecture refactor complete: singleton HTTP clien
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
 | Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* |
+| Emulator | `list_avds` *(async)*, `launch_avd` *(async)*, `stop_avd` *(async)*, `get_avd_restore_plan` *(async)*, `restore_avd_backups` *(async)*, `prepare_avd_root` *(async)*, `finalize_avd_root` *(async)* |
 
 ### Payload Dumper
 
@@ -202,6 +213,8 @@ src-tauri/src/
 - `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
 - `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
 - `docs/reports&audits/marketplace_architecture_audit.md` — Marketplace architecture audit, research, and improvement strategy (2026-04-05)
+- `docs/superpowers/specs/2026-04-05-emulator-manager-design.md` — Emulator Manager feature spec covering scope, UX, backend architecture, root/restore safety, and testing strategy (2026-04-05)
+- `docs/superpowers/plans/2026-04-05-emulator-manager.md` — Step-by-step implementation plan for the Emulator Manager backend, frontend, tests, and memory-bank updates (2026-04-05)
 - `docs/rust-audit-report.md` — Code quality audit
 - `docs/rust-performance-research.md` — Performance optimization research
 
@@ -220,6 +233,7 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|-------|
+| High | Device-backed Emulator Manager validation | Run the new AVD discovery, launch, root, finalize, and restore flows against real Android Studio emulator installs. |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -232,7 +246,6 @@ src-tauri/src/
 ## Risks / Known Issues
 
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
-- `cargo clippy` blocked on Windows when `AdbWinApi.dll` is locked by another process (pre-existing)
 - `pnpm tauri build --debug` succeeds when the debug executable is not already running; Windows file locking can still block it if `src-tauri/target/debug/adb-gui-next.exe` is open
 - Large frontend bundle chunk warning during build (~274 KB JS)
 
@@ -240,6 +253,8 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-05 | 0.1.0 | Emulator Manager implemented: added a dedicated Rust `emulator/` domain module, new Tauri emulator commands, typed desktop wrappers, Zustand `emulatorManagerStore`, an Advanced `Emulator Manager` view with roster/header/quick actions/tabs/activity log, and frontend tests. Verified `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing) and `pnpm tauri build --debug` was blocked in this session by a locked target executable. |
+| 2026-04-05 | 0.1.0 | Emulator Manager planning: created the feature spec and implementation plan for a new Advanced `Emulator Manager` view. Scope is limited to existing official Android Studio AVDs. The planned architecture uses a dedicated Rust `emulator/` domain module, a React hybrid manager layout, safe launch presets, local `.apk`/`.zip` root package import, assisted fake-boot root orchestration, and backup-based restore/unroot. `rootAVD` and `EMU.bat` remain local reference material only, not runtime dependencies. |
 | 2026-04-05 | 0.1.0 | Marketplace Architecture Audit: Deep-dive analysis of `GitHub-Store` reference architecture and research into Rust-native marketplace improvements. Proposed a three-stage roadmap: (1) Core Verification Engine with concurrent release-scanning, (2) Intelligence layer with weighted scoring heuristics and auto-pagination, (3) Security layer with Sigstore/Attestation verification. Created `docs/reports/marketplace_architecture_audit.md`. |
 | 2026-04-04 | 0.1.0 | Marketplace hardening pass: APK downloads now reject non-HTTP(S) and private/internal targets, GitHub cache keys no longer embed token values, GitHub detail/release flows now fail on non-success HTTP responses, GitHub PAT fallback is session-only, device-flow polling keeps the original client ID, stale debounced searches are cancelled before quick-search/filter/auth reruns, external URL opening is validated, AppCard keyboard activation avoids nested interactive controls, and FilterBar view toggles expose accessible labels/state. Verified `pnpm test`, `pnpm lint`, `pnpm build`, `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo fmt --check --manifest-path src-tauri/Cargo.toml`, and `pnpm tauri build --debug` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
 | 2026-04-04 | 0.1.0 | Marketplace UX overhaul: new frontend hooks (`useMarketplaceSearch`, `useMarketplaceHome`, `useMarketplaceAuth`), redesigned SearchBar/FilterBar/EmptyState/Settings/AppDetailDialog, Lucide-based provider badges, recent-view persistence, Rust marketplace `auth.rs` + `cache.rs` + `ranking.rs` + `service.rs`, cache-aware search/detail/trending, `marketplace_clear_cache`, GitHub OAuth device-flow start/poll commands, result dedupe + sort support, and session-only GitHub token handling. Verified `pnpm check:fast`, `pnpm test`, `pnpm exec tsc --noEmit`, `pnpm build`, `cargo check`, and `pnpm tauri build --debug` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
