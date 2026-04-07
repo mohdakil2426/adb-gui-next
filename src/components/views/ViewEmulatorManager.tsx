@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AvdRoster } from '@/components/emulator-manager/AvdRoster';
-import { EmulatorActivityCard } from '@/components/emulator-manager/EmulatorActivityCard';
-import { EmulatorHeaderCard } from '@/components/emulator-manager/EmulatorHeaderCard';
+import { EmptyState } from '@/components/EmptyState';
+import { AvdSwitcher } from '@/components/emulator-manager/AvdSwitcher';
 import { EmulatorLaunchTab } from '@/components/emulator-manager/EmulatorLaunchTab';
-import { EmulatorQuickActions } from '@/components/emulator-manager/EmulatorQuickActions';
 import { EmulatorRestoreTab } from '@/components/emulator-manager/EmulatorRestoreTab';
 import { EmulatorRootTab } from '@/components/emulator-manager/EmulatorRootTab';
 import {
@@ -23,35 +22,26 @@ import type { backend } from '@/lib/desktop/models';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { type EmulatorManagerTab, useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
 import { fetchAvds, queryKeys } from '@/lib/queries';
-import { Bot } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Bot,
+  FolderOpen,
+  MonitorSmartphone,
+  Play,
+  RefreshCcw,
+  Snowflake,
+  Square,
+} from 'lucide-react';
 
-function createPresetOptions(
-  preset: 'default' | 'coldBoot' | 'headless',
-): backend.EmulatorLaunchOptions {
+function createPresetOptions(preset: 'default' | 'coldBoot'): backend.EmulatorLaunchOptions {
   return {
     wipeData: false,
     writableSystem: false,
-    headless: preset === 'headless',
     coldBoot: preset === 'coldBoot',
     noSnapshotLoad: preset === 'coldBoot',
     noSnapshotSave: preset === 'coldBoot',
     noBootAnim: false,
-    netSpeed: null,
-    netDelay: null,
   };
-}
-
-function formatRootState(state: backend.AvdRootState): string {
-  switch (state) {
-    case 'rooted':
-      return 'Rooted';
-    case 'modified':
-      return 'Modified';
-    case 'unknown':
-      return 'Unknown';
-    default:
-      return 'Stock';
-  }
 }
 
 export function ViewEmulatorManager() {
@@ -65,6 +55,7 @@ export function ViewEmulatorManager() {
     queryFn: fetchAvds,
     refetchInterval: 5000,
   });
+
   const selectedAvdName = useEmulatorManagerStore((state) => state.selectedAvdName);
   const activeTab = useEmulatorManagerStore((state) => state.activeTab);
   const rootSession = useEmulatorManagerStore((state) => state.rootSession);
@@ -72,7 +63,6 @@ export function ViewEmulatorManager() {
   const pendingAction = useEmulatorManagerStore((state) => state.pendingAction);
   const setSelectedAvdName = useEmulatorManagerStore((state) => state.setSelectedAvdName);
   const setActiveTab = useEmulatorManagerStore((state) => state.setActiveTab);
-  const appendActivity = useEmulatorManagerStore((state) => state.appendActivity);
   const setRootSession = useEmulatorManagerStore((state) => state.setRootSession);
   const clearRootSession = useEmulatorManagerStore((state) => state.clearRootSession);
   const setRestorePlan = useEmulatorManagerStore((state) => state.setRestorePlan);
@@ -83,19 +73,21 @@ export function ViewEmulatorManager() {
   const activeRootSession =
     rootSession && rootSession.avdName === selectedAvd?.name ? rootSession : null;
   const isBusy = pendingAction !== null;
+  const isRefreshing = isFetching && pendingAction === 'refreshPlan';
 
+  // Auto-select first AVD
   useEffect(() => {
     if (avds.length === 0) {
       setSelectedAvdName(null);
       setRestorePlan(null);
       return;
     }
-
     if (!selectedAvdName || !avds.some((item) => item.name === selectedAvdName)) {
       setSelectedAvdName(avds[0].name);
     }
   }, [avds, selectedAvdName, setRestorePlan, setSelectedAvdName]);
 
+  // Load restore plan on AVD change
   useEffect(() => {
     let cancelled = false;
 
@@ -104,45 +96,26 @@ export function ViewEmulatorManager() {
         setRestorePlan(null);
         return;
       }
-
       setIsRestorePlanLoading(true);
-
       try {
         const plan = await GetAvdRestorePlan(selectedAvd.name);
-        if (!cancelled) {
-          setRestorePlan(plan);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setRestorePlan(null);
-          appendActivity({
-            level: 'warning',
-            message: `Could not load restore plan for ${selectedAvd.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          });
-        }
+        if (!cancelled) setRestorePlan(plan);
+      } catch {
+        if (!cancelled) setRestorePlan(null);
       } finally {
-        if (!cancelled) {
-          setIsRestorePlanLoading(false);
-        }
+        if (!cancelled) setIsRestorePlanLoading(false);
       }
     }
 
     void loadRestorePlan();
-
     return () => {
       cancelled = true;
     };
-  }, [selectedAvd, setRestorePlan, appendActivity]);
+  }, [selectedAvd, setRestorePlan]);
 
-  async function refreshAvds(logMessage?: string) {
+  async function refreshAvds() {
     const result = await refetch();
-    if (result.error) {
-      throw result.error;
-    }
-
-    if (logMessage) {
-      appendActivity({ level: 'info', message: logMessage });
-    }
+    if (result.error) throw result.error;
   }
 
   async function runAction(
@@ -154,28 +127,20 @@ export function ViewEmulatorManager() {
       setPendingAction(action);
       await task();
     } catch (error) {
-      appendActivity({
-        level: 'error',
-        message: error instanceof Error ? error.message : fallbackMessage,
-      });
-      handleError('Emulator Manager', error);
+      handleError('Emulator Manager', error instanceof Error ? error : new Error(fallbackMessage));
     } finally {
       setPendingAction(null);
     }
   }
 
   async function handleLaunch(options: backend.EmulatorLaunchOptions) {
-    if (!selectedAvd) {
-      return;
-    }
-
+    if (!selectedAvd) return;
     await runAction(
       'launch',
       async () => {
         const message = await LaunchAvd(selectedAvd.name, options);
-        appendActivity({ level: 'success', message });
         handleSuccess('Emulator Manager', message);
-        await refreshAvds(`Refreshed AVD state after launching ${selectedAvd.name}.`);
+        await refreshAvds();
       },
       `Failed to launch ${selectedAvd.name}`,
     );
@@ -183,36 +148,23 @@ export function ViewEmulatorManager() {
 
   async function handleStop() {
     const serial = selectedAvd?.serial;
-
-    if (!selectedAvd || !serial) {
-      return;
-    }
-
+    if (!selectedAvd || !serial) return;
     await runAction(
       'stop',
       async () => {
         const message = await StopAvd(serial);
-        appendActivity({ level: 'warning', message });
         handleSuccess('Emulator Manager', message);
-        await refreshAvds(`Refreshed AVD state after stopping ${selectedAvd.name}.`);
+        await refreshAvds();
       },
       `Failed to stop ${selectedAvd.name}`,
     );
   }
 
   async function handleOpenFolder() {
-    if (!selectedAvd) {
-      return;
-    }
-
+    if (!selectedAvd) return;
     try {
       await OpenFolder(selectedAvd.avdPath);
-      appendActivity({ level: 'info', message: `Opened ${selectedAvd.avdPath}` });
     } catch (error) {
-      appendActivity({
-        level: 'error',
-        message: error instanceof Error ? error.message : `Failed to open ${selectedAvd.avdPath}`,
-      });
       handleError('Emulator Manager', error);
     }
   }
@@ -221,7 +173,7 @@ export function ViewEmulatorManager() {
     await runAction(
       'refreshPlan',
       async () => {
-        await refreshAvds('Refreshed the emulator roster.');
+        await refreshAvds();
       },
       'Failed to refresh emulator roster',
     );
@@ -229,30 +181,17 @@ export function ViewEmulatorManager() {
 
   async function handlePrepareRoot(rootPackagePath: string) {
     const serial = selectedAvd?.serial;
-
-    if (!selectedAvd || !serial) {
-      return;
-    }
-
+    if (!selectedAvd || !serial) return;
     await runAction(
       'rootPrepare',
       async () => {
-        const result = await PrepareAvdRoot({
-          avdName: selectedAvd.name,
-          serial,
-          rootPackagePath,
-        });
-
+        const result = await PrepareAvdRoot({ avdName: selectedAvd.name, serial, rootPackagePath });
         setRootSession({
           avdName: selectedAvd.name,
           serial,
           normalizedPackagePath: result.normalizedPackagePath,
           fakeBootRemotePath: result.fakeBootRemotePath,
           instructions: result.instructions,
-        });
-        appendActivity({
-          level: 'success',
-          message: `Prepared root workflow for ${selectedAvd.name}.`,
         });
         handleSuccess('Emulator Manager', `Prepared root workflow for ${selectedAvd.name}.`);
       },
@@ -261,10 +200,7 @@ export function ViewEmulatorManager() {
   }
 
   async function handleFinalizeRoot() {
-    if (!activeRootSession) {
-      return;
-    }
-
+    if (!activeRootSession) return;
     await runAction(
       'rootFinalize',
       async () => {
@@ -273,185 +209,205 @@ export function ViewEmulatorManager() {
           serial: activeRootSession.serial,
         });
         clearRootSession();
-        appendActivity({
-          level: 'success',
-          message: result.nextBootRecommendation,
-        });
         handleSuccess('Emulator Manager', result.nextBootRecommendation);
-        await refreshAvds(
-          `Refreshed AVD state after finalizing root for ${activeRootSession.avdName}.`,
-        );
+        await refreshAvds();
       },
       `Failed to finalize root for ${activeRootSession.avdName}`,
     );
   }
 
   async function handleRestore() {
-    if (!selectedAvd) {
-      return;
-    }
-
+    if (!selectedAvd) return;
     await runAction(
       'restore',
       async () => {
         const message = await RestoreAvdBackups(selectedAvd.name);
         clearRootSession();
-        appendActivity({ level: 'warning', message });
         handleSuccess('Emulator Manager', message);
-        await refreshAvds(`Refreshed AVD state after restoring ${selectedAvd.name}.`);
+        await refreshAvds();
       },
       `Failed to restore ${selectedAvd.name}`,
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
-      <div className="flex items-start gap-4">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border bg-primary/10 text-primary shadow-sm">
-          <Bot className="size-6" />
-        </div>
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-bold sm:text-2xl">Emulator Manager</h1>
-            <Badge variant="outline" className="rounded-full">
-              Advanced
-            </Badge>
+    <div className="flex flex-col gap-5 pb-10">
+      {/* ── Row 1: Page header ─────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-primary/10 text-primary">
+            <Bot className="size-5" />
           </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Manage existing Android Studio AVDs, launch them with safe presets, assist local root
-            flows, and restore stock state from backups.
-          </p>
+          <div>
+            <h1 className="text-xl font-semibold">Emulator Manager</h1>
+            <p className="text-sm text-muted-foreground">
+              Manage AVDs, launch with safe presets, and run root / restore workflows.
+            </p>
+          </div>
         </div>
+
+        {/* Refresh — top-right of header */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0"
+          disabled={isBusy || isRefreshing}
+          onClick={() => void handleRefresh()}
+        >
+          <RefreshCcw className={cn('size-4', isRefreshing && 'animate-spin')} />
+          {isRefreshing ? 'Refreshing…' : 'Refresh'}
+        </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <AvdRoster
-          avds={avds}
-          isLoading={isLoading}
-          selectedAvdName={selectedAvdName}
-          onSelect={setSelectedAvdName}
-        />
+      {/* ── Row 2: Toolbar strip ───────────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        {/* Left: AVD switcher pill + status meta below */}
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <AvdSwitcher
+              avds={avds}
+              selectedAvdName={selectedAvdName}
+              isRefreshing={isLoading || isRefreshing}
+              onSelect={setSelectedAvdName}
+              onRefresh={() => void handleRefresh()}
+            />
+            {selectedAvd?.warnings && selectedAvd.warnings.length > 0 && (
+              <Badge className="rounded-full bg-amber-500/15 text-xs text-amber-700 dark:text-amber-300">
+                {selectedAvd.warnings.length}{' '}
+                {selectedAvd.warnings.length === 1 ? 'warning' : 'warnings'}
+              </Badge>
+            )}
+          </div>
 
-        <div className="flex min-w-0 flex-col gap-6">
-          <EmulatorHeaderCard avd={selectedAvd} />
-
-          <EmulatorQuickActions
-            avd={selectedAvd}
-            isBusy={isBusy}
-            isRefreshing={isFetching && pendingAction === 'refreshPlan'}
-            onLaunchPreset={(preset) => void handleLaunch(createPresetOptions(preset))}
-            onOpenFolder={() => void handleOpenFolder()}
-            onRefresh={() => void handleRefresh()}
-            onStop={() => void handleStop()}
-          />
-
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as EmulatorManagerTab)}
-          >
-            <TabsList variant="line" className="w-full justify-start">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="launch">Launch</TabsTrigger>
-              <TabsTrigger value="root">Root</TabsTrigger>
-              <TabsTrigger value="restore">Restore</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader className="gap-2 border-b pb-4">
-                  <CardTitle className="text-base">AVD overview</CardTitle>
-                  <CardDescription>
-                    Health, path integrity, and prerequisites for launch or root operations.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6 pt-6 lg:grid-cols-2">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                        Root state
-                      </p>
-                      <p className="mt-1 font-medium">
-                        {selectedAvd ? formatRootState(selectedAvd.rootState) : 'No AVD selected'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                        Runtime
-                      </p>
-                      <p className="mt-1 font-medium">
-                        {selectedAvd?.isRunning
-                          ? `Online${selectedAvd.serial ? ` • ${selectedAvd.serial}` : ''}`
-                          : 'Stopped'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                        Restore readiness
-                      </p>
-                      <p className="mt-1 font-medium">
-                        {selectedAvd?.hasBackups ? 'Backups available' : 'No backups yet'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                      Warnings
-                    </p>
-                    {selectedAvd?.warnings.length ? (
-                      <div className="space-y-2">
-                        {selectedAvd.warnings.map((warning) => (
-                          <div
-                            key={warning}
-                            className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200"
-                          >
-                            {warning}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
-                        No warnings reported for the selected AVD.
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="launch">
-              <EmulatorLaunchTab
-                avd={selectedAvd}
-                isLaunching={pendingAction === 'launch'}
-                onLaunch={handleLaunch}
-              />
-            </TabsContent>
-
-            <TabsContent value="root">
-              <EmulatorRootTab
-                avd={selectedAvd}
-                isPreparing={pendingAction === 'rootPrepare'}
-                isFinalizing={pendingAction === 'rootFinalize'}
-                rootSession={activeRootSession}
-                onPrepare={handlePrepareRoot}
-                onFinalize={handleFinalizeRoot}
-              />
-            </TabsContent>
-
-            <TabsContent value="restore">
-              <EmulatorRestoreTab
-                avd={selectedAvd}
-                isLoadingPlan={isRestorePlanLoading}
-                isRestoring={pendingAction === 'restore'}
-                restorePlan={restorePlan}
-                onRestore={handleRestore}
-              />
-            </TabsContent>
-          </Tabs>
-
-          <EmulatorActivityCard />
+          {/* Status meta line */}
+          {selectedAvd ? (
+            <p className="pl-0.5 text-xs text-muted-foreground">
+              {selectedAvd.isRunning ? (
+                <span className="text-emerald-700 dark:text-emerald-400">
+                  ● Running{selectedAvd.serial ? ` · ${selectedAvd.serial}` : ''}
+                </span>
+              ) : (
+                <span>● Stopped</span>
+              )}
+              {' · '}
+              {selectedAvd.target ?? 'Unknown target'} · API {selectedAvd.apiLevel ?? '?'}
+              {selectedAvd.abi ? ` · ${selectedAvd.abi}` : ''}
+              {selectedAvd.deviceName ? ` · ${selectedAvd.deviceName}` : ''}
+            </p>
+          ) : (
+            <p className="pl-0.5 text-xs text-muted-foreground">
+              {isLoading ? 'Scanning for AVDs…' : 'Select an AVD to begin.'}
+            </p>
+          )}
         </div>
+
+        {/* Right: Action buttons — only shown when an AVD is selected */}
+        {selectedAvd && (
+          <div className="flex flex-wrap gap-1.5 sm:shrink-0">
+            {selectedAvd.isRunning ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={!selectedAvd.serial || isBusy}
+                onClick={() => void handleStop()}
+              >
+                <Square className="size-3.5" />
+                Stop
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                disabled={isBusy}
+                onClick={() => void handleLaunch(createPresetOptions('default'))}
+              >
+                <Play className="size-3.5" />
+                Launch
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={isBusy}
+              onClick={() => void handleLaunch(createPresetOptions('coldBoot'))}
+            >
+              <Snowflake className="size-3.5" />
+              Cold boot
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isBusy}
+              onClick={() => void handleOpenFolder()}
+            >
+              <FolderOpen className="size-3.5" />
+              Folder
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* ── Card: content only (tabs flush at top) ────────────────────────── */}
+      <Card>
+        <CardContent className="p-0">
+          {selectedAvd ? (
+            <Tabs
+              value={activeTab === 'overview' ? 'launch' : activeTab}
+              onValueChange={(value) => setActiveTab(value as EmulatorManagerTab)}
+            >
+              <TabsList
+                variant="line"
+                className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
+              >
+                <TabsTrigger value="launch">Launch</TabsTrigger>
+                <TabsTrigger value="root">Root</TabsTrigger>
+                <TabsTrigger value="restore">Restore</TabsTrigger>
+              </TabsList>
+
+              <div className="p-6">
+                <TabsContent value="launch">
+                  <EmulatorLaunchTab
+                    avd={selectedAvd}
+                    isLaunching={pendingAction === 'launch'}
+                    onLaunch={handleLaunch}
+                  />
+                </TabsContent>
+
+                <TabsContent value="root">
+                  <EmulatorRootTab
+                    avd={selectedAvd}
+                    isPreparing={pendingAction === 'rootPrepare'}
+                    isFinalizing={pendingAction === 'rootFinalize'}
+                    rootSession={activeRootSession}
+                    onPrepare={handlePrepareRoot}
+                    onFinalize={handleFinalizeRoot}
+                  />
+                </TabsContent>
+
+                <TabsContent value="restore">
+                  <EmulatorRestoreTab
+                    avd={selectedAvd}
+                    isLoadingPlan={isRestorePlanLoading}
+                    isRestoring={pendingAction === 'restore'}
+                    restorePlan={restorePlan}
+                    onRestore={handleRestore}
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          ) : (
+            <EmptyState
+              icon={MonitorSmartphone}
+              title={isLoading ? 'Scanning AVDs…' : 'No AVD selected'}
+              description={
+                isLoading
+                  ? 'Looking for Android Studio virtual devices.'
+                  : 'Use the emulator switcher above to pick an AVD and begin.'
+              }
+              className="py-16"
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { LoadingButton } from '@/components/LoadingButton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { backend } from '@/lib/desktop/models';
 import { RotateCcw } from 'lucide-react';
 
@@ -20,80 +19,67 @@ export function EmulatorRestoreTab({
 }: EmulatorRestoreTabProps) {
   if (!avd) {
     return (
-      <Card>
-        <CardContent className="py-10">
-          <p className="text-sm text-muted-foreground">
-            Select an AVD to inspect restore candidates and backup state.
-          </p>
-        </CardContent>
-      </Card>
+      <p className="py-4 text-sm text-muted-foreground">
+        Select an AVD to inspect restore candidates and backup state.
+      </p>
     );
   }
 
   const hasEntries = Boolean(restorePlan && restorePlan.entries.length > 0);
 
   return (
-    <Card>
-      <CardHeader className="gap-2 border-b pb-4">
-        <CardTitle className="text-base">Restore and unroot</CardTitle>
-        <CardDescription>
-          Restore stock emulator artifacts from backups created alongside the original files.
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-5">
+      {/* Backup status */}
+      <div
+        className={`rounded-lg border px-4 py-3 text-sm ${
+          avd.hasBackups
+            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+            : 'border-border bg-muted/40 text-muted-foreground'
+        }`}
+      >
+        {avd.hasBackups
+          ? 'Backups detected — restore will put backed-up files back in place.'
+          : 'No backups yet. Run a root preparation first to create restore artifacts.'}
+      </div>
 
-      <CardContent className="space-y-5 pt-6">
-        <div className="rounded-xl border bg-muted/40 p-4 text-sm">
-          <p className="font-medium">
-            {avd.hasBackups ? 'Backups detected' : 'No backups detected yet'}
-          </p>
-          <p className="mt-2 text-muted-foreground">
-            {avd.hasBackups
-              ? 'Restore will put backed-up files back in place without deleting the backups.'
-              : 'The first successful root preparation creates the restore artifacts needed here.'}
+      {/* Plan header + restore button */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Restore plan</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {isLoadingPlan
+              ? 'Refreshing backup metadata…'
+              : hasEntries
+                ? `Source: ${restorePlan?.source}`
+                : 'No restorable entries found.'}
           </p>
         </div>
+        <LoadingButton
+          variant="outline"
+          isLoading={isRestoring}
+          icon={<RotateCcw className="size-4" />}
+          loadingLabel="Restoring…"
+          disabled={!avd.hasBackups || !hasEntries || isLoadingPlan}
+          onClick={() => void onRestore()}
+        >
+          Restore stock state
+        </LoadingButton>
+      </div>
 
-        <div className="space-y-3 rounded-xl border p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="font-medium">Restore plan</p>
-              <p className="text-sm text-muted-foreground">
-                {isLoadingPlan
-                  ? 'Refreshing backup metadata...'
-                  : hasEntries
-                    ? `Source: ${restorePlan?.source}`
-                    : 'No restorable file entries available.'}
-              </p>
-            </div>
-            <LoadingButton
-              variant="outline"
-              isLoading={isRestoring}
-              icon={<RotateCcw className="size-4" />}
-              loadingLabel="Restoring..."
-              disabled={!avd.hasBackups || !hasEntries || isLoadingPlan}
-              onClick={() => void onRestore()}
+      {/* Plan entries */}
+      {hasEntries && (
+        <div className="space-y-2">
+          {restorePlan?.entries.map((entry) => (
+            <div
+              key={entry.originalPath}
+              className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm"
             >
-              Restore Stock State
-            </LoadingButton>
-          </div>
-
-          {hasEntries && (
-            <div className="space-y-3">
-              {restorePlan?.entries.map((entry) => (
-                <div
-                  key={entry.originalPath}
-                  className="rounded-lg border bg-background/80 p-3 text-sm"
-                >
-                  <p className="font-medium break-all">{entry.originalPath}</p>
-                  <p className="mt-1 text-xs text-muted-foreground break-all">
-                    Backup: {entry.backupPath}
-                  </p>
-                </div>
-              ))}
+              <p className="break-all font-medium">{entry.originalPath}</p>
+              <p className="mt-1 break-all text-xs text-muted-foreground">← {entry.backupPath}</p>
             </div>
-          )}
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 }

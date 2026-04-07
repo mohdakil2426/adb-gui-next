@@ -471,9 +471,9 @@ src/components/
   - **Language extraction** — GitHub `language` field parsed and stored in `MarketplaceApp.language`, used for ranking and displayed as UI badge.
   - `reqwest` is a **required** (non-optional) dependency since marketplace is core functionality.
 - `src-tauri/src/emulator/` — dedicated AVD domain architecture:
-  - **`sdk.rs`** resolves `ANDROID_SDK_ROOT`, `ANDROID_HOME`, platform defaults, and AVD home.
-  - **`avd.rs`** reads `emulator -list-avds`, enriches from `.ini` + `config.ini`, resolves ramdisk paths, and synthesizes conservative root state.
-  - **`runtime.rs`** builds launch args, maps running emulators back to AVD names via `adb emu avd name`, and stops emulators with `adb emu kill`.
+  - **`sdk.rs`** resolves `ANDROID_SDK_ROOT`, `ANDROID_HOME`, platform defaults, and AVD home. Added `resolve_emulator_binary(env)` / `resolve_emulator_binary_from_current_env()` — searches `$SDK/emulator/emulator.exe` with no PATH dependency.
+  - **`avd.rs`** scans `~/.android/avd/*.ini` files directly (`scan_avd_names()`) — removed the `emulator -list-avds` dependency. Enriches from `config.ini`, normalises Windows backslash paths in `resolve_system_image_dir()`, and synthesizes conservative root state.
+  - **`runtime.rs`** builds launch args using the SDK-resolved binary (fallback to PATH), sets working dir to binary parent (needed for QEMU siblings), adds 1s crash detection, maps running emulators to AVD names via `adb emu avd name`, and stops emulators with `adb emu kill`.
   - **`backup.rs`** creates sidecar `.backup` files, restore plans, and restore operations for AVD artifacts.
   - **`root.rs`** implements an assisted fake-boot workflow: local package normalization, host-built fake boot image, staged patch flow, patched ramdisk extraction, and local ramdisk replacement.
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`

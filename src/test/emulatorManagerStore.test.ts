@@ -22,17 +22,17 @@ describe('emulatorManagerStore', () => {
     expect(useEmulatorManagerStore.getState().rootSession).toBeNull();
   });
 
-  it('stores activity entries with metadata', () => {
-    useEmulatorManagerStore.getState().appendActivity({
-      level: 'success',
-      message: 'Launched Pixel_8_API_34',
+  it('stores and clears restore plan', () => {
+    useEmulatorManagerStore.getState().setRestorePlan({
+      entries: [{ originalPath: '/data/ramdisk.img', backupPath: '/data/ramdisk.img.backup' }],
+      createdAt: '2026-04-08T00:00:00Z',
+      source: 'Pixel_8_API_34',
     });
 
-    const [entry] = useEmulatorManagerStore.getState().activity;
+    expect(useEmulatorManagerStore.getState().restorePlan?.source).toBe('Pixel_8_API_34');
 
-    expect(entry?.level).toBe('success');
-    expect(entry?.message).toBe('Launched Pixel_8_API_34');
-    expect(entry?.id).toBeTruthy();
-    expect(entry?.timestamp).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+    useEmulatorManagerStore.getState().setRestorePlan(null);
+
+    expect(useEmulatorManagerStore.getState().restorePlan).toBeNull();
   });
 });

@@ -32,13 +32,10 @@ pub struct AvdSummary {
 pub struct EmulatorLaunchOptions {
     pub wipe_data: bool,
     pub writable_system: bool,
-    pub headless: bool,
     pub cold_boot: bool,
     pub no_snapshot_load: bool,
     pub no_snapshot_save: bool,
     pub no_boot_anim: bool,
-    pub net_speed: Option<String>,
-    pub net_delay: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

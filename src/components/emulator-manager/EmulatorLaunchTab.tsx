@@ -1,7 +1,6 @@
 import { LoadingButton } from '@/components/LoadingButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { backend } from '@/lib/desktop/models';
 import { Play } from 'lucide-react';
@@ -16,13 +15,10 @@ interface EmulatorLaunchTabProps {
 export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunchTabProps) {
   const [wipeData, setWipeData] = useState(false);
   const [writableSystem, setWritableSystem] = useState(false);
-  const [headless, setHeadless] = useState(false);
   const [coldBoot, setColdBoot] = useState(false);
   const [noSnapshotLoad, setNoSnapshotLoad] = useState(false);
   const [noSnapshotSave, setNoSnapshotSave] = useState(false);
   const [noBootAnim, setNoBootAnim] = useState(false);
-  const [netSpeed, setNetSpeed] = useState('');
-  const [netDelay, setNetDelay] = useState('');
   const [confirmWipeData, setConfirmWipeData] = useState(false);
   const [confirmWritableSystem, setConfirmWritableSystem] = useState(false);
 
@@ -31,148 +27,107 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
 
   if (!avd) {
     return (
-      <Card>
-        <CardContent className="py-10">
-          <p className="text-sm text-muted-foreground">
-            Select an AVD to configure advanced launch options.
-          </p>
-        </CardContent>
-      </Card>
+      <p className="py-4 text-sm text-muted-foreground">
+        Select an AVD to configure advanced launch options.
+      </p>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="gap-2 border-b pb-4">
-        <CardTitle className="text-base">Advanced launch</CardTitle>
-        <CardDescription>
-          Tune emulator flags before booting. Dangerous options require an explicit confirmation.
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {(
+          [
+            { id: 'coldBoot', label: 'Cold boot', value: coldBoot, onChange: setColdBoot },
+            {
+              id: 'noSnapLoad',
+              label: 'Skip snapshot load',
+              value: noSnapshotLoad,
+              onChange: setNoSnapshotLoad,
+            },
+            {
+              id: 'noSnapSave',
+              label: 'Skip snapshot save',
+              value: noSnapshotSave,
+              onChange: setNoSnapshotSave,
+            },
+            {
+              id: 'noBootAnim',
+              label: 'Disable boot animation',
+              value: noBootAnim,
+              onChange: setNoBootAnim,
+            },
+            {
+              id: 'writableSystem',
+              label: 'Writable system',
+              value: writableSystem,
+              onChange: setWritableSystem,
+            },
+            { id: 'wipeData', label: 'Wipe user data', value: wipeData, onChange: setWipeData },
+          ] as const
+        ).map((opt) => (
+          <Label key={opt.id} className="flex items-center gap-2.5 text-sm">
+            <Checkbox
+              id={`launch-opt-${opt.id}`}
+              checked={opt.value}
+              onCheckedChange={(checked) => opt.onChange(checked === true)}
+            />
+            {opt.label}
+          </Label>
+        ))}
+      </div>
 
-      <CardContent className="space-y-6 pt-6">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Label>
-            <Checkbox
-              checked={headless}
-              onCheckedChange={(checked) => setHeadless(checked === true)}
-            />
-            Headless mode
-          </Label>
-          <Label>
-            <Checkbox
-              checked={coldBoot}
-              onCheckedChange={(checked) => setColdBoot(checked === true)}
-            />
-            Cold boot
-          </Label>
-          <Label>
-            <Checkbox
-              checked={noSnapshotLoad}
-              onCheckedChange={(checked) => setNoSnapshotLoad(checked === true)}
-            />
-            Disable snapshot load
-          </Label>
-          <Label>
-            <Checkbox
-              checked={noSnapshotSave}
-              onCheckedChange={(checked) => setNoSnapshotSave(checked === true)}
-            />
-            Disable snapshot save
-          </Label>
-          <Label>
-            <Checkbox
-              checked={noBootAnim}
-              onCheckedChange={(checked) => setNoBootAnim(checked === true)}
-            />
-            Disable boot animation
-          </Label>
-          <Label>
-            <Checkbox
-              checked={writableSystem}
-              onCheckedChange={(checked) => setWritableSystem(checked === true)}
-            />
-            Writable system
-          </Label>
-          <Label>
-            <Checkbox
-              checked={wipeData}
-              onCheckedChange={(checked) => setWipeData(checked === true)}
-            />
-            Wipe user data
-          </Label>
-        </div>
+      {(wipeData || writableSystem) && (
+        <Card className="border-amber-500/30 bg-amber-500/10">
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-sm text-amber-800 dark:text-amber-200">
+              Safety confirmation required
+            </CardTitle>
+            <CardDescription className="text-amber-700/80 dark:text-amber-300/80">
+              Acknowledge the risks before launching with destructive flags.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 pb-4">
+            {wipeData && (
+              <Label className="flex items-center gap-2.5 text-sm">
+                <Checkbox
+                  checked={confirmWipeData}
+                  onCheckedChange={(checked) => setConfirmWipeData(checked === true)}
+                />
+                I understand wiping data resets this emulator profile.
+              </Label>
+            )}
+            {writableSystem && (
+              <Label className="flex items-center gap-2.5 text-sm">
+                <Checkbox
+                  checked={confirmWritableSystem}
+                  onCheckedChange={(checked) => setConfirmWritableSystem(checked === true)}
+                />
+                I understand writable-system can leave this AVD in a modified state.
+              </Label>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="emulator-net-speed">Network speed</Label>
-            <Input
-              id="emulator-net-speed"
-              placeholder="full, lte, edge..."
-              value={netSpeed}
-              onChange={(event) => setNetSpeed(event.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="emulator-net-delay">Network delay</Label>
-            <Input
-              id="emulator-net-delay"
-              placeholder="none, gsm, edge..."
-              value={netDelay}
-              onChange={(event) => setNetDelay(event.target.value)}
-            />
-          </div>
-        </div>
-
-        {(wipeData || writableSystem) && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-            <p className="font-medium text-amber-800 dark:text-amber-200">Safety confirmation</p>
-            <div className="mt-3 grid gap-3">
-              {wipeData && (
-                <Label>
-                  <Checkbox
-                    checked={confirmWipeData}
-                    onCheckedChange={(checked) => setConfirmWipeData(checked === true)}
-                  />
-                  I understand that wiping data resets this emulator profile.
-                </Label>
-              )}
-              {writableSystem && (
-                <Label>
-                  <Checkbox
-                    checked={confirmWritableSystem}
-                    onCheckedChange={(checked) => setConfirmWritableSystem(checked === true)}
-                  />
-                  I understand that writable-system can leave this AVD in a modified state.
-                </Label>
-              )}
-            </div>
-          </div>
-        )}
-
-        <LoadingButton
-          isLoading={isLaunching}
-          icon={<Play className="size-4" />}
-          loadingLabel="Launching..."
-          disabled={destructiveBlocked}
-          onClick={() =>
-            void onLaunch({
-              wipeData,
-              writableSystem,
-              headless,
-              coldBoot,
-              noSnapshotLoad,
-              noSnapshotSave,
-              noBootAnim,
-              netSpeed: netSpeed.trim() || null,
-              netDelay: netDelay.trim() || null,
-            })
-          }
-        >
-          Launch With These Options
-        </LoadingButton>
-      </CardContent>
-    </Card>
+      <LoadingButton
+        isLoading={isLaunching}
+        icon={<Play className="size-4" />}
+        loadingLabel="Launching…"
+        disabled={destructiveBlocked}
+        onClick={() =>
+          void onLaunch({
+            wipeData,
+            writableSystem,
+            coldBoot,
+            noSnapshotLoad,
+            noSnapshotSave,
+            noBootAnim,
+          })
+        }
+      >
+        Launch with these options
+      </LoadingButton>
+    </div>
   );
 }

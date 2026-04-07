@@ -5,11 +5,97 @@
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
 Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. All core quality gates pass: format, lint (ESLint), tsc build, cargo check (lib + tests). `cargo clippy`/`cargo test` still blocked by pre-existing Windows `AdbWinApi.dll` file lock.
-Emulator Manager is now implemented as a new Advanced view. The app can discover existing official Android Studio AVDs, show runtime/config health, launch and stop emulators, assist local-package root flows with a fake-boot staging path, and restore backed-up ramdisk state. Verification is green for `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check`. `cargo test` still exits abnormally on Windows with `0xc0000139` and `pnpm tauri build --debug` was blocked in this session by a locked `src-tauri/target/debug/adb-gui-next.exe`.
+Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-08 — Emulator Manager Feature Trim (Remove Overkill Options)
+
+**Change:** Removed headless mode and network speed/delay options from the Emulator Manager — they were surfaced as "overkill" complexity for a UI tool. Complete removal across all layers.
+
+**What was removed (every reference):**
+
+| Layer | What removed |
+|:---|:---|
+| `src-tauri/src/emulator/models.rs` | `headless: bool`, `net_speed: Option<String>`, `net_delay: Option<String>` fields from `EmulatorLaunchOptions` |
+| `src-tauri/src/emulator/runtime.rs` | `-no-window`/`-no-audio` args from `build_launch_args`, `-netspeed`/`-netdelay` args, renamed + updated test |
+| `src/lib/desktop/models.ts` | `headless`, `netSpeed`, `netDelay` from `EmulatorLaunchOptions` TS interface |
+| `src/components/emulator-manager/EmulatorLaunchTab.tsx` | `headless` state/checkbox, `netSpeed`/`netDelay` state/inputs, `Input` + unused imports |
+| `src/components/views/ViewEmulatorManager.tsx` | `headless` preset case from `createPresetOptions`, Headless toolbar button, `ScanFace` import |
+
+**Verification:** `format:check` ✅ · `lint:web` ✅ · `build` ✅ (Rust cargo test blocked by Windows DLL file-lock — known issue with dev server running)
+
+---
+
+### 2026-04-08 — Emulator Manager Design 3 UI Redesign
+
+**Problem:** The previous 2-column sidebar layout (256px left roster + right detail card) wasted horizontal space and looked inconsistent with the rest of the app's full-width column layout.
+
+**Design chosen (Design 3 — Two-Row Header Bar + Full-Width Content Card):**
+
+| Zone | What |
+|:---|:---|
+| Row 1 | Icon + `h1` + Advanced badge + description · Refresh button pushed right |
+| Row 2 left | `AvdSwitcher` Popover pill + warnings badge · status meta line below (running state · serial · API · ABI · device name) |
+| Row 2 right | Context-aware action buttons (Launch/Stop toggle + Cold boot + Folder) — hidden when no AVD |
+| Card | `CardContent p-0` only — `TabsList variant="line"` flush at top, `p-6` tab content below |
+| Empty state | `EmptyState` component when no AVD or loading |
+
+**New component — `AvdSwitcher.tsx`:** Structural clone of `DeviceSwitcher` (Popover+Tooltip pill → `align="start" w-72 p-0` flyout, header with icon+label+count+refresh icon-button, Separator, selection-dot + name + subtitle + badge rows). Identical UX pattern — zero new patterns introduced.
+
+**Removed:** `AvdRoster.tsx` (replaced by `AvdSwitcher`), side-panel `xl:grid-cols-[256px_minmax(0,1fr)]` layout, `EmulatorActivityCard.tsx`, activity-related state from `emulatorManagerStore.ts`.
+
+**Verification:** `format:check` ✅ · `lint:web` ✅ · `build` ✅
+
+---
+
+**Problem:** The Emulator Manager UI was messy and over-complicated — 4+ stacked Card blocks (HeaderCard, QuickActions, Tabs, ActivityCard), a redundant "Overview" tab that duplicated data already visible in the roster badges and header, a fixed 34rem height roster that wasted space, and separate cards for just 6 buttons.
+
+**Changes:**
+
+| What | Before | After |
+|:---|:---|:---|
+| Layout | 4 separate stacked Cards | 1 unified Card with inline header+actions |
+| AVD list | Fixed 34rem height Card | Adaptive ScrollArea, no Card wrapper |
+| Quick actions | Separate Card with title+description | Inline button row inside the unified Card header |
+| Tabs | Overview + Launch + Root + Restore | Launch + Root + Restore only (Overview was pure duplication) |
+| Roster width | 320px | 256px |
+| Activity log | Always-visible Card even when empty | Renders only when there are entries |
+| Tab content | Each tab had its own Card wrapper | Content is flat inside a shared `<div className="p-6">` |
+| EmulatorHeaderCard | Separate component (115 lines) | Merged into ViewEmulatorManager header section |
+| EmulatorQuickActions | Separate component (72 lines) | Merged inline into ViewEmulatorManager header |
+| Deleted files | — | `EmulatorHeaderCard.tsx`, `EmulatorQuickActions.tsx` |
+
+**Verification:** `pnpm format:check` ✅ · `pnpm lint:web` ✅ · `pnpm build` ✅
+
+
+### 2026-04-08 — Emulator Manager Bug Fixes (Critical — AVD Discovery & Launch)
+
+**Problem:** Running Android Studio emulator (`Medium_Phone` on `emulator-5554`) was not appearing in the Emulator Manager roster. Page showed "No AVDs found" despite confirming via `adb devices` that the emulator was connected.
+
+**Root Cause Analysis:** Full analysis in `docs/reports/emulator-manager-analysis.md`. Bug chain:
+1. `avd.rs::list_avds()` called `run_binary_command(app, "emulator", &["-list-avds"])` — but `emulator.exe` is NOT bundled in `src-tauri/resources/` and NOT on system PATH (only in `$LOCALAPPDATA\Android\Sdk\emulator\emulator.exe`).
+2. `resolve_binary_path()` fails all 3 tiers → returns `Err(...)` → `list_avds()` propagates it → frontend `useQuery` catches it → `avds = []` → empty roster.
+3. `resolve_system_image_dir()`: `config.ini` uses backslashes on Windows (`system-images\android-31\...`) — normalisation was needed before `PathBuf::join`.
+4. `GetAvdRestorePlan` errors silently swallowed in `ViewEmulatorManager.tsx` — no user-visible feedback.
+
+**Fixes (commit `a52ca2e`):**
+
+| File | Fix |
+|:---|:---|
+| `emulator/sdk.rs` | Added `resolve_emulator_binary(env)` — searches `$SDK/emulator/emulator.exe` across all candidate SDK roots. Added `resolve_emulator_binary_from_current_env()` convenience wrapper. No PATH dependency. |
+| `emulator/avd.rs` | `list_avds()` now calls `scan_avd_names(avd_home)` — reads `~/.android/avd/*.ini` file stems directly. Removed `emulator -list-avds` call entirely. Removed `run_binary_command` import. `resolve_system_image_dir()` normalises Windows backslashes → forward slashes before `PathBuf::join`. |
+| `emulator/runtime.rs` | `launch_avd()` uses `sdk::resolve_emulator_binary_from_current_env()` with fallback to PATH. Working directory set to emulator binary's own parent folder (needed: `qemu-system-x86_64.exe` must be a sibling). Added 1-second crash detection after `spawn()`. |
+| `ViewEmulatorManager.tsx` | `GetAvdRestorePlan` catch block now appends a `'warning'`-level activity log entry instead of silently setting `restorePlan(null)`. Fixed `react-hooks/exhaustive-deps` lint: added `appendActivity` to `useEffect` deps. |
+
+**Verification:**
+- `cargo check` ✅ (3.18s, zero errors)
+- `cargo clippy -- -D warnings` ✅ (zero warnings)
+- `pnpm lint:web` ✅ (ESLint exit 0)
+- `pnpm build` ✅ (tsc + Vite, 2493 modules, 1.71s)
+- `pnpm format:check` ✅
 
 ### 2026-04-05 — Emulator Manager Implementation (Advanced AVD Control)
 
@@ -366,15 +452,14 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-05** (after Emulator Manager implementation)
+Last verified: **2026-04-08** (after Emulator Manager bug fix — commit `a52ca2e`)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
 - `pnpm format:check` ✅ — Formatting clean
-- `pnpm test` ✅ — Vitest clean after TypeScript 6 upgrade
-- `pnpm exec tsc --noEmit` ✅ — TypeScript 6.0.2 clean
 - `cargo check` ✅ — Rust compilation clean
+- `cargo clippy -- -D warnings` ✅ — Zero warnings
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
-- `pnpm tauri build --debug` ⚠️ — blocked in this session by locked `src-tauri/target/debug/adb-gui-next.exe`
+- `pnpm tauri build --debug` ⚠️ — blocked when `adb-gui-next.exe` is already running
 
 ---
 
@@ -389,7 +474,7 @@ Last verified: **2026-04-05** (after Emulator Manager implementation)
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
-| Emulator Manager | ✅ Working | Existing-AVD discovery, runtime health, quick launch/stop controls, advanced launch flags, assisted fake-boot root flow, and backup-based restore/unroot for official Android Studio emulators. |
+| Emulator Manager | ✅ Fixed & Working | AVD discovery via INI scan (no emulator binary needed), `resolve_emulator_binary()` for SDK-aware launch, crash detection, error visibility. Running emulators appear in roster with correct serial/status. |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
@@ -441,6 +526,9 @@ Last verified: **2026-04-05** (after Emulator Manager implementation)
 - **`split_args` in spawn_blocking**: Must be called **inside** the `spawn_blocking` closure — borrows from the closure-owned String, not across 'static boundary.
 - **`cargo test` on Windows**: STATUS_ENTRYPOINT_NOT_FOUND — pre-existing Tauri DLL issue, not a code bug.
 - **`pnpm tauri build --debug` can fail with `os error 5`**: If `src-tauri/target/debug/adb-gui-next.exe` is still running or locked by another process, packaging fails until the lock is released.
+- **`emulator` binary is NOT bundled**: Unlike `adb`/`fastboot`, the Android `emulator` binary lives in `$SDK/emulator/`. Use `sdk::resolve_emulator_binary_from_current_env()` — never `resolve_binary_path(app, "emulator")` — for emulator-specific operations. `ANDROID_HOME`/`ANDROID_SDK_ROOT` may not be set; the `LOCALAPPDATA` fallback covers the default Android Studio install path.
+- **`emulator -list-avds` is fragile**: It requires the `emulator` binary. Prefer scanning `~/.android/avd/*.ini` files directly for AVD enumeration — these files are the canonical ground truth and require zero binary dependencies.
+- **Windows `config.ini` uses backslashes**: `image.sysdir.1` in a Windows AVD's `config.ini` uses backslashes (`system-images\android-31\...`). Always normalise to forward slashes before `PathBuf::join` to avoid broken path resolution.
 
 ### Component Patterns
 

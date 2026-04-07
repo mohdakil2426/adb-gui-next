@@ -15,10 +15,6 @@ pub fn build_launch_args(name: &str, options: &EmulatorLaunchOptions) -> Vec<Str
     if options.writable_system {
         args.push("-writable-system".into());
     }
-    if options.headless {
-        args.push("-no-window".into());
-        args.push("-no-audio".into());
-    }
     if options.cold_boot || options.no_snapshot_load {
         args.push("-no-snapshot-load".into());
     }
@@ -27,14 +23,6 @@ pub fn build_launch_args(name: &str, options: &EmulatorLaunchOptions) -> Vec<Str
     }
     if options.no_boot_anim {
         args.push("-no-boot-anim".into());
-    }
-    if let Some(speed) = &options.net_speed {
-        args.push("-netspeed".into());
-        args.push(speed.clone());
-    }
-    if let Some(delay) = &options.net_delay {
-        args.push("-netdelay".into());
-        args.push(delay.clone());
     }
     if options.wipe_data {
         args.push("-wipe-data".into());
@@ -189,19 +177,16 @@ mod tests {
     use crate::emulator::models::EmulatorLaunchOptions;
 
     #[test]
-    fn build_launch_args_adds_cold_boot_headless_and_network_flags() {
+    fn build_launch_args_adds_cold_boot_flags() {
         let args = build_launch_args(
             "Pixel_8_API_34",
             &EmulatorLaunchOptions {
                 wipe_data: false,
                 writable_system: true,
-                headless: true,
                 cold_boot: true,
                 no_snapshot_load: true,
                 no_snapshot_save: true,
                 no_boot_anim: true,
-                net_speed: Some("lte".into()),
-                net_delay: Some("none".into()),
             },
         );
 
@@ -210,15 +195,9 @@ mod tests {
             vec![
                 "@Pixel_8_API_34",
                 "-writable-system",
-                "-no-window",
-                "-no-audio",
                 "-no-snapshot-load",
                 "-no-snapshot-save",
                 "-no-boot-anim",
-                "-netspeed",
-                "lte",
-                "-netdelay",
-                "none",
             ]
         );
     }

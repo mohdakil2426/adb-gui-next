@@ -3,8 +3,6 @@
 > **Tauri 2 desktop application** for ADB and fastboot workflows.
 > React 19 + TypeScript + Vite + Rust | Windows & Linux
 
-**Memory Bank**: The `memory-bank/` directory contains the source of truth for project context, patterns, and progress tracking. Read ALL files for deep project understanding. **NEVER SKIP THIS STEP.**
-
 **RESPECT ALL RULES**: You MUST follow every rule, guideline, principle, coding standard and best practice documented below. No exceptions, no shortcuts, no lazy work, full comprehensive efforts. Respect project patterns, shared contracts, and existing code, ui, colors, patterns style consistency.
 
 ## Architecture (Tauri 2 + React + Rust)
@@ -47,7 +45,6 @@
 ## Project Structure
 
 ```text
-/
 ├── src/                          # Frontend — React 19 + TypeScript + Vite
 │   ├── components/               # UI components (MainLayout, views, shadcn primitives)
 │   ├── lib/                      # Zustand stores, utils, Tauri desktop abstraction layer
@@ -58,11 +55,6 @@
 │   ├── capabilities/             # Tauri permission grants
 │   ├── icons/                    # App icons (all platforms)
 │   └── resources/                # Bundled Android platform tools (adb, fastboot, etc.)
-│
-├── memory-bank/                  # Project memory — 6 core files, source of truth
-├── .claude/skills/               # Agent skills (read SKILL.md before coding)
-├── docs/                         # Preserved legacy Go/Wails reference archive
-└── CLAUDE.md                     # This file — project rules and patterns
 ```
 
 **Key folders:**
@@ -92,29 +84,6 @@
 | Shared feature components | `src/components/`                 | Duplicating components across views         |
 | Bundled Android binaries  | `src-tauri/resources/{platform}/` | Hardcoded system paths for adb/fastboot     |
 | Tailwind theme tokens     | `src/styles/global.css`           | Hardcoded color values in components        |
-
----
-
-## Tech Stack
-
-| Layer             | Stack                                                                   |
-| ----------------- | ----------------------------------------------------------------------- |
-| **Frontend**      | React 19, TypeScript 5.9, Vite 7/8                                      |
-| **Styling**       | Tailwind CSS v4 (Vite plugin, CSS-first config)                         |
-| **UI Components** | shadcn/ui (new-york style), Radix UI primitives, lucide-react icons     |
-| **State**         | Zustand v5                                                              |
-| **Animation**     | Framer Motion                                                           |
-| **Theming**       | next-themes (light/dark + system)                                       |
-| **Toasts**        | sonner                                                                  |
-| **Backend**       | Rust, Tauri 2                                                           |
-| **Protobuf**      | prost + prost-build (payload.bin manifest parsing)                      |
-| **Compression**   | zip, zstd, xz2, bzip2 (OTA payload operations)                          |
-| **Checksums**     | sha2 (payload operation verification)                                   |
-| **IPC**           | Tauri invoke() + event system                                           |
-| **Build**         | pnpm, Cargo, Tauri CLI                                                  |
-| **Lint**          | ESLint v10 (flat config), typescript-eslint, react-hooks, react-refresh |
-| **Format**        | Prettier (web), cargo fmt (Rust)                                        |
-| **Rust Lint**     | cargo clippy (-D warnings)                                              |
 
 ---
 
@@ -200,37 +169,6 @@ pnpm check                         # All-in-one: runs gates 1-4
 - Use `size-*` when width and height are equal
 - Full Card composition: `CardHeader`/`CardTitle`/`CardDescription`/`CardContent`/`CardFooter`
 - Toasts via sonner: `toast.success()` / `toast.error()`
-
----
-
-## Coding Standards — Rust
-
-### Formatting & Style
-
-| Setting   | Value                    |
-| --------- | ------------------------ |
-| Formatter | cargo fmt (edition 2021) |
-| Max width | 100 characters           |
-| Indent    | 4 spaces                 |
-| Style     | Default rustfmt          |
-
-### Conventions
-
-| Type           | Convention                           | Example                                   |
-| -------------- | ------------------------------------ | ----------------------------------------- |
-| Structs        | PascalCase                           | `Device`, `DeviceInfo`, `FileEntry`       |
-| Functions      | snake_case                           | `get_devices`, `run_adb_host_command`     |
-| Constants      | SCREAMING_SNAKE_CASE                 | `DEFAULT_ADB_PORT`, `VALUE_NOT_AVAILABLE` |
-| Tauri commands | snake_case                           | `get_device_info`, `flash_partition`      |
-| Error type     | `CmdResult<T> = Result<T, String>`   | All commands return this                  |
-| Serialization  | `#[serde(rename_all = "camelCase")]` | All structs sent to frontend              |
-
-### Patterns
-
-- **Command structure**: Each `#[tauri::command]` calls a private helper, helpers call `run_binary_command()`
-- **Binary resolution**: `resolve_binary_path()` — Tauri resource dir → repo resources → system PATH
-- **Error handling**: `CmdResult<T>` with `.map_err(|e| e.to_string())?`
-- **Process execution**: `run_binary_command()` for strict (fail-on-error), `run_binary_command_allow_output_on_failure()` for tolerant
 
 ---
 

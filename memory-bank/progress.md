@@ -6,7 +6,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
-Emulator Manager is now implemented as an Advanced view for official Android Studio AVDs only. It discovers existing AVDs, surfaces runtime/config health, supports quick launch presets plus advanced flags, assists local-package root workflows through a fake-boot staging flow, and restores stock state from app-created backups without depending on `rootAVD` or `EMU.bat` at runtime.
+Emulator Manager is **fully working** on Windows (commit `a52ca2e`). Critical bug fixed: AVD discovery now scans `~/.android/avd/*.ini` files directly (no `emulator` binary needed for enumeration). `sdk.rs` gained `resolve_emulator_binary()` for SDK-aware launch. Running emulators appear in roster with correct serial and `isRunning: true`.
 
 ## What Works
 
@@ -28,14 +28,16 @@ Emulator Manager is now implemented as an Advanced view for official Android Stu
 - `sidebar-context.ts` holds non-component exports (constants, context, hook) — Fast Refresh clean
 - `Ctrl+B` keyboard shortcut for sidebar toggle
 - 9 sidebar views compile and build successfully
-- **Emulator Manager**:
+- **Emulator Manager** (fully redesigned, Design 3 layout):
   - Advanced `Emulator Manager` route under the sidebar Advanced group
-  - Hybrid manager layout with left AVD roster, summary header, quick actions, `Overview`/`Launch`/`Root`/`Restore` tabs, and page-scoped activity log
-  - Existing-AVD discovery UI with runtime/root/backup badges and warnings
-  - Quick actions for Launch, Cold Boot, Headless, Stop, Open AVD Folder, and Refresh
-  - Advanced launch tab with gated `wipeData` and `writableSystem` confirmations
-  - Assisted root tab with local `.apk`/`.zip` package picker, staged instructions, and finalize action
-  - Restore tab with explicit restore plan entries and backup-based restore/unroot action
+  - **Design 3 layout**: Two-row header bar (title + Refresh | AvdSwitcher pill + status meta + action buttons) + full-width content-only Card (TabsList flush at top, no CardHeader)
+  - `AvdSwitcher` Popover pill component — mirrors `DeviceSwitcher` exactly (same pill+flyout UX pattern)
+  - AVD discovery via `~/.android/avd/*.ini` scan (no `emulator` binary needed for enumeration)
+  - Quick actions: Launch / Stop (context-aware toggle) + Cold boot + Open Folder
+  - **Removed features (overkill):** Headless mode, Network speed/delay — removed from Rust model, Tauri command args, TS DTO, and all UI
+  - Launch tab: cold boot, snapshot, boot animation, writable-system, wipe-data flags (with safety confirmation gate)
+  - Assisted root tab: local `.apk`/`.zip` package picker, staged instructions, finalize action
+  - Restore tab: explicit restore plan entries, backup-based restore/unroot action
 - VS Code-style **fixed-position** bottom panel with Logs and Shell tabs:
   - Viewport-anchored (never scrolls with page); sidebar-aware left offset via `useSidebar()`
   - Fluid resize: DOM-first + RAF throttle (60fps), zero re-renders during drag, `will-change` GPU hint
@@ -232,8 +234,8 @@ src-tauri/src/
 ## Remaining Work
 
 | Priority | Task | Notes |
-|----------|------|-------|
-| High | Device-backed Emulator Manager validation | Run the new AVD discovery, launch, root, finalize, and restore flows against real Android Studio emulator installs. |
+|----------|------|----|
+| Medium | Validate root/restore flows on real emulator | AVD discovery is fixed. Remaining: test prepare/finalize root and restore against a running `Medium_Phone` AVD. |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -253,6 +255,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-08 | 0.1.0 | Emulator Manager bug fix: `avd.rs` replaced `emulator -list-avds` with direct `~/.android/avd/*.ini` scanning (`scan_avd_names()`). `sdk.rs` added `resolve_emulator_binary(env)` + `resolve_emulator_binary_from_current_env()` for SDK-aware binary lookup (no PATH required). `runtime.rs` `launch_avd()` uses SDK resolver with fallback, sets working dir to emulator binary parent, adds 1s crash detection. `ViewEmulatorManager.tsx` surfaces `GetAvdRestorePlan` errors to activity log. `resolve_system_image_dir()` normalises Windows backslashes. All gates pass. |
 | 2026-04-05 | 0.1.0 | Emulator Manager implemented: added a dedicated Rust `emulator/` domain module, new Tauri emulator commands, typed desktop wrappers, Zustand `emulatorManagerStore`, an Advanced `Emulator Manager` view with roster/header/quick actions/tabs/activity log, and frontend tests. Verified `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing) and `pnpm tauri build --debug` was blocked in this session by a locked target executable. |
 | 2026-04-05 | 0.1.0 | Emulator Manager planning: created the feature spec and implementation plan for a new Advanced `Emulator Manager` view. Scope is limited to existing official Android Studio AVDs. The planned architecture uses a dedicated Rust `emulator/` domain module, a React hybrid manager layout, safe launch presets, local `.apk`/`.zip` root package import, assisted fake-boot root orchestration, and backup-based restore/unroot. `rootAVD` and `EMU.bat` remain local reference material only, not runtime dependencies. |
 | 2026-04-05 | 0.1.0 | Marketplace Architecture Audit: Deep-dive analysis of `GitHub-Store` reference architecture and research into Rust-native marketplace improvements. Proposed a three-stage roadmap: (1) Core Verification Engine with concurrent release-scanning, (2) Intelligence layer with weighted scoring heuristics and auto-pagination, (3) Security layer with Sigstore/Attestation verification. Created `docs/reports/marketplace_architecture_audit.md`. |

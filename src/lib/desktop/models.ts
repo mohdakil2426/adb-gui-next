@@ -20,13 +20,10 @@ export namespace backend {
   export interface EmulatorLaunchOptions {
     wipeData: boolean;
     writableSystem: boolean;
-    headless: boolean;
     coldBoot: boolean;
     noSnapshotLoad: boolean;
     noSnapshotSave: boolean;
     noBootAnim: boolean;
-    netSpeed: string | null;
-    netDelay: string | null;
   }
 
   export interface BackupEntry {
