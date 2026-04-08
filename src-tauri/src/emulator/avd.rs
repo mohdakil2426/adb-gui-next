@@ -2,7 +2,7 @@ use crate::{
     CmdResult,
     emulator::{
         backup,
-        models::{AvdRootState, AvdSummary},
+        models::{AvdRootState, AvdSummary, EmulatorBootMode},
         runtime, sdk,
     },
 };
@@ -178,6 +178,13 @@ pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
         let root_state = avd_root_state(app, ramdisk_path.as_deref(), serial.as_deref());
         let has_backups = ramdisk_path.as_deref().is_some_and(backup::backup_exists);
 
+        // Determine boot mode for running emulators.
+        let boot_mode = if serial.is_some() {
+            detect_boot_mode(app, serial.as_deref().unwrap_or_default())
+        } else {
+            EmulatorBootMode::Unknown
+        };
+
         avds.push(AvdSummary {
             name: name.to_string(),
             ini_path: ini_path.to_string_lossy().to_string(),
@@ -189,6 +196,7 @@ pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
             ramdisk_path: ramdisk_path.map(|path| path.to_string_lossy().to_string()),
             has_backups,
             root_state,
+            boot_mode,
             is_running: serial.is_some(),
             serial,
             warnings,
@@ -197,6 +205,25 @@ pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
 
     avds.sort_by(|left, right| left.name.cmp(&right.name));
     Ok(avds)
+}
+/// Detect whether a running emulator was cold-booted or loaded from a Quick Boot snapshot.
+///
+/// Uses `ro.kernel.androidboot.snapshot_loaded` which the QEMU hypervisor sets to `true`
+/// when a snapshot is loaded. Falls back to `Unknown` if the property isn't available.
+fn detect_boot_mode(app: &AppHandle, serial: &str) -> EmulatorBootMode {
+    use crate::helpers::run_binary_command_allow_output_on_failure;
+
+    let output = run_binary_command_allow_output_on_failure(
+        app,
+        "adb",
+        &["-s", serial, "shell", "getprop", "ro.kernel.androidboot.snapshot_loaded"],
+    );
+
+    match output.as_deref().map(str::trim) {
+        Ok("true" | "1") => EmulatorBootMode::Normal,
+        Ok("false" | "0" | "") => EmulatorBootMode::Cold,
+        _ => EmulatorBootMode::Unknown,
+    }
 }
 
 #[cfg(test)]

@@ -460,6 +460,7 @@ src/components/
                              #   Flasher, Utilities, PayloadDumper, Marketplace, Emulator, About)
 ```
 
+
 ## Known Architectural Notes
 
 - `src-tauri/src/lib.rs` split into helpers + 8 command modules (41 total commands)
@@ -472,16 +473,22 @@ src/components/
   - `reqwest` is a **required** (non-optional) dependency since marketplace is core functionality.
 - `src-tauri/src/emulator/` — dedicated AVD domain architecture:
   - **`sdk.rs`** resolves `ANDROID_SDK_ROOT`, `ANDROID_HOME`, platform defaults, and AVD home. Added `resolve_emulator_binary(env)` / `resolve_emulator_binary_from_current_env()` — searches `$SDK/emulator/emulator.exe` with no PATH dependency.
-  - **`avd.rs`** scans `~/.android/avd/*.ini` files directly (`scan_avd_names()`) — removed the `emulator -list-avds` dependency. Enriches from `config.ini`, normalises Windows backslash paths in `resolve_system_image_dir()`, and synthesizes conservative root state.
+  - **`avd.rs`** scans `~/.android/avd/*.ini` files directly (`scan_avd_names()`) — removed the `emulator -list-avds` dependency. Enriches from `config.ini`, normalises Windows backslash paths in `resolve_system_image_dir()`, synthesizes conservative root state, and detects `EmulatorBootMode` (Cold/Normal/Unknown) via `ro.kernel.androidboot.snapshot_loaded` getprop.
   - **`runtime.rs`** builds launch args using the SDK-resolved binary (fallback to PATH), sets working dir to binary parent (needed for QEMU siblings), adds 1s crash detection, maps running emulators to AVD names via `adb emu avd name`, and stops emulators with `adb emu kill`.
   - **`backup.rs`** creates sidecar `.backup` files, restore plans, and restore operations for AVD artifacts.
-  - **`root.rs`** implements an assisted fake-boot workflow: local package normalization, host-built fake boot image, staged patch flow, patched ramdisk extraction, and local ramdisk replacement.
+  - **`root.rs`** implements the automated ramdisk-patching pipeline (rootAVD-aligned):
+    - `wait_for_boot_completed()` — polls `sys.boot_completed` for up to 60s before starting.
+    - `detect_compression_method()` — reads magic bytes via `xxd`/`od` to detect `lz4_legacy`/`gzip`/`raw`.
+    - `adb_shell_checked()` — wraps command with `; echo EXITCODE:$?` and fails fast on non-zero exit.
+    - `verify_remote_file()` — confirms files exist and are non-empty on device.
+    - `patch_ramdisk_in_emulator()` — full rootAVD-aligned pipeline: decompress → test status → SHA1 config → XZ-compress magisk binaries + stub.apk → CPIO patch (magiskinit + magisk64.xz + stub.xz + config) → recompress with ORIGINAL method.
+    - Auto-shutdown via `setprop sys.powerctl shutdown` after writing patched ramdisk.
+    - Graceful Magisk Manager APK install (skips if emulator already offline).
+  - **`magisk_package.rs`** handles APK binary extraction. Magisk v25+ renamed daemon libraries: pre-v25 uses `libmagisk64.so`/`libmagisk32.so`; v25+ uses `libmagisk.so` per ABI dir. `extract_lib_binary_as(src_name, dest_name)` handles the rename — always saves as `magisk64`/`magisk32` regardless of ZIP name. Cascading fallback: old name → new name → error.
+  - **Serde tag discriminator camelCase**: `RootSource` uses `#[serde(tag = "type", rename_all = "camelCase")]`. Tag values in JSON are renamed too: `LatestStable` → `latestStable`, `LocalFile` → `localFile`. Frontend TypeScript types and mapping code must use camelCase strings.
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
-- `cargo test` crashes on Windows due to pre-existing Tauri DLL issue (not a code bug)
-- **Shift+Click range selection** is Phase 2 — currently deferred (needs `lastClickedIndex` tracking in `isMultiSelectMode` context)
-- **Tauri blocking commands = UI freeze**: `pub fn` commands calling `std::process::Command::output()` run on the main thread and block the WebView. Pattern: `pub async fn` + `tokio::task::spawn_blocking(move || ...)`. Applied to `install_package`, `uninstall_package`, `sideload_package`, `flash_partition`, `wipe_data`.
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
 - **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.
 - **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.

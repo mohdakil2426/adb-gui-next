@@ -1,5 +1,6 @@
 export namespace backend {
   export type AvdRootState = 'stock' | 'rooted' | 'modified' | 'unknown';
+  export type EmulatorBootMode = 'cold' | 'normal' | 'unknown';
 
   export interface AvdSummary {
     name: string;
@@ -12,6 +13,7 @@ export namespace backend {
     ramdiskPath: string | null;
     hasBackups: boolean;
     rootState: AvdRootState;
+    bootMode: EmulatorBootMode;
     isRunning: boolean;
     serial: string | null;
     warnings: string[];
@@ -57,6 +59,47 @@ export namespace backend {
   export interface RootFinalizeResult {
     restoredFiles: string[];
     nextBootRecommendation: string;
+  }
+
+  // ─── Automated root pipeline ────────────────────────────────────────────────
+
+  export type RootSource = { type: 'localFile'; value: string } | { type: 'latestStable' };
+
+  /** Latest official stable Magisk release metadata from the GitHub releases API. */
+  export interface MagiskStableRelease {
+    /** Human-readable version string (e.g. "Magisk v30.7"). */
+    version: string;
+    /** Git tag name (e.g. "v30.7"). */
+    tag: string;
+    /** Exact filename of the APK asset (e.g. "Magisk-v30.7.apk"). */
+    assetName: string;
+    /** Direct download URL for the APK. */
+    downloadUrl: string;
+    /** File size in bytes. */
+    size: number;
+    /** SHA-256 hex digest (without "sha256:" prefix), if provided by GitHub. */
+    sha256: string | null;
+    /** ISO-8601 publish timestamp. */
+    publishedAt: string;
+  }
+
+  export interface RootAvdRequest {
+    avdName: string;
+    serial: string;
+    source: RootSource;
+  }
+
+  export interface RootProgress {
+    step: number;
+    totalSteps: number;
+    label: string;
+    detail: string | null;
+  }
+
+  export interface RootAvdResult {
+    magiskVersion: string;
+    patchedRamdiskPath: string;
+    managerInstalled: boolean;
   }
 
   export interface Device {

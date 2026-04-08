@@ -302,6 +302,16 @@ export function SelectRootPackageFile(): Promise<string> {
   });
 }
 
+/** Fetch the latest official stable Magisk release from the GitHub releases API. */
+export function FetchMagiskStableRelease(): Promise<backend.MagiskStableRelease> {
+  return call('fetch_magisk_stable_release');
+}
+
+/** Root an AVD using the automated magiskboot pipeline. Emits root:progress events. */
+export function RootAvd(request: backend.RootAvdRequest): Promise<backend.RootAvdResult> {
+  return call('root_avd', { request });
+}
+
 export function UninstallPackage(arg1: string): Promise<string> {
   return call('uninstall_package', { packageName: arg1 });
 }

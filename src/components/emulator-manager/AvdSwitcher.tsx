@@ -180,6 +180,20 @@ export function AvdSwitcher({
                     >
                       {avd.isRunning ? 'Running' : 'Stopped'}
                     </Badge>
+
+                    {/* Boot mode badge — only for running emulators */}
+                    {avd.isRunning && avd.bootMode !== 'unknown' && (
+                      <Badge
+                        className={cn(
+                          'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
+                          avd.bootMode === 'cold'
+                            ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+                        )}
+                      >
+                        {avd.bootMode === 'cold' ? 'Cold' : 'Normal'}
+                      </Badge>
+                    )}
                   </div>
                 );
               })}

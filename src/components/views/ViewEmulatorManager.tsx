@@ -10,11 +10,9 @@ import { EmulatorLaunchTab } from '@/components/emulator-manager/EmulatorLaunchT
 import { EmulatorRestoreTab } from '@/components/emulator-manager/EmulatorRestoreTab';
 import { EmulatorRootTab } from '@/components/emulator-manager/EmulatorRootTab';
 import {
-  FinalizeAvdRoot,
   GetAvdRestorePlan,
   LaunchAvd,
   OpenFolder,
-  PrepareAvdRoot,
   RestoreAvdBackups,
   StopAvd,
 } from '@/lib/desktop/backend';
@@ -58,20 +56,15 @@ export function ViewEmulatorManager() {
 
   const selectedAvdName = useEmulatorManagerStore((state) => state.selectedAvdName);
   const activeTab = useEmulatorManagerStore((state) => state.activeTab);
-  const rootSession = useEmulatorManagerStore((state) => state.rootSession);
   const restorePlan = useEmulatorManagerStore((state) => state.restorePlan);
   const pendingAction = useEmulatorManagerStore((state) => state.pendingAction);
   const setSelectedAvdName = useEmulatorManagerStore((state) => state.setSelectedAvdName);
   const setActiveTab = useEmulatorManagerStore((state) => state.setActiveTab);
-  const setRootSession = useEmulatorManagerStore((state) => state.setRootSession);
-  const clearRootSession = useEmulatorManagerStore((state) => state.clearRootSession);
   const setRestorePlan = useEmulatorManagerStore((state) => state.setRestorePlan);
   const setPendingAction = useEmulatorManagerStore((state) => state.setPendingAction);
   const [isRestorePlanLoading, setIsRestorePlanLoading] = useState(false);
 
   const selectedAvd = avds.find((item) => item.name === selectedAvdName) ?? null;
-  const activeRootSession =
-    rootSession && rootSession.avdName === selectedAvd?.name ? rootSession : null;
   const isBusy = pendingAction !== null;
   const isRefreshing = isFetching && pendingAction === 'refreshPlan';
 
@@ -179,50 +172,12 @@ export function ViewEmulatorManager() {
     );
   }
 
-  async function handlePrepareRoot(rootPackagePath: string) {
-    const serial = selectedAvd?.serial;
-    if (!selectedAvd || !serial) return;
-    await runAction(
-      'rootPrepare',
-      async () => {
-        const result = await PrepareAvdRoot({ avdName: selectedAvd.name, serial, rootPackagePath });
-        setRootSession({
-          avdName: selectedAvd.name,
-          serial,
-          normalizedPackagePath: result.normalizedPackagePath,
-          fakeBootRemotePath: result.fakeBootRemotePath,
-          instructions: result.instructions,
-        });
-        handleSuccess('Emulator Manager', `Prepared root workflow for ${selectedAvd.name}.`);
-      },
-      `Failed to prepare root for ${selectedAvd.name}`,
-    );
-  }
-
-  async function handleFinalizeRoot() {
-    if (!activeRootSession) return;
-    await runAction(
-      'rootFinalize',
-      async () => {
-        const result = await FinalizeAvdRoot({
-          avdName: activeRootSession.avdName,
-          serial: activeRootSession.serial,
-        });
-        clearRootSession();
-        handleSuccess('Emulator Manager', result.nextBootRecommendation);
-        await refreshAvds();
-      },
-      `Failed to finalize root for ${activeRootSession.avdName}`,
-    );
-  }
-
   async function handleRestore() {
     if (!selectedAvd) return;
     await runAction(
       'restore',
       async () => {
         const message = await RestoreAvdBackups(selectedAvd.name);
-        clearRootSession();
         handleSuccess('Emulator Manager', message);
         await refreshAvds();
       },
@@ -373,14 +328,7 @@ export function ViewEmulatorManager() {
                 </TabsContent>
 
                 <TabsContent value="root">
-                  <EmulatorRootTab
-                    avd={selectedAvd}
-                    isPreparing={pendingAction === 'rootPrepare'}
-                    isFinalizing={pendingAction === 'rootFinalize'}
-                    rootSession={activeRootSession}
-                    onPrepare={handlePrepareRoot}
-                    onFinalize={handleFinalizeRoot}
-                  />
+                  <EmulatorRootTab avd={selectedAvd} />
                 </TabsContent>
 
                 <TabsContent value="restore">

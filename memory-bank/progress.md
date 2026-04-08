@@ -6,21 +6,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
 Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
-Emulator Manager is **fully working** on Windows (commit `a52ca2e`). Critical bug fixed: AVD discovery now scans `~/.android/avd/*.ini` files directly (no `emulator` binary needed for enumeration). `sdk.rs` gained `resolve_emulator_binary()` for SDK-aware launch. Running emulators appear in roster with correct serial and `isRunning: true`.
-
-## What Works
-
-### TypeScript Toolchain
-
-- TypeScript upgraded to **6.0.2**
-- `tsconfig.json` no longer uses deprecated `compilerOptions.baseUrl`
-- `@/*` alias continues to work via `paths` without `baseUrl`
-- `pnpm exec tsc --noEmit` passes on TypeScript 6.0.2
-
-### Authentication
-- GitHub OAuth Device Flow successfully tested and integrated. Backend `auth.rs` correctly extracts and propagates `error_description` from HTTP 4xx responses (e.g., `device_flow_disabled`), greatly streamlining developer onboarding.
-
-### Frontend
+Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discovery scans `~/.android/avd/*.ini` directly. Root pipeline **fully modernized** 2026-04-09: (1) serde camelCase discriminator mismatch fixed, (2) Magisk v25+ binary naming compatibility, (3) detailed step logging, (4) 3-phase pipeline overhaul — ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, `adb_shell_checked()` strict error checking, auto-shutdown after patching, boot-completion polling, no-snapshot-save cold boot, `EmulatorBootMode` detection and Cold/Normal badge in AvdSwitcher.
 
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
@@ -235,7 +221,7 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|----|
-| Medium | Validate root/restore flows on real emulator | AVD discovery is fixed. Remaining: test prepare/finalize root and restore against a running `Medium_Phone` AVD. |
+| High | Validate full root/restore flow end-to-end on real emulator | Pipeline is now modernized and should work. Needs real AVD testing to confirm end-to-end. |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -255,6 +241,8 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-09 | 0.1.0 | Root pipeline modernization (3-phase, 12 bug fixes): Phase 1 — `adb_shell_checked()` strict error checking, `detect_compression_method()` from magic bytes (removes hardcoded lz4_legacy), SHA1 config, `stub.xz` injection, `wait_for_boot_completed()`, auto-shutdown after patching. Phase 2 — `noSnapshotSave: true`, auto-stopped emulator handling, updated success messaging. Phase 3 — `EmulatorBootMode` enum (`Cold`/`Normal`/`Unknown`), `detect_boot_mode()` via `ro.kernel.androidboot.snapshot_loaded`, Cold/Normal badge in AvdSwitcher. All gates pass: `pnpm build` ✅ · `pnpm lint` ✅ · `pnpm format` ✅ |
+| 2026-04-09 | 0.1.0 | Root pipeline bug fixes: (1) Serde camelCase discriminator mismatch fixed — `RootSource` tag values must be camelCase (`latestStable`/`localFile`) to match `rename_all = "camelCase"`. Fixed in `models.ts` and `RootWizard.tsx`. (2) Magisk v25+ binary naming — `libmagisk64.so` → `libmagisk.so` rename in v25+. Added `extract_lib_binary_as()` helper and cascading fallback in `magisk_package.rs`. (3) Detailed `[root]` step logging added to `root_avd_automated()` — ABI detection, each binary push, patch sequence, pull sizes, APK install result. (4) React Compiler `useCallback` fix in `RootSourceStep.tsx` — removed manual memoization per React Compiler guidance; mount-only `useEffect` with justified `eslint-disable-next-line`. All gates pass: `pnpm build` ✅ · `pnpm lint:web` ✅ · `cargo check` ✅ · `cargo clippy -D warnings` ✅ |
 | 2026-04-08 | 0.1.0 | Emulator Manager bug fix: `avd.rs` replaced `emulator -list-avds` with direct `~/.android/avd/*.ini` scanning (`scan_avd_names()`). `sdk.rs` added `resolve_emulator_binary(env)` + `resolve_emulator_binary_from_current_env()` for SDK-aware binary lookup (no PATH required). `runtime.rs` `launch_avd()` uses SDK resolver with fallback, sets working dir to emulator binary parent, adds 1s crash detection. `ViewEmulatorManager.tsx` surfaces `GetAvdRestorePlan` errors to activity log. `resolve_system_image_dir()` normalises Windows backslashes. All gates pass. |
 | 2026-04-05 | 0.1.0 | Emulator Manager implemented: added a dedicated Rust `emulator/` domain module, new Tauri emulator commands, typed desktop wrappers, Zustand `emulatorManagerStore`, an Advanced `Emulator Manager` view with roster/header/quick actions/tabs/activity log, and frontend tests. Verified `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing) and `pnpm tauri build --debug` was blocked in this session by a locked target executable. |
 | 2026-04-05 | 0.1.0 | Emulator Manager planning: created the feature spec and implementation plan for a new Advanced `Emulator Manager` view. Scope is limited to existing official Android Studio AVDs. The planned architecture uses a dedicated Rust `emulator/` domain module, a React hybrid manager layout, safe launch presets, local `.apk`/`.zip` root package import, assisted fake-boot root orchestration, and backup-based restore/unroot. `rootAVD` and `EMU.bat` remain local reference material only, not runtime dependencies. |

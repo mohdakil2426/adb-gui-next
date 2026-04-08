@@ -2,33 +2,43 @@ import { create } from 'zustand';
 import type { backend } from '@/lib/desktop/models';
 
 export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
-export type EmulatorPendingAction =
-  | 'launch'
-  | 'stop'
-  | 'rootPrepare'
-  | 'rootFinalize'
-  | 'restore'
-  | 'refreshPlan'
-  | null;
+export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
 
-export interface RootSessionState {
-  avdName: string;
-  serial: string;
-  normalizedPackagePath: string;
-  fakeBootRemotePath: string;
-  instructions: string[];
+/** Wizard step for the automated root flow. */
+export type RootWizardStep = 'source' | 'progress' | 'result';
+
+/** Describes where the Magisk package will come from. */
+export type RootWizardSource = { type: 'stable' } | { type: 'local'; path: string } | null;
+
+export interface RootWizardState {
+  step: RootWizardStep;
+  source: RootWizardSource;
+  progress: backend.RootProgress | null;
+  result: backend.RootAvdResult | null;
+  error: string | null;
 }
+
+const INITIAL_ROOT_WIZARD: RootWizardState = {
+  step: 'source',
+  source: null,
+  progress: null,
+  result: null,
+  error: null,
+};
 
 interface EmulatorManagerState {
   selectedAvdName: string | null;
   activeTab: EmulatorManagerTab;
-  rootSession: RootSessionState | null;
+  rootWizard: RootWizardState;
   restorePlan: backend.RestorePlan | null;
   pendingAction: EmulatorPendingAction;
   setSelectedAvdName: (name: string | null) => void;
   setActiveTab: (tab: EmulatorManagerTab) => void;
-  setRootSession: (session: RootSessionState | null) => void;
-  clearRootSession: () => void;
+  setRootWizardStep: (step: RootWizardStep) => void;
+  setRootWizardSource: (source: RootWizardSource) => void;
+  setRootWizardProgress: (progress: backend.RootProgress | null) => void;
+  setRootWizardResult: (result: backend.RootAvdResult | null, error?: string | null) => void;
+  resetRootWizard: () => void;
   setRestorePlan: (plan: backend.RestorePlan | null) => void;
   setPendingAction: (action: EmulatorPendingAction) => void;
   reset: () => void;
@@ -37,7 +47,7 @@ interface EmulatorManagerState {
 const INITIAL_STATE = {
   selectedAvdName: null,
   activeTab: 'overview' as EmulatorManagerTab,
-  rootSession: null as RootSessionState | null,
+  rootWizard: INITIAL_ROOT_WIZARD,
   restorePlan: null as backend.RestorePlan | null,
   pendingAction: null as EmulatorPendingAction,
 };
@@ -47,8 +57,20 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
 
   setSelectedAvdName: (selectedAvdName) => set({ selectedAvdName }),
   setActiveTab: (activeTab) => set({ activeTab }),
-  setRootSession: (rootSession) => set({ rootSession }),
-  clearRootSession: () => set({ rootSession: null }),
+
+  setRootWizardStep: (step) => set((state) => ({ rootWizard: { ...state.rootWizard, step } })),
+
+  setRootWizardSource: (source) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, source } })),
+
+  setRootWizardProgress: (progress) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, progress } })),
+
+  setRootWizardResult: (result, error = null) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, result, error, step: 'result' } })),
+
+  resetRootWizard: () => set({ rootWizard: INITIAL_ROOT_WIZARD }),
+
   setRestorePlan: (restorePlan) => set({ restorePlan }),
   setPendingAction: (pendingAction) => set({ pendingAction }),
   reset: () => set({ ...INITIAL_STATE }),

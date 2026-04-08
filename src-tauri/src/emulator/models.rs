@@ -1,11 +1,84 @@
 use serde::{Deserialize, Serialize};
 
+// ─── Automated root pipeline models ──────────────────────────────────────────
+
+/// Where the Magisk package originates from.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum RootSource {
+    /// A local file path provided by the user (`.apk` or `.zip`).
+    #[serde(rename_all = "camelCase")]
+    LocalFile { value: String },
+    /// Automatically download the latest official stable Magisk from GitHub.
+    LatestStable,
+}
+
+/// The latest official stable Magisk release fetched from the GitHub releases API.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct MagiskStableRelease {
+    /// Human-readable version string (e.g. "Magisk v30.7").
+    pub version: String,
+    /// Git tag name (e.g. "v30.7").
+    pub tag: String,
+    /// Exact filename of the APK asset (e.g. "Magisk-v30.7.apk").
+    pub asset_name: String,
+    /// Direct download URL for the APK.
+    pub download_url: String,
+    /// File size in bytes.
+    pub size: u64,
+    /// SHA-256 hex digest provided by GitHub (without the "sha256:" prefix), if present.
+    pub sha256: Option<String>,
+    /// ISO-8601 publish timestamp from the GitHub release.
+    pub published_at: String,
+}
+
+/// Live progress event emitted during `root_avd` execution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RootProgress {
+    pub step: u8,
+    pub total_steps: u8,
+    pub label: String,
+    pub detail: Option<String>,
+}
+
+/// Request to root a running AVD using the automated pipeline.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RootAvdRequest {
+    pub avd_name: String,
+    pub serial: String,
+    pub source: RootSource,
+}
+
+/// Result returned after a successful automated root.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RootAvdResult {
+    pub magisk_version: String,
+    pub patched_ramdisk_path: String,
+    pub manager_installed: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub enum AvdRootState {
     Stock,
     Rooted,
     Modified,
+    Unknown,
+}
+
+/// Whether the emulator was cold-booted (fresh) or loaded from a Quick Boot snapshot.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum EmulatorBootMode {
+    /// Fresh boot with no snapshot loaded.
+    Cold,
+    /// Booted from a Quick Boot snapshot.
+    Normal,
+    /// Could not determine boot mode.
     Unknown,
 }
 
@@ -22,6 +95,7 @@ pub struct AvdSummary {
     pub ramdisk_path: Option<String>,
     pub has_backups: bool,
     pub root_state: AvdRootState,
+    pub boot_mode: EmulatorBootMode,
     pub is_running: bool,
     pub serial: Option<String>,
     pub warnings: Vec<String>,

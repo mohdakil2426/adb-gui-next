@@ -6,20 +6,30 @@ describe('emulatorManagerStore', () => {
     useEmulatorManagerStore.getState().reset();
   });
 
-  it('tracks root preparation state until cleared', () => {
-    useEmulatorManagerStore.getState().setRootSession({
-      avdName: 'Pixel_8_API_34',
-      serial: 'emulator-5554',
-      normalizedPackagePath: 'C:/temp/magisk.apk',
-      fakeBootRemotePath: '/sdcard/Download/fakeboot.img',
-      instructions: ['Patch the fake boot image'],
+  it('tracks root wizard source selection', () => {
+    useEmulatorManagerStore.getState().setRootWizardSource({ type: 'stable' });
+
+    expect(useEmulatorManagerStore.getState().rootWizard.source).toEqual({
+      type: 'stable',
     });
 
-    expect(useEmulatorManagerStore.getState().rootSession?.serial).toBe('emulator-5554');
+    useEmulatorManagerStore.getState().resetRootWizard();
 
-    useEmulatorManagerStore.getState().clearRootSession();
+    expect(useEmulatorManagerStore.getState().rootWizard.source).toBeNull();
+    expect(useEmulatorManagerStore.getState().rootWizard.step).toBe('source');
+  });
 
-    expect(useEmulatorManagerStore.getState().rootSession).toBeNull();
+  it('tracks root wizard progress', () => {
+    useEmulatorManagerStore.getState().setRootWizardStep('progress');
+    useEmulatorManagerStore.getState().setRootWizardProgress({
+      step: 3,
+      totalSteps: 8,
+      label: 'Extracting binaries',
+      detail: 'x86_64',
+    });
+
+    expect(useEmulatorManagerStore.getState().rootWizard.step).toBe('progress');
+    expect(useEmulatorManagerStore.getState().rootWizard.progress?.step).toBe(3);
   });
 
   it('stores and clears restore plan', () => {

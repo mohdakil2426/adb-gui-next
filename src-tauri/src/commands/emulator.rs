@@ -1,16 +1,19 @@
 use crate::{
     CmdResult,
     emulator::{
-        avd, backup,
+        avd, backup, magisk_download,
         models::{
-            AvdSummary, EmulatorLaunchOptions, RestorePlan, RootFinalizeRequest,
-            RootFinalizeResult, RootPreparationRequest, RootPreparationResult,
+            AvdSummary, EmulatorLaunchOptions, MagiskStableRelease, RestorePlan, RootAvdRequest,
+            RootAvdResult, RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest,
+            RootPreparationResult,
         },
         root, runtime,
     },
 };
 use std::path::PathBuf;
 use tauri::AppHandle;
+
+// ─── AVD management ───────────────────────────────────────────────────────────
 
 #[tauri::command]
 pub async fn list_avds(app: AppHandle) -> CmdResult<Vec<AvdSummary>> {
@@ -67,6 +70,28 @@ pub async fn restore_avd_backups(app: AppHandle, avd_name: String) -> CmdResult<
     .await
     .map_err(|error| error.to_string())?
 }
+
+// ─── Automated one-click root ─────────────────────────────────────────────────
+
+/// Fetch the latest official stable Magisk release from the GitHub releases API.
+/// Returns version, tag, download URL, file size, SHA-256 digest, and publish date.
+#[tauri::command]
+pub async fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
+    tokio::task::spawn_blocking(magisk_download::fetch_magisk_stable_release)
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+/// Root an AVD using the automated magiskboot pipeline.
+/// Emits `root:progress` events during execution for live UI progress.
+#[tauri::command]
+pub async fn root_avd(app: AppHandle, request: RootAvdRequest) -> CmdResult<RootAvdResult> {
+    tokio::task::spawn_blocking(move || root::root_avd_automated(&app, &request))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+// ─── Legacy manual root (FAKEBOOTIMG) — kept as fallback ──────────────────────
 
 #[tauri::command]
 pub async fn prepare_avd_root(

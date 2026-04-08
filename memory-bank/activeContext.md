@@ -6,10 +6,116 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
 Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. All core quality gates pass: format, lint (ESLint), tsc build, cargo check (lib + tests). `cargo clippy`/`cargo test` still blocked by pre-existing Windows `AdbWinApi.dll` file lock.
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
+Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-09 — Root Pipeline Modernization (12 Bug Fixes, 3-Phase Overhaul)
+
+**3-phase overhaul** to make the AVD rooting pipeline robust, aligned with the rootAVD reference architecture.
+
+#### Phase 1 — Core Pipeline Fix (`root.rs`)
+| Bug | Issue | Fix |
+|-----|-------|-----|
+| BUG-01 | Decompression failures silent | `adb_shell_checked()` — wraps command with `; echo EXITCODE:$?` and fails fast on non-zero |
+| BUG-02 | Hardcoded `lz4_legacy` recompression | `detect_compression_method()` — reads magic bytes via `xxd`/`od` to detect `lz4_legacy`/`gzip`/`raw` |
+| BUG-03 | Missing SHA1 in Magisk config | Compute via `magiskboot sha1` on stock ramdisk |
+| BUG-04 | `stub.xz` never included in CPIO | Push `stub.apk`, XZ-compress to `stub.xz`, add to overlay.d/sbin in CPIO patch command |
+| BUG-06 | No boot-completion check | `wait_for_boot_completed()` — polls `sys.boot_completed` for up to 60s |
+| BUG-07 | Exit codes silently swallowed | All critical commands now use `adb_shell_checked` |
+| BUG-08 | No auto-stop after patching | `setprop sys.powerctl shutdown` after writing patched ramdisk — prevents snapshot re-save |
+
+**New helpers:** `adb_shell_checked()`, `verify_remote_file()`, `detect_compression_method()`, `wait_for_boot_completed()`, `parse_exit_code()`.
+
+#### Phase 2 — Frontend Reliability
+| Bug | Issue | Fix |
+|-----|-------|-----|
+| BUG-05 | Cold boot saves snapshot (reverts root) | `noSnapshotSave: true` in `handleColdBoot()` |
+| BUG-08b | `handleColdBoot` fails if emulator already stopped | `StopAvd().catch(() => {})` — gracefully handles auto-stopped emulators |
+| BUG-09 | Success messaging misleading | Updated to "The emulator was stopped automatically. Click Cold Boot below…" |
+
+#### Phase 3 — Boot Mode Visibility
+| Bug | Issue | Fix |
+|-----|-------|-----|
+| BUG-10 | No boot state visibility | `EmulatorBootMode` enum (`Cold`/`Normal`/`Unknown`) added to `models.rs` |
+| BUG-11 | No boot mode detection | `detect_boot_mode()` in `avd.rs` queries `ro.kernel.androidboot.snapshot_loaded` |
+| BUG-12 | No boot mode in UI | Blue "Cold" / amber "Normal" badge in `AvdSwitcher.tsx` dropdown |
+
+**Files changed:** `root.rs`, `models.rs`, `avd.rs`, `models.ts`, `RootWizard.tsx`, `RootResultStep.tsx`, `AvdSwitcher.tsx`
+
+**Verification:** `pnpm build` ✅ · `pnpm lint:web` ✅ · `pnpm lint:rust` ✅ · `pnpm format` ✅
+
+---
+
+### 2026-04-09 — Root Pipeline Bug Fixes (3 Fixes, All Gates Pass)
+
+#### Fix 1 — Serde CamelCase Discriminator Mismatch
+**Problem:** `root_avd` command rejected with `unknown variant 'LatestStable', expected 'localFile' or 'latestStable'`.
+**Root Cause:** Rust `#[serde(rename_all = "camelCase")]` converts enum variant names in the tag discriminator — `LatestStable` → `latestStable`, `LocalFile` → `localFile`. Frontend was sending PascalCase.
+**Fix:**
+- `models.ts` — `RootSource` union: `'LocalFile'`/`'LatestStable'` → `'localFile'`/`'latestStable'`
+- `RootWizard.tsx` — source mapping: sends `'latestStable'`/`'localFile'` with `as const`
+
+#### Fix 2 — React Compiler useCallback Rejection
+**Problem:** ESLint `preserve-manual-memoization` error — React Compiler rejected `useCallback(() => ..., [])` because it detected `onSourceChange`/`source` were used inside but not listed as deps.
+**Fix (guided by Context7 React Compiler docs):** Removed `useCallback` entirely per React team guidance: *"If you're using React Compiler, safely remove manual `useCallback` calls — let the compiler optimize automatically."*
+- `RootSourceStep.tsx` — `loadRelease` is now a plain `function`, called inside `useEffect(() => { loadRelease(); }, [])` with a justified `eslint-disable-next-line` on the effect's empty dep array.
+
+#### Fix 3 — Magisk v25+ Binary Naming Compatibility
+**Problem:** `Missing binary 'lib/x86_64/libmagisk64.so' in Magisk package` — Magisk v30.7 APK doesn't have `libmagisk64.so`.
+**Root Cause:** Magisk renamed its daemon libraries starting v25 (2023):
+- Pre-v25: `libmagisk64.so` / `libmagisk32.so`
+- v25+: `libmagisk.so` (per-ABI dir, 64-bit builds drop magisk32)
+
+**Fix in `magisk_package.rs`:**
+- Added `extract_lib_binary_as(src_name, dest_name)` helper — extracts under a source ZIP name but saves under a stable destination name.
+- Replaced hardcoded `magisk64`/`magisk32` lookups with cascading fallback:
+  1. Try `libmagisk64.so` (old, all forks pre-v25)
+  2. Fall back to `libmagisk.so` saved as `magisk64` (v25+)
+  3. Error with both names listed if neither exists
+- `magisk32`: tries old name, then 32-bit fallback lib dir, then silently skips (v25+ 64-bit builds omit it — that's fine)
+- Fully backward-compatible with Delta, Kitsune Mask, Alpha, and any fork still using old naming.
+
+#### Detailed Logging Added to Root Pipeline (`root.rs`)
+- `log::info!` at every step: ADB connectivity check, ramdisk path + size, backup path, source type, work dir, package size, ABI detection (or fallback with reason), each binary extraction path, each `adb push` target, chmod, patch sequence start/fail/success, pull size, copy destination, APK install output or failure reason, workdir cleanup.
+- All log lines prefixed `[root]` for easy filtering in the Logs panel.
+
+**Verification:** `pnpm build` ✅ · `pnpm lint:web` ✅ · `cargo check` ✅ · `cargo clippy -- -D warnings` ✅
+
+---
+
+
+**Change:** Replaced the multi-channel (stable/canary/alpha) download picker with a single **official stable release** fetch from the GitHub `releases/latest` API. Local file mode is unchanged — supports any `.apk`/`.zip` (any fork, any version).
+
+**Architecture decisions:**
+- `RootSource::Channel(String)` → `RootSource::LatestStable` — no value needed; the endpoint always returns the latest non-prerelease.
+- GitHub `releases/latest` API (not raw manifest files) — uses proper HTTP `Accept: application/vnd.github+json` header and `X-GitHub-Api-Version: 2022-11-28`.
+- APK asset selection: prefers `Magisk-*.apk` (official naming), falls back to highest download-count non-debug `.apk`, explicitly excludes `app-debug.apk`.
+- SHA-256 digest surfaced in UI (truncated preview) when GitHub provides it.
+- Download cached by release tag (`Magisk-v30.7.apk`) — re-downloads skipped automatically.
+
+**Files changed:**
+
+| File | Change |
+|:---|:---|
+| `emulator/magisk_download.rs` | Complete rewrite — `fetch_magisk_stable_release()` + `download_magisk_stable()`. `fetch_magisk_channels()` and `download_magisk_channel()` removed. 4 new unit tests. |
+| `emulator/models.rs` | Removed `MagiskChannel` struct. Added `MagiskStableRelease` struct (version, tag, assetName, downloadUrl, size, sha256, publishedAt). `RootSource::Channel(String)` → `RootSource::LatestStable`. |
+| `emulator/root.rs` | `resolve_package_path()` updated: `Channel` arm → `LatestStable` arm (fetches + downloads stable release). `LocalFile(String)` → `LocalFile { value }`. |
+| `commands/emulator.rs` | `fetch_magisk_channels` command removed. `fetch_magisk_stable_release` command added → `MagiskStableRelease`. |
+| `lib.rs` | `commands::fetch_magisk_channels` → `commands::fetch_magisk_stable_release` in invoke handler. |
+| `src/lib/desktop/models.ts` | `MagiskChannel` interface removed. `MagiskStableRelease` interface added. `RootSource` union updated → `LatestStable`. |
+| `src/lib/desktop/backend.ts` | `FetchMagiskChannels()` → `FetchMagiskStableRelease()`. |
+| `src/lib/emulatorManagerStore.ts` | `RootWizardSource`: `{ type: 'channel'; channel: string }` → `{ type: 'stable' }`. |
+| `src/components/emulator-manager/RootSourceStep.tsx` | Complete rewrite — download panel now shows a single stable release card (version, size, date, sha256 preview) with loading/error/retry states. Local file panel unchanged. |
+| `src/components/emulator-manager/RootWizard.tsx` | `startRoot()` mapping updated: `'stable'` → `{ type: 'LatestStable' }`. |
+| `src/test/emulatorManagerStore.test.ts` | Test updated to use `{ type: 'stable' }` instead of `{ type: 'channel', channel: 'stable' }`. |
+
+**Verification:** `pnpm build` ✅ · `pnpm lint:web` ✅ · `pnpm format:check` ✅ · `cargo check` ✅ · `cargo clippy -- -D warnings` ✅
+
+---
+
 
 ### 2026-04-08 — Emulator Manager Feature Trim (Remove Overkill Options)
 
@@ -452,10 +558,9 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-08** (after Emulator Manager bug fix — commit `a52ca2e`)
+Last verified: **2026-04-09** (after root pipeline bug fixes)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
-- `pnpm lint` ✅ — ESLint + cargo clippy -D warnings clean
-- `pnpm format:check` ✅ — Formatting clean
+- `pnpm lint:web` ✅ — ESLint zero problems
 - `cargo check` ✅ — Rust compilation clean
 - `cargo clippy -- -D warnings` ✅ — Zero warnings
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
@@ -474,7 +579,7 @@ Last verified: **2026-04-08** (after Emulator Manager bug fix — commit `a52ca2
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
-| Emulator Manager | ✅ Fixed & Working | AVD discovery via INI scan (no emulator binary needed), `resolve_emulator_binary()` for SDK-aware launch, crash detection, error visibility. Running emulators appear in roster with correct serial/status. |
+| Emulator Manager | ✅ Modernized | AVD discovery via INI scan. Root pipeline fully modernized: ramdisk compression detection, stub.xz injection, SHA1 config, adb_shell_checked error checking, auto-shutdown, no-snapshot-save cold boot, boot mode badge (Cold/Normal). |
 | App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
@@ -524,11 +629,17 @@ Last verified: **2026-04-08** (after Emulator Manager bug fix — commit `a52ca2
 - **Tauri sync commands = main thread**: `pub fn` commands block WebView. Always `pub async fn` + `tokio::task::spawn_blocking`.
 - **`State<'_, T>` in async commands**: Cannot use `spawn_blocking` (needs `'static`). Use `block_in_place` instead.
 - **`split_args` in spawn_blocking**: Must be called **inside** the `spawn_blocking` closure — borrows from the closure-owned String, not across 'static boundary.
-- **`cargo test` on Windows**: STATUS_ENTRYPOINT_NOT_FOUND — pre-existing Tauri DLL issue, not a code bug.
+- **Serde `rename_all = "camelCase"` applies to tag discriminators**: When using `#[serde(tag = "type", rename_all = "camelCase")]` on an enum, variant names in the tag field are also renamed. `LatestStable` → `latestStable`, `LocalFile` → `localFile`. The frontend TypeScript union type and all mapping code must use camelCase strings — not PascalCase.
+- **Magisk library naming changed in v25+ (2023)**: Pre-v25 APKs use `lib/{abi}/libmagisk64.so` and `lib/{abi}/libmagisk32.so`. v25+ APKs use `lib/{abi}/libmagisk.so` (64-bit builds also drop `magisk32` entirely). Always use cascading fallback: try old name first (for forks), then new name. The helper `extract_lib_binary_as(src, dest)` in `magisk_package.rs` handles this — extracts `libmagisk.so` but saves it as `magisk64`.
+- **React Compiler rejects `useCallback` with incorrect deps**: When React Compiler is active (this project uses it), `useCallback(() => ..., [])` with variables used inside-but-not-listed will trigger `react-hooks/preserve-manual-memoization` and fail the build. Solution: remove `useCallback` entirely and let the compiler handle memoization automatically. Mount-only effects: use `useEffect(() => { fn(); }, [])` with `// eslint-disable-next-line react-hooks/exhaustive-deps` and a clear justification comment.
 - **`pnpm tauri build --debug` can fail with `os error 5`**: If `src-tauri/target/debug/adb-gui-next.exe` is still running or locked by another process, packaging fails until the lock is released.
 - **`emulator` binary is NOT bundled**: Unlike `adb`/`fastboot`, the Android `emulator` binary lives in `$SDK/emulator/`. Use `sdk::resolve_emulator_binary_from_current_env()` — never `resolve_binary_path(app, "emulator")` — for emulator-specific operations. `ANDROID_HOME`/`ANDROID_SDK_ROOT` may not be set; the `LOCALAPPDATA` fallback covers the default Android Studio install path.
 - **`emulator -list-avds` is fragile**: It requires the `emulator` binary. Prefer scanning `~/.android/avd/*.ini` files directly for AVD enumeration — these files are the canonical ground truth and require zero binary dependencies.
 - **Windows `config.ini` uses backslashes**: `image.sysdir.1` in a Windows AVD's `config.ini` uses backslashes (`system-images\android-31\...`). Always normalise to forward slashes before `PathBuf::join` to avoid broken path resolution.
+- **Root pipeline: use `adb_shell_checked()` for critical commands**: Never use `adb_shell()` for commands that must succeed. The `_checked` variant appends `; echo EXITCODE:$?`, parses the exit code, and returns `Err` on non-zero.
+- **Root pipeline: recompress with ORIGINAL method**: Ramdisk compression varies per AVD (lz4_legacy, gzip, raw). Always detect from magic bytes before patching and recompress using the same method. Never hardcode `lz4_legacy`.
+- **Root pipeline: auto-shutdown after patching**: After writing the patched ramdisk to the system image dir, the emulator MUST be stopped (`setprop sys.powerctl shutdown`) to prevent Quick Boot from saving a snapshot that reverts the ramdisk.
+- **`EmulatorBootMode` detection**: Use `ro.kernel.androidboot.snapshot_loaded` getprop — returns `true` for snapshot (Normal) boot, `false`/empty for Cold boot.
 
 ### Component Patterns
 
