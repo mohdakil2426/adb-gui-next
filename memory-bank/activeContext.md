@@ -4,13 +4,27 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. All core quality gates pass: format, lint (ESLint), tsc build, cargo check (lib + tests). `cargo clippy`/`cargo test` still blocked by pre-existing Windows `AdbWinApi.dll` file lock.
+Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current verification evidence includes passing format, `pnpm lint:web`, `pnpm build`, `cargo check`, and `cargo clippy -- -D warnings`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-14 — App Manager Installed App Icons
+
+**Change:** Added real installed-app icons to the Applications page without blocking package list load.
+
+**Implementation shape:**
+- Frontend `ViewAppManager.tsx` now lazy-loads icons only for currently visible virtualized rows.
+- Each row keeps a fixed icon slot from first paint and falls back to the `Package` glyph when no raster icon is available.
+- Backend `get_package_icon` command resolves the installed APK via `adb shell pm path`, pulls the APK to a temp path, parses `AndroidManifest.xml` + `resources.arsc`, resolves the `application` icon resource, and returns a data URL for raster assets.
+- Adaptive/compiled XML icons are handled best-effort by scanning same-stem raster candidates (`mipmap-*` / `drawable-*`) and preferring the highest-density match.
+
+**Files changed:** `src/components/views/ViewAppManager.tsx`, `src/lib/desktop/backend.ts`, `src-tauri/src/commands/apps.rs`, `src-tauri/src/app_icons.rs`, `src-tauri/src/lib.rs`, `src/test/ViewAppManager.test.tsx`
+
+**Verification:** `pnpm build` ✅ · `pnpm lint:web` ✅ · `cargo check` ✅ · `cargo clippy --all-targets -- -D warnings` ✅ · `pnpm format:check` ✅ · `pnpm test -- ViewAppManager.test.tsx` ✅
 
 ### 2026-04-09 — Root Pipeline Modernization (12 Bug Fixes, 3-Phase Overhaul)
 
@@ -558,11 +572,12 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-09** (after root pipeline bug fixes)
+Last verified: **2026-04-14** (after Applications page installed-app icons)
 - `pnpm build` ✅ — TypeScript + Vite bundle clean
 - `pnpm lint:web` ✅ — ESLint zero problems
 - `cargo check` ✅ — Rust compilation clean
 - `cargo clippy -- -D warnings` ✅ — Zero warnings
+- `pnpm test -- ViewAppManager.test.tsx` ✅ — App Manager icon loading UI test passes
 - `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
 - `pnpm tauri build --debug` ⚠️ — blocked when `adb-gui-next.exe` is already running
 
@@ -573,23 +588,23 @@ Last verified: **2026-04-09** (after root pipeline bug fixes)
 | Area | Status | Notes |
 |------|--------|-------|
 | Layout | ✅ Fixed | h-svh boundary, flex-col pinned header, overflow-x-hidden containment |
-| Responsive | ✅ Fixed | All 8 views — min-w-0 chain complete, no horizontal overflow |
+| Responsive | ✅ Fixed | All 9 views — min-w-0 chain complete, no horizontal overflow |
 | Header | ✅ Fixed | Structurally pinned via flex-col — never scrolls regardless of content |
 | Sidebar | ✅ Fixed | No phantom scrollbar gutter; overflow-x-hidden on content |
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
 | Emulator Manager | ✅ Modernized | AVD discovery via INI scan. Root pipeline fully modernized: ramdisk compression detection, stub.xz injection, SHA1 config, adb_shell_checked error checking, auto-shutdown, no-snapshot-save cold boot, boot mode badge (Cold/Normal). |
-| App Manager | ✅ Fixed | Viewport-relative virtualizer + APK list heights |
+| App Manager | ✅ Improved | Viewport-relative virtualizer, APK list heights, and lazy installed-app icons with fixed row slots |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
-| Frontend | ✅ Complete | shadcn Sidebar + 8 views + bottom panel |
+| Frontend | ✅ Complete | shadcn Sidebar + 9 views + bottom panel |
 | Bottom Panel | ✅ Polished | Fixed position, fluid resize (DOM-first/RAF), smart tab toggle |
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlinks |
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source |
 | App Manager | ✅ Improved | shadcn Command search, destructive glow, non-blocking install |
 | Flasher | ✅ Overhauled | Async flash/wipe, DropArea with position hit-testing, queue actions |
-| Backend | ✅ Complete | All 36 Tauri commands fully async |
+| Backend | ✅ Complete | 57 registered Tauri commands with async surfaces for long-running work |
 | Security | ✅ Hardened | Shell injection, SSRF, path traversal, content-length validation |
 
 ---

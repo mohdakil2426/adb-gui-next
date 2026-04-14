@@ -8,6 +8,8 @@ version = "0.1.0"
 dependencies = [
  "aes",
  "anyhow",
+ "apk-info-axml",
+ "base64 0.22.1",
  "bzip2",
  "cfb-mode",
  "flate2",
@@ -123,6 +125,30 @@ name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
+
+[[package]]
+name = "apk-info-axml"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07d6cd89ab93032e8eeb18f822774cad67222bdcd3a332989caaa43b4ec650a9"
+dependencies = [
+ "apk-info-xml",
+ "bitflags 2.11.0",
+ "log",
+ "phf 0.13.1",
+ "phf_codegen 0.13.1",
+ "quick-xml 0.39.2",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "winnow 0.7.15",
+]
+
+[[package]]
+name = "apk-info-xml"
+version = "1.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29b05a4ac2fb73f3ca59a708807c3870b3901f8251135690fb7de8b05bb687c7"
 
 [[package]]
 name = "arboard"

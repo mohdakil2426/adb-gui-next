@@ -57,6 +57,8 @@
 | cfb-mode | 0.8 | CFB stream cipher mode (OFP-QC/MTK AES decryption) |
 | md-5 | 0.10 | MD5 digest (OFP key derivation) |
 | quick-xml | 0.37 | XML parsing (OPS manifest parsing) |
+| apk-info-axml | 1.0.11 | Android AXML + `resources.arsc` parsing for installed-app icon extraction |
+| base64 | 0.22 | Encodes extracted raster app icons as frontend data URLs |
 
 ## Tooling
 
@@ -128,7 +130,7 @@
 │   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
 │   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
 │   │   ├── ui/                   # 22+ shadcn primitives (incl. Checkbox, ContextMenu)
-│   │   └── views/                # 8 feature views
+│   │   └── views/                # 9 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
 │   │   ├── logStore.ts           # Log panel state (ring buffer, filter, search)
@@ -143,8 +145,9 @@
     ├── Cargo.toml                # Rust deps (edition 2024)
     ├── src/
     │   ├── lib.rs                # Thin orchestrator (~95 lines)
+    │   ├── app_icons.rs          # Installed APK icon extraction helpers (AXML/ARSC + raster fallback)
     │   ├── helpers.rs            # Shared utilities
-    │   ├── commands/             # 8 command modules
+    │   ├── commands/             # 9 command modules
     │   │   ├── mod.rs
     │   │   ├── device.rs
     │   │   ├── adb.rs
@@ -204,4 +207,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-04 (marketplace hardening pass, TypeScript 6.0.2 upgrade, `baseUrl` deprecation migration)
+- **Last Updated**: 2026-04-14 (Applications page icon extraction pipeline: `apk-info-axml`, `base64`, `app_icons.rs`)

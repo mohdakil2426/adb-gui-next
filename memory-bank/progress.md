@@ -46,6 +46,10 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking, stable React keys for removable APK list
+- App Manager installed-app icons:
+  - Lazy visible-row icon loading via `GetPackageIcon(packageName)` — package list still appears immediately
+  - Fixed icon slot per row — no layout shift in the virtualized list
+  - Backend APK icon extraction from installed packages via `pm path` + manifest/resource resolution + same-stem raster fallback for adaptive-icon XML entries
 - **File Explorer (full-featured dual-pane)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
   - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
@@ -89,7 +93,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition` *(async)*, `reboot`, `wipe_data` *(async)*, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
-| Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages` |
+| Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages`, `get_package_icon` *(async)* |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
@@ -234,6 +238,7 @@ src-tauri/src/
 ## Risks / Known Issues
 
 - `cargo test` abnormal exit on Windows (pre-existing — Tauri DLL not available in bare `cargo test` process; not a code bug)
+- Installed app icons are best-effort: if an APK exposes only unsupported XML/vector/adaptive resources with no same-stem raster fallback, the Applications page keeps the placeholder glyph for that package
 - `pnpm tauri build --debug` succeeds when the debug executable is not already running; Windows file locking can still block it if `src-tauri/target/debug/adb-gui-next.exe` is open
 - Large frontend bundle chunk warning during build (~274 KB JS)
 
@@ -241,6 +246,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-14 | 0.1.0 | Applications page installed-app icons: added lazy visible-row icon loading with fixed icon slots in the virtualized App Manager list, a new backend `get_package_icon` command, APK manifest/resource parsing in `app_icons.rs`, same-stem raster fallback for adaptive/XML icon resources, and a focused `ViewAppManager.test.tsx`. Verified `pnpm build`, `pnpm lint:web`, `cargo check`, `cargo clippy --all-targets -- -D warnings`, `pnpm format:check`, and `pnpm test -- ViewAppManager.test.tsx` pass. |
 | 2026-04-09 | 0.1.0 | Root pipeline modernization (3-phase, 12 bug fixes): Phase 1 — `adb_shell_checked()` strict error checking, `detect_compression_method()` from magic bytes (removes hardcoded lz4_legacy), SHA1 config, `stub.xz` injection, `wait_for_boot_completed()`, auto-shutdown after patching. Phase 2 — `noSnapshotSave: true`, auto-stopped emulator handling, updated success messaging. Phase 3 — `EmulatorBootMode` enum (`Cold`/`Normal`/`Unknown`), `detect_boot_mode()` via `ro.kernel.androidboot.snapshot_loaded`, Cold/Normal badge in AvdSwitcher. All gates pass: `pnpm build` ✅ · `pnpm lint` ✅ · `pnpm format` ✅ |
 | 2026-04-09 | 0.1.0 | Root pipeline bug fixes: (1) Serde camelCase discriminator mismatch fixed — `RootSource` tag values must be camelCase (`latestStable`/`localFile`) to match `rename_all = "camelCase"`. Fixed in `models.ts` and `RootWizard.tsx`. (2) Magisk v25+ binary naming — `libmagisk64.so` → `libmagisk.so` rename in v25+. Added `extract_lib_binary_as()` helper and cascading fallback in `magisk_package.rs`. (3) Detailed `[root]` step logging added to `root_avd_automated()` — ABI detection, each binary push, patch sequence, pull sizes, APK install result. (4) React Compiler `useCallback` fix in `RootSourceStep.tsx` — removed manual memoization per React Compiler guidance; mount-only `useEffect` with justified `eslint-disable-next-line`. All gates pass: `pnpm build` ✅ · `pnpm lint:web` ✅ · `cargo check` ✅ · `cargo clippy -D warnings` ✅ |
 | 2026-04-08 | 0.1.0 | Emulator Manager bug fix: `avd.rs` replaced `emulator -list-avds` with direct `~/.android/avd/*.ini` scanning (`scan_avd_names()`). `sdk.rs` added `resolve_emulator_binary(env)` + `resolve_emulator_binary_from_current_env()` for SDK-aware binary lookup (no PATH required). `runtime.rs` `launch_avd()` uses SDK resolver with fallback, sets working dir to emulator binary parent, adds 1s crash detection. `ViewEmulatorManager.tsx` surfaces `GetAvdRestorePlan` errors to activity log. `resolve_system_image_dir()` normalises Windows backslashes. All gates pass. |

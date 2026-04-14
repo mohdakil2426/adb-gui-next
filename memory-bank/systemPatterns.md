@@ -20,11 +20,12 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  runtime.ts → event listeners, file drop, URL opener                   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Backend (Rust — src-tauri/)                         │
-│  lib.rs (~60 lines) — thin orchestrator                                 │
+│  lib.rs (~95 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
 │  commands/ — 9 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload, marketplace, emulator) — 54 registered    │
+│              system, payload, marketplace, emulator) — 57 registered    │
 │              commands                                                    │
+│  app_icons.rs — installed APK icon extraction + manifest/resource walk   │
 │  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)              │
 │  marketplace/ — provider modules + auth/cache/ranking/service layers    │
 │  emulator/ — sdk/avd/runtime/backup/root domain modules                 │
@@ -86,6 +87,11 @@ OnFileDrop({
 
 - **Zustand v5** for shared state (device, log, shell, payloadDumper)
 - **localStorage** for user preferences that must survive view switches and restarts:
+  - `nicknameStore` — device nicknames (no reactivity needed)
+  - `fe.currentPath` — last visited File Explorer path (lazy `useState` initializer)
+  - `fe.treeCollapsed` — File Explorer tree panel collapsed state
+- **No router** — `useState<ViewType>` + switch statement in MainLayout
+
 ### 3a. Marketplace Feature Split
 
 Marketplace now follows a hybrid state/orchestration pattern:
@@ -115,10 +121,14 @@ Emulator Manager follows the same thin-command + focused-domain pattern as Marke
 - `src/lib/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
 - `src/components/views/ViewEmulatorManager.tsx` is the orchestration shell. Feature components under `src/components/emulator-manager/` stay presentational and callback-driven.
 
-  - `nicknameStore` — device nicknames (no reactivity needed)
-  - `fe.currentPath` — last visited File Explorer path (lazy `useState` initializer)
-  - `fe.treeCollapsed` — File Explorer tree panel collapsed state
-- **No router** — `useState<ViewType>` + switch statement in MainLayout
+### 3d. App Manager Installed Icon Pipeline
+
+Applications page icons follow a 2-phase pattern so package list load stays fast:
+- `get_installed_packages` stays metadata-only and returns immediately.
+- `ViewAppManager.tsx` renders a fixed icon slot for every virtualized row and lazy-loads icons only for currently visible rows.
+- `get_package_icon` resolves the installed APK with `adb shell pm path`, pulls it to a temp path, parses `AndroidManifest.xml` + `resources.arsc`, and returns a raster icon as a data URL.
+- If the declared icon resource is adaptive/XML-only, `app_icons.rs` searches same-stem raster candidates under `mipmap-*` / `drawable-*` and prefers the highest-density match.
+- Placeholder glyphs remain valid fallback UI and row height must never change after the icon arrives.
 
 ### 3. File Explorer — State Model & Critical Patterns
 
@@ -439,13 +449,14 @@ src/components/
 ├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
 ├── AppDetailDialog.tsx      # Marketplace app detail dialog (download + install + versions)
 ├── emulator-manager/        # Emulator Manager UI surface
-│   ├── AvdRoster.tsx        # Existing AVD roster with running/root/backup badges
-│   ├── EmulatorHeaderCard.tsx
-│   ├── EmulatorQuickActions.tsx
+│   ├── AvdSwitcher.tsx      # DeviceSwitcher-style AVD picker pill + popover
 │   ├── EmulatorLaunchTab.tsx
 │   ├── EmulatorRootTab.tsx
 │   ├── EmulatorRestoreTab.tsx
-│   └── EmulatorActivityCard.tsx
+│   ├── RootSourceStep.tsx   # Stable-release or local-package source selection
+│   ├── RootProgressStep.tsx # Root progress stage UI
+│   ├── RootResultStep.tsx   # Post-root next steps and result summary
+│   └── RootWizard.tsx       # Root flow orchestration within the Emulator Manager
 ├── marketplace/             # 8 marketplace UI components
 │   ├── SearchBar.tsx        # Ctrl+K shortcut, 600ms debounced search, settings icon
 │   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
@@ -463,7 +474,7 @@ src/components/
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` split into helpers + 8 command modules (41 total commands)
+- `src-tauri/src/lib.rs` is a thin orchestrator over helpers + 9 command modules (57 registered commands). Installed-app icon extraction lives in `src-tauri/src/app_icons.rs`, not in command wrappers.
 - `src-tauri/src/marketplace/` — modular provider architecture (fdroid, github, aptoide, types) with managed state:
   - **`ManagedHttpClient`** — singleton `reqwest::Client` registered as Tauri state; all marketplace commands share one connection-pooled client via `State<ManagedHttpClient>`. Download command uses a separate client (300s timeout, no auto-redirect).
   - **APK verification** — `verify_apk_availability()` in `github.rs` scans last 5 releases per repo using `JoinSet` + `Semaphore(5)` for bounded concurrent verification. Gracefully skips on 403/429 rate-limit. Called by both `search()` and `get_trending()`.
@@ -491,6 +502,7 @@ src/components/
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
 - **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.
+- **AppManager installed icons must stay lazy + fixed-size**: never fetch icons during initial package listing and never let icon arrival change row height. Visible-row lazy loading + placeholder slots keeps the virtualizer stable.
 - **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.
 - **`overflow-x-hidden` not `overflow-hidden` on layout containers**: `overflow-hidden` terminates the scroll-ancestor chain (breaks sticky) and clips both axes. `overflow-x-hidden` clips only horizontal escapes, leaving vertical flex flow intact.
 - **No `position: sticky` in this app**: Header is pinned structurally as a `shrink-0` sibling to the `flex-1 overflow-y-auto` scroll area inside the bounded `SidebarInset`.
