@@ -1,5 +1,5 @@
 use crate::CmdResult;
-use crate::helpers::{binary_working_directory, normalize_path};
+use crate::helpers::{binary_working_directory, normalize_path, sanitize_filename};
 use log::info;
 use std::{
     fs,
@@ -76,12 +76,7 @@ pub fn save_log(app: AppHandle, content: String, prefix: String) -> CmdResult<St
     let prefix = if prefix.trim().is_empty() {
         DEFAULT_LOG_PREFIX.to_string()
     } else {
-        prefix
-            .trim()
-            .chars()
-            .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
-            .take(50)
-            .collect::<String>()
+        sanitize_filename(&prefix)
     };
     let timestamp =
         SystemTime::now().duration_since(UNIX_EPOCH).map_err(|error| error.to_string())?.as_secs();

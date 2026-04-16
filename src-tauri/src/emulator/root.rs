@@ -100,14 +100,16 @@ fn adb_cleanup_workdir(app: &AppHandle, serial: &str) {
     let _ = adb_shell(app, serial, &format!("rm -rf {ROOT_WORKDIR}"));
 }
 
+const EXIT_CODE_MARKER: &str = "__ADB_GUI_EXIT_STATUS__:";
+
 /// Run an ADB shell command with **strict exit-code checking**.
 ///
-/// Appends `; echo EXITCODE:$?` to the command, parses the exit code from the
-/// output, and returns `Err` if non-zero.  Use for every critical pipeline step.
+/// Appends `; echo __ADB_GUI_EXIT_STATUS__:$?` to the command, parses the exit code
+/// from the output, and returns `Err` if non-zero. Use for every critical pipeline step.
 fn adb_shell_checked(app: &AppHandle, serial: &str, cmd: &str) -> CmdResult<String> {
-    let wrapped = format!("{cmd}; echo EXITCODE:$?");
+    let wrapped = format!("{cmd}; echo {EXIT_CODE_MARKER}$?");
     let output = adb_shell(app, serial, &wrapped)?;
-    if let Some(code) = parse_exit_code(&output, "EXITCODE:")
+    if let Some(code) = parse_exit_code(&output, EXIT_CODE_MARKER)
         && code != 0
     {
         return Err(format!(
@@ -623,9 +625,17 @@ fn patch_ramdisk_in_emulator(
     Ok(())
 }
 
-/// Parse `exit:<code>` from an ADB shell command output.
+/// Parse an exit code from an ADB shell command output using the provided marker.
+/// Searches from the bottom up since the exit status is typically the final line.
 fn parse_exit_code(output: &str, marker: &str) -> Option<u32> {
-    output.lines().find_map(|line| line.strip_prefix(marker)).and_then(|s| s.trim().parse().ok())
+    output.lines().rev().find_map(|line| {
+        let line = line.trim();
+        if let Some(status_str) = line.strip_prefix(marker) {
+            status_str.trim().parse::<u32>().ok()
+        } else {
+            None
+        }
+    })
 }
 
 fn sanitize_name(value: &str) -> String {
@@ -883,12 +893,18 @@ mod tests {
 
     #[test]
     fn parse_exit_code_from_composite_output() {
-        let output = "some magiskboot output\nexit:1\n";
-        assert_eq!(parse_exit_code(output, "exit:"), Some(1));
+        let output = "some magiskboot output\n__ADB_GUI_EXIT_STATUS__:1\n";
+        assert_eq!(parse_exit_code(output, "__ADB_GUI_EXIT_STATUS__:"), Some(1));
+    }
+
+    #[test]
+    fn parse_exit_code_prefers_last_line() {
+        let output = "__ADB_GUI_EXIT_STATUS__:1\nactual output\n__ADB_GUI_EXIT_STATUS__:0";
+        assert_eq!(parse_exit_code(output, "__ADB_GUI_EXIT_STATUS__:"), Some(0));
     }
 
     #[test]
     fn parse_exit_code_returns_none_when_missing() {
-        assert_eq!(parse_exit_code("no marker here", "exit:"), None);
+        assert_eq!(parse_exit_code("no marker here", "__ADB_GUI_EXIT_STATUS__:"), None);
     }
 }

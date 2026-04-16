@@ -59,6 +59,7 @@
 | quick-xml | 0.37 | XML parsing (OPS manifest parsing) |
 | apk-info-axml | 1.0.11 | Android AXML + `resources.arsc` parsing for installed-app icon extraction |
 | base64 | 0.22 | Encodes extracted raster app icons as frontend data URLs |
+| sanitize-filename | 0.6 | Sanitizes user-provided filenames to prevent path traversal and reserved name conflicts |
 
 ## Tooling
 
@@ -125,7 +126,7 @@
 │   │   ├── EmptyState.tsx        # Shared empty state component
 │   │   ├── CopyButton.tsx        # Shared copy-to-clipboard button
 │   │   ├── FileSelector.tsx      # Shared file/dir picker
-│   │   ├── LoadingButton.tsx     # Shared loading button
+│   │   ├── LoadingButton.tsx     # Shared button with loading spinner
 │   │   ├── SectionHeader.tsx     # Shared section sub-header
 │   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
 │   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
@@ -180,7 +181,8 @@
     ├── tauri.conf.json           # Main Tauri config
     ├── tauri.windows.conf.json   # Windows-specific config
     ├── tauri.linux.conf.json     # Linux-specific config
-    ├── capabilities/             # Tauri permission grants
+    ├── capabilities/             # Tauri 2 capability files (.json)
+    ├── permissions/              # Tauri 2 permission whitelists (.toml)
     ├── icons/                    # App icons (all platforms)
     └── resources/
         ├── windows/              # 14 files (~14 MB)
@@ -207,4 +209,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-14 (Applications page icon extraction pipeline: `apk-info-axml`, `base64`, `app_icons.rs`)
+- **Last Updated**: 2026-04-16 (Security hardening: `sanitize-filename`, Tauri v2 ACL whitelist migration to TOML, `adb_shell_checked` exit-code monitoring)

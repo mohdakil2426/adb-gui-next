@@ -13,6 +13,22 @@ pub fn default_if_empty<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     if trimmed.is_empty() { fallback } else { trimmed }
 }
 
+/// Sanitizes a filename by removing path traversal components and keeping only
+/// alphanumeric characters, dots, underscores, and dashes.
+pub fn sanitize_filename(name: &str) -> String {
+    let mut sanitized = name
+        .chars()
+        .filter(|&c| c.is_alphanumeric() || matches!(c, '.' | '_' | '-'))
+        .collect::<String>();
+
+    // Prevent directory traversal via '..' sequences
+    while sanitized.contains("..") {
+        sanitized = sanitized.replace("..", ".");
+    }
+
+    sanitized
+}
+
 pub fn split_args(command: &str) -> Vec<&str> {
     let mut args = Vec::new();
     let mut token_start = None;

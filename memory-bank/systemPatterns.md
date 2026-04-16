@@ -130,7 +130,7 @@ Applications page icons follow a 2-phase pattern so package list load stays fast
 - If the declared icon resource is adaptive/XML-only, `app_icons.rs` searches same-stem raster candidates under `mipmap-*` / `drawable-*` and prefers the highest-density match.
 - Placeholder glyphs remain valid fallback UI and row height must never change after the icon arrives.
 
-### 3. File Explorer — State Model & Critical Patterns
+### 3e. File Explorer — State Model & Critical Patterns
 
 `ViewFileExplorer` uses several carefully designed state patterns:
 
@@ -265,7 +265,29 @@ extract_payload(path) / list_payload_partitions_with_details(path)
 - **SSRF prevention**: `is_private_url()` blocks loopback, private, link-local, CGNAT, and unspecified IP ranges
 - **Path canonicalization**: `open_folder` verifies path exists, is a directory, and canonicalizes before opening
 - **TempDir RAII**: `tempfile::TempDir` auto-cleans on any exit path (APKS extraction)
-- **Prefix sanitization**: `save_log` filters prefix to alphanumeric + `-`/`_` only, max 50 chars
+- **`sanitize_filename()` mandatory**: Centralized utility in `helpers.rs` to strip all path delimiters, control characters, and reserved names. Must be used on any user-provided string used as a filename (e.g., log prefixes).
+
+### 6c. Standardized Exit Code Monitoring
+
+Android shells (`sh`, `mksh`, `toybox`) vary in how they report failures. Direct `Command` execution only captures the shell's exit status (usually 0 if the shell itself started), not the status of the command *inside* the shell.
+
+**Pattern:** Append a unique marker and `echo $?`.
+
+```rust
+// adb_shell_checked() pattern
+let marker = "__ADB_GUI_EXIT_STATUS__:";
+let cmd_with_marker = format!("{} ; echo {}$?", original_command, marker);
+let output = run_shell_command(app, &cmd_with_marker)?;
+
+// parse_exit_code()
+if let Some(status_line) = output.lines().find(|l| l.contains(marker)) {
+    let code_str = status_line.replace(marker, "").trim();
+    let code = code_str.parse::<i32>().unwrap_or(1);
+    if code != 0 { return Err(format!("Command failed with exit code {}", code)); }
+}
+```
+
+This ensures we detect `Permission denied`, `No space left`, `Partition is read-only`, and binary-not-found errors that a raw `adb shell` would otherwise report as "Success" (exit 0).
 
 ### 7. Sidebar (shadcn)
 
