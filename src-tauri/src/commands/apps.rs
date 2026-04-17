@@ -50,6 +50,37 @@ pub async fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPa
 }
 
 #[tauri::command]
+pub async fn get_package_label(app: AppHandle, package_name: String) -> CmdResult<Option<String>> {
+    let package_name = package_name.trim().to_string();
+    if package_name.is_empty() {
+        return Err("Package name is required.".into());
+    }
+
+    tokio::task::spawn_blocking(move || {
+        let output = run_binary_command(
+            &app,
+            "adb",
+            &["shell", "cmd", "package", "label", &package_name],
+        )?;
+        let label = output.trim().to_string();
+
+        // Treat as no label if empty, contains error keywords, or equals the package name
+        if label.is_empty()
+            || label == package_name
+            || label.contains("Exception")
+            || label.contains("Error")
+            || label.starts_with("Unknown")
+        {
+            Ok(None)
+        } else {
+            Ok(Some(label))
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 pub async fn install_package(app: AppHandle, path: String) -> CmdResult<String> {
     let path = path.trim().to_string();
     if path.is_empty() {

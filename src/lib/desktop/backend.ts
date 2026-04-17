@@ -100,6 +100,10 @@ export function GetInstalledPackages(): Promise<Array<backend.InstalledPackage>>
   return call('get_installed_packages');
 }
 
+export function GetPackageLabel(packageName: string): Promise<string | null> {
+  return call('get_package_label', { packageName });
+}
+
 export function InstallPackage(arg1: string): Promise<string> {
   return call('install_package', { path: arg1 });
 }

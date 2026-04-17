@@ -55,6 +55,7 @@ pub fn run() {
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,
+            commands::get_package_label,
             commands::get_avd_restore_plan,
             commands::install_package,
             commands::launch_device_manager,

@@ -9,6 +9,7 @@ import {
   InstallPackage,
   UninstallPackage,
   GetInstalledPackages,
+  GetPackageLabel,
 } from '../../lib/desktop/backend';
 import type { backend } from '../../lib/desktop/models';
 
@@ -59,6 +60,8 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
   const [isUninstalling, setIsUninstalling] = useState(false);
+  const [packageLabels, setPackageLabels] = useState<Record<string, string | null>>({});
+  const requestedLabelsRef = useRef<Set<string>>(new Set());
 
   const loadPackages = useCallback(async () => {
     setIsLoadingPackages(true);
@@ -103,10 +106,36 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
     count: filteredPackages.length,
     getScrollElement: () => packageListRef.current,
     getItemKey: (index) => filteredPackages[index]?.name ?? index,
-    estimateSize: () => 36,
+    estimateSize: () => 52,
     overscan: 5,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
+
+  // Lazy-load app labels for visible rows only
+  useEffect(() => {
+    const visibleNames = virtualRows
+      .map((row) => filteredPackages[row.index]?.name)
+      .filter((name): name is string => Boolean(name));
+
+    for (const packageName of visibleNames) {
+      if (requestedLabelsRef.current.has(packageName)) continue;
+      requestedLabelsRef.current.add(packageName);
+
+      void GetPackageLabel(packageName)
+        .then((label) => {
+          setPackageLabels((prev) => {
+            if (prev[packageName] === (label ?? null)) return prev;
+            return { ...prev, [packageName]: label ?? null };
+          });
+        })
+        .catch(() => {
+          setPackageLabels((prev) => {
+            if (Object.prototype.hasOwnProperty.call(prev, packageName)) return prev;
+            return { ...prev, [packageName]: null };
+          });
+        });
+    }
+  }, [filteredPackages, virtualRows]);
 
   const handleSelectApk = async () => {
     try {
@@ -448,7 +477,16 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                           <div className="flex size-6 items-center justify-center overflow-hidden rounded-md border bg-muted/40 shrink-0">
                             <Package className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
-                          <span className="text-sm truncate flex-1">{pkg.name}</span>
+                          <div className="flex min-w-0 flex-1 flex-col justify-center">
+                            <span className="truncate text-sm leading-tight">
+                              {packageLabels[pkg.name] ?? pkg.name}
+                            </span>
+                            {packageLabels[pkg.name] && (
+                              <span className="truncate text-xs leading-tight text-muted-foreground">
+                                {pkg.name}
+                              </span>
+                            )}
+                          </div>
                           <Badge
                             variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
                             className="ml-2 shrink-0 text-[10px] px-1.5 py-0"
