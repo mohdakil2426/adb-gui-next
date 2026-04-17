@@ -11,5 +11,5 @@ src-tauri/target/
 src-tauri/gen/schemas/
 docs/
 dev-tauri.log
-pnpm-lock.yaml
+bun.lock
 src-tauri/Cargo.lock

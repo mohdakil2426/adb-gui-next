@@ -91,11 +91,11 @@
 
 ### Build
 
-| Tool | Purpose |
-|------|---------|
-| pnpm | Package manager |
-| Cargo | Rust build |
-| Tauri CLI | Desktop build |
+| Tool      | Purpose         |
+|-----------|-----------------|
+| Bun       | Package manager |
+| Cargo     | Rust build      |
+| Tauri CLI | Desktop build   |
 
 ## Important Files
 
@@ -193,20 +193,20 @@
 
 | Command | What It Does |
 |---------|--------------|
-| `pnpm dev` | Vite dev server + Tauri window |
-| `pnpm build` | tsc type-check + Vite bundle |
-| `pnpm lint` | ESLint (web) + cargo clippy (Rust) |
-| `pnpm lint:web` | ESLint only |
-| `pnpm lint:rust` | cargo clippy -D warnings |
-| `pnpm format` | Prettier (web) + cargo fmt (Rust) |
-| `pnpm format:check` | Check-only (CI mode) |
-| `pnpm check` | Full gate: lint → format:check → cargo test → pnpm build |
-| `pnpm check:fast` | Fast gate: lint → format:check (no build) |
-| `pnpm tauri build --debug` | Full Tauri build (debug) |
-| `pnpm tauri build` | Full Tauri build (release) |
+| `bun run dev` | Vite dev server + Tauri window |
+| `bun run build` | tsc type-check + Vite bundle |
+| `bun run lint` | ESLint (web) + cargo clippy (Rust) |
+| `bun run lint:web` | ESLint only |
+| `bun run lint:rust` | cargo clippy -D warnings |
+| `bun run format` | Prettier (web) + cargo fmt (Rust) |
+| `bun run format:check` | Check-only (CI mode) |
+| `bun run check` | Full gate: lint → format:check → cargo test → bun build |
+| `bun run check:fast` | Fast gate: lint → format:check (no build) |
+| `bun run tauri build --debug` | Full Tauri build (debug) |
+| `bun run tauri build` | Full Tauri build (release) |
 
 ## Edition
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-16 (Security hardening: `sanitize-filename`, Tauri v2 ACL whitelist migration to TOML, `adb_shell_checked` exit-code monitoring)
+- **Last Updated**: 2026-04-18 (pnpm → Bun migration; security hardening: `sanitize-filename`, Tauri v2 ACL whitelist migration to TOML, `adb_shell_checked` exit-code monitoring)

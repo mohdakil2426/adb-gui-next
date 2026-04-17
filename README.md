@@ -180,12 +180,12 @@ Click the theme toggle in the sidebar to switch between:
 
 ## 📋 Prerequisites
 
-| Requirement                                             | Version                                  |
-| ------------------------------------------------------- | ---------------------------------------- |
-| [Node.js](https://nodejs.org/)                          | LTS (20+)                                |
-| [pnpm](https://pnpm.io/)                                | 9+                                       |
-| [Rust](https://rustup.rs/)                              | Stable (1.85+)                           |
-| [Tauri CLI](https://v2.tauri.app/start/create-project/) | `pnpm add -D @tauri-apps/cli` (included) |
+| Requirement                                             | Version                                 |
+| ------------------------------------------------------- | --------------------------------------- |
+| [Node.js](https://nodejs.org/)                          | LTS (20+)                               |
+| [Bun](https://bun.sh/)                                  | 1+                                      |
+| [Rust](https://rustup.rs/)                              | Stable (1.85+)                          |
+| [Tauri CLI](https://v2.tauri.app/start/create-project/) | `bun add -D @tauri-apps/cli` (included) |
 
 **Linux only** — install system dependencies:
 
@@ -203,13 +203,13 @@ git clone https://github.com/akila/adb-gui-next.git
 cd adb-gui-next
 
 # Install dependencies
-pnpm install
+bun install
 
 # Run in development mode (opens desktop window)
-pnpm tauri dev
+bun run tauri dev
 
 # Build production installer
-pnpm tauri build
+bun run tauri build
 ```
 
 ---
@@ -238,15 +238,15 @@ pnpm tauri build
 
 ## 🛠️ Development
 
-| Command                    | Description                                     |
-| -------------------------- | ----------------------------------------------- |
-| `pnpm tauri dev`           | Dev server + Tauri window                       |
-| `pnpm build`               | TypeScript + Vite bundle                        |
-| `pnpm lint`                | ESLint (frontend) + cargo clippy (Rust)         |
-| `pnpm format`              | Prettier (frontend) + cargo fmt (Rust)          |
-| `pnpm check`               | Full quality gate: lint → format → test → build |
-| `pnpm tauri build --debug` | Debug build with installer                      |
-| `pnpm tauri build`         | Release build                                   |
+| Command                       | Description                                     |
+| ----------------------------- | ----------------------------------------------- |
+| `bun run tauri dev`           | Dev server + Tauri window                       |
+| `bun run build`               | TypeScript + Vite bundle                        |
+| `bun run lint`                | ESLint (frontend) + cargo clippy (Rust)         |
+| `bun run format`              | Prettier (frontend) + cargo fmt (Rust)          |
+| `bun run check`               | Full quality gate: lint → format → test → build |
+| `bun run tauri build --debug` | Debug build with installer                      |
+| `bun run tauri build`         | Release build                                   |
 
 ---
 
@@ -285,16 +285,16 @@ pnpm tauri build
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing`)
 3. Make your changes
-4. Run quality gates: `pnpm check`
+4. Run quality gates: `bun run check`
 5. Commit and push
 6. Open a Pull Request
 
 ### Quality Gates (must pass before PR)
 
 ```bash
-pnpm format:check          # Prettier + cargo fmt
-pnpm lint                  # ESLint + cargo clippy -D warnings
-pnpm build                 # TypeScript type-check + Vite bundle
+bun run format:check       # Prettier + cargo fmt
+bun run lint               # ESLint + cargo clippy -D warnings
+bun run build              # TypeScript type-check + Vite bundle
 cargo test --manifest-path src-tauri/Cargo.toml  # Rust tests
 ```
 

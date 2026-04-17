@@ -43,8 +43,8 @@ export default defineConfig(() => ({
   build: {
     // Tauri uses Chromium on Windows and WebKit on macOS/Linux
     target: process.env.TAURI_ENV_PLATFORM === 'windows' ? 'chrome105' : 'safari13',
-    // Don't minify debug builds — easier to debug; minify release builds with esbuild
-    minify: process.env.TAURI_ENV_DEBUG ? false : ('esbuild' as const),
+    // Don't minify debug builds — easier to debug; minify release builds with Oxc (Vite 8 default)
+    minify: process.env.TAURI_ENV_DEBUG ? false : ('oxc' as const),
     // Produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
     // Raise warning limit — vendor chunks split below keeps individual chunks small

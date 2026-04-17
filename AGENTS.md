@@ -89,22 +89,22 @@
 
 ## Commands & Quality Gates
 
-| Command                    | What it does                                             |
-| -------------------------- | -------------------------------------------------------- |
-| `pnpm dev`                 | Vite dev server on port 1420 + Tauri window              |
-| `pnpm build`               | tsc type-check + Vite bundle → `dist/`                   |
-| `pnpm tauri build --debug` | Full Tauri build (debug — Windows MSI + NSIS)            |
-| `pnpm tauri build`         | Full Tauri build (release)                               |
-| `pnpm lint`                | ESLint (web) + cargo clippy (Rust, -D warnings)          |
-| `pnpm lint:web`            | ESLint only                                              |
-| `pnpm lint:web:fix`        | ESLint auto-fix                                          |
-| `pnpm lint:rust`           | cargo clippy -D warnings                                 |
-| `pnpm format`              | Prettier (web) + cargo fmt (Rust)                        |
-| `pnpm format:check`        | Check-only (CI mode)                                     |
-| `pnpm format:web`          | Prettier auto-fix                                        |
-| `pnpm format:rust`         | cargo fmt --all                                          |
-| `pnpm check`               | Full gate: lint → format:check → cargo test → pnpm build |
-| `pnpm check:fast`          | Fast gate: lint → format:check (no build, no tests)      |
+| Command                       | What it does                                            |
+| ----------------------------- | ------------------------------------------------------- |
+| `bun run dev`                 | Vite dev server on port 1420 + Tauri window             |
+| `bun run build`               | tsc type-check + Vite bundle → `dist/`                  |
+| `bun run tauri build --debug` | Full Tauri build (debug — Windows MSI + NSIS)           |
+| `bun run tauri build`         | Full Tauri build (release)                              |
+| `bun run lint`                | ESLint (web) + cargo clippy (Rust, -D warnings)         |
+| `bun run lint:web`            | ESLint only                                             |
+| `bun run lint:web:fix`        | ESLint auto-fix                                         |
+| `bun run lint:rust`           | cargo clippy -D warnings                                |
+| `bun run format`              | Prettier (web) + cargo fmt (Rust)                       |
+| `bun run format:check`        | Check-only (CI mode)                                    |
+| `bun run format:web`          | Prettier auto-fix                                       |
+| `bun run format:rust`         | cargo fmt --all                                         |
+| `bun run check`               | Full gate: lint → format:check → cargo test → bun build |
+| `bun run check:fast`          | Fast gate: lint → format:check (no build, no tests)     |
 
 **Tests:** `cargo test --manifest-path src-tauri/Cargo.toml` (8 Rust tests, no JS/TS framework configured)
 
@@ -115,15 +115,15 @@
 **ZERO-TOLERANCE**: Run ALL gates in order every time you touch any source file. A single failure means the task is NOT done. Fix the root cause — never suppress or ignore.
 
 ```bash
-pnpm format:check                  # Gate 1: Format
-# If fails → pnpm format, then re-check
+bun run format:check                  # Gate 1: Format
+# If fails → bun run format, then re-check
 
-pnpm lint                          # Gate 2: Lint (ESLint + cargo clippy -D warnings)
-pnpm build                         # Gate 3: Type check (tsc before vite build)
+bun run lint                          # Gate 2: Lint (ESLint + cargo clippy -D warnings)
+bun run build                         # Gate 3: Type check (tsc before vite build)
 cargo test --manifest-path src-tauri/Cargo.toml  # Gate 4: Rust tests (8 tests)
-pnpm tauri build --debug           # Gate 5: Full build (packaging + resource bundling)
+bun run tauri build --debug           # Gate 5: Full build (packaging + resource bundling)
 
-pnpm check                         # All-in-one: runs gates 1-4
+bun run check                         # All-in-one: runs gates 1-4
 ```
 
 ---
@@ -193,7 +193,7 @@ pnpm check                         # All-in-one: runs gates 1-4
 
 Before closing any task, confirm ALL of the following:
 
-- [ ] `pnpm check` passes (lint + format + tests + build)
+- [ ] `bun run check` passes (lint + format + tests + build)
 - [ ] No `'use client'` directives (this is Vite/Tauri, not Next.js)
 - [ ] No unused imports or variables (ESLint catches these)
 - [ ] Rust: all new structs have `#[derive(Serialize)]` with `#[serde(rename_all = "camelCase")]`
@@ -211,7 +211,7 @@ Before closing any task, confirm ALL of the following:
 
 | Gate                   | Rule                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------- |
-| **format:check fails** | Run `pnpm format`, then verify `pnpm format:check` is clean.                    |
+| **format:check fails** | Run `bun run format`, then verify `bun run format:check` is clean.              |
 | **lint errors**        | Fix the code. Never suppress lint warnings without a written justification.     |
 | **build fails**        | Fix the build. Do not hand off a broken build under any circumstances.          |
 | **type errors**        | Fix TypeScript types. Never use `any` without explicit justification.           |
