@@ -306,4 +306,52 @@ export namespace backend {
     githubToken?: string | null;
     resultsPerProvider?: number;
   }
+
+  // ── Debloater ──────────────────────────────────────────────────────────────
+
+  export type DebloatList = 'Aosp' | 'Carrier' | 'Google' | 'Misc' | 'Oem' | 'Pending' | 'Unlisted';
+  export type RemovalTier = 'Recommended' | 'Advanced' | 'Expert' | 'Unsafe' | 'Unlisted';
+  export type PkgState = 'Enabled' | 'Disabled' | 'Uninstalled';
+  export type DebloatAction = 'uninstall' | 'disable' | 'restore';
+
+  export interface DebloatPackageRow {
+    name: string;
+    state: PkgState;
+    description: string;
+    list: DebloatList;
+    removal: RemovalTier;
+    dependencies: string[];
+    neededBy: string[];
+  }
+
+  export interface DebloatListStatus {
+    source: string;
+    lastUpdated: string;
+    totalEntries: number;
+  }
+
+  export interface DebloatActionResult {
+    packageName: string;
+    success: boolean;
+    error: string | null;
+    newState: PkgState;
+  }
+
+  export interface PackageSnapshot {
+    name: string;
+    state: PkgState;
+  }
+
+  export interface BackupSummary {
+    fileName: string;
+    createdAt: string;
+    deviceId: string;
+    packageCount: number;
+  }
+
+  export interface PerDeviceSettings {
+    disableMode: boolean;
+    multiUserMode: boolean;
+    expertMode: boolean;
+  }
 }

@@ -11,8 +11,9 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  9 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
 │           Utilities │ PayloadDumper │ Marketplace │ Emulator │ About     │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
+│  AppManager is dual-tab: Debloater (UAD) + Installation                │
 │  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
-│                 marketplaceStore │ emulatorManagerStore + hooks          │
+│                 marketplaceStore │ emulatorManagerStore │ debloatStore    │
 │  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
@@ -22,13 +23,14 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │                     Backend (Rust — src-tauri/)                         │
 │  lib.rs (~95 lines) — thin orchestrator                                 │
 │  helpers.rs — shared utilities (binary resolution, command execution)   │
-│  commands/ — 9 focused modules (device, adb, fastboot, files, apps,    │
-│              system, payload, marketplace, emulator) — 57 registered    │
-│              commands                                                    │
+│  commands/ — 10 focused modules (device, adb, fastboot, files, apps,   │
+│              system, payload, marketplace, emulator, debloat) — 65+     │
+│              registered commands                                         │
 │  app_icons.rs — installed APK icon extraction + manifest/resource walk   │
 │  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)              │
 │  marketplace/ — provider modules + auth/cache/ranking/service layers    │
 │  emulator/ — sdk/avd/runtime/backup/root domain modules                 │
+│  debloat/ — lists/sync/actions/backup domain modules (UAD backend)      │
 │  resources/ — Bundled Android platform tools (adb, fastboot, etc.)     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```

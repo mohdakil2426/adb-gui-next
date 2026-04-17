@@ -1,5 +1,6 @@
 mod adb;
 mod apps;
+mod debloat;
 mod device;
 mod emulator;
 mod fastboot;
@@ -10,6 +11,7 @@ mod system;
 
 pub use adb::*;
 pub use apps::*;
+pub use debloat::*;
 pub use device::*;
 pub use emulator::*;
 pub use fastboot::*;

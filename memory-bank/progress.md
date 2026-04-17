@@ -8,6 +8,8 @@ Marketplace now has Phase 1 architecture refactor complete: singleton HTTP clien
 
 Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discovery scans `~/.android/avd/*.ini` directly. Root pipeline **fully modernized** 2026-04-16: (1) backend ACL hardened with mandatory TOML permissions and proper capability scoping, (2) `adb_shell_checked()` with `__ADB_GUI_EXIT_STATUS__` marker for diverse shell support, (3) `sanitize_filename()` utility for all user-provided paths, (4) Magisk v25+ binary naming compatibility, (5) 3-phase pipeline overhaul — ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, auto-shutdown after patching, boot-completion polling, no-snapshot-save cold boot, `EmulatorBootMode` detection and Cold/Normal badge in AvdSwitcher.
 
+**UAD Debloater integration complete (2026-04-18):** `ViewAppManager` redesigned as dual-tab shell (Debloater + Installation). Full Rust backend (`src-tauri/src/debloat/` — 5 files, 8 commands), Zustand `debloatStore`, and 5 new React components. Critical runtime crash (`CommandInput` outside `<Command>` context) diagnosed and fixed.
+
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail
@@ -46,6 +48,14 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking, stable React keys for removable APK list
+- **UAD Debloater (dual-tab ViewAppManager)**:
+  - Tab 1 — Debloater: UAD-backed system package list with TanStack Virtual, 3-way filter (List/Safety/State), search input (`<Input>` + `<Search>` icon — NOT `CommandInput`), expert/disable mode pill toggles, state dot per package, safety tier badge, description panel, Select All / Unselect All, Review button
+  - Safety review dialog: tier breakdown table, affected package list, mandatory backup creation for Unsafe ops, disclaimer
+  - Tab 2 — Installation: APK install, sideload, uninstall (extracted from original ViewAppManager)
+  - Rust backend: `src-tauri/src/debloat/` (mod, lists, sync, actions, backup) + `commands/debloat.rs` — 8 commands, all `spawn_blocking`
+  - 3-tier UAD list strategy: remote GitHub → disk cache → bundled fallback
+  - SDK-aware debloat: `pm hide/unhide` (SDK 19-22) vs `pm disable-user --user 0` (SDK ≥23)
+  - Timestamped JSON backups + per-device settings persistence
 - App Manager installed-app icons:
   - Lazy visible-row icon loading via `GetPackageIcon(packageName)` — package list still appears immediately
   - Fixed icon slot per row — no layout shift in the virtualized list
@@ -99,6 +109,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
 | Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* |
 | Emulator | `list_avds` *(async)*, `launch_avd` *(async)*, `stop_avd` *(async)*, `get_avd_restore_plan` *(async)*, `restore_avd_backups` *(async)*, `prepare_avd_root` *(async)*, `finalize_avd_root` *(async)* |
+| Debloat | `get_debloat_packages` *(async)*, `debloat_packages` *(async)*, `load_debloat_lists` *(async)*, `create_debloat_backup` *(async)*, `list_debloat_backups` *(async)*, `restore_debloat_backup` *(async)*, `get_debloat_device_settings` *(async)*, `save_debloat_device_settings` *(async)* |
 
 ### Payload Dumper
 
@@ -170,7 +181,8 @@ src-tauri/src/
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
 │   ├── payload.rs — payload command wrappers + remote URL commands + OPS dispatch
-│   └── marketplace.rs — thin wrappers for search, detail, download, install, trending, versions
+│   ├── marketplace.rs — thin wrappers for search, detail, download, install, trending, versions
+│   └── debloat.rs — 8 thin debloat command wrappers (all spawn_blocking)
 ├── marketplace/ — modular provider architecture
 │   ├── mod.rs — module root, shared reqwest::Client
 │   ├── types.rs — MarketplaceApp, MarketplaceAppDetail, VersionInfo DTOs
@@ -178,6 +190,12 @@ src-tauri/src/
 │   ├── izzy.rs         # IzzyOnDroid cross-reference (checks F-Droid results against packages API)
 │   ├── github.rs       # GitHub Search API (proper URL encoding + PAT + APK filter + trending)
 │   └── aptoide.rs — Aptoide ws75 API (TRUSTED-only, OBB/module skip)
+├── debloat/ — UAD debloater backend domain
+│   ├── mod.rs — core types (DebloatPackage, RemovalTier, PackageState, DebloatPackageRow, DebloatListStatus, DebloatSettings)
+│   ├── lists.rs — 3-tier UAD list loading (remote GitHub → disk cache → bundled fallback)
+│   ├── sync.rs — device package state detection + SDK-level merge with UAD metadata
+│   ├── actions.rs — SDK-aware command builder (pm hide / pm disable-user based on API level)
+│   └── backup.rs — timestamped JSON snapshots + per-device settings persistence
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
     ├── parser.rs — CrAU header parsing, protobuf decoding
@@ -201,6 +219,7 @@ src-tauri/src/
 
 ## Documentation
 
+- `docs/plans/2026-04-18-debloater-integration.md` — Comprehensive UAD Debloater integration plan covering backend architecture, frontend design, safety model, and UI components (2026-04-18)
 - `docs/guides/ops-ofp-firmware-extraction.md` — Comprehensive OPS/OFP firmware extraction technical guide (2026-04-03)
 - `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
 - `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
@@ -225,7 +244,10 @@ src-tauri/src/
 
 | Priority | Task | Notes |
 |----------|------|----|
-| High | Validate full root/restore flow end-to-end on real physical devices | Pipeline is validated on emulators. Needs testing on physical hardware to confirm broad compatibility. |
+| High | Bundle `uad_lists.json` in `src-tauri/resources/` | Offline fallback tier for UAD list loader. App works without it (remote fetch first). |
+| High | Validate UAD debloat on real device (SDK 23+) | Test `pm disable-user --user 0` vs `pm enable` round-trip |
+| Medium | Validate UAD debloat on older device (SDK 19-22) | Test `pm hide/unhide` path |
+| Medium | Validate full root/restore flow end-to-end on real physical devices | Pipeline is validated on emulators. Needs testing on physical hardware to confirm broad compatibility. |
 | Medium | Shift+Click range selection in File Explorer | Phase 2 — needs `lastClickedIndex` tracking |
 | Medium | Add tests for bottom panel components | logStore, shellStore, BottomPanel, LogsPanel |
 | Medium | Test remote ZIP extraction with real Google factory URLs | Need to verify EOCD/CD parsing works on large ZIPs |
@@ -246,6 +268,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-18 | 0.1.0 | UAD Debloater integration: `ViewAppManager` rewritten as dual-tab shell (Debloater + Installation). New Rust `src-tauri/src/debloat/` domain module (5 files: mod, lists, sync, actions, backup) + `commands/debloat.rs` (8 commands, all `spawn_blocking`). New Zustand `debloatStore`. New frontend components: `DebloaterTab`, `InstallationTab`, `ReviewSelectionDialog`, `DescriptionPanel`, `debloaterUtils`. Critical crash fixed: `CommandInput` outside `<Command>` context throws `Cannot read properties of undefined (reading 'subscribe')` — replaced with plain `<Input>` + `<Search>` icon. Verified `bun run build` ✅ · `bun run format:web` ✅ · `cargo check` ✅. |
 | 2026-04-16 | 0.1.0 | Security hardening & ACL migration: resolved Tauri v2 ACL discovery failures by migrating application permissions to the mandatory TOML format (`autogenerated.toml`) and properly scoping them in `capabilities/default.json` (no prefix lookup). Hardened the rooting pipeline with a robust `__ADB_GUI_EXIT_STATUS__` shell marker in `adb_shell_checked()` and integrated a centralized `sanitize_filename` utility in `helpers.rs` to prevent path traversal in user-provided file operations. Verified clean compilation with `cargo build`. |
 | 2026-04-14 | 0.1.0 | Applications page installed-app icons: added lazy visible-row icon loading with fixed icon slots in the virtualized App Manager list, a new backend `get_package_icon` command, APK manifest/resource parsing in `app_icons.rs`, same-stem raster fallback for adaptive/XML icon resources, and a focused `ViewAppManager.test.tsx`. Verified `pnpm build`, `pnpm lint:web`, `cargo check`, `cargo clippy --all-targets -- -D warnings`, `pnpm format:check`, and `pnpm test -- ViewAppManager.test.tsx` pass. |
 | 2026-04-09 | 0.1.0 | Root pipeline modernization (3-phase, 12 bug fixes): Phase 1 — `adb_shell_checked()` strict error checking, `detect_compression_method()` from magic bytes (removes hardcoded lz4_legacy), SHA1 config, `stub.xz` injection, `wait_for_boot_completed()`, auto-shutdown after patching. Phase 2 — `noSnapshotSave: true`, auto-stopped emulator handling, updated success messaging. Phase 3 — `EmulatorBootMode` enum (`Cold`/`Normal`/`Unknown`), `detect_boot_mode()` via `ro.kernel.androidboot.snapshot_loaded`, Cold/Normal badge in AvdSwitcher. All gates pass: `pnpm build` ✅ · `pnpm lint` ✅ · `pnpm format` ✅ |

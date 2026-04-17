@@ -20,7 +20,6 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 vi.mock('@/lib/desktop/backend', () => ({
   GetInstalledPackages: () => getInstalledPackagesMock(),
-  GetPackageLabel: vi.fn().mockResolvedValue(null),
   InstallPackage: vi.fn(),
   SelectMultipleApkFiles: vi.fn(),
   UninstallPackage: vi.fn(),

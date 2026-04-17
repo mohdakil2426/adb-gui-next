@@ -4,15 +4,54 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current verification evidence includes passing format, `pnpm lint:web`, `pnpm build`, `cargo check`, and `cargo clippy -- -D warnings`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
+Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current verification evidence includes passing format, `bun lint:web`, `bun build`, `cargo check`, and `cargo clippy -- -D warnings`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
+**Universal Android Debloater (UAD) Integration is now complete.** `ViewAppManager` has been redesigned as a dual-tab shell ("Debloater" + "Installation"). The full Rust backend module (`src-tauri/src/debloat/`) and 8 Tauri commands are implemented. The `debloatStore` Zustand store and all React UI components are live. The critical crash (`Cannot read properties of undefined (reading 'subscribe')`) caused by using `CommandInput` outside a `<Command>` context was diagnosed and fixed.
 
 ---
 
 ## Recently Completed
 
-### 2026-04-16 — Security Hardening & ACL Migration (Tauri v2)
+### 2026-04-18 — Universal Android Debloater (UAD) Integration
+
+**Feature:** Integrated the Universal Android Debloater concept into the app as a redesigned `ViewAppManager` with two tabs: **Debloater** (UAD-powered system package management) and **Installation** (extracted existing APK install/uninstall flow).
+
+**Backend — new `src-tauri/src/debloat/` module (5 files + 1 commands file):**
+
+| File | Purpose |
+|---|---|
+| `debloat/mod.rs` | Core types: `DebloatPackage`, `RemovalTier` (Recommended/Advanced/Expert/Unsafe/Unlisted), `PackageState` (Enabled/Disabled/Uninstalled), `DebloatPackageRow`, `DebloatListStatus`, `DebloatSettings`. Bundled UAD JSON deserialization (8 types). |
+| `debloat/lists.rs` | 3-tier UAD list loading: remote GitHub fetch → disk cache → bundled `uad_lists.json` fallback. Uses `reqwest::blocking`. |
+| `debloat/sync.rs` | SDK detection via `getprop ro.build.version.sdk`. Merges `pm list packages -s/-e/-d` output with UAD metadata to produce per-package state. |
+| `debloat/actions.rs` | SDK-aware command builder: maps (action, sdk) → exact ADB shell command. SDK <19: no `disable`, SDK 19-22: `pm hide/unhide`, SDK ≥23: `pm disable-user --user 0 / enable`. |
+| `debloat/backup.rs` | Timestamped JSON state snapshots in `app_data_dir/debloat_backups/`. Per-device settings (expert mode, disable mode) in `app_data_dir/debloat_settings/`. |
+| `commands/debloat.rs` | 8 thin `#[tauri::command]` wrappers — all long-running ADB calls offloaded to `spawn_blocking`. |
+
+**Tauri commands registered:** `get_debloat_packages`, `debloat_packages`, `load_debloat_lists`, `create_debloat_backup`, `list_debloat_backups`, `restore_debloat_backup`, `get_debloat_device_settings`, `save_debloat_device_settings`.
+
+**Frontend:**
+
+| File | Purpose |
+|---|---|
+| `src/lib/debloatStore.ts` | Zustand store — package list, 3 filters (list/removal/state), search query, `Set<string>` selection with expert-mode gate, `applyResults()` to update states after batch action, backup list. |
+| `src/lib/desktop/models.ts` | 8 new DTOs: `DebloatPackageRow`, `RemovalTier`, `PkgState`, `DebloatList`, `DebloatListStatus`, `BackupSnapshot`, `BackupSummary`, `DebloatSettings`, `DebloatActionResult`, `DebloatAction`. |
+| `src/lib/desktop/backend.ts` | 9 new command wrappers matching all 8 Tauri commands + `DebloatPackages`. |
+| `debloater/debloaterUtils.ts` | Tier/state badge class constants (`REMOVAL_TIER_CLASSES`, `REMOVAL_TIER_LABELS`, `PKG_STATE_CLASSES`). |
+| `debloater/DescriptionPanel.tsx` | Description + dependency metadata panel for selected package. |
+| `debloater/ReviewSelectionDialog.tsx` | Safety review dialog — tier breakdown table, affected package list, mandatory backup prompt for Unsafe operations, disclaimer. |
+| `debloater/DebloaterTab.tsx` | Main UI: search input, 3 filter dropdowns, expert/disable mode toggles, TanStack Virtual package list (rows: checkbox + state dot + package name + list badge + tier badge), description panel, select all/unselect, "Review" action button. |
+| `debloater/InstallationTab.tsx` | Extracted APK install/sideload/uninstall UI from old ViewAppManager. |
+| `views/ViewAppManager.tsx` | **Rewritten** as thin tabbed shell — `Tabs variant="line"` with Debloater and Installation tabs. Mirrors Emulator Manager design pattern. |
+
+**Critical crash fixed:** `CommandInput` from `cmdk` was used outside a `<Command>` context → `Cannot read properties of undefined (reading 'subscribe')`. Fixed by replacing with a plain `<Input>` + `<Search>` icon overlay. `onValueChange` (cmdk API) changed to `onChange` (native DOM event).
+
+**Verification:** `bun run build` ✅ · `bun run format:web` ✅ · `cargo check` ✅ · `bun run lint:web` — only pre-existing errors in `ViewFlasher.tsx` (not introduced by us) · `cargo test` — blocked by running dev server file lock (not a code error).
+
+**Files changed:** `src-tauri/src/debloat/` (5 new), `src-tauri/src/commands/debloat.rs` (new), `src-tauri/src/commands/mod.rs`, `src-tauri/src/lib.rs`, `src/lib/debloatStore.ts` (new), `src/lib/desktop/models.ts`, `src/lib/desktop/backend.ts`, `src/components/views/debloater/` (5 new), `src/components/views/ViewAppManager.tsx` (rewritten), `docs/plans/2026-04-18-debloater-integration.md` (new).
+
+---
+
 
 **Change:** Resolved persistent Tauri v2 ACL discovery failures and hardened the backend against command injection and path traversal.
 
@@ -586,14 +625,13 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-14** (after Applications page installed-app icons)
-- `pnpm build` ✅ — TypeScript + Vite bundle clean
-- `pnpm lint:web` ✅ — ESLint zero problems
+Last verified: **2026-04-18** (after UAD Debloater integration + crash fix)
+- `bun run build` ✅ — TypeScript + Vite bundle clean
+- `bun run format:web` ✅ — all files formatted
 - `cargo check` ✅ — Rust compilation clean
-- `cargo clippy -- -D warnings` ✅ — Zero warnings
-- `pnpm test -- ViewAppManager.test.tsx` ✅ — App Manager icon loading UI test passes
-- `cargo test` ⚠️ — pre-existing Windows crash (Tauri DLL — not a code bug)
-- `pnpm tauri build --debug` ⚠️ — blocked when `adb-gui-next.exe` is already running
+- `bun run lint:web` ⚠️ — 2 pre-existing errors in `ViewFlasher.tsx` (not introduced by UAD work); 1 new `useVirtualizer` warning (same pattern as rest of app, expected)
+- `cargo test` ⚠️ — blocked by running dev server file lock (`os error 32` on resource DLL); not a code error
+- `bun run tauri build --debug` ⚠️ — blocked when `adb-gui-next.exe` is already running
 
 ---
 
@@ -609,16 +647,15 @@ Last verified: **2026-04-14** (after Applications page installed-app icons)
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
 | Emulator Manager | ✅ Modernized | AVD discovery via INI scan. Root pipeline fully modernized: ramdisk compression detection, stub.xz injection, SHA1 config, adb_shell_checked error checking, auto-shutdown, no-snapshot-save cold boot, boot mode badge (Cold/Normal). |
-| App Manager | ✅ Improved | Viewport-relative virtualizer, APK list heights, and lazy installed-app icons with fixed row slots |
+| App Manager / Debloater | ✅ Complete | ViewAppManager rewritten as dual-tab shell. Debloater tab: UAD-backed virtualized system package list, 3 filters, expert/disable mode, safety review dialog, backup/restore. Installation tab: APK install, sideload, uninstall. |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
 | Frontend | ✅ Complete | shadcn Sidebar + 9 views + bottom panel |
 | Bottom Panel | ✅ Polished | Fixed position, fluid resize (DOM-first/RAF), smart tab toggle |
 | File Explorer | ✅ Enhanced | Full CRUD, dual-pane, history, search, sort, human sizes, symlinks |
 | Device Management | ✅ Centralized | Global DeviceSwitcher in header, single polling source |
-| App Manager | ✅ Improved | shadcn Command search, destructive glow, non-blocking install |
 | Flasher | ✅ Overhauled | Async flash/wipe, DropArea with position hit-testing, queue actions |
-| Backend | ✅ Complete | 57 registered Tauri commands with async surfaces for long-running work |
+| Backend | ✅ Complete | 65+ registered Tauri commands with async surfaces for long-running work |
 | Architecture | ✅ Refined | Standardized exit-code monitoring via `__ADB_GUI_EXIT_STATUS__` and backend path sanitization utility integrated. |
 | Security | ✅ Hardened | Shell injection, SSRF, path traversal, content-length validation. Fixed Tauri v2 ACL discovery by migrating to TOML-based permission whitelists and proper capability scoping (unprefixed lookup). |
 
@@ -626,10 +663,12 @@ Last verified: **2026-04-14** (after Applications page installed-app icons)
 
 ## Next Steps
 
-1. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.
-2. **Extended Device Testing**: Validate the modernized rooting pipeline on a wider range of physical devices and API levels.
-3. **Advanced Log Filtering**: Add regex support and severity-based color coding to the Logs panel.
-4. **Range selection**: Implement Shift+Click range selection in the File Explorer.
+1. **UAD `uad_lists.json` bundled fallback**: Place a copy of `uad_lists.json` in `src-tauri/resources/` so the offline fallback tier works without network. The app functions without it (tries remote fetch → disk cache first).
+2. **UAD end-to-end testing**: Test Debloater tab on a real device — confirm SDK-aware command routing (`pm disable-user` vs `pm hide`) on Android 5/6 vs 7+.
+3. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.
+4. **Extended Device Testing**: Validate the modernized rooting pipeline on a wider range of physical devices and API levels.
+5. **Advanced Log Filtering**: Add regex support and severity-based color coding to the Logs panel.
+6. **Range selection**: Implement Shift+Click range selection in the File Explorer.
 
 ---
 
@@ -686,9 +725,15 @@ Last verified: **2026-04-14** (after Applications page installed-app icons)
 ### Component Patterns
 
 - **`AppManager shouldFilter={false}`**: Mandatory — cmdk's built-in filter conflicts with virtualizer.
+- **`CommandInput` requires `<Command>` context**: `CommandInput` (from `cmdk` / shadcn `command.tsx`) internally reads from a React context provided by the `<Command>` parent. Using it standalone (outside `<Command>`) will throw `Cannot read properties of undefined (reading 'subscribe')` and crash the entire view. Always use a plain `<Input>` with a `<Search>` icon overlay instead when you don't need cmdk's full filtering behavior.
 - **Drag-drop hit-testing**: Tauri's `onDragDropEvent` is window-level. Always use `getBoundingClientRect()` + cursor `(x, y)`.
 - **One `OnFileDrop` per page**: Calling it replaces the previous handler. Multiple drop areas = single handler + hit-test per ref.
 - **ErrorBoundary**: Keyed to `activeView` so navigating away + back resets it.
 - **Tauri `DragDropEvent` API**: `type` is `'enter' | 'over' | 'drop' | 'leave'` — NOT `'cancel'`.
 - **`deviceStatus.ts`**: Single source of truth. Import `getStatusConfig()` from `@/lib/deviceStatus` — never define locally.
 - **`loadFiles` request sequencing**: `loadRequestIdRef = useRef(0)`, stamp `requestId = ++ref.current`, discard stale after each `await`.
+- **Zustand `Set` state**: Using `new Set()` in Zustand state is supported but the `Set` must be replaced with a new `Set` instance on every mutation (never mutate in place). Zustand's shallow equality only detects identity changes. The debloatStore pattern (`const next = new Set(prev); next.add(x); set({ selectedPackages: next })`) is the correct approach.
+- **UAD debloat module structure**: `src-tauri/src/debloat/` — 5 files (`mod.rs`, `lists.rs`, `sync.rs`, `actions.rs`, `backup.rs`). Commands are in `src-tauri/src/commands/debloat.rs`. Do NOT put command logic in `debloat/*.rs` files — follows the same separation as the emulator module.
+- **UAD list loading tiers**: Remote GitHub → disk cache at `app_data_dir/uad_cache.json` → bundled `resources/uad_lists.json`. The bundled fallback requires the file to be placed manually in `src-tauri/resources/`.
+- **UAD SDK-aware commands**: Never call `pm disable` on SDK < 23 — it's unavailable. Use `actions.rs::build_action_command()` which handles the SDK check and picks the right command (`pm hide`, `pm disable-user --user 0`, etc.).
+

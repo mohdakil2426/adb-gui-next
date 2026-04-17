@@ -100,10 +100,6 @@ export function GetInstalledPackages(): Promise<Array<backend.InstalledPackage>>
   return call('get_installed_packages');
 }
 
-export function GetPackageLabel(packageName: string): Promise<string | null> {
-  return call('get_package_label', { packageName });
-}
-
 export function InstallPackage(arg1: string): Promise<string> {
   return call('install_package', { path: arg1 });
 }
@@ -442,4 +438,57 @@ export function MarketplaceDownloadApk(url: string): Promise<string> {
 /** Install a downloaded APK via ADB. */
 export function MarketplaceInstallApk(apkPath: string): Promise<string> {
   return call('marketplace_install_apk', { apkPath });
+}
+
+// ── Debloater ────────────────────────────────────────────────────────────────
+
+/** Load UAD lists from remote/cache/bundled. Returns status info. */
+export function LoadDebloatLists(): Promise<backend.DebloatListStatus> {
+  return call('load_debloat_lists');
+}
+
+/** Get all system packages merged with UAD metadata. */
+export function GetDebloatPackages(): Promise<backend.DebloatPackageRow[]> {
+  return call('get_debloat_packages');
+}
+
+/** Apply an action to a batch of packages. action: 'uninstall' | 'disable' | 'restore'. */
+export function DebloatPackages(
+  packages: string[],
+  action: backend.DebloatAction,
+  user = 0,
+): Promise<backend.DebloatActionResult[]> {
+  return call('debloat_packages', { packages, action, user });
+}
+
+/** Create a backup snapshot of current package states. */
+export function CreateDebloatBackup(
+  packages: backend.PackageSnapshot[],
+): Promise<backend.BackupSummary> {
+  return call('create_debloat_backup', { packages });
+}
+
+/** List all available backups for the connected device. */
+export function ListDebloatBackups(): Promise<backend.BackupSummary[]> {
+  return call('list_debloat_backups');
+}
+
+/** Restore a previously created backup. */
+export function RestoreDebloatBackup(fileName: string): Promise<backend.DebloatActionResult[]> {
+  return call('restore_debloat_backup', { fileName });
+}
+
+/** Get per-device settings (expert mode, disable mode, multi-user mode). */
+export function GetDebloatDeviceSettings(): Promise<backend.PerDeviceSettings> {
+  return call('get_debloat_device_settings');
+}
+
+/** Save per-device settings. */
+export function SaveDebloatDeviceSettings(settings: backend.PerDeviceSettings): Promise<void> {
+  return call('save_debloat_device_settings', { settings });
+}
+
+/** Get the Android SDK version of the connected device. */
+export function GetDeviceSdk(): Promise<number> {
+  return call('get_device_sdk');
 }

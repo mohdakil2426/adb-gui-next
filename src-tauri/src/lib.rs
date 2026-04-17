@@ -1,4 +1,5 @@
 mod commands;
+pub mod debloat;
 pub mod emulator;
 mod helpers;
 pub mod marketplace;
@@ -52,10 +53,10 @@ pub fn run() {
             commands::get_bootloader_variables,
             commands::get_device_info,
             commands::get_device_mode,
+            commands::get_device_sdk,
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,
-            commands::get_package_label,
             commands::get_avd_restore_plan,
             commands::install_package,
             commands::launch_device_manager,
@@ -98,6 +99,15 @@ pub fn run() {
             commands::marketplace_github_device_poll,
             commands::marketplace_download_apk,
             commands::marketplace_install_apk,
+            // Debloater
+            commands::load_debloat_lists,
+            commands::get_debloat_packages,
+            commands::debloat_packages,
+            commands::create_debloat_backup,
+            commands::list_debloat_backups,
+            commands::restore_debloat_backup,
+            commands::get_debloat_device_settings,
+            commands::save_debloat_device_settings,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
