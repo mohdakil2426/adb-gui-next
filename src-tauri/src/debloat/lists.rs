@@ -9,7 +9,7 @@ use std::{
 use tauri::{AppHandle, Manager};
 
 const UAD_GITHUB_URL: &str =
-    "https://raw.githubusercontent.com/Universal-Android-Debloater-2/universal-android-debloater-next-generation/main/resources/uad_lists.json";
+    "https://raw.githubusercontent.com/0x192/universal-android-debloater/main/resources/assets/uad_lists.json";
 const CACHE_FILE_NAME: &str = "uad_lists.json";
 const FETCH_TIMEOUT_SECS: u64 = 30;
 
@@ -52,9 +52,14 @@ fn format_age(secs: u64) -> String {
 }
 
 fn parse_json(json: &str) -> Result<Vec<DebloatPackage>, String> {
-    let raw: HashMap<String, UadRawEntry> =
+    // Try parsing as HashMap first (old format)
+    if let Ok(raw) = serde_json::from_str::<HashMap<String, UadRawEntry>>(json) {
+        return Ok(raw.into_values().map(|e| e.into_debloat_package()).collect());
+    }
+    // Fall back to array (new format)
+    let raw: Vec<UadRawEntry> =
         serde_json::from_str(json).map_err(|e| format!("Failed to parse UAD JSON: {e}"))?;
-    Ok(raw.into_values().map(|e| e.into_debloat_package()).collect())
+    Ok(raw.into_iter().map(|e| e.into_debloat_package()).collect())
 }
 
 /// Load the UAD package list: try remote → cache → bundled (in that order).

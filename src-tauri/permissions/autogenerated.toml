@@ -55,5 +55,17 @@ commands.allow = [
   "marketplace_github_device_start",
   "marketplace_github_device_poll",
   "marketplace_download_apk",
-  "marketplace_install_apk"
+  "marketplace_install_apk",
+  "get_device_sdk",
+  "check_remote_payload",
+  "get_remote_payload_metadata",
+  "list_remote_payload_partitions",
+  "load_debloat_lists",
+  "get_debloat_packages",
+  "debloat_packages",
+  "create_debloat_backup",
+  "list_debloat_backups",
+  "restore_debloat_backup",
+  "get_debloat_device_settings",
+  "save_debloat_device_settings"
 ]
