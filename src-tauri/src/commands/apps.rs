@@ -1,7 +1,4 @@
 use crate::CmdResult;
-use crate::app_icons::{
-    extract_package_icon_data_url, package_icon_temp_path, parse_pm_path_output,
-};
 use crate::helpers::run_binary_command;
 use log::{debug, info};
 use serde::Serialize;
@@ -47,38 +44,6 @@ pub async fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPa
 
         debug!("Found {} installed packages", packages.len());
         Ok(packages)
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
-#[tauri::command]
-pub async fn get_package_icon(app: AppHandle, package_name: String) -> CmdResult<Option<String>> {
-    let package_name = package_name.trim().to_string();
-    if package_name.is_empty() {
-        return Err("Package name is required.".into());
-    }
-
-    info!("Getting package icon for {}", package_name);
-    tokio::task::spawn_blocking(move || {
-        let pm_output =
-            run_binary_command(&app, "adb", &["shell", "pm", "path", package_name.as_str()])?;
-        let remote_apk_path = parse_pm_path_output(&pm_output)
-            .ok_or_else(|| format!("No APK path found for package {package_name}"))?;
-
-        let local_apk_path = package_icon_temp_path(&package_name);
-        let local_apk_string = local_apk_path.to_string_lossy().to_string();
-
-        run_binary_command(
-            &app,
-            "adb",
-            &["pull", remote_apk_path.as_str(), local_apk_string.as_str()],
-        )?;
-        let icon_data_url = extract_package_icon_data_url(&local_apk_path)?;
-
-        let _ = fs::remove_file(&local_apk_path);
-
-        Ok(icon_data_url)
     })
     .await
     .map_err(|e| e.to_string())?

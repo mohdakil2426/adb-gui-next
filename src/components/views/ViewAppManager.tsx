@@ -9,7 +9,6 @@ import {
   InstallPackage,
   UninstallPackage,
   GetInstalledPackages,
-  GetPackageIcon,
 } from '../../lib/desktop/backend';
 import type { backend } from '../../lib/desktop/models';
 
@@ -59,10 +58,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
   const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
-  const [packageIcons, setPackageIcons] = useState<Record<string, string | null>>({});
-
   const [isUninstalling, setIsUninstalling] = useState(false);
-  const requestedPackageIconsRef = useRef<Set<string>>(new Set());
 
   const loadPackages = useCallback(async () => {
     setIsLoadingPackages(true);
@@ -111,46 +107,6 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
     overscan: 5,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
-
-  useEffect(() => {
-    const visiblePackageNames = virtualRows
-      .map((virtualRow) => filteredPackages[virtualRow.index]?.name)
-      .filter((packageName): packageName is string => Boolean(packageName));
-
-    for (const packageName of visiblePackageNames) {
-      if (requestedPackageIconsRef.current.has(packageName)) {
-        continue;
-      }
-
-      requestedPackageIconsRef.current.add(packageName);
-      void GetPackageIcon(packageName)
-        .then((iconSrc) => {
-          setPackageIcons((current) => {
-            if (current[packageName] === (iconSrc ?? null)) {
-              return current;
-            }
-
-            return {
-              ...current,
-              [packageName]: iconSrc ?? null,
-            };
-          });
-        })
-        .catch((error) => {
-          debugLog(`Failed to load icon for ${packageName}:`, error);
-          setPackageIcons((current) => {
-            if (Object.prototype.hasOwnProperty.call(current, packageName)) {
-              return current;
-            }
-
-            return {
-              ...current,
-              [packageName]: null,
-            };
-          });
-        });
-    }
-  }, [filteredPackages, virtualRows]);
 
   const handleSelectApk = async () => {
     try {
@@ -466,7 +422,6 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                     {virtualRows.map((virtualRow) => {
                       const pkg = filteredPackages[virtualRow.index];
                       const isSelected = selectedPackages.has(pkg.name);
-                      const packageIcon = packageIcons[pkg.name];
                       return (
                         <div
                           key={pkg.name}
@@ -491,24 +446,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
                         >
                           <CheckboxItem checked={isSelected} />
                           <div className="flex size-6 items-center justify-center overflow-hidden rounded-md border bg-muted/40 shrink-0">
-                            {packageIcon ? (
-                              <img
-                                src={packageIcon}
-                                alt={`${pkg.name} icon`}
-                                className="size-6 object-cover"
-                                onError={() => {
-                                  setPackageIcons((current) => ({
-                                    ...current,
-                                    [pkg.name]: null,
-                                  }));
-                                }}
-                              />
-                            ) : (
-                              <Package
-                                data-testid={`package-icon-fallback-${pkg.name}`}
-                                className="h-3.5 w-3.5 text-muted-foreground"
-                              />
-                            )}
+                            <Package className="h-3.5 w-3.5 text-muted-foreground" />
                           </div>
                           <span className="text-sm truncate flex-1">{pkg.name}</span>
                           <Badge

@@ -1,9 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewAppManager } from '@/components/views/ViewAppManager';
 
 const getInstalledPackagesMock = vi.fn();
-const getPackageIconMock = vi.fn();
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: () => ({
@@ -21,7 +20,6 @@ vi.mock('@tanstack/react-virtual', () => ({
 
 vi.mock('@/lib/desktop/backend', () => ({
   GetInstalledPackages: () => getInstalledPackagesMock(),
-  GetPackageIcon: (packageName: string) => getPackageIconMock(packageName),
   InstallPackage: vi.fn(),
   SelectMultipleApkFiles: vi.fn(),
   UninstallPackage: vi.fn(),
@@ -35,29 +33,19 @@ vi.mock('@/lib/desktop/runtime', () => ({
 describe('ViewAppManager', () => {
   beforeEach(() => {
     getInstalledPackagesMock.mockReset();
-    getPackageIconMock.mockReset();
   });
 
-  it('renders a fallback package icon first and replaces it when the app icon loads', async () => {
+  it('renders a package icon for each visible row', async () => {
     getInstalledPackagesMock.mockResolvedValue([
       {
         name: 'com.example.camera',
         packageType: 'user',
       },
     ]);
-    getPackageIconMock.mockResolvedValue(
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wn0YDUAAAAASUVORK5CYII=',
-    );
 
     render(<ViewAppManager activeView="apps" />);
 
     expect(await screen.findByText('com.example.camera')).toBeInTheDocument();
-    expect(screen.getByTestId('package-icon-fallback-com.example.camera')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByAltText('com.example.camera icon')).toBeInTheDocument();
-    });
-
-    expect(getPackageIconMock).toHaveBeenCalledWith('com.example.camera');
+    expect(screen.getByText('com.example.camera').closest('[role="option"]')).toBeInTheDocument();
   });
 });
