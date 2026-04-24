@@ -4,6 +4,7 @@
 node_modules/
 dist/
 src-tauri/target/
+src-tauri/target-*/
 __tauri_template_tmp/
 
 # Local machine / MCP

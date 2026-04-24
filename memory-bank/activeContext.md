@@ -3,8 +3,8 @@
 ## Current State
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
-All responsive layout fixes, sticky header, and adaptive hardening are complete.
-Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current verification evidence includes passing format, `bun lint:web`, `bun build`, `cargo check`, and `cargo clippy -- -D warnings`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
+All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 frontend audit cleanup are complete.
+Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current user-requested verification scope is lint-only: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
 **Universal Android Debloater (UAD) Integration is now complete.** `ViewAppManager` has been redesigned as a dual-tab shell ("Debloater" + "Installation"). The full Rust backend module (`src-tauri/src/debloat/`) and 8 Tauri commands are implemented. The `debloatStore` Zustand store and all React UI components are live. The critical crash (`Cannot read properties of undefined (reading 'subscribe')`) caused by using `CommandInput` outside a `<Command>` context was diagnosed and fixed.
@@ -12,6 +12,18 @@ Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdi
 ---
 
 ## Recently Completed
+
+### 2026-04-24 — Frontend Audit Cleanup + Lint-Only Verification
+
+**Change:** Applied the frontend audit cleanup across the app shell and major views, with emphasis on consistency, accessibility, async correctness, and React/Zustand performance.
+
+**Highlights:**
+- MainLayout: skip link, main landmark, reduced-motion support, stable view renderer map, selector-based stores, error boundaries, and viewport-height state passed to BottomPanel.
+- Bottom panel/log/shell surfaces: accessible tab roles, live log region, icon labels, larger resize hit target, and selector-based store usage.
+- Shared UI/views: heading hierarchy fixes, polymorphic `CardTitle`, semantic CSS tokens, accessible icon-only buttons, lazy marketplace images, and React Hook Form `useWatch`.
+- Backend/frontend hygiene: typed Tauri `core.invoke<T>()` wrapper, Rust debloat clippy fixes, generated Cargo target ignores for ESLint, and stale tests updated to match current App Manager/Emulator Manager UI.
+
+**Verification:** user requested lint-only scope. `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean.
 
 ### 2026-04-18 — Universal Android Debloater (UAD) Integration
 
@@ -625,13 +637,10 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-18** (after UAD Debloater integration + crash fix)
-- `bun run build` ✅ — TypeScript + Vite bundle clean
-- `bun run format:web` ✅ — all files formatted
-- `cargo check` ✅ — Rust compilation clean
-- `bun run lint:web` ⚠️ — 2 pre-existing errors in `ViewFlasher.tsx` (not introduced by UAD work); 1 new `useVirtualizer` warning (same pattern as rest of app, expected)
-- `cargo test` ⚠️ — blocked by running dev server file lock (`os error 32` on resource DLL); not a code error
-- `bun run tauri build --debug` ⚠️ — blocked when `adb-gui-next.exe` is already running
+Last verified: **2026-04-24** (after frontend audit cleanup)
+- `bun run lint` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean
+- Full app packaging intentionally skipped per user request ("stop building the app; just use lintings")
+- `cargo test` remains a known Windows runtime-loader issue in this environment (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`) when the Tauri-linked test binary starts
 
 ---
 
@@ -663,6 +672,7 @@ Last verified: **2026-04-18** (after UAD Debloater integration + crash fix)
 
 ## Next Steps
 
+0. **Frontend audit cleanup follow-up**: Audit-driven UI consistency/accessibility/performance cleanup is implemented across MainLayout, bottom panel, shared UI, marketplace, payload dumper, and major views. Current verification scope requested by user is lint-only: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts are not scanned.
 1. **UAD `uad_lists.json` bundled fallback**: Place a copy of `uad_lists.json` in `src-tauri/resources/` so the offline fallback tier works without network. The app functions without it (tries remote fetch → disk cache first).
 2. **UAD end-to-end testing**: Test Debloater tab on a real device — confirm SDK-aware command routing (`pm disable-user` vs `pm hide`) on Android 5/6 vs 7+.
 3. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.
@@ -736,4 +746,3 @@ Last verified: **2026-04-18** (after UAD Debloater integration + crash fix)
 - **UAD debloat module structure**: `src-tauri/src/debloat/` — 5 files (`mod.rs`, `lists.rs`, `sync.rs`, `actions.rs`, `backup.rs`). Commands are in `src-tauri/src/commands/debloat.rs`. Do NOT put command logic in `debloat/*.rs` files — follows the same separation as the emulator module.
 - **UAD list loading tiers**: Remote GitHub → disk cache at `app_data_dir/uad_cache.json` → bundled `resources/uad_lists.json`. The bundled fallback requires the file to be placed manually in `src-tauri/resources/`.
 - **UAD SDK-aware commands**: Never call `pm disable` on SDK < 23 — it's unavailable. Use `actions.rs::build_action_command()` which handles the SDK check and picks the right command (`pm hide`, `pm disable-user --user 0`, etc.).
-

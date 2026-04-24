@@ -102,9 +102,10 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
                     <SidebarMenuButton
                       tooltip={item.label}
                       isActive={activeView === item.id}
+                      aria-current={activeView === item.id ? 'page' : undefined}
                       onClick={() => onViewChange(item.id)}
                     >
-                      <item.icon />
+                      <item.icon aria-hidden="true" />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -122,9 +123,10 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
             <SidebarMenuButton
               tooltip="About"
               isActive={activeView === 'about'}
+              aria-current={activeView === 'about' ? 'page' : undefined}
               onClick={() => onViewChange('about')}
             >
-              <Info />
+              <Info aria-hidden="true" />
               <span>About</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

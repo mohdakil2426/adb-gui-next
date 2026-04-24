@@ -49,7 +49,6 @@ pub async fn get_installed_packages(app: AppHandle) -> CmdResult<Vec<InstalledPa
     .map_err(|e| e.to_string())?
 }
 
-
 #[tauri::command]
 pub async fn install_package(app: AppHandle, path: String) -> CmdResult<String> {
     let path = path.trim().to_string();

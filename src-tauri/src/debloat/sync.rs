@@ -1,6 +1,6 @@
+use crate::CmdResult;
 use crate::debloat::{DebloatPackage, DebloatPackageRow, PackageState};
 use crate::helpers::run_binary_command;
-use crate::CmdResult;
 use log::debug;
 use std::collections::{HashMap, HashSet};
 use tauri::AppHandle;
@@ -46,8 +46,7 @@ struct DevicePackageStates {
 
 fn detect_package_states(app: &AppHandle) -> CmdResult<DevicePackageStates> {
     // All system packages (including uninstalled for this user)
-    let all_out =
-        run_binary_command(app, "adb", &["shell", "pm", "list", "packages", "-s", "-u"])?;
+    let all_out = run_binary_command(app, "adb", &["shell", "pm", "list", "packages", "-s", "-u"])?;
     let all_system = parse_package_list(&all_out);
 
     // Enabled system packages

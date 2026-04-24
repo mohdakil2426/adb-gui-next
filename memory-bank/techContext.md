@@ -209,4 +209,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-18 (pnpm → Bun migration; security hardening: `sanitize-filename`, Tauri v2 ACL whitelist migration to TOML, `adb_shell_checked` exit-code monitoring)
+- **Last Updated**: 2026-04-24 (Bun toolchain current; ESLint ignores generated Cargo `src-tauri/target-*/**`; lint verification uses `CARGO_TARGET_DIR=src-tauri/target-codex-lint` when the dev app locks the default target)

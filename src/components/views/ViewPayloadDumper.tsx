@@ -13,25 +13,23 @@ import { ExtractionStatusCard } from '@/components/payload-dumper/ExtractionStat
 import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
 
 export function ViewPayloadDumper() {
-  const {
-    payloadPath,
-    outputPath,
-    partitions,
-    status,
-    extractedFiles,
-    errorMessage,
-    outputDir,
-    extractingPartitions,
-    completedPartitions,
-    partitionProgress,
-    remoteUrl,
-    activeMode,
-    remoteMetadata,
-    setRemoteUrl,
-    setActiveMode,
-    togglePartition,
-    toggleAll,
-  } = usePayloadDumperStore();
+  const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
+  const outputPath = usePayloadDumperStore((state) => state.outputPath);
+  const partitions = usePayloadDumperStore((state) => state.partitions);
+  const status = usePayloadDumperStore((state) => state.status);
+  const extractedFiles = usePayloadDumperStore((state) => state.extractedFiles);
+  const errorMessage = usePayloadDumperStore((state) => state.errorMessage);
+  const outputDir = usePayloadDumperStore((state) => state.outputDir);
+  const extractingPartitions = usePayloadDumperStore((state) => state.extractingPartitions);
+  const completedPartitions = usePayloadDumperStore((state) => state.completedPartitions);
+  const partitionProgress = usePayloadDumperStore((state) => state.partitionProgress);
+  const remoteUrl = usePayloadDumperStore((state) => state.remoteUrl);
+  const activeMode = usePayloadDumperStore((state) => state.activeMode);
+  const remoteMetadata = usePayloadDumperStore((state) => state.remoteMetadata);
+  const setRemoteUrl = usePayloadDumperStore((state) => state.setRemoteUrl);
+  const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
+  const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
+  const toggleAll = usePayloadDumperStore((state) => state.toggleAll);
 
   // Local UI state — transient, doesn't need to survive view switches
   const [prefetch, setPrefetch] = useState(false);
@@ -79,7 +77,7 @@ export function ViewPayloadDumper() {
         <div className="relative">
           <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
           <div className="relative h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Package className="h-6 w-6 text-primary" />
+            <Package className="h-6 w-6 text-primary" aria-hidden="true" />
           </div>
         </div>
         <div>
@@ -94,7 +92,7 @@ export function ViewPayloadDumper() {
       <Card className="w-full overflow-hidden min-w-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileArchive className="h-5 w-5" />
+            <FileArchive className="h-5 w-5" aria-hidden="true" />
             Extraction Setup
           </CardTitle>
           <CardDescription>Select payload file and output directory for extraction</CardDescription>

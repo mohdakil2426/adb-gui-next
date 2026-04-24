@@ -21,6 +21,8 @@ import type { backend } from '@/lib/desktop/models';
 
 type AppDetail = backend.MarketplaceAppDetail;
 
+const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+
 function MetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
   return (
@@ -34,9 +36,9 @@ function MetadataItem({ label, value }: { label: string; value: string | null | 
 }
 
 export function AppDetailView() {
-  const store = useMarketplaceStore();
-  const { selectedApp, closeDetail } = store;
-  const githubToken = getMarketplaceEffectiveGithubToken(store);
+  const selectedApp = useMarketplaceStore((state) => state.selectedApp);
+  const closeDetail = useMarketplaceStore((state) => state.closeDetail);
+  const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [detail, setDetail] = useState<AppDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
@@ -116,7 +118,7 @@ export function AppDetailView() {
           onClick={closeDetail}
           className="-ml-3 text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="mr-2 size-4" />
+          <ArrowLeft className="mr-2 size-4" aria-hidden="true" />
           Back to results
         </Button>
       </div>
@@ -133,9 +135,10 @@ export function AppDetailView() {
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
+                loading="lazy"
               />
             ) : (
-              <Package className="size-10 text-muted-foreground" />
+              <Package className="size-10 text-muted-foreground" aria-hidden="true" />
             )}
           </div>
           <div className="flex min-w-0 flex-col gap-2 pt-1">
@@ -168,11 +171,11 @@ export function AppDetailView() {
             disabled={!effectiveDownloadUrl || primaryInstallState === 'running'}
           >
             {primaryInstallState === 'done' ? (
-              <Check className="mr-2 size-5" />
+              <Check className="mr-2 size-5" aria-hidden="true" />
             ) : primaryInstallState === 'running' ? (
-              <Loader2 className="mr-2 size-5 animate-spin" />
+              <Loader2 className="mr-2 size-5 animate-spin" aria-hidden="true" />
             ) : (
-              <Download className="mr-2 size-5" />
+              <Download className="mr-2 size-5" aria-hidden="true" />
             )}
             {primaryInstallState === 'done'
               ? 'Installed'
@@ -187,8 +190,8 @@ export function AppDetailView() {
 
       {isLoadingDetail && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-          <Loader2 className="size-4 animate-spin" />
-          Loading additional app details...
+          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          Loading additional app details…
         </div>
       )}
 
@@ -201,6 +204,7 @@ export function AppDetailView() {
                 key={`${url}-${i}`}
                 src={url}
                 alt=""
+                loading="lazy"
                 className="h-64 shrink-0 snap-start rounded-xl border bg-muted/20 object-contain shadow-sm sm:h-80"
               />
             ))}
@@ -241,7 +245,7 @@ export function AppDetailView() {
               <MetadataItem label="Version" value={detail?.version || selectedApp.version} />
               <MetadataItem
                 label="Updated"
-                value={detail?.updatedAt ? new Date(detail.updatedAt).toLocaleDateString() : null}
+                value={detail?.updatedAt ? DATE_FORMATTER.format(new Date(detail.updatedAt)) : null}
               />
               <MetadataItem label="License" value={detail?.license} />
               <MetadataItem label="Author" value={detail?.author} />
@@ -254,9 +258,9 @@ export function AppDetailView() {
                   onClick={() => BrowserOpenURL(detail?.repoUrl ?? selectedApp.repoUrl!)}
                 >
                   {selectedApp.source === 'GitHub' ? (
-                    <GitBranch className="mr-2 size-4" />
+                    <GitBranch className="mr-2 size-4" aria-hidden="true" />
                   ) : (
-                    <ExternalLink className="mr-2 size-4" />
+                    <ExternalLink className="mr-2 size-4" aria-hidden="true" />
                   )}
                   Open Repository
                 </Button>
@@ -276,7 +280,7 @@ export function AppDetailView() {
                 }
               }}
             >
-              <Copy className="mr-2 size-4" /> Copy Package ID
+              <Copy className="mr-2 size-4" aria-hidden="true" /> Copy Package ID
             </Button>
           </section>
 
@@ -297,7 +301,7 @@ export function AppDetailView() {
                         <span className="truncate text-sm font-medium">{version.versionName}</span>
                         {version.publishedAt && (
                           <span className="text-xs text-muted-foreground">
-                            {new Date(version.publishedAt).toLocaleDateString()}
+                            {DATE_FORMATTER.format(new Date(version.publishedAt))}
                           </span>
                         )}
                       </div>
@@ -318,9 +322,9 @@ export function AppDetailView() {
                             disabled={isInstallingVersion || primaryInstallState === 'running'}
                           >
                             {isInstallingVersion ? (
-                              <Loader2 className="mr-1.5 size-3 animate-spin" />
+                              <Loader2 className="mr-1.5 size-3 animate-spin" aria-hidden="true" />
                             ) : (
-                              <Download className="mr-1.5 size-3" />
+                              <Download className="mr-1.5 size-3" aria-hidden="true" />
                             )}
                             Install
                           </Button>

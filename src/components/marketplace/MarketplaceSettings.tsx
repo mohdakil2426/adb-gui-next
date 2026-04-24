@@ -46,23 +46,21 @@ const PROVIDERS: { id: ProviderSource; label: string; description: string }[] = 
 ];
 
 export function MarketplaceSettings() {
-  const {
-    isSettingsOpen,
-    closeSettings,
-    activeProviders,
-    toggleProvider,
-    githubPat,
-    setGithubPat,
-    githubOauthClientId,
-    setGithubOauthClientId,
-    resultsPerProvider,
-    setResultsPerProvider,
-    clearSearchHistory,
-    searchHistory,
-    githubSession,
-    setTrendingApps,
-    setRecentReleaseApps,
-  } = useMarketplaceStore();
+  const isSettingsOpen = useMarketplaceStore((state) => state.isSettingsOpen);
+  const closeSettings = useMarketplaceStore((state) => state.closeSettings);
+  const activeProviders = useMarketplaceStore((state) => state.activeProviders);
+  const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
+  const githubPat = useMarketplaceStore((state) => state.githubPat);
+  const setGithubPat = useMarketplaceStore((state) => state.setGithubPat);
+  const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
+  const setGithubOauthClientId = useMarketplaceStore((state) => state.setGithubOauthClientId);
+  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const setResultsPerProvider = useMarketplaceStore((state) => state.setResultsPerProvider);
+  const clearSearchHistory = useMarketplaceStore((state) => state.clearSearchHistory);
+  const searchHistory = useMarketplaceStore((state) => state.searchHistory);
+  const githubSession = useMarketplaceStore((state) => state.githubSession);
+  const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);
+  const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
   const {
     githubDeviceChallenge,
     isGithubAuthenticating,

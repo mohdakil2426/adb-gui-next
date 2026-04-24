@@ -64,6 +64,13 @@
   /* Layout constants for responsive design */
   --content-min-width: 0px;
   --content-max-width: 1280px;
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-drawer: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -72,6 +79,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
+  --primary-rgb: 31 31 31;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -125,6 +133,7 @@
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
+  --primary-rgb: 233 233 233;
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -185,6 +194,11 @@
 
   body {
     @apply bg-background text-foreground;
+    color-scheme: light;
+  }
+
+  html.dark body {
+    color-scheme: dark;
   }
 
   button,
@@ -247,4 +261,15 @@ body::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-track,
 .custom-scroll::-webkit-scrollbar-track {
   background-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

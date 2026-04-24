@@ -9,7 +9,10 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 export function ShellPanel() {
-  const { history, commandHistory, setHistory, addCommand } = useShellStore();
+  const history = useShellStore((state) => state.history);
+  const commandHistory = useShellStore((state) => state.commandHistory);
+  const setHistory = useShellStore((state) => state.setHistory);
+  const addCommand = useShellStore((state) => state.addCommand);
   const [command, setCommand] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(commandHistory.length);
@@ -183,7 +186,8 @@ export function ShellPanel() {
         </span>
         <Input
           id="shell-panel-input"
-          placeholder="adb devices, adb shell ls, fastboot devices..."
+          aria-label="Shell Command"
+          placeholder="adb devices, adb shell ls, fastboot devices…"
           className="font-mono text-[12px] border-none bg-transparent shadow-none focus-visible:ring-0 h-7 px-0"
           style={{ color: 'var(--terminal-fg)' }}
           value={command}

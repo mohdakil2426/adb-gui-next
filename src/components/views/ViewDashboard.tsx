@@ -13,7 +13,7 @@ import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import { wirelessAdbSchema, type WirelessAdbValues } from '@/lib/schemas';
 import { queryKeys } from '@/lib/queries';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,9 @@ import { CopyButton } from '@/components/CopyButton';
 type Device = backend.Device;
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
-  const { devices: queriedDevices, deviceInfo, setDeviceInfo } = useDeviceStore();
+  const queriedDevices = useDeviceStore((state) => state.devices);
+  const deviceInfo = useDeviceStore((state) => state.deviceInfo);
+  const setDeviceInfo = useDeviceStore((state) => state.setDeviceInfo);
   const queryClient = useQueryClient();
   const [isRefreshingInfo, setIsRefreshingInfo] = useState(false);
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
@@ -59,7 +61,11 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     resolver: zodResolver(wirelessAdbSchema),
     defaultValues: { ip: '', port: '5555' },
   });
-  const watchedIp = wirelessForm.watch('ip');
+  const watchedIp = useWatch({
+    control: wirelessForm.control,
+    name: 'ip',
+    defaultValue: '',
+  });
 
   const refreshDevices = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
@@ -163,6 +169,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
   return (
     <div className="flex flex-col gap-6">
+      <h1 className="sr-only">Dashboard</h1>
       <ConnectedDevicesCard
         devices={queriedDevices.map((device) => ({
           serial: device.serial,
@@ -215,6 +222,8 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Input
+                    aria-label="Device IP Address"
+                    autoComplete="off"
                     placeholder="Device IP Address"
                     {...wirelessForm.register('ip')}
                     disabled={isConnecting || isDisconnecting}
@@ -227,6 +236,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                 </div>
                 <div className="w-24">
                   <Input
+                    aria-label="Wireless ADB Port"
+                    inputMode="numeric"
+                    autoComplete="off"
                     placeholder="Port"
                     {...wirelessForm.register('port')}
                     disabled={isConnecting || isDisconnecting}

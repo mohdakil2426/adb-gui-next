@@ -58,25 +58,23 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     status,
   } = options;
 
-  const {
-    payloadPath,
-    outputPath,
-    partitions,
-    outputDir,
-    completedPartitions,
-    setPayloadPath,
-    setOutputPath,
-    setPartitions,
-    setStatus,
-    setExtractedFiles,
-    setErrorMessage,
-    setOutputDir,
-    setExtractingPartitions,
-    addCompletedPartitions,
-    clearPartitionProgress,
-    setRemoteMetadata,
-    reset,
-  } = usePayloadDumperStore();
+  const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
+  const outputPath = usePayloadDumperStore((state) => state.outputPath);
+  const partitions = usePayloadDumperStore((state) => state.partitions);
+  const outputDir = usePayloadDumperStore((state) => state.outputDir);
+  const completedPartitions = usePayloadDumperStore((state) => state.completedPartitions);
+  const setPayloadPath = usePayloadDumperStore((state) => state.setPayloadPath);
+  const setOutputPath = usePayloadDumperStore((state) => state.setOutputPath);
+  const setPartitions = usePayloadDumperStore((state) => state.setPartitions);
+  const setStatus = usePayloadDumperStore((state) => state.setStatus);
+  const setExtractedFiles = usePayloadDumperStore((state) => state.setExtractedFiles);
+  const setErrorMessage = usePayloadDumperStore((state) => state.setErrorMessage);
+  const setOutputDir = usePayloadDumperStore((state) => state.setOutputDir);
+  const setExtractingPartitions = usePayloadDumperStore((state) => state.setExtractingPartitions);
+  const addCompletedPartitions = usePayloadDumperStore((state) => state.addCompletedPartitions);
+  const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
+  const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
+  const reset = usePayloadDumperStore((state) => state.reset);
 
   const cancelLoadingRef = useRef(false);
 

@@ -35,16 +35,14 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ resultCount }: FilterBarProps) {
-  const {
-    activeProviders,
-    toggleProvider,
-    setAllProviders,
-    sortBy,
-    setSortBy,
-    viewMode,
-    setViewMode,
-    resultsPerProvider,
-  } = useMarketplaceStore();
+  const activeProviders = useMarketplaceStore((state) => state.activeProviders);
+  const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
+  const setAllProviders = useMarketplaceStore((state) => state.setAllProviders);
+  const sortBy = useMarketplaceStore((state) => state.sortBy);
+  const setSortBy = useMarketplaceStore((state) => state.setSortBy);
+  const viewMode = useMarketplaceStore((state) => state.viewMode);
+  const setViewMode = useMarketplaceStore((state) => state.setViewMode);
+  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
 
   const summaries = getMarketplaceActiveFilterSummary({
     activeProviders,
@@ -54,8 +52,8 @@ export function FilterBar({ resultCount }: FilterBarProps) {
   const allActive = activeProviders.length === PROVIDERS.length;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Sources
         </h4>
@@ -88,7 +86,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           View Mode
         </h4>
@@ -106,7 +104,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             aria-label="Grid view"
             aria-pressed={viewMode === 'grid'}
           >
-            <LayoutGrid className="size-3.5" />
+            <LayoutGrid className="size-3.5" aria-hidden="true" />
             Grid
           </Button>
           <Button
@@ -122,13 +120,13 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             aria-label="List view"
             aria-pressed={viewMode === 'list'}
           >
-            <List className="size-3.5" />
+            <List className="size-3.5" aria-hidden="true" />
             List
           </Button>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Sort By
         </h4>
@@ -139,7 +137,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
               size="sm"
               className="w-full justify-start gap-2 text-xs text-muted-foreground font-normal"
             >
-              <ArrowDownWideNarrow className="size-3.5 text-foreground" />
+              <ArrowDownWideNarrow className="size-3.5 text-foreground" aria-hidden="true" />
               <span className="text-foreground font-medium">
                 {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
               </span>
@@ -162,13 +160,13 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         </DropdownMenu>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Active Filters
         </h4>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex w-full items-center gap-2 text-xs text-muted-foreground mb-1">
-            <SlidersHorizontal className="size-3.5" />
+            <SlidersHorizontal className="size-3.5" aria-hidden="true" />
             <span>
               {resultCount} result{resultCount !== 1 ? 's' : ''}
             </span>

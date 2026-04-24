@@ -111,7 +111,7 @@ export function DropZone({
       className={cn(
         'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
         isDragging
-          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_rgba(var(--primary-rgb,59,130,246),0.15)]'
+          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]'
           : 'border-muted-foreground/25 hover:border-muted-foreground/40',
         disabled && 'pointer-events-none opacity-50',
         className,

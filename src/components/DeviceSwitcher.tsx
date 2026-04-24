@@ -24,7 +24,9 @@ interface DeviceSwitcherProps {
 }
 
 export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps) {
-  const { devices, selectedSerial, setSelectedSerial } = useDeviceStore();
+  const devices = useDeviceStore((state) => state.devices);
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
+  const setSelectedSerial = useDeviceStore((state) => state.setSelectedSerial);
   const [isOpen, setIsOpen] = useState(false);
   const [editingSerial, setEditingSerial] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -76,11 +78,11 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                   </>
                 ) : (
                   <>
-                    <MonitorSmartphone className="size-3.5 shrink-0" />
+                    <MonitorSmartphone className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>No Device</span>
                   </>
                 )}
-                <ChevronDown className="size-3 shrink-0 opacity-60" />
+                <ChevronDown className="size-3 shrink-0 opacity-60" aria-hidden="true" />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
@@ -91,20 +93,21 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-1.5">
-              <Smartphone className="size-4 text-muted-foreground" />
+              <Smartphone className="size-4 text-muted-foreground" aria-hidden="true" />
               <span className="text-sm font-medium">Connected Devices</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Refresh Devices"
               className="size-7"
               onClick={onRefresh}
               disabled={isRefreshing}
             >
               {isRefreshing ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
               ) : (
-                <RefreshCw className="size-3.5" />
+                <RefreshCw className="size-3.5" aria-hidden="true" />
               )}
             </Button>
           </div>
@@ -115,7 +118,10 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
           <div className="max-h-[240px] overflow-y-auto p-1">
             {devices.length === 0 ? (
               <div className="px-3 py-6 text-center">
-                <MonitorSmartphone className="mx-auto size-8 text-muted-foreground/40" />
+                <MonitorSmartphone
+                  className="mx-auto size-8 text-muted-foreground/40"
+                  aria-hidden="true"
+                />
                 <p className="mt-2 text-sm text-muted-foreground">
                   {isRefreshing ? 'Scanning for devices…' : 'No devices detected'}
                 </p>
@@ -168,13 +174,14 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`Edit ${name} Nickname`}
                             className="size-5 shrink-0 opacity-0 group-hover/device:opacity-100 hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEdit(device.serial);
                             }}
                           >
-                            <Pencil className="size-3" />
+                            <Pencil className="size-3" aria-hidden="true" />
                           </Button>
                         </div>
                         {subtitle && (

@@ -8,8 +8,7 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-const UAD_GITHUB_URL: &str =
-    "https://raw.githubusercontent.com/0x192/universal-android-debloater/main/resources/assets/uad_lists.json";
+const UAD_GITHUB_URL: &str = "https://raw.githubusercontent.com/0x192/universal-android-debloater/main/resources/assets/uad_lists.json";
 const CACHE_FILE_NAME: &str = "uad_lists.json";
 const FETCH_TIMEOUT_SECS: u64 = 30;
 
@@ -22,11 +21,7 @@ fn cache_path(app: &AppHandle) -> PathBuf {
 }
 
 fn bundled_json_path(app: &AppHandle) -> Option<PathBuf> {
-    app.path()
-        .resource_dir()
-        .ok()
-        .map(|dir| dir.join(CACHE_FILE_NAME))
-        .filter(|p| p.exists())
+    app.path().resource_dir().ok().map(|dir| dir.join(CACHE_FILE_NAME)).filter(|p| p.exists())
 }
 
 /// Returns seconds since the file was last modified, or u64::MAX if unknown.
@@ -135,12 +130,7 @@ fn fetch_remote(url: &str) -> Result<String, String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    client
-        .get(url)
-        .send()
-        .map_err(|e| e.to_string())?
-        .text()
-        .map_err(|e| e.to_string())
+    client.get(url).send().map_err(|e| e.to_string())?.text().map_err(|e| e.to_string())
 }
 
 /// Return the current age of the cached list file for display.

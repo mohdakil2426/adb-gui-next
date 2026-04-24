@@ -8,15 +8,13 @@ const AUTH_SCOPES = ['read:user'];
 const SLOW_DOWN_MS = 5000;
 
 export function useMarketplaceAuth() {
-  const {
-    githubOauthClientId,
-    githubDeviceChallenge,
-    isGithubAuthenticating,
-    setGithubDeviceChallenge,
-    setGithubSession,
-    clearGithubSession,
-    setIsGithubAuthenticating,
-  } = useMarketplaceStore();
+  const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
+  const githubDeviceChallenge = useMarketplaceStore((state) => state.githubDeviceChallenge);
+  const isGithubAuthenticating = useMarketplaceStore((state) => state.isGithubAuthenticating);
+  const setGithubDeviceChallenge = useMarketplaceStore((state) => state.setGithubDeviceChallenge);
+  const setGithubSession = useMarketplaceStore((state) => state.setGithubSession);
+  const clearGithubSession = useMarketplaceStore((state) => state.clearGithubSession);
+  const setIsGithubAuthenticating = useMarketplaceStore((state) => state.setIsGithubAuthenticating);
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

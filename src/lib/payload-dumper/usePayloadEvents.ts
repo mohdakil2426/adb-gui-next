@@ -10,7 +10,8 @@ import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
  * Call it once in the component that owns the extraction lifecycle.
  */
 export function usePayloadEvents(): void {
-  const { updatePartitionProgress, markPartitionCompleted } = usePayloadDumperStore();
+  const updatePartitionProgress = usePayloadDumperStore((state) => state.updatePartitionProgress);
+  const markPartitionCompleted = usePayloadDumperStore((state) => state.markPartitionCompleted);
 
   useEffect(() => {
     const unlisten = EventsOn(

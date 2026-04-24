@@ -7,20 +7,17 @@ const DEBOUNCE_MS = 450;
 const MIN_QUERY_LENGTH = 2;
 
 export function useMarketplaceSearch() {
-  const {
-    query,
-    results,
-    isSearching,
-    activeProviders,
-    sortBy,
-    resultsPerProvider,
-    setQuery,
-    setResults,
-    setIsSearching,
-    addToSearchHistory,
-  } = useMarketplaceStore();
-  const store = useMarketplaceStore();
-  const githubToken = getMarketplaceEffectiveGithubToken(store);
+  const query = useMarketplaceStore((state) => state.query);
+  const results = useMarketplaceStore((state) => state.results);
+  const isSearching = useMarketplaceStore((state) => state.isSearching);
+  const activeProviders = useMarketplaceStore((state) => state.activeProviders);
+  const sortBy = useMarketplaceStore((state) => state.sortBy);
+  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const setQuery = useMarketplaceStore((state) => state.setQuery);
+  const setResults = useMarketplaceStore((state) => state.setResults);
+  const setIsSearching = useMarketplaceStore((state) => state.setIsSearching);
+  const addToSearchHistory = useMarketplaceStore((state) => state.addToSearchHistory);
+  const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);

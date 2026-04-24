@@ -1,6 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { debugLog } from '@/lib/debug';
 
 interface Props {
   children: ReactNode;
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[ErrorBoundary] Uncaught render error:', error, info.componentStack);
+    debugLog('[ErrorBoundary] Uncaught render error:', error, info.componentStack);
   }
 
   private handleRetry = (): void => {
@@ -39,11 +40,14 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px] text-center">
+        <div
+          role="alert"
+          className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px] text-center"
+        >
           <div className="relative">
             <div className="absolute inset-0 bg-destructive/20 blur-xl rounded-full" />
             <div className="relative h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-6 w-6 text-destructive" />
+              <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
             </div>
           </div>
           <div className="flex flex-col gap-1">

@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import { SaveLog } from '@/lib/desktop/backend';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { useShellStore } from '@/lib/shellStore';
+import { debugLog } from '@/lib/debug';
 
 const MIN_HEIGHT = 120;
 const MAX_HEIGHT_RATIO = 0.7;
@@ -40,32 +41,34 @@ const FILTER_OPTIONS: { value: LogLevel | 'all'; label: string }[] = [
   { value: 'warning', label: 'Warning' },
 ];
 
-export function BottomPanel() {
+interface BottomPanelProps {
+  viewportHeight: number;
+}
+
+export function BottomPanel({ viewportHeight }: BottomPanelProps) {
   const { state: sidebarState } = useSidebar();
   // Track sidebar expand/collapse so the fixed panel left edge follows the content area
   const panelLeft =
     sidebarState === 'expanded' ? 'var(--sidebar-width, 16rem)' : 'var(--sidebar-width-icon, 3rem)';
 
-  const {
-    logs,
-    isOpen,
-    togglePanel,
-    clearLogs,
-    activeTab,
-    setActiveTab,
-    filter,
-    setFilter,
-    searchQuery,
-    setSearchQuery,
-    isFollowing,
-    setIsFollowing,
-    isPanelMaximized,
-    toggleMaximized,
-    panelHeight,
-    setPanelHeight,
-  } = useLogStore();
+  const logs = useLogStore((state) => state.logs);
+  const isOpen = useLogStore((state) => state.isOpen);
+  const togglePanel = useLogStore((state) => state.togglePanel);
+  const clearLogs = useLogStore((state) => state.clearLogs);
+  const activeTab = useLogStore((state) => state.activeTab);
+  const setActiveTab = useLogStore((state) => state.setActiveTab);
+  const filter = useLogStore((state) => state.filter);
+  const setFilter = useLogStore((state) => state.setFilter);
+  const searchQuery = useLogStore((state) => state.searchQuery);
+  const setSearchQuery = useLogStore((state) => state.setSearchQuery);
+  const isFollowing = useLogStore((state) => state.isFollowing);
+  const setIsFollowing = useLogStore((state) => state.setIsFollowing);
+  const isPanelMaximized = useLogStore((state) => state.isPanelMaximized);
+  const toggleMaximized = useLogStore((state) => state.toggleMaximized);
+  const panelHeight = useLogStore((state) => state.panelHeight);
+  const setPanelHeight = useLogStore((state) => state.setPanelHeight);
 
-  const { clearHistory } = useShellStore();
+  const clearHistory = useShellStore((state) => state.clearHistory);
   // Drag state: all refs — zero listener re-registrations, zero re-renders during drag
   const panelRef = useRef<HTMLDivElement>(null);
   const isResizingRef = useRef(false);
@@ -105,20 +108,23 @@ export function BottomPanel() {
     }
   }, [setPanelHeight]);
 
-  const resize = useCallback((e: MouseEvent) => {
-    if (!isResizingRef.current) return;
-    // RAF throttle: skip frames the browser can't render anyway
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const maxHeight = window.innerHeight * MAX_HEIGHT_RATIO;
-      const rawHeight = window.innerHeight - e.clientY;
-      const clampedHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, rawHeight));
-      // Direct DOM write — bypasses React render pipeline entirely
-      if (panelRef.current) {
-        panelRef.current.style.height = `${clampedHeight}px`;
-      }
-    });
-  }, []);
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizingRef.current) return;
+      // RAF throttle: skip frames the browser can't render anyway
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const maxHeight = viewportHeight * MAX_HEIGHT_RATIO;
+        const rawHeight = viewportHeight - e.clientY;
+        const clampedHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, rawHeight));
+        // Direct DOM write — bypasses React render pipeline entirely
+        if (panelRef.current) {
+          panelRef.current.style.height = `${clampedHeight}px`;
+        }
+      });
+    },
+    [viewportHeight],
+  );
 
   // Register once — stable refs mean no listener churn
   useEffect(() => {
@@ -164,7 +170,7 @@ export function BottomPanel() {
       const path = await SaveLog(text, prefix);
       toast.success('Logs Saved', { description: `Saved to ${path}`, id: toastId });
     } catch (error) {
-      console.error(error);
+      debugLog('Failed to save logs', error);
       toast.error('Save Failed', { description: String(error), id: toastId });
     }
   };
@@ -178,7 +184,7 @@ export function BottomPanel() {
   };
 
   const computedHeight = isPanelMaximized
-    ? window.innerHeight * MAX_HEIGHT_RATIO
+    ? viewportHeight * MAX_HEIGHT_RATIO
     : panelHeight || DEFAULT_HEIGHT;
 
   // Animate in/out
@@ -234,10 +240,18 @@ export function BottomPanel() {
       >
         {/* Drag handle */}
         <div
-          className="h-1 cursor-ns-resize hover:bg-primary/50 active:bg-primary transition-colors shrink-0"
-          style={{ backgroundColor: 'var(--terminal-border)' }}
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Resize bottom panel"
+          className="group flex h-6 cursor-ns-resize items-start transition-colors hover:bg-primary/10 active:bg-primary/15 shrink-0"
           onMouseDown={startResizing}
-        />
+        >
+          <span
+            className="h-1 w-full"
+            style={{ backgroundColor: 'var(--terminal-border)' }}
+            aria-hidden="true"
+          />
+        </div>
 
         {/* Panel header */}
         <div
@@ -245,8 +259,13 @@ export function BottomPanel() {
           style={{ backgroundColor: 'var(--terminal-header-bg)' }}
         >
           {/* Left: Tabs */}
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-0.5" role="tablist" aria-label="Bottom panel tabs">
             <button
+              id="bottom-panel-logs-tab"
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'logs'}
+              aria-controls="bottom-panel-logs"
               onClick={() => setActiveTab('logs')}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-t-md transition-colors',
@@ -263,13 +282,18 @@ export function BottomPanel() {
                     : '2px solid transparent',
               }}
             >
-              <Logs className="size-3.5" />
+              <Logs className="size-3.5" aria-hidden="true" />
               Logs
               {logs.length > 0 && (
                 <span className="ml-1 text-[10px] opacity-60">({logs.length})</span>
               )}
             </button>
             <button
+              id="bottom-panel-shell-tab"
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'shell'}
+              aria-controls="bottom-panel-shell"
               onClick={() => setActiveTab('shell')}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-t-md transition-colors',
@@ -286,7 +310,7 @@ export function BottomPanel() {
                     : '2px solid transparent',
               }}
             >
-              <Terminal className="size-3.5" />
+              <Terminal className="size-3.5" aria-hidden="true" />
               Shell
             </button>
           </div>
@@ -300,6 +324,7 @@ export function BottomPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={isSearchOpen ? 'Close Log Search' : 'Search Logs'}
                     className={cn(
                       'size-6',
                       isSearchOpen ? 'opacity-100' : 'opacity-60 hover:opacity-100',
@@ -307,7 +332,7 @@ export function BottomPanel() {
                     style={{ color: 'var(--terminal-fg)' }}
                     onClick={() => setIsSearchOpen(!isSearchOpen)}
                   >
-                    <Search className="size-3.5" />
+                    <Search className="size-3.5" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Search Logs</TooltipContent>
@@ -322,6 +347,7 @@ export function BottomPanel() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label="Filter Logs"
                       className={cn(
                         'size-6',
                         filter !== 'all' ? 'opacity-100' : 'opacity-60 hover:opacity-100',
@@ -329,7 +355,7 @@ export function BottomPanel() {
                       style={{ color: 'var(--terminal-fg)' }}
                       onClick={() => setIsFilterOpen(!isFilterOpen)}
                     >
-                      <Filter className="size-3.5" />
+                      <Filter className="size-3.5" aria-hidden="true" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">Filter Logs</TooltipContent>
@@ -345,6 +371,8 @@ export function BottomPanel() {
                     {FILTER_OPTIONS.map((option) => (
                       <button
                         key={option.value}
+                        type="button"
+                        aria-pressed={filter === option.value}
                         className={cn(
                           'w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-[var(--terminal-fg)]/[0.05]',
                           filter === option.value ? 'font-semibold opacity-100' : 'opacity-70',
@@ -371,6 +399,7 @@ export function BottomPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={isFollowing ? 'Pause Log Following' : 'Follow Latest Logs'}
                     className={cn(
                       'size-6',
                       isFollowing ? 'opacity-100' : 'opacity-60 hover:opacity-100',
@@ -378,7 +407,11 @@ export function BottomPanel() {
                     style={{ color: 'var(--terminal-fg)' }}
                     onClick={() => setIsFollowing(!isFollowing)}
                   >
-                    {isFollowing ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
+                    {isFollowing ? (
+                      <Pin className="size-3.5" aria-hidden="true" />
+                    ) : (
+                      <PinOff className="size-3.5" aria-hidden="true" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">
@@ -397,11 +430,12 @@ export function BottomPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Copy Logs"
                     className="size-6 opacity-60 hover:opacity-100"
                     style={{ color: 'var(--terminal-fg)' }}
                     onClick={handleCopy}
                   >
-                    <Copy className="size-3.5" />
+                    <Copy className="size-3.5" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Copy Logs</TooltipContent>
@@ -415,11 +449,12 @@ export function BottomPanel() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Save Logs"
                     className="size-6 opacity-60 hover:opacity-100"
                     style={{ color: 'var(--terminal-fg)' }}
                     onClick={handleSave}
                   >
-                    <Save className="size-3.5" />
+                    <Save className="size-3.5" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Save Logs</TooltipContent>
@@ -432,11 +467,12 @@ export function BottomPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={activeTab === 'logs' ? 'Clear Logs' : 'Clear Shell'}
                   className="size-6 opacity-60 hover:opacity-100"
                   style={{ color: 'var(--terminal-fg)' }}
                   onClick={handleClear}
                 >
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="size-3.5" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">
@@ -450,14 +486,15 @@ export function BottomPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={isPanelMaximized ? 'Restore Panel' : 'Maximize Panel'}
                   className="size-6 opacity-60 hover:opacity-100"
                   style={{ color: 'var(--terminal-fg)' }}
                   onClick={toggleMaximized}
                 >
                   {isPanelMaximized ? (
-                    <Minimize2 className="size-3.5" />
+                    <Minimize2 className="size-3.5" aria-hidden="true" />
                   ) : (
-                    <Maximize2 className="size-3.5" />
+                    <Maximize2 className="size-3.5" aria-hidden="true" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -472,11 +509,12 @@ export function BottomPanel() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label="Close Panel"
                   className="size-6 opacity-60 hover:opacity-100"
                   style={{ color: 'var(--terminal-fg)' }}
                   onClick={togglePanel}
                 >
-                  <X className="size-3.5" />
+                  <X className="size-3.5" aria-hidden="true" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">Close Panel (Ctrl+`)</TooltipContent>
@@ -493,9 +531,14 @@ export function BottomPanel() {
               backgroundColor: 'var(--terminal-header-bg)',
             }}
           >
-            <Search className="size-3.5 opacity-50" style={{ color: 'var(--terminal-fg)' }} />
+            <Search
+              className="size-3.5 opacity-50"
+              style={{ color: 'var(--terminal-fg)' }}
+              aria-hidden="true"
+            />
             <Input
-              placeholder="Search logs..."
+              aria-label="Search Logs"
+              placeholder="Search logs…"
               className="font-mono text-[12px] border-none bg-transparent shadow-none focus-visible:ring-0 h-6 px-0"
               style={{ color: 'var(--terminal-fg)' }}
               value={searchQuery}
@@ -506,18 +549,26 @@ export function BottomPanel() {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Clear Log Search"
                 className="size-5 opacity-60 hover:opacity-100"
                 style={{ color: 'var(--terminal-fg)' }}
                 onClick={() => setSearchQuery('')}
               >
-                <X className="size-3" />
+                <X className="size-3" aria-hidden="true" />
               </Button>
             )}
           </div>
         )}
 
         {/* Panel content — min-h-0 prevents flex overflow that hides shell input on resize */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div
+          id={activeTab === 'logs' ? 'bottom-panel-logs' : 'bottom-panel-shell'}
+          role="tabpanel"
+          aria-labelledby={
+            activeTab === 'logs' ? 'bottom-panel-logs-tab' : 'bottom-panel-shell-tab'
+          }
+          className="flex-1 min-h-0 overflow-hidden"
+        >
           {activeTab === 'logs' ? <LogsPanel /> : <ShellPanel />}
         </div>
       </div>

@@ -58,7 +58,11 @@ function LogRow({ log, searchQuery }: { log: LogEntry; searchQuery: string }) {
 }
 
 export function LogsPanel() {
-  const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore();
+  const logs = useLogStore((state) => state.logs);
+  const filter = useLogStore((state) => state.filter);
+  const searchQuery = useLogStore((state) => state.searchQuery);
+  const isFollowing = useLogStore((state) => state.isFollowing);
+  const setIsFollowing = useLogStore((state) => state.setIsFollowing);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserScrollingRef = useRef(false);
 
@@ -124,7 +128,7 @@ export function LogsPanel() {
       style={{ backgroundColor: 'var(--terminal-bg)' }}
     >
       <ScrollArea className="flex-1 min-h-0 w-full" ref={scrollRef}>
-        <div className="flex flex-col py-1">
+        <div className="flex flex-col py-1" role="log" aria-live="polite" aria-relevant="additions">
           {filteredLogs.length === 0 ? (
             <div
               className="text-center py-8 text-sm italic opacity-40 select-none"

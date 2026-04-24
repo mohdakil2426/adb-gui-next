@@ -17,6 +17,7 @@ export default defineConfig([
       '.agent/**',
       'memory-bank/**',
       'src-tauri/target/**',
+      'src-tauri/target-*/**',
       'src-tauri/gen/schemas/**',
       'docs/**',
       '.clinerules',

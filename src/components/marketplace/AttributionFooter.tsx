@@ -1,7 +1,7 @@
 import { useMarketplaceStore } from '@/lib/marketplaceStore';
 
 export function AttributionFooter() {
-  const { activeProviders } = useMarketplaceStore();
+  const activeProviders = useMarketplaceStore((state) => state.activeProviders);
 
   const providerLinks: Record<string, string> = {
     'F-Droid': 'https://f-droid.org',

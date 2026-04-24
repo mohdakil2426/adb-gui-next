@@ -87,24 +87,13 @@ pub struct DebloatListStatus {
 }
 
 /// Per-device settings persisted to disk.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct DebloatDeviceSettings {
     pub device_id: String,
     pub disable_mode: bool,
     pub multi_user_mode: bool,
     pub expert_mode: bool,
-}
-
-impl Default for DebloatDeviceSettings {
-    fn default() -> Self {
-        Self {
-            device_id: String::new(),
-            disable_mode: false,
-            multi_user_mode: false,
-            expert_mode: false,
-        }
-    }
 }
 
 // ── UAD JSON Deserialization ───────────────────────────────────────────────────

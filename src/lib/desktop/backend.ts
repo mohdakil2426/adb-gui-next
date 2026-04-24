@@ -2,10 +2,8 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import * as core from '@tauri-apps/api/core';
 import type { backend } from './models';
 
-const invoke = core.invoke as <T>(command: string, args?: Record<string, unknown>) => Promise<T>;
-
-function call<T>(command: string, args?: Record<string, unknown>) {
-  return invoke<T>(command, args);
+function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  return core.invoke<T>(command, args);
 }
 
 function normalizeSingleSelection(selection: string | null): string {

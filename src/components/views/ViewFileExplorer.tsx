@@ -846,8 +846,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   return (
     <div
       ref={containerRef}
-      className="flex h-[calc(100vh-4rem)] overflow-hidden rounded-lg border border-border"
+      className="flex h-[calc(100svh-4rem)] overflow-hidden rounded-lg border border-border"
     >
+      <h1 className="sr-only">File Explorer</h1>
       {/* Drag overlay — prevents text selection while resizing */}
       {isResizing && <div className="fixed inset-0 z-50 cursor-col-resize select-none" />}
 

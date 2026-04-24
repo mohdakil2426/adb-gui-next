@@ -13,15 +13,13 @@ import { useMarketplaceStore } from '@/lib/marketplaceStore';
 import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
 
 export function ViewMarketplace() {
-  const {
-    openDetail,
-    openSettings,
-    viewMode,
-    searchHistory,
-    githubSession,
-    selectedApp,
-    isDetailOpen,
-  } = useMarketplaceStore();
+  const openDetail = useMarketplaceStore((state) => state.openDetail);
+  const openSettings = useMarketplaceStore((state) => state.openSettings);
+  const viewMode = useMarketplaceStore((state) => state.viewMode);
+  const searchHistory = useMarketplaceStore((state) => state.searchHistory);
+  const githubSession = useMarketplaceStore((state) => state.githubSession);
+  const selectedApp = useMarketplaceStore((state) => state.selectedApp);
+  const isDetailOpen = useMarketplaceStore((state) => state.isDetailOpen);
   const {
     localQuery,
     results,
@@ -36,12 +34,13 @@ export function ViewMarketplace() {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 relative">
+      <h1 className="sr-only">Marketplace</h1>
       {/* Left Sidebar */}
       <div className="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64 lg:sticky lg:top-2 h-fit z-10">
         <Card>
           <CardHeader className="gap-2 pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Store className="size-5" />
+              <Store className="size-5" aria-hidden="true" />
               Marketplace
             </CardTitle>
             <CardDescription className="text-xs">
@@ -60,7 +59,7 @@ export function ViewMarketplace() {
               >
                 {githubSession.user ? (
                   <span className="flex items-center gap-1">
-                    <UserRound className="size-3" />
+                    <UserRound className="size-3" aria-hidden="true" />
                     {githubSession.user.login}
                   </span>
                 ) : (
@@ -112,7 +111,7 @@ export function ViewMarketplace() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {results.map((app) => (
                   <AppListItem
                     key={`${app.source}-${app.packageName}`}

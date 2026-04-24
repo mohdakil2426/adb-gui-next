@@ -1,5 +1,5 @@
-use crate::debloat::PackageState;
 use crate::CmdResult;
+use crate::debloat::PackageState;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
@@ -118,18 +118,12 @@ pub fn load_backup(app: &AppHandle, device_id: &str, file_name: &str) -> CmdResu
 }
 
 /// Per-device settings persisted on disk.
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct PerDeviceSettings {
     pub disable_mode: bool,
     pub multi_user_mode: bool,
     pub expert_mode: bool,
-}
-
-impl Default for PerDeviceSettings {
-    fn default() -> Self {
-        Self { disable_mode: false, multi_user_mode: false, expert_mode: false }
-    }
 }
 
 fn settings_path(app: &AppHandle, device_id: &str) -> PathBuf {
@@ -142,10 +136,7 @@ fn settings_path(app: &AppHandle, device_id: &str) -> PathBuf {
 
 pub fn load_device_settings(app: &AppHandle, device_id: &str) -> PerDeviceSettings {
     let path = settings_path(app, device_id);
-    fs::read_to_string(&path)
-        .ok()
-        .and_then(|j| serde_json::from_str(&j).ok())
-        .unwrap_or_default()
+    fs::read_to_string(&path).ok().and_then(|j| serde_json::from_str(&j).ok()).unwrap_or_default()
 }
 
 pub fn save_device_settings(

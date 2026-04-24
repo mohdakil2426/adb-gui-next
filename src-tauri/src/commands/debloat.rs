@@ -1,14 +1,14 @@
+use crate::CmdResult;
 use crate::debloat::{
+    DebloatActionResult, DebloatListStatus, DebloatPackageRow,
     actions::apply_package_actions,
     backup::{
-        create_backup, list_backups, load_backup, load_device_settings, save_device_settings,
-        BackupSummary, PackageSnapshot, PerDeviceSettings,
+        BackupSummary, PackageSnapshot, PerDeviceSettings, create_backup, list_backups,
+        load_backup, load_device_settings, save_device_settings,
     },
     lists::load_uad_lists,
     sync::{build_uad_map, get_android_sdk, get_device_id, sync_device_packages},
-    DebloatActionResult, DebloatListStatus, DebloatPackageRow,
 };
-use crate::CmdResult;
 use log::info;
 use tauri::AppHandle;
 
@@ -100,7 +100,13 @@ pub async fn restore_debloat_backup(
                 crate::debloat::PackageState::Disabled => "disable",
                 crate::debloat::PackageState::Uninstalled => "uninstall",
             };
-            let mut r = apply_package_actions(&app, &[snapshot.name.clone()], action_str, sdk, 0)?;
+            let mut r = apply_package_actions(
+                &app,
+                std::slice::from_ref(&snapshot.name),
+                action_str,
+                sdk,
+                0,
+            )?;
             results.append(&mut r);
         }
         Ok(results)

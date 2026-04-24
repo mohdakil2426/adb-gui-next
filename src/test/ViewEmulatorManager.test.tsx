@@ -53,7 +53,7 @@ describe('ViewEmulatorManager', () => {
     renderWithQueryClient();
 
     expect(await screen.findByText('Emulator Manager')).toBeInTheDocument();
-    expect(await screen.findByText('No AVDs found')).toBeInTheDocument();
+    expect(await screen.findByText('No AVD selected')).toBeInTheDocument();
   });
 
   it('renders the selected avd when discovery returns data', async () => {
@@ -82,8 +82,11 @@ describe('ViewEmulatorManager', () => {
 
     renderWithQueryClient();
 
-    expect(await screen.findAllByText('Pixel_8_API_34')).toHaveLength(2);
-    expect(await screen.findByText('Google Play')).toBeInTheDocument();
-    expect(await screen.findAllByText('Stock')).toHaveLength(3);
+    expect(await screen.findByText('Pixel_8_API_34')).toBeInTheDocument();
+    expect(await screen.findByText(/API 34/)).toBeInTheDocument();
+    expect(await screen.findByText('Stopped')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: /launch with these options/i }),
+    ).toBeInTheDocument();
   });
 });

@@ -118,7 +118,7 @@ function DropArea({
       className={cn(
         'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
         isDragging
-          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_rgba(var(--primary-rgb,59,130,246),0.15)]'
+          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]'
           : 'border-muted-foreground/25 hover:border-muted-foreground/40',
         disabled && 'pointer-events-none opacity-50',
       )}
@@ -171,7 +171,7 @@ export function ViewFlasher() {
   const flashSectionRef = useRef<HTMLDivElement>(null);
   const sideloadSectionRef = useRef<HTMLDivElement>(null);
 
-  const { devices } = useDeviceStore();
+  const devices = useDeviceStore((state) => state.devices);
 
   const hasFastbootDevice = useMemo(
     () => devices.some((d) => d.status === 'fastboot' || d.status === 'bootloader'),
@@ -306,16 +306,16 @@ export function ViewFlasher() {
       setQueuedAction(null);
 
       if (action.type === 'flash') {
-        executeFlash(action.partition!, action.filePath);
+        void executeFlash(action.partition!, action.filePath);
       } else {
-        executeSideload(action.filePath);
+        void executeSideload(action.filePath);
       }
     }
   }, [queuedAction, hasFastbootDevice, hasSideloadDevice, isGlobalLoading]);
 
   // ─── Action handlers ───────────────────────────────────────────────
 
-  const executeFlash = async (partitionName: string, imgPath: string) => {
+  async function executeFlash(partitionName: string, imgPath: string): Promise<void> {
     setLoadingAction('flash');
     const toastId = toast.loading(`Flashing ${partitionName} partition...`);
 
@@ -332,9 +332,9 @@ export function ViewFlasher() {
     } finally {
       setLoadingAction(null);
     }
-  };
+  }
 
-  const executeSideload = async (zipPath: string) => {
+  async function executeSideload(zipPath: string): Promise<void> {
     const fileName = getFileName(zipPath);
     setLoadingAction('sideload');
     const toastId = toast.loading(`Sideloading ${fileName}...`);
@@ -350,7 +350,7 @@ export function ViewFlasher() {
     } finally {
       setLoadingAction(null);
     }
-  };
+  }
 
   const handleFlash = () => {
     const parsed = partitionSchema.safeParse(partition);
@@ -364,7 +364,7 @@ export function ViewFlasher() {
     }
 
     if (hasFastbootDevice) {
-      executeFlash(partition, filePath);
+      void executeFlash(partition, filePath);
     } else {
       setQueuedAction({ type: 'flash', partition, filePath });
       toast.info('Waiting for fastboot device...', {
@@ -380,7 +380,7 @@ export function ViewFlasher() {
     }
 
     if (hasSideloadDevice) {
-      executeSideload(sideloadFilePath);
+      void executeSideload(sideloadFilePath);
     } else {
       setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
       toast.info('Waiting for sideload device...', {
@@ -407,6 +407,7 @@ export function ViewFlasher() {
 
   return (
     <div className="flex flex-col gap-6">
+      <h1 className="sr-only">Flasher</h1>
       {/* ── Flash Partition ─────────────────────────────────────────── */}
       <div ref={flashSectionRef}>
         <Card>

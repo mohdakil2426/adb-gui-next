@@ -61,4 +61,4 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 - Current: 0.1.0
 - Tauri: 2.x
-- Last Updated: 2026-04-14 (Applications page now progressively shows installed-app icons while keeping package-list load fast)
+- Last Updated: 2026-04-24 (frontend audit cleanup: consistent shell, accessibility polish, reduced-motion handling, and lint-clean UI/backend code)

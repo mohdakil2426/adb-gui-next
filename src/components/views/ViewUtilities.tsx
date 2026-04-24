@@ -70,7 +70,7 @@ export function ViewUtilities() {
   // Nickname Editing State
   const [isEditing, setIsEditing] = useState(false);
 
-  const { devices: allDevices } = useDeviceStore();
+  const allDevices = useDeviceStore((state) => state.devices);
   const queryClient = useQueryClient();
 
   const refetchDevices = () => queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
@@ -112,7 +112,7 @@ export function ViewUtilities() {
       setSentAction(actionId);
       setTimeout(() => setSentAction(null), 2000);
     } catch (error) {
-      console.error(`Error rebooting to ${modeId}:`, error);
+      debugLog(`Error rebooting to ${modeId}:`, error);
       toast.error('Failed to send reboot command', {
         id: toastId,
         description: String(error),
@@ -224,6 +224,7 @@ export function ViewUtilities() {
 
   return (
     <div className="flex flex-col gap-6 pb-10">
+      <h1 className="sr-only">Utilities</h1>
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
