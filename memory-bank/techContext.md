@@ -16,7 +16,7 @@
 | Zod | ^4.3.6 | Schema validation |
 | Framer Motion | ^12.38.0 | Animations |
 | Radix UI | Various | shadcn primitives (incl. tabs) |
-| lucide-react | ^0.577.0 | Icons |
+| lucide-react | ^1.7.0 | Icons |
 | next-themes | ^0.4.6 | Light/dark/system theme |
 | sonner | ^2.0.7 | Toast notifications |
 | @tauri-apps/api | ^2.10.1 | Tauri frontend API |
@@ -130,7 +130,7 @@
 │   │   ├── SectionHeader.tsx     # Shared section sub-header
 │   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
 │   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
-│   │   ├── ui/                   # 22+ shadcn primitives (incl. Checkbox, ContextMenu)
+│   │   ├── ui/                   # 35+ shadcn primitives (Alert, Empty, Field, Select, Switch, ToggleGroup, etc.)
 │   │   └── views/                # 9 feature views
 │   ├── lib/
 │   │   ├── utils.ts              # cn() helper
@@ -209,4 +209,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-24 (Bun toolchain current; ESLint ignores generated Cargo `src-tauri/target-*/**`; lint verification uses `CARGO_TARGET_DIR=src-tauri/target-codex-lint` when the dev app locks the default target)
+- **Last Updated**: 2026-04-24 (shadcn frontend audit implementation complete; Bun toolchain current; ESLint ignores generated Cargo `src-tauri/target-*/**`; lint verification uses `CARGO_TARGET_DIR=src-tauri/target-codex-lint` and debug packaging can use `CARGO_TARGET_DIR=src-tauri/target-codex-tauri` when the default target is locked)

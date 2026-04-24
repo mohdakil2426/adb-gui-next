@@ -81,7 +81,13 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none">
-              <img src="/logo.png" alt="Logo" className="size-8 object-contain shrink-0" />
+              <img
+                src="/logo.png"
+                alt="Logo"
+                width={32}
+                height={32}
+                className="size-8 object-contain shrink-0"
+              />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">ADB GUI Next</span>
                 <span className="truncate text-xs text-sidebar-foreground/70">Desktop Toolkit</span>

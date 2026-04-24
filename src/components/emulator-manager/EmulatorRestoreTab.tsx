@@ -1,6 +1,7 @@
 import { LoadingButton } from '@/components/LoadingButton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { backend } from '@/lib/desktop/models';
-import { RotateCcw } from 'lucide-react';
+import { CheckCircle2, RotateCcw } from 'lucide-react';
 
 interface EmulatorRestoreTabProps {
   avd: backend.AvdSummary | null;
@@ -30,17 +31,15 @@ export function EmulatorRestoreTab({
   return (
     <div className="space-y-5">
       {/* Backup status */}
-      <div
-        className={`rounded-lg border px-4 py-3 text-sm ${
-          avd.hasBackups
-            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
-            : 'border-border bg-muted/40 text-muted-foreground'
-        }`}
-      >
-        {avd.hasBackups
-          ? 'Backups detected — restore will put backed-up files back in place.'
-          : 'No backups yet. Run a root preparation first to create restore artifacts.'}
-      </div>
+      <Alert className={avd.hasBackups ? 'border-success/30 bg-success/10 text-success' : ''}>
+        <CheckCircle2 />
+        <AlertTitle>{avd.hasBackups ? 'Backups detected' : 'No backups yet'}</AlertTitle>
+        <AlertDescription>
+          {avd.hasBackups
+            ? 'Restore will put backed-up files back in place.'
+            : 'Run a root preparation first to create restore artifacts.'}
+        </AlertDescription>
+      </Alert>
 
       {/* Plan header + restore button */}
       <div className="flex items-start justify-between gap-3">

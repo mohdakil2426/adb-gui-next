@@ -227,7 +227,7 @@ export function ViewEmulatorManager() {
               onRefresh={() => void handleRefresh()}
             />
             {selectedAvd?.warnings && selectedAvd.warnings.length > 0 && (
-              <Badge className="rounded-full bg-amber-500/15 text-xs text-amber-700 dark:text-amber-300">
+              <Badge variant="warning" className="rounded-full text-xs">
                 {selectedAvd.warnings.length}{' '}
                 {selectedAvd.warnings.length === 1 ? 'warning' : 'warnings'}
               </Badge>
@@ -238,7 +238,7 @@ export function ViewEmulatorManager() {
           {selectedAvd ? (
             <p className="pl-0.5 text-xs text-muted-foreground">
               {selectedAvd.isRunning ? (
-                <span className="text-emerald-700 dark:text-emerald-400">
+                <span className="text-success">
                   ● Running{selectedAvd.serial ? ` · ${selectedAvd.serial}` : ''}
                 </span>
               ) : (
@@ -266,7 +266,7 @@ export function ViewEmulatorManager() {
                 disabled={!selectedAvd.serial || isBusy}
                 onClick={() => void handleStop()}
               >
-                <Square className="size-3.5" />
+                <Square data-icon="inline-start" />
                 Stop
               </Button>
             ) : (
@@ -275,7 +275,7 @@ export function ViewEmulatorManager() {
                 disabled={isBusy}
                 onClick={() => void handleLaunch(createPresetOptions('default'))}
               >
-                <Play className="size-3.5" />
+                <Play data-icon="inline-start" />
                 Launch
               </Button>
             )}
@@ -285,7 +285,7 @@ export function ViewEmulatorManager() {
               disabled={isBusy}
               onClick={() => void handleLaunch(createPresetOptions('coldBoot'))}
             >
-              <Snowflake className="size-3.5" />
+              <Snowflake data-icon="inline-start" />
               Cold boot
             </Button>
             <Button
@@ -294,7 +294,7 @@ export function ViewEmulatorManager() {
               disabled={isBusy}
               onClick={() => void handleOpenFolder()}
             >
-              <FolderOpen className="size-3.5" />
+              <FolderOpen data-icon="inline-start" />
               Folder
             </Button>
           </div>

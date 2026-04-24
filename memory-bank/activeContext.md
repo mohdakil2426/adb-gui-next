@@ -3,8 +3,8 @@
 ## Current State
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
-All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 frontend audit cleanup are complete.
-Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current user-requested verification scope is lint-only: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`. `cargo test` still hits the pre-existing Windows Tauri runtime crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
+All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 shadcn frontend audit implementation are complete.
+Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Current verification passes for frontend tests, format, lint, build, and debug Tauri packaging when using isolated Cargo target directories. `bun run check` still reaches the pre-existing Windows Tauri runtime crash in `cargo test` (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
 **Universal Android Debloater (UAD) Integration is now complete.** `ViewAppManager` has been redesigned as a dual-tab shell ("Debloater" + "Installation"). The full Rust backend module (`src-tauri/src/debloat/`) and 8 Tauri commands are implemented. The `debloatStore` Zustand store and all React UI components are live. The critical crash (`Cannot read properties of undefined (reading 'subscribe')`) caused by using `CommandInput` outside a `<Command>` context was diagnosed and fixed.
@@ -13,17 +13,18 @@ Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdi
 
 ## Recently Completed
 
-### 2026-04-24 — Frontend Audit Cleanup + Lint-Only Verification
+### 2026-04-24 — shadcn Frontend Audit Implementation
 
-**Change:** Applied the frontend audit cleanup across the app shell and major views, with emphasis on consistency, accessibility, async correctness, and React/Zustand performance.
+**Change:** Applied all findings from `docs/reports/shadcn-frontend-audit-2026-04-24.md` as a shadcn-first frontend cleanup without changing backend APIs or the Tauri desktop shell architecture.
 
 **Highlights:**
-- MainLayout: skip link, main landmark, reduced-motion support, stable view renderer map, selector-based stores, error boundaries, and viewport-height state passed to BottomPanel.
-- Bottom panel/log/shell surfaces: accessible tab roles, live log region, icon labels, larger resize hit target, and selector-based store usage.
-- Shared UI/views: heading hierarchy fixes, polymorphic `CardTitle`, semantic CSS tokens, accessible icon-only buttons, lazy marketplace images, and React Hook Form `useWatch`.
-- Backend/frontend hygiene: typed Tauri `core.invoke<T>()` wrapper, Rust debloat clippy fixes, generated Cargo target ignores for ESLint, and stale tests updated to match current App Manager/Emulator Manager UI.
+- Added missing shadcn primitives: `Alert`, `Empty`, `Field`, `InputGroup`, `Select`, `Switch`, `Toggle`, `ToggleGroup`, `Textarea`, `RadioGroup`, `Slider`, and `Avatar`.
+- Migrated form-like settings and inputs to `Field`/`FieldGroup`/`Select`/`Switch`/`InputGroup` in marketplace settings, remote payload URLs, file selectors, nickname editing, and the shell panel.
+- Replaced custom warning/status panels with `Alert`, mode toggles with `ToggleGroup`/`Switch`, raw review tables with shadcn `Table`, and placeholder blocks with `Skeleton` where appropriate.
+- Converted `EmptyState` to a wrapper over shadcn `Empty`, expanded semantic badge variants, removed practical raw status colors, improved marketplace cards/list rows, added explicit image dimensions, and replaced actionable native `title` tooltips with shadcn `Tooltip`.
+- Added shared formatting helpers for bytes, compact counts, ratings, and dates with focused Vitest coverage.
 
-**Verification:** user requested lint-only scope. `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean.
+**Verification:** `bun run test`, `bun run build`, `bun run format:check`, and `bun run lint` pass. `bun run tauri build --debug` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`. `bun run check` still fails only at the known Windows Tauri-linked `cargo test` loader crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`).
 
 ### 2026-04-18 — Universal Android Debloater (UAD) Integration
 
@@ -637,10 +638,13 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-24** (after frontend audit cleanup)
+Last verified: **2026-04-24** (after shadcn frontend audit implementation)
+- `bun run test` ✅ — 34 frontend tests pass
+- `bun run build` ✅ — TypeScript check and Vite bundle pass
+- `bun run format:check` ✅
 - `bun run lint` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean
-- Full app packaging intentionally skipped per user request ("stop building the app; just use lintings")
-- `cargo test` remains a known Windows runtime-loader issue in this environment (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`) when the Tauri-linked test binary starts
+- `bun run tauri build --debug` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`
+- `bun run check` remains blocked only by the known Windows runtime-loader issue in `cargo test` (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`) when the Tauri-linked test binary starts
 
 ---
 
@@ -672,7 +676,7 @@ Last verified: **2026-04-24** (after frontend audit cleanup)
 
 ## Next Steps
 
-0. **Frontend audit cleanup follow-up**: Audit-driven UI consistency/accessibility/performance cleanup is implemented across MainLayout, bottom panel, shared UI, marketplace, payload dumper, and major views. Current verification scope requested by user is lint-only: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts are not scanned.
+0. **shadcn frontend audit follow-up**: The April 2026 shadcn audit implementation is complete across shared primitives, forms, alerts, mode controls, marketplace cards/list rows, debloater review tables, payload remote URL status, and tooltips. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts from isolated target directories are not scanned.
 1. **UAD `uad_lists.json` bundled fallback**: Place a copy of `uad_lists.json` in `src-tauri/resources/` so the offline fallback tier works without network. The app functions without it (tries remote fetch → disk cache first).
 2. **UAD end-to-end testing**: Test Debloater tab on a real device — confirm SDK-aware command routing (`pm disable-user` vs `pm hide`) on Android 5/6 vs 7+.
 3. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.

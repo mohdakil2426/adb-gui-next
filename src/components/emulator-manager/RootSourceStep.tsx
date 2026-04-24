@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Download, FolderOpen, Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { cn, formatDisplayDate, formatFileSize } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
 import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/lib/desktop/backend';
 import type { RootWizardSource } from '@/lib/emulatorManagerStore';
@@ -17,26 +19,6 @@ type FetchState =
   | { status: 'loading' }
   | { status: 'ok'; release: backend.MagiskStableRelease }
   | { status: 'error'; message: string };
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  return `${(kb / 1024).toFixed(1)} MB`;
-}
-
-function formatDate(iso: string): string {
-  if (!iso) return '';
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
-}
 
 export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourceStepProps) {
   const [mode, setMode] = useState<'download' | 'local'>(
@@ -96,41 +78,39 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
       </div>
 
       {/* Mode toggle */}
-      <div className="flex gap-2">
-        <button
+      <ToggleGroup
+        type="single"
+        value={mode}
+        onValueChange={(value) => {
+          if (value === 'download' || value === 'local') handleSelectMode(value);
+        }}
+        className="grid w-full grid-cols-2"
+        variant="outline"
+      >
+        <ToggleGroupItem
           id="root-source-mode-download"
-          className={cn(
-            'flex flex-1 items-center gap-2 rounded-lg border p-3 text-left transition-colors',
-            mode === 'download'
-              ? 'border-primary bg-primary/10 text-primary'
-              : 'border-border text-muted-foreground hover:border-primary/50',
-          )}
-          onClick={() => handleSelectMode('download')}
+          value="download"
+          className="h-auto justify-start gap-2 p-3 text-left"
         >
-          <Download className="size-4 shrink-0" />
-          <div>
+          <Download />
+          <div className="min-w-0">
             <p className="text-sm font-medium">Download</p>
             <p className="text-xs text-muted-foreground">Official stable from GitHub</p>
           </div>
-        </button>
+        </ToggleGroupItem>
 
-        <button
+        <ToggleGroupItem
           id="root-source-mode-local"
-          className={cn(
-            'flex flex-1 items-center gap-2 rounded-lg border p-3 text-left transition-colors',
-            mode === 'local'
-              ? 'border-primary bg-primary/10 text-primary'
-              : 'border-border text-muted-foreground hover:border-primary/50',
-          )}
-          onClick={() => handleSelectMode('local')}
+          value="local"
+          className="h-auto justify-start gap-2 p-3 text-left"
         >
-          <FolderOpen className="size-4 shrink-0" />
-          <div>
+          <FolderOpen />
+          <div className="min-w-0">
             <p className="text-sm font-medium">Local File</p>
             <p className="text-xs text-muted-foreground">Pick .apk or .zip</p>
           </div>
-        </button>
-      </div>
+        </ToggleGroupItem>
+      </ToggleGroup>
 
       {/* Download panel */}
       {mode === 'download' && (
@@ -145,11 +125,10 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
 
           {/* Error */}
           {fetchState.status === 'error' && (
-            <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4">
-              <div className="flex items-start gap-2 text-sm text-destructive">
-                <WifiOff className="mt-0.5 size-4 shrink-0" />
-                <span>Could not reach GitHub: {fetchState.message}</span>
-              </div>
+            <Alert variant="destructive">
+              <WifiOff />
+              <AlertTitle>Could not reach GitHub</AlertTitle>
+              <AlertDescription>{fetchState.message}</AlertDescription>
               <Button
                 id="root-source-retry"
                 variant="outline"
@@ -157,26 +136,26 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
                 className="w-fit gap-1.5"
                 onClick={loadRelease}
               >
-                <RefreshCw className="size-3.5" />
+                <RefreshCw data-icon="inline-start" />
                 Retry
               </Button>
               <p className="text-xs text-muted-foreground">
                 No internet? Switch to <strong>Local File</strong> to use a pre-downloaded package.
               </p>
-            </div>
+            </Alert>
           )}
 
           {/* Release card */}
           {fetchState.status === 'ok' && (
-            <div
+            <button
               id="root-source-stable-card"
+              type="button"
               className={cn(
-                'flex items-center justify-between rounded-lg border px-4 py-3 transition-colors',
+                'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
                 source?.type === 'stable'
                   ? 'border-primary bg-primary/10'
                   : 'border-border hover:border-primary/40',
               )}
-              role="button"
               onClick={() => onSourceChange({ type: 'stable' })}
             >
               <div className="flex flex-col gap-0.5">
@@ -189,8 +168,8 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {fetchState.release.assetName} · {formatBytes(fetchState.release.size)} ·{' '}
-                  {formatDate(fetchState.release.publishedAt)}
+                  {fetchState.release.assetName} · {formatFileSize(fetchState.release.size)} ·{' '}
+                  {formatDisplayDate(fetchState.release.publishedAt)}
                 </p>
                 {fetchState.release.sha256 && (
                   <p
@@ -205,7 +184,7 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
               {source?.type === 'stable' && (
                 <CheckCircle2 className="size-5 shrink-0 text-primary" />
               )}
-            </div>
+            </button>
           )}
 
           {fetchState.status === 'ok' && (
@@ -220,12 +199,14 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
       {/* Local file panel */}
       {mode === 'local' && (
         <div className="flex flex-col gap-3">
-          <button
+          <Button
             id="root-local-file-picker"
-            className="flex items-center gap-3 rounded-lg border border-dashed border-border px-4 py-6 text-center transition-colors hover:border-primary/60"
+            type="button"
+            variant="outline"
+            className="h-auto justify-start gap-3 border-dashed px-4 py-6 text-center"
             onClick={handleLocalPick}
           >
-            <FolderOpen className="size-5 shrink-0 text-muted-foreground" />
+            <FolderOpen data-icon="inline-start" className="text-muted-foreground" />
             <div className="text-left">
               {source?.type === 'local' ? (
                 <>
@@ -241,7 +222,7 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
                 </>
               )}
             </div>
-          </button>
+          </Button>
 
           <p className="text-xs text-muted-foreground">
             Any Magisk fork is supported: official Magisk, Kitsune Mask, Magisk Delta, Alpha,

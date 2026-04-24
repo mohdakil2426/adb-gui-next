@@ -42,7 +42,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
             >
               <TabsTrigger value="debloater" className="flex items-center gap-1.5">
-                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-pulse')} />
+                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-spin')} />
                 Debloater
               </TabsTrigger>
               <TabsTrigger value="installation" className="flex items-center gap-1.5">

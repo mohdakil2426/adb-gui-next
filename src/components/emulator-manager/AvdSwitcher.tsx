@@ -66,7 +66,7 @@ export function AvdSwitcher({
                     className={cn(
                       'pointer-events-none rounded-full px-1.5 py-0 text-[10px]',
                       selectedAvd.isRunning
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                        ? 'bg-success/15 text-success'
                         : 'border border-border bg-transparent text-muted-foreground',
                     )}
                   >
@@ -102,6 +102,7 @@ export function AvdSwitcher({
             className="size-7"
             onClick={onRefresh}
             disabled={isRefreshing}
+            aria-label="Refresh emulators"
           >
             {isRefreshing ? (
               <Loader2 className="size-3.5 animate-spin" />
@@ -174,7 +175,7 @@ export function AvdSwitcher({
                       className={cn(
                         'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
                         avd.isRunning
-                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          ? 'bg-success/15 text-success'
                           : 'border border-border bg-transparent text-muted-foreground',
                       )}
                     >
@@ -187,8 +188,8 @@ export function AvdSwitcher({
                         className={cn(
                           'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
                           avd.bootMode === 'cold'
-                            ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
-                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-warning/15 text-warning-foreground',
                         )}
                       >
                         {avd.bootMode === 'cold' ? 'Cold' : 'Normal'}

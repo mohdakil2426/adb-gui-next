@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import { useLogStore } from '@/lib/logStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
@@ -56,6 +57,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import { DirectoryTree } from '@/components/DirectoryTree';
 import { cn, formatBytes } from '@/lib/utils';
@@ -104,6 +106,15 @@ const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
+
+function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 /** Sort a file list by field + direction, always keeping dirs before files. */
 function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir): FileEntry[] {
@@ -858,15 +869,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0 bg-muted/30">
             <Layers className="size-4 text-muted-foreground shrink-0" />
             <span className="text-sm font-medium text-muted-foreground flex-1">Device</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
-              onClick={() => toggleTree(true)}
-              title="Collapse tree panel"
-            >
-              <PanelLeftClose className="size-3.5" />
-            </Button>
+            <ToolbarTooltip label="Collapse tree panel">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                onClick={() => toggleTree(true)}
+              >
+                <PanelLeftClose className="size-3.5" />
+              </Button>
+            </ToolbarTooltip>
           </div>
           <div className="flex-1 overflow-hidden">
             <DirectoryTree
@@ -896,15 +908,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           {/* Tree restore toggle */}
           {isTreeCollapsed && (
             <>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => toggleTree(false)}
-                title="Show tree panel"
-              >
-                <PanelLeft className="size-4" />
-              </Button>
+              <ToolbarTooltip label="Show tree panel">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => toggleTree(false)}
+                >
+                  <PanelLeft className="size-4" />
+                </Button>
+              </ToolbarTooltip>
               <Separator orientation="vertical" className="h-4 mx-0.5" />
             </>
           )}
@@ -912,40 +925,43 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           {/* Back / Forward / Up + Address bar */}
           <div className="flex items-center gap-1 min-w-0 flex-1">
             {/* Back */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
-              onClick={handleGoBack}
-              disabled={!canGoBack || isBusy}
-              title="Back (Alt+←)"
-            >
-              <ArrowLeft className="h-4 w-4 shrink-0" />
-            </Button>
+            <ToolbarTooltip label="Back (Alt+Left)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                onClick={handleGoBack}
+                disabled={!canGoBack || isBusy}
+              >
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+              </Button>
+            </ToolbarTooltip>
 
             {/* Forward */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
-              onClick={handleGoForward}
-              disabled={!canGoForward || isBusy}
-              title="Forward (Alt+→)"
-            >
-              <ArrowRight className="h-4 w-4 shrink-0" />
-            </Button>
+            <ToolbarTooltip label="Forward (Alt+Right)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                onClick={handleGoForward}
+                disabled={!canGoForward || isBusy}
+              >
+                <ArrowRight className="h-4 w-4 shrink-0" />
+              </Button>
+            </ToolbarTooltip>
 
             {/* Up */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7 shrink-0"
-              onClick={handleBackClick}
-              disabled={currentPath === '/' || isBusy}
-              title="Go up"
-            >
-              <ArrowUp className="h-4 w-4 shrink-0" />
-            </Button>
+            <ToolbarTooltip label="Go up">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 shrink-0"
+                onClick={handleBackClick}
+                disabled={currentPath === '/' || isBusy}
+              >
+                <ArrowUp className="h-4 w-4 shrink-0" />
+              </Button>
+            </ToolbarTooltip>
 
             {isEditingPath ? (
               <Input
@@ -983,20 +999,21 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           {/* Action buttons */}
           <div className="flex items-center gap-1 shrink-0">
             {/* Refresh */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() => loadFiles(currentPath, false)}
-              disabled={isBusy}
-              title="Refresh (F5)"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              ) : (
-                <RefreshCw className="h-4 w-4 shrink-0" />
-              )}
-            </Button>
+            <ToolbarTooltip label="Refresh (F5)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => loadFiles(currentPath, false)}
+                disabled={isBusy}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 shrink-0" />
+                )}
+              </Button>
+            </ToolbarTooltip>
 
             <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
 
@@ -1026,28 +1043,30 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
 
             {/* New File */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() => startCreate('file')}
-              disabled={isBusy}
-              title="New File (Ctrl+N)"
-            >
-              <FilePlus2 className="h-4 w-4 shrink-0" />
-            </Button>
+            <ToolbarTooltip label="New File (Ctrl+N)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => startCreate('file')}
+                disabled={isBusy}
+              >
+                <FilePlus2 className="h-4 w-4 shrink-0" />
+              </Button>
+            </ToolbarTooltip>
 
             {/* New Folder */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() => startCreate('folder')}
-              disabled={isBusy}
-              title="New Folder (Ctrl+Shift+N)"
-            >
-              <FolderPlus className="h-4 w-4 shrink-0" />
-            </Button>
+            <ToolbarTooltip label="New Folder (Ctrl+Shift+N)">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => startCreate('folder')}
+                disabled={isBusy}
+              >
+                <FolderPlus className="h-4 w-4 shrink-0" />
+              </Button>
+            </ToolbarTooltip>
 
             <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
 

@@ -1,6 +1,7 @@
 import { ArrowDownWideNarrow, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 import { getMarketplaceActiveFilterSummary, useMarketplaceStore } from '@/lib/marketplaceStore';
 import type { backend } from '@/lib/desktop/models';
+import { cn } from '@/lib/utils';
 
 type ProviderSource = backend.ProviderSource;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
@@ -90,40 +91,25 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           View Mode
         </h4>
-        <div className="flex items-center rounded-md border bg-muted/40 p-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'flex-1 h-8 gap-2 hover:bg-transparent',
-              viewMode === 'grid'
-                ? 'bg-background shadow-sm hover:bg-background'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => setViewMode('grid')}
-            aria-label="Grid view"
-            aria-pressed={viewMode === 'grid'}
-          >
-            <LayoutGrid className="size-3.5" aria-hidden="true" />
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(value) => {
+            if (value === 'grid' || value === 'list') setViewMode(value);
+          }}
+          variant="outline"
+          size="sm"
+          className="grid w-full grid-cols-2"
+        >
+          <ToggleGroupItem value="grid" aria-label="Grid view" className="gap-2">
+            <LayoutGrid aria-hidden="true" />
             Grid
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'flex-1 h-8 gap-2 hover:bg-transparent',
-              viewMode === 'list'
-                ? 'bg-background shadow-sm hover:bg-background'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => setViewMode('list')}
-            aria-label="List view"
-            aria-pressed={viewMode === 'list'}
-          >
-            <List className="size-3.5" aria-hidden="true" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="list" aria-label="List view" className="gap-2">
+            <List aria-hidden="true" />
             List
-          </Button>
-        </div>
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -137,7 +123,11 @@ export function FilterBar({ resultCount }: FilterBarProps) {
               size="sm"
               className="w-full justify-start gap-2 text-xs text-muted-foreground font-normal"
             >
-              <ArrowDownWideNarrow className="size-3.5 text-foreground" aria-hidden="true" />
+              <ArrowDownWideNarrow
+                data-icon="inline-start"
+                className="text-foreground"
+                aria-hidden="true"
+              />
               <span className="text-foreground font-medium">
                 {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
               </span>

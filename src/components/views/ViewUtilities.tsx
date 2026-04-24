@@ -55,6 +55,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { buttonVariants } from '@/components/ui/button-variants';
 import { ActionButton } from '@/components/ActionButton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
 type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
@@ -472,15 +473,20 @@ export function ViewUtilities() {
               </div>
               <div className="flex gap-2">
                 <CopyButton value={getVarContent} label="Variables" />
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={handleSaveGetVars}
-                  disabled={!getVarContent}
-                  title="Save to Log"
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={handleSaveGetVars}
+                      disabled={!getVarContent}
+                      aria-label="Save to Log"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Save to Log</TooltipContent>
+                </Tooltip>
               </div>
             </div>
           </DialogHeader>

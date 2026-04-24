@@ -29,14 +29,14 @@ export function RootResultStep({
       <div className="flex flex-col gap-5">
         {/* Success header */}
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 size-8 shrink-0 text-emerald-500" />
+          <CheckCircle2 className="mt-0.5 size-8 shrink-0 text-success" />
           <div>
             <h3 className="text-base font-semibold text-foreground">Root Successful!</h3>
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{avdName}</span> is now rooted with
               Magisk {result.magiskVersion ? `v${result.magiskVersion}` : ''}.
               {!result.managerInstalled && (
-                <span className="ml-1 text-amber-500">
+                <span className="ml-1 text-warning-foreground">
                   Magisk Manager install failed — install manually from your package file.
                 </span>
               )}
@@ -76,7 +76,7 @@ export function RootResultStep({
         {/* Actions */}
         <div className="flex flex-col gap-2">
           <Button id="root-result-cold-boot" className="w-full" onClick={onColdBoot}>
-            <RefreshCcw className="mr-2 size-4" />
+            <RefreshCcw data-icon="inline-start" />
             Cold Boot Emulator
           </Button>
           <Button
@@ -85,7 +85,7 @@ export function RootResultStep({
             className="w-full"
             onClick={onRestoreStock}
           >
-            <RotateCcw className="mr-2 size-4" />
+            <RotateCcw data-icon="inline-start" />
             Restore Stock (Undo)
           </Button>
         </div>
@@ -130,7 +130,7 @@ export function RootResultStep({
           className="w-full"
           onClick={onTryManual}
         >
-          <ShieldCheck className="mr-2 size-4" />
+          <ShieldCheck data-icon="inline-start" />
           Try Manual Mode (FAKEBOOTIMG)
         </Button>
         <Button id="root-result-retry" variant="ghost" className="w-full" onClick={onReset}>

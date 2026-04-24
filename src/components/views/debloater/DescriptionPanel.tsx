@@ -42,7 +42,7 @@ export function DescriptionPanel({ pkg }: DescriptionPanelProps) {
           {REMOVAL_TIER_LABELS[pkg.removal]}
         </span>
         {/* List badge */}
-        <span className="inline-flex items-center rounded-full bg-zinc-500/10 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
+        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           {pkg.list}
         </span>
       </div>

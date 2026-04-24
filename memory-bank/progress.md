@@ -10,7 +10,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 **UAD Debloater integration complete (2026-04-18):** `ViewAppManager` redesigned as dual-tab shell (Debloater + Installation). Full Rust backend (`src-tauri/src/debloat/` — 5 files, 8 commands), Zustand `debloatStore`, and 5 new React components. Critical runtime crash (`CommandInput` outside `<Command>` context) diagnosed and fixed.
 
-**Frontend audit cleanup complete (2026-04-24):** App shell, bottom panel, marketplace, payload dumper, major views, and shared UI were cleaned up for consistency, accessibility, reduced-motion behavior, selector-based Zustand performance, and lint-safe React patterns. User requested lint-only final verification; `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`.
+**shadcn frontend audit implementation complete (2026-04-24):** Applied all findings from `docs/reports/shadcn-frontend-audit-2026-04-24.md` as a shadcn-first cleanup. Added missing primitives, migrated custom form/status/toggle/table/empty/loading patterns, expanded semantic badge variants, improved marketplace cards/list rows, added shared formatters with tests, and preserved backend APIs plus the desktop shell layout. `bun run test`, `bun run build`, `bun run format:check`, `bun run lint`, and isolated-target `bun run tauri build --debug` pass; `bun run check` is blocked only by the known Windows Tauri-linked `cargo test` loader crash.
 
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
@@ -44,15 +44,15 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
   - Viewport-relative scroll container heights (`max-h-[40vh]`, `h-[40vh]`) replace all fixed px heights
   - `scrollbar-gutter: stable` scoped to `.main-scroll-area` class only (no phantom sidebar gutters)
   - Long device serials, file paths, URLs, package names all truncate correctly
-- shadcn/ui components (22+ primitives incl. Popover) with Tailwind CSS v4
+- shadcn/ui components (35+ primitives incl. Alert, Empty, Field, InputGroup, Select, Switch, ToggleGroup, RadioGroup, Slider, Avatar, Popover) with Tailwind CSS v4
 - Light/dark/system theme support via next-themes
 - Toast notifications via sonner
 - Framer Motion view transitions (opacity fade 150ms via AnimatePresence in MainLayout)
 - Terminal panel with filter dropdown, search highlighting, auto-scroll toggle, maximize/minimize
 - App Manager: virtualized package list (TanStack Virtual), user/system filter, type Badge, shadcn `Command`/`CommandInput`/`CommandEmpty` search (shouldFilter=false), toolbar layout (count left, filter+refresh right), non-blocking install via spawn_blocking, stable React keys for removable APK list
 - **UAD Debloater (dual-tab ViewAppManager)**:
-  - Tab 1 — Debloater: UAD-backed system package list with TanStack Virtual, 3-way filter (List/Safety/State), search input (`<Input>` + `<Search>` icon — NOT `CommandInput`), expert/disable mode pill toggles, state dot per package, safety tier badge, description panel, Select All / Unselect All, Review button
-  - Safety review dialog: tier breakdown table, affected package list, mandatory backup creation for Unsafe ops, disclaimer
+  - Tab 1 — Debloater: UAD-backed system package list with TanStack Virtual, 3-way filter (List/Safety/State), search input (`<Input>` + `<Search>` icon — NOT `CommandInput`), expert/disable mode switches, state dot per package, semantic safety tier badge, description panel, Select All / Unselect All, Review button
+  - Safety review dialog: shadcn `Table` tier breakdown, affected package list, mandatory backup creation for Unsafe ops, shadcn `Alert` disclaimer
   - Tab 2 — Installation: APK install, sideload, uninstall (extracted from original ViewAppManager)
   - Rust backend: `src-tauri/src/debloat/` (mod, lists, sync, actions, backup) + `commands/debloat.rs` — 8 commands, all `spawn_blocking`
   - 3-tier UAD list strategy: remote GitHub → disk cache → bundled fallback
@@ -270,6 +270,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-04-24 | 0.1.0 | shadcn frontend audit implementation: added official primitives (`Alert`, `Empty`, `Field`, `InputGroup`, `Select`, `Switch`, `ToggleGroup`, `Textarea`, `RadioGroup`, `Slider`, `Avatar`), migrated custom forms/status panels/mode controls/tables/loading placeholders to shadcn patterns, expanded semantic badge variants, replaced actionable native `title` tooltips with `Tooltip`, improved marketplace card/list semantics and image sizing, added shared formatting helpers with Vitest coverage, and preserved frontend-only scope. Verified `bun run test`, `bun run build`, `bun run format:check`, `bun run lint` with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`, and `bun run tauri build --debug` with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`. `bun run check` still fails only at the known Windows Tauri-linked `cargo test` loader crash (`0xc0000139`). |
 | 2026-04-24 | 0.1.0 | Frontend audit cleanup: improved app shell accessibility and consistency with skip link/main landmark, reduced-motion handling, error boundaries, semantic tab/log regions, accessible icon buttons, stable viewport sizing for BottomPanel, focused Zustand selectors, safer Tauri invoke typing, semantic CSS tokens, heading hierarchy fixes, lazy marketplace imagery, React Hook Form `useWatch` usage, and lint-compatible TanStack Virtual annotations. Added polymorphic `CardTitle` plus tests and updated stale AppManager/EmulatorManager tests. Fixed Rust clippy findings in debloat backend. User requested lint-only verification: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`; ESLint now ignores `src-tauri/target-*/**` generated Cargo directories. |
 | 2026-04-18 | 0.1.0 | UAD Debloater integration: `ViewAppManager` rewritten as dual-tab shell (Debloater + Installation). New Rust `src-tauri/src/debloat/` domain module (5 files: mod, lists, sync, actions, backup) + `commands/debloat.rs` (8 commands, all `spawn_blocking`). New Zustand `debloatStore`. New frontend components: `DebloaterTab`, `InstallationTab`, `ReviewSelectionDialog`, `DescriptionPanel`, `debloaterUtils`. Critical crash fixed: `CommandInput` outside `<Command>` context throws `Cannot read properties of undefined (reading 'subscribe')` — replaced with plain `<Input>` + `<Search>` icon. Verified `bun run build` ✅ · `bun run format:web` ✅ · `cargo check` ✅. |
 | 2026-04-16 | 0.1.0 | Security hardening & ACL migration: resolved Tauri v2 ACL discovery failures by migrating application permissions to the mandatory TOML format (`autogenerated.toml`) and properly scoping them in `capabilities/default.json` (no prefix lookup). Hardened the rooting pipeline with a robust `__ADB_GUI_EXIT_STATUS__` shell marker in `adb_shell_checked()` and integrated a centralized `sanitize_filename` utility in `helpers.rs` to prevent path traversal in user-provided file operations. Verified clean compilation with `cargo build`. |

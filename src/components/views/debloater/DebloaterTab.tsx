@@ -4,6 +4,8 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 import { CheckSquare2, Filter, Loader2, RefreshCcw, Search, Shield, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -236,6 +238,7 @@ export function DebloaterTab() {
           size="icon"
           className="size-9 shrink-0"
           disabled={isLoadingPackages}
+          aria-label="Refresh packages"
           onClick={() => void loadAll()}
         >
           <RefreshCcw className={cn('size-4', isLoadingPackages && 'animate-spin')} />
@@ -255,41 +258,37 @@ export function DebloaterTab() {
           )}
         </span>
 
-        <div className="flex items-center gap-3">
-          {/* Disable mode toggle */}
-          <button
-            type="button"
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-              disableMode
-                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80',
-            )}
-            onClick={() => void handleDisableModeChange(!disableMode)}
-          >
-            <span
-              className={cn(
-                'size-1.5 rounded-full transition-colors',
-                disableMode ? 'bg-amber-500' : 'bg-muted-foreground',
-              )}
+        <div className="flex flex-wrap items-center gap-4">
+          <Field orientation="horizontal" className="w-auto gap-2">
+            <Switch
+              id="debloat-disable-mode"
+              checked={disableMode}
+              onCheckedChange={(value) => void handleDisableModeChange(value)}
             />
-            Disable mode
-          </button>
+            <FieldContent className="gap-0">
+              <FieldLabel htmlFor="debloat-disable-mode" className="text-xs">
+                Disable mode
+              </FieldLabel>
+              <FieldDescription className="sr-only">Disable instead of uninstall.</FieldDescription>
+            </FieldContent>
+          </Field>
 
-          {/* Expert mode toggle */}
-          <button
-            type="button"
-            className={cn(
-              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-              expertMode
-                ? 'bg-red-500/15 text-red-600 dark:text-red-400'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80',
-            )}
-            onClick={() => void handleExpertModeChange(!expertMode)}
-          >
-            <Shield className="size-3" />
-            Expert {expertMode ? 'ON' : 'OFF'}
-          </button>
+          <Field orientation="horizontal" className="w-auto gap-2">
+            <Switch
+              id="debloat-expert-mode"
+              checked={expertMode}
+              onCheckedChange={(value) => void handleExpertModeChange(value)}
+            />
+            <FieldContent className="gap-0">
+              <FieldLabel htmlFor="debloat-expert-mode" className="text-xs">
+                <Shield className="size-3" />
+                Expert mode
+              </FieldLabel>
+              <FieldDescription className="sr-only">
+                Allow unsafe package selection.
+              </FieldDescription>
+            </FieldContent>
+          </Field>
         </div>
       </div>
 
@@ -358,7 +357,7 @@ export function DebloaterTab() {
                   {/* Package name */}
                   <span className="flex-1 truncate font-mono text-xs">{pkg.name}</span>
                   {/* List badge */}
-                  <span className="shrink-0 rounded bg-zinc-500/10 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500">
+                  <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
                     {pkg.list}
                   </span>
                   {/* Safety badge */}
@@ -386,7 +385,7 @@ export function DebloaterTab() {
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1.5">
           <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={selectAll}>
-            <CheckSquare2 className="size-3.5" />
+            <CheckSquare2 data-icon="inline-start" />
             Select All
           </Button>
           <Button
@@ -396,7 +395,7 @@ export function DebloaterTab() {
             disabled={selectedPackages.size === 0}
             onClick={unselectAll}
           >
-            <Square className="size-3.5" />
+            <Square data-icon="inline-start" />
             Unselect All
           </Button>
         </div>
@@ -407,7 +406,7 @@ export function DebloaterTab() {
           variant={disableMode ? 'outline' : 'default'}
           onClick={() => setReviewOpen(true)}
         >
-          {isApplying && <Loader2 className="mr-1.5 size-3.5 animate-spin" />}
+          {isApplying && <Loader2 data-icon="inline-start" className="animate-spin" />}
           Review {disableMode ? 'Disable' : 'Uninstall'} ({selectedPackages.size})
         </Button>
       </div>
@@ -442,7 +441,7 @@ function FilterDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
-          <Filter className="size-3.5" />
+          <Filter data-icon="inline-start" />
           {label}
         </Button>
       </DropdownMenuTrigger>

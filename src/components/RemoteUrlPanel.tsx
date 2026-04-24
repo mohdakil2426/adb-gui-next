@@ -1,10 +1,20 @@
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/components/ui/input-group';
+import { Switch } from '@/components/ui/switch';
 import { Loader2, CheckCircle2, AlertCircle, X, Globe } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
 
@@ -34,29 +44,41 @@ export function RemoteUrlPanel({
   const isError = connectionStatus === 'error';
 
   return (
-    <div className="space-y-4 min-w-0">
+    <div className="flex min-w-0 flex-col gap-4">
       {/* URL Input */}
-      <div className="space-y-2">
-        <Label htmlFor="remote-url" className="flex items-center gap-2">
-          <Globe className="h-4 w-4" />
-          Payload URL
-        </Label>
-        <div className="flex gap-2 min-w-0">
-          <Input
-            id="remote-url"
-            placeholder="https://example.com/ota.zip"
-            value={url}
-            onChange={(e) => onUrlChange(e.target.value)}
-            className="flex-1 min-w-0"
-            disabled={disabled}
-          />
-          {url && !disabled && (
-            <Button variant="ghost" size="icon" onClick={() => onUrlChange('')}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="remote-url" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Payload URL
+          </FieldLabel>
+          <InputGroup>
+            <InputGroupInput
+              id="remote-url"
+              name="remote-payload-url"
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              placeholder="https://example.com/ota.zip"
+              value={url}
+              onChange={(e) => onUrlChange(e.target.value)}
+              className="flex-1 min-w-0"
+              disabled={disabled}
+            />
+            {url && !disabled && (
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  size="icon-xs"
+                  aria-label="Clear URL"
+                  onClick={() => onUrlChange('')}
+                >
+                  <X className="h-4 w-4" />
+                </InputGroupButton>
+              </InputGroupAddon>
+            )}
+          </InputGroup>
+        </Field>
+      </FieldGroup>
 
       {/* Check URL Button */}
       <Button
@@ -67,70 +89,64 @@ export function RemoteUrlPanel({
       >
         {isChecking ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 data-icon="inline-start" className="animate-spin" />
             Checking connection...
           </>
         ) : (
           <>
-            <Globe className="mr-2 h-4 w-4" />
+            <Globe data-icon="inline-start" />
             Check URL
           </>
         )}
       </Button>
 
       {/* Options */}
-      <div className="space-y-3">
-        <Label className="text-muted-foreground">Options</Label>
-        <div className="flex items-center gap-2">
-          <Checkbox
+      <FieldGroup>
+        <Field orientation="horizontal" data-disabled={disabled}>
+          <Switch
             id="prefetch"
             checked={prefetch}
             onCheckedChange={(checked) => onPrefetchChange(checked === true)}
             disabled={disabled}
           />
-          <label htmlFor="prefetch" className="text-sm cursor-pointer">
-            Prefetch mode (download before extraction)
-          </label>
-        </div>
-      </div>
+          <FieldContent>
+            <FieldLabel htmlFor="prefetch">Prefetch mode</FieldLabel>
+            <FieldDescription>Download before extraction.</FieldDescription>
+          </FieldContent>
+        </Field>
+      </FieldGroup>
 
       {/* Connection Status */}
       {connectionStatus !== 'idle' && (
-        <Card
-          className={cn(
-            isReady && 'border-success/50',
-            isError && 'border-destructive/50',
-            'min-w-0',
-          )}
+        <Alert
+          variant={isError ? 'destructive' : 'default'}
+          className={isReady ? 'border-success/50 text-success' : undefined}
         >
-          <CardContent className="pt-4 space-y-2 min-w-0">
-            {isChecking && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Checking connection...
-              </div>
-            )}
-            {isReady && (
-              <>
-                <div className="flex items-center gap-2 text-success">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Range requests supported
-                </div>
-                {estimatedSize && (
-                  <div className="text-sm text-muted-foreground">
-                    Estimated download: {estimatedSize}
-                  </div>
-                )}
-              </>
-            )}
-            {isError && (
-              <div className="flex items-center gap-2 text-destructive">
-                <AlertCircle className="h-4 w-4" />
+          {isChecking && (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertTitle>Checking connection...</AlertTitle>
+            </>
+          )}
+          {isReady && (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Range requests supported</AlertTitle>
+              {estimatedSize && (
+                <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
+              )}
+            </>
+          )}
+          {isError && (
+            <>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Connection check failed</AlertTitle>
+              <AlertDescription>
                 Server does not support range requests or URL is invalid
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </AlertDescription>
+            </>
+          )}
+        </Alert>
       )}
     </div>
   );

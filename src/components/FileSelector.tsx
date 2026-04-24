@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,8 +39,8 @@ export function FileSelector({
   className,
 }: FileSelectorProps) {
   return (
-    <div className={cn('flex flex-col gap-1.5 min-w-0', className)}>
-      <label className="text-sm font-medium">{label}</label>
+    <Field className={cn('min-w-0 gap-1.5', className)}>
+      <FieldLabel>{label}</FieldLabel>
       <div className="flex gap-2 min-w-0">
         <Button
           variant="secondary"
@@ -57,10 +58,10 @@ export function FileSelector({
         {trailingAction}
       </div>
       {path && (
-        <p className="text-xs text-muted-foreground truncate" title={path}>
+        <FieldDescription className="truncate text-xs" title={path}>
           {path}
-        </p>
+        </FieldDescription>
       )}
-    </div>
+    </Field>
   );
 }

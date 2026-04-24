@@ -34,3 +34,43 @@ export function formatBytesNum(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
+
+export function formatFileSize(bytes: number | null | undefined): string {
+  if (bytes == null || !Number.isFinite(bytes)) return '';
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  const units = ['KB', 'MB', 'GB', 'TB'];
+  let value = bytes / 1024;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+
+  return `${value.toFixed(1)} ${units[unitIndex]}`;
+}
+
+export function formatCompactNumber(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '';
+  return new Intl.NumberFormat(undefined, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatRating(value: number | null | undefined): string {
+  if (value == null || !Number.isFinite(value)) return '';
+  return new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+export function formatDisplayDate(value: string | number | Date | null | undefined): string {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+}

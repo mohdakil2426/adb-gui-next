@@ -1,9 +1,9 @@
 import { LoadingButton } from '@/components/LoadingButton';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { backend } from '@/lib/desktop/models';
-import { Play } from 'lucide-react';
+import { AlertTriangle, Play } from 'lucide-react';
 import { useState } from 'react';
 
 interface EmulatorLaunchTabProps {
@@ -78,16 +78,13 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
       </div>
 
       {(wipeData || writableSystem) && (
-        <Card className="border-amber-500/30 bg-amber-500/10">
-          <CardHeader className="pb-2 pt-4">
-            <CardTitle className="text-sm text-amber-800 dark:text-amber-200">
-              Safety confirmation required
-            </CardTitle>
-            <CardDescription className="text-amber-700/80 dark:text-amber-300/80">
-              Acknowledge the risks before launching with destructive flags.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pb-4">
+        <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
+          <AlertTriangle />
+          <AlertTitle>Safety confirmation required</AlertTitle>
+          <AlertDescription className="text-warning-foreground/90">
+            Acknowledge the risks before launching with destructive flags.
+          </AlertDescription>
+          <div className="col-start-2 mt-2 flex flex-col gap-3">
             {wipeData && (
               <Label className="flex items-center gap-2.5 text-sm">
                 <Checkbox
@@ -106,8 +103,8 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
                 I understand writable-system can leave this AVD in a modified state.
               </Label>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </Alert>
       )}
 
       <LoadingButton

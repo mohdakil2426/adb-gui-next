@@ -10,6 +10,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, formatBytesNum } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
 
@@ -54,17 +55,22 @@ function CopyableText({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-1.5 min-w-0">
       <span className="min-w-0 break-all font-mono text-xs leading-relaxed">{text}</span>
-      <button
-        onClick={handleCopy}
-        className={cn(
-          'shrink-0 p-1 rounded-md transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-          copied && 'text-success',
-        )}
-        title={copied ? 'Copied!' : 'Copy'}
-      >
-        {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={handleCopy}
+            className={cn(
+              'shrink-0 rounded-md p-1 transition-colors',
+              'hover:bg-accent hover:text-accent-foreground',
+              copied && 'text-success',
+            )}
+            aria-label={copied ? 'Copied' : 'Copy'}
+          >
+            {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{copied ? 'Copied' : 'Copy'}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

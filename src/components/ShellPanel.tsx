@@ -5,7 +5,12 @@ import { shellCommandSchema } from '@/lib/schemas';
 import { useShellStore } from '@/lib/shellStore';
 import { RunShellCommand, RunAdbHostCommand, RunFastbootHostCommand } from '@/lib/desktop/backend';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+  InputGroupText,
+} from '@/components/ui/input-group';
 import { cn } from '@/lib/utils';
 
 export function ShellPanel() {
@@ -175,30 +180,37 @@ export function ShellPanel() {
       </ScrollArea>
 
       <div
-        className="flex items-center gap-2 px-3 py-2 border-t shrink-0"
+        className="px-3 py-2 border-t shrink-0"
         style={{ borderColor: 'var(--terminal-border)' }}
       >
-        <span
-          className="font-mono text-sm font-semibold shrink-0 select-none"
-          style={{ color: 'var(--terminal-log-info)' }}
-        >
-          $
-        </span>
-        <Input
-          id="shell-panel-input"
-          aria-label="Shell Command"
-          placeholder="adb devices, adb shell ls, fastboot devices…"
-          className="font-mono text-[12px] border-none bg-transparent shadow-none focus-visible:ring-0 h-7 px-0"
-          style={{ color: 'var(--terminal-fg)' }}
-          value={command}
-          onChange={(e) => {
-            setCommand(e.target.value);
-            setHistoryIndex(commandHistory.length);
-          }}
-          onKeyDown={handleKeyDown}
-          disabled={isLoading}
-          autoFocus
-        />
+        <InputGroup className="border-0 bg-transparent shadow-none dark:bg-transparent">
+          <InputGroupAddon>
+            <InputGroupText
+              className="font-mono text-sm font-semibold select-none"
+              style={{ color: 'var(--terminal-log-info)' }}
+            >
+              $
+            </InputGroupText>
+          </InputGroupAddon>
+          <InputGroupInput
+            id="shell-panel-input"
+            aria-label="Shell Command"
+            name="shell-command"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="adb devices, adb shell ls, fastboot devices…"
+            className="font-mono text-[12px]"
+            style={{ color: 'var(--terminal-fg)' }}
+            value={command}
+            onChange={(e) => {
+              setCommand(e.target.value);
+              setHistoryIndex(commandHistory.length);
+            }}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            autoFocus
+          />
+        </InputGroup>
       </div>
     </div>
   );

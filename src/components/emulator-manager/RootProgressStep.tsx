@@ -61,7 +61,7 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
                 {isFailed ? (
                   <XCircle className="size-4 text-destructive" />
                 ) : isDone ? (
-                  <CheckCircle2 className="size-4 text-emerald-500" />
+                  <CheckCircle2 className="size-4 text-success" />
                 ) : isActive ? (
                   <Loader2 className="size-4 animate-spin text-primary" />
                 ) : (

@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { getNickname, setNickname } from '@/lib/nicknameStore';
 import { toast } from 'sonner';
@@ -54,21 +54,22 @@ export function EditNicknameDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <Label htmlFor="nickname" className="text-left">
-            Nickname
-          </Label>
-          <Input
-            id="nickname"
-            value={newNickname}
-            onChange={(e) => setNewNickname(e.target.value)}
-            placeholder="Ex: My Device"
-            className="mt-2"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSaveNickname();
-            }}
-          />
-        </div>
+        <FieldGroup className="py-4">
+          <Field>
+            <FieldLabel htmlFor="nickname">Nickname</FieldLabel>
+            <Input
+              id="nickname"
+              name="nickname"
+              autoComplete="off"
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+              placeholder="Ex: My Device"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveNickname();
+              }}
+            />
+          </Field>
+        </FieldGroup>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

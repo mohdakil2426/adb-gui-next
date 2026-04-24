@@ -15,24 +15,24 @@ export const REMOVAL_TIER_LABELS: Record<RemovalTier, string> = {
 
 export const REMOVAL_TIER_CLASSES: Record<RemovalTier, { badge: string; dot: string }> = {
   Recommended: {
-    badge: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
-    dot: 'bg-emerald-500',
+    badge: 'bg-success/15 text-success',
+    dot: 'bg-success',
   },
   Advanced: {
-    badge: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    dot: 'bg-amber-500',
+    badge: 'bg-warning/15 text-warning-foreground',
+    dot: 'bg-warning',
   },
   Expert: {
-    badge: 'bg-orange-500/15 text-orange-600 dark:text-orange-400',
-    dot: 'bg-orange-500',
+    badge: 'bg-warning/20 text-warning-foreground',
+    dot: 'bg-warning',
   },
   Unsafe: {
-    badge: 'bg-red-500/15 text-red-600 dark:text-red-400',
-    dot: 'bg-red-500',
+    badge: 'bg-destructive/15 text-destructive',
+    dot: 'bg-destructive',
   },
   Unlisted: {
-    badge: 'bg-zinc-500/15 text-zinc-500',
-    dot: 'bg-zinc-400',
+    badge: 'bg-muted text-muted-foreground',
+    dot: 'bg-muted-foreground',
   },
 };
 
@@ -45,9 +45,9 @@ export const PKG_STATE_LABELS: Record<PkgState, string> = {
 };
 
 export const PKG_STATE_CLASSES: Record<PkgState, string> = {
-  Enabled: 'bg-emerald-500',
-  Disabled: 'bg-amber-500',
-  Uninstalled: 'bg-zinc-400',
+  Enabled: 'bg-success',
+  Disabled: 'bg-warning',
+  Uninstalled: 'bg-muted-foreground',
 };
 
 // ── Summary helpers for review dialog ─────────────────────────────────────────

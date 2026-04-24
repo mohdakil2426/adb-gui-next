@@ -390,6 +390,9 @@ onClick={() => {
 | Clickable div lists | must have `role`, `aria-*`, `tabIndex`, `onKeyDown` |
 | Checkbox UI | use shared `<CheckboxItem>` |
 | Empty states | use shared `<EmptyState>` |
+| Form layout | use shadcn `<FieldGroup>` / `<Field>` / `<FieldLabel>` / `<FieldDescription>` for form-like settings |
+| Status panels | use shadcn `<Alert>` with semantic `warning`, `success`, or `destructive` tokens |
+| Mode controls | use shadcn `<ToggleGroup>` or `<Switch>` instead of custom button toggles |
 | Animations | use MainLayout's `motion.div` wrapper — do NOT add per-view `animate-in` classes |
 | Links that open URL | `<button onClick={openLink}>` — never `<a href>` with `onClick` (double-open on Tauri) |
 | Searchable lists | `<Command shouldFilter={false}>` + `<CommandInput>` — never hand-roll search icon+input |
@@ -490,7 +493,7 @@ src/components/
 │   ├── MarketplaceSettings.tsx    # Settings dialog: providers, GitHub PAT, preferences
 │   ├── ProviderBadge.tsx    # Color-coded source badges (F-Droid/Izzy/GitHub/Aptoide)
 │   └── AttributionFooter.tsx  # "Powered by" provider links
-├── ui/                      # 23+ shadcn primitives (incl. Checkbox, ContextMenu, Command, Tabs)
+├── ui/                      # 35+ shadcn primitives (incl. Alert, Empty, Field, InputGroup, Select, Switch, ToggleGroup, Table)
 └── views/                   # 9 feature views (Dashboard, AppManager, FileExplorer,
                              #   Flasher, Utilities, PayloadDumper, Marketplace, Emulator, About)
 ```

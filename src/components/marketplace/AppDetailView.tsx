@@ -11,17 +11,17 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ProviderBadge } from '@/components/marketplace/ProviderBadge';
 import { MarketplaceGetAppDetail } from '@/lib/desktop/backend';
 import { BrowserOpenURL } from '@/lib/desktop/runtime';
 import { handleError } from '@/lib/errorHandler';
 import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
 import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
+import { formatDisplayDate, formatFileSize } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
 
 type AppDetail = backend.MarketplaceAppDetail;
-
-const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
 function MetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
@@ -131,6 +131,8 @@ export function AppDetailView() {
               <img
                 src={selectedApp.iconUrl}
                 alt=""
+                width={96}
+                height={96}
                 className="size-full object-cover"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none';
@@ -171,27 +173,27 @@ export function AppDetailView() {
             disabled={!effectiveDownloadUrl || primaryInstallState === 'running'}
           >
             {primaryInstallState === 'done' ? (
-              <Check className="mr-2 size-5" aria-hidden="true" />
+              <Check data-icon="inline-start" aria-hidden="true" />
             ) : primaryInstallState === 'running' ? (
-              <Loader2 className="mr-2 size-5 animate-spin" aria-hidden="true" />
+              <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
             ) : (
-              <Download className="mr-2 size-5" aria-hidden="true" />
+              <Download data-icon="inline-start" aria-hidden="true" />
             )}
             {primaryInstallState === 'done'
               ? 'Installed'
               : primaryInstallState === 'running'
                 ? 'Installing…'
                 : effectiveDownloadUrl
-                  ? `Install ${detail?.size ? `(${(detail.size / 1024 / 1024).toFixed(1)} MB)` : ''}`
+                  ? `Install ${detail?.size ? `(${formatFileSize(detail.size)})` : ''}`
                   : 'No APK available'}
           </Button>
         </div>
       </div>
 
       {isLoadingDetail && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Loading additional app details…
+        <div className="flex items-center gap-3">
+          <Skeleton className="size-4 rounded-full" />
+          <Skeleton className="h-4 w-56" />
         </div>
       )}
 
@@ -204,6 +206,8 @@ export function AppDetailView() {
                 key={`${url}-${i}`}
                 src={url}
                 alt=""
+                width={320}
+                height={320}
                 loading="lazy"
                 className="h-64 shrink-0 snap-start rounded-xl border bg-muted/20 object-contain shadow-sm sm:h-80"
               />
@@ -245,7 +249,7 @@ export function AppDetailView() {
               <MetadataItem label="Version" value={detail?.version || selectedApp.version} />
               <MetadataItem
                 label="Updated"
-                value={detail?.updatedAt ? DATE_FORMATTER.format(new Date(detail.updatedAt)) : null}
+                value={detail?.updatedAt ? formatDisplayDate(detail.updatedAt) : null}
               />
               <MetadataItem label="License" value={detail?.license} />
               <MetadataItem label="Author" value={detail?.author} />
@@ -258,9 +262,9 @@ export function AppDetailView() {
                   onClick={() => BrowserOpenURL(detail?.repoUrl ?? selectedApp.repoUrl!)}
                 >
                   {selectedApp.source === 'GitHub' ? (
-                    <GitBranch className="mr-2 size-4" aria-hidden="true" />
+                    <GitBranch data-icon="inline-start" aria-hidden="true" />
                   ) : (
-                    <ExternalLink className="mr-2 size-4" aria-hidden="true" />
+                    <ExternalLink data-icon="inline-start" aria-hidden="true" />
                   )}
                   Open Repository
                 </Button>
@@ -280,7 +284,7 @@ export function AppDetailView() {
                 }
               }}
             >
-              <Copy className="mr-2 size-4" aria-hidden="true" /> Copy Package ID
+              <Copy data-icon="inline-start" aria-hidden="true" /> Copy Package ID
             </Button>
           </section>
 
@@ -301,16 +305,14 @@ export function AppDetailView() {
                         <span className="truncate text-sm font-medium">{version.versionName}</span>
                         {version.publishedAt && (
                           <span className="text-xs text-muted-foreground">
-                            {DATE_FORMATTER.format(new Date(version.publishedAt))}
+                            {formatDisplayDate(version.publishedAt)}
                           </span>
                         )}
                       </div>
                       {version.downloadUrl && (
                         <div className="mt-1 flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
-                            {version.size != null
-                              ? `${(version.size / 1024 / 1024).toFixed(1)} MB`
-                              : 'APK'}
+                            {version.size != null ? formatFileSize(version.size) : 'APK'}
                           </span>
                           <Button
                             variant="secondary"
@@ -322,9 +324,13 @@ export function AppDetailView() {
                             disabled={isInstallingVersion || primaryInstallState === 'running'}
                           >
                             {isInstallingVersion ? (
-                              <Loader2 className="mr-1.5 size-3 animate-spin" aria-hidden="true" />
+                              <Loader2
+                                data-icon="inline-start"
+                                className="animate-spin"
+                                aria-hidden="true"
+                              />
                             ) : (
-                              <Download className="mr-1.5 size-3" aria-hidden="true" />
+                              <Download data-icon="inline-start" aria-hidden="true" />
                             )}
                             Install
                           </Button>

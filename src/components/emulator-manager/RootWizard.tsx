@@ -136,7 +136,7 @@ export function RootWizard({ avd }: RootWizardProps) {
               <div
                 className={cn(
                   'flex size-6 items-center justify-center rounded-full border text-xs font-semibold transition-colors',
-                  done && 'border-emerald-500 bg-emerald-500 text-white',
+                  done && 'border-success bg-success text-success-foreground',
                   active && 'border-primary bg-primary text-primary-foreground',
                   !done && !active && 'border-border bg-background text-muted-foreground',
                 )}
@@ -153,10 +153,7 @@ export function RootWizard({ avd }: RootWizardProps) {
               </span>
               {idx < STEPS.length - 1 && (
                 <div
-                  className={cn(
-                    'h-px w-8 transition-colors',
-                    done ? 'bg-emerald-500' : 'bg-border',
-                  )}
+                  className={cn('h-px w-8 transition-colors', done ? 'bg-success' : 'bg-border')}
                 />
               )}
             </div>

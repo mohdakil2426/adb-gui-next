@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
 import {
@@ -86,24 +95,22 @@ export function ReviewSelectionDialog({
         </DialogHeader>
 
         {/* Safety tier summary table */}
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                  Safety Tier
-                </th>
-                <th className="px-3 py-2 text-right font-medium text-muted-foreground">Packages</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-hidden rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40">
+                <TableHead>Safety Tier</TableHead>
+                <TableHead className="text-right">Packages</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {ALL_REMOVAL_TIERS.map((tier) => {
                 const count = tierCounts[tier];
                 if (count === 0) return null;
                 const classes = REMOVAL_TIER_CLASSES[tier];
                 return (
-                  <tr key={tier} className="border-b last:border-0">
-                    <td className="px-3 py-2">
+                  <TableRow key={tier}>
+                    <TableCell>
                       <span
                         className={cn(
                           'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium',
@@ -113,13 +120,13 @@ export function ReviewSelectionDialog({
                         <span className={cn('size-1.5 rounded-full', classes.dot)} />
                         {REMOVAL_TIER_LABELS[tier]}
                       </span>
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono">{count}</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{count}</TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Package list */}
@@ -139,14 +146,14 @@ export function ReviewSelectionDialog({
                 >
                   {pkg.removal}
                 </span>
-                <span className="shrink-0 rounded bg-zinc-500/10 px-1.5 py-0.5 text-[9px] font-medium text-zinc-500">
+                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
                   {pkg.list}
                 </span>
                 <span className="flex-1 truncate font-mono text-foreground">{pkg.name}</span>
                 <span
                   className={cn(
                     'shrink-0 text-[9px] font-medium',
-                    disableMode ? 'text-amber-500' : 'text-red-500',
+                    disableMode ? 'text-warning-foreground' : 'text-destructive',
                   )}
                 >
                   {actionLabel}
@@ -172,7 +179,7 @@ export function ReviewSelectionDialog({
               disabled={isCreatingBackup}
               onClick={() => void handleCreateBackup()}
             >
-              {isCreatingBackup && <Loader2 className="mr-1 size-3 animate-spin" />}
+              {isCreatingBackup && <Loader2 data-icon="inline-start" className="animate-spin" />}
               Backup
             </Button>
           )}
@@ -180,20 +187,23 @@ export function ReviewSelectionDialog({
 
         {/* Warning banner */}
         {hasUnsafe && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            <span>
-              <span className="font-semibold">Unsafe packages selected.</span> These may cause
-              system instability or bootloops. Ensure you have a backup.
-            </span>
-          </div>
+          <Alert variant="destructive">
+            <AlertTriangle />
+            <AlertTitle>Unsafe packages selected</AlertTitle>
+            <AlertDescription>
+              These may cause system instability or bootloops. Ensure you have a backup.
+            </AlertDescription>
+          </Alert>
         )}
 
-        <div className="rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-          <span className="font-semibold">⚠ Disclaimer:</span> You cannot brick your device with
-          user-space debloating, but removing essential packages may cause a bootloop requiring a
-          factory reset. Always backup first.
-        </div>
+        <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
+          <AlertTriangle />
+          <AlertTitle>Disclaimer</AlertTitle>
+          <AlertDescription className="text-warning-foreground/90">
+            You cannot brick your device with user-space debloating, but removing essential packages
+            may cause a bootloop requiring a factory reset. Always backup first.
+          </AlertDescription>
+        </Alert>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isApplying}>
@@ -204,7 +214,7 @@ export function ReviewSelectionDialog({
             onClick={() => void onConfirm()}
             disabled={isApplying}
           >
-            {isApplying && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {isApplying && <Loader2 data-icon="inline-start" className="animate-spin" />}
             {isApplying
               ? 'Applying…'
               : `Apply ${selectedPackages.size} Action${selectedPackages.size !== 1 ? 's' : ''}`}

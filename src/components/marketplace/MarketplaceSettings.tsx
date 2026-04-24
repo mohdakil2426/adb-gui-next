@@ -20,8 +20,24 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+  FieldTitle,
+} from '@/components/ui/field';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { MarketplaceClearCache } from '@/lib/desktop/backend';
 import { BrowserOpenURL } from '@/lib/desktop/runtime';
@@ -127,41 +143,46 @@ export function MarketplaceSettings() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-1">
-          <section className="space-y-4">
+        <div className="flex flex-col gap-6 py-1">
+          <section className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldCheck className="size-4 text-muted-foreground" />
               Source selection
             </div>
-            <div className="space-y-2">
+            <FieldGroup>
               {PROVIDERS.map((provider) => (
-                <div
+                <Field
                   key={provider.id}
-                  className="flex items-center justify-between rounded-lg border px-3 py-3"
+                  orientation="horizontal"
+                  data-disabled={
+                    activeProviders.includes(provider.id) && activeProviders.length <= 1
+                  }
+                  className="justify-between rounded-lg border px-3 py-3"
                 >
-                  <div className="space-y-1 pr-4">
-                    <Label className="text-sm font-medium">{provider.label}</Label>
-                    <p className="text-xs text-muted-foreground">{provider.description}</p>
-                  </div>
+                  <FieldContent className="pr-4">
+                    <FieldTitle>{provider.label}</FieldTitle>
+                    <FieldDescription>{provider.description}</FieldDescription>
+                  </FieldContent>
                   <Checkbox
+                    aria-label={`Enable ${provider.label}`}
                     checked={activeProviders.includes(provider.id)}
                     onCheckedChange={() => toggleProvider(provider.id)}
                     disabled={activeProviders.includes(provider.id) && activeProviders.length <= 1}
                   />
-                </div>
+                </Field>
               ))}
-            </div>
+            </FieldGroup>
           </section>
 
           <Separator />
 
-          <section className="space-y-4">
+          <section className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-medium">
               <GitBranch className="size-4 text-muted-foreground" />
               GitHub session
             </div>
             <div className="rounded-lg border bg-muted/20 p-4">
-              <div className="space-y-3">
+              <FieldGroup className="gap-4">
                 <div>
                   <p className="text-sm font-medium">{authStatus}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -170,16 +191,19 @@ export function MarketplaceSettings() {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="github-oauth-client-id">GitHub OAuth client ID</Label>
+                <Field>
+                  <FieldLabel htmlFor="github-oauth-client-id">GitHub OAuth client ID</FieldLabel>
                   <Input
                     id="github-oauth-client-id"
+                    name="github-oauth-client-id"
+                    autoComplete="off"
+                    spellCheck={false}
                     value={localClientId}
                     onChange={(event) => setLocalClientId(event.target.value)}
                     placeholder="Iv1.xxxxxxxxxxxxxxxx"
                     className="font-mono text-xs"
                   />
-                </div>
+                </Field>
 
                 {githubSession.user && (
                   <div className="rounded-lg border bg-background/80 p-3 text-xs text-muted-foreground">
@@ -232,73 +256,84 @@ export function MarketplaceSettings() {
                       disabled={!localClientId.trim() || isGithubAuthenticating}
                     >
                       {isGithubAuthenticating ? (
-                        <Loader2 className="mr-2 size-4 animate-spin" />
+                        <Loader2 data-icon="inline-start" className="animate-spin" />
                       ) : (
-                        <GitBranch className="mr-2 size-4" />
+                        <GitBranch data-icon="inline-start" />
                       )}
                       Sign in with GitHub
                     </Button>
                   ) : (
                     <Button variant="outline" onClick={signOutGithub}>
-                      <LogOut className="mr-2 size-4" />
+                      <LogOut data-icon="inline-start" />
                       Sign out
                     </Button>
                   )}
                 </div>
-              </div>
+              </FieldGroup>
             </div>
           </section>
 
           <Separator />
 
-          <section className="space-y-4">
+          <section className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-medium">
               <SlidersHorizontal className="size-4 text-muted-foreground" />
               Search preferences
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="results-per-provider">Results per provider</Label>
-                <select
-                  id="results-per-provider"
-                  className="h-10 rounded-md border bg-background px-3 text-sm"
-                  value={resultsPerProvider}
-                  onChange={(event) => setResultsPerProvider(Number(event.target.value))}
-                >
-                  <option value={6}>6</option>
-                  <option value={8}>8</option>
-                  <option value={12}>12</option>
-                  <option value={16}>16</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="github-pat">Advanced fallback token</Label>
-                <Input
-                  id="github-pat"
-                  value={localPat}
-                  onChange={(event) => setLocalPat(event.target.value)}
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  className="font-mono text-xs"
-                  type="password"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
+            <FieldSet>
+              <FieldGroup className="grid gap-4 sm:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
+                  <Select
+                    value={String(resultsPerProvider)}
+                    onValueChange={(value) => setResultsPerProvider(Number(value))}
+                  >
+                    <SelectTrigger id="results-per-provider" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {[6, 8, 12, 16].map((value) => (
+                          <SelectItem key={value} value={String(value)}>
+                            {value}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
+                  <Input
+                    id="github-pat"
+                    name="github-pat"
+                    value={localPat}
+                    onChange={(event) => setLocalPat(event.target.value)}
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                    className="font-mono text-xs"
+                    type="password"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </Field>
+              </FieldGroup>
+            </FieldSet>
+            <FieldDescription>
               Personal access tokens are optional session-only fallbacks. They are kept in memory
               for the current app session and are not saved after reload or restart.
-            </p>
+            </FieldDescription>
           </section>
 
           <Separator />
 
-          <section className="space-y-4">
+          <section className="flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-medium">
               <RefreshCw className="size-4 text-muted-foreground" />
               Cache and history
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={handleClearCache}>
-                <RefreshCw className="mr-2 size-4" />
+                <RefreshCw data-icon="inline-start" />
                 Clear cache
               </Button>
               <Button
@@ -306,7 +341,7 @@ export function MarketplaceSettings() {
                 onClick={clearSearchHistory}
                 disabled={searchHistory.length === 0}
               >
-                <Trash2 className="mr-2 size-4" />
+                <Trash2 data-icon="inline-start" />
                 Clear search history
               </Button>
             </div>
