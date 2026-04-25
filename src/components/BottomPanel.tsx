@@ -6,6 +6,15 @@ import { ShellPanel } from './ShellPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/ui/sidebar';
 import {
@@ -76,7 +85,6 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
   // Only this triggers a re-render — purely for the cursor-lock overlay
   const [showCursorOverlay, setShowCursorOverlay] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // ── Fluid resize: DOM-first, commit-last ─────────────────────────────────────
   // During drag: height updated via direct DOM style — NO React re-renders.
@@ -341,55 +349,49 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
 
             {/* Filter toggle (logs only) */}
             {activeTab === 'logs' && (
-              <div className="relative">
+              <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Filter Logs"
-                      className={cn(
-                        'size-6',
-                        filter !== 'all' ? 'opacity-100' : 'opacity-60 hover:opacity-100',
-                      )}
-                      style={{ color: 'var(--terminal-fg)' }}
-                      onClick={() => setIsFilterOpen(!isFilterOpen)}
-                    >
-                      <Filter className="size-3.5" aria-hidden="true" />
-                    </Button>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Filter Logs"
+                        className={cn(
+                          'size-6',
+                          filter !== 'all' ? 'opacity-100' : 'opacity-60 hover:opacity-100',
+                        )}
+                        style={{ color: 'var(--terminal-fg)' }}
+                      >
+                        <Filter className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </DropdownMenuTrigger>
                   </TooltipTrigger>
                   <TooltipContent side="top">Filter Logs</TooltipContent>
                 </Tooltip>
-                {isFilterOpen && (
-                  <div
-                    className="absolute right-0 bottom-8 z-50 rounded-md border shadow-lg py-1 min-w-[140px]"
-                    style={{
-                      backgroundColor: 'var(--terminal-header-bg)',
-                      borderColor: 'var(--terminal-border)',
-                    }}
+                <DropdownMenuContent
+                  align="end"
+                  className="w-40"
+                  style={{
+                    backgroundColor: 'var(--terminal-header-bg)',
+                    borderColor: 'var(--terminal-border)',
+                    color: 'var(--terminal-fg)',
+                  }}
+                >
+                  <DropdownMenuLabel>Filter logs</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={filter}
+                    onValueChange={(value) => setFilter(value as LogLevel | 'all')}
                   >
                     {FILTER_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        aria-pressed={filter === option.value}
-                        className={cn(
-                          'w-full text-left px-3 py-1.5 text-xs transition-colors hover:bg-[var(--terminal-fg)]/[0.05]',
-                          filter === option.value ? 'font-semibold opacity-100' : 'opacity-70',
-                        )}
-                        style={{ color: 'var(--terminal-fg)' }}
-                        onClick={() => {
-                          setFilter(option.value);
-                          setIsFilterOpen(false);
-                        }}
-                      >
-                        {filter === option.value && '• '}
+                      <DropdownMenuRadioItem key={option.value} value={option.value}>
                         {option.label}
-                      </button>
+                      </DropdownMenuRadioItem>
                     ))}
-                  </div>
-                )}
-              </div>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
 
             {/* Follow output toggle (logs only) */}

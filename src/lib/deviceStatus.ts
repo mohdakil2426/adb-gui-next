@@ -21,44 +21,52 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   device: {
     label: 'adb',
     variant: 'default',
-    badgeClass: 'bg-emerald-400/15 text-emerald-400 border-emerald-400/30',
+    badgeClass:
+      'bg-[var(--device-status-adb-bg)] text-[var(--device-status-adb-fg)] border-[var(--device-status-adb-border)]',
   },
   fastboot: {
     label: 'fastboot',
     variant: 'outline',
-    badgeClass: 'bg-amber-400/15 text-amber-400 border-amber-400/30',
+    badgeClass:
+      'bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]',
   },
   bootloader: {
     label: 'bootloader',
     variant: 'outline',
-    badgeClass: 'bg-orange-400/15 text-orange-400 border-orange-400/30',
+    badgeClass:
+      'bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]',
   },
   recovery: {
     label: 'recovery',
     variant: 'outline',
-    badgeClass: 'bg-blue-400/15 text-blue-400 border-blue-400/30',
+    badgeClass:
+      'bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]',
   },
   sideload: {
     label: 'sideload',
     variant: 'outline',
-    badgeClass: 'bg-violet-400/15 text-violet-400 border-violet-400/30',
+    badgeClass:
+      'bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]',
   },
   unauthorized: {
     label: 'unauthorized',
     variant: 'destructive',
-    badgeClass: 'bg-red-400/15 text-red-400 border-red-400/30',
+    badgeClass:
+      'bg-[var(--device-status-unauthorized-bg)] text-[var(--device-status-unauthorized-fg)] border-[var(--device-status-unauthorized-border)]',
   },
   offline: {
     label: 'offline',
     variant: 'destructive',
-    badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
+    badgeClass:
+      'bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]',
   },
 };
 
 const DEFAULT_STATUS_CONFIG: StatusConfig = {
   label: '',
   variant: 'outline',
-  badgeClass: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30',
+  badgeClass:
+    'bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]',
 };
 
 /**

@@ -17,8 +17,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -421,8 +421,8 @@ export function ViewFlasher() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="flasher-partition">Partition Name</Label>
+            <Field>
+              <FieldLabel htmlFor="flasher-partition">Partition Name</FieldLabel>
               <Input
                 id="flasher-partition"
                 list="partition-suggestions"
@@ -431,12 +431,15 @@ export function ViewFlasher() {
                 onChange={(e) => setPartition(e.target.value)}
                 disabled={isGlobalLoading}
               />
+              <FieldDescription>
+                Choose a fastboot partition name or type a custom one.
+              </FieldDescription>
               <datalist id="partition-suggestions">
                 {COMMON_PARTITIONS.map((p) => (
                   <option key={p} value={p} />
                 ))}
               </datalist>
-            </div>
+            </Field>
 
             {!filePath ? (
               <DropArea

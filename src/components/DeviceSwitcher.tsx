@@ -194,7 +194,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                       {/* Status badge */}
                       <Badge
                         variant={config.variant}
-                        className={cn('shrink-0 text-[10px] px-1.5 py-0', config.badgeClass)}
+                        className={cn('shrink-0 px-1.5 py-0 text-[10px]', config.badgeClass)}
                       >
                         {config.label}
                       </Badge>

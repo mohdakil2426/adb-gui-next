@@ -33,6 +33,7 @@ describe('ConnectedDevicesCard', () => {
         onEdit={mockOnEdit}
       />,
     );
+    expect(screen.getByText('No devices detected')).toBeInTheDocument();
     expect(
       screen.getByText('No device detected. Ensure USB Debugging is enabled.'),
     ).toBeInTheDocument();

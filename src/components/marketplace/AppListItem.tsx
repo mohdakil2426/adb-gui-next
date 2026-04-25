@@ -40,6 +40,7 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-accent/50">
       <button
         type="button"
+        aria-label={`View details for ${app.name}`}
         className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"
         onClick={onSelect}
       >
@@ -93,6 +94,7 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
       </button>
 
       <Button
+        aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
         variant={installState === 'done' ? 'default' : 'outline'}
         size="sm"
         className={cn('h-8 gap-1.5', installState === 'done' && 'pointer-events-none')}

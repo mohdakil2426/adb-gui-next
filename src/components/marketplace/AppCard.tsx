@@ -39,7 +39,12 @@ export function AppCard({ app, onSelect }: AppCardProps) {
 
   return (
     <Card className="group border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-md">
-      <button type="button" className="w-full cursor-pointer text-left" onClick={onSelect}>
+      <button
+        type="button"
+        aria-label={`View details for ${app.name}`}
+        className="w-full cursor-pointer text-left"
+        onClick={onSelect}
+      >
         <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
           <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
             {app.iconUrl ? (
@@ -117,6 +122,7 @@ export function AppCard({ app, onSelect }: AppCardProps) {
       </button>
       <CardFooter className="justify-end p-4 pt-0">
         <Button
+          aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
           variant={installState === 'done' ? 'default' : 'outline'}
           size="sm"
           className={cn('h-8 shrink-0 gap-1.5', installState === 'done' && 'pointer-events-none')}

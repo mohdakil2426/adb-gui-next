@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Smartphone, RefreshCw, Loader2, Pencil } from 'lucide-react';
 import { getNickname } from '@/lib/nicknameStore';
 import { getStatusConfig } from '@/lib/deviceStatus';
+import { EmptyState } from '@/components/EmptyState';
 
 export interface DeviceData {
   serial: string;
@@ -51,9 +52,12 @@ export function ConnectedDevicesCard({
       </CardHeader>
       <CardContent>
         {devices.length === 0 ? (
-          <p className="text-muted-foreground">
-            {isLoading ? 'Scanning for devices...' : emptyText}
-          </p>
+          <EmptyState
+            icon={Smartphone}
+            title={isLoading ? 'Scanning for devices...' : 'No devices detected'}
+            description={isLoading ? 'Looking for connected Android devices.' : emptyText}
+            className="py-6"
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((device) => {

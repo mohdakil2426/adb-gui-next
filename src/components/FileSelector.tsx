@@ -57,11 +57,7 @@ export function FileSelector({
         </Button>
         {trailingAction}
       </div>
-      {path && (
-        <FieldDescription className="truncate text-xs" title={path}>
-          {path}
-        </FieldDescription>
-      )}
+      {path && <FieldDescription className="break-all text-xs">{path}</FieldDescription>}
     </Field>
   );
 }

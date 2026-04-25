@@ -34,7 +34,7 @@ function LogRow({ log, searchQuery }: { log: LogEntry; searchQuery: string }) {
   const config = LOG_LEVEL_CONFIG[log.type];
 
   return (
-    <div className="flex gap-2 group hover:bg-[var(--terminal-fg)]/[0.03] px-3 py-0.5 transition-colors">
+    <div className="flex gap-2 px-3 py-0.5 transition-colors hover:bg-accent/20">
       <span
         className="select-none shrink-0 font-mono text-[11px] leading-5 opacity-50"
         style={{ color: 'var(--terminal-fg)' }}

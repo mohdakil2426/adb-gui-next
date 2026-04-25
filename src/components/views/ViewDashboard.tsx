@@ -18,6 +18,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
   Smartphone,
   Battery,
@@ -219,37 +220,43 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
               onSubmit={wirelessForm.handleSubmit(handleConnect)}
               className="flex flex-col gap-3"
             >
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    aria-label="Device IP Address"
-                    autoComplete="off"
-                    placeholder="Device IP Address"
-                    {...wirelessForm.register('ip')}
-                    disabled={isConnecting || isDisconnecting}
-                  />
-                  {wirelessForm.formState.errors.ip && (
-                    <p className="text-xs text-destructive mt-1">
-                      {wirelessForm.formState.errors.ip.message}
-                    </p>
-                  )}
+              <FieldGroup>
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem]">
+                  <Field data-invalid={Boolean(wirelessForm.formState.errors.ip)}>
+                    <FieldLabel htmlFor="dashboard-wireless-ip">Device IP Address</FieldLabel>
+                    <Input
+                      id="dashboard-wireless-ip"
+                      aria-invalid={Boolean(wirelessForm.formState.errors.ip)}
+                      autoComplete="off"
+                      placeholder="Device IP Address"
+                      {...wirelessForm.register('ip')}
+                      disabled={isConnecting || isDisconnecting}
+                    />
+                    {wirelessForm.formState.errors.ip && (
+                      <FieldDescription className="text-destructive">
+                        {wirelessForm.formState.errors.ip.message}
+                      </FieldDescription>
+                    )}
+                  </Field>
+                  <Field data-invalid={Boolean(wirelessForm.formState.errors.port)}>
+                    <FieldLabel htmlFor="dashboard-wireless-port">Wireless ADB Port</FieldLabel>
+                    <Input
+                      id="dashboard-wireless-port"
+                      aria-invalid={Boolean(wirelessForm.formState.errors.port)}
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="Port"
+                      {...wirelessForm.register('port')}
+                      disabled={isConnecting || isDisconnecting}
+                    />
+                    {wirelessForm.formState.errors.port && (
+                      <FieldDescription className="text-destructive">
+                        {wirelessForm.formState.errors.port.message}
+                      </FieldDescription>
+                    )}
+                  </Field>
                 </div>
-                <div className="w-24">
-                  <Input
-                    aria-label="Wireless ADB Port"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    placeholder="Port"
-                    {...wirelessForm.register('port')}
-                    disabled={isConnecting || isDisconnecting}
-                  />
-                  {wirelessForm.formState.errors.port && (
-                    <p className="text-xs text-destructive mt-1">
-                      {wirelessForm.formState.errors.port.message}
-                    </p>
-                  )}
-                </div>
-              </div>
+              </FieldGroup>
               <div className="flex flex-col gap-2">
                 <Button
                   type="submit"
@@ -408,12 +415,8 @@ function InfoItem({
     <div className="flex items-center p-3 bg-muted rounded-lg overflow-hidden">
       <div className="mr-3 text-primary shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm text-muted-foreground truncate" title={label}>
-          {label}
-        </div>
-        <div className={cn('font-semibold truncate', valueClassName)} title={value}>
-          {value ? value : 'N/A'}
-        </div>
+        <div className="text-sm text-muted-foreground truncate">{label}</div>
+        <div className={cn('font-semibold truncate', valueClassName)}>{value || 'N/A'}</div>
       </div>
       {copyable && value && <CopyButton value={value} label={label} />}
     </div>

@@ -111,6 +111,21 @@
   --warning-foreground: oklch(0.28 0.07 46);
   --success: oklch(0.52 0.176 142.5);
   --success-foreground: oklch(0.985 0 0);
+  --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
+  --device-status-adb-fg: var(--success);
+  --device-status-adb-border: color-mix(in oklch, var(--success) 35%, transparent);
+  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 18%, transparent);
+  --device-status-fastboot-fg: var(--warning-foreground);
+  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 38%, transparent);
+  --device-status-recovery-bg: color-mix(in oklch, var(--chart-2) 18%, transparent);
+  --device-status-recovery-fg: var(--chart-2);
+  --device-status-recovery-border: color-mix(in oklch, var(--chart-2) 35%, transparent);
+  --device-status-neutral-bg: color-mix(in oklch, var(--muted-foreground) 16%, transparent);
+  --device-status-neutral-fg: var(--muted-foreground);
+  --device-status-neutral-border: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
+  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-unauthorized-fg: var(--destructive);
+  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 32%, transparent);
 
   /* Terminal panel tokens */
   --terminal-bg: oklch(0.97 0 0);
@@ -165,6 +180,21 @@
   --warning-foreground: oklch(0.985 0 0);
   --success: oklch(0.72 0.19 150);
   --success-foreground: oklch(0.985 0 0);
+  --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
+  --device-status-adb-fg: var(--success);
+  --device-status-adb-border: color-mix(in oklch, var(--success) 34%, transparent);
+  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 18%, transparent);
+  --device-status-fastboot-fg: var(--warning);
+  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 34%, transparent);
+  --device-status-recovery-bg: color-mix(in oklch, var(--chart-2) 18%, transparent);
+  --device-status-recovery-fg: var(--chart-2);
+  --device-status-recovery-border: color-mix(in oklch, var(--chart-2) 34%, transparent);
+  --device-status-neutral-bg: color-mix(in oklch, var(--muted-foreground) 16%, transparent);
+  --device-status-neutral-fg: var(--muted-foreground);
+  --device-status-neutral-border: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
+  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-unauthorized-fg: var(--destructive);
+  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 30%, transparent);
 
   /* Terminal panel tokens */
   --terminal-bg: oklch(0.12 0 0);

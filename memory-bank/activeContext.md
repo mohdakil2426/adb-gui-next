@@ -13,6 +13,20 @@ Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdi
 
 ## Recently Completed
 
+### 2026-04-26 — Frontend Audit Remediation Follow-Up
+
+**Change:** Finished the second-pass frontend audit remediation without changing backend contracts or the Tauri desktop shell architecture.
+
+**Highlights:**
+- Added semantic device-status CSS tokens and migrated shared status badges away from raw palette utility classes.
+- Removed remaining native `title` tooltips from `FileSelector` and dashboard info cells in favor of visible supporting text and explicit labels.
+- Normalized the Dashboard wireless ADB form and Flasher partition input to shadcn `Field` composition with visible labels and helper/error text.
+- Replaced the BottomPanel log filter popup with shadcn `DropdownMenuRadioGroup`, aligned terminal row hover styling with semantic tokens, and kept the DOM-first resize behavior intact.
+- Converted the connected-devices empty state to the shared `EmptyState` presentation and tightened marketplace button accessibility with explicit detail/install labels.
+- Added focused Vitest coverage for device-status tokens, file-path disclosure, dashboard/flasher form composition, bottom-panel filter semantics, marketplace button semantics, and the connected-devices empty state.
+
+**Verification:** `bun run test`, `bun run format:check`, `bun run lint` with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`, and `bun run build` pass.
+
 ### 2026-04-24 — shadcn Frontend Audit Implementation
 
 **Change:** Applied all findings from `docs/reports/shadcn-frontend-audit-2026-04-24.md` as a shadcn-first frontend cleanup without changing backend APIs or the Tauri desktop shell architecture.
@@ -638,8 +652,8 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-24** (after shadcn frontend audit implementation)
-- `bun run test` ✅ — 34 frontend tests pass
+Last verified: **2026-04-26** (after frontend audit remediation follow-up)
+- `bun run test` ✅ — 40 frontend tests pass
 - `bun run build` ✅ — TypeScript check and Vite bundle pass
 - `bun run format:check` ✅
 - `bun run lint` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean
@@ -676,7 +690,7 @@ Last verified: **2026-04-24** (after shadcn frontend audit implementation)
 
 ## Next Steps
 
-0. **shadcn frontend audit follow-up**: The April 2026 shadcn audit implementation is complete across shared primitives, forms, alerts, mode controls, marketplace cards/list rows, debloater review tables, payload remote URL status, and tooltips. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts from isolated target directories are not scanned.
+0. **Post-remediation frontend polish**: The April 2026 frontend audit follow-up is complete across semantic device-status tokens, path disclosure, dashboard/flasher field composition, bottom-panel filter semantics, and marketplace/device accessibility naming. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts from isolated target directories are not scanned.
 1. **UAD `uad_lists.json` bundled fallback**: Place a copy of `uad_lists.json` in `src-tauri/resources/` so the offline fallback tier works without network. The app functions without it (tries remote fetch → disk cache first).
 2. **UAD end-to-end testing**: Test Debloater tab on a real device — confirm SDK-aware command routing (`pm disable-user` vs `pm hide`) on Android 5/6 vs 7+.
 3. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.
