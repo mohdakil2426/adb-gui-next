@@ -310,6 +310,14 @@ export function RootAvd(request: backend.RootAvdRequest): Promise<backend.RootAv
   return call('root_avd', { request });
 }
 
+/** Run the pre-flight readiness scan for an AVD. Fast (~1-2s). */
+export function ScanAvdRootReadiness(
+  avdName: string,
+  serial?: string | null,
+): Promise<backend.RootReadinessScan> {
+  return call('scan_avd_root_readiness', { avdName, serial: serial ?? null });
+}
+
 export function UninstallPackage(arg1: string): Promise<string> {
   return call('uninstall_package', { packageName: arg1 });
 }

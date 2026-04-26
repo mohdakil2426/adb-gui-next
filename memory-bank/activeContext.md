@@ -8,10 +8,73 @@ Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (co
 Emulator Manager is implemented and **fully working** on Windows. Critical AVD discovery bug (commit `a52ca2e`) was diagnosed and fixed: `avd.rs` now scans `~/.android/avd/*.ini` files directly instead of calling `emulator -list-avds`, which fails when `emulator.exe` is not on PATH. `sdk.rs` gained `resolve_emulator_binary()` to find the binary via the Android SDK install path. Running emulators now appear in the roster with correct `isRunning: true` and serial.
 Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdisk_in_emulator()` function now follows the rootAVD reference architecture: ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, strict error checking via `adb_shell_checked()`, and auto-shutdown after patching. Frontend enforces `noSnapshotSave: true` and handles auto-stopped emulators. AvdSwitcher shows Cold/Normal boot mode badges.
 **Universal Android Debloater (UAD) Integration is now complete.** `ViewAppManager` has been redesigned as a dual-tab shell ("Debloater" + "Installation"). The full Rust backend module (`src-tauri/src/debloat/`) and 8 Tauri commands are implemented. The `debloatStore` Zustand store and all React UI components are live. The critical crash (`Cannot read properties of undefined (reading 'subscribe')`) caused by using `CommandInput` outside a `<Command>` context was diagnosed and fixed.
+**Emulator Root UX Audit is now complete (2026-04-26).** The root wizard is now a guided 4-step flow (Preflight → Source → Rooting → Done). A new `scan_avd_root_readiness` Rust command performs 10 pre-flight diagnostics (running state, boot completion, boot mode, ABI, API level, ramdisk existence + writability, shared ramdisk, root state, safe mode). The pre-flight step auto-runs on wizard open, auto-advances on all-green, and provides inline Launch/Cold Boot actions for issues detected. `EmulatorRootTab` now has a smart gate (Launch + Cold Boot buttons with explanatory text) instead of a dead-end alert. `ViewEmulatorManager` toolbar displays boot mode (❄ Cold Boot / ⚠ Normal Boot) and root state (🟢 Rooted / 🟡 Modified) badges. Progress labels are now beginner-friendly; result step has 4-step post-root guidance, always-cold-boot reminder, FAKEBOOTIMG explanation, and bootloop safe-mode tip. Source step explains what Magisk is.
 
 ---
 
 ## Recently Completed
+
+### 2026-04-26 — Tauri Dev OPS Crypto Import Fix
+
+**Change:** Fixed `bun tauri dev` failing with `unresolved import aes::cipher::AsyncStreamCipher` after the lockfile resolved RustCrypto `aes 0.9` / `cfb-mode 0.9` / `cipher 0.5.1`. `cipher 0.5.1` no longer exports `AsyncStreamCipher`, and `cfb-mode 0.9` exposes `Decryptor::decrypt()` through its current API without that stale import.
+
+**Files changed:** `src-tauri/src/payload/ops/crypto.rs`
+
+**Verification:** `cargo check --manifest-path src-tauri/Cargo.toml --no-default-features --features local_zip,remote_zip` with isolated `CARGO_TARGET_DIR=src-tauri/target-codex-check` ✅ · `bun run format:check` ✅.
+
+### 2026-04-26 — Emulator Root Magisk CPIO Backup Fix
+
+**Change:** Fixed `Ramdisk patching failed` during the `magiskboot cpio ... 'backup ramdisk.cpio.orig'` step. The local rootAVD reference creates `ramdisk.cpio.orig` for stock ramdisks before patching; our pipeline computed the SHA1 but never created that original CPIO backup file. `patch_ramdisk_in_emulator()` now masks the `magiskboot cpio test` status with `status & 3`, creates and verifies `{ROOT_WORKDIR}/ramdisk.cpio.orig` for stock ramdisks, then runs the Magisk patch sequence.
+
+**Files changed:** `src-tauri/src/emulator/root.rs`, `src/test/rootAvdPipeline.test.ts`
+
+**Verification:** Added focused regression coverage proving `ramdisk.cpio.orig` is created before the patch command uses it. `bun vitest run src/test/rootAvdPipeline.test.ts` ✅. No production build was run.
+
+### 2026-04-26 — Emulator Root Preflight Auto-Scan Loop Fix
+
+**Change:** Fixed a rapid preflight scan loop in `RootWizard` when `scan_avd_root_readiness` rejects. The wizard now records that the automatic scan has already been attempted for the current AVD/serial while the preflight step is open, so a backend error no longer flips `isScanning` back to false and immediately re-enters the scan. Manual **Rescan** still runs explicitly.
+
+**Files changed:** `src/components/emulator-manager/RootWizard.tsx`, `src/test/RootWizard.test.tsx`
+
+**Verification:** Added a focused regression test proving a failed automatic scan calls `ScanAvdRootReadiness` only once. `bun vitest run` ✅ (41/41 tests) · `bun tsc --noEmit` ✅ · `bun run format:check` ✅ · `bun run lint:web` ✅ · `bun run build` ✅ · isolated-target `bun run lint:rust` ✅. `bun run check` is still blocked by Windows `AdbWinApi.dll` file lock during default-target clippy; isolated-target `cargo test` compiles but still exits with the known Tauri-linked `STATUS_ENTRYPOINT_NOT_FOUND` loader failure.
+
+### 2026-04-26 — Emulator Root Preflight Tauri Permission Fix
+
+**Change:** Fixed `Preflight scan failed: scan_avd_root_readiness not allowed. Command not found` by adding `scan_avd_root_readiness` to `src-tauri/permissions/autogenerated.toml`. The command was already implemented and registered in `lib.rs`; Tauri was blocking it at the capability/ACL layer before dispatch.
+
+**Files changed:** `src-tauri/permissions/autogenerated.toml`, `src/test/tauriPermissions.test.ts`
+
+**Verification:** Added focused permission regression coverage. `bun vitest run src/test/tauriPermissions.test.ts src/test/RootWizard.test.tsx` ✅ · `bun run format:check` ✅ · `bun run lint:web` ✅. No production build was run for this permission-only fix.
+
+### 2026-04-26 — Emulator Root UX Audit (Pre-Flight Checks + Beginner-First Wizard)
+
+**Change:** Transformed the emulator root tab from a 3-step wizard with a dead-end gate into a guided 4-step flow with automated pre-flight diagnostics and clear beginner guidance throughout.
+
+**Backend — new `scan_avd_root_readiness` command (`src-tauri/src/emulator/root.rs`, `models.rs`, `commands/emulator.rs`):**
+- Added `CheckStatus` (`Pass | Warn | Fail | Info`), `ReadinessCheck`, `RecommendedAction` (tagged enum: `LaunchEmulator | ColdBoot | RestoreFirst | Unsupported`), and `RootReadinessScan` Rust structs to `emulator/models.rs`.
+- Implemented `scan_avd_root_readiness(app, avd_name, serial)` with 10 checks: (1) emulator running, (2) boot completed, (3) boot mode (snapshot = Warn → recommends ColdBoot), (4) ABI support, (5) API level compatibility, (6) ramdisk file exists, (7) ramdisk directory writable, (8) shared ramdisk advisory, (9) root state (Modified = Warn → recommends RestoreFirst), (10) safe mode active. Returns `RootReadinessScan { checks, canProceed, hasWarnings, recommendedAction }`.
+- Added `is_dir_writable()` helper and `add_check!` macro.
+- Registered `scan_avd_root_readiness` in `lib.rs`.
+
+**Frontend — 4-step wizard + smart gate + toolbar badges:**
+
+| File | Change |
+|------|--------|
+| `src/lib/desktop/models.ts` | Added `CheckStatus`, `ReadinessCheck`, `RecommendedAction`, `RootReadinessScan` TS interfaces |
+| `src/lib/desktop/backend.ts` | Added `ScanAvdRootReadiness(avdName, serial?)` wrapper |
+| `src/lib/emulatorManagerStore.ts` | `RootWizardStep` → added `'preflight'`; initial step is now `'preflight'`; added `preflightScan` state + `setPreflightScan` action |
+| `RootPreflightStep.tsx` *(new)* | Full checklist UI: spinner during scan, per-check status icons, tinted fail/warn rows, inline action card for `recommendedAction`, summary bar, Scan/Rescan + Continue buttons (Continue gated on `canProceed`) |
+| `RootWizard.tsx` *(rewritten)* | 4-step indicator; auto-runs scan on mount; auto-advances to Source if all-green; wires `onLaunch`/`onColdBoot`/`onRestoreStock` into preflight step |
+| `EmulatorRootTab.tsx` *(rewritten)* | Smart gate: Launch + Cold Boot (Recommended) buttons with boot-snapshot explanation (replaces dead-end alert); accepts `onLaunch` prop |
+| `ViewEmulatorManager.tsx` | Passes `handleLaunch` to `EmulatorRootTab`; status meta line now shows **Boot Mode badge** (❄ Cold Boot / ⚠ Normal Boot) and **Root State badge** (🟢 Rooted / 🟡 Modified) |
+| `RootProgressStep.tsx` | 8 step labels rewritten in beginner-friendly language; subtitle explains what's happening |
+| `RootResultStep.tsx` | 4 post-root steps (incl. "Accept Additional Setup" + "Volume Down for safe mode"); ⚠️ always-cold-boot reminder banner; FAKEBOOTIMG explanation text |
+| `RootSourceStep.tsx` | Added "why" intro: "Magisk is the tool that gives your emulator root access" |
+| `emulatorManagerStore.test.ts` | Updated assertion: `resetRootWizard()` now expects step `'preflight'` (was `'source'`) |
+
+**Verification:** `bun run format:check` ✅ · `bun tsc --noEmit` ✅ · `bun vitest run` ✅ (40/40 tests) · `cargo check` ✅ (`Finished dev profile`) · `cargo fmt --check` ✅. `cargo test`/`cargo clippy` blocked by OS error 32 (AdbWinApi.dll file lock — pre-existing Windows issue when ADB is running).
+
+---
 
 ### 2026-04-26 — Frontend Audit Remediation Follow-Up
 
@@ -652,13 +715,14 @@ can't establish a scroll boundary.
 
 ## Current Verification Evidence
 
-Last verified: **2026-04-26** (after frontend audit remediation follow-up)
-- `bun run test` ✅ — 40 frontend tests pass
-- `bun run build` ✅ — TypeScript check and Vite bundle pass
-- `bun run format:check` ✅
-- `bun run lint` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-lint` — ESLint clean and cargo clippy `--all-targets -- -D warnings` clean
-- `bun run tauri build --debug` ✅ with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`
-- `bun run check` remains blocked only by the known Windows runtime-loader issue in `cargo test` (`0xc0000139`, `STATUS_ENTRYPOINT_NOT_FOUND`) when the Tauri-linked test binary starts
+Last verified: **2026-04-26** (after Emulator Root UX Audit)
+- `bun vitest run` ✅ — 40/40 frontend tests pass
+- `bun tsc --noEmit` ✅ — 0 TypeScript errors
+- `bun run format:check` ✅ — Prettier + rustfmt clean
+- `bun eslint .` ✅ — ESLint clean
+- `cargo check` ✅ — Rust compilation clean (`Finished dev profile`)
+- `cargo fmt --check` ✅
+- `cargo test` / `cargo clippy` blocked by OS error 32 (`AdbWinApi.dll` file lock — pre-existing Windows issue when ADB is running in background)
 
 ---
 
@@ -673,7 +737,7 @@ Last verified: **2026-04-26** (after frontend audit remediation follow-up)
 | Payload Dumper | ✅ Enhanced | Remote metadata panel, OPS/OFP/sparse support, URL persistence, viewport-relative heights |
 | OPS/OFP | ✅ Working | Decryption verified, 62 partitions, comprehensive docs written |
 | Marketplace | ✅ Working | 4-provider Unified Discovery with all providers returning results. F-Droid search API, IzzyOnDroid cross-reference, GitHub with proper encoding + PAT support, Aptoide ws75. Settings dialog with provider management + GitHub PAT. 600ms debounce, min 2-char query. |
-| Emulator Manager | ✅ Modernized | AVD discovery via INI scan. Root pipeline fully modernized: ramdisk compression detection, stub.xz injection, SHA1 config, adb_shell_checked error checking, auto-shutdown, no-snapshot-save cold boot, boot mode badge (Cold/Normal). |
+| Emulator Manager | ✅ Modernized + UX Audited | AVD discovery via INI scan. Root pipeline fully modernized. **Root UX Audit complete**: 4-step wizard (Preflight → Source → Rooting → Done), `scan_avd_root_readiness` 10-check pre-flight command, smart gate (Launch/Cold Boot buttons instead of dead-end alert), boot mode badge (❄ Cold Boot / ⚠ Normal Boot), root state badge (🟢 Rooted / 🟡 Modified) in toolbar. Beginner-friendly progress labels, post-root 4-step guidance, always-cold-boot reminder, FAKEBOOTIMG explanation. |
 | App Manager / Debloater | ✅ Complete | ViewAppManager rewritten as dual-tab shell. Debloater tab: UAD-backed virtualized system package list, 3 filters, expert/disable mode, safety review dialog, backup/restore. Installation tab: APK install, sideload, uninstall. |
 | Connected Devices | ✅ Fixed | min-w-0 + truncate on device name/serial |
 | FileSelector | ✅ Fixed | min-w-0 on outer div for path truncation chain |
@@ -690,7 +754,7 @@ Last verified: **2026-04-26** (after frontend audit remediation follow-up)
 
 ## Next Steps
 
-0. **Post-remediation frontend polish**: The April 2026 frontend audit follow-up is complete across semantic device-status tokens, path disclosure, dashboard/flasher field composition, bottom-panel filter semantics, and marketplace/device accessibility naming. Keep `src-tauri/target-*/**` ignored by ESLint so generated Cargo artifacts from isolated target directories are not scanned.
+0. **Root UX Audit Phase 3** (backend hardening): Add concurrency guards (atomic flag) to prevent simultaneous rooting attempts. Improve ADB error parsing (offline device, disk full). Add explicit backup size validation before restore.
 1. **UAD `uad_lists.json` bundled fallback**: Place a copy of `uad_lists.json` in `src-tauri/resources/` so the offline fallback tier works without network. The app functions without it (tries remote fetch → disk cache first).
 2. **UAD end-to-end testing**: Test Debloater tab on a real device — confirm SDK-aware command routing (`pm disable-user` vs `pm hide`) on Android 5/6 vs 7+.
 3. **Marketplace Phase 2**: Implement ETag conditional requests, rate-limit header tracking, and per-provider error reporting.
@@ -764,3 +828,12 @@ Last verified: **2026-04-26** (after frontend audit remediation follow-up)
 - **UAD debloat module structure**: `src-tauri/src/debloat/` — 5 files (`mod.rs`, `lists.rs`, `sync.rs`, `actions.rs`, `backup.rs`). Commands are in `src-tauri/src/commands/debloat.rs`. Do NOT put command logic in `debloat/*.rs` files — follows the same separation as the emulator module.
 - **UAD list loading tiers**: Remote GitHub → disk cache at `app_data_dir/uad_cache.json` → bundled `resources/uad_lists.json`. The bundled fallback requires the file to be placed manually in `src-tauri/resources/`.
 - **UAD SDK-aware commands**: Never call `pm disable` on SDK < 23 — it's unavailable. Use `actions.rs::build_action_command()` which handles the SDK check and picks the right command (`pm hide`, `pm disable-user --user 0`, etc.).
+
+### Emulator Root Wizard
+
+- **Root wizard is now 4 steps**: `'preflight' → 'source' → 'progress' → 'result'`. The initial step after `resetRootWizard()` is `'preflight'` (not `'source'`). Tests must reflect this.
+- **Pre-flight scan auto-runs on wizard open**: `RootWizard` triggers `ScanAvdRootReadiness` in a `useEffect` when `step === 'preflight' && preflightScan === null`. On all-green + no warnings, it auto-advances to `'source'` immediately.
+- **Smart gate replaces dead-end**: `EmulatorRootTab` no longer shows a simple alert when the emulator isn't running. It shows Launch + Cold Boot (Recommended) buttons with boot-snapshot explanation and accepts an `onLaunch` prop from `ViewEmulatorManager`.
+- **Boot mode badge logic**: Shown only when `selectedAvd.isRunning && selectedAvd.bootMode !== 'unknown'`. `'cold'` → `'default'` variant badge; any other value → `'warning'` variant badge.
+- **`scan_avd_root_readiness` is the canonical readiness gate**: Never call the automated root pipeline without running this first. It surfaces unsupported ABIs, read-only ramdisks, snapshot boot mode, and safe mode — all common silent failure causes.
+- **`RecommendedAction` drives inline fix cards**: Each non-null `recommendedAction` in the scan renders a tinted card with a primary action button. `LaunchEmulator` → Launch button; `ColdBoot` → cold-boot handler (stop then launch with `coldBoot: true, noSnapshotLoad: true, noSnapshotSave: true`); `RestoreFirst` → navigates to `'restore'` tab; `Unsupported { reason }` → shows reason string, Continue is permanently disabled.

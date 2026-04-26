@@ -61,7 +61,8 @@ export function RootResultStep({
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 2
               </span>
-              Open <strong>Magisk Manager</strong> to configure modules.
+              Open <strong>Magisk Manager</strong> and accept the{' '}
+              <strong>"Additional Setup"</strong> prompt if it appears.
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
@@ -70,7 +71,23 @@ export function RootResultStep({
               Verify root: open a terminal and run{' '}
               <code className="rounded bg-muted px-1 text-xs">su</code>.
             </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                4
+              </span>
+              <span className="text-muted-foreground">
+                If the emulator gets stuck in a bootloop, hold{' '}
+                <strong className="text-foreground">Volume Down</strong> during boot to enter Safe
+                Mode and disable Magisk modules.
+              </span>
+            </li>
           </ol>
+        </div>
+
+        {/* Always cold boot reminder */}
+        <div className="rounded-md bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+          ⚠️ <strong>Always Cold Boot</strong> after rooting. Normal Boot may load a snapshot that
+          overwrites your root patch.
         </div>
 
         {/* Actions */}
@@ -133,6 +150,10 @@ export function RootResultStep({
           <ShieldCheck data-icon="inline-start" />
           Try Manual Mode (FAKEBOOTIMG)
         </Button>
+        <p className="text-xs text-muted-foreground">
+          Manual mode opens the Magisk app inside the emulator so it can patch the boot image
+          itself. Use this as a fallback if the automated pipeline fails.
+        </p>
         <Button id="root-result-retry" variant="ghost" className="w-full" onClick={onReset}>
           Try Again
         </Button>

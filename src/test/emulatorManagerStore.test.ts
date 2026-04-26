@@ -16,7 +16,7 @@ describe('emulatorManagerStore', () => {
     useEmulatorManagerStore.getState().resetRootWizard();
 
     expect(useEmulatorManagerStore.getState().rootWizard.source).toBeNull();
-    expect(useEmulatorManagerStore.getState().rootWizard.step).toBe('source');
+    expect(useEmulatorManagerStore.getState().rootWizard.step).toBe('preflight');
   });
 
   it('tracks root wizard progress', () => {

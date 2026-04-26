@@ -5,7 +5,7 @@ use crate::{
         models::{
             AvdSummary, EmulatorLaunchOptions, MagiskStableRelease, RestorePlan, RootAvdRequest,
             RootAvdResult, RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest,
-            RootPreparationResult,
+            RootPreparationResult, RootReadinessScan,
         },
         root, runtime,
     },
@@ -89,6 +89,21 @@ pub async fn root_avd(app: AppHandle, request: RootAvdRequest) -> CmdResult<Root
     tokio::task::spawn_blocking(move || root::root_avd_automated(&app, &request))
         .await
         .map_err(|error| error.to_string())?
+}
+
+/// Run the pre-flight readiness scan before starting the root wizard.
+/// Returns a structured scan result with per-check statuses and a `can_proceed` flag.
+#[tauri::command]
+pub async fn scan_avd_root_readiness(
+    app: AppHandle,
+    avd_name: String,
+    serial: Option<String>,
+) -> CmdResult<RootReadinessScan> {
+    tokio::task::spawn_blocking(move || {
+        root::scan_avd_root_readiness(&app, &avd_name, serial.as_deref())
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 // ─── Legacy manual root (FAKEBOOTIMG) — kept as fallback ──────────────────────

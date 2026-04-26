@@ -4,8 +4,9 @@ use crate::{
         avd, backup, magisk_download,
         magisk_package::{self, MagiskPackageContents},
         models::{
-            RootAvdRequest, RootAvdResult, RootFinalizeRequest, RootFinalizeResult,
-            RootPreparationRequest, RootPreparationResult, RootProgress, RootSource,
+            CheckStatus, ReadinessCheck, RecommendedAction, RootAvdRequest, RootAvdResult,
+            RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest, RootPreparationResult,
+            RootProgress, RootReadinessScan, RootSource,
         },
         runtime,
     },
@@ -216,6 +217,456 @@ fn resolve_package_path(source: &RootSource, work_dir: &Path) -> CmdResult<PathB
             magisk_download::download_magisk_stable(&release, work_dir)
         }
     }
+}
+
+// ─── Pre-flight readiness scan ────────────────────────────────────────────────
+
+/// Helper: add a check result to the list and update flags.
+macro_rules! add_check {
+    ($checks:expr, $can_proceed:expr, $has_warnings:expr,
+     $id:expr, $label:expr, $status:expr, $message:expr, $detail:expr) => {{
+        let status = $status;
+        match &status {
+            CheckStatus::Fail => *$can_proceed = false,
+            CheckStatus::Warn => *$has_warnings = true,
+            _ => {}
+        }
+        $checks.push(ReadinessCheck {
+            id: $id.to_string(),
+            label: $label.to_string(),
+            status,
+            message: $message.to_string(),
+            detail: $detail.map(str::to_string),
+        });
+    }};
+}
+
+/// Check whether `parent_dir` has write access by attempting to create a temp file.
+fn is_dir_writable(path: &std::path::Path) -> bool {
+    let probe = path.join(".adb_gui_write_probe");
+    match std::fs::File::create(&probe) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
+}
+
+/// Run the pre-flight readiness scan for a given AVD before starting the root wizard.
+///
+/// Checks: running state, boot completed, boot mode, root state, API level compatibility,
+/// ramdisk existence + size, ramdisk write permission, shared ramdisk, ABI support,
+/// and writable-system mount (advisory).
+pub fn scan_avd_root_readiness(
+    app: &AppHandle,
+    avd_name: &str,
+    serial: Option<&str>,
+) -> CmdResult<RootReadinessScan> {
+    let mut checks: Vec<ReadinessCheck> = Vec::new();
+    let mut can_proceed = true;
+    let mut has_warnings = false;
+    let mut recommended_action: Option<RecommendedAction> = None;
+
+    // ── 1: Emulator running ──────────────────────────────────────────────────
+    let is_running = serial.is_some_and(|s| runtime::is_serial_online(app, s));
+    if is_running {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "running",
+            "Emulator",
+            CheckStatus::Pass,
+            format!("Running on {}", serial.unwrap_or("unknown")),
+            None::<&str>
+        );
+    } else {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "running",
+            "Emulator",
+            CheckStatus::Fail,
+            "Not running",
+            Some("Launch the emulator first. Cold Boot is recommended for reliable rooting.")
+        );
+        if recommended_action.is_none() {
+            recommended_action = Some(RecommendedAction::LaunchEmulator);
+        }
+        // Cannot check anything else without a live emulator.
+        return Ok(RootReadinessScan { checks, can_proceed, has_warnings, recommended_action });
+    }
+
+    let active_serial = serial.unwrap();
+
+    // ── 2: Boot completed ───────────────────────────────────────────────────
+    let boot_completed = getprop(app, active_serial, "sys.boot_completed").unwrap_or_default();
+    if boot_completed.trim() == "1" {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "boot_completed",
+            "Boot Status",
+            CheckStatus::Pass,
+            "Boot complete ✓",
+            None::<&str>
+        );
+    } else {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "boot_completed",
+            "Boot Status",
+            CheckStatus::Fail,
+            "Still booting",
+            Some("Wait for the home screen to appear, then run the scan again.")
+        );
+        can_proceed = false;
+        return Ok(RootReadinessScan { checks, can_proceed, has_warnings, recommended_action });
+    }
+
+    // ── 3: Boot mode ─────────────────────────────────────────────────────────
+    let snapshot_loaded =
+        getprop(app, active_serial, "ro.kernel.androidboot.snapshot_loaded").unwrap_or_default();
+    let is_snapshot = matches!(snapshot_loaded.trim(), "true" | "1");
+    if is_snapshot {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "boot_mode",
+            "Boot Mode",
+            CheckStatus::Warn,
+            "Normal Boot (snapshot loaded)",
+            Some(
+                "Root patches may be overwritten when the emulator saves a snapshot on shutdown. \
+                 Restart with Cold Boot for reliable rooting."
+            )
+        );
+        if recommended_action.is_none() {
+            recommended_action = Some(RecommendedAction::ColdBoot);
+        }
+    } else {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "boot_mode",
+            "Boot Mode",
+            CheckStatus::Pass,
+            "Cold Boot ✓",
+            None::<&str>
+        );
+    }
+
+    // ── 4: ABI ──────────────────────────────────────────────────────────────
+    let abi = getprop(app, active_serial, "ro.product.cpu.abi").unwrap_or_default();
+    let supported_abis = ["x86_64", "x86", "arm64-v8a", "armeabi-v7a", "armeabi"];
+    if abi.is_empty() {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "abi",
+            "Architecture",
+            CheckStatus::Warn,
+            "Unknown ABI",
+            Some("Could not detect CPU architecture. Rooting may still work with x86_64 fallback.")
+        );
+    } else if supported_abis.contains(&abi.as_str()) {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "abi",
+            "Architecture",
+            CheckStatus::Pass,
+            format!("{abi} supported ✓"),
+            None::<&str>
+        );
+    } else {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "abi",
+            "Architecture",
+            CheckStatus::Fail,
+            format!("Unsupported ABI: {abi}"),
+            Some("Only x86_64, x86, arm64-v8a, and armeabi ABI images are supported.")
+        );
+    }
+
+    // ── 5: API level ─────────────────────────────────────────────────────────
+    let api_level = detect_emulator_api_level(app, active_serial).ok();
+    match api_level {
+        Some(28) => {
+            add_check!(
+                &mut checks,
+                &mut can_proceed,
+                &mut has_warnings,
+                "api_level",
+                "API Level",
+                CheckStatus::Fail,
+                "API 28 (Pie) — Not supported",
+                Some(
+                    "Android Pie uses a system-as-root layout that is incompatible with ramdisk \
+                     patching. Please use an API 29+ system image."
+                )
+            );
+            if recommended_action.is_none() {
+                recommended_action = Some(RecommendedAction::Unsupported {
+                    reason: "API 28 (Pie) is not supported for ramdisk rooting.".into(),
+                });
+            }
+        }
+        Some(api) if api >= 34 => {
+            add_check!(
+                &mut checks,
+                &mut can_proceed,
+                &mut has_warnings,
+                "api_level",
+                "API Level",
+                CheckStatus::Warn,
+                format!("API {api} (Android 14+)"),
+                Some(
+                    "API 34+ requires Magisk v26.x or newer. Use the stable download or a local file."
+                )
+            );
+        }
+        Some(api) => {
+            add_check!(
+                &mut checks,
+                &mut can_proceed,
+                &mut has_warnings,
+                "api_level",
+                "API Level",
+                CheckStatus::Pass,
+                format!("API {api} ✓"),
+                None::<&str>
+            );
+        }
+        None => {
+            add_check!(
+                &mut checks,
+                &mut can_proceed,
+                &mut has_warnings,
+                "api_level",
+                "API Level",
+                CheckStatus::Info,
+                "Unknown API level",
+                Some("Could not read ro.build.version.sdk. Rooting may still work.")
+            );
+        }
+    }
+
+    // ── 6 & 7: Ramdisk checks (needs AVD data) ───────────────────────────────
+    let avd_list = avd::list_avds(app).unwrap_or_default();
+    let avd_data = avd_list.iter().find(|a| a.name == avd_name);
+
+    match avd_data.and_then(|a| a.ramdisk_path.as_deref()) {
+        None => {
+            add_check!(
+                &mut checks,
+                &mut can_proceed,
+                &mut has_warnings,
+                "ramdisk",
+                "Ramdisk",
+                CheckStatus::Fail,
+                "Ramdisk not found",
+                Some(
+                    "No ramdisk.img could be resolved for this AVD. Reinstall the system image via SDK Manager."
+                )
+            );
+        }
+        Some(rdp) => {
+            let rd_path = std::path::Path::new(rdp);
+            if !rd_path.exists() {
+                add_check!(
+                    &mut checks,
+                    &mut can_proceed,
+                    &mut has_warnings,
+                    "ramdisk",
+                    "Ramdisk",
+                    CheckStatus::Fail,
+                    "Ramdisk file missing from disk",
+                    Some("The system image may not be fully installed. Reinstall via SDK Manager.")
+                );
+            } else {
+                let size = rd_path.metadata().map(|m| m.len()).unwrap_or(0);
+                if size == 0 {
+                    add_check!(
+                        &mut checks,
+                        &mut can_proceed,
+                        &mut has_warnings,
+                        "ramdisk",
+                        "Ramdisk",
+                        CheckStatus::Fail,
+                        "Ramdisk is empty (0 bytes)",
+                        Some("The ramdisk file is corrupt. Reinstall the system image.")
+                    );
+                } else {
+                    add_check!(
+                        &mut checks,
+                        &mut can_proceed,
+                        &mut has_warnings,
+                        "ramdisk",
+                        "Ramdisk",
+                        CheckStatus::Pass,
+                        format!("Found ({} KB)", size / 1024),
+                        None::<&str>
+                    );
+                }
+
+                // Write permission check.
+                let parent_writable = rd_path.parent().map(is_dir_writable).unwrap_or(false);
+                if parent_writable {
+                    add_check!(
+                        &mut checks,
+                        &mut can_proceed,
+                        &mut has_warnings,
+                        "ramdisk_writable",
+                        "Ramdisk Write Access",
+                        CheckStatus::Pass,
+                        "Writable ✓",
+                        None::<&str>
+                    );
+                } else {
+                    add_check!(
+                        &mut checks,
+                        &mut can_proceed,
+                        &mut has_warnings,
+                        "ramdisk_writable",
+                        "Ramdisk Write Access",
+                        CheckStatus::Fail,
+                        "Read-only (cannot write)",
+                        Some(
+                            "The system image directory is read-only. Check folder permissions or run as administrator."
+                        )
+                    );
+                }
+
+                // Shared-ramdisk warning: multiple AVDs referencing the same sysdir.
+                let shared_count =
+                    avd_list.iter().filter(|a| a.ramdisk_path.as_deref() == Some(rdp)).count();
+                if shared_count > 1 {
+                    add_check!(
+                        &mut checks,
+                        &mut can_proceed,
+                        &mut has_warnings,
+                        "shared_ramdisk",
+                        "Shared Ramdisk",
+                        CheckStatus::Warn,
+                        format!("{shared_count} AVDs share this ramdisk"),
+                        Some(
+                            "Patching this ramdisk will affect all AVDs that use the same system image. \
+                             This is usually fine if they all need root."
+                        )
+                    );
+                }
+            }
+        }
+    }
+
+    // ── 8: Root state ────────────────────────────────────────────────────────
+    if let Some(avd_data) = avd_data {
+        use crate::emulator::models::AvdRootState;
+        match &avd_data.root_state {
+            AvdRootState::Stock => {
+                add_check!(
+                    &mut checks,
+                    &mut can_proceed,
+                    &mut has_warnings,
+                    "root_state",
+                    "Root State",
+                    CheckStatus::Pass,
+                    "Stock — ready to patch",
+                    None::<&str>
+                );
+            }
+            AvdRootState::Rooted => {
+                add_check!(
+                    &mut checks,
+                    &mut can_proceed,
+                    &mut has_warnings,
+                    "root_state",
+                    "Root State",
+                    CheckStatus::Info,
+                    "Already rooted",
+                    Some(
+                        "Re-rooting will overwrite the existing patch. Backup is already in place."
+                    )
+                );
+            }
+            AvdRootState::Modified => {
+                add_check!(
+                    &mut checks,
+                    &mut can_proceed,
+                    &mut has_warnings,
+                    "root_state",
+                    "Root State",
+                    CheckStatus::Warn,
+                    "Modified by another tool",
+                    Some(
+                        "The ramdisk appears to have been patched externally. Restore stock before rooting for best results."
+                    )
+                );
+                if recommended_action.is_none() {
+                    recommended_action = Some(RecommendedAction::RestoreFirst);
+                }
+            }
+            AvdRootState::Unknown => {
+                add_check!(
+                    &mut checks,
+                    &mut can_proceed,
+                    &mut has_warnings,
+                    "root_state",
+                    "Root State",
+                    CheckStatus::Info,
+                    "Unknown",
+                    None::<&str>
+                );
+            }
+        }
+    }
+
+    // ── 9: Writable-system advisory ──────────────────────────────────────────
+    let mount_out = adb_shell(app, active_serial, "mount | grep ' /system '").unwrap_or_default();
+    if mount_out.contains("rw,") || mount_out.contains(",rw") {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "writable_system",
+            "System Mount",
+            CheckStatus::Info,
+            "Launched with -writable-system",
+            Some(
+                "The emulator is running with a writable system partition. Rooting will still work normally."
+            )
+        );
+    }
+
+    // ── 10: Safe mode check ──────────────────────────────────────────────────
+    let safe_mode = getprop(app, active_serial, "ro.sys.safemode").unwrap_or_default();
+    if safe_mode.trim() == "1" {
+        add_check!(
+            &mut checks,
+            &mut can_proceed,
+            &mut has_warnings,
+            "safe_mode",
+            "Safe Mode",
+            CheckStatus::Warn,
+            "Safe Mode active",
+            Some("The emulator is in safe mode. Reboot normally before rooting.")
+        );
+    }
+
+    Ok(RootReadinessScan { checks, can_proceed, has_warnings, recommended_action })
 }
 
 // ─── Core automated pipeline ──────────────────────────────────────────────────
@@ -509,7 +960,8 @@ fn patch_ramdisk_in_emulator(
     .unwrap_or_default();
 
     let status_code = parse_exit_code(&status_output, "exit:").unwrap_or(0);
-    if status_code == 2 {
+    let status_base = status_code & 3;
+    if status_base == 2 {
         return Err(
             "Ramdisk was patched by an unsupported tool. Restore stock ramdisk first.".into()
         );
@@ -517,7 +969,7 @@ fn patch_ramdisk_in_emulator(
     log::info!("[root] Ramdisk patch status: {status_code} (0=stock, 1=magisk, &4=compressed)");
 
     // 4. Compute SHA1 hash of the CPIO (used by Magisk boot verification on stock images).
-    let sha1 = if status_code == 0 {
+    let sha1 = if status_base == 0 {
         adb_shell(app, serial, &format!("{mb} sha1 {ROOT_WORKDIR}/ramdisk.cpio"))
             .ok()
             .map(|s| s.trim().to_string())
@@ -527,6 +979,15 @@ fn patch_ramdisk_in_emulator(
     };
     if let Some(ref hash) = sha1 {
         log::info!("[root] Ramdisk SHA1: {hash}");
+    }
+    if status_base == 0 {
+        adb_shell_checked(
+            app,
+            serial,
+            &format!("cp {ROOT_WORKDIR}/ramdisk.cpio {ROOT_WORKDIR}/ramdisk.cpio.orig"),
+        )?;
+        verify_remote_file(app, serial, &format!("{ROOT_WORKDIR}/ramdisk.cpio.orig"))?;
+        log::info!("[root] Stock ramdisk backup prepared at {ROOT_WORKDIR}/ramdisk.cpio.orig");
     }
 
     // 5. Write Magisk config file.

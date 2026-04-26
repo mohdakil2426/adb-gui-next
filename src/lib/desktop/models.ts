@@ -102,6 +102,31 @@ export namespace backend {
     managerInstalled: boolean;
   }
 
+  // ─── Pre-flight readiness scan ──────────────────────────────────────────────
+
+  export type CheckStatus = 'pass' | 'warn' | 'fail' | 'info';
+
+  export interface ReadinessCheck {
+    id: string;
+    label: string;
+    status: CheckStatus;
+    message: string;
+    detail: string | null;
+  }
+
+  export type RecommendedAction =
+    | { type: 'launchEmulator' }
+    | { type: 'coldBoot' }
+    | { type: 'restoreFirst' }
+    | { type: 'unsupported'; reason: string };
+
+  export interface RootReadinessScan {
+    checks: ReadinessCheck[];
+    canProceed: boolean;
+    hasWarnings: boolean;
+    recommendedAction: RecommendedAction | null;
+  }
+
   export interface Device {
     serial: string;
     status: string;

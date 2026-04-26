@@ -236,19 +236,41 @@ export function ViewEmulatorManager() {
 
           {/* Status meta line */}
           {selectedAvd ? (
-            <p className="pl-0.5 text-xs text-muted-foreground">
-              {selectedAvd.isRunning ? (
-                <span className="text-success">
-                  ● Running{selectedAvd.serial ? ` · ${selectedAvd.serial}` : ''}
-                </span>
-              ) : (
-                <span>● Stopped</span>
+            <div className="flex flex-wrap items-center gap-2 pl-0.5">
+              <p className="text-xs text-muted-foreground">
+                {selectedAvd.isRunning ? (
+                  <span className="text-success">
+                    ● Running{selectedAvd.serial ? ` · ${selectedAvd.serial}` : ''}
+                  </span>
+                ) : (
+                  <span>● Stopped</span>
+                )}
+                {' · '}
+                {selectedAvd.target ?? 'Unknown target'} · API {selectedAvd.apiLevel ?? '?'}
+                {selectedAvd.abi ? ` · ${selectedAvd.abi}` : ''}
+                {selectedAvd.deviceName ? ` · ${selectedAvd.deviceName}` : ''}
+              </p>
+              {/* Boot mode badge — shown only when running */}
+              {selectedAvd.isRunning && selectedAvd.bootMode !== 'unknown' && (
+                <Badge
+                  variant={selectedAvd.bootMode === 'cold' ? 'default' : 'warning'}
+                  className="rounded-full text-xs"
+                >
+                  {selectedAvd.bootMode === 'cold' ? '❄ Cold Boot' : '⚠ Normal Boot'}
+                </Badge>
               )}
-              {' · '}
-              {selectedAvd.target ?? 'Unknown target'} · API {selectedAvd.apiLevel ?? '?'}
-              {selectedAvd.abi ? ` · ${selectedAvd.abi}` : ''}
-              {selectedAvd.deviceName ? ` · ${selectedAvd.deviceName}` : ''}
-            </p>
+              {/* Root state badge */}
+              {selectedAvd.rootState === 'rooted' && (
+                <Badge variant="success" className="rounded-full text-xs">
+                  🟢 Rooted
+                </Badge>
+              )}
+              {selectedAvd.rootState === 'modified' && (
+                <Badge variant="warning" className="rounded-full text-xs">
+                  🟡 Modified
+                </Badge>
+              )}
+            </div>
           ) : (
             <p className="pl-0.5 text-xs text-muted-foreground">
               {isLoading ? 'Scanning for AVDs…' : 'Select an AVD to begin.'}
@@ -328,7 +350,7 @@ export function ViewEmulatorManager() {
                 </TabsContent>
 
                 <TabsContent value="root">
-                  <EmulatorRootTab avd={selectedAvd} />
+                  <EmulatorRootTab avd={selectedAvd} onLaunch={handleLaunch} />
                 </TabsContent>
 
                 <TabsContent value="restore">

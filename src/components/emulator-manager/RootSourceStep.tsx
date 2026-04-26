@@ -72,8 +72,9 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
       <div>
         <h3 className="text-base font-semibold text-foreground">Select Magisk Source</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Download the official stable release, or pick any local package — Kitsune Mask, Magisk
-          Delta, Alpha, Canary, and more are all supported via local file.
+          Magisk is the tool that gives your emulator root access. Choose where to get it: download
+          the latest official release automatically, or pick a local file if you have a specific
+          version or fork (Kitsune Mask, Magisk Delta, Alpha, Canary, and more are all supported).
         </p>
       </div>
 

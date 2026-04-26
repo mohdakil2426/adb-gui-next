@@ -478,12 +478,13 @@ src/components/
 ├── emulator-manager/        # Emulator Manager UI surface
 │   ├── AvdSwitcher.tsx      # DeviceSwitcher-style AVD picker pill + popover
 │   ├── EmulatorLaunchTab.tsx
-│   ├── EmulatorRootTab.tsx
+│   ├── EmulatorRootTab.tsx  # Smart gate: Launch/Cold Boot buttons when emulator is stopped
 │   ├── EmulatorRestoreTab.tsx
-│   ├── RootSourceStep.tsx   # Stable-release or local-package source selection
-│   ├── RootProgressStep.tsx # Root progress stage UI
-│   ├── RootResultStep.tsx   # Post-root next steps and result summary
-│   └── RootWizard.tsx       # Root flow orchestration within the Emulator Manager
+│   ├── RootPreflightStep.tsx # 10-check pre-flight checklist with inline fix actions (NEW)
+│   ├── RootSourceStep.tsx   # Stable-release or local-package source selection (w/ Magisk why text)
+│   ├── RootProgressStep.tsx # Root progress stage UI (beginner-friendly labels)
+│   ├── RootResultStep.tsx   # Post-root: 4-step guide, cold-boot reminder, FAKEBOOTIMG explanation
+│   └── RootWizard.tsx       # 4-step orchestration: Preflight→Source→Rooting→Done
 ├── marketplace/             # 8 marketplace UI components
 │   ├── SearchBar.tsx        # Ctrl+K shortcut, 600ms debounced search, settings icon
 │   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
@@ -514,7 +515,8 @@ src/components/
   - **`avd.rs`** scans `~/.android/avd/*.ini` files directly (`scan_avd_names()`) — removed the `emulator -list-avds` dependency. Enriches from `config.ini`, normalises Windows backslash paths in `resolve_system_image_dir()`, synthesizes conservative root state, and detects `EmulatorBootMode` (Cold/Normal/Unknown) via `ro.kernel.androidboot.snapshot_loaded` getprop.
   - **`runtime.rs`** builds launch args using the SDK-resolved binary (fallback to PATH), sets working dir to binary parent (needed for QEMU siblings), adds 1s crash detection, maps running emulators to AVD names via `adb emu avd name`, and stops emulators with `adb emu kill`.
   - **`backup.rs`** creates sidecar `.backup` files, restore plans, and restore operations for AVD artifacts.
-  - **`root.rs`** implements the automated ramdisk-patching pipeline (rootAVD-aligned):
+  - **`root.rs`** implements the automated ramdisk-patching pipeline (rootAVD-aligned) **and** the `scan_avd_root_readiness()` pre-flight diagnostic function:
+    - `scan_avd_root_readiness()` — 10 checks: running state, boot completion, boot mode (snapshot Warn → ColdBoot), ABI support, API compatibility, ramdisk existence, ramdisk writability, shared ramdisk advisory, root state (Modified Warn → RestoreFirst), safe mode. Returns `RootReadinessScan { checks, canProceed, hasWarnings, recommendedAction }`. Uses `add_check!` macro and `is_dir_writable()` helper.
     - `wait_for_boot_completed()` — polls `sys.boot_completed` for up to 60s before starting.
     - `detect_compression_method()` — reads magic bytes via `xxd`/`od` to detect `lz4_legacy`/`gzip`/`raw`.
     - `adb_shell_checked()` — wraps command with `; echo EXITCODE:$?` and fails fast on non-zero exit.

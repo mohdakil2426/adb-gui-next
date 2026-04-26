@@ -1,20 +1,21 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
-import { RootAvd, LaunchAvd, StopAvd } from '@/lib/desktop/backend';
+import { LaunchAvd, RootAvd, ScanAvdRootReadiness, StopAvd } from '@/lib/desktop/backend';
 import { useEmulatorManagerStore, type RootWizardSource } from '@/lib/emulatorManagerStore';
-import { RootSourceStep } from './RootSourceStep';
+import { RootPreflightStep } from './RootPreflightStep';
 import { RootProgressStep } from './RootProgressStep';
 import { RootResultStep } from './RootResultStep';
+import { RootSourceStep } from './RootSourceStep';
 
 interface RootWizardProps {
   avd: backend.AvdSummary;
 }
 
-const STEPS = ['Source', 'Rooting', 'Done'];
+const STEPS = ['Preflight', 'Source', 'Rooting', 'Done'];
 
 export function RootWizard({ avd }: RootWizardProps) {
   const {
@@ -23,11 +24,25 @@ export function RootWizard({ avd }: RootWizardProps) {
     setRootWizardSource,
     setRootWizardProgress,
     setRootWizardResult,
+    setPreflightScan,
     resetRootWizard,
     setActiveTab,
   } = useEmulatorManagerStore();
 
   const cancelledRef = useRef(false);
+  const autoScanKeyRef = useRef<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const scanKey = `${avd.name}:${avd.serial ?? 'stopped'}`;
+
+  // Map wizard step to STEPS index
+  const stepIndex =
+    rootWizard.step === 'preflight'
+      ? 0
+      : rootWizard.step === 'source'
+        ? 1
+        : rootWizard.step === 'progress'
+          ? 2
+          : 3;
 
   // Listen for root:progress events from Tauri backend.
   useEffect(() => {
@@ -41,9 +56,35 @@ export function RootWizard({ avd }: RootWizardProps) {
     };
   }, [setRootWizardProgress]);
 
-  const stepIndex = STEPS.indexOf(
-    rootWizard.step === 'source' ? 'Source' : rootWizard.step === 'progress' ? 'Rooting' : 'Done',
-  );
+  // Run the preflight scan.
+  const runScan = useCallback(async () => {
+    setIsScanning(true);
+    try {
+      const scan = await ScanAvdRootReadiness(avd.name, avd.serial);
+      setPreflightScan(scan);
+      // Auto-proceed to Source if everything is green.
+      if (scan.canProceed && !scan.hasWarnings) {
+        setRootWizardStep('source');
+      }
+    } catch (err) {
+      toast.error(`Preflight scan failed: ${String(err)}`);
+    } finally {
+      setIsScanning(false);
+    }
+  }, [avd.name, avd.serial, setPreflightScan, setRootWizardStep]);
+
+  // Trigger scan automatically when entering preflight step.
+  useEffect(() => {
+    if (rootWizard.step !== 'preflight') {
+      autoScanKeyRef.current = null;
+      return;
+    }
+
+    if (rootWizard.preflightScan === null && !isScanning && autoScanKeyRef.current !== scanKey) {
+      autoScanKeyRef.current = scanKey;
+      void runScan();
+    }
+  }, [rootWizard.step, rootWizard.preflightScan, isScanning, runScan, scanKey]);
 
   function handleSourceChange(src: RootWizardSource) {
     setRootWizardSource(src);
@@ -91,6 +132,19 @@ export function RootWizard({ avd }: RootWizardProps) {
     cancelledRef.current = true;
     resetRootWizard();
     toast.info('Rooting cancelled');
+  }
+
+  function handleLaunch() {
+    LaunchAvd(avd.name, {
+      wipeData: false,
+      writableSystem: false,
+      coldBoot: false,
+      noSnapshotLoad: false,
+      noSnapshotSave: false,
+      noBootAnim: false,
+    })
+      .then(() => toast.success(`Launching ${avd.name}…`))
+      .catch((err: unknown) => toast.error(String(err)));
   }
 
   function handleColdBoot() {
@@ -162,6 +216,23 @@ export function RootWizard({ avd }: RootWizardProps) {
       </div>
 
       {/* Step content */}
+      {rootWizard.step === 'preflight' && (
+        <RootPreflightStep
+          scan={rootWizard.preflightScan}
+          isScanning={isScanning}
+          avdName={avd.name}
+          onRescan={() => {
+            autoScanKeyRef.current = scanKey;
+            setPreflightScan(null);
+            void runScan();
+          }}
+          onContinue={() => setRootWizardStep('source')}
+          onLaunch={handleLaunch}
+          onColdBoot={handleColdBoot}
+          onRestoreStock={handleRestoreStock}
+        />
+      )}
+
       {rootWizard.step === 'source' && (
         <RootSourceStep
           source={rootWizard.source}

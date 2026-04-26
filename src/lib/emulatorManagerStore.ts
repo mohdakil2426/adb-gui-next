@@ -5,7 +5,7 @@ export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
 export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
 
 /** Wizard step for the automated root flow. */
-export type RootWizardStep = 'source' | 'progress' | 'result';
+export type RootWizardStep = 'preflight' | 'source' | 'progress' | 'result';
 
 /** Describes where the Magisk package will come from. */
 export type RootWizardSource = { type: 'stable' } | { type: 'local'; path: string } | null;
@@ -16,14 +16,16 @@ export interface RootWizardState {
   progress: backend.RootProgress | null;
   result: backend.RootAvdResult | null;
   error: string | null;
+  preflightScan: backend.RootReadinessScan | null;
 }
 
 const INITIAL_ROOT_WIZARD: RootWizardState = {
-  step: 'source',
+  step: 'preflight',
   source: null,
   progress: null,
   result: null,
   error: null,
+  preflightScan: null,
 };
 
 interface EmulatorManagerState {
@@ -38,6 +40,7 @@ interface EmulatorManagerState {
   setRootWizardSource: (source: RootWizardSource) => void;
   setRootWizardProgress: (progress: backend.RootProgress | null) => void;
   setRootWizardResult: (result: backend.RootAvdResult | null, error?: string | null) => void;
+  setPreflightScan: (scan: backend.RootReadinessScan | null) => void;
   resetRootWizard: () => void;
   setRestorePlan: (plan: backend.RestorePlan | null) => void;
   setPendingAction: (action: EmulatorPendingAction) => void;
@@ -68,6 +71,9 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
 
   setRootWizardResult: (result, error = null) =>
     set((state) => ({ rootWizard: { ...state.rootWizard, result, error, step: 'result' } })),
+
+  setPreflightScan: (preflightScan) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, preflightScan } })),
 
   resetRootWizard: () => set({ rootWizard: INITIAL_ROOT_WIZARD }),
 

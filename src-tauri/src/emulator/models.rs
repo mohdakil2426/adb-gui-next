@@ -156,3 +156,60 @@ pub struct RootFinalizeResult {
     pub restored_files: Vec<String>,
     pub next_boot_recommendation: String,
 }
+
+// ─── Pre-flight readiness scan ────────────────────────────────────────────────
+
+/// Status of an individual pre-flight readiness check.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum CheckStatus {
+    Pass,
+    Warn,
+    Fail,
+    Info,
+}
+
+/// A single check result in the pre-flight scan.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadinessCheck {
+    /// Machine-readable identifier (e.g. "boot_mode", "api_level").
+    pub id: String,
+    /// Human-readable label (e.g. "Boot Mode").
+    pub label: String,
+    /// Pass / Warn / Fail / Info.
+    pub status: CheckStatus,
+    /// Short result message (e.g. "Cold Boot ✓").
+    pub message: String,
+    /// Optional additional detail or recommended action text.
+    pub detail: Option<String>,
+}
+
+/// Recommended corrective action when the scan is not fully green.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum RecommendedAction {
+    /// The emulator needs to be started before rooting.
+    LaunchEmulator,
+    /// The emulator is running from a snapshot — a cold boot is recommended.
+    ColdBoot,
+    /// The ramdisk is already modified — the user should restore stock first.
+    RestoreFirst,
+    /// The configuration is fundamentally unsupported.
+    #[serde(rename_all = "camelCase")]
+    Unsupported { reason: String },
+}
+
+/// Aggregated result of the pre-flight readiness scan.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RootReadinessScan {
+    /// Ordered list of individual check results.
+    pub checks: Vec<ReadinessCheck>,
+    /// True iff no Fail-status checks exist (user may proceed despite warnings).
+    pub can_proceed: bool,
+    /// True iff at least one Warn-status check exists.
+    pub has_warnings: bool,
+    /// Highest-priority corrective action, if any.
+    pub recommended_action: Option<RecommendedAction>,
+}

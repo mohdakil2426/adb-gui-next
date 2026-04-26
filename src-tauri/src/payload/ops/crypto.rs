@@ -5,7 +5,6 @@
 //! - **OFP-MTK**: AES-128-CFB + nibble-swap obfuscation (mtk_shuffle).
 
 use aes::Aes128;
-use aes::cipher::AsyncStreamCipher;
 use cfb_mode::cipher::KeyIvInit;
 use md5::{Digest as Md5Digest, Md5};
 

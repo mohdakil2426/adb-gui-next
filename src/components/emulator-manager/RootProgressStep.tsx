@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
 
 const STEP_LABELS = [
-  'Validating emulator state',
-  'Acquiring Magisk package',
-  'Extracting Magisk binaries',
-  'Pushing files to emulator',
-  'Patching ramdisk',
-  'Pulling patched ramdisk',
-  'Installing patched ramdisk',
-  'Installing Magisk Manager',
+  'Checking your emulator is ready…',
+  'Downloading Magisk (root toolkit)…',
+  'Unpacking Magisk files…',
+  'Sending files to your emulator…',
+  'Applying root patch to boot image…',
+  'Retrieving patched boot image…',
+  'Saving root changes & stopping emulator…',
+  'Installing Magisk app on emulator…',
 ];
 
 interface RootProgressStepProps {
@@ -33,7 +33,9 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
           {failed ? 'Rooting Failed' : 'Rooting in Progress'}
         </h3>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {failed ? error : `Rooting ${avdName}…`}
+          {failed
+            ? error
+            : `The boot image on ${avdName} is being modified to include Magisk's root tools.`}
         </p>
       </div>
 
