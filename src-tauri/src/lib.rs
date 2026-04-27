@@ -75,6 +75,7 @@ pub fn run() {
             commands::restore_avd_backups,
             commands::root_avd,
             commands::scan_avd_root_readiness,
+            commands::verify_avd_root,
             commands::run_adb_host_command,
             commands::run_fastboot_host_command,
             commands::run_shell_command,

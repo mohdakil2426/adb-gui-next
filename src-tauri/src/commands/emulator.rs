@@ -5,7 +5,7 @@ use crate::{
         models::{
             AvdSummary, EmulatorLaunchOptions, MagiskStableRelease, RestorePlan, RootAvdRequest,
             RootAvdResult, RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest,
-            RootPreparationResult, RootReadinessScan,
+            RootPreparationResult, RootReadinessScan, RootVerificationResult,
         },
         root, runtime,
     },
@@ -104,6 +104,18 @@ pub async fn scan_avd_root_readiness(
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+/// Verify that a cold-booted AVD has working Magisk root.
+#[tauri::command]
+pub async fn verify_avd_root(
+    app: AppHandle,
+    avd_name: String,
+    serial: String,
+) -> CmdResult<RootVerificationResult> {
+    tokio::task::spawn_blocking(move || root::verify_avd_root(&app, &avd_name, &serial))
+        .await
+        .map_err(|error| error.to_string())?
 }
 
 // ─── Legacy manual root (FAKEBOOTIMG) — kept as fallback ──────────────────────

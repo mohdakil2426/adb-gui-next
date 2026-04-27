@@ -15,6 +15,8 @@ export interface RootWizardState {
   source: RootWizardSource;
   progress: backend.RootProgress | null;
   result: backend.RootAvdResult | null;
+  verification: backend.RootVerificationResult | null;
+  isVerifying: boolean;
   error: string | null;
   preflightScan: backend.RootReadinessScan | null;
 }
@@ -24,6 +26,8 @@ const INITIAL_ROOT_WIZARD: RootWizardState = {
   source: null,
   progress: null,
   result: null,
+  verification: null,
+  isVerifying: false,
   error: null,
   preflightScan: null,
 };
@@ -40,6 +44,8 @@ interface EmulatorManagerState {
   setRootWizardSource: (source: RootWizardSource) => void;
   setRootWizardProgress: (progress: backend.RootProgress | null) => void;
   setRootWizardResult: (result: backend.RootAvdResult | null, error?: string | null) => void;
+  setRootVerification: (verification: backend.RootVerificationResult | null) => void;
+  setRootVerifying: (isVerifying: boolean) => void;
   setPreflightScan: (scan: backend.RootReadinessScan | null) => void;
   resetRootWizard: () => void;
   setRestorePlan: (plan: backend.RestorePlan | null) => void;
@@ -70,7 +76,22 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
     set((state) => ({ rootWizard: { ...state.rootWizard, progress } })),
 
   setRootWizardResult: (result, error = null) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, result, error, step: 'result' } })),
+    set((state) => ({
+      rootWizard: {
+        ...state.rootWizard,
+        result,
+        verification: null,
+        isVerifying: false,
+        error,
+        step: 'result',
+      },
+    })),
+
+  setRootVerification: (verification) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, verification } })),
+
+  setRootVerifying: (isVerifying) =>
+    set((state) => ({ rootWizard: { ...state.rootWizard, isVerifying } })),
 
   setPreflightScan: (preflightScan) =>
     set((state) => ({ rootWizard: { ...state.rootWizard, preflightScan } })),

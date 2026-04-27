@@ -4,7 +4,13 @@ import { toast } from 'sonner';
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { backend } from '@/lib/desktop/models';
-import { LaunchAvd, RootAvd, ScanAvdRootReadiness, StopAvd } from '@/lib/desktop/backend';
+import {
+  LaunchAvd,
+  RootAvd,
+  ScanAvdRootReadiness,
+  StopAvd,
+  VerifyAvdRoot,
+} from '@/lib/desktop/backend';
 import { useEmulatorManagerStore, type RootWizardSource } from '@/lib/emulatorManagerStore';
 import { RootPreflightStep } from './RootPreflightStep';
 import { RootProgressStep } from './RootProgressStep';
@@ -24,6 +30,8 @@ export function RootWizard({ avd }: RootWizardProps) {
     setRootWizardSource,
     setRootWizardProgress,
     setRootWizardResult,
+    setRootVerification,
+    setRootVerifying,
     setPreflightScan,
     resetRootWizard,
     setActiveTab,
@@ -117,7 +125,7 @@ export function RootWizard({ avd }: RootWizardProps) {
       const result = await RootAvd(request);
       if (!cancelledRef.current) {
         setRootWizardResult(result);
-        toast.success(`Rooted ${avd.name} with Magisk v${result.magiskVersion}`);
+        toast.success(`Patch installed for ${avd.name}. Cold boot to verify root.`);
       }
     } catch (err) {
       if (!cancelledRef.current) {
@@ -165,6 +173,30 @@ export function RootWizard({ avd }: RootWizardProps) {
       .then(() => toast.success(`Cold booting ${avd.name}…`))
       .catch((err: unknown) => toast.error(String(err)));
     resetRootWizard();
+  }
+
+  async function handleVerifyRoot() {
+    if (!avd.serial) {
+      toast.error(
+        'Emulator is not online yet. Wait for the cold boot to finish, then verify again.',
+      );
+      return;
+    }
+
+    setRootVerifying(true);
+    try {
+      const verification = await VerifyAvdRoot(avd.name, avd.serial);
+      setRootVerification(verification);
+      if (verification.status === 'verified') {
+        toast.success('Root verified: su returned uid 0');
+      } else {
+        toast.error('Root not verified yet');
+      }
+    } catch (error) {
+      toast.error(String(error));
+    } finally {
+      setRootVerifying(false);
+    }
   }
 
   function handleRestoreStock() {
@@ -253,9 +285,12 @@ export function RootWizard({ avd }: RootWizardProps) {
       {rootWizard.step === 'result' && (
         <RootResultStep
           result={rootWizard.result}
+          verification={rootWizard.verification}
+          isVerifying={rootWizard.isVerifying}
           error={rootWizard.error}
           avdName={avd.name}
           serial={avd.serial ?? ''}
+          onVerifyRoot={handleVerifyRoot}
           onColdBoot={handleColdBoot}
           onRestoreStock={handleRestoreStock}
           onTryManual={handleTryManual}

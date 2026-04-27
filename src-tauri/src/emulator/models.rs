@@ -59,6 +59,26 @@ pub struct RootAvdResult {
     pub magisk_version: String,
     pub patched_ramdisk_path: String,
     pub manager_installed: bool,
+    pub activation_status: RootActivationStatus,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum RootActivationStatus {
+    PatchInstalled,
+    Verified,
+    VerificationFailed,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct RootVerificationResult {
+    pub status: RootActivationStatus,
+    pub boot_completed: bool,
+    pub su_uid: Option<String>,
+    pub magisk_package: Option<String>,
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

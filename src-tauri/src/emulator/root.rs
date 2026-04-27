@@ -4,9 +4,10 @@ use crate::{
         avd, backup, magisk_download,
         magisk_package::{self, MagiskPackageContents},
         models::{
-            CheckStatus, ReadinessCheck, RecommendedAction, RootAvdRequest, RootAvdResult,
-            RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest, RootPreparationResult,
-            RootProgress, RootReadinessScan, RootSource,
+            CheckStatus, ReadinessCheck, RecommendedAction, RootActivationStatus, RootAvdRequest,
+            RootAvdResult, RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest,
+            RootPreparationResult, RootProgress, RootReadinessScan, RootSource,
+            RootVerificationResult,
         },
         runtime,
     },
@@ -110,9 +111,13 @@ const EXIT_CODE_MARKER: &str = "__ADB_GUI_EXIT_STATUS__:";
 fn adb_shell_checked(app: &AppHandle, serial: &str, cmd: &str) -> CmdResult<String> {
     let wrapped = format!("{cmd}; echo {EXIT_CODE_MARKER}$?");
     let output = adb_shell(app, serial, &wrapped)?;
-    if let Some(code) = parse_exit_code(&output, EXIT_CODE_MARKER)
-        && code != 0
-    {
+    let Some(code) = parse_exit_code(&output, EXIT_CODE_MARKER) else {
+        return Err(format!(
+            "Missing ADB shell exit marker. The shell command may have aborted before completion:\n  cmd: {cmd}\n  output: {output}"
+        ));
+    };
+
+    if code != 0 {
         return Err(format!(
             "ADB shell command failed (exit {code}):\n  cmd: {cmd}\n  output: {output}"
         ));
@@ -851,13 +856,28 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
     log::info!("[root] Step 6 — pulled patched ramdisk: {patched_size} bytes");
     emit_progress(app, 6, "Ramdisk pulled", Some(&format!("{patched_size} bytes")));
 
-    // ── Step 7: Write patched ramdisk + stop emulator ─────────────────────────
+    // ── Step 7: Write patched ramdisk, install manager, stop emulator ─────────
     emit_progress(app, 7, "Installing patched ramdisk…", None);
     log::info!("[root] Step 7 — writing patched ramdisk → {ramdisk_path_str}");
 
     fs::copy(&local_patched, &ramdisk_path)
         .map_err(|e| format!("Failed to write patched ramdisk to {ramdisk_path_str}: {e}"))?;
     log::info!("[root] Step 7 — ramdisk installed ✓");
+
+    log::info!(
+        "[root] Step 7 - installing Magisk Manager APK before shutdown: {}",
+        pkg.magisk_apk.display()
+    );
+    let manager_installed = match adb_install(app, &request.serial, &pkg.magisk_apk) {
+        Ok(output) => {
+            log::info!("[root] Step 7 — APK install success: {output}");
+            true
+        }
+        Err(error) => {
+            log::warn!("[root] Step 7 — APK install failed before shutdown (non-fatal): {error}");
+            false
+        }
+    };
 
     // Stop the emulator so any running snapshot doesn't overwrite the patched ramdisk.
     emit_progress(
@@ -872,41 +892,20 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
     log::info!("[root] Step 7 — emulator stop signal sent ✓");
     emit_progress(app, 7, "Ramdisk installed & emulator stopped", Some(&ramdisk_path_str));
 
-    // ── Step 8: Install Magisk Manager + cleanup ──────────────────────────────
-    // The emulator may already be offline at this point.  Try to install the manager
-    // APK — if the emulator shut down too fast, we skip it (user can install on cold boot).
-    emit_progress(app, 8, "Installing Magisk Manager…", None);
-    log::info!("[root] Step 8 — installing Magisk Manager APK: {}", pkg.magisk_apk.display());
-
-    let manager_installed = if runtime::is_serial_online(app, &request.serial) {
-        match adb_install(app, &request.serial, &pkg.magisk_apk) {
-            Ok(output) => {
-                log::info!("[root] Step 8 — APK install success: {output}");
-                true
-            }
-            Err(e) => {
-                log::warn!("[root] Step 8 — APK install failed (non-fatal): {e}");
-                false
-            }
-        }
-    } else {
-        log::info!(
-            "[root] Step 8 — emulator already offline, skipping APK install (will install on cold boot)"
-        );
-        false
-    };
-
+    // ── Step 8: Cleanup ──────────────────────────────────────────────────────
     if runtime::is_serial_online(app, &request.serial) {
         adb_cleanup_workdir(app, &request.serial);
     }
     log::info!("[root] Step 8 — cleanup done. managerInstalled={manager_installed}");
-    log::info!("[root] ── Root pipeline complete ✓ (Magisk {})", pkg.version);
-    emit_progress(app, 8, "Root complete!", Some("Cold boot the emulator to activate Magisk."));
+    log::info!("[root] ── Patch pipeline complete ✓ (Magisk {})", pkg.version);
+    emit_progress(app, 8, "Patch installed", Some("Cold boot the emulator, then verify root."));
 
     Ok(RootAvdResult {
         magisk_version: pkg.version.clone(),
         patched_ramdisk_path: ramdisk_path_str,
         manager_installed,
+        activation_status: RootActivationStatus::PatchInstalled,
+        message: "Patched ramdisk installed. Cold boot the emulator, then run verification.".into(),
     })
 }
 
@@ -950,6 +949,8 @@ fn patch_ramdisk_in_emulator(
     // Verify the CPIO was created and is non-empty.
     let cpio_size = verify_remote_file(app, serial, &format!("{ROOT_WORKDIR}/ramdisk.cpio"))?;
     log::info!("[root] Decompressed ramdisk.cpio size: {cpio_size} bytes");
+
+    repack_multi_cpio_ramdisk_if_needed(app, serial)?;
 
     // 3. Test ramdisk patch status (exit code: 0=stock, 1=patched, 2=unsupported).
     let status_output = adb_shell(
@@ -1086,6 +1087,57 @@ fn patch_ramdisk_in_emulator(
     Ok(())
 }
 
+fn repack_multi_cpio_ramdisk_if_needed(app: &AppHandle, serial: &str) -> CmdResult<()> {
+    let output = adb_shell(
+        app,
+        serial,
+        &format!("strings {ROOT_WORKDIR}/ramdisk.cpio 2>/dev/null | grep -c 'TRAILER!!!' || true"),
+    )
+    .unwrap_or_default();
+    let count = output.trim().parse::<u32>().unwrap_or(0);
+
+    if count <= 1 {
+        return Ok(());
+    }
+
+    log::warn!(
+        "[root] Multiple CPIO archives detected ({count} trailer markers). Repacking before Magisk patching."
+    );
+
+    let script = format!(
+        r#"set -eu
+cd {ROOT_WORKDIR}
+rm -rf ramdisk-repack ramdisk-splits
+mkdir -p ramdisk-repack ramdisk-splits
+last=0
+idx=0
+for offset in $(strings -t d ramdisk.cpio | grep 'TRAILER!!!' | awk '{{print $1}}'); do
+  end=$((offset + 128))
+  size=$((end - last))
+  if [ "$size" -gt 0 ]; then
+    dd if=ramdisk.cpio of=ramdisk-splits/archive-$idx.cpio ibs=1 obs=4096 skip=$last count=$size >/dev/null 2>&1 || true
+    (cd ramdisk-repack && ../busybox cpio -F ../ramdisk-splits/archive-$idx.cpio -i >/dev/null 2>&1 || true)
+  fi
+  last=$end
+  idx=$((idx + 1))
+done
+if ! find ramdisk-repack -mindepth 1 -print -quit | grep -q .; then
+  echo 'multi-cpio repack produced no files'
+  exit 1
+fi
+(cd ramdisk-repack && find . | ../busybox cpio -H newc -o > ../ramdisk.cpio.repacked)
+test -s ramdisk.cpio.repacked
+mv ramdisk.cpio ramdisk.cpio.multi.orig
+mv ramdisk.cpio.repacked ramdisk.cpio"#
+    );
+
+    adb_shell_checked(app, serial, &script)?;
+    let repacked_size = verify_remote_file(app, serial, &format!("{ROOT_WORKDIR}/ramdisk.cpio"))?;
+    log::info!("[root] Repacked multi-CPIO ramdisk.cpio size: {repacked_size} bytes");
+
+    Ok(())
+}
+
 /// Parse an exit code from an ADB shell command output using the provided marker.
 /// Searches from the bottom up since the exit status is typically the final line.
 fn parse_exit_code(output: &str, marker: &str) -> Option<u32> {
@@ -1183,14 +1235,7 @@ pub fn extract_ramdisk_from_fake_boot(bytes: &[u8]) -> Result<Vec<u8>, String> {
         .ok_or_else(|| "Patched image does not contain a full ramdisk payload.".into())
 }
 
-fn detect_root_app_package(app: &AppHandle, serial: &str) -> Option<String> {
-    let output = run_binary_command_allow_output_on_failure(
-        app,
-        "adb",
-        &["-s", serial, "shell", "pm", "list", "packages"],
-    )
-    .ok()?;
-
+fn parse_root_app_package(output: &str) -> Option<String> {
     output
         .lines()
         .filter_map(|line| line.trim().strip_prefix("package:"))
@@ -1202,6 +1247,78 @@ fn detect_root_app_package(app: &AppHandle, serial: &str) -> Option<String> {
                 || lower.contains("alpha")
         })
         .map(ToOwned::to_owned)
+}
+
+fn detect_root_app_package(app: &AppHandle, serial: &str) -> Option<String> {
+    let output = run_binary_command_allow_output_on_failure(
+        app,
+        "adb",
+        &["-s", serial, "shell", "pm", "list", "packages"],
+    )
+    .ok()?;
+
+    parse_root_app_package(&output)
+}
+
+pub fn verify_avd_root(
+    app: &AppHandle,
+    avd_name: &str,
+    serial: &str,
+) -> CmdResult<RootVerificationResult> {
+    if !runtime::is_serial_online(app, serial) {
+        return Ok(RootVerificationResult {
+            status: RootActivationStatus::VerificationFailed,
+            boot_completed: false,
+            su_uid: None,
+            magisk_package: None,
+            message: format!("AVD '{avd_name}' is not online over ADB."),
+        });
+    }
+
+    let boot_completed = getprop(app, serial, "sys.boot_completed").unwrap_or_default();
+    let boot_ready = boot_completed.trim() == "1";
+    if !boot_ready {
+        return Ok(RootVerificationResult {
+            status: RootActivationStatus::VerificationFailed,
+            boot_completed: false,
+            su_uid: None,
+            magisk_package: detect_root_app_package(app, serial),
+            message: "Emulator is still booting. Wait for the home screen, then verify again."
+                .into(),
+        });
+    }
+
+    let magisk_package = detect_root_app_package(app, serial);
+    let su_output = run_binary_command_allow_output_on_failure(
+        app,
+        "adb",
+        &["-s", serial, "shell", "su", "-c", "id -u"],
+    )
+    .unwrap_or_default();
+    let su_uid = su_output
+        .trim()
+        .lines()
+        .last()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    let verified = su_uid.as_deref() == Some("0");
+
+    Ok(RootVerificationResult {
+        status: if verified {
+            RootActivationStatus::Verified
+        } else {
+            RootActivationStatus::VerificationFailed
+        },
+        boot_completed: true,
+        su_uid,
+        magisk_package,
+        message: if verified {
+            "Root verified: su returned uid 0.".into()
+        } else {
+            "Root not verified: su did not return uid 0. Open Magisk Manager, complete Additional Setup if prompted, reboot, then verify again.".into()
+        },
+    })
 }
 
 fn latest_patched_remote_file(app: &AppHandle, serial: &str) -> CmdResult<String> {
@@ -1367,5 +1484,29 @@ mod tests {
     #[test]
     fn parse_exit_code_returns_none_when_missing() {
         assert_eq!(parse_exit_code("no marker here", "__ADB_GUI_EXIT_STATUS__:"), None);
+    }
+
+    #[test]
+    fn checked_exit_marker_missing_is_not_success() {
+        let output = "sh: /data/local/tmp/adb-gui-root/magiskboot: not found\n";
+        assert_eq!(parse_exit_code(output, "__ADB_GUI_EXIT_STATUS__:"), None);
+    }
+
+    #[test]
+    fn parse_root_app_package_prefers_magisk_package() {
+        let output = "package:com.android.settings\npackage:com.topjohnwu.magisk\n";
+        assert_eq!(parse_root_app_package(output), Some("com.topjohnwu.magisk".to_string()));
+    }
+
+    #[test]
+    fn parse_root_app_package_accepts_kitsune_package() {
+        let output = "package:io.github.huskydg.magisk\npackage:com.kitsune.mask\n";
+        assert_eq!(parse_root_app_package(output), Some("io.github.huskydg.magisk".to_string()));
+    }
+
+    #[test]
+    fn parse_root_app_package_returns_none_for_no_root_app() {
+        let output = "package:com.android.settings\npackage:com.android.shell\n";
+        assert_eq!(parse_root_app_package(output), None);
     }
 }

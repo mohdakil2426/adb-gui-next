@@ -318,6 +318,14 @@ export function ScanAvdRootReadiness(
   return call('scan_avd_root_readiness', { avdName, serial: serial ?? null });
 }
 
+/** Verify that a cold-booted AVD has working Magisk root. */
+export function VerifyAvdRoot(
+  avdName: string,
+  serial: string,
+): Promise<backend.RootVerificationResult> {
+  return call('verify_avd_root', { avdName, serial });
+}
+
 export function UninstallPackage(arg1: string): Promise<string> {
   return call('uninstall_package', { packageName: arg1 });
 }

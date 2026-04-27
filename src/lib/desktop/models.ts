@@ -96,10 +96,22 @@ export namespace backend {
     detail: string | null;
   }
 
+  export type RootActivationStatus = 'patchInstalled' | 'verified' | 'verificationFailed';
+
   export interface RootAvdResult {
     magiskVersion: string;
     patchedRamdiskPath: string;
     managerInstalled: boolean;
+    activationStatus: RootActivationStatus;
+    message: string;
+  }
+
+  export interface RootVerificationResult {
+    status: RootActivationStatus;
+    bootCompleted: boolean;
+    suUid: string | null;
+    magiskPackage: string | null;
+    message: string;
   }
 
   // ─── Pre-flight readiness scan ──────────────────────────────────────────────

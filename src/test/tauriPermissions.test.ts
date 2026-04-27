@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -9,5 +11,11 @@ describe('Tauri command permissions', () => {
     const permissions = readFileSync(permissionFile, 'utf8');
 
     expect(permissions).toContain('"scan_avd_root_readiness"');
+  });
+
+  it('allows the emulator root verification command', () => {
+    const permissions = readFileSync(permissionFile, 'utf8');
+
+    expect(permissions).toContain('"verify_avd_root"');
   });
 });

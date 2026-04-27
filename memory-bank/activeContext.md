@@ -14,6 +14,20 @@ Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdi
 
 ## Recently Completed
 
+### 2026-04-28 - Emulator Root Verification Fix
+
+**Change:** Split emulator root completion into two explicit states: patch installation and verified root. The automated `root_avd` pipeline now returns `activationStatus: patchInstalled` with a message telling the user to cold boot and verify. A new `verify_avd_root` command checks ADB online state, `sys.boot_completed`, installed Magisk-family package presence, and `su -c id -u`; the UI only renders **Root Verified** after that command returns uid `0`.
+
+**Backend hardening:** `adb_shell_checked()` now fails if the shell exit marker is missing, preventing aborted critical commands from being treated as success. Magisk Manager install is attempted before sending `setprop sys.powerctl shutdown`. The automated patch path logs detected multi-CPIO ramdisks but continues to the real `magiskboot` validation steps instead of falsely blocking API 30+ AVDs.
+
+**Verification:** Focused frontend tests and `cargo check` passed. Full gate results are recorded in the current session final notes.
+
+### 2026-04-28 - Emulator Root Multi-CPIO + Magisk Version Fix
+
+**Change:** Fixed the API 30+ Play Store/x86_64 root failure by matching rootAVD's multi-CPIO ramdisk flow. After decompression, `patch_ramdisk_in_emulator()` now detects multiple `TRAILER!!!` markers, extracts split CPIO archives with bundled busybox, rebuilds a single `newc` CPIO, and only then runs `magiskboot cpio ... test` and patching. The automated Magisk source now uses the rootAVD-compatible `v25.2` package, preferring the local `docs/refrences/github-repos/rootAVD/Magisk.zip` clone before falling back to the upstream v25.2 APK URL.
+
+**Live verification:** The local `Medium_Phone` API 33 Google Play x86_64 AVD was restored to stock ramdisk, cold-booted, rooted with the local upstream rootAVD clone as an oracle, cold-booted again, and verified with `su -c id -u == 0`. Added reusable scripts: `scripts/emulator-root-diagnostics.ps1` and `scripts/emulator-root-e2e.ps1`.
+
 ### 2026-04-26 — Tauri Dev OPS Crypto Import Fix
 
 **Change:** Fixed `bun tauri dev` failing with `unresolved import aes::cipher::AsyncStreamCipher` after the lockfile resolved RustCrypto `aes 0.9` / `cfb-mode 0.9` / `cipher 0.5.1`. `cipher 0.5.1` no longer exports `AsyncStreamCipher`, and `cfb-mode 0.9` exposes `Decryptor::decrypt()` through its current API without that stale import.

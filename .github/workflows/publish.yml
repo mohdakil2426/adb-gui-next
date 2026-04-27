@@ -1,10 +1,14 @@
-name: 'publish'
+name: Publish Release
 
 on:
   workflow_dispatch:
   push:
     branches:
       - release
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish-tauri:
@@ -50,8 +54,22 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
 
+      # ── Pre-publish quality gate ────────────────────────────────
+      - name: Lint
+        run: bun run lint
+
+      - name: Format check
+        run: bun run format:check
+
+      - name: Frontend tests
+        run: bun run test
+
+      - name: Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # ── Build + Publish ─────────────────────────────────────────
       - name: Build and publish
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v0.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

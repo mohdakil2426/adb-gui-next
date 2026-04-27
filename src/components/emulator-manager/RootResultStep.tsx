@@ -1,12 +1,22 @@
-import { AlertTriangle, CheckCircle2, RefreshCcw, RotateCcw, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  RefreshCcw,
+  RotateCcw,
+  ShieldCheck,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { backend } from '@/lib/desktop/models';
 
 interface RootResultStepProps {
   result: backend.RootAvdResult | null;
+  verification: backend.RootVerificationResult | null;
+  isVerifying: boolean;
   error: string | null;
   avdName: string;
   serial: string;
+  onVerifyRoot: () => void;
   onColdBoot: () => void;
   onRestoreStock: () => void;
   onTryManual: () => void;
@@ -15,14 +25,18 @@ interface RootResultStepProps {
 
 export function RootResultStep({
   result,
+  verification,
+  isVerifying,
   error,
   avdName,
+  onVerifyRoot,
   onColdBoot,
   onRestoreStock,
   onTryManual,
   onReset,
 }: RootResultStepProps) {
   const success = result !== null && error === null;
+  const verified = verification?.status === 'verified';
 
   if (success) {
     return (
@@ -31,18 +45,38 @@ export function RootResultStep({
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 size-8 shrink-0 text-success" />
           <div>
-            <h3 className="text-base font-semibold text-foreground">Root Successful!</h3>
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{avdName}</span> is now rooted with
-              Magisk {result.magiskVersion ? `v${result.magiskVersion}` : ''}.
-              {!result.managerInstalled && (
-                <span className="ml-1 text-warning-foreground">
-                  Magisk Manager install failed — install manually from your package file.
-                </span>
-              )}
-            </p>
+            {verified ? (
+              <>
+                <h3 className="text-base font-semibold text-foreground">Root Verified</h3>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{avdName}</span> has working Magisk
+                  root. <code className="ml-1 rounded bg-muted px-1 text-xs">su -c id -u</code>{' '}
+                  returned <code className="ml-1 rounded bg-muted px-1 text-xs">0</code>.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-base font-semibold text-foreground">Patch Installed</h3>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{avdName}</span> has a patched
+                  ramdisk. Cold boot it, then verify root before using root-only tools.
+                  {!result.managerInstalled && (
+                    <span className="ml-1 text-warning-foreground">
+                      Magisk Manager install failed — install manually from your package file.
+                    </span>
+                  )}
+                </p>
+              </>
+            )}
           </div>
         </div>
+
+        {verification && !verified && (
+          <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
+            <p className="text-xs font-medium text-warning-foreground">Verification result</p>
+            <p className="mt-1 text-xs text-muted-foreground">{verification.message}</p>
+          </div>
+        )}
 
         {/* Next steps */}
         <div className="rounded-lg border border-border bg-muted/30 p-4">
@@ -96,6 +130,22 @@ export function RootResultStep({
             <RefreshCcw data-icon="inline-start" />
             Cold Boot Emulator
           </Button>
+          {result.activationStatus === 'patchInstalled' && (
+            <Button
+              id="root-result-verify"
+              variant="outline"
+              className="w-full"
+              disabled={isVerifying}
+              onClick={onVerifyRoot}
+            >
+              {isVerifying ? (
+                <Loader2 data-icon="inline-start" className="animate-spin" />
+              ) : (
+                <ShieldCheck data-icon="inline-start" />
+              )}
+              Verify Root
+            </Button>
+          )}
           <Button
             id="root-result-restore"
             variant="outline"

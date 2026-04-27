@@ -6,8 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint-and-build:
+  lint-and-test:
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -46,17 +50,27 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
 
-      - name: Lint frontend
-        run: bun run lint:web
-
-      - name: Lint Rust
-        run: bun run lint:rust
-
+      # ── Gate 1: Formatting ──────────────────────────────────────
       - name: Check formatting (frontend)
         run: bun run format:web:check
 
       - name: Check formatting (Rust)
         run: bun run format:rust:check
 
+      # ── Gate 2: Linting ─────────────────────────────────────────
+      - name: Lint frontend
+        run: bun run lint:web
+
+      - name: Lint Rust
+        run: bun run lint:rust
+
+      # ── Gate 3: Tests ───────────────────────────────────────────
+      - name: Run frontend tests
+        run: bun run test
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # ── Gate 4: Build ───────────────────────────────────────────
       - name: TypeScript + Vite build
         run: bun run build

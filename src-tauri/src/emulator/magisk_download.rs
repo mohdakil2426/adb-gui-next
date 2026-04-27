@@ -3,8 +3,11 @@ use std::path::{Path, PathBuf};
 
 // ─── GitHub releases API ──────────────────────────────────────────────────────
 
-const MAGISK_RELEASES_LATEST: &str =
-    "https://api.github.com/repos/topjohnwu/Magisk/releases/latest";
+const MAGISK_AVD_RECOMMENDED_TAG: &str = "v25.2";
+const MAGISK_AVD_RECOMMENDED_VERSION: &str = "25.2";
+const MAGISK_AVD_RECOMMENDED_ASSET: &str = "Magisk-v25.2.apk";
+const MAGISK_AVD_RECOMMENDED_URL: &str =
+    "https://github.com/topjohnwu/Magisk/releases/download/v25.2/Magisk-v25.2.apk";
 
 /// Fetch the latest official stable Magisk release from the GitHub releases API.
 ///
@@ -13,33 +16,40 @@ const MAGISK_RELEASES_LATEST: &str =
 ///
 /// Uses a blocking `reqwest` client — call from a `spawn_blocking` context.
 pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(15))
-        .user_agent("adb-gui-next/1.0")
-        .build()
-        .map_err(|e| format!("HTTP client error: {e}"))?;
-
-    let response = client
-        .get(MAGISK_RELEASES_LATEST)
-        .header("Accept", "application/vnd.github+json")
-        .header("X-GitHub-Api-Version", "2022-11-28")
-        .send()
-        .map_err(|e| format!("Failed to contact GitHub API: {e}"))?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        if status.as_u16() == 403 || status.as_u16() == 429 {
-            return Err(
-                "GitHub API rate limit exceeded. Try again later or pick a local file.".into()
-            );
-        }
-        return Err(format!("GitHub API returned HTTP {status}"));
+    if let Some(local) = local_rootavd_magisk_zip() {
+        let size = local.metadata().map(|metadata| metadata.len()).unwrap_or(0);
+        return Ok(MagiskStableRelease {
+            version: MAGISK_AVD_RECOMMENDED_VERSION.into(),
+            tag: MAGISK_AVD_RECOMMENDED_TAG.into(),
+            asset_name: "Magisk.zip".into(),
+            download_url: local.to_string_lossy().to_string(),
+            size,
+            sha256: None,
+            published_at: "2022-10-03T00:00:00Z".into(),
+        });
     }
 
-    let body: serde_json::Value =
-        response.json().map_err(|e| format!("Failed to parse GitHub API response: {e}"))?;
+    Ok(MagiskStableRelease {
+        version: MAGISK_AVD_RECOMMENDED_VERSION.into(),
+        tag: MAGISK_AVD_RECOMMENDED_TAG.into(),
+        asset_name: MAGISK_AVD_RECOMMENDED_ASSET.into(),
+        download_url: MAGISK_AVD_RECOMMENDED_URL.into(),
+        size: 0,
+        sha256: None,
+        published_at: "2022-10-03T00:00:00Z".into(),
+    })
+}
 
-    parse_stable_release(&body)
+fn local_rootavd_magisk_zip() -> Option<PathBuf> {
+    let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).parent()?;
+    let candidate = repo_root
+        .join("docs")
+        .join("refrences")
+        .join("github-repos")
+        .join("rootAVD")
+        .join("Magisk.zip");
+
+    candidate.exists().then_some(candidate)
 }
 
 /// Parse the GitHub releases API JSON into a [`MagiskStableRelease`].
@@ -49,6 +59,7 @@ pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
 /// 2. Any other `.apk` with the highest `download_count` — future-proof fallback.
 ///
 /// Explicitly excluded: `app-debug.apk` (debug build, not for end users).
+#[cfg(test)]
 fn parse_stable_release(body: &serde_json::Value) -> CmdResult<MagiskStableRelease> {
     let tag = body["tag_name"].as_str().unwrap_or("").to_string();
     if tag.is_empty() {
@@ -81,6 +92,7 @@ fn parse_stable_release(body: &serde_json::Value) -> CmdResult<MagiskStableRelea
 }
 
 /// Select the best APK from a release's asset list.
+#[cfg(test)]
 fn pick_best_apk(assets: &[serde_json::Value]) -> Option<&serde_json::Value> {
     // Priority 1: official "Magisk-*.apk"
     let official = assets.iter().find(|a| {
@@ -114,6 +126,15 @@ pub fn download_magisk_stable(
     target_dir: &Path,
 ) -> CmdResult<PathBuf> {
     std::fs::create_dir_all(target_dir).map_err(|e| e.to_string())?;
+
+    if release.tag == MAGISK_AVD_RECOMMENDED_TAG
+        && let Some(local) = local_rootavd_magisk_zip()
+    {
+        let dest = target_dir.join("Magisk-rootAVD-v25.2.zip");
+        std::fs::copy(&local, &dest).map_err(|e| e.to_string())?;
+        log::info!("Using local rootAVD Magisk package at {:?}", local);
+        return Ok(dest);
+    }
 
     // Stable cache key: "Magisk-v30.7.apk" (tag is e.g. "v30.7").
     let file_name = format!("Magisk-{}.apk", release.tag);
@@ -251,5 +272,11 @@ mod tests {
             "assets": []
         });
         assert!(parse_stable_release(&body).is_err());
+    }
+
+    #[test]
+    fn automatic_release_is_rootavd_compatible_magisk() {
+        let release = fetch_magisk_stable_release().unwrap();
+        assert_eq!(release.tag, "v25.2");
     }
 }

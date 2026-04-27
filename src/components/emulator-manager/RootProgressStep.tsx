@@ -10,8 +10,8 @@ const STEP_LABELS = [
   'Sending files to your emulator…',
   'Applying root patch to boot image…',
   'Retrieving patched boot image…',
-  'Saving root changes & stopping emulator…',
-  'Installing Magisk app on emulator…',
+  'Saving patch and stopping emulator…',
+  'Patch installed. Cold boot to verify root…',
 ];
 
 interface RootProgressStepProps {

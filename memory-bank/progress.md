@@ -24,6 +24,10 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 **Tauri dev OPS crypto import fix (2026-04-26):** Fixed `bun tauri dev` failing after RustCrypto dependency resolution moved to `aes 0.9` / `cfb-mode 0.9` / `cipher 0.5.1`. Removed the stale `aes::cipher::AsyncStreamCipher` import from `payload/ops/crypto.rs`; the current `cfb-mode` decryptor API compiles with `KeyIvInit` only.
 
+**Emulator Root verification fix (2026-04-28):** The automated root flow now reports `patchInstalled` instead of immediate success. A new `verify_avd_root` command verifies post-cold-boot root by checking ADB online state, `sys.boot_completed`, Magisk-family package presence, and `su -c id -u == 0`. The result screen shows "Patch Installed" until verification passes, then "Root Verified". The backend also fails checked shell commands when the exit marker is missing, installs Magisk Manager before shutdown, and logs multi-CPIO ramdisk detection without falsely blocking API 30+ AVDs before `magiskboot` validation. Manual verification template added at `docs/reports/emulator-root-verification-manual-test.md`.
+
+**Emulator Root multi-CPIO + rootAVD-compatible Magisk fix (2026-04-28):** The API 33 Google Play x86_64 AVD root failure was reproduced and resolved against the local rootAVD reference. Automated ramdisk patching now repacks API 30+ multi-CPIO layouts before Magisk patching, and the automatic source uses rootAVD-compatible Magisk v25.2 instead of current latest stable Magisk for the direct ramdisk workflow. Added PowerShell diagnostics/E2E scripts and verified the live `Medium_Phone` emulator reaches `su -c id -u == 0` after stock restore, patch, and cold boot.
+
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail

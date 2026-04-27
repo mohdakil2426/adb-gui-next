@@ -7,6 +7,7 @@
 Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/mohdakil2426/adb-gui-next/actions/workflows/ci.yml/badge.svg)](https://github.com/mohdakil2426/adb-gui-next/actions/workflows/ci.yml)
 
 </div>
 
@@ -14,24 +15,28 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 
 ## ✨ Features
 
-| Feature            | Description                                                                  |
-| ------------------ | ---------------------------------------------------------------------------- |
-| **Dashboard**      | Real-time device info — model, battery, storage, IP, root status             |
-| **App Manager**    | Install, uninstall, sideload APK/APKS packages with user/system filter       |
-| **File Explorer**  | Browse, push, and pull files to/from connected devices                       |
-| **Flasher**        | Flash partitions, reboot modes, wipe data, manage A/B slots                  |
-| **Utilities**      | Wireless ADB, bootloader variables, device manager, terminal launcher        |
-| **Payload Dumper** | Extract partitions from OTA `payload.bin` / ZIP files with progress tracking |
-| **Shell**          | Interactive ADB & Fastboot command terminal                                  |
-| **Logs Panel**     | Filterable, searchable log viewer with auto-scroll                           |
+| Feature              | Description                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| **Dashboard**        | Real-time device info — model, battery, storage, IP, root status, wireless ADB     |
+| **App Manager**      | Install/uninstall APK/APKS packages with user/system filter and batch operations   |
+| **Debloater**        | Universal Android Debloater (UAD) integration — remove bloatware with safety tiers |
+| **File Explorer**    | Browse, push, pull, rename, delete files with breadcrumb navigation and drag-drop  |
+| **Flasher**          | Flash partitions, recovery sideload, wipe data, manage A/B slots with action queue |
+| **Utilities**        | ADB/Fastboot power menus, server control, bootloader variables, terminal launcher  |
+| **Payload Dumper**   | Extract partitions from OTA `payload.bin`, ZIP, OPS, and OFP files with progress   |
+| **Marketplace**      | Discover and install Android apps from F-Droid, GitHub, and Aptoide                |
+| **Emulator Manager** | List, launch, stop AVDs with one-click Magisk rooting wizard and pre-flight checks |
+| **Shell**            | Interactive ADB & Fastboot command terminal with history                           |
+| **Logs Panel**       | Filterable, searchable log viewer with auto-scroll and export                      |
 
 ### Highlights
 
-- 🎨 Light/Dark/System theme with premium UI
+- 🎨 Light / Dark / System theme with premium UI (OKLCH color system, Framer Motion animations)
 - ⚡ ~30 MB installer — Tauri 2 (no Electron bloat)
 - 🔒 Hardened CSP, least-privilege capabilities, `freezePrototype`
 - 📦 Bundled ADB & Fastboot — no system install required
 - 🖥️ Windows & Linux first-class support
+- 🔧 70+ Rust-powered backend commands across 10 modules
 
 ---
 
@@ -54,7 +59,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 3. **Launch ADB GUI Next** — your device should appear in the Dashboard automatically
 4. **Authorize** the USB debugging prompt on your device when prompted
 
-> **Tip**: The app auto-detects ADB and Fastboot devices every 3–4 seconds. No manual refresh needed.
+> **Tip**: The app auto-detects ADB and Fastboot devices every 3 seconds. No manual refresh needed.
 
 ---
 
@@ -72,22 +77,34 @@ The Dashboard is your home screen. It shows:
 
 #### 📦 App Manager
 
-Manage applications on your connected device:
+Manage applications on your connected device across two tabs:
 
-- **Install APK**:
-  1. Click **Select App Files** to choose one or more `.apk` or `.apks` files
-  2. Review the selection list (remove unwanted files with the trash icon)
-  3. Click **Install** — progress is shown for batch installs
-  4. `.apks` files (split APK bundles) are automatically extracted and installed via `install-multiple`
+**Installation Tab:**
 
-- **Uninstall Packages**:
-  1. Click the refresh button to load all installed packages
-  2. Use the **Filter** dropdown to show All / User / System apps
-  3. **Search** packages by name
-  4. **Select** one or more packages using checkboxes
-  5. Click **Uninstall** and confirm the dialog
+- Click **Select App Files** to choose one or more `.apk` or `.apks` files
+- Review the selection list (remove unwanted files with the trash icon)
+- Click **Install** — progress is shown for batch installs
+- `.apks` files (split APK bundles) are automatically extracted and installed via `install-multiple`
+
+**Uninstall:**
+
+- Click the refresh button to load all installed packages
+- Use the **Filter** dropdown to show All / User / System apps
+- **Search** packages by name
+- **Select** one or more packages using checkboxes
+- Click **Uninstall** and confirm the dialog
 
 > **Warning**: Uninstalling system packages can cause instability or bootloops. Only remove packages you're confident are safe.
+
+#### 🗑️ Debloater
+
+Integrated Universal Android Debloater (UAD) for safe bloatware removal:
+
+- Loads curated package lists with safety tiers: **Recommended**, **Advanced**, **Expert**, **Unsafe**
+- Filter by list type (AOSP, Carrier, Google, OEM, Misc)
+- Actions: **Uninstall**, **Disable**, or **Restore** packages
+- Create and restore backups before making changes
+- Per-device settings for expert mode, disable mode, and multi-user support
 
 #### 📂 File Explorer
 
@@ -97,6 +114,8 @@ Browse and transfer files between your computer and device:
 - **Import File**: Push a single file from your computer to the current device directory
 - **Import Folder**: Push an entire folder to the current device directory
 - **Export Selected**: Select a file or folder (single click), then click **Export** to pull it to your computer
+- **Create**: Create new files and directories on the device
+- **Rename / Delete**: Right-click context menu for file operations
 - Default starting directory: `/sdcard/`
 
 #### ⚡ Flasher
@@ -105,7 +124,7 @@ Flash firmware images and sideload OTA updates:
 
 - **Flash Partition** (requires Fastboot mode):
   1. Enter the partition name (e.g., `boot`, `recovery`, `vendor_boot`, `dtbo`)
-  2. Click **Select File** to choose an `.img` file
+  2. Click **Select File** or drag-and-drop an `.img` file
   3. Click **Flash Partition** — the device must show as `fastboot` in the device list
 
 - **Recovery Sideload** (requires Recovery mode):
@@ -116,6 +135,8 @@ Flash firmware images and sideload OTA updates:
 - **Wipe Data** (requires Fastboot mode):
   - Performs `fastboot -w` — **permanently erases all user data**
   - Requires confirmation dialog
+
+- **A/B Slot Management**: Switch active slot between **Slot A** and **Slot B**
 
 > **Caution**: Flashing incorrect images can brick your device. Always verify partition names and image compatibility.
 
@@ -136,14 +157,47 @@ Power controls and device management tools:
 
 Extract partition images from OTA update files:
 
-1. Click **Select File** to choose a `payload.bin` or an OTA `.zip` file
-2. The app parses the payload manifest and lists all available partitions with sizes
-3. **Select partitions** to extract (or select all)
-4. Optionally choose an **output directory** (defaults to a temp folder)
-5. Click **Extract** — progress is shown per partition with parallel extraction
-6. When complete, click **Open Output Folder** to view extracted `.img` files
+1. Click **Select File** to choose a `payload.bin`, OTA `.zip`, `.ops`, or `.ofp` file
+2. Or enter a **Remote URL** — the app downloads partition data via HTTP range requests (no full download needed)
+3. The app parses the payload manifest and lists all available partitions with sizes
+4. **Select partitions** to extract (or select all)
+5. Optionally choose an **output directory** (defaults to a temp folder)
+6. Click **Extract** — progress is shown per partition with parallel extraction
+7. When complete, click **Open Output Folder** to view extracted `.img` files
 
 > **Tip**: Extraction uses multi-threaded decompression (XZ, BZ2, Zstd) with SHA-256 verification for data integrity.
+
+Supported formats:
+
+- `payload.bin` — Standard Android OTA payload
+- `.zip` — OTA ZIP files (payload.bin auto-detected inside)
+- `.ops` — OnePlus firmware packages (AES-CFB decryption)
+- `.ofp` — Oppo firmware packages (AES decryption)
+- **Remote URLs** — HTTP/HTTPS with range request support
+
+#### 🏪 Marketplace
+
+Discover and install Android apps directly from your desktop:
+
+- **Search** across three providers: F-Droid, GitHub, and Aptoide
+- **Filter** by provider, sort by relevance, name, downloads, or recently updated
+- **App Details**: View description, screenshots, version history, repo stats
+- **Download & Install**: Download APKs and install directly to connected device via ADB
+- **GitHub Authentication**: Optional device-flow OAuth for higher API rate limits and private repos
+
+#### 🤖 Emulator Manager
+
+Manage Android Virtual Devices (AVDs):
+
+- **List AVDs**: Auto-discovers all installed emulators with API level, ABI, boot mode, and root status
+- **Launch**: Start emulators with configurable options (cold boot, no-snapshot, writable system, no boot animation)
+- **Stop**: Gracefully shut down running emulators
+- **Root with Magisk**: One-click automated rooting wizard:
+  1. **Preflight**: Automated readiness scan (ramdisk, boot mode, SDK compatibility)
+  2. **Source**: Choose latest stable Magisk (auto-download) or a local APK/ZIP
+  3. **Progress**: Real-time step-by-step progress with ramdisk patching and Magisk injection
+  4. **Result**: Verification with cold-boot recommendation to prevent snapshot-based reversion
+- **Restore**: Undo rooting by restoring original ramdisk backups
 
 #### 💻 Shell (Bottom Panel)
 
@@ -177,6 +231,9 @@ Click the theme toggle in the sidebar to switch between:
 | Wireless ADB won't connect     | Ensure device and PC are on the same WiFi network                |
 | Fastboot operations grayed out | Device must be in bootloader/fastboot mode (not ADB mode)        |
 | Flash/Wipe buttons disabled    | No fastboot device detected — reboot to bootloader first         |
+| Emulator not listed            | Ensure Android SDK is installed and `ANDROID_HOME` is set        |
+
+---
 
 ## 📋 Prerequisites
 
@@ -199,7 +256,7 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev 
 
 ```bash
 # Clone the repository
-git clone https://github.com/akila/adb-gui-next.git
+git clone https://github.com/mohdakil2426/adb-gui-next.git
 cd adb-gui-next
 
 # Install dependencies
@@ -217,21 +274,53 @@ bun run tauri build
 ## 🏗️ Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│              Frontend (React 19 + TypeScript + Vite)         │
-│  MainLayout → 7 Views + Bottom Panel (Logs + Shell tabs)     │
-│  State: Zustand + TanStack Query (device polling)            │
-│  UI: shadcn/ui + Tailwind CSS v4 + Framer Motion             │
-├──────────────────────────────────────────────────────────────┤
-│              Tauri 2 IPC Bridge                              │
-│  backend.ts → invoke<T>() → Rust commands                    │
-│  runtime.ts → events, file drop, opener                      │
-├──────────────────────────────────────────────────────────────┤
-│              Backend (Rust)                                  │
-│  28 Tauri commands across 7 modules                          │
-│  Payload parser: CrAU + protobuf + parallel extraction       │
-│  Binary resolution: resource dir → repo → system PATH        │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│              Frontend (React 19 + TypeScript + Vite 8)           │
+│  MainLayout → 9 Views + Bottom Panel (Logs + Shell tabs)         │
+│  State: Zustand 5 + TanStack Query 5 (centralized device poll)   │
+│  UI: shadcn/ui (40 primitives) + Tailwind CSS v4 + Framer Motion │
+├──────────────────────────────────────────────────────────────────┤
+│              Tauri 2 IPC Bridge                                  │
+│  backend.ts → invoke<T>() → Rust commands                        │
+│  runtime.ts → events, file drop, opener                          │
+│  models.ts → 380+ lines of TypeScript DTOs                       │
+├──────────────────────────────────────────────────────────────────┤
+│              Backend (Rust — Edition 2024)                        │
+│  71 Tauri commands across 10 command modules                     │
+│  4 domain modules: payload, emulator, debloat, marketplace       │
+│  Binary resolution: resource dir → repo → system PATH            │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📂 Project Structure
+
+```
+├── src/                    # React 19 + TypeScript frontend
+│   ├── components/         # UI components (views, layout, shared)
+│   │   ├── ui/             # 40 shadcn/ui primitives
+│   │   ├── views/          # 9 view components + debloater sub-views
+│   │   ├── emulator-manager/  # Rooting wizard sub-components
+│   │   ├── marketplace/    # App discovery sub-components
+│   │   └── payload-dumper/ # Payload extraction sub-components
+│   ├── lib/                # Stores, utils, Tauri abstraction layer
+│   │   ├── desktop/        # backend.ts, runtime.ts, models.ts
+│   │   └── *Store.ts       # 7 Zustand stores
+│   └── styles/             # Tailwind v4 CSS + theme tokens
+├── src-tauri/              # Rust backend
+│   ├── src/
+│   │   ├── lib.rs          # App entry + plugin setup (122 lines)
+│   │   ├── helpers.rs      # Binary resolution, command execution
+│   │   ├── commands/       # 10 command modules
+│   │   ├── payload/        # OTA payload parser (8+ modules)
+│   │   ├── emulator/       # AVD management + rooting (9 modules)
+│   │   ├── debloat/        # UAD integration (5 modules)
+│   │   └── marketplace/    # App discovery (9 modules)
+│   ├── resources/          # Bundled ADB/Fastboot binaries
+│   ├── capabilities/       # Tauri permission grants
+│   └── permissions/        # TOML-based command ACL
+└── .github/workflows/      # CI + Release pipelines
 ```
 
 ---
@@ -242,31 +331,12 @@ bun run tauri build
 | ----------------------------- | ----------------------------------------------- |
 | `bun run tauri dev`           | Dev server + Tauri window                       |
 | `bun run build`               | TypeScript + Vite bundle                        |
+| `bun run test`                | Run frontend tests (Vitest)                     |
 | `bun run lint`                | ESLint (frontend) + cargo clippy (Rust)         |
 | `bun run format`              | Prettier (frontend) + cargo fmt (Rust)          |
 | `bun run check`               | Full quality gate: lint → format → test → build |
 | `bun run tauri build --debug` | Debug build with installer                      |
 | `bun run tauri build`         | Release build                                   |
-
----
-
-## 📂 Project Structure
-
-```
-├── src/                    # React 19 + TypeScript frontend
-│   ├── components/         # UI components (views, layout, shared)
-│   ├── lib/                # Stores, utils, Tauri abstraction layer
-│   └── styles/             # Tailwind v4 CSS + theme tokens
-├── src-tauri/              # Rust backend
-│   ├── src/
-│   │   ├── lib.rs          # App entry + plugin setup
-│   │   ├── helpers.rs      # Binary resolution, command execution
-│   │   ├── commands/       # 7 command modules
-│   │   └── payload/        # OTA payload parser (4 modules)
-│   ├── resources/          # Bundled ADB/Fastboot binaries
-│   └── capabilities/       # Tauri permission grants
-└── .github/workflows/      # CI + Release pipelines
-```
 
 ---
 
@@ -294,8 +364,8 @@ bun run tauri build
 ```bash
 bun run format:check       # Prettier + cargo fmt
 bun run lint               # ESLint + cargo clippy -D warnings
+bun run test               # Vitest (frontend) + cargo test (Rust)
 bun run build              # TypeScript type-check + Vite bundle
-cargo test --manifest-path src-tauri/Cargo.toml  # Rust tests
 ```
 
 ---

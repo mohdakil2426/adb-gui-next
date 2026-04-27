@@ -122,6 +122,7 @@ Emulator Manager follows the same thin-command + focused-domain pattern as Marke
 - `src/lib/desktop/models.ts` and `backend.ts` define the typed DTO/IPC contract for the new view.
 - `src/lib/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
 - `src/components/views/ViewEmulatorManager.tsx` is the orchestration shell. Feature components under `src/components/emulator-manager/` stay presentational and callback-driven.
+- Automated root mirrors rootAVD's API 30+ ramdisk behavior: decompress, repack multi-CPIO ramdisks into one `newc` CPIO with busybox when multiple `TRAILER!!!` markers are detected, then run Magisk patching. The automatic package source is pinned to the rootAVD-compatible Magisk v25.2 path; newer Magisk/forks belong in manual FAKEBOOTIMG/local workflows.
 
 ### 3d. App Manager Installed Icon Pipeline
 
@@ -519,11 +520,12 @@ src/components/
     - `scan_avd_root_readiness()` — 10 checks: running state, boot completion, boot mode (snapshot Warn → ColdBoot), ABI support, API compatibility, ramdisk existence, ramdisk writability, shared ramdisk advisory, root state (Modified Warn → RestoreFirst), safe mode. Returns `RootReadinessScan { checks, canProceed, hasWarnings, recommendedAction }`. Uses `add_check!` macro and `is_dir_writable()` helper.
     - `wait_for_boot_completed()` — polls `sys.boot_completed` for up to 60s before starting.
     - `detect_compression_method()` — reads magic bytes via `xxd`/`od` to detect `lz4_legacy`/`gzip`/`raw`.
-    - `adb_shell_checked()` — wraps command with `; echo EXITCODE:$?` and fails fast on non-zero exit.
+    - `adb_shell_checked()` — wraps command with `; echo EXITCODE:$?`, fails fast on non-zero exit, and fails when the exit marker is missing.
     - `verify_remote_file()` — confirms files exist and are non-empty on device.
-    - `patch_ramdisk_in_emulator()` — full rootAVD-aligned pipeline: decompress → test status → SHA1 config → XZ-compress magisk binaries + stub.apk → CPIO patch (magiskinit + magisk64.xz + stub.xz + config) → recompress with ORIGINAL method.
+    - `patch_ramdisk_in_emulator()` — full rootAVD-aligned pipeline: decompress → test status → SHA1 config → XZ-compress magisk binaries + stub.apk → CPIO patch (magiskinit + magisk64.xz + stub.xz + config) → recompress with ORIGINAL method. Detected multi-CPIO ramdisks are logged and then left to `magiskboot` validation; do not block API 30+ solely because multiple `TRAILER!!!` markers are present.
     - Auto-shutdown via `setprop sys.powerctl shutdown` after writing patched ramdisk.
-    - Graceful Magisk Manager APK install (skips if emulator already offline).
+    - Magisk Manager APK install is attempted before shutdown so the emulator does not go offline first.
+    - `verify_avd_root()` is the only backend success proof for usable root. It checks the emulator is online, `sys.boot_completed == 1`, Magisk-family package presence, and `su -c id -u == 0`.
   - **`magisk_package.rs`** handles APK binary extraction. Magisk v25+ renamed daemon libraries: pre-v25 uses `libmagisk64.so`/`libmagisk32.so`; v25+ uses `libmagisk.so` per ABI dir. `extract_lib_binary_as(src_name, dest_name)` handles the rename — always saves as `magisk64`/`magisk32` regardless of ZIP name. Cascading fallback: old name → new name → error.
   - **Serde tag discriminator camelCase**: `RootSource` uses `#[serde(tag = "type", rename_all = "camelCase")]`. Tag values in JSON are renamed too: `LatestStable` → `latestStable`, `LocalFile` → `localFile`. Frontend TypeScript types and mapping code must use camelCase strings.
 - Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
