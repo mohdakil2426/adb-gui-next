@@ -12,6 +12,7 @@ import {
   VerifyAvdRoot,
 } from '@/lib/desktop/backend';
 import { useEmulatorManagerStore, type RootWizardSource } from '@/lib/emulatorManagerStore';
+import { RootManualStep } from './RootManualStep';
 import { RootPreflightStep } from './RootPreflightStep';
 import { RootProgressStep } from './RootProgressStep';
 import { RootResultStep } from './RootResultStep';
@@ -21,7 +22,7 @@ interface RootWizardProps {
   avd: backend.AvdSummary;
 }
 
-const STEPS = ['Preflight', 'Source', 'Rooting', 'Done'];
+const STEPS = ['Preflight', 'Source', 'Manual', 'Rooting', 'Done'];
 
 export function RootWizard({ avd }: RootWizardProps) {
   const {
@@ -48,9 +49,11 @@ export function RootWizard({ avd }: RootWizardProps) {
       ? 0
       : rootWizard.step === 'source'
         ? 1
-        : rootWizard.step === 'progress'
+        : rootWizard.step === 'manual'
           ? 2
-          : 3;
+          : rootWizard.step === 'progress'
+            ? 3
+            : 4;
 
   // Listen for root:progress events from Tauri backend.
   useEffect(() => {
@@ -206,8 +209,7 @@ export function RootWizard({ avd }: RootWizardProps) {
 
   const handleTryManual = useCallback(() => {
     resetRootWizard();
-    // Signal to EmulatorRootTab to show the legacy flow
-    setRootWizardStep('source');
+    setRootWizardStep('manual');
   }, [resetRootWizard, setRootWizardStep]);
 
   return (
@@ -270,6 +272,16 @@ export function RootWizard({ avd }: RootWizardProps) {
           source={rootWizard.source}
           onSourceChange={handleSourceChange}
           onContinue={handleContinue}
+          onManualMode={() => setRootWizardStep('manual')}
+        />
+      )}
+
+      {rootWizard.step === 'manual' && (
+        <RootManualStep
+          avdName={avd.name}
+          serial={avd.serial ?? null}
+          onBack={() => setRootWizardStep('source')}
+          onColdBoot={handleColdBoot}
         />
       )}
 

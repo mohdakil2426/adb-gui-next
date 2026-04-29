@@ -182,6 +182,12 @@ fn wait_for_boot_completed(
     interval: Duration,
 ) -> CmdResult<()> {
     for attempt in 1..=max_attempts {
+        if !runtime::is_serial_online(app, serial) {
+            log::info!("[root] ADB still offline during boot (attempt {attempt}/{max_attempts})");
+            thread::sleep(interval);
+            continue;
+        }
+
         let val = getprop(app, serial, "sys.boot_completed").unwrap_or_default();
         if val.trim() == "1" {
             log::info!("[root] Boot completed (attempt {attempt}/{max_attempts})");
@@ -708,7 +714,7 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
 
     // Wait for the emulator to finish booting (home screen loaded).
     emit_progress(app, 1, "Waiting for emulator boot…", None);
-    wait_for_boot_completed(app, &request.serial, 30, Duration::from_secs(2))?;
+    wait_for_boot_completed(app, &request.serial, 90, Duration::from_secs(2))?;
     log::info!("[root] Step 1 — boot completed ✓");
 
     let avd = avd::list_avds(app)?
@@ -1331,16 +1337,29 @@ fn latest_patched_remote_file(app: &AppHandle, serial: &str) -> CmdResult<String
             "shell",
             "sh",
             "-c",
-            "ls -t /sdcard/Download/*magisk_patched* 2>/dev/null | head -n 1",
+            "ls -t /sdcard/Download/*magisk_patched* /storage/emulated/0/Download/*magisk_patched* 2>/dev/null | head -n 1",
         ],
     )?;
-    let candidate = output.trim();
+    let candidate = output
+        .lines()
+        .map(str::trim)
+        .find(|line| line.starts_with("/sdcard/") || line.starts_with("/storage/"))
+        .unwrap_or("");
 
     if candidate.is_empty() {
         Err("No patched fake boot image was found in /sdcard/Download.".into())
     } else {
         Ok(candidate.to_string())
     }
+}
+
+fn clear_stale_manual_patch_outputs(app: &AppHandle, serial: &str) -> CmdResult<()> {
+    adb_shell_checked(
+        app,
+        serial,
+        "rm -f /sdcard/Download/*magisk_patched* /storage/emulated/0/Download/*magisk_patched* /sdcard/Download/fakeboot.img /storage/emulated/0/Download/fakeboot.img",
+    )?;
+    Ok(())
 }
 
 /// Manual (legacy) root preparation — FAKEBOOTIMG fallback.
@@ -1373,6 +1392,7 @@ pub fn prepare_root(
     let local_fake_boot_string = local_fake_boot_path.to_string_lossy().to_string();
     let normalized_package_string = normalized_package_path.to_string_lossy().to_string();
 
+    clear_stale_manual_patch_outputs(app, &request.serial)?;
     run_binary_command(
         app,
         "adb",
@@ -1426,16 +1446,27 @@ pub fn finalize_root(
         .ramdisk_path
         .clone()
         .ok_or_else(|| format!("No ramdisk found for {}", request.avd_name))?;
-    let remote_patched_path = latest_patched_remote_file(app, &request.serial)?;
     let temp_name = sanitize_name(&request.avd_name);
-    let local_patched_path = std::env::temp_dir().join(format!("{temp_name}-magisk-patched.img"));
-    let local_patched_string = local_patched_path.to_string_lossy().to_string();
+    let local_patched_path = if let Some(patched_image_path) = &request.patched_image_path {
+        PathBuf::from(patched_image_path)
+    } else {
+        let serial = request.serial.as_deref().ok_or_else(|| {
+            "No patched image was selected and the emulator serial is unavailable.".to_string()
+        })?;
+        let remote_patched_path = latest_patched_remote_file(app, serial)?;
+        let local_patched_path =
+            std::env::temp_dir().join(format!("{temp_name}-magisk-patched.img"));
+        let local_patched_string = local_patched_path.to_string_lossy().to_string();
 
-    run_binary_command(
-        app,
-        "adb",
-        &["-s", &request.serial, "pull", &remote_patched_path, &local_patched_string],
-    )?;
+        run_binary_command(
+            app,
+            "adb",
+            &["-s", serial, "pull", &remote_patched_path, &local_patched_string],
+        )?;
+
+        local_patched_path
+    };
+    let local_patched_string = local_patched_path.to_string_lossy().to_string();
 
     let patched_bytes = fs::read(&local_patched_path).map_err(|error| error.to_string())?;
     let patched_ramdisk = extract_ramdisk_from_fake_boot(&patched_bytes)?;

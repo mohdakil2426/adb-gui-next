@@ -22,6 +22,14 @@ Root pipeline has been **fully modernized** (3-phase overhaul). The `patch_ramdi
 
 **Verification:** Focused frontend tests and `cargo check` passed. Full gate results are recorded in the current session final notes.
 
+### 2026-04-28 - FAKEBOOTIMG Manual UI + Offline Boot Polling Fix
+
+**Change:** Added a first-class **Manual Mode (FAKEBOOTIMG)** wizard step that uses the existing `prepare_avd_root` and `finalize_avd_root` backend commands. Users can now enter manual mode from the Source step or after an automated root failure, choose any local Magisk `.apk`/`.zip`, create `/sdcard/Download/fakeboot.img`, patch it inside Magisk, then finalize the patched ramdisk from the UI.
+
+**Runtime hardening:** `wait_for_boot_completed()` now checks `runtime::is_serial_online()` before calling `getprop sys.boot_completed`, so boot polling no longer floods logs with repeated `adb shell ... device offline` warnings while the emulator is still transitioning to ADB online. The automated root boot wait was extended from 60s to 180s for slower cold boots.
+
+**Verification:** Added focused tests for the manual FAKEBOOTIMG flow and offline boot polling guard. `bun run test`, `bun run format:check`, `bun run lint:web`, isolated-target `bun run lint:rust`, and `bun run build` passed. `cargo test` compiled but still exits with the known Windows Tauri-linked `STATUS_ENTRYPOINT_NOT_FOUND` test harness failure.
+
 ### 2026-04-28 - Emulator Root Multi-CPIO + Magisk Version Fix
 
 **Change:** Fixed the API 30+ Play Store/x86_64 root failure by matching rootAVD's multi-CPIO ramdisk flow. After decompression, `patch_ramdisk_in_emulator()` now detects multiple `TRAILER!!!` markers, extracts split CPIO archives with bundled busybox, rebuilds a single `newc` CPIO, and only then runs `magiskboot cpio ... test` and patching. The automated Magisk source now uses the rootAVD-compatible `v25.2` package, preferring the local `docs/refrences/github-repos/rootAVD/Magisk.zip` clone before falling back to the upstream v25.2 APK URL.

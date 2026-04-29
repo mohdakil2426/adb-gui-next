@@ -53,7 +53,8 @@ export namespace backend {
 
   export interface RootFinalizeRequest {
     avdName: string;
-    serial: string;
+    serial: string | null;
+    patchedImagePath?: string | null;
   }
 
   export interface RootFinalizeResult {

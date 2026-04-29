@@ -76,4 +76,44 @@ describe('rootAVD-aligned ramdisk patch pipeline', () => {
     expect(source).toContain('local_rootavd_magisk_zip');
     expect(source).toContain('Magisk-rootAVD-v25.2.zip');
   });
+
+  it('does not spam getprop while the emulator serial is still offline', () => {
+    const source = readFileSync(rootPipelineFile, 'utf8');
+    const onlineCheck = 'runtime::is_serial_online(app, serial)';
+    const bootProp = 'getprop(app, serial, "sys.boot_completed")';
+
+    expect(source).toContain('ADB still offline during boot');
+    expect(source.indexOf(onlineCheck)).toBeLessThan(source.indexOf(bootProp));
+  });
+
+  it('clears stale Magisk patched outputs before preparing a new fakeboot image', () => {
+    const source = readFileSync(rootPipelineFile, 'utf8');
+    const cleanup = 'clear_stale_manual_patch_outputs(app, &request.serial)?';
+    const pushFakeBoot =
+      '&["-s", &request.serial, "push", &local_fake_boot_string, FAKE_BOOT_REMOTE_PATH]';
+
+    expect(source).toContain('fn clear_stale_manual_patch_outputs');
+    expect(source).toContain(cleanup);
+    expect(source.indexOf(cleanup)).toBeLessThan(source.indexOf(pushFakeBoot));
+  });
+
+  it('does not use a shell for-loop when finding manual Magisk patched output', () => {
+    const source = readFileSync(rootPipelineFile, 'utf8');
+
+    expect(source).not.toContain('for dir in /sdcard/Download');
+    expect(source).not.toContain('; do ls -t');
+    expect(source).toContain(
+      'ls -t /sdcard/Download/*magisk_patched* /storage/emulated/0/Download/*magisk_patched*',
+    );
+  });
+
+  it('supports finalizing manual root from a local patched image path', () => {
+    const source = readFileSync(rootPipelineFile, 'utf8');
+
+    expect(source).toContain('patched_image_path');
+    expect(source).toContain('PathBuf::from(patched_image_path)');
+    expect(source).toContain(
+      'No patched image was selected and the emulator serial is unavailable',
+    );
+  });
 });

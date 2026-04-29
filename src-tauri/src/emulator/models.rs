@@ -167,7 +167,8 @@ pub struct RootPreparationResult {
 #[serde(rename_all = "camelCase")]
 pub struct RootFinalizeRequest {
     pub avd_name: String,
-    pub serial: String,
+    pub serial: Option<String>,
+    pub patched_image_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

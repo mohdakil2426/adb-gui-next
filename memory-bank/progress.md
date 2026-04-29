@@ -28,6 +28,8 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 **Emulator Root multi-CPIO + rootAVD-compatible Magisk fix (2026-04-28):** The API 33 Google Play x86_64 AVD root failure was reproduced and resolved against the local rootAVD reference. Automated ramdisk patching now repacks API 30+ multi-CPIO layouts before Magisk patching, and the automatic source uses rootAVD-compatible Magisk v25.2 instead of current latest stable Magisk for the direct ramdisk workflow. Added PowerShell diagnostics/E2E scripts and verified the live `Medium_Phone` emulator reaches `su -c id -u == 0` after stock restore, patch, and cold boot.
 
+**FAKEBOOTIMG manual UI + offline boot polling fix (2026-04-28):** The Root wizard now has a dedicated **Manual Mode (FAKEBOOTIMG)** step wired to the existing `prepare_avd_root` / `finalize_avd_root` IPC commands. Manual mode is accessible before failure from the Source step and from the failure fallback button. It lets users choose a local Magisk `.apk`/`.zip`, create `/sdcard/Download/fakeboot.img`, follow Magisk patch instructions inside the emulator, and finalize the patched ramdisk. The automated boot wait now checks ADB serial online state before running `getprop sys.boot_completed`, reducing repeated `device offline` log spam during emulator startup.
+
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
 - `AppSidebar.tsx` extracted component with SidebarHeader, SidebarFooter, SidebarRail

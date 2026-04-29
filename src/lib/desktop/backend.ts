@@ -300,6 +300,17 @@ export function SelectRootPackageFile(): Promise<string> {
   });
 }
 
+export function SelectPatchedRootImageFile(): Promise<string> {
+  return selectFile({
+    filters: [
+      {
+        name: 'Patched boot images',
+        extensions: ['img'],
+      },
+    ],
+  });
+}
+
 /** Fetch the latest official stable Magisk release from the GitHub releases API. */
 export function FetchMagiskStableRelease(): Promise<backend.MagiskStableRelease> {
   return call('fetch_magisk_stable_release');
