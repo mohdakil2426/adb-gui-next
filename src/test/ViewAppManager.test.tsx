@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewAppManager } from '@/components/views/ViewAppManager';
+import { useDeviceStore } from '@/lib/deviceStore';
 
 const getInstalledPackagesMock = vi.fn();
 const getDebloatPackagesMock = vi.fn();
@@ -27,7 +28,7 @@ vi.mock('@/lib/desktop/backend', () => ({
   DebloatPackages: vi.fn(),
   GetDebloatDeviceSettings: () => getDebloatDeviceSettingsMock(),
   GetDebloatPackages: () => getDebloatPackagesMock(),
-  GetInstalledPackages: () => getInstalledPackagesMock(),
+  GetInstalledPackages: (serial?: string | null) => getInstalledPackagesMock(serial),
   InstallPackage: vi.fn(),
   ListDebloatBackups: () => listDebloatBackupsMock(),
   LoadDebloatLists: () => loadDebloatListsMock(),
@@ -43,6 +44,8 @@ vi.mock('@/lib/desktop/runtime', () => ({
 
 describe('ViewAppManager', () => {
   beforeEach(() => {
+    useDeviceStore.getState().reset();
+    useDeviceStore.getState().setDevices([{ serial: 'device-a', status: 'device' }]);
     getInstalledPackagesMock.mockReset();
     getDebloatPackagesMock.mockReset();
     loadDebloatListsMock.mockReset();
@@ -78,5 +81,6 @@ describe('ViewAppManager', () => {
 
     expect(await screen.findByText('com.example.camera')).toBeInTheDocument();
     expect(screen.getByText('com.example.camera').closest('[role="option"]')).toBeInTheDocument();
+    expect(getInstalledPackagesMock).toHaveBeenCalledWith('device-a');
   });
 });

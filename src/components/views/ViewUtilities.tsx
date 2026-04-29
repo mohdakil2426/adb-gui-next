@@ -72,6 +72,7 @@ export function ViewUtilities() {
   const [isEditing, setIsEditing] = useState(false);
 
   const allDevices = useDeviceStore((state) => state.devices);
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const queryClient = useQueryClient();
 
   const refetchDevices = () => queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
@@ -82,24 +83,26 @@ export function ViewUtilities() {
         deviceMode: 'unknown' as DeviceConnectionMode,
         deviceSerial: null,
       };
-    const adb = allDevices.find((d) => d.status === 'device' || d.status === 'recovery');
-    if (adb) {
+    const selectedDevice = allDevices.find((device) => device.serial === selectedSerial);
+    if (!selectedDevice) {
+      return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
+    }
+    if (selectedDevice.status === 'device' || selectedDevice.status === 'recovery') {
       debugLog('Device mode: adb');
       return {
         deviceMode: 'adb' as DeviceConnectionMode,
-        deviceSerial: adb.serial,
+        deviceSerial: selectedDevice.serial,
       };
     }
-    const fb = allDevices.find((d) => d.status === 'fastboot' || d.status === 'bootloader');
-    if (fb) {
+    if (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader') {
       debugLog('Device mode: fastboot');
       return {
         deviceMode: 'fastboot' as DeviceConnectionMode,
-        deviceSerial: fb.serial,
+        deviceSerial: selectedDevice.serial,
       };
     }
     return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
-  }, [allDevices]);
+  }, [allDevices, selectedSerial]);
 
   const handleReboot = async (mode: string, modeId: RebootMode, actionId: string) => {
     if (loadingAction || sentAction) return;
@@ -107,7 +110,7 @@ export function ViewUtilities() {
     setLoadingAction(actionId);
     const toastId = toast.loading(`Sending reboot command...`);
     try {
-      await Reboot(mode);
+      await Reboot(mode, deviceSerial);
       toast.success(`Reboot to ${modeId || 'system'} initiated`, { id: toastId });
       useLogStore.getState().addLog(`Rebooting to ${modeId || 'system'}...`, 'info');
       setSentAction(actionId);
@@ -166,7 +169,7 @@ export function ViewUtilities() {
     setLoadingAction(`set_active_${slot}`);
     const toastId = toast.loading(`Setting active slot to ${slot.toUpperCase()}...`);
     try {
-      await RunFastbootHostCommand(`--set-active=${slot}`);
+      await RunFastbootHostCommand(`--set-active=${slot}`, deviceSerial);
       toast.success(`Active slot set to ${slot.toUpperCase()}`, { id: toastId });
       useLogStore.getState().addLog(`Set active slot to ${slot}`, 'success');
       setSentAction(`set_active_${slot}`);
@@ -182,7 +185,7 @@ export function ViewUtilities() {
     if (loadingAction || sentAction) return;
     setLoadingAction('get_vars');
     try {
-      const output = await RunFastbootHostCommand('getvar all');
+      const output = await RunFastbootHostCommand('getvar all', deviceSerial);
       setGetVarContent(output);
       setShowGetVarDialog(true);
       useLogStore.getState().addLog('Fetched fastboot variables', 'success');
@@ -211,7 +214,7 @@ export function ViewUtilities() {
     setLoadingAction('wipe_data');
     const toastId = toast.loading('Wiping User Data (this may take a while)...');
     try {
-      await WipeData();
+      await WipeData(deviceSerial);
       toast.success('Device Wiped Successfully', { id: toastId });
       useLogStore.getState().addLog('Device user data wiped (fastboot -w)', 'success');
     } catch (error) {

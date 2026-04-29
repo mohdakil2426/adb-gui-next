@@ -77,8 +77,8 @@ function getAncestorPaths(path: string): string[] {
 }
 
 /** Load all entries (files + dirs) for a path and return as TreeNode[]. */
-function loadDirEntries(path: string): Promise<TreeNode[]> {
-  return ListFiles(path).then((entries) =>
+function loadDirEntries(path: string, serial?: string | null): Promise<TreeNode[]> {
+  return ListFiles(path, serial).then((entries) =>
     entries
       .sort((a, b) => {
         const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
@@ -225,9 +225,15 @@ export interface DirectoryTreeProps {
   onNavigate: (path: string) => void;
   /** Increment to force-refresh the tree node for currentPath. */
   refreshTrigger?: number;
+  serial?: string | null;
 }
 
-export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: DirectoryTreeProps) {
+export function DirectoryTree({
+  currentPath,
+  onNavigate,
+  refreshTrigger,
+  serial,
+}: DirectoryTreeProps) {
   const [nodes, setNodesRaw] = useState<TreeNode[]>(INITIAL_NODES);
 
   // Sync ref — always holds latest nodes for use in async callbacks
@@ -271,7 +277,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
 
       if (firstToLoad) {
         const loadPath = firstToLoad;
-        loadDirEntries(loadPath)
+        loadDirEntries(loadPath, serial)
           .then((entries) => {
             const next = applyToNode(nodesRef.current, loadPath, (n) => ({
               ...n,
@@ -293,7 +299,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
           });
       }
     },
-    [setNodesRaw],
+    [serial],
   );
 
   useEffect(() => {
@@ -316,7 +322,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
 
     if (node.isExpanded) {
       setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
-      loadDirEntries(currentPath)
+      loadDirEntries(currentPath, serial)
         .then((entries) => {
           setNodes((prev) =>
             applyToNode(prev, currentPath, (n) => ({
@@ -333,7 +339,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
       // Invalidate cache so it refetches on next expand
       setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
     }
-  }, [refreshTrigger, currentPath, setNodes]);
+  }, [refreshTrigger, currentPath, serial, setNodes]);
 
   // Toggle expand/collapse with lazy loading (dirs only)
   const handleToggle = useCallback(
@@ -357,7 +363,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
 
       if (!shouldLoad) return;
 
-      loadDirEntries(path)
+      loadDirEntries(path, serial)
         .then((entries) => {
           setNodes((prev) =>
             applyToNode(prev, path, (n) => ({
@@ -372,7 +378,7 @@ export function DirectoryTree({ currentPath, onNavigate, refreshTrigger }: Direc
           setNodes((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
         });
     },
-    [setNodes],
+    [serial, setNodes],
   );
 
   return (

@@ -25,6 +25,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
   setDevices: (devices) =>
     set((state) => {
       let { selectedSerial } = state;
+      const previousSerial = selectedSerial;
 
       // If selected device disconnected → clear selection
       if (selectedSerial && !devices.some((d) => d.serial === selectedSerial)) {
@@ -36,10 +37,19 @@ export const useDeviceStore = create<DeviceState>((set) => ({
         selectedSerial = devices[0].serial;
       }
 
-      return { devices, selectedSerial, lastUpdated: Date.now() };
+      return {
+        devices,
+        selectedSerial,
+        deviceInfo: selectedSerial === previousSerial ? state.deviceInfo : null,
+        lastUpdated: Date.now(),
+      };
     }),
 
-  setSelectedSerial: (serial) => set({ selectedSerial: serial }),
+  setSelectedSerial: (serial) =>
+    set((state) => ({
+      selectedSerial: serial,
+      deviceInfo: serial === state.selectedSerial ? state.deviceInfo : null,
+    })),
   setDeviceInfo: (info) => set({ deviceInfo: info }),
 
   reset: () => set({ devices: [], selectedSerial: null, deviceInfo: null, lastUpdated: 0 }),

@@ -814,6 +814,7 @@ Last verified: **2026-04-26** (after Emulator Root UX Audit)
 - **`fileList.length === 0 && creatingType === null`**: The empty-state condition. Missing `creatingType === null` breaks inline creation in empty directories.
 - **Device polling**: Single `useQuery(['allDevices'], 3s)` in MainLayout — never add per-view polling.
 - **`selectedSerial` auto-select**: disconnect → clear, single device → auto-select, user pick → persist.
+- **Selected device routing is mandatory**: Any device-scoped ADB/fastboot action must pass `selectedSerial` through the TypeScript backend wrapper and Rust command (`adb -s` / `fastboot -s`). Host-only commands such as `adb devices`, `adb start-server`, and `adb kill-server` stay untargeted.
 - **Bottom panel resize**: Use `panelRef` + RAF + `setState` only on mouseup. Never `setState` on mousemove.
 
 ### Rust

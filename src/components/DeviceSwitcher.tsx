@@ -89,7 +89,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
           <TooltipContent side="bottom">Device Switcher</TooltipContent>
         </Tooltip>
 
-        <PopoverContent align="end" className="w-72 p-0">
+        <PopoverContent align="start" collisionPadding={16} className="w-72 p-0">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-1.5">

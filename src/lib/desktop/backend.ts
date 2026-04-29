@@ -48,8 +48,8 @@ export function DisconnectWirelessAdb(arg1: string, arg2: string): Promise<strin
   return call('disconnect_wireless_adb', { ip: arg1, port: arg2 });
 }
 
-export function EnableWirelessAdb(arg1: string): Promise<string> {
-  return call('enable_wireless_adb', { port: arg1 });
+export function EnableWirelessAdb(arg1: string, serial?: string | null): Promise<string> {
+  return call('enable_wireless_adb', { port: arg1, serial });
 }
 
 export function ExtractPayload(
@@ -66,8 +66,8 @@ export function ExtractPayload(
   });
 }
 
-export function FlashPartition(arg1: string, arg2: string): Promise<void> {
-  return call('flash_partition', { partition: arg1, imagePath: arg2 });
+export function FlashPartition(arg1: string, arg2: string, serial?: string | null): Promise<void> {
+  return call('flash_partition', { partition: arg1, imagePath: arg2, serial });
 }
 
 export function GetBootloaderVariables(): Promise<string> {
@@ -78,8 +78,8 @@ export function GetAvdRestorePlan(avdName: string): Promise<backend.RestorePlan>
   return call('get_avd_restore_plan', { avdName });
 }
 
-export function GetDeviceInfo(): Promise<backend.DeviceInfo> {
-  return call('get_device_info');
+export function GetDeviceInfo(serial?: string | null): Promise<backend.DeviceInfo> {
+  return call('get_device_info', { serial });
 }
 
 export function GetDeviceMode(): Promise<string> {
@@ -94,12 +94,14 @@ export function GetFastbootDevices(): Promise<Array<backend.Device>> {
   return call('get_fastboot_devices');
 }
 
-export function GetInstalledPackages(): Promise<Array<backend.InstalledPackage>> {
-  return call('get_installed_packages');
+export function GetInstalledPackages(
+  serial?: string | null,
+): Promise<Array<backend.InstalledPackage>> {
+  return call('get_installed_packages', { serial });
 }
 
-export function InstallPackage(arg1: string): Promise<string> {
-  return call('install_package', { path: arg1 });
+export function InstallPackage(arg1: string, serial?: string | null): Promise<string> {
+  return call('install_package', { path: arg1, serial });
 }
 
 export function LaunchAvd(
@@ -121,8 +123,8 @@ export function ListAvds(): Promise<Array<backend.AvdSummary>> {
   return call('list_avds');
 }
 
-export function ListFiles(arg1: string): Promise<Array<backend.FileEntry>> {
-  return call('list_files', { path: arg1 });
+export function ListFiles(arg1: string, serial?: string | null): Promise<Array<backend.FileEntry>> {
+  return call('list_files', { path: arg1, serial });
 }
 
 export function ListPayloadPartitions(arg1: string): Promise<Array<string>> {
@@ -139,8 +141,8 @@ export function OpenFolder(arg1: string): Promise<void> {
   return call('open_folder', { folderPath: arg1 });
 }
 
-export function PullFile(arg1: string, arg2: string): Promise<string> {
-  return call('pull_file', { remotePath: arg1, localPath: arg2 });
+export function PullFile(arg1: string, arg2: string, serial?: string | null): Promise<string> {
+  return call('pull_file', { remotePath: arg1, localPath: arg2, serial });
 }
 
 export function PrepareAvdRoot(
@@ -149,28 +151,28 @@ export function PrepareAvdRoot(
   return call('prepare_avd_root', { request });
 }
 
-export function PushFile(arg1: string, arg2: string): Promise<string> {
-  return call('push_file', { localPath: arg1, remotePath: arg2 });
+export function PushFile(arg1: string, arg2: string, serial?: string | null): Promise<string> {
+  return call('push_file', { localPath: arg1, remotePath: arg2, serial });
 }
 
-export function CreateDirectory(arg1: string): Promise<string> {
-  return call('create_directory', { path: arg1 });
+export function CreateDirectory(arg1: string, serial?: string | null): Promise<string> {
+  return call('create_directory', { path: arg1, serial });
 }
 
-export function CreateFile(arg1: string): Promise<string> {
-  return call('create_file', { path: arg1 });
+export function CreateFile(arg1: string, serial?: string | null): Promise<string> {
+  return call('create_file', { path: arg1, serial });
 }
 
-export function DeleteFiles(arg1: string[]): Promise<string> {
-  return call('delete_files', { paths: arg1 });
+export function DeleteFiles(arg1: string[], serial?: string | null): Promise<string> {
+  return call('delete_files', { paths: arg1, serial });
 }
 
-export function RenameFile(arg1: string, arg2: string): Promise<string> {
-  return call('rename_file', { oldPath: arg1, newPath: arg2 });
+export function RenameFile(arg1: string, arg2: string, serial?: string | null): Promise<string> {
+  return call('rename_file', { oldPath: arg1, newPath: arg2, serial });
 }
 
-export function Reboot(arg1: string): Promise<void> {
-  return call('reboot', { mode: arg1 });
+export function Reboot(arg1: string, serial?: string | null): Promise<void> {
+  return call('reboot', { mode: arg1, serial });
 }
 
 export function RestoreAvdBackups(avdName: string): Promise<string> {
@@ -181,12 +183,12 @@ export function RunAdbHostCommand(arg1: string): Promise<string> {
   return call('run_adb_host_command', { command: arg1 });
 }
 
-export function RunFastbootHostCommand(arg1: string): Promise<string> {
-  return call('run_fastboot_host_command', { command: arg1 });
+export function RunFastbootHostCommand(arg1: string, serial?: string | null): Promise<string> {
+  return call('run_fastboot_host_command', { command: arg1, serial });
 }
 
-export function RunShellCommand(arg1: string): Promise<string> {
-  return call('run_shell_command', { command: arg1 });
+export function RunShellCommand(arg1: string, serial?: string | null): Promise<string> {
+  return call('run_shell_command', { command: arg1, serial });
 }
 
 export function SaveLog(arg1: string, arg2: string): Promise<string> {
@@ -285,8 +287,8 @@ export function SetActiveSlot(arg1: string): Promise<void> {
   return call('set_active_slot', { slot: arg1 });
 }
 
-export function SideloadPackage(arg1: string): Promise<string> {
-  return call('sideload_package', { path: arg1 });
+export function SideloadPackage(arg1: string, serial?: string | null): Promise<string> {
+  return call('sideload_package', { path: arg1, serial });
 }
 
 export function SelectRootPackageFile(): Promise<string> {
@@ -337,16 +339,16 @@ export function VerifyAvdRoot(
   return call('verify_avd_root', { avdName, serial });
 }
 
-export function UninstallPackage(arg1: string): Promise<string> {
-  return call('uninstall_package', { packageName: arg1 });
+export function UninstallPackage(arg1: string, serial?: string | null): Promise<string> {
+  return call('uninstall_package', { packageName: arg1, serial });
 }
 
 export function StopAvd(serial: string): Promise<string> {
   return call('stop_avd', { serial });
 }
 
-export function WipeData(): Promise<void> {
-  return call('wipe_data');
+export function WipeData(serial?: string | null): Promise<void> {
+  return call('wipe_data', { serial });
 }
 
 // =============================================================================

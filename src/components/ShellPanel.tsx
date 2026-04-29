@@ -3,6 +3,7 @@ import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import { shellCommandSchema } from '@/lib/schemas';
 import { useShellStore } from '@/lib/shellStore';
+import { useDeviceStore } from '@/lib/deviceStore';
 import { RunShellCommand, RunAdbHostCommand, RunFastbootHostCommand } from '@/lib/desktop/backend';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 export function ShellPanel() {
   const history = useShellStore((state) => state.history);
   const commandHistory = useShellStore((state) => state.commandHistory);
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const setHistory = useShellStore((state) => state.setHistory);
   const addCommand = useShellStore((state) => state.addCommand);
   const [command, setCommand] = useState('');
@@ -85,7 +87,7 @@ export function ShellPanel() {
       let result = '';
       if (trimmedCommand.startsWith('adb shell ')) {
         const shellCmd = trimmedCommand.substring(10).trim();
-        if (shellCmd) result = await RunShellCommand(shellCmd);
+        if (shellCmd) result = await RunShellCommand(shellCmd, selectedSerial);
         else throw new Error('Usage: adb shell <command...>');
       } else if (trimmedCommand.startsWith('adb ')) {
         const hostCmd = trimmedCommand.substring(4).trim();
@@ -93,7 +95,7 @@ export function ShellPanel() {
         else throw new Error('Usage: adb <command...>');
       } else if (trimmedCommand.startsWith('fastboot ')) {
         const fastbootCmd = trimmedCommand.substring(9).trim();
-        if (fastbootCmd) result = await RunFastbootHostCommand(fastbootCmd);
+        if (fastbootCmd) result = await RunFastbootHostCommand(fastbootCmd, selectedSerial);
         else throw new Error('Usage: fastboot <command...>');
       } else {
         throw new Error(`Unknown command: "${trimmedCommand}".`);

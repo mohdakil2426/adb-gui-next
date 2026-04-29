@@ -1,4 +1,5 @@
 use crate::CmdResult;
+use crate::commands::device::run_adb_for_serial;
 use crate::helpers::{default_if_empty, run_binary_command};
 use log::{error, info};
 use tauri::AppHandle;
@@ -58,12 +59,18 @@ pub async fn disconnect_wireless_adb(
 }
 
 #[tauri::command]
-pub async fn enable_wireless_adb(app: AppHandle, port: String) -> CmdResult<String> {
+pub async fn enable_wireless_adb(
+    app: AppHandle,
+    port: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
     let port_str = default_if_empty(&port, DEFAULT_ADB_PORT).to_string();
     info!("Enabling wireless ADB on port {}", port_str);
-    tokio::task::spawn_blocking(move || run_binary_command(&app, "adb", &["tcpip", &port_str]))
-        .await
-        .map_err(|e| e.to_string())?
+    tokio::task::spawn_blocking(move || {
+        run_adb_for_serial(&app, serial.as_deref(), &["tcpip", &port_str])
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Runs an arbitrary ADB host command entered by the user.
@@ -88,14 +95,20 @@ pub async fn run_adb_host_command(app: AppHandle, command: String) -> CmdResult<
 ///
 /// Runs on a blocking thread — shell commands can run indefinitely.
 #[tauri::command]
-pub async fn run_shell_command(app: AppHandle, command: String) -> CmdResult<String> {
+pub async fn run_shell_command(
+    app: AppHandle,
+    command: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
     let command = command.trim().to_string();
     if command.is_empty() {
         return Err("Shell command is empty.".into());
     }
     validate_shell_command(&command)?;
     info!("Running shell command: {}", command);
-    tokio::task::spawn_blocking(move || run_binary_command(&app, "adb", &["shell", &command]))
-        .await
-        .map_err(|e| e.to_string())?
+    tokio::task::spawn_blocking(move || {
+        run_adb_for_serial(&app, serial.as_deref(), &["shell", &command])
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

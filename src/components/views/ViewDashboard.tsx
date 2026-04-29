@@ -47,6 +47,7 @@ type Device = backend.Device;
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
   const queriedDevices = useDeviceStore((state) => state.devices);
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const deviceInfo = useDeviceStore((state) => state.deviceInfo);
   const setDeviceInfo = useDeviceStore((state) => state.setDeviceInfo);
   const queryClient = useQueryClient();
@@ -73,7 +74,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   }, [queryClient]);
 
   const refreshInfo = useCallback(async () => {
-    if (queriedDevices.length === 0) {
+    if (!selectedSerial) {
       setDeviceInfo(null);
       return;
     }
@@ -81,7 +82,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsRefreshingInfo(true);
     try {
       debugLog('Refreshing device info');
-      const result = await GetDeviceInfo();
+      const result = await GetDeviceInfo(selectedSerial);
       setDeviceInfo(result);
       debugLog('Device info refreshed:', result);
     } catch (error) {
@@ -90,13 +91,13 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     } finally {
       setIsRefreshingInfo(false);
     }
-  }, [queriedDevices.length, setDeviceInfo]);
+  }, [selectedSerial, setDeviceInfo]);
 
   useEffect(() => {
-    if (activeView === 'dashboard' && queriedDevices.length > 0 && !deviceInfo) {
+    if (activeView === 'dashboard' && selectedSerial && !deviceInfo) {
       void refreshInfo();
     }
-  }, [activeView, queriedDevices.length, deviceInfo, refreshInfo]);
+  }, [activeView, selectedSerial, deviceInfo, refreshInfo]);
 
   useEffect(() => {
     if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {
@@ -111,7 +112,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     });
     try {
       debugLog('Enabling wireless ADB on port 5555');
-      const output = await EnableWirelessAdb('5555');
+      const output = await EnableWirelessAdb('5555', selectedSerial);
       toast.success('Wireless mode enabled!', { id: toastId, description: output });
       handleSuccess('Wireless ADB', `Wireless mode enabled: ${output}`);
     } catch (error) {
@@ -200,7 +201,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             <Button
               className="w-full h-auto whitespace-normal"
               onClick={handleEnableTcpip}
-              disabled={isEnablingTcpip || queriedDevices.length === 0 || isConnecting}
+              disabled={isEnablingTcpip || !selectedSerial || isConnecting}
             >
               {isEnablingTcpip ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
@@ -299,7 +300,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           <Button
             variant="default"
             onClick={refreshInfo}
-            disabled={isRefreshingInfo || queriedDevices.length === 0}
+            disabled={isRefreshingInfo || !selectedSerial}
           >
             {isRefreshingInfo ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -310,7 +311,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           </Button>
         </CardHeader>
         <CardContent>
-          {queriedDevices.length === 0 ? (
+          {!selectedSerial ? (
             <p className="text-muted-foreground">Connect a device to see info.</p>
           ) : !deviceInfo ? (
             <p className="text-muted-foreground">Click "Refresh Info" to load data.</p>

@@ -39,6 +39,7 @@ import {
 } from '@/lib/desktop/backend';
 import { handleError } from '@/lib/errorHandler';
 import { useLogStore } from '@/lib/logStore';
+import { useDeviceStore } from '@/lib/deviceStore';
 import { getFileName } from '@/lib/utils';
 import { Filter, FileUp, Loader2, Package, RefreshCw, Trash2 } from 'lucide-react';
 import type { backend } from '@/lib/desktop/models';
@@ -59,20 +60,26 @@ export function InstallationTab() {
   const [searchQuery, setSearchQuery] = useState('');
   const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
   const [isUninstalling, setIsUninstalling] = useState(false);
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
 
   const loadPackages = useCallback(async () => {
+    if (!selectedSerial) {
+      setPackages([]);
+      return;
+    }
     setIsLoadingPackages(true);
     try {
-      const list = await GetInstalledPackages();
+      const list = await GetInstalledPackages(selectedSerial);
       setPackages(list ?? []);
     } catch (error) {
       handleError('Load Packages', error);
     } finally {
       setIsLoadingPackages(false);
     }
-  }, []);
+  }, [selectedSerial]);
 
   useEffect(() => {
+    setSelectedPackages(new Set());
     void loadPackages();
   }, [loadPackages]);
 
@@ -124,6 +131,7 @@ export function InstallationTab() {
   }
 
   async function handleInstall() {
+    if (!selectedSerial) return;
     if (apkPaths.length === 0) return;
     setIsInstalling(true);
     setInstallProgress({ current: 0, total: apkPaths.length });
@@ -137,7 +145,7 @@ export function InstallationTab() {
       setInstallProgress({ current: i + 1, total: apkPaths.length });
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       try {
-        await InstallPackage(path);
+        await InstallPackage(path, selectedSerial);
         ok++;
         useLogStore.getState().addLog(`Installed APK: ${name}`, 'success');
       } catch (error) {
@@ -153,6 +161,7 @@ export function InstallationTab() {
   }
 
   async function handleUninstall() {
+    if (!selectedSerial) return;
     if (selectedPackages.size === 0) return;
     setIsUninstalling(true);
     const list = Array.from(selectedPackages);
@@ -162,7 +171,7 @@ export function InstallationTab() {
     for (const pkg of list) {
       toast.loading(`Uninstalling: ${pkg}…`, { id: toastId });
       try {
-        const output = await UninstallPackage(pkg);
+        const output = await UninstallPackage(pkg, selectedSerial);
         useLogStore.getState().addLog(`Uninstalled: ${pkg}: ${output}`, 'success');
         ok++;
       } catch (error) {
@@ -201,7 +210,7 @@ export function InstallationTab() {
             label="Drop APK files here"
             browseLabel="Select App Files"
             sublabel="Accepts .apk and .apks files"
-            disabled={isInstalling}
+            disabled={isInstalling || !selectedSerial}
           />
         ) : (
           <>
@@ -212,7 +221,7 @@ export function InstallationTab() {
                 size="sm"
                 className="h-7 gap-1.5 text-xs"
                 onClick={handleSelectApk}
-                disabled={isInstalling}
+                disabled={isInstalling || !selectedSerial}
               >
                 <FileUp className="size-3.5" />
                 Add More
@@ -253,7 +262,7 @@ export function InstallationTab() {
 
             <Button
               className="relative w-full overflow-hidden"
-              disabled={isInstalling}
+              disabled={isInstalling || !selectedSerial}
               onClick={() => void handleInstall()}
             >
               {isInstalling && installProgress && (
@@ -322,7 +331,7 @@ export function InstallationTab() {
               size="icon"
               className="size-8"
               onClick={() => void loadPackages()}
-              disabled={isLoadingPackages}
+              disabled={isLoadingPackages || !selectedSerial}
             >
               {isLoadingPackages ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -413,7 +422,7 @@ export function InstallationTab() {
             <Button
               variant="destructive"
               className="w-full"
-              disabled={isUninstalling || selectedPackages.size === 0}
+              disabled={isUninstalling || selectedPackages.size === 0 || !selectedSerial}
             >
               <Trash2 className="mr-2 size-4" />
               Uninstall
@@ -449,7 +458,7 @@ export function InstallationTab() {
               <AlertDialogAction
                 className={buttonVariants({ variant: 'destructive' })}
                 onClick={() => void handleUninstall()}
-                disabled={isUninstalling}
+                disabled={isUninstalling || !selectedSerial}
               >
                 {isUninstalling ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />

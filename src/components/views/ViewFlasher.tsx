@@ -172,15 +172,28 @@ export function ViewFlasher() {
   const sideloadSectionRef = useRef<HTMLDivElement>(null);
 
   const devices = useDeviceStore((state) => state.devices);
-
-  const hasFastbootDevice = useMemo(
-    () => devices.some((d) => d.status === 'fastboot' || d.status === 'bootloader'),
-    [devices],
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
+  const selectedDevice = useMemo(
+    () => devices.find((device) => device.serial === selectedSerial) ?? null,
+    [devices, selectedSerial],
   );
 
-  const hasSideloadDevice = useMemo(
-    () => devices.some((d) => d.status === 'sideload' || d.status === 'recovery'),
-    [devices],
+  const selectedFastbootSerial = useMemo(
+    () =>
+      selectedDevice &&
+      (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader')
+        ? selectedDevice.serial
+        : null,
+    [selectedDevice],
+  );
+
+  const selectedSideloadSerial = useMemo(
+    () =>
+      selectedDevice &&
+      (selectedDevice.status === 'sideload' || selectedDevice.status === 'recovery')
+        ? selectedDevice.serial
+        : null,
+    [selectedDevice],
   );
 
   const isGlobalLoading = !!loadingAction;
@@ -299,28 +312,35 @@ export function ViewFlasher() {
   useEffect(() => {
     if (!queuedAction || isGlobalLoading) return;
 
-    const isReady = queuedAction.type === 'flash' ? hasFastbootDevice : hasSideloadDevice;
+    const isReady =
+      queuedAction.type === 'flash'
+        ? Boolean(selectedFastbootSerial)
+        : Boolean(selectedSideloadSerial);
 
     if (isReady) {
       const action = queuedAction;
       setQueuedAction(null);
 
       if (action.type === 'flash') {
-        void executeFlash(action.partition!, action.filePath);
+        void executeFlash(action.partition!, action.filePath, selectedFastbootSerial);
       } else {
-        void executeSideload(action.filePath);
+        void executeSideload(action.filePath, selectedSideloadSerial);
       }
     }
-  }, [queuedAction, hasFastbootDevice, hasSideloadDevice, isGlobalLoading]);
+  }, [queuedAction, selectedFastbootSerial, selectedSideloadSerial, isGlobalLoading]);
 
   // ─── Action handlers ───────────────────────────────────────────────
 
-  async function executeFlash(partitionName: string, imgPath: string): Promise<void> {
+  async function executeFlash(
+    partitionName: string,
+    imgPath: string,
+    serial: string | null,
+  ): Promise<void> {
     setLoadingAction('flash');
     const toastId = toast.loading(`Flashing ${partitionName} partition...`);
 
     try {
-      await FlashPartition(partitionName, imgPath);
+      await FlashPartition(partitionName, imgPath, serial);
       toast.success('Flash Complete', {
         description: `${partitionName} flashed successfully.`,
         id: toastId,
@@ -334,13 +354,13 @@ export function ViewFlasher() {
     }
   }
 
-  async function executeSideload(zipPath: string): Promise<void> {
+  async function executeSideload(zipPath: string, serial: string | null): Promise<void> {
     const fileName = getFileName(zipPath);
     setLoadingAction('sideload');
     const toastId = toast.loading(`Sideloading ${fileName}...`);
 
     try {
-      const output = await SideloadPackage(zipPath);
+      const output = await SideloadPackage(zipPath, serial);
       const description = output || `${fileName} sideloaded successfully.`;
       toast.success('Sideload Complete', { description, id: toastId });
       useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
@@ -363,8 +383,8 @@ export function ViewFlasher() {
       return;
     }
 
-    if (hasFastbootDevice) {
-      void executeFlash(partition, filePath);
+    if (selectedFastbootSerial) {
+      void executeFlash(partition, filePath, selectedFastbootSerial);
     } else {
       setQueuedAction({ type: 'flash', partition, filePath });
       toast.info('Waiting for fastboot device...', {
@@ -379,8 +399,8 @@ export function ViewFlasher() {
       return;
     }
 
-    if (hasSideloadDevice) {
-      void executeSideload(sideloadFilePath);
+    if (selectedSideloadSerial) {
+      void executeSideload(sideloadFilePath, selectedSideloadSerial);
     } else {
       setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
       toast.info('Waiting for sideload device...', {
@@ -394,7 +414,7 @@ export function ViewFlasher() {
     const toastId = toast.loading('Wiping data... Device will factory reset.');
 
     try {
-      await WipeData();
+      await WipeData(selectedFastbootSerial);
       toast.success('Wipe Complete', { description: 'Device data has been erased.', id: toastId });
       useLogStore.getState().addLog('Device data wiped (Factory Reset): Success', 'success');
     } catch (error) {
@@ -592,7 +612,7 @@ export function ViewFlasher() {
               <Button
                 variant="destructive"
                 className="w-full"
-                disabled={isGlobalLoading || !hasFastbootDevice}
+                disabled={isGlobalLoading || !selectedFastbootSerial}
               >
                 {loadingAction === 'wipe' ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />

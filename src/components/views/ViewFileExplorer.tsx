@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { useLogStore } from '@/lib/logStore';
+import { useDeviceStore } from '@/lib/deviceStore';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import path from 'path-browserify';
@@ -219,9 +220,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   );
   const [isEditingPath, setIsEditingPath] = useState(false);
   const [editPathValue, setEditPathValue] = useState('');
+  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const currentPathRef = useRef(localStorage.getItem('fe.currentPath') ?? '/sdcard/');
+  const selectedSerialRef = useRef<string | null>(selectedSerial);
   // Tracks whether the tree was auto-collapsed by responsive resize (not by user).
   // When true, expanding the window past the threshold will auto-restore the tree.
   const wasResponsiveCollapsedRef = useRef(false);
@@ -330,7 +333,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       setCreateError('');
       try {
         debugLog(`Listing files at: ${targetPath}`);
-        const files = await ListFiles(targetPath);
+        const files = await ListFiles(targetPath, selectedSerialRef.current);
         // Discard stale results — a newer request has already been dispatched.
         if (requestId !== loadRequestIdRef.current) return;
         // Raw sort only for initial load; table may re-sort via sortField/sortDir
@@ -379,8 +382,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   );
 
   useEffect(() => {
-    if (activeView === 'files') loadFiles(currentPathRef.current);
-  }, [activeView, loadFiles]);
+    selectedSerialRef.current = selectedSerial;
+    setFileList([]);
+    setSelectedNames(new Set());
+    setIsMultiSelectMode(false);
+    if (activeView === 'files' && selectedSerial) {
+      void loadFiles(currentPathRef.current, false);
+    }
+  }, [activeView, selectedSerial, loadFiles]);
 
   const handleGoBack = useCallback(() => {
     const currentIdx = historyIndexRef.current;
@@ -523,7 +532,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     const oldPath = path.posix.join(currentPath, renamingName);
     const newPath = path.posix.join(currentPath, trimmed);
     try {
-      await RenameFile(oldPath, newPath);
+      await RenameFile(oldPath, newPath, selectedSerialRef.current);
       toast.success(`Renamed to "${trimmed}"`);
       useLogStore.getState().addLog(`Renamed ${renamingName} → ${trimmed}`, 'success');
       setRenamingName(null);
@@ -583,11 +592,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     setIsCreating(true);
     try {
       if (creatingType === 'file') {
-        await CreateFile(fullPath);
+        await CreateFile(fullPath, selectedSerialRef.current);
         toast.success(`Created file "${trimmed}"`);
         useLogStore.getState().addLog(`Created file: ${fullPath}`, 'success');
       } else {
-        await CreateDirectory(fullPath);
+        await CreateDirectory(fullPath, selectedSerialRef.current);
         toast.success(`Created folder "${trimmed}"`);
         useLogStore.getState().addLog(`Created folder: ${fullPath}`, 'success');
       }
@@ -611,7 +620,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     const paths = names.map((name) => path.posix.join(currentPath, name));
     setIsDeleting(true);
     try {
-      await DeleteFiles(paths);
+      await DeleteFiles(paths, selectedSerialRef.current);
       const label = names.length === 1 ? `"${names[0]}"` : `${names.length} items`;
       toast.success(`Deleted ${label}`);
       useLogStore.getState().addLog(`Deleted from ${currentPath}: ${names.join(', ')}`, 'success');
@@ -647,7 +656,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         }
         if (!localPath) return;
         toastId = toast.loading(`Pulling ${file.name}…`, { description: `From: ${remotePath}` });
-        const output = await PullFile(remotePath, localPath);
+        const output = await PullFile(remotePath, localPath, selectedSerialRef.current);
         toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
         useLogStore.getState().addLog(`Pulled ${file.name} to ${localPath}: ${output}`, 'success');
       } catch (error) {
@@ -669,7 +678,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? '';
         const remotePath = path.posix.join(targetDir, fileName);
         toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-        const output = await PushFile(localPath, remotePath);
+        const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
         toast.success('Import Complete', { description: output, id: toastId });
         useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
         loadFiles(currentPath, false);
@@ -694,7 +703,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const remotePath = path.posix.join(currentPath, fileName);
       debugLog(`Pushing file ${fileName} to ${remotePath}`);
       toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-      const output = await PushFile(localPath, remotePath);
+      const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
       toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
       loadFiles(currentPath, false);
@@ -718,7 +727,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       toastId = toast.loading(`Pushing folder ${folderName}…`, {
         description: `To: ${currentPath}`,
       });
-      const output = await PushFile(localFolderPath, currentPath);
+      const output = await PushFile(localFolderPath, currentPath, selectedSerialRef.current);
       toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
       loadFiles(currentPath, false);
@@ -882,9 +891,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           </div>
           <div className="flex-1 overflow-hidden">
             <DirectoryTree
+              key={selectedSerial ?? 'no-device'}
               currentPath={currentPath}
               onNavigate={loadFiles}
               refreshTrigger={treeRefreshKey}
+              serial={selectedSerial}
             />
           </div>
         </div>

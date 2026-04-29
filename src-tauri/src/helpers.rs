@@ -6,8 +6,6 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-const VALUE_NOT_AVAILABLE: &str = "N/A";
-
 pub fn default_if_empty<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     let trimmed = value.trim();
     if trimmed.is_empty() { fallback } else { trimmed }
@@ -224,74 +222,6 @@ pub fn run_binary_command_allow_output_on_failure(
     } else {
         Err(format!("{binary} command failed."))
     }
-}
-
-pub fn get_prop(app: &AppHandle, prop: &str) -> String {
-    run_binary_command(app, "adb", &["shell", "getprop", prop])
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| VALUE_NOT_AVAILABLE.into())
-}
-
-pub fn get_serial(app: &AppHandle) -> String {
-    run_binary_command(app, "adb", &["get-serialno"])
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| get_prop(app, "ro.serialno"))
-}
-
-pub fn get_root_status(app: &AppHandle) -> String {
-    let output = run_binary_command(app, "adb", &["shell", "su", "-c", "id -u"]);
-    if matches!(output.as_deref(), Ok("0")) { "Yes".into() } else { "No".into() }
-}
-
-pub fn get_ip_address(app: &AppHandle) -> String {
-    if let Ok(output) = run_binary_command(app, "adb", &["shell", "ip", "addr", "show", "wlan0"])
-        && let Some(ip) = output
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .windows(2)
-            .find_map(|chunk| (chunk[0] == "inet").then_some(chunk[1]))
-    {
-        return ip.split('/').next().unwrap_or(ip).to_string();
-    }
-
-    let fallback = get_prop(app, "dhcp.wlan0.ipaddress");
-    if fallback == VALUE_NOT_AVAILABLE { "N/A (Not on WiFi?)".into() } else { fallback }
-}
-
-pub fn get_battery_level(app: &AppHandle) -> String {
-    if let Ok(output) = run_binary_command(app, "adb", &["shell", "dumpsys battery | grep level"])
-        && let Some(level) = output.split(':').nth(1)
-    {
-        return format!("{}%", level.trim());
-    }
-    VALUE_NOT_AVAILABLE.into()
-}
-
-pub fn get_ram_total(app: &AppHandle) -> String {
-    if let Ok(output) =
-        run_binary_command(app, "adb", &["shell", "cat /proc/meminfo | grep MemTotal"])
-        && let Some(value) = output.split_whitespace().nth(1)
-        && let Ok(kb) = value.parse::<f64>()
-    {
-        return format!("{:.1} GB", kb / 1024.0 / 1024.0);
-    }
-    VALUE_NOT_AVAILABLE.into()
-}
-
-pub fn get_storage_info(app: &AppHandle) -> String {
-    if let Ok(output) = run_binary_command(app, "adb", &["shell", "df /data"])
-        && let Some(line) = output.lines().nth(1)
-    {
-        let parts: Vec<_> = line.split_whitespace().collect();
-        if parts.len() >= 3
-            && let (Ok(total), Ok(used)) = (parts[1].parse::<f64>(), parts[2].parse::<f64>())
-        {
-            return format!("{:.1} GB / {:.1} GB", used / 1024.0 / 1024.0, total / 1024.0 / 1024.0);
-        }
-    }
-    VALUE_NOT_AVAILABLE.into()
 }
 
 #[cfg(test)]

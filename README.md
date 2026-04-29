@@ -285,7 +285,7 @@ bun run tauri build
 │  runtime.ts → events, file drop, opener                          │
 │  models.ts → 380+ lines of TypeScript DTOs                       │
 ├──────────────────────────────────────────────────────────────────┤
-│              Backend (Rust — Edition 2024)                        │
+│              Backend (Rust — Edition 2024)                       │
 │  71 Tauri commands across 10 command modules                     │
 │  4 domain modules: payload, emulator, debloat, marketplace       │
 │  Binary resolution: resource dir → repo → system PATH            │
