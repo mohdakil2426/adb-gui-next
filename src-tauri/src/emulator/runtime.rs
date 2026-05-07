@@ -9,6 +9,12 @@ use crate::{
 use std::{collections::HashMap, process::Command};
 use tauri::AppHandle;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn build_launch_args(name: &str, options: &EmulatorLaunchOptions) -> Vec<String> {
     let mut args = vec![format!("@{name}")];
 
@@ -139,6 +145,9 @@ pub fn launch_avd(
 
     let mut command = Command::new(&binary);
     command.args(build_launch_args(avd_name, options));
+
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
 
     // Use the emulator binary's own directory as the working directory.
     // The emulator binary requires its siblings (e.g. qemu-system-x86_64) to be present.

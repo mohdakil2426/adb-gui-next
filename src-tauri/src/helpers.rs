@@ -6,6 +6,12 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 pub fn default_if_empty<'a>(value: &'a str, fallback: &'a str) -> &'a str {
     let trimmed = value.trim();
     if trimmed.is_empty() { fallback } else { trimmed }
@@ -170,17 +176,20 @@ pub fn run_command_capture(
 ) -> CmdResult<CommandOutput> {
     debug!("Running command: {} {:?}", binary, args);
     let binary_path = resolve_binary_path(app, binary)?;
-    let output = Command::new(&binary_path)
-        .args(args)
-        .current_dir(
-            binary_working_directory(Some(app))
-                .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))),
-        )
-        .output()
-        .map_err(|error| {
-            error!("Failed to execute {} {:?}: {}", binary, args, error);
-            error.to_string()
-        })?;
+    let mut cmd = Command::new(&binary_path);
+    cmd.args(args);
+    cmd.current_dir(
+        binary_working_directory(Some(app))
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))),
+    );
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd.output().map_err(|error| {
+        error!("Failed to execute {} {:?}: {}", binary, args, error);
+        error.to_string()
+    })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();

@@ -252,12 +252,8 @@ fn parse_image_element(
             "FileOffsetInSrc" => offset = val.parse().unwrap_or(0),
             "SizeInByteInSrc" => size = val.parse().unwrap_or(0),
             "SizeInSectorInSrc" => sector_size = val.parse().unwrap_or(0),
-            "Sha256" | "sha256" => {
-                // Skip placeholder "0" hash
-                if val != "0" {
-                    sha256 = val;
-                }
-            }
+            // Skip placeholder "0" hash
+            "Sha256" | "sha256" if val != "0" => sha256 = val,
             "sparse" => sparse = val.eq_ignore_ascii_case("true"),
             _ => {}
         }

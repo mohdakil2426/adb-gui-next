@@ -9,19 +9,32 @@ use tauri::Manager;
 
 pub type CmdResult<T> = Result<T, String>;
 
+fn build_log_targets() -> Vec<tauri_plugin_log::Target> {
+    #[cfg(debug_assertions)]
+    {
+        vec![
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: None }),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+        ]
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        // Release builds: no stdout target to prevent console window
+        vec![
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir { file_name: None }),
+            tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
+        ]
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)
-                .targets([
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Stdout),
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::LogDir {
-                        file_name: None,
-                    }),
-                    tauri_plugin_log::Target::new(tauri_plugin_log::TargetKind::Webview),
-                ])
+                .targets(build_log_targets())
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
