@@ -1,5 +1,5 @@
 ---
-description: commit
+description:
 ---
 
 Create a new commit for all of our uncommitted changes
@@ -9,3 +9,5 @@ add the untracked and changed files
 Add an atomic commit message with an appropriate message
 
 add a tag such as "feat", "fix", "docs", etc. that reflects our work
+
+Commit messsage should be highly detailed info.

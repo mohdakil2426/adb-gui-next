@@ -72,9 +72,9 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
               </span>
               <div>
                 <span>{label}</span>
-                {isActive && progress?.detail && (
+                {isActive && progress?.detail ? (
                   <p className="mt-0.5 text-xs text-muted-foreground">{progress.detail}</p>
-                )}
+                ) : null}
               </div>
             </div>
           );
@@ -83,7 +83,7 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
 
       {/* Progress bar */}
       {!failed && (
-        <div className="space-y-1">
+        <div className="gap-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-primary transition-all duration-500"

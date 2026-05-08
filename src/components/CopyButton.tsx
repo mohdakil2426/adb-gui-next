@@ -29,7 +29,9 @@ export function CopyButton({ value, label = 'Value', className }: CopyButtonProp
       await writeText(value);
       setCopied(true);
       toast.success(`${label} copied to clipboard`);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     } catch {
       toast.error('Failed to copy to clipboard');
     }
@@ -45,7 +47,7 @@ export function CopyButton({ value, label = 'Value', className }: CopyButtonProp
       aria-label={`Copy ${label}`}
       disabled={!value}
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
     </Button>
   );
 }

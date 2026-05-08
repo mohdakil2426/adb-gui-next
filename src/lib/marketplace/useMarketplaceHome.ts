@@ -36,7 +36,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
       .then((apps) => {
         if (!cancelled) setTrendingApps(apps);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (!cancelled) handleError('Marketplace Trending', error);
       })
       .finally(() => {
@@ -60,7 +60,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
       .then((apps) => {
         if (!cancelled) setRecentReleaseApps(apps);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (!cancelled) handleError('Marketplace Recent Releases', error);
       })
       .finally(() => {

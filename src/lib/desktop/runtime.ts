@@ -10,9 +10,9 @@ type EventCallback<T = unknown> = (data: T) => void;
 type Unlisten = () => void;
 type FileDropCallback = (x: number, y: number, paths: string[]) => void;
 
-type ListenerEntry = {
+interface ListenerEntry {
   dispose: Unlisten;
-};
+}
 
 const eventListeners = new Map<string, Set<ListenerEntry>>();
 let fileDropCleanup: Unlisten | null = null;
@@ -85,7 +85,7 @@ function registerEventListener<T = unknown>(
 
 function toSafeExternalUrl(url: string | URL): string | null {
   try {
-    const parsed = url instanceof URL ? url : new URL(String(url).trim());
+    const parsed = url instanceof URL ? url : new URL(url.trim());
     if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
       return null;
     }
@@ -104,7 +104,7 @@ export function BrowserOpenURL(url: string | URL): void {
     return;
   }
 
-  void openUrl(safeUrl).catch((error) => {
+  void openUrl(safeUrl).catch((error: unknown) => {
     toast.error('Unable to open link', {
       description: String(error),
     });
@@ -122,7 +122,9 @@ export function EventsOff(eventName: string, ...additionalEventNames: string[]):
       return;
     }
 
-    [...current].forEach((entry) => entry.dispose());
+    [...current].forEach((entry) => {
+      entry.dispose();
+    });
   });
 }
 
@@ -154,22 +156,26 @@ export function OnFileDrop(
   // Normalize to DragDropHandler
   const handler: DragDropHandler =
     typeof callbackOrHandler === 'function'
-      ? { onDrop: (paths, x, y) => callbackOrHandler(x, y, paths) }
+      ? {
+          onDrop: (paths, x, y) => {
+            callbackOrHandler(x, y, paths);
+          },
+        }
       : callbackOrHandler;
 
   void getCurrentWebview()
     .onDragDropEvent((event: Event<DragDropEvent>) => {
       const payload = event.payload;
-      if (!payload?.type) return;
+      if (!payload.type) return;
 
       if (payload.type === 'enter' || payload.type === 'over') {
         const pos = payload.position ?? { x: 0, y: 0 };
         const paths =
           'paths' in payload && Array.isArray(payload.paths) ? payload.paths : undefined;
-        handler.onHover?.(pos.x ?? 0, pos.y ?? 0, paths);
+        handler.onHover?.(pos.x, pos.y, paths);
       } else if (payload.type === 'drop' && 'paths' in payload && Array.isArray(payload.paths)) {
         const pos = payload.position ?? { x: 0, y: 0 };
-        handler.onDrop(payload.paths, pos.x ?? 0, pos.y ?? 0);
+        handler.onDrop(payload.paths, pos.x, pos.y);
       } else if (payload.type === 'leave') {
         handler.onCancel?.();
       }

@@ -1,7 +1,11 @@
 import { LoadingButton } from '@/components/LoadingButton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { handleError } from '@/lib/errorHandler';
+import { OpenFolder } from '@/lib/desktop/backend';
 import type { backend } from '@/lib/desktop/models';
-import { CheckCircle2, RotateCcw } from 'lucide-react';
+import { CheckCircle2, RotateCcw, ExternalLink } from 'lucide-react';
 
 interface EmulatorRestoreTabProps {
   avd: backend.AvdSummary | null;
@@ -27,6 +31,15 @@ export function EmulatorRestoreTab({
   }
 
   const hasEntries = Boolean(restorePlan && restorePlan.entries.length > 0);
+
+  const handleOpenBackupFolder = async (backupPath: string) => {
+    try {
+      const folderPath = backupPath.substring(0, backupPath.lastIndexOf('\\'));
+      await OpenFolder(folderPath);
+    } catch (error) {
+      handleError('Open Backup Folder', error);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -66,7 +79,7 @@ export function EmulatorRestoreTab({
       </div>
 
       {/* Plan entries */}
-      {hasEntries && (
+      {hasEntries ? (
         <div className="space-y-2">
           {restorePlan?.entries.map((entry) => (
             <div
@@ -74,11 +87,26 @@ export function EmulatorRestoreTab({
               className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm"
             >
               <p className="break-all font-medium">{entry.originalPath}</p>
-              <p className="mt-1 break-all text-xs text-muted-foreground">← {entry.backupPath}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="break-all text-xs text-muted-foreground">← {entry.backupPath}</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 shrink-0"
+                      onClick={() => handleOpenBackupFolder(entry.backupPath)}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Open backup location</TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

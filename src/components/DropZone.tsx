@@ -75,7 +75,9 @@ export function DropZone({
         setIsDragging(isOver);
 
         // Auto-hide if no events for 150ms (cursor left window)
-        hoverTimeoutRef.current = setTimeout(() => setIsDragging(false), 150);
+        hoverTimeoutRef.current = setTimeout(() => {
+          setIsDragging(false);
+        }, 150);
       },
 
       onDrop: (paths) => {
@@ -86,7 +88,7 @@ export function DropZone({
 
         const valid = filterFiles(paths);
         if (valid.length === 0) {
-          toast.error(rejectMessage || `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
+          toast.error(rejectMessage ?? `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
           return;
         }
 
@@ -118,7 +120,7 @@ export function DropZone({
       )}
     >
       {/* Drag-over overlay */}
-      {isDragging && (
+      {isDragging ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
           <div className="flex flex-col items-center gap-2 text-primary animate-in fade-in zoom-in-95 duration-150">
             <div className="rounded-full bg-primary/10 p-4">
@@ -127,7 +129,7 @@ export function DropZone({
             <p className="text-sm font-semibold">Drop to add files</p>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Default state */}
       <div
@@ -149,7 +151,7 @@ export function DropZone({
           {browseLabel}
         </Button>
 
-        {sublabel && <p className="text-xs text-muted-foreground/40">{sublabel}</p>}
+        {sublabel ? <p className="text-xs text-muted-foreground/40">{sublabel}</p> : null}
       </div>
     </div>
   );

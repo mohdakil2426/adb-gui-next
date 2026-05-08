@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import {
   Field,
   FieldContent,
@@ -163,10 +163,12 @@ export function MarketplaceSettings() {
                     <FieldTitle>{provider.label}</FieldTitle>
                     <FieldDescription>{provider.description}</FieldDescription>
                   </FieldContent>
-                  <Checkbox
+                  <Switch
                     aria-label={`Enable ${provider.label}`}
                     checked={activeProviders.includes(provider.id)}
-                    onCheckedChange={() => toggleProvider(provider.id)}
+                    onCheckedChange={() => {
+                      toggleProvider(provider.id);
+                    }}
                     disabled={activeProviders.includes(provider.id) && activeProviders.length <= 1}
                   />
                 </Field>
@@ -199,19 +201,21 @@ export function MarketplaceSettings() {
                     autoComplete="off"
                     spellCheck={false}
                     value={localClientId}
-                    onChange={(event) => setLocalClientId(event.target.value)}
+                    onChange={(event) => {
+                      setLocalClientId(event.target.value);
+                    }}
                     placeholder="Iv1.xxxxxxxxxxxxxxxx"
                     className="font-mono text-xs"
                   />
                 </Field>
 
-                {githubSession.user && (
+                {githubSession.user ? (
                   <div className="rounded-lg border bg-background/80 p-3 text-xs text-muted-foreground">
                     <div className="flex items-center gap-2 text-foreground">
                       <CheckCircle2 className="size-4" />
                       <span className="font-medium">{githubSession.user.login}</span>
                     </div>
-                    {githubSession.rateLimit && (
+                    {githubSession.rateLimit ? (
                       <p className="mt-2">
                         Remaining API requests:{' '}
                         <span className="font-medium text-foreground">
@@ -219,11 +223,11 @@ export function MarketplaceSettings() {
                         </span>{' '}
                         / {githubSession.rateLimit.limit}
                       </p>
-                    )}
+                    ) : null}
                   </div>
-                )}
+                ) : null}
 
-                {githubDeviceChallenge && isGithubAuthenticating && (
+                {githubDeviceChallenge && isGithubAuthenticating ? (
                   <div className="rounded-lg border bg-background/80 p-3 text-xs text-muted-foreground">
                     <p className="font-medium text-foreground">Verification code</p>
                     <p className="mt-1 font-mono text-sm tracking-[0.2em] text-foreground">
@@ -233,12 +237,12 @@ export function MarketplaceSettings() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() =>
+                        onClick={() => {
                           BrowserOpenURL(
                             githubDeviceChallenge.challenge.verificationUriComplete ??
                               githubDeviceChallenge.challenge.verificationUri,
-                          )
-                        }
+                          );
+                        }}
                       >
                         Open verification page
                       </Button>
@@ -247,7 +251,7 @@ export function MarketplaceSettings() {
                       </Button>
                     </div>
                   </div>
-                )}
+                ) : null}
 
                 <div className="flex flex-wrap gap-2">
                   {!githubSession.user ? (
@@ -286,7 +290,9 @@ export function MarketplaceSettings() {
                   <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
                   <Select
                     value={String(resultsPerProvider)}
-                    onValueChange={(value) => setResultsPerProvider(Number(value))}
+                    onValueChange={(value) => {
+                      setResultsPerProvider(Number(value));
+                    }}
                   >
                     <SelectTrigger id="results-per-provider" className="w-full">
                       <SelectValue />
@@ -308,7 +314,9 @@ export function MarketplaceSettings() {
                     id="github-pat"
                     name="github-pat"
                     value={localPat}
-                    onChange={(event) => setLocalPat(event.target.value)}
+                    onChange={(event) => {
+                      setLocalPat(event.target.value);
+                    }}
                     placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                     className="font-mono text-xs"
                     type="password"

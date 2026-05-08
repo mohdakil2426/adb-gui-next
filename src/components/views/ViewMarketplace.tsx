@@ -106,7 +106,9 @@ export function ViewMarketplace() {
                   <AppCard
                     key={`${app.source}-${app.packageName}`}
                     app={app}
-                    onSelect={() => openDetail(app)}
+                    onSelect={() => {
+                      openDetail(app);
+                    }}
                   />
                 ))}
               </div>
@@ -116,7 +118,9 @@ export function ViewMarketplace() {
                   <AppListItem
                     key={`${app.source}-${app.packageName}`}
                     app={app}
-                    onSelect={() => openDetail(app)}
+                    onSelect={() => {
+                      openDetail(app);
+                    }}
                   />
                 ))}
               </div>

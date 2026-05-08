@@ -46,9 +46,11 @@ function CopyableText({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
+    void navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => {
+        setCopied(false);
+      }, 2000);
     });
   }, [text]);
 
@@ -106,11 +108,11 @@ function parseBuildFingerprint(fp: string): { device: string; build: string } | 
   const parts = fp.split('/');
   if (parts.length < 3) return null;
   const brand = parts[0];
-  const androidVersion = parts[2]?.split(':')[1] || '';
-  const buildId = parts[3] || '';
+  const androidVersion = parts[2]?.split(':')[1] ?? '';
+  const buildId = parts[3] ?? '';
   return {
     device: `${brand} (Android ${androidVersion})`,
-    build: `${buildId}/${parts[4] || ''}`,
+    build: `${buildId}/${parts[4] ?? ''}`,
   };
 }
 
@@ -144,37 +146,37 @@ export function FileBannerDetails({
   outputPath,
 }: FileBannerDetailsProps) {
   const hasOtaPackageInfo =
-    metadata.preDevice || metadata.postBuild || metadata.otaType || metadata.otaVersion;
-  const hasPayloadProperties = metadata.fileHash || metadata.fileSize || metadata.metadataHash;
+    metadata.preDevice ?? metadata.postBuild ?? metadata.otaType ?? metadata.otaVersion;
+  const hasPayloadProperties = metadata.fileHash ?? metadata.fileSize ?? metadata.metadataHash;
   const buildInfo = metadata.postBuild ? parseBuildFingerprint(metadata.postBuild) : null;
 
   return (
-    <div className="space-y-4 pt-3 border-t border-border/50">
+    <div className="gap-4 pt-3 border-t border-border/50">
       {/* ═══════════════════════════════════════════════════════════════════
           OTA Package Info — the MOST important section for users.
           Sourced from META-INF/com/android/metadata inside the ZIP.
           ═══════════════════════════════════════════════════════════════════ */}
-      {hasOtaPackageInfo && (
-        <div className="space-y-2">
+      {hasOtaPackageInfo ? (
+        <div className="gap-2">
           <SectionHeader icon={Smartphone} title="OTA Package" />
-          <div className="space-y-1.5 pl-1">
-            {metadata.preDevice && <MetadataRow label="Device" value={metadata.preDevice} />}
-            {metadata.postSdkLevel && (
+          <div className="gap-1.5 pl-1">
+            {metadata.preDevice ? <MetadataRow label="Device" value={metadata.preDevice} /> : null}
+            {metadata.postSdkLevel ? (
               <MetadataRow label="Android" value={sdkToAndroid(metadata.postSdkLevel)} />
-            )}
-            {buildInfo && (
+            ) : null}
+            {buildInfo ? (
               <MetadataRow
                 label="Build"
                 value={<span className="font-mono text-xs">{metadata.postBuildIncremental}</span>}
               />
-            )}
-            {metadata.postBuild && (
+            ) : null}
+            {metadata.postBuild ? (
               <MetadataRow
                 label="Fingerprint"
                 value={<span className="font-mono text-xs">{metadata.postBuild}</span>}
               />
-            )}
-            {metadata.otaType && (
+            ) : null}
+            {metadata.otaType ? (
               <MetadataRow
                 label="OTA Type"
                 value={
@@ -190,81 +192,81 @@ export function FileBannerDetails({
                   </span>
                 }
               />
-            )}
-            {metadata.postSecurityPatchLevel && (
+            ) : null}
+            {metadata.postSecurityPatchLevel ? (
               <MetadataRow label="Security Patch" value={metadata.postSecurityPatchLevel} />
-            )}
-            {metadata.postTimestamp && (
+            ) : null}
+            {metadata.postTimestamp ? (
               <MetadataRow label="Build Date" value={formatTimestamp(metadata.postTimestamp)} />
-            )}
-            {metadata.otaVersion && (
+            ) : null}
+            {metadata.otaVersion ? (
               <MetadataRow
                 label="Version"
                 value={<span className="font-mono text-xs">{metadata.otaVersion}</span>}
               />
-            )}
+            ) : null}
             {metadata.wipe !== null && (
               <MetadataRow label="Wipes Data" value={metadata.wipe ? 'Yes' : 'No'} />
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Payload Properties — hash & size from payload_properties.txt */}
-      {hasPayloadProperties && (
-        <div className="space-y-2">
+      {hasPayloadProperties ? (
+        <div className="gap-2">
           <SectionHeader icon={FileKey} title="Payload Properties" />
-          <div className="space-y-1.5 pl-1">
+          <div className="gap-1.5 pl-1">
             {metadata.fileSize !== null && (
               <MetadataRow label="Payload Size" value={formatBytesNum(metadata.fileSize)} />
             )}
-            {metadata.fileHash && (
+            {metadata.fileHash ? (
               <MetadataRow label="File Hash" value={<CopyableText text={metadata.fileHash} />} />
-            )}
+            ) : null}
             {metadata.metadataSize !== null && (
               <MetadataRow label="Metadata Size" value={formatBytesNum(metadata.metadataSize)} />
             )}
-            {metadata.metadataHash && (
+            {metadata.metadataHash ? (
               <MetadataRow
                 label="Metadata Hash"
                 value={<CopyableText text={metadata.metadataHash} />}
               />
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* HTTP Section */}
-      <div className="space-y-2">
+      <div className="gap-2">
         <SectionHeader icon={Globe} title="HTTP" />
-        <div className="space-y-1.5 pl-1">
+        <div className="gap-1.5 pl-1">
           <MetadataRow label="Full URL" value={<CopyableText text={remoteUrl} />} />
           <MetadataRow label="File Size" value={formatBytesNum(metadata.contentLength)} />
-          {metadata.contentType && (
+          {metadata.contentType ? (
             <MetadataRow label="Content-Type" value={metadata.contentType} />
-          )}
-          {metadata.server && <MetadataRow label="Server" value={metadata.server} />}
-          {metadata.lastModified && (
+          ) : null}
+          {metadata.server ? <MetadataRow label="Server" value={metadata.server} /> : null}
+          {metadata.lastModified ? (
             <MetadataRow label="Last Modified" value={metadata.lastModified} />
-          )}
-          {metadata.etag && (
+          ) : null}
+          {metadata.etag ? (
             <MetadataRow
               label="ETag"
               value={<span className="font-mono text-xs">{metadata.etag}</span>}
             />
-          )}
+          ) : null}
         </div>
       </div>
 
       {/* ZIP Section — only shown for ZIP archives */}
-      {metadata.isZip && (
-        <div className="space-y-2">
+      {metadata.isZip ? (
+        <div className="gap-2">
           <SectionHeader icon={Archive} title="ZIP Archive" />
-          <div className="space-y-1.5 pl-1">
+          <div className="gap-1.5 pl-1">
             <MetadataRow label="Format" value="ZIP (payload.bin inside)" />
-            {metadata.zipCompressionMethod && (
+            {metadata.zipCompressionMethod ? (
               <MetadataRow label="Compression" value={metadata.zipCompressionMethod} />
-            )}
+            ) : null}
             {metadata.zipPayloadOffset !== null && (
               <MetadataRow
                 label="Payload Offset"
@@ -283,18 +285,18 @@ export function FileBannerDetails({
             )}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* OTA Manifest Section */}
-      <div className="space-y-2">
+      <div className="gap-2">
         <SectionHeader icon={Cpu} title="OTA Manifest" />
-        <div className="space-y-1.5 pl-1">
+        <div className="gap-1.5 pl-1">
           <MetadataRow label="CrAU Version" value={metadata.payloadVersion} />
           <MetadataRow label="Block Size" value={`${metadata.blockSize} bytes`} />
           <MetadataRow label="Update Type" value={formatUpdateType(metadata.minorVersion)} />
-          {metadata.securityPatchLevel && (
+          {metadata.securityPatchLevel ? (
             <MetadataRow label="Security Patch" value={metadata.securityPatchLevel} />
-          )}
+          ) : null}
           <MetadataRow label="Timestamp" value={formatTimestamp(metadata.maxTimestamp)} />
           <MetadataRow label="Partial Update" value={metadata.partialUpdate ? 'Yes' : 'No'} />
         </div>
@@ -302,9 +304,9 @@ export function FileBannerDetails({
 
       {/* Dynamic Groups Section — only shown if groups exist */}
       {metadata.dynamicGroups.length > 0 && (
-        <div className="space-y-2">
+        <div className="gap-2">
           <SectionHeader icon={Layers} title="Dynamic Groups" />
-          <div className="space-y-1.5 pl-1">
+          <div className="gap-1.5 pl-1">
             {metadata.dynamicGroups.map((group) => (
               <MetadataRow
                 key={group.name}
@@ -326,19 +328,19 @@ export function FileBannerDetails({
       )}
 
       {/* Extraction Config Section */}
-      <div className="space-y-2">
+      <div className="gap-2">
         <SectionHeader icon={Settings2} title="Extraction" />
-        <div className="space-y-1.5 pl-1">
+        <div className="gap-1.5 pl-1">
           <MetadataRow
             label="Mode"
             value={prefetch ? 'Prefetch (download first)' : 'Direct (HTTP range on-demand)'}
           />
-          {outputPath && (
+          {outputPath ? (
             <MetadataRow
               label="Output"
               value={<span className="font-mono text-xs break-all">{outputPath}</span>}
             />
-          )}
+          ) : null}
         </div>
       </div>
     </div>

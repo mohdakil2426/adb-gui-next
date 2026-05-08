@@ -123,7 +123,7 @@ function DropArea({
         disabled && 'pointer-events-none opacity-50',
       )}
     >
-      {isDragging && (
+      {isDragging ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
           <div className="flex flex-col items-center gap-2 text-primary animate-in fade-in zoom-in-95 duration-150">
             <div className="rounded-full bg-primary/10 p-4">
@@ -132,7 +132,7 @@ function DropArea({
             <p className="text-sm font-semibold">Drop to add file</p>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div
         className={cn(
@@ -224,7 +224,9 @@ export function ViewFlasher() {
         }
 
         setDragTarget(target);
-        hoverTimeoutRef.current = setTimeout(() => setDragTarget('none'), 150);
+        hoverTimeoutRef.current = setTimeout(() => {
+          setDragTarget('none');
+        }, 150);
       },
 
       onDrop: (paths) => {
@@ -322,7 +324,10 @@ export function ViewFlasher() {
       setQueuedAction(null);
 
       if (action.type === 'flash') {
-        void executeFlash(action.partition!, action.filePath, selectedFastbootSerial);
+        const partitionName = action.partition;
+        if (partitionName && selectedFastbootSerial) {
+          void executeFlash(partitionName, action.filePath, selectedFastbootSerial);
+        }
       } else {
         void executeSideload(action.filePath, selectedSideloadSerial);
       }
@@ -375,7 +380,9 @@ export function ViewFlasher() {
   const handleFlash = () => {
     const parsed = partitionSchema.safeParse(partition);
     if (!parsed.success) {
-      toast.error('Invalid partition name', { description: parsed.error.issues[0].message });
+      toast.error('Invalid partition name', {
+        description: parsed.error.issues[0]?.message ?? 'Unknown error',
+      });
       return;
     }
     if (!filePath) {
@@ -433,7 +440,7 @@ export function ViewFlasher() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <HardDrive className="h-5 w-5" />
+              <HardDrive className="size-5" />
               Flash Partition
             </CardTitle>
             <CardDescription>
@@ -448,7 +455,9 @@ export function ViewFlasher() {
                 list="partition-suggestions"
                 placeholder="e.g., boot, recovery, vendor_boot"
                 value={partition}
-                onChange={(e) => setPartition(e.target.value)}
+                onChange={(e) => {
+                  setPartition(e.target.value);
+                }}
                 disabled={isGlobalLoading}
               />
               <FieldDescription>
@@ -476,7 +485,7 @@ export function ViewFlasher() {
                 label="Image File"
                 path={filePath}
                 onSelect={handleSelectImageFile}
-                icon={<FileUp className="h-4 w-4" />}
+                icon={<FileUp className="size-4" />}
                 disabled={isGlobalLoading}
                 trailingAction={
                   <Tooltip>
@@ -490,7 +499,7 @@ export function ViewFlasher() {
                         }}
                         disabled={isGlobalLoading}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="size-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Clear selection</TooltipContent>
@@ -505,11 +514,11 @@ export function ViewFlasher() {
               onClick={handleFlash}
             >
               {loadingAction === 'flash' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
               ) : queuedAction?.type === 'flash' ? (
-                <Clock className="mr-2 h-4 w-4 shrink-0" />
+                <Clock className="mr-2 size-4 shrink-0" />
               ) : (
-                <FileUp className="mr-2 h-4 w-4 shrink-0" />
+                <FileUp className="mr-2 size-4 shrink-0" />
               )}
               {queuedAction?.type === 'flash' && loadingAction !== 'flash'
                 ? 'Waiting for Device...'
@@ -524,7 +533,7 @@ export function ViewFlasher() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
+              <Package className="size-5" />
               Recovery Sideload
             </CardTitle>
             <CardDescription>
@@ -548,7 +557,7 @@ export function ViewFlasher() {
                 path={sideloadFilePath}
                 onSelect={handleSelectSideloadFile}
                 placeholder="Select a flashable .zip file..."
-                icon={<Package className="h-4 w-4" />}
+                icon={<Package className="size-4" />}
                 disabled={isGlobalLoading}
                 trailingAction={
                   <Tooltip>
@@ -562,7 +571,7 @@ export function ViewFlasher() {
                         }}
                         disabled={isGlobalLoading}
                       >
-                        <X className="h-4 w-4" />
+                        <X className="size-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>Clear selection</TooltipContent>
@@ -581,11 +590,11 @@ export function ViewFlasher() {
               onClick={handleSideload}
             >
               {loadingAction === 'sideload' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
               ) : queuedAction?.type === 'sideload' ? (
-                <Clock className="mr-2 h-4 w-4 shrink-0" />
+                <Clock className="mr-2 size-4 shrink-0" />
               ) : (
-                <Package className="mr-2 h-4 w-4 shrink-0" />
+                <Package className="mr-2 size-4 shrink-0" />
               )}
               {queuedAction?.type === 'sideload' && loadingAction !== 'sideload'
                 ? 'Waiting for Device...'
@@ -599,7 +608,7 @@ export function ViewFlasher() {
       <Card className="border-destructive">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5" />
+            <AlertTriangle className="size-5" />
             Danger Zone
           </CardTitle>
           <CardDescription>
@@ -615,9 +624,9 @@ export function ViewFlasher() {
                 disabled={isGlobalLoading || !selectedFastbootSerial}
               >
                 {loadingAction === 'wipe' ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                  <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
                 ) : (
-                  <Trash2 className="mr-2 h-4 w-4 shrink-0" />
+                  <Trash2 className="mr-2 size-4 shrink-0" />
                 )}
                 Wipe Data (Factory Reset)
               </Button>

@@ -267,6 +267,7 @@ extract_payload(path) / list_payload_partitions_with_details(path)
 - **Shell command validation**: `validate_shell_command()` blocks metacharacters (`;`, `|`, `&`, `$`, backticks, etc.) from `run_shell_command`
 - **SSRF prevention**: `is_private_url()` blocks loopback, private, link-local, CGNAT, and unspecified IP ranges
 - **Path canonicalization**: `open_folder` verifies path exists, is a directory, and canonicalizes before opening
+- **Open folder for file paths**: When `backupPath` is a file (not directory), extract parent directory via `path.substring(0, path.lastIndexOf('\\'))` before calling `OpenFolder()` — the Rust command requires a directory
 - **TempDir RAII**: `tempfile::TempDir` auto-cleans on any exit path (APKS extraction)
 - **`sanitize_filename()` mandatory**: Centralized utility in `helpers.rs` to strip all path delimiters, control characters, and reserved names. Must be used on any user-provided string used as a filename (e.g., log prefixes).
 
@@ -381,9 +382,10 @@ onClick={() => {
 
 | Rule | Pattern |
 |------|---------|
-| CardTitle icons | `className="h-5 w-5"` — never `size={N}` prop |
-| Inline/list icons | `className="h-4 w-4 shrink-0"` |
+| CardTitle icons | `className="size-5"` — never `h-5 w-5` or `size={N}` prop |
+| Inline/list icons | `className="size-4 shrink-0"` — never `h-4 w-4` |
 | In-button icons | must include `shrink-0` |
+| Spacing between elements | Use `gap-*` — never `space-y-*` or `space-x-*` |
 | Form labels | always `<Label>` (shadcn), never raw `<label className="...">` |
 | Destructive dialogs | `buttonVariants({ variant: 'destructive' })` on `AlertDialogAction` (includes glow) |
 | Semantic colors | `text-success`, `bg-success` etc. — never `text-[var(--terminal-log-success)]` |
@@ -397,6 +399,8 @@ onClick={() => {
 | Animations | use MainLayout's `motion.div` wrapper — do NOT add per-view `animate-in` classes |
 | Links that open URL | `<button onClick={openLink}>` — never `<a href>` with `onClick` (double-open on Tauri) |
 | Searchable lists | `<Command shouldFilter={false}>` + `<CommandInput>` — never hand-roll search icon+input |
+| Icon buttons | must have `aria-label` for accessibility |
+| Semantic heading | views should use `<h1 className="sr-only">` for screen readers |
 
 ### 12. Layout & Containment (Viewport-Locked Desktop Pattern)
 
@@ -480,7 +484,7 @@ src/components/
 │   ├── AvdSwitcher.tsx      # DeviceSwitcher-style AVD picker pill + popover
 │   ├── EmulatorLaunchTab.tsx
 │   ├── EmulatorRootTab.tsx  # Smart gate: Launch/Cold Boot buttons when emulator is stopped
-│   ├── EmulatorRestoreTab.tsx
+│   ├── EmulatorRestoreTab.tsx    # includes open folder button (ExternalLink icon) to open backup location
 │   ├── RootPreflightStep.tsx # 10-check pre-flight checklist with inline fix actions (NEW)
 │   ├── RootSourceStep.tsx   # Stable-release or local-package source selection (w/ Magisk why text)
 │   ├── RootProgressStep.tsx # Root progress stage UI (beginner-friendly labels)
@@ -537,3 +541,43 @@ src/components/
 - **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.
 - **`overflow-x-hidden` not `overflow-hidden` on layout containers**: `overflow-hidden` terminates the scroll-ancestor chain (breaks sticky) and clips both axes. `overflow-x-hidden` clips only horizontal escapes, leaving vertical flex flow intact.
 - **No `position: sticky` in this app**: Header is pinned structurally as a `shrink-0` sibling to the `flex-1 overflow-y-auto` scroll area inside the bounded `SidebarInset`.
+
+### 13. ESLint Strict Mode & TypeScript Configuration
+
+The project uses ESLint with strict TypeScript-aware rules for production-grade code quality.
+
+**ESLint Configuration (`eslint.config.mjs`):**
+- `typescript-eslint` with `strictTypeChecked` + `stylisticTypeChecked` configs
+- Type-aware rules enabled (require `parserOptions.project: './tsconfig.json'`)
+- Test files have relaxed rules (disabled: no-unsafe-assignment, no-unsafe-return, no-empty-function, require-await)
+
+**TypeScript Configuration (`tsconfig.json`):**
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true
+  }
+}
+```
+
+**Key ESLint Rules (all errors):**
+- `@typescript-eslint/prefer-nullish-coalescing` — use `??` instead of `||`
+- `@typescript-eslint/no-floating-promises` — use `void` keyword for fire-and-forget promises
+- `@typescript-eslint/no-unsafe-*` — no implicit any types
+- `react-hooks/exhaustive-deps` — complete dependency arrays
+- `import/order` — organized import groups with newlines between
+
+**Common Fix Patterns:**
+- `||` → `??` for nullish coalescing
+- `.then(promise)` → `void promise` for ignored promises
+- `catch (e)` → `catch (e: unknown)` for safe catch variables
+- `h-4 w-4` → `size-4` for consistent icon sizing
+- `space-y-2` → `gap-2` for spacing

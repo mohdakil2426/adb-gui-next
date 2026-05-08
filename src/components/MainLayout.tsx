@@ -25,7 +25,7 @@ import { BottomPanel } from './BottomPanel';
 import { useLogStore } from '@/lib/logStore';
 import { useDeviceStore } from '@/lib/deviceStore';
 import { DeviceSwitcher } from './DeviceSwitcher';
-import { queryKeys, fetchAllDevices } from '@/lib/queries';
+import { queryKeys, fetchAllDevices, STALE_TIME } from '@/lib/queries';
 
 import { ThemeProvider } from './ThemeProvider';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -88,7 +88,8 @@ export function MainLayout() {
       setDevices(devices);
       return devices;
     },
-    refetchInterval: 3000,
+    refetchInterval: STALE_TIME.ALL_DEVICES,
+    staleTime: STALE_TIME.ALL_DEVICES,
   });
 
   const refreshDevices = useCallback(() => {
@@ -151,6 +152,7 @@ export function MainLayout() {
     let startTime: number | null = null;
 
     const tick = (timestamp: number) => {
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       if (startTime === null) {
         startTime = timestamp;
       }
@@ -167,7 +169,9 @@ export function MainLayout() {
 
     animationFrame = requestAnimationFrame(tick);
 
-    return () => cancelAnimationFrame(animationFrame);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
   }, [shouldReduceMotion]);
 
   useEffect(() => {
@@ -176,7 +180,9 @@ export function MainLayout() {
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const activeViewContent = VIEW_RENDERERS[activeView](activeView);
@@ -189,7 +195,7 @@ export function MainLayout() {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <MotionConfig reducedMotion="user">
         <AnimatePresence>
-          {isLoading && (
+          {isLoading ? (
             <motion.div
               key="welcome-screen"
               initial={{ opacity: 1 }}
@@ -199,7 +205,7 @@ export function MainLayout() {
             >
               <WelcomeScreen progress={progress} />
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
         <div
           className={cn(

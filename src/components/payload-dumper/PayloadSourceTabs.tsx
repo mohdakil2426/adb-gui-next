@@ -46,7 +46,9 @@ export function PayloadSourceTabs({
   return (
     <Tabs
       value={mode}
-      onValueChange={(v) => onModeChange(v as 'local' | 'remote')}
+      onValueChange={(v) => {
+        onModeChange(v as 'local' | 'remote');
+      }}
       className="w-full"
     >
       <TabsList className="grid w-full grid-cols-2">

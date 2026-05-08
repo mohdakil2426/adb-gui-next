@@ -61,7 +61,9 @@ function CheckRow({ check }: { check: backend.ReadinessCheck }) {
           </span>
           <span className="text-xs text-muted-foreground">{check.message}</span>
         </div>
-        {check.detail && <p className="mt-0.5 text-xs text-muted-foreground">{check.detail}</p>}
+        {check.detail ? (
+          <p className="mt-0.5 text-xs text-muted-foreground">{check.detail}</p>
+        ) : null}
       </div>
     </div>
   );
@@ -111,7 +113,7 @@ export function RootPreflightStep({
       )}
 
       {/* Inline action for recommended fix */}
-      {!isScanning && recommendedAction && (
+      {!isScanning && recommendedAction ? (
         <div className="rounded-lg border border-border bg-muted/30 p-4">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Recommended Action
@@ -179,10 +181,10 @@ export function RootPreflightStep({
             <p className="text-sm text-destructive">{recommendedAction.reason}</p>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Summary bar */}
-      {!isScanning && scan && (
+      {!isScanning && scan ? (
         <div
           className={cn(
             'rounded-md px-3 py-2 text-xs',
@@ -197,11 +199,11 @@ export function RootPreflightStep({
               : 'All checks passed. You are ready to root!'
             : 'One or more checks failed. Resolve the issues above before rooting.'}
         </div>
-      )}
+      ) : null}
 
       {/* Actions */}
       <div className="flex flex-col gap-2">
-        {scan && (
+        {scan ? (
           <Button
             id="preflight-continue-btn"
             className="w-full"
@@ -210,7 +212,7 @@ export function RootPreflightStep({
           >
             Continue to Source Selection →
           </Button>
-        )}
+        ) : null}
         <Button
           id="preflight-rescan-btn"
           variant="outline"

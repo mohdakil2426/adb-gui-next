@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import { QueryClient } from '@tanstack/react-query';
 
 // Mock @tauri-apps/api/core — IPC is unavailable in jsdom
 vi.mock('@tauri-apps/api/core', () => ({
@@ -20,3 +21,18 @@ vi.mock('@tauri-apps/plugin-log', () => ({
   debug: vi.fn(),
   trace: vi.fn(),
 }));
+
+// Global mock for useQueryClient
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false, gcTime: 0 },
+  },
+});
+
+vi.mock('@tanstack/react-query', async () => {
+  const actual = await vi.importActual('@tanstack/react-query');
+  return {
+    ...actual,
+    useQueryClient: () => queryClient,
+  };
+});

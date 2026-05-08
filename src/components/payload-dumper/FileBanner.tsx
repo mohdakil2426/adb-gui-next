@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   FileArchive,
   FolderOutput,
@@ -17,7 +18,7 @@ interface FileBannerProps {
   payloadPath: string;
   isRemote: boolean;
   remoteUrl: string;
-  partitions: Array<{ name: string; size: number }>;
+  partitions: { name: string; size: number }[];
   totalPayloadSize: number;
   effectiveOutputPath: string;
   outputDir: string;
@@ -37,7 +38,7 @@ interface FileBannerProps {
  * File info banner showing payload details, partition count, and action buttons.
  * Zone 1 of the loaded state layout.
  */
-export function FileBanner({
+export const FileBanner = memo(function FileBanner({
   payloadPath,
   isRemote,
   remoteUrl,
@@ -123,7 +124,7 @@ export function FileBanner({
               {effectiveOutputPath || 'Select Output Directory'}
             </TooltipContent>
           </Tooltip>
-          {effectiveOutputPath && (
+          {effectiveOutputPath ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -137,7 +138,7 @@ export function FileBanner({
               </TooltipTrigger>
               <TooltipContent side="bottom">Open Output Folder</TooltipContent>
             </Tooltip>
-          )}
+          ) : null}
         </div>
       </div>
       <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
@@ -146,7 +147,7 @@ export function FileBanner({
             {partitions.length} partitions &bull; {formatBytesNum(totalPayloadSize)} total
           </span>
         )}
-        {effectiveOutputPath && (
+        {effectiveOutputPath ? (
           <>
             <span>&bull;</span>
             <div className="flex-1 min-w-0">
@@ -155,15 +156,15 @@ export function FileBanner({
                 title={effectiveOutputPath}
               >
                 {getFileName(effectiveOutputPath)}
-                {outputDir && !outputPath && ' (auto)'}
+                {outputDir && !outputPath ? ' (auto)' : null}
               </p>
             </div>
           </>
-        )}
+        ) : null}
       </div>
 
       {/* Collapsible details toggle — only for remote payloads with metadata */}
-      {isRemote && remoteMetadata && (
+      {isRemote && remoteMetadata ? (
         <>
           <button
             onClick={onToggleDetails}
@@ -183,7 +184,7 @@ export function FileBanner({
           </button>
 
           <AnimatePresence initial={false}>
-            {isDetailsOpen && (
+            {isDetailsOpen ? (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
@@ -198,10 +199,10 @@ export function FileBanner({
                   outputPath={effectiveOutputPath}
                 />
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </>
-      )}
+      ) : null}
     </div>
   );
-}
+});

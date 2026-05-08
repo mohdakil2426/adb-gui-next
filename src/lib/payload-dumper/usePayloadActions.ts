@@ -181,7 +181,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
             setRemoteMetadata(metadata);
             debugLog('Remote payload metadata loaded');
           })
-          .catch((err) => {
+          .catch((err: unknown) => {
             debugLog(`Metadata fetch failed (non-blocking): ${err}`);
             useLogStore.getState().addLog(`Metadata fetch failed: ${err}`, 'warning');
           });
@@ -215,6 +215,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       if (paths.length === 0) return;
 
       const filePath = paths[0];
+      if (!filePath) return;
       await CleanupPayloadCache();
       setPayloadPath(filePath);
       toast.success('Payload file selected');
@@ -338,7 +339,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
             'success',
           );
       } else {
-        setErrorMessage(result.error || 'Unknown error');
+        setErrorMessage(result.error ?? 'Unknown error');
         setStatus('error');
         setExtractingPartitions(new Set());
         clearPartitionProgress();
@@ -379,7 +380,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setEstimatedSize(null);
     setRemoteMetadata(null);
     cancelLoadingRef.current = false;
-    useLogStore.getState().addLog('Payload Dumper reset', 'info');
+    useLogStore.getState().addLog('Dumper reset', 'info');
   }, [
     reset,
     setMode,

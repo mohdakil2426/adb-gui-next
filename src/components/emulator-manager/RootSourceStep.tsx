@@ -45,7 +45,7 @@ export function RootSourceStep({
     FetchMagiskStableRelease()
       .then((release) => {
         setFetchState({ status: 'ok', release });
-        if (!source || source.type !== 'local') {
+        if (source?.type !== 'local') {
           onSourceChange({ type: 'stable' });
         }
       })
@@ -171,7 +171,9 @@ export function RootSourceStep({
                   ? 'border-primary bg-primary/10'
                   : 'border-border hover:border-primary/40',
               )}
-              onClick={() => onSourceChange({ type: 'stable' })}
+              onClick={() => {
+                onSourceChange({ type: 'stable' });
+              }}
             >
               <div className="flex flex-col gap-0.5">
                 <div className="flex items-center gap-2">
@@ -186,14 +188,14 @@ export function RootSourceStep({
                   {fetchState.release.assetName} · {formatFileSize(fetchState.release.size)} ·{' '}
                   {formatDisplayDate(fetchState.release.publishedAt)}
                 </p>
-                {fetchState.release.sha256 && (
+                {fetchState.release.sha256 ? (
                   <p
                     className="mt-0.5 max-w-xs truncate font-mono text-[10px] text-muted-foreground/60"
                     title={`sha256: ${fetchState.release.sha256}`}
                   >
                     sha256: {fetchState.release.sha256.slice(0, 16)}…
                   </p>
-                )}
+                ) : null}
               </div>
 
               {source?.type === 'stable' && (

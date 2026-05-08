@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ interface AppCardProps {
   onSelect: () => void;
 }
 
-export function AppCard({ app, onSelect }: AppCardProps) {
+export const AppCard = memo(function AppCard({ app, onSelect }: AppCardProps) {
   const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
 
   const handleInstall = async (event: React.MouseEvent) => {
@@ -29,7 +29,9 @@ export function AppCard({ app, onSelect }: AppCardProps) {
       setInstallState('running');
       await installMarketplacePackage(app.name, app.downloadUrl);
       setInstallState('done');
-      setTimeout(() => setInstallState('idle'), 2000);
+      setTimeout(() => {
+        setInstallState('idle');
+      }, 2000);
     } catch {
       setInstallState('idle');
     }
@@ -64,7 +66,7 @@ export function AppCard({ app, onSelect }: AppCardProps) {
             )}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1">
+          <div className="min-w-0 flex-1 gap-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <h3 className="truncate text-sm font-semibold leading-none">{app.name}</h3>
               <ProviderBadge source={app.source} />
@@ -80,7 +82,7 @@ export function AppCard({ app, onSelect }: AppCardProps) {
             </p>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-4 pt-2">
+        <CardContent className="gap-4 p-4 pt-2">
           <div className="flex items-start gap-3">
             <div className="min-w-0 flex-1">
               <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
@@ -96,19 +98,19 @@ export function AppCard({ app, onSelect }: AppCardProps) {
                 {formatRating(app.rating)}
               </span>
             )}
-            {downloadLabel && <span>{downloadLabel}</span>}
-            {app.language && (
+            {downloadLabel ? <span>{downloadLabel}</span> : null}
+            {app.language ? (
               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
                 {app.language}
               </span>
-            )}
-            {app.updatedAt && <span>{formatDisplayDate(app.updatedAt)}</span>}
-            {!app.installable && app.repoUrl && (
+            ) : null}
+            {app.updatedAt ? <span>{formatDisplayDate(app.updatedAt)}</span> : null}
+            {!app.installable && app.repoUrl ? (
               <span className="inline-flex items-center gap-1">
                 <ExternalLink className="size-3.5" />
                 Repo only
               </span>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center justify-between gap-3">
@@ -151,4 +153,4 @@ export function AppCard({ app, onSelect }: AppCardProps) {
       </CardFooter>
     </Card>
   );
-}
+});

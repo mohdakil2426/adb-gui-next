@@ -61,21 +61,25 @@ export function RemoteUrlPanel({
               autoComplete="off"
               placeholder="https://example.com/ota.zip"
               value={url}
-              onChange={(e) => onUrlChange(e.target.value)}
+              onChange={(e) => {
+                onUrlChange(e.target.value);
+              }}
               className="flex-1 min-w-0"
               disabled={disabled}
             />
-            {url && !disabled && (
+            {url && !disabled ? (
               <InputGroupAddon align="inline-end">
                 <InputGroupButton
                   size="icon-xs"
                   aria-label="Clear URL"
-                  onClick={() => onUrlChange('')}
+                  onClick={() => {
+                    onUrlChange('');
+                  }}
                 >
                   <X className="h-4 w-4" />
                 </InputGroupButton>
               </InputGroupAddon>
-            )}
+            ) : null}
           </InputGroup>
         </Field>
       </FieldGroup>
@@ -106,7 +110,9 @@ export function RemoteUrlPanel({
           <Switch
             id="prefetch"
             checked={prefetch}
-            onCheckedChange={(checked) => onPrefetchChange(checked === true)}
+            onCheckedChange={(checked) => {
+              onPrefetchChange(checked);
+            }}
             disabled={disabled}
           />
           <FieldContent>
@@ -122,22 +128,22 @@ export function RemoteUrlPanel({
           variant={isError ? 'destructive' : 'default'}
           className={isReady ? 'border-success/50 text-success' : undefined}
         >
-          {isChecking && (
+          {isChecking ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               <AlertTitle>Checking connection...</AlertTitle>
             </>
-          )}
-          {isReady && (
+          ) : null}
+          {isReady ? (
             <>
               <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Range requests supported</AlertTitle>
-              {estimatedSize && (
+              {estimatedSize ? (
                 <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
-              )}
+              ) : null}
             </>
-          )}
-          {isError && (
+          ) : null}
+          {isError ? (
             <>
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Connection check failed</AlertTitle>
@@ -145,7 +151,7 @@ export function RemoteUrlPanel({
                 Server does not support range requests or URL is invalid
               </AlertDescription>
             </>
-          )}
+          ) : null}
         </Alert>
       )}
     </div>

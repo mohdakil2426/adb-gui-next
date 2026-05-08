@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useDeviceStore } from '@/lib/deviceStore';
 import { getNickname } from '@/lib/nicknameStore';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
@@ -24,9 +25,13 @@ interface DeviceSwitcherProps {
 }
 
 export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps) {
-  const devices = useDeviceStore((state) => state.devices);
-  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
-  const setSelectedSerial = useDeviceStore((state) => state.setSelectedSerial);
+  const { devices, selectedSerial, setSelectedSerial } = useDeviceStore(
+    useShallow((state) => ({
+      devices: state.devices,
+      selectedSerial: state.selectedSerial,
+      setSelectedSerial: state.setSelectedSerial,
+    })),
+  );
   const [isOpen, setIsOpen] = useState(false);
   const [editingSerial, setEditingSerial] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -34,7 +39,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
 
   const selectedDevice = devices.find((d) => d.serial === selectedSerial);
   const displayName = selectedDevice
-    ? getNickname(selectedDevice.serial) || selectedDevice.serial
+    ? (getNickname(selectedDevice.serial) ?? selectedDevice.serial)
     : null;
   const statusConfig = selectedDevice ? getStatusConfig(selectedDevice.status) : null;
 
@@ -133,22 +138,24 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
               <div className="flex flex-col gap-0.5" key={nicknameVersion}>
                 {devices.map((device) => {
                   const nickname = getNickname(device.serial);
-                  const name = nickname || device.serial;
+                  const name = nickname ?? device.serial;
                   const subtitle = nickname ? device.serial : undefined;
                   const config = getStatusConfig(device.status);
                   const isSelected = device.serial === selectedSerial;
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={device.serial}
-                      role="button"
                       tabIndex={0}
                       className={cn(
                         'group/device relative flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm cursor-pointer',
                         'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                         isSelected && 'bg-accent',
                       )}
-                      onClick={() => handleSelect(device.serial)}
+                      onClick={() => {
+                        handleSelect(device.serial);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
@@ -184,11 +191,11 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                             <Pencil className="size-3" aria-hidden="true" />
                           </Button>
                         </div>
-                        {subtitle && (
+                        {subtitle ? (
                           <div className="truncate text-xs text-muted-foreground font-mono">
                             {subtitle}
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Status badge */}
@@ -198,7 +205,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                       >
                         {config.label}
                       </Badge>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -211,7 +218,9 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
         isOpen={isEditing}
         onOpenChange={setIsEditing}
         serial={editingSerial}
-        onSaved={() => setNicknameVersion((v) => v + 1)}
+        onSaved={() => {
+          setNicknameVersion((v) => v + 1);
+        }}
       />
     </>
   );

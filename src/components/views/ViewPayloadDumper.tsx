@@ -81,7 +81,7 @@ export function ViewPayloadDumper() {
           </div>
         </div>
         <div>
-          <h1 className="text-xl md:text-2xl font-bold">Payload Dumper</h1>
+          <h1 className="sr-only">Payload Dumper</h1>
           <p className="text-sm text-muted-foreground">
             Extract partition images from Android OTA, OnePlus OPS, and Oppo OFP files
           </p>
@@ -140,7 +140,9 @@ export function ViewPayloadDumper() {
                 onOpenOutputFolder={actions.handleOpenOutputFolder}
                 remoteMetadata={remoteMetadata}
                 isDetailsOpen={isDetailsOpen}
-                onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
+                onToggleDetails={() => {
+                  setIsDetailsOpen((prev) => !prev);
+                }}
                 prefetch={prefetch}
               />
 
@@ -153,7 +155,9 @@ export function ViewPayloadDumper() {
                 isExtractionActive={isExtractionActive}
                 status={status}
                 onToggle={togglePartition}
-                onToggleAll={() => toggleAll(!allSelected)}
+                onToggleAll={() => {
+                  toggleAll(!allSelected);
+                }}
               />
 
               {/* Zone 3: Action Footer */}

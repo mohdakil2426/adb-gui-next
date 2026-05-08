@@ -29,7 +29,7 @@ function SectionHeader({
           <Icon className="size-4 text-muted-foreground" aria-hidden="true" />
           <span>{title}</span>
         </div>
-        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
     </div>
   );
@@ -100,7 +100,9 @@ export function MarketplaceEmptyState({
                 variant="outline"
                 size="sm"
                 className="h-8 rounded-full"
-                onClick={() => onQuickSearch(entry)}
+                onClick={() => {
+                  onQuickSearch(entry);
+                }}
               >
                 {entry}
               </Button>
@@ -112,7 +114,9 @@ export function MarketplaceEmptyState({
                 <AppCard
                   key={`${app.source}-${app.packageName}`}
                   app={app}
-                  onSelect={() => openDetail(app)}
+                  onSelect={() => {
+                    openDetail(app);
+                  }}
                 />
               ))}
             </div>
@@ -133,7 +137,9 @@ export function MarketplaceEmptyState({
               variant="outline"
               size="sm"
               className="h-8 rounded-full"
-              onClick={() => onQuickSearch(collection)}
+              onClick={() => {
+                onQuickSearch(collection);
+              }}
             >
               {collection}
             </Button>
@@ -159,7 +165,9 @@ export function MarketplaceEmptyState({
                   <AppCard
                     key={`${app.source}-${app.packageName}`}
                     app={app}
-                    onSelect={() => openDetail(app)}
+                    onSelect={() => {
+                      openDetail(app);
+                    }}
                   />
                 ))}
               </div>
@@ -182,7 +190,9 @@ export function MarketplaceEmptyState({
                   <AppCard
                     key={`${app.source}-${app.packageName}`}
                     app={app}
-                    onSelect={() => openDetail(app)}
+                    onSelect={() => {
+                      openDetail(app);
+                    }}
                   />
                 ))}
               </div>
@@ -205,7 +215,7 @@ export function MarketplaceEmptyState({
                   : 'Sign in with GitHub to improve rate limits and future GitHub-powered discovery features.'
               }
             />
-            {githubSession.rateLimit && (
+            {githubSession.rateLimit ? (
               <div className="rounded-lg border bg-background/70 p-3 text-xs text-muted-foreground">
                 <p>
                   API remaining:{' '}
@@ -215,7 +225,7 @@ export function MarketplaceEmptyState({
                   / {githubSession.rateLimit.limit}
                 </p>
               </div>
-            )}
+            ) : null}
             <Separator />
             <Button
               className="w-full"

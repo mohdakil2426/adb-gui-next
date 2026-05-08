@@ -62,7 +62,7 @@ export function AppDetailView() {
       .then((nextDetail) => {
         if (!cancelled) setDetail(nextDetail);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         if (!cancelled) handleError('Marketplace Detail', error);
       })
       .finally(() => {
@@ -90,7 +90,9 @@ export function AppDetailView() {
       setPrimaryInstallState('running');
       await installMarketplacePackage(displayName, effectiveDownloadUrl);
       setPrimaryInstallState('done');
-      setTimeout(() => setPrimaryInstallState('idle'), 2000);
+      setTimeout(() => {
+        setPrimaryInstallState('idle');
+      }, 2000);
     } catch {
       setPrimaryInstallState('idle');
     }
@@ -153,13 +155,13 @@ export function AppDetailView() {
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <ProviderBadge source={selectedApp.source} />
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                {detail?.repoStars && <span>★ {detail.repoStars.toLocaleString()}</span>}
-                {downloadsLabel && (
+                {detail?.repoStars ? <span>★ {detail.repoStars.toLocaleString()}</span> : null}
+                {downloadsLabel ? (
                   <>
                     <span>•</span>
                     <span>{downloadsLabel} Downloads</span>
                   </>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
@@ -190,16 +192,16 @@ export function AppDetailView() {
         </div>
       </div>
 
-      {isLoadingDetail && (
+      {isLoadingDetail ? (
         <div className="flex items-center gap-3">
           <Skeleton className="size-4 rounded-full" />
           <Skeleton className="h-4 w-56" />
         </div>
-      )}
+      ) : null}
 
       {/* Screenshots Carousel */}
-      {detail?.screenshots && detail.screenshots.length > 0 && (
-        <section className="space-y-4">
+      {detail?.screenshots && detail.screenshots.length > 0 ? (
+        <section className="gap-4">
           <div className="custom-scroll flex snap-x gap-4 overflow-x-auto pb-4">
             {detail.screenshots.map((url, i) => (
               <img
@@ -214,39 +216,39 @@ export function AppDetailView() {
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Two Column Layout for Specs/Description */}
       <div className="grid gap-12 lg:grid-cols-[1fr_300px]">
         {/* Main Content Column */}
-        <div className="min-w-0 space-y-10">
-          <section className="space-y-4">
+        <div className="min-w-0 gap-10">
+          <section className="gap-4">
             <h2 className="text-xl font-semibold tracking-tight">About this app</h2>
             <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed text-muted-foreground">
-              {detail?.description ||
-                selectedApp.summary ||
+              {detail?.description ??
+                selectedApp.summary ??
                 'No description is available for this app yet.'}
             </div>
           </section>
 
-          {detail?.changelog && (
-            <section className="space-y-4">
+          {detail?.changelog ? (
+            <section className="gap-4">
               <h2 className="text-xl font-semibold tracking-tight">What's New</h2>
               <div className="whitespace-pre-wrap rounded-xl border bg-muted/10 p-5 text-sm leading-relaxed text-muted-foreground">
                 {detail.changelog}
               </div>
             </section>
-          )}
+          ) : null}
         </div>
 
         {/* Sidebar Info Column */}
-        <div className="space-y-8">
-          <section className="space-y-4">
+        <div className="gap-8">
+          <section className="gap-4">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               App Information
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-              <MetadataItem label="Version" value={detail?.version || selectedApp.version} />
+              <MetadataItem label="Version" value={detail?.version ?? selectedApp.version} />
               <MetadataItem
                 label="Updated"
                 value={detail?.updatedAt ? formatDisplayDate(detail.updatedAt) : null}
@@ -254,12 +256,15 @@ export function AppDetailView() {
               <MetadataItem label="License" value={detail?.license} />
               <MetadataItem label="Author" value={detail?.author} />
             </div>
-            {(detail?.repoUrl ?? selectedApp.repoUrl) && (
+            {(detail?.repoUrl ?? selectedApp.repoUrl) ? (
               <div className="pt-2">
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => BrowserOpenURL(detail?.repoUrl ?? selectedApp.repoUrl!)}
+                  onClick={() => {
+                    const url = detail?.repoUrl ?? selectedApp.repoUrl;
+                    if (url) BrowserOpenURL(url);
+                  }}
                 >
                   {selectedApp.source === 'GitHub' ? (
                     <GitBranch data-icon="inline-start" aria-hidden="true" />
@@ -269,7 +274,7 @@ export function AppDetailView() {
                   Open Repository
                 </Button>
               </div>
-            )}
+            ) : null}
             <Button
               variant="ghost"
               className="mt-2 w-full text-muted-foreground hover:text-foreground"
@@ -288,12 +293,12 @@ export function AppDetailView() {
             </Button>
           </section>
 
-          {detail?.versions && detail.versions.length > 0 && (
-            <section className="space-y-4">
+          {detail?.versions && detail.versions.length > 0 ? (
+            <section className="gap-4">
               <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Recent Versions
               </h3>
-              <div className="space-y-3">
+              <div className="gap-3">
                 {detail.versions.slice(0, 5).map((version) => {
                   const isInstallingVersion = activeVersionName === version.versionName;
                   return (
@@ -303,13 +308,13 @@ export function AppDetailView() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="truncate text-sm font-medium">{version.versionName}</span>
-                        {version.publishedAt && (
+                        {version.publishedAt ? (
                           <span className="text-xs text-muted-foreground">
                             {formatDisplayDate(version.publishedAt)}
                           </span>
-                        )}
+                        ) : null}
                       </div>
-                      {version.downloadUrl && (
+                      {version.downloadUrl ? (
                         <div className="mt-1 flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
                             {version.size != null ? formatFileSize(version.size) : 'APK'}
@@ -318,9 +323,12 @@ export function AppDetailView() {
                             variant="secondary"
                             size="sm"
                             className="h-7 px-3 text-xs"
-                            onClick={() =>
-                              handleVersionInstall(version.versionName, version.downloadUrl!)
-                            }
+                            onClick={() => {
+                              const url = version.downloadUrl;
+                              if (url)
+                                // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                                handleVersionInstall(version.versionName, url);
+                            }}
                             disabled={isInstallingVersion || primaryInstallState === 'running'}
                           >
                             {isInstallingVersion ? (
@@ -335,13 +343,13 @@ export function AppDetailView() {
                             Install
                           </Button>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
             </section>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

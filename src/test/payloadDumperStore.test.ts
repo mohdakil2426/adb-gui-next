@@ -35,7 +35,7 @@ describe('payloadDumperStore', () => {
     act(() => {
       usePayloadDumperStore.getState().togglePartition(0);
     });
-    expect(usePayloadDumperStore.getState().partitions[0].selected).toBe(false);
+    expect(usePayloadDumperStore.getState().partitions[0]?.selected).toBe(false);
   });
 
   it('toggleAll selects all partitions', () => {
@@ -76,7 +76,7 @@ describe('payloadDumperStore', () => {
       usePayloadDumperStore.getState();
     expect(completedPartitions.has('boot')).toBe(true);
     expect(extractingPartitions.has('boot')).toBe(false);
-    expect(partitions[0].selected).toBe(false);
+    expect(partitions[0]?.selected).toBe(false);
   });
 
   it('updatePartitionProgress computes percentage correctly', () => {

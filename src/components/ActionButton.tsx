@@ -66,7 +66,7 @@ export function ActionButton({
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
             className={tall ? '' : 'shrink-0'}
           >
-            <Check className={cn('text-success', tall ? 'h-5 w-5' : 'h-4 w-4 mr-2')} />
+            <Check className={cn('text-success', tall ? 'size-5' : 'size-4 mr-2')} />
           </motion.div>
         ) : isLoading ? (
           <motion.div
@@ -76,7 +76,7 @@ export function ActionButton({
             exit={{ opacity: 0 }}
             className={tall ? '' : 'shrink-0'}
           >
-            <Loader2 className={cn('animate-spin', tall ? 'h-5 w-5' : 'h-4 w-4 mr-2')} />
+            <Loader2 className={cn('animate-spin', tall ? 'size-5' : 'size-4 mr-2')} />
           </motion.div>
         ) : (
           <motion.div
@@ -86,7 +86,7 @@ export function ActionButton({
             exit={{ opacity: 0 }}
             className={tall ? '' : 'shrink-0'}
           >
-            <Icon className={cn(tall ? 'h-5 w-5' : 'h-4 w-4 mr-2')} />
+            <Icon className={cn(tall ? 'size-5' : 'size-4 mr-2')} />
           </motion.div>
         )}
       </AnimatePresence>

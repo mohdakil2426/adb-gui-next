@@ -115,12 +115,14 @@ function ContextMenuItem({
   );
 }
 
+type CheckboxItemProps = React.ComponentProps<typeof ContextMenuPrimitive.CheckboxItem>;
+
 function ContextMenuCheckboxItem({
   className,
   children,
-  checked,
+  checked = false,
   ...props
-}: React.ComponentProps<typeof ContextMenuPrimitive.CheckboxItem>) {
+}: CheckboxItemProps) {
   return (
     <ContextMenuPrimitive.CheckboxItem
       data-slot="context-menu-checkbox-item"

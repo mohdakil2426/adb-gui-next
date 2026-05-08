@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { PartitionRow } from './PartitionRow';
 
 interface PartitionTableProps {
-  partitions: Array<{ name: string; size: number; selected: boolean }>;
+  partitions: { name: string; size: number; selected: boolean }[];
   extractingPartitions: Set<string>;
   completedPartitions: Set<string>;
   partitionProgress: Map<string, { current: number; total: number; percentage: number }>;
@@ -47,7 +47,7 @@ export function PartitionTable({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs text-muted-foreground">
           {selectedCount}/{partitions.length} selected
-          {hasCompletedPartitions && ` \u2022 ${completedPartitions.size} extracted`}
+          {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
           {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
         </span>
         <Button
@@ -74,7 +74,7 @@ export function PartitionTable({
         >
           <span></span>
           <span>Partition</span>
-          {isExtractionActive && <span className="text-center">Progress</span>}
+          {isExtractionActive ? <span className="text-center">Progress</span> : null}
           <span className="text-right">Size</span>
         </div>
 

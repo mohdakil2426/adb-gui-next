@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +12,11 @@ interface CheckboxItemProps {
  * A consistent checkbox indicator used in virtualised list items
  * (AppManager package list, PayloadDumper partition list).
  */
-export function CheckboxItem({ checked, disabled = false, className }: CheckboxItemProps) {
+export const CheckboxItem = memo(function CheckboxItem({
+  checked,
+  disabled = false,
+  className,
+}: CheckboxItemProps) {
   return (
     <div
       className={cn(
@@ -24,7 +29,7 @@ export function CheckboxItem({ checked, disabled = false, className }: CheckboxI
         className,
       )}
     >
-      {checked && <Check className="h-3 w-3 text-primary-foreground" />}
+      {checked ? <Check className="h-3 w-3 text-primary-foreground" /> : null}
     </div>
   );
-}
+});

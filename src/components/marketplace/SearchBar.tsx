@@ -47,7 +47,9 @@ export function SearchBar({
     };
 
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      window.removeEventListener('keydown', handler);
+    };
   }, []);
 
   return (
@@ -58,18 +60,25 @@ export function SearchBar({
           ref={inputRef}
           value={value}
           placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={(event) => {
+            onChange(event.target.value);
+          }}
           className="h-11 pl-9 pr-28"
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-          {isSearching && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+          {isSearching ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
 
           {searchHistory.length > 0 && (
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="size-7 text-muted-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-muted-foreground"
+                      aria-label="Recent searches"
+                    >
                       <Clock3 className="size-3.5" />
                     </Button>
                   </PopoverTrigger>
@@ -86,7 +95,9 @@ export function SearchBar({
                       key={entry}
                       variant="ghost"
                       className="h-8 w-full justify-start px-2 text-sm"
-                      onClick={() => onSelectHistory(entry)}
+                      onClick={() => {
+                        onSelectHistory(entry);
+                      }}
                     >
                       <Clock3 className="mr-2 size-3.5 text-muted-foreground" />
                       <span className="truncate">{entry}</span>

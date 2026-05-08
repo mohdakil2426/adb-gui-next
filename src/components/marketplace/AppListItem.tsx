@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatRating } from '@/lib/utils';
@@ -13,7 +13,7 @@ interface AppListItemProps {
   onSelect: () => void;
 }
 
-export function AppListItem({ app, onSelect }: AppListItemProps) {
+export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListItemProps) {
   const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
 
   const handleInstall = async (event: React.MouseEvent) => {
@@ -28,7 +28,9 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
       setInstallState('running');
       await installMarketplacePackage(app.name, app.downloadUrl);
       setInstallState('done');
-      setTimeout(() => setInstallState('idle'), 2000);
+      setTimeout(() => {
+        setInstallState('idle');
+      }, 2000);
     } catch {
       setInstallState('idle');
     }
@@ -61,7 +63,7 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
           )}
         </div>
 
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 gap-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="truncate text-sm font-medium">{app.name}</span>
             <ProviderBadge source={app.source} />
@@ -83,12 +85,12 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
                 {formatRating(app.rating)}
               </span>
             )}
-            {downloadsLabel && <span>{downloadsLabel}</span>}
-            {app.language && (
+            {downloadsLabel ? <span>{downloadsLabel}</span> : null}
+            {app.language ? (
               <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
                 {app.language}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
       </button>
@@ -122,4 +124,4 @@ export function AppListItem({ app, onSelect }: AppListItemProps) {
       </Button>
     </div>
   );
-}
+});

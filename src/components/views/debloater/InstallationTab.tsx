@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 import {
@@ -41,6 +42,7 @@ import { handleError } from '@/lib/errorHandler';
 import { useLogStore } from '@/lib/logStore';
 import { useDeviceStore } from '@/lib/deviceStore';
 import { getFileName } from '@/lib/utils';
+import { invalidatePackages } from '@/lib/queries';
 import { Filter, FileUp, Loader2, Package, RefreshCw, Trash2 } from 'lucide-react';
 import type { backend } from '@/lib/desktop/models';
 
@@ -61,6 +63,7 @@ export function InstallationTab() {
   const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
   const [isUninstalling, setIsUninstalling] = useState(false);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
+  const queryClient = useQueryClient();
 
   const loadPackages = useCallback(async () => {
     if (!selectedSerial) {
@@ -140,12 +143,13 @@ export function InstallationTab() {
     let fail = 0;
     for (let i = 0; i < apkPaths.length; i++) {
       const path = apkPaths[i];
+      if (!path) continue;
       const name = getFileName(path);
       toast.loading(`Installing (${i + 1}/${apkPaths.length}): ${name}`, { id: toastId });
       setInstallProgress({ current: i + 1, total: apkPaths.length });
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       try {
-        await InstallPackage(path, selectedSerial);
+        await InstallPackage(path, selectedSerial ?? '');
         ok++;
         useLogStore.getState().addLog(`Installed APK: ${name}`, 'success');
       } catch (error) {
@@ -155,6 +159,7 @@ export function InstallationTab() {
     }
     if (fail === 0) toast.success(`Successfully installed ${ok} APK(s)`, { id: toastId });
     else toast.warning(`Finished: ${ok} installed, ${fail} failed`, { id: toastId });
+    if (ok > 0) invalidatePackages(queryClient);
     setApkPaths([]);
     setIsInstalling(false);
     setInstallProgress(null);
@@ -181,6 +186,7 @@ export function InstallationTab() {
     }
     if (fail === 0) toast.success(`Successfully uninstalled ${ok} package(s)`, { id: toastId });
     else toast.warning(`Finished: ${ok} uninstalled, ${fail} failed`, { id: toastId });
+    if (ok > 0) invalidatePackages(queryClient);
     setSelectedPackages(new Set());
     await loadPackages();
     setIsUninstalling(false);
@@ -243,7 +249,9 @@ export function InstallationTab() {
                       variant="ghost"
                       size="icon"
                       className="size-6 opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-transparent"
-                      onClick={() => setApkPaths((prev) => prev.filter((p) => p !== path))}
+                      onClick={() => {
+                        setApkPaths((prev) => prev.filter((p) => p !== path));
+                      }}
                       disabled={isInstalling}
                     >
                       <Trash2 className="size-3" />
@@ -256,7 +264,9 @@ export function InstallationTab() {
             <SelectionSummaryBar
               count={apkPaths.length}
               label="file(s)"
-              onClear={() => setApkPaths([])}
+              onClear={() => {
+                setApkPaths([]);
+              }}
               disabled={isInstalling}
             />
 
@@ -265,12 +275,12 @@ export function InstallationTab() {
               disabled={isInstalling || !selectedSerial}
               onClick={() => void handleInstall()}
             >
-              {isInstalling && installProgress && (
+              {isInstalling && installProgress ? (
                 <div
                   className="absolute inset-0 left-0 bg-primary/20 transition-all duration-300"
                   style={{ width: `${(installProgress.current / installProgress.total) * 100}%` }}
                 />
-              )}
+              ) : null}
               <span className="relative z-10 flex items-center">
                 {isInstalling ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
@@ -305,7 +315,7 @@ export function InstallationTab() {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
                   <Filter className="size-3.5" />
-                  {packageFilter === 'all' ? 'All' : `${packageFilter}`}
+                  {packageFilter === 'all' ? 'All' : packageFilter}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
@@ -313,7 +323,9 @@ export function InstallationTab() {
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   value={packageFilter}
-                  onValueChange={(v) => setPackageFilter(v as 'all' | 'user' | 'system')}
+                  onValueChange={(v) => {
+                    setPackageFilter(v as 'all' | 'user' | 'system');
+                  }}
                 >
                   <DropdownMenuRadioItem value="all">All ({packages.length})</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="user">
@@ -369,11 +381,14 @@ export function InstallationTab() {
               >
                 {virtualRows.map((vRow) => {
                   const pkg = filteredPackages[vRow.index];
+                  if (!pkg) return null;
                   const isSelected = selectedPackages.has(pkg.name);
                   return (
                     <div
                       key={pkg.name}
-                      onClick={() => togglePackage(pkg.name)}
+                      onClick={() => {
+                        togglePackage(pkg.name);
+                      }}
                       role="option"
                       aria-selected={isSelected}
                       tabIndex={0}
@@ -414,7 +429,9 @@ export function InstallationTab() {
         <SelectionSummaryBar
           count={selectedPackages.size}
           label="package(s)"
-          onClear={() => setSelectedPackages(new Set())}
+          onClear={() => {
+            setSelectedPackages(new Set());
+          }}
         />
 
         <AlertDialog>

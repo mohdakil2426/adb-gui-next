@@ -54,12 +54,7 @@ describe('ConnectedDevicesCard', () => {
 
   it('shows scanning message when loading with no devices', () => {
     render(
-      <ConnectedDevicesCard
-        devices={[]}
-        isLoading={true}
-        onRefresh={mockOnRefresh}
-        onEdit={mockOnEdit}
-      />,
+      <ConnectedDevicesCard devices={[]} isLoading onRefresh={mockOnRefresh} onEdit={mockOnEdit} />,
     );
     expect(screen.getByText('Scanning for devices...')).toBeInTheDocument();
   });

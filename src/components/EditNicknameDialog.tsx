@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,7 @@ export function EditNicknameDialog({
 
   useEffect(() => {
     if (isOpen && serial) {
-      setNewNickname(getNickname(serial) || '');
+      setNewNickname(getNickname(serial) ?? '');
     }
   }, [isOpen, serial]);
 
@@ -62,7 +62,9 @@ export function EditNicknameDialog({
               name="nickname"
               autoComplete="off"
               value={newNickname}
-              onChange={(e) => setNewNickname(e.target.value)}
+              onChange={(e) => {
+                setNewNickname(e.target.value);
+              }}
               placeholder="Ex: My Device"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSaveNickname();
@@ -72,7 +74,12 @@ export function EditNicknameDialog({
         </FieldGroup>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
             Cancel
           </Button>
           <Button onClick={handleSaveNickname}>Save</Button>

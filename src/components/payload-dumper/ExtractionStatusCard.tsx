@@ -58,7 +58,7 @@ export function ExtractionStatusCard({
       <CardContent>
         {status === 'success' && (
           <div className="flex flex-col gap-3">
-            {outputDir && (
+            {outputDir ? (
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-muted-foreground font-medium">Saved to:</span>
                 <div className="flex items-center gap-2 min-w-0">
@@ -83,7 +83,7 @@ export function ExtractionStatusCard({
                   </Tooltip>
                 </div>
               </div>
-            )}
+            ) : null}
             {extractedFiles.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground">
@@ -104,9 +104,9 @@ export function ExtractionStatusCard({
             )}
           </div>
         )}
-        {status === 'error' && errorMessage && (
+        {status === 'error' && errorMessage ? (
           <p className="text-sm text-destructive">{errorMessage}</p>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

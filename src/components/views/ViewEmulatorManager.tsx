@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,14 +19,16 @@ import {
 import type { backend } from '@/lib/desktop/models';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { type EmulatorManagerTab, useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
-import { fetchAvds, queryKeys } from '@/lib/queries';
+import { fetchAvds, invalidateAvds, queryKeys } from '@/lib/queries';
 import { cn } from '@/lib/utils';
 import {
   Bot,
   FolderOpen,
   MonitorSmartphone,
+  PenTool,
   Play,
   RefreshCcw,
+  ShieldCheck,
   Snowflake,
   Square,
 } from 'lucide-react';
@@ -63,6 +65,7 @@ export function ViewEmulatorManager() {
   const setRestorePlan = useEmulatorManagerStore((state) => state.setRestorePlan);
   const setPendingAction = useEmulatorManagerStore((state) => state.setPendingAction);
   const [isRestorePlanLoading, setIsRestorePlanLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   const selectedAvd = avds.find((item) => item.name === selectedAvdName) ?? null;
   const isBusy = pendingAction !== null;
@@ -76,7 +79,7 @@ export function ViewEmulatorManager() {
       return;
     }
     if (!selectedAvdName || !avds.some((item) => item.name === selectedAvdName)) {
-      setSelectedAvdName(avds[0].name);
+      setSelectedAvdName(avds[0]?.name ?? null);
     }
   }, [avds, selectedAvdName, setRestorePlan, setSelectedAvdName]);
 
@@ -120,7 +123,7 @@ export function ViewEmulatorManager() {
       setPendingAction(action);
       await task();
     } catch (error) {
-      handleError('Emulator Manager', error instanceof Error ? error : new Error(fallbackMessage));
+      handleError('Emulator', error instanceof Error ? error : new Error(fallbackMessage));
     } finally {
       setPendingAction(null);
     }
@@ -132,7 +135,8 @@ export function ViewEmulatorManager() {
       'launch',
       async () => {
         const message = await LaunchAvd(selectedAvd.name, options);
-        handleSuccess('Emulator Manager', message);
+        handleSuccess('Emulator', message);
+        invalidateAvds(queryClient);
         await refreshAvds();
       },
       `Failed to launch ${selectedAvd.name}`,
@@ -146,7 +150,8 @@ export function ViewEmulatorManager() {
       'stop',
       async () => {
         const message = await StopAvd(serial);
-        handleSuccess('Emulator Manager', message);
+        handleSuccess('Emulator', message);
+        invalidateAvds(queryClient);
         await refreshAvds();
       },
       `Failed to stop ${selectedAvd.name}`,
@@ -158,7 +163,7 @@ export function ViewEmulatorManager() {
     try {
       await OpenFolder(selectedAvd.avdPath);
     } catch (error) {
-      handleError('Emulator Manager', error);
+      handleError('Emulator', error);
     }
   }
 
@@ -178,7 +183,8 @@ export function ViewEmulatorManager() {
       'restore',
       async () => {
         const message = await RestoreAvdBackups(selectedAvd.name);
-        handleSuccess('Emulator Manager', message);
+        handleSuccess('Emulator', message);
+        invalidateAvds(queryClient);
         await refreshAvds();
       },
       `Failed to restore ${selectedAvd.name}`,
@@ -194,7 +200,7 @@ export function ViewEmulatorManager() {
             <Bot className="size-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Emulator Manager</h1>
+            <h1 className="sr-only">Emulator Manager</h1>
             <p className="text-sm text-muted-foreground">
               Manage AVDs, launch with safe presets, and run root / restore workflows.
             </p>
@@ -226,12 +232,12 @@ export function ViewEmulatorManager() {
               onSelect={setSelectedAvdName}
               onRefresh={() => void handleRefresh()}
             />
-            {selectedAvd?.warnings && selectedAvd.warnings.length > 0 && (
+            {selectedAvd?.warnings && selectedAvd.warnings.length > 0 ? (
               <Badge variant="warning" className="rounded-full text-xs">
                 {selectedAvd.warnings.length}{' '}
                 {selectedAvd.warnings.length === 1 ? 'warning' : 'warnings'}
               </Badge>
-            )}
+            ) : null}
           </div>
 
           {/* Status meta line */}
@@ -251,23 +257,25 @@ export function ViewEmulatorManager() {
                 {selectedAvd.deviceName ? ` · ${selectedAvd.deviceName}` : ''}
               </p>
               {/* Boot mode badge — shown only when running */}
-              {selectedAvd.isRunning && selectedAvd.bootMode !== 'unknown' && (
+              {selectedAvd.isRunning && selectedAvd.bootMode !== 'unknown' ? (
                 <Badge
                   variant={selectedAvd.bootMode === 'cold' ? 'default' : 'warning'}
                   className="rounded-full text-xs"
                 >
                   {selectedAvd.bootMode === 'cold' ? '❄ Cold Boot' : '⚠ Normal Boot'}
                 </Badge>
-              )}
+              ) : null}
               {/* Root state badge */}
               {selectedAvd.rootState === 'rooted' && (
-                <Badge variant="success" className="rounded-full text-xs">
-                  🟢 Rooted
+                <Badge className="rounded-full text-xs gap-1 bg-success/15 text-success">
+                  <ShieldCheck className="size-3" />
+                  Rooted
                 </Badge>
               )}
               {selectedAvd.rootState === 'modified' && (
-                <Badge variant="warning" className="rounded-full text-xs">
-                  🟡 Modified
+                <Badge className="rounded-full text-xs gap-1 bg-warning/15 text-warning">
+                  <PenTool className="size-3" />
+                  Modified
                 </Badge>
               )}
             </div>
@@ -279,7 +287,7 @@ export function ViewEmulatorManager() {
         </div>
 
         {/* Right: Action buttons — only shown when an AVD is selected */}
-        {selectedAvd && (
+        {selectedAvd ? (
           <div className="flex flex-wrap gap-1.5 sm:shrink-0">
             {selectedAvd.isRunning ? (
               <Button
@@ -320,7 +328,7 @@ export function ViewEmulatorManager() {
               Folder
             </Button>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* ── Card: content only (tabs flush at top) ────────────────────────── */}
@@ -329,7 +337,9 @@ export function ViewEmulatorManager() {
           {selectedAvd ? (
             <Tabs
               value={activeTab === 'overview' ? 'launch' : activeTab}
-              onValueChange={(value) => setActiveTab(value as EmulatorManagerTab)}
+              onValueChange={(value) => {
+                setActiveTab(value as EmulatorManagerTab);
+              }}
             >
               <TabsList
                 variant="line"

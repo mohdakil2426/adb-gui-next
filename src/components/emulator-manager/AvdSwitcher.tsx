@@ -132,16 +132,18 @@ export function AvdSwitcher({
                 const isSelected = avd.name === selectedAvdName;
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={avd.name}
-                    role="button"
                     tabIndex={0}
                     className={cn(
                       'relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm',
                       'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
                       isSelected && 'bg-accent',
                     )}
-                    onClick={() => handleSelect(avd.name)}
+                    onClick={() => {
+                      handleSelect(avd.name);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
@@ -183,7 +185,7 @@ export function AvdSwitcher({
                     </Badge>
 
                     {/* Boot mode badge — only for running emulators */}
-                    {avd.isRunning && avd.bootMode !== 'unknown' && (
+                    {avd.isRunning && avd.bootMode !== 'unknown' ? (
                       <Badge
                         className={cn(
                           'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
@@ -194,8 +196,8 @@ export function AvdSwitcher({
                       >
                         {avd.bootMode === 'cold' ? 'Cold' : 'Normal'}
                       </Badge>
-                    )}
-                  </div>
+                    ) : null}
+                  </button>
                 );
               })}
             </div>

@@ -42,6 +42,7 @@ export function ConnectedDevicesCard({
           size="icon"
           onClick={onRefresh}
           disabled={isLoading || isRefreshDisabled}
+          aria-label="Refresh device list"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -61,7 +62,7 @@ export function ConnectedDevicesCard({
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((device) => {
-              const displayName = getNickname(device.serial) || device.serial;
+              const displayName = getNickname(device.serial) ?? device.serial;
               const description = displayName !== device.serial ? device.serial : undefined;
               const { label, variant, badgeClass } = getStatusConfig(device.status);
 
@@ -77,16 +78,18 @@ export function ConnectedDevicesCard({
                         variant="ghost"
                         size="icon"
                         className="size-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => onEdit(device.serial)}
+                        onClick={() => {
+                          onEdit(device.serial);
+                        }}
                       >
                         <Pencil className="size-3.5" />
                       </Button>
                     </div>
-                    {description && (
+                    {description ? (
                       <span className="font-mono text-xs text-muted-foreground truncate">
                         {description}
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <Badge variant={variant} className={badgeClass}>

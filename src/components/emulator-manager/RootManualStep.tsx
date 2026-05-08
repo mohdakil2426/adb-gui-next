@@ -127,13 +127,13 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
         </Alert>
       )}
 
-      {error && (
+      {error ? (
         <Alert variant="destructive">
           <ShieldCheck />
           <AlertTitle>Manual root failed</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
         <Button
@@ -170,7 +170,7 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
         </Button>
       </div>
 
-      {prepareResult && (
+      {prepareResult ? (
         <div className="flex flex-col gap-4 rounded-lg border bg-muted/30 p-4">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
@@ -221,9 +221,9 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
             Finalize Root
           </Button>
         </div>
-      )}
+      ) : null}
 
-      {finalizeResult && (
+      {finalizeResult ? (
         <Alert className="border-success/40 bg-success/10 text-success">
           <CheckCircle2 />
           <AlertTitle>Manual Patch Installed</AlertTitle>
@@ -232,7 +232,7 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
             file{finalizeResult.restoredFiles.length === 1 ? '' : 's'}.
           </AlertDescription>
         </Alert>
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="button" variant="outline" className="gap-2" onClick={onBack}>

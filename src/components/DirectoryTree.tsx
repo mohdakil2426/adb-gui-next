@@ -155,7 +155,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
           className="shrink-0 flex items-center justify-center size-4"
           onClick={
             node.isDirectory
-              ? (e) => {
+              ? (e: React.MouseEvent) => {
                   e.stopPropagation();
                   onToggle(node.path);
                 }
@@ -193,7 +193,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
       </div>
 
       {/* Children — only dirs expand */}
-      {node.isDirectory && node.isExpanded && node.children && (
+      {node.isDirectory && node.isExpanded && node.children ? (
         <>
           {node.children.length === 0 ? (
             <div
@@ -215,7 +215,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
             ))
           )}
         </>
-      )}
+      ) : null}
     </>
   );
 }
@@ -247,6 +247,7 @@ export function DirectoryTree({
   }, []);
 
   // Ref to hold the latest expandToPath (avoids circular useCallback dep)
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   const expandToPathRef = useRef<(targetPath: string) => void>(() => {});
 
   const expandToPath = useCallback(
@@ -318,7 +319,7 @@ export function DirectoryTree({
     prevRefreshTriggerRef.current = refreshTrigger;
 
     const node = findNode(nodesRef.current, currentPath);
-    if (!node || !node.isDirectory) return;
+    if (!node?.isDirectory) return;
 
     if (node.isExpanded) {
       setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));

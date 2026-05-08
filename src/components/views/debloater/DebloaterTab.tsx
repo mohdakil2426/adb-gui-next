@@ -35,7 +35,7 @@ import { DescriptionPanel } from './DescriptionPanel';
 import { ReviewSelectionDialog } from './ReviewSelectionDialog';
 import { REMOVAL_TIER_CLASSES, REMOVAL_TIER_LABELS, PKG_STATE_CLASSES } from './debloaterUtils';
 
-const LIST_OPTIONS: Array<{ value: DebloatListFilter; label: string }> = [
+const LIST_OPTIONS: { value: DebloatListFilter; label: string }[] = [
   { value: 'All', label: 'All Lists' },
   { value: 'Aosp', label: 'AOSP' },
   { value: 'Google', label: 'Google' },
@@ -46,7 +46,7 @@ const LIST_OPTIONS: Array<{ value: DebloatListFilter; label: string }> = [
   { value: 'Unlisted', label: 'Unlisted' },
 ];
 
-const REMOVAL_OPTIONS: Array<{ value: RemovalFilter; label: string }> = [
+const REMOVAL_OPTIONS: { value: RemovalFilter; label: string }[] = [
   { value: 'All', label: 'All Safety Tiers' },
   { value: 'Recommended', label: 'Recommended' },
   { value: 'Advanced', label: 'Advanced' },
@@ -55,7 +55,7 @@ const REMOVAL_OPTIONS: Array<{ value: RemovalFilter; label: string }> = [
   { value: 'Unlisted', label: 'Unlisted' },
 ];
 
-const STATE_OPTIONS: Array<{ value: StateFilter; label: string }> = [
+const STATE_OPTIONS: { value: StateFilter; label: string }[] = [
   { value: 'All', label: 'All States' },
   { value: 'Enabled', label: 'Enabled' },
   { value: 'Disabled', label: 'Disabled' },
@@ -203,7 +203,9 @@ export function DebloaterTab() {
           <Input
             placeholder="Search packages…"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
             className="h-9 pl-8"
           />
         </div>
@@ -213,7 +215,9 @@ export function DebloaterTab() {
           label={listFilter === 'All' ? 'All Lists' : listFilter}
           options={LIST_OPTIONS}
           value={listFilter}
-          onValueChange={(v) => setListFilter(v as DebloatListFilter)}
+          onValueChange={(v) => {
+            setListFilter(v as DebloatListFilter);
+          }}
         />
 
         {/* Safety filter */}
@@ -221,7 +225,9 @@ export function DebloaterTab() {
           label={removalFilter === 'All' ? 'Safety' : removalFilter}
           options={REMOVAL_OPTIONS}
           value={removalFilter}
-          onValueChange={(v) => setRemovalFilter(v as RemovalFilter)}
+          onValueChange={(v) => {
+            setRemovalFilter(v as RemovalFilter);
+          }}
         />
 
         {/* State filter */}
@@ -229,7 +235,9 @@ export function DebloaterTab() {
           label={stateFilter === 'All' ? 'State' : stateFilter}
           options={STATE_OPTIONS}
           value={stateFilter}
-          onValueChange={(v) => setStateFilter(v as StateFilter)}
+          onValueChange={(v) => {
+            setStateFilter(v as StateFilter);
+          }}
         />
 
         {/* Refresh */}
@@ -251,11 +259,11 @@ export function DebloaterTab() {
           {isLoadingPackages
             ? 'Loading packages…'
             : `${filteredPackages.length} of ${packages.length} system packages`}
-          {listStatus && (
+          {listStatus ? (
             <span className="ml-2">
               · UAD {listStatus.source === 'remote' ? '✓' : '○'} {listStatus.lastUpdated}
             </span>
-          )}
+          ) : null}
         </span>
 
         <div className="flex flex-wrap items-center gap-4">
@@ -319,6 +327,7 @@ export function DebloaterTab() {
           >
             {virtualRows.map((vRow) => {
               const pkg = filteredPackages[vRow.index];
+              if (!pkg) return null;
               const isSelected = selectedPackages.has(pkg.name);
               const isCurrent = currentPackageName === pkg.name;
               const tierClasses = REMOVAL_TIER_CLASSES[pkg.removal];
@@ -383,30 +392,41 @@ export function DebloaterTab() {
 
       {/* ── Action bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-1.5">
-          <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={selectAll}>
-            <CheckSquare2 data-icon="inline-start" />
-            Select All
-          </Button>
-          <Button
+        <Button
             variant="ghost"
             size="sm"
             className="h-8 text-xs"
-            disabled={selectedPackages.size === 0}
-            onClick={unselectAll}
+            disabled={filteredPackages.length === 0}
+            onClick={() => {
+              if (selectedPackages.size > 0) {
+                unselectAll();
+              } else {
+                selectAll();
+              }
+            }}
           >
-            <Square data-icon="inline-start" />
-            Unselect All
+            {selectedPackages.size > 0 ? (
+              <>
+                <Square data-icon="inline-start" />
+                Unselect All
+              </>
+            ) : (
+              <>
+                <CheckSquare2 data-icon="inline-start" />
+                Select All
+              </>
+            )}
           </Button>
-        </div>
 
         <Button
           size="sm"
           disabled={selectedPackages.size === 0 || isApplying}
           variant={disableMode ? 'outline' : 'default'}
-          onClick={() => setReviewOpen(true)}
+          onClick={() => {
+            setReviewOpen(true);
+          }}
         >
-          {isApplying && <Loader2 data-icon="inline-start" className="animate-spin" />}
+          {isApplying ? <Loader2 data-icon="inline-start" className="animate-spin" /> : null}
           Review {disableMode ? 'Disable' : 'Uninstall'} ({selectedPackages.size})
         </Button>
       </div>
@@ -433,7 +453,7 @@ function FilterDropdown({
   onValueChange,
 }: {
   label: string;
-  options: Array<{ value: string; label: string }>;
+  options: { value: string; label: string }[];
   value: string;
   onValueChange: (v: string) => void;
 }) {

@@ -83,15 +83,31 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
   backups: [],
   selectedBackupFileName: null,
 
-  setPackages: (packages) => set({ packages }),
-  setListStatus: (listStatus) => set({ listStatus }),
-  setIsLoadingPackages: (isLoadingPackages) => set({ isLoadingPackages }),
-  setIsApplying: (isApplying) => set({ isApplying }),
+  setPackages: (packages) => {
+    set({ packages });
+  },
+  setListStatus: (listStatus) => {
+    set({ listStatus });
+  },
+  setIsLoadingPackages: (isLoadingPackages) => {
+    set({ isLoadingPackages });
+  },
+  setIsApplying: (isApplying) => {
+    set({ isApplying });
+  },
 
-  setSearchQuery: (searchQuery) => set({ searchQuery }),
-  setListFilter: (listFilter) => set({ listFilter }),
-  setRemovalFilter: (removalFilter) => set({ removalFilter }),
-  setStateFilter: (stateFilter) => set({ stateFilter }),
+  setSearchQuery: (searchQuery) => {
+    set({ searchQuery });
+  },
+  setListFilter: (listFilter) => {
+    set({ listFilter });
+  },
+  setRemovalFilter: (removalFilter) => {
+    set({ removalFilter });
+  },
+  setStateFilter: (stateFilter) => {
+    set({ stateFilter });
+  },
 
   togglePackage: (name) => {
     const { selectedPackages, packages, expertMode } = get();
@@ -121,9 +137,13 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
     set({ selectedPackages: next });
   },
 
-  unselectAll: () => set({ selectedPackages: new Set() }),
+  unselectAll: () => {
+    set({ selectedPackages: new Set() });
+  },
 
-  setCurrentPackageName: (currentPackageName) => set({ currentPackageName }),
+  setCurrentPackageName: (currentPackageName) => {
+    set({ currentPackageName });
+  },
 
   setExpertMode: (expertMode) => {
     // Deselect any Unsafe packages if expert mode is turned off
@@ -139,11 +159,19 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
     }
   },
 
-  setDisableMode: (disableMode) => set({ disableMode }),
-  setMultiUserMode: (multiUserMode) => set({ multiUserMode }),
+  setDisableMode: (disableMode) => {
+    set({ disableMode });
+  },
+  setMultiUserMode: (multiUserMode) => {
+    set({ multiUserMode });
+  },
 
-  setBackups: (backups) => set({ backups }),
-  setSelectedBackupFileName: (selectedBackupFileName) => set({ selectedBackupFileName }),
+  setBackups: (backups) => {
+    set({ backups });
+  },
+  setSelectedBackupFileName: (selectedBackupFileName) => {
+    set({ selectedBackupFileName });
+  },
 
   applyResults: (results) => {
     const { packages } = get();
@@ -162,8 +190,9 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
     set({ packages: updated, selectedPackages: next });
   },
 
-  resetFilters: () =>
-    set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' }),
+  resetFilters: () => {
+    set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' });
+  },
 }));
 
 // ── Client-side filter helper (used by components + selectAll) ────────────────

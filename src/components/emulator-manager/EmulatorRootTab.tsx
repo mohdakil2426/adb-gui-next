@@ -45,7 +45,9 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
             <Button
               id="root-gate-launch-btn"
               size="sm"
-              onClick={() => onLaunch(createLaunchOptions('default'))}
+              onClick={() => {
+                onLaunch(createLaunchOptions('default'));
+              }}
             >
               ▶ Launch
             </Button>
@@ -53,7 +55,9 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
               id="root-gate-cold-boot-btn"
               size="sm"
               variant="outline"
-              onClick={() => onLaunch(createLaunchOptions('coldBoot'))}
+              onClick={() => {
+                onLaunch(createLaunchOptions('coldBoot'));
+              }}
             >
               <Snowflake data-icon="inline-start" />
               Cold Boot (Recommended)

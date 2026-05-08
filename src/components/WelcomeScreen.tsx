@@ -1,8 +1,8 @@
 import { Progress } from '@/components/ui/progress';
 
-type WelcomeScreenProps = {
+interface WelcomeScreenProps {
   progress: number;
-};
+}
 
 export function WelcomeScreen({ progress }: WelcomeScreenProps) {
   const clampedProgress = Math.min(100, Math.max(0, progress));

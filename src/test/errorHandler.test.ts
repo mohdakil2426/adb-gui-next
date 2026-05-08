@@ -1,16 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleError, handleSuccess, handleInfo, handleWarning } from '../lib/errorHandler';
 
-// Mock sonner toast
 vi.mock('sonner', () => ({
   toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-    warning: vi.fn(),
+    error: vi.fn(() => {}),
+    success: vi.fn(() => {}),
+    warning: vi.fn(() => {}),
   },
 }));
 
-// Mock the log store
 const mockAddLog = vi.fn();
 vi.mock('../lib/logStore', () => ({
   useLogStore: {
@@ -37,6 +35,16 @@ describe('handleError', () => {
     handleError('TestCtx', 'oops');
     expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] oops', 'error');
   });
+
+  it('handles empty error message', () => {
+    const msg = handleError('TestCtx', '');
+    expect(msg).toBe('[TestCtx] ');
+  });
+
+  it('handles numeric error value', () => {
+    const msg = handleError('TestCtx', 404);
+    expect(msg).toBe('[TestCtx] 404');
+  });
 });
 
 describe('handleSuccess', () => {
@@ -47,6 +55,11 @@ describe('handleSuccess', () => {
   it('calls addLog with success level', () => {
     handleSuccess('TestCtx', 'it worked');
     expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] it worked', 'success');
+  });
+
+  it('handles empty message', () => {
+    handleSuccess('TestCtx', '');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] ', 'success');
   });
 });
 

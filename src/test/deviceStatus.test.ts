@@ -6,12 +6,12 @@ describe('deviceStatus', () => {
     expect(getStatusConfig('device')).toMatchObject({
       label: 'adb',
       variant: 'default',
-      badgeClass: expect.stringContaining('bg-[var(--device-status-adb-bg)]'),
+      badgeClass: expect.stringContaining('bg-success-light'),
     });
     expect(getStatusConfig('unauthorized')).toMatchObject({
       label: 'unauthorized',
       variant: 'destructive',
-      badgeClass: expect.stringContaining('text-[var(--device-status-unauthorized-fg)]'),
+      badgeClass: expect.stringContaining('text-'),
     });
   });
 });

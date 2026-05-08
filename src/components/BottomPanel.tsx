@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useLogStore } from '@/lib/logStore';
 import type { LogLevel } from '@/lib/logStore';
 import { LogsPanel } from './LogsPanel';
@@ -60,22 +61,43 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
   const panelLeft =
     sidebarState === 'expanded' ? 'var(--sidebar-width, 16rem)' : 'var(--sidebar-width-icon, 3rem)';
 
-  const logs = useLogStore((state) => state.logs);
-  const isOpen = useLogStore((state) => state.isOpen);
-  const togglePanel = useLogStore((state) => state.togglePanel);
-  const clearLogs = useLogStore((state) => state.clearLogs);
-  const activeTab = useLogStore((state) => state.activeTab);
-  const setActiveTab = useLogStore((state) => state.setActiveTab);
-  const filter = useLogStore((state) => state.filter);
-  const setFilter = useLogStore((state) => state.setFilter);
-  const searchQuery = useLogStore((state) => state.searchQuery);
-  const setSearchQuery = useLogStore((state) => state.setSearchQuery);
-  const isFollowing = useLogStore((state) => state.isFollowing);
-  const setIsFollowing = useLogStore((state) => state.setIsFollowing);
-  const isPanelMaximized = useLogStore((state) => state.isPanelMaximized);
-  const toggleMaximized = useLogStore((state) => state.toggleMaximized);
-  const panelHeight = useLogStore((state) => state.panelHeight);
-  const setPanelHeight = useLogStore((state) => state.setPanelHeight);
+  const {
+    logs,
+    isOpen,
+    togglePanel,
+    clearLogs,
+    activeTab,
+    setActiveTab,
+    filter,
+    setFilter,
+    searchQuery,
+    setSearchQuery,
+    isFollowing,
+    setIsFollowing,
+    isPanelMaximized,
+    toggleMaximized,
+    panelHeight,
+    setPanelHeight,
+  } = useLogStore(
+    useShallow((state) => ({
+      logs: state.logs,
+      isOpen: state.isOpen,
+      togglePanel: state.togglePanel,
+      clearLogs: state.clearLogs,
+      activeTab: state.activeTab,
+      setActiveTab: state.setActiveTab,
+      filter: state.filter,
+      setFilter: state.setFilter,
+      searchQuery: state.searchQuery,
+      setSearchQuery: state.setSearchQuery,
+      isFollowing: state.isFollowing,
+      setIsFollowing: state.setIsFollowing,
+      isPanelMaximized: state.isPanelMaximized,
+      toggleMaximized: state.toggleMaximized,
+      panelHeight: state.panelHeight,
+      setPanelHeight: state.setPanelHeight,
+    })),
+  );
 
   const clearHistory = useShellStore((state) => state.clearHistory);
   // Drag state: all refs — zero listener re-registrations, zero re-renders during drag
@@ -153,7 +175,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [togglePanel]);
 
   const handleCopy = async () => {
@@ -207,10 +231,14 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
       setIsAnimatingIn(true);
       // Allow one frame for display before starting transition
       const frame = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsAnimatingIn(false));
+        requestAnimationFrame(() => {
+          setIsAnimatingIn(false);
+        });
       });
       prevOpenRef.current = isOpen;
-      return () => cancelAnimationFrame(frame);
+      return () => {
+        cancelAnimationFrame(frame);
+      };
     } else if (!isOpen && prevOpenRef.current) {
       setIsAnimatingOut(true);
       const timer = setTimeout(() => {
@@ -218,9 +246,12 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
         setIsAnimatingOut(false);
       }, 200);
       prevOpenRef.current = isOpen;
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
     prevOpenRef.current = isOpen;
+    return undefined;
   }, [isOpen]);
 
   if (!isVisible) return null;
@@ -230,7 +261,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
   return (
     <>
       {/* Cursor-lock overlay: blocks pointer events on content during drag */}
-      {showCursorOverlay && <div className="fixed inset-0 z-[60] cursor-ns-resize select-none" />}
+      {showCursorOverlay ? (
+        <div className="fixed inset-0 z-[60] cursor-ns-resize select-none" />
+      ) : null}
 
       <div
         ref={panelRef}
@@ -274,7 +307,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
               role="tab"
               aria-selected={activeTab === 'logs'}
               aria-controls="bottom-panel-logs"
-              onClick={() => setActiveTab('logs')}
+              onClick={() => {
+                setActiveTab('logs');
+              }}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-t-md transition-colors',
                 activeTab === 'logs' ? 'opacity-100' : 'opacity-60 hover:opacity-80',
@@ -302,7 +337,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
               role="tab"
               aria-selected={activeTab === 'shell'}
               aria-controls="bottom-panel-shell"
-              onClick={() => setActiveTab('shell')}
+              onClick={() => {
+                setActiveTab('shell');
+              }}
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-t-md transition-colors',
                 activeTab === 'shell' ? 'opacity-100' : 'opacity-60 hover:opacity-80',
@@ -338,7 +375,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
                       isSearchOpen ? 'opacity-100' : 'opacity-60 hover:opacity-100',
                     )}
                     style={{ color: 'var(--terminal-fg)' }}
-                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    onClick={() => {
+                      setIsSearchOpen(!isSearchOpen);
+                    }}
                   >
                     <Search className="size-3.5" aria-hidden="true" />
                   </Button>
@@ -382,7 +421,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioGroup
                     value={filter}
-                    onValueChange={(value) => setFilter(value as LogLevel | 'all')}
+                    onValueChange={(value) => {
+                      setFilter(value as LogLevel | 'all');
+                    }}
                   >
                     {FILTER_OPTIONS.map((option) => (
                       <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -407,7 +448,9 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
                       isFollowing ? 'opacity-100' : 'opacity-60 hover:opacity-100',
                     )}
                     style={{ color: 'var(--terminal-fg)' }}
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={() => {
+                      setIsFollowing(!isFollowing);
+                    }}
                   >
                     {isFollowing ? (
                       <Pin className="size-3.5" aria-hidden="true" />
@@ -525,7 +568,7 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
         </div>
 
         {/* Search bar (conditionally rendered) */}
-        {isSearchOpen && activeTab === 'logs' && (
+        {isSearchOpen && activeTab === 'logs' ? (
           <div
             className="flex items-center gap-2 px-3 py-1.5 border-b shrink-0"
             style={{
@@ -544,23 +587,27 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
               className="font-mono text-[12px] border-none bg-transparent shadow-none focus-visible:ring-0 h-6 px-0"
               style={{ color: 'var(--terminal-fg)' }}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
               autoFocus
             />
-            {searchQuery && (
+            {searchQuery ? (
               <Button
                 variant="ghost"
                 size="icon"
                 aria-label="Clear Log Search"
                 className="size-5 opacity-60 hover:opacity-100"
                 style={{ color: 'var(--terminal-fg)' }}
-                onClick={() => setSearchQuery('')}
+                onClick={() => {
+                  setSearchQuery('');
+                }}
               >
                 <X className="size-3" aria-hidden="true" />
               </Button>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
         {/* Panel content — min-h-0 prevents flex overflow that hides shell input on resize */}
         <div
@@ -569,6 +616,7 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
           aria-labelledby={
             activeTab === 'logs' ? 'bottom-panel-logs-tab' : 'bottom-panel-shell-tab'
           }
+          aria-live="polite"
           className="flex-1 min-h-0 overflow-hidden"
         >
           {activeTab === 'logs' ? <LogsPanel /> : <ShellPanel />}

@@ -22,9 +22,7 @@ export function ViewAbout() {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tighter bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            ADB GUI Next
-          </h1>
+          <h1 className="sr-only">ADB GUI Next Desktop Toolkit</h1>
           <span className="bg-linear-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent font-extrabold text-2xl sm:text-4xl pt-2">
             Desktop Toolkit
           </span>
@@ -106,7 +104,9 @@ export function ViewAbout() {
           ADB GUI Next by{' '}
           <button
             className="font-semibold text-foreground hover:underline cursor-pointer bg-transparent border-none p-0"
-            onClick={() => openLink('https://github.com/mohdakil2426')}
+            onClick={() => {
+              openLink('https://github.com/mohdakil2426');
+            }}
           >
             AKIL
           </button>{' '}

@@ -63,8 +63,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { id: 'flasher', icon: Zap, label: 'Flasher' },
       { id: 'utils', icon: Settings, label: 'Utilities' },
-      { id: 'emulator', icon: Bot, label: 'Emulator Manager' },
-      { id: 'payload', icon: Package, label: 'Payload Dumper' },
+      { id: 'emulator', icon: Bot, label: 'Emulator' },
+      { id: 'payload', icon: Package, label: 'Dumper' },
     ],
   },
 ];
@@ -109,7 +109,9 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
                       tooltip={item.label}
                       isActive={activeView === item.id}
                       aria-current={activeView === item.id ? 'page' : undefined}
-                      onClick={() => onViewChange(item.id)}
+                      onClick={() => {
+                        onViewChange(item.id);
+                      }}
                     >
                       <item.icon aria-hidden="true" />
                       <span>{item.label}</span>
@@ -130,7 +132,9 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
               tooltip="About"
               isActive={activeView === 'about'}
               aria-current={activeView === 'about' ? 'page' : undefined}
-              onClick={() => onViewChange('about')}
+              onClick={() => {
+                onViewChange('about');
+              }}
             >
               <Info aria-hidden="true" />
               <span>About</span>

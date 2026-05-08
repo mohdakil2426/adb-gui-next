@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { handleError } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
 import { shellCommandSchema } from '@/lib/schemas';
@@ -15,11 +16,15 @@ import {
 import { cn } from '@/lib/utils';
 
 export function ShellPanel() {
-  const history = useShellStore((state) => state.history);
-  const commandHistory = useShellStore((state) => state.commandHistory);
+  const { history, commandHistory, setHistory, addCommand } = useShellStore(
+    useShallow((state) => ({
+      history: state.history,
+      commandHistory: state.commandHistory,
+      setHistory: state.setHistory,
+      addCommand: state.addCommand,
+    })),
+  );
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
-  const setHistory = useShellStore((state) => state.setHistory);
-  const addCommand = useShellStore((state) => state.addCommand);
   const [command, setCommand] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(commandHistory.length);
@@ -32,7 +37,7 @@ export function ShellPanel() {
 
       const newIndex = Math.max(0, historyIndex - 1);
       setHistoryIndex(newIndex);
-      setCommand(commandHistory[newIndex] || '');
+      setCommand(commandHistory[newIndex] ?? '');
       return;
     }
 
@@ -46,7 +51,7 @@ export function ShellPanel() {
       if (newIndex === commandHistory.length) {
         setCommand('');
       } else {
-        setCommand(commandHistory[newIndex]);
+        setCommand(commandHistory[newIndex] ?? '');
       }
       return;
     }
@@ -61,7 +66,7 @@ export function ShellPanel() {
     // Validate command prefix before any backend interaction
     const parsed = shellCommandSchema.safeParse(trimmedCommand);
     if (!parsed.success) {
-      const errorText = parsed.error.issues[0].message;
+      const errorText = parsed.error.issues[0]?.message ?? 'Unknown error';
       setHistory([
         ...history,
         { type: 'command', text: trimmedCommand },

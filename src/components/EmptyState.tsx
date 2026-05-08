@@ -19,12 +19,12 @@ export function EmptyState({ icon: Icon, title, description, className }: EmptyS
   return (
     <Empty className={cn('border-0 py-8', className)}>
       <EmptyHeader>
-        {Icon && (
+        {Icon ? (
           <EmptyMedia variant="icon">
-            <Icon />
+            <Icon aria-hidden="true" />
           </EmptyMedia>
-        )}
-        {title && <EmptyTitle className="text-sm">{title}</EmptyTitle>}
+        ) : null}
+        {title ? <EmptyTitle className="text-sm">{title}</EmptyTitle> : null}
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
     </Empty>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { debugLog } from '@/lib/debug';
@@ -111,10 +111,12 @@ export function ViewUtilities() {
     const toastId = toast.loading(`Sending reboot command...`);
     try {
       await Reboot(mode, deviceSerial);
-      toast.success(`Reboot to ${modeId || 'system'} initiated`, { id: toastId });
-      useLogStore.getState().addLog(`Rebooting to ${modeId || 'system'}...`, 'info');
+      toast.success(`Reboot to ${modeId ?? 'system'} initiated`, { id: toastId });
+      useLogStore.getState().addLog(`Rebooting to ${modeId ?? 'system'}...`, 'info');
       setSentAction(actionId);
-      setTimeout(() => setSentAction(null), 2000);
+      setTimeout(() => {
+        setSentAction(null);
+      }, 2000);
     } catch (error) {
       debugLog(`Error rebooting to ${modeId}:`, error);
       toast.error('Failed to send reboot command', {
@@ -138,7 +140,9 @@ export function ViewUtilities() {
       toast.success('ADB Server Restarted', { id: toastId });
       useLogStore.getState().addLog('ADB Server restarted', 'success');
       setSentAction('restart_server');
-      setTimeout(() => setSentAction(null), 2000);
+      setTimeout(() => {
+        setSentAction(null);
+      }, 2000);
       void refetchDevices();
     } catch (error) {
       toast.error('Failed to restart server', { id: toastId, description: String(error) });
@@ -156,7 +160,9 @@ export function ViewUtilities() {
       toast.success('ADB Server Killed', { id: toastId });
       useLogStore.getState().addLog('ADB Server killed', 'warning');
       setSentAction('kill_server');
-      setTimeout(() => setSentAction(null), 2000);
+      setTimeout(() => {
+        setSentAction(null);
+      }, 2000);
       void refetchDevices();
     } catch (error) {
       toast.error('Failed to kill server', { id: toastId, description: String(error) });
@@ -173,7 +179,9 @@ export function ViewUtilities() {
       toast.success(`Active slot set to ${slot.toUpperCase()}`, { id: toastId });
       useLogStore.getState().addLog(`Set active slot to ${slot}`, 'success');
       setSentAction(`set_active_${slot}`);
-      setTimeout(() => setSentAction(null), 2000);
+      setTimeout(() => {
+        setSentAction(null);
+      }, 2000);
     } catch (error) {
       toast.error(`Failed to set slot ${slot}`, { id: toastId, description: String(error) });
       useLogStore.getState().addLog(`Failed to set active slot ${slot}: ${error}`, 'error');
@@ -190,7 +198,9 @@ export function ViewUtilities() {
       setShowGetVarDialog(true);
       useLogStore.getState().addLog('Fetched fastboot variables', 'success');
       setSentAction('get_vars');
-      setTimeout(() => setSentAction(null), 2000);
+      setTimeout(() => {
+        setSentAction(null);
+      }, 2000);
     } catch (error) {
       toast.error('Failed to get variables', { description: String(error) });
       useLogStore.getState().addLog(`Failed to get fastboot vars: ${error}`, 'error');
@@ -209,6 +219,10 @@ export function ViewUtilities() {
       toast.error('Failed to save log', { description: String(error) });
     }
   };
+
+  const handleCloseGetVarDialog = useCallback(() => {
+    setShowGetVarDialog(false);
+  }, []);
 
   const handleWipeData = async () => {
     setLoadingAction('wipe_data');
@@ -241,7 +255,7 @@ export function ViewUtilities() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5" />
+              <Smartphone className="size-5" />
               ADB Utilities
             </CardTitle>
             <CardDescription>Operations requiring USB Debugging enabled.</CardDescription>
@@ -330,7 +344,7 @@ export function ViewUtilities() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5" />
+              <Zap className="size-5" />
               Fastboot Utilities
             </CardTitle>
             <CardDescription>Operations requiring Bootloader/Fastboot mode.</CardDescription>
@@ -427,9 +441,9 @@ export function ViewUtilities() {
                       className="w-full justify-start pl-4"
                     >
                       {loadingAction === 'wipe_data' ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                        <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
                       ) : (
-                        <Trash2 className="mr-2 h-4 w-4" />
+                        <Trash2 className="mr-2 size-4" />
                       )}
                       Wipe User Data (Factory Reset)
                     </Button>
@@ -467,7 +481,7 @@ export function ViewUtilities() {
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <DialogTitle className="flex items-center gap-2">
-                  <FileJson className="h-5 w-5" />
+                  <FileJson className="size-5" />
                   Fastboot Variables
                 </DialogTitle>
                 <DialogDescription>
@@ -485,7 +499,7 @@ export function ViewUtilities() {
                       disabled={!getVarContent}
                       aria-label="Save to Log"
                     >
-                      <Save className="h-4 w-4" />
+                      <Save className="size-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Save to Log</TooltipContent>
@@ -499,7 +513,7 @@ export function ViewUtilities() {
             </pre>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowGetVarDialog(false)}>
+            <Button variant="outline" onClick={handleCloseGetVarDialog}>
               Close
             </Button>
           </DialogFooter>

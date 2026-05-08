@@ -21,8 +21,7 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   device: {
     label: 'adb',
     variant: 'default',
-    badgeClass:
-      'bg-[var(--device-status-adb-bg)] text-[var(--device-status-adb-fg)] border-[var(--device-status-adb-border)]',
+    badgeClass: 'bg-success-light text-success border-success/35',
   },
   fastboot: {
     label: 'fastboot',

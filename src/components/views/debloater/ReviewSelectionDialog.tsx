@@ -81,7 +81,7 @@ export function ReviewSelectionDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={isApplying ? undefined : onOpenChange}>
+    <Dialog open={open} onOpenChange={isApplying ? () => undefined : onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -179,14 +179,16 @@ export function ReviewSelectionDialog({
               disabled={isCreatingBackup}
               onClick={() => void handleCreateBackup()}
             >
-              {isCreatingBackup && <Loader2 data-icon="inline-start" className="animate-spin" />}
+              {isCreatingBackup ? (
+                <Loader2 data-icon="inline-start" className="animate-spin" />
+              ) : null}
               Backup
             </Button>
           )}
         </div>
 
         {/* Warning banner */}
-        {hasUnsafe && (
+        {hasUnsafe ? (
           <Alert variant="destructive">
             <AlertTriangle />
             <AlertTitle>Unsafe packages selected</AlertTitle>
@@ -194,7 +196,7 @@ export function ReviewSelectionDialog({
               These may cause system instability or bootloops. Ensure you have a backup.
             </AlertDescription>
           </Alert>
-        )}
+        ) : null}
 
         <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
           <AlertTriangle />
@@ -206,7 +208,13 @@ export function ReviewSelectionDialog({
         </Alert>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isApplying}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+            disabled={isApplying}
+          >
             Cancel
           </Button>
           <Button
@@ -214,7 +222,7 @@ export function ReviewSelectionDialog({
             onClick={() => void onConfirm()}
             disabled={isApplying}
           >
-            {isApplying && <Loader2 data-icon="inline-start" className="animate-spin" />}
+            {isApplying ? <Loader2 data-icon="inline-start" className="animate-spin" /> : null}
             {isApplying
               ? 'Applying…'
               : `Apply ${selectedPackages.size} Action${selectedPackages.size !== 1 ? 's' : ''}`}

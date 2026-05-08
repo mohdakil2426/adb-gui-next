@@ -50,7 +50,7 @@ export const useLogStore = create<LogStore>((set) => ({
   unreadCount: 0,
   panelHeight: 300,
 
-  addLog: (message: string, type: LogLevel) =>
+  addLog: (message: string, type: LogLevel) => {
     set((state: LogStore) => ({
       logs: [
         ...state.logs,
@@ -62,24 +62,43 @@ export const useLogStore = create<LogStore>((set) => ({
         },
       ].slice(-MAX_LOGS),
       unreadCount: state.isOpen ? state.unreadCount : state.unreadCount + 1,
-    })),
+    }));
+  },
 
-  clearLogs: () => set({ logs: [], unreadCount: 0 }),
+  clearLogs: () => {
+    set({ logs: [], unreadCount: 0 });
+  },
 
-  togglePanel: () =>
+  togglePanel: () => {
     set((state: LogStore) => ({
       isOpen: !state.isOpen,
       unreadCount: !state.isOpen ? 0 : state.unreadCount,
-    })),
+    }));
+  },
 
-  setPanelOpen: (isOpen: boolean) =>
-    set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount })),
+  setPanelOpen: (isOpen: boolean) => {
+    set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
+  },
 
-  setFilter: (filter: LogLevel | 'all') => set({ filter }),
-  setSearchQuery: (query: string) => set({ searchQuery: query }),
-  setIsFollowing: (following: boolean) => set({ isFollowing: following }),
-  toggleMaximized: () => set((state: LogStore) => ({ isPanelMaximized: !state.isPanelMaximized })),
-  setActiveTab: (tab: 'logs' | 'shell') => set({ activeTab: tab }),
-  resetUnreadCount: () => set({ unreadCount: 0 }),
-  setPanelHeight: (height: number) => set({ panelHeight: height }),
+  setFilter: (filter: LogLevel | 'all') => {
+    set({ filter });
+  },
+  setSearchQuery: (query: string) => {
+    set({ searchQuery: query });
+  },
+  setIsFollowing: (following: boolean) => {
+    set({ isFollowing: following });
+  },
+  toggleMaximized: () => {
+    set((state: LogStore) => ({ isPanelMaximized: !state.isPanelMaximized }));
+  },
+  setActiveTab: (tab: 'logs' | 'shell') => {
+    set({ activeTab: tab });
+  },
+  resetUnreadCount: () => {
+    set({ unreadCount: 0 });
+  },
+  setPanelHeight: (height: number) => {
+    set({ panelHeight: height });
+  },
 }));

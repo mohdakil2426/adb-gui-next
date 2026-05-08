@@ -64,18 +64,26 @@ const INITIAL_STATE = {
 export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
   ...INITIAL_STATE,
 
-  setSelectedAvdName: (selectedAvdName) => set({ selectedAvdName }),
-  setActiveTab: (activeTab) => set({ activeTab }),
+  setSelectedAvdName: (selectedAvdName) => {
+    set({ selectedAvdName });
+  },
+  setActiveTab: (activeTab) => {
+    set({ activeTab });
+  },
 
-  setRootWizardStep: (step) => set((state) => ({ rootWizard: { ...state.rootWizard, step } })),
+  setRootWizardStep: (step) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, step } }));
+  },
 
-  setRootWizardSource: (source) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, source } })),
+  setRootWizardSource: (source) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, source } }));
+  },
 
-  setRootWizardProgress: (progress) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, progress } })),
+  setRootWizardProgress: (progress) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, progress } }));
+  },
 
-  setRootWizardResult: (result, error = null) =>
+  setRootWizardResult: (result, error = null) => {
     set((state) => ({
       rootWizard: {
         ...state.rootWizard,
@@ -85,20 +93,32 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
         error,
         step: 'result',
       },
-    })),
+    }));
+  },
 
-  setRootVerification: (verification) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, verification } })),
+  setRootVerification: (verification) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, verification } }));
+  },
 
-  setRootVerifying: (isVerifying) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, isVerifying } })),
+  setRootVerifying: (isVerifying) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, isVerifying } }));
+  },
 
-  setPreflightScan: (preflightScan) =>
-    set((state) => ({ rootWizard: { ...state.rootWizard, preflightScan } })),
+  setPreflightScan: (preflightScan) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, preflightScan } }));
+  },
 
-  resetRootWizard: () => set({ rootWizard: INITIAL_ROOT_WIZARD }),
+  resetRootWizard: () => {
+    set({ rootWizard: INITIAL_ROOT_WIZARD });
+  },
 
-  setRestorePlan: (restorePlan) => set({ restorePlan }),
-  setPendingAction: (pendingAction) => set({ pendingAction }),
-  reset: () => set({ ...INITIAL_STATE }),
+  setRestorePlan: (restorePlan) => {
+    set({ restorePlan });
+  },
+  setPendingAction: (pendingAction) => {
+    set({ pendingAction });
+  },
+  reset: () => {
+    set({ ...INITIAL_STATE });
+  },
 }));

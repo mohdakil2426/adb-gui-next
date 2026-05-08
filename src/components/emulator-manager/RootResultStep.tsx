@@ -71,12 +71,12 @@ export function RootResultStep({
           </div>
         </div>
 
-        {verification && !verified && (
+        {verification && !verified ? (
           <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
             <p className="text-xs font-medium text-warning-foreground">Verification result</p>
             <p className="mt-1 text-xs text-muted-foreground">{verification.message}</p>
           </div>
-        )}
+        ) : null}
 
         {/* Next steps */}
         <div className="rounded-lg border border-border bg-muted/30 p-4">
@@ -183,12 +183,12 @@ export function RootResultStep({
       </div>
 
       {/* Error detail */}
-      {error && (
+      {error ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
           <p className="text-xs font-medium text-destructive">Error details</p>
           <p className="mt-1 text-xs text-muted-foreground break-words">{error}</p>
         </div>
-      )}
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Button

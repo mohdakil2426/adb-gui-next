@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useLogStore } from '@/lib/logStore';
 import type { LogEntry, LogLevel } from '@/lib/logStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -58,11 +59,15 @@ function LogRow({ log, searchQuery }: { log: LogEntry; searchQuery: string }) {
 }
 
 export function LogsPanel() {
-  const logs = useLogStore((state) => state.logs);
-  const filter = useLogStore((state) => state.filter);
-  const searchQuery = useLogStore((state) => state.searchQuery);
-  const isFollowing = useLogStore((state) => state.isFollowing);
-  const setIsFollowing = useLogStore((state) => state.setIsFollowing);
+  const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore(
+    useShallow((state) => ({
+      logs: state.logs,
+      filter: state.filter,
+      searchQuery: state.searchQuery,
+      isFollowing: state.isFollowing,
+      setIsFollowing: state.setIsFollowing,
+    })),
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const isUserScrollingRef = useRef(false);
 

@@ -19,15 +19,21 @@ export const useShellStore = create<ShellStore>((set) => ({
   history: [],
   commandHistory: [],
 
-  addHistoryEntry: (entry: HistoryEntry) =>
-    set((state) => ({ history: [...state.history, entry] })),
+  addHistoryEntry: (entry: HistoryEntry) => {
+    set((state) => ({ history: [...state.history, entry] }));
+  },
 
-  setHistory: (history: HistoryEntry[]) => set({ history }),
+  setHistory: (history: HistoryEntry[]) => {
+    set({ history });
+  },
 
-  clearHistory: () => set({ history: [] }),
+  clearHistory: () => {
+    set({ history: [] });
+  },
 
-  addCommand: (command: string) =>
+  addCommand: (command: string) => {
     set((state) => ({
       commandHistory: [...state.commandHistory, command],
-    })),
+    }));
+  },
 }));

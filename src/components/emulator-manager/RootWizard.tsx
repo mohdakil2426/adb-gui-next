@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import { CheckCircle2 } from 'lucide-react';
@@ -12,6 +13,7 @@ import {
   VerifyAvdRoot,
 } from '@/lib/desktop/backend';
 import { useEmulatorManagerStore, type RootWizardSource } from '@/lib/emulatorManagerStore';
+import { invalidateAvds } from '@/lib/queries';
 import { RootManualStep } from './RootManualStep';
 import { RootPreflightStep } from './RootPreflightStep';
 import { RootProgressStep } from './RootProgressStep';
@@ -38,6 +40,8 @@ export function RootWizard({ avd }: RootWizardProps) {
     setActiveTab,
   } = useEmulatorManagerStore();
 
+  const queryClient = useQueryClient();
+
   const cancelledRef = useRef(false);
   const autoScanKeyRef = useRef<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -63,7 +67,10 @@ export function RootWizard({ avd }: RootWizardProps) {
       }
     });
     return () => {
-      unlistenPromise.then((fn) => fn());
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      unlistenPromise.then((fn) => {
+        fn();
+      });
     };
   }, [setRootWizardProgress]);
 
@@ -105,7 +112,7 @@ export function RootWizard({ avd }: RootWizardProps) {
     if (!rootWizard.source) return;
     setRootWizardStep('progress');
     cancelledRef.current = false;
-    startRoot();
+    void startRoot();
   }
 
   async function startRoot() {
@@ -129,6 +136,7 @@ export function RootWizard({ avd }: RootWizardProps) {
       if (!cancelledRef.current) {
         setRootWizardResult(result);
         toast.success(`Patch installed for ${avd.name}. Cold boot to verify root.`);
+        invalidateAvds(queryClient);
       }
     } catch (err) {
       if (!cancelledRef.current) {
@@ -161,8 +169,12 @@ export function RootWizard({ avd }: RootWizardProps) {
   function handleColdBoot() {
     // The emulator may already be stopped (auto-shutdown after patching).
     // Attempt to stop gracefully, then cold boot with no-snapshot flags.
-    const stopPromise = avd.serial ? StopAvd(avd.serial).catch(() => {}) : Promise.resolve();
-    stopPromise
+    const stopPromise = avd.serial
+      ? StopAvd(avd.serial).catch(() => {
+          // ignore
+        })
+      : Promise.resolve();
+    void stopPromise
       .then(() =>
         LaunchAvd(avd.name, {
           wipeData: false,
@@ -173,9 +185,9 @@ export function RootWizard({ avd }: RootWizardProps) {
           noBootAnim: false,
         }),
       )
-      .then(() => toast.success(`Cold booting ${avd.name}…`))
-      .catch((err: unknown) => toast.error(String(err)));
-    resetRootWizard();
+      .catch(() => {
+        // ignore
+      });
   }
 
   async function handleVerifyRoot() {
@@ -260,7 +272,9 @@ export function RootWizard({ avd }: RootWizardProps) {
             setPreflightScan(null);
             void runScan();
           }}
-          onContinue={() => setRootWizardStep('source')}
+          onContinue={() => {
+            setRootWizardStep('source');
+          }}
           onLaunch={handleLaunch}
           onColdBoot={handleColdBoot}
           onRestoreStock={handleRestoreStock}
@@ -272,7 +286,9 @@ export function RootWizard({ avd }: RootWizardProps) {
           source={rootWizard.source}
           onSourceChange={handleSourceChange}
           onContinue={handleContinue}
-          onManualMode={() => setRootWizardStep('manual')}
+          onManualMode={() => {
+            setRootWizardStep('manual');
+          }}
         />
       )}
 
@@ -280,7 +296,9 @@ export function RootWizard({ avd }: RootWizardProps) {
         <RootManualStep
           avdName={avd.name}
           serial={avd.serial ?? null}
-          onBack={() => setRootWizardStep('source')}
+          onBack={() => {
+            setRootWizardStep('source');
+          }}
           onColdBoot={handleColdBoot}
         />
       )}

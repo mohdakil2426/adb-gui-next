@@ -32,7 +32,11 @@ export const PartitionRow = React.memo(function PartitionRow({
 }: PartitionRowProps) {
   return (
     <div
-      onClick={() => !disabled && !isCompleted && onToggle(index)}
+      onClick={() => {
+        if (!disabled && !isCompleted) {
+          onToggle(index);
+        }
+      }}
       role="checkbox"
       aria-checked={isCompleted ? true : partition.selected}
       aria-disabled={disabled || isCompleted}
@@ -91,7 +95,7 @@ export const PartitionRow = React.memo(function PartitionRow({
       </div>
 
       {/* Progress — only when extraction active */}
-      {showProgress && (
+      {showProgress ? (
         <div className="flex items-center justify-center">
           <ExtractionProgressBar
             isExtracting={isExtracting}
@@ -99,7 +103,7 @@ export const PartitionRow = React.memo(function PartitionRow({
             realProgress={progressPercent}
           />
         </div>
-      )}
+      ) : null}
 
       {/* Size */}
       <span

@@ -12,7 +12,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 prost-build = "0.14"
 protoc-bin-vendored = "3"
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.6.1", features = [] }
 
 [dependencies]
 anyhow = "1"
@@ -26,11 +26,11 @@ rayon = "1.12.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11.0"
-tauri = { version = "2", features = [] }
-tokio = { version = "1.52.1", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
-tauri-plugin-dialog = "2.7.0"
+tauri = { version = "2.11.1", features = [] }
+tokio = { version = "1.52.2", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
+tauri-plugin-dialog = "2.7.1"
 tauri-plugin-log = "2"
-tauri-plugin-opener = "2"
+tauri-plugin-opener = "2.5.4"
 tempfile = "3"
 url = "2"
 which = "8"
@@ -44,7 +44,7 @@ urlencoding = "2"
 aes = "0.9.0"
 cfb-mode = "0.9.0"
 md-5 = "0.11.0"
-quick-xml = "0.39.2"
+quick-xml = "0.39.3"
 
 # HTTP client for marketplace + payload
 reqwest = { version = "0.13.3", features = ["rustls", "stream", "http2", "blocking", "json"] }

@@ -89,7 +89,9 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await waitFor(() => expect(scanAvdRootReadinessMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      expect(scanAvdRootReadinessMock).toHaveBeenCalledTimes(1);
+    });
 
     await act(async () => {
       await Promise.resolve();

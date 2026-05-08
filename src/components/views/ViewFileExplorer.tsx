@@ -264,7 +264,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     e.preventDefault();
     setIsResizing(true);
   }, []);
-  const stopResizing = useCallback(() => setIsResizing(false), []);
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
   const resize = useCallback(
     (e: MouseEvent) => {
       if (!isResizing || !containerRef.current) return;
@@ -314,7 +316,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     };
 
     window.addEventListener('resize', onWindowResize);
-    return () => window.removeEventListener('resize', onWindowResize);
+    return () => {
+      window.removeEventListener('resize', onWindowResize);
+    };
   }, []);
 
   // ── Load files ───────────────────────────────────────────────────────────
@@ -454,7 +458,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     (file: FileEntry) => {
       if (renamingName) return;
       if (file.type === 'Directory' || file.type === 'Symlink') {
-        loadFiles(path.posix.join(currentPath, file.name) + '/');
+        void loadFiles(path.posix.join(currentPath, file.name) + '/');
       }
     },
     [renamingName, currentPath, loadFiles],
@@ -507,7 +511,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     setRenameError('');
   }, []);
 
-  const handleRenameChange = (val: string) => {
+  const handleRenameChange = useCallback((val: string) => {
     setRenameValue(val);
     if (!val.trim()) {
       setRenameError('Name cannot be empty');
@@ -518,7 +522,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       return;
     }
     setRenameError('');
-  };
+  }, []);
 
   const handleRenameConfirm = useCallback(async () => {
     if (!renamingName) return;
@@ -537,7 +541,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       useLogStore.getState().addLog(`Renamed ${renamingName} → ${trimmed}`, 'success');
       setRenamingName(null);
       setSelectedNames(new Set([trimmed]));
-      loadFiles(currentPath);
+      void loadFiles(currentPath);
     } catch (error) {
       handleError('Rename', error);
       setRenamingName(null);
@@ -601,7 +605,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         useLogStore.getState().addLog(`Created folder: ${fullPath}`, 'success');
       }
       setCreatingType(null);
-      loadFiles(currentPath);
+      void loadFiles(currentPath);
     } catch (error) {
       handleError(creatingType === 'file' ? 'Create File' : 'Create Folder', error);
     } finally {
@@ -625,7 +629,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       toast.success(`Deleted ${label}`);
       useLogStore.getState().addLog(`Deleted from ${currentPath}: ${names.join(', ')}`, 'success');
       setSelectedNames(new Set());
-      loadFiles(currentPath);
+      void loadFiles(currentPath);
     } catch (error) {
       handleError('Delete', error);
     } finally {
@@ -635,10 +639,39 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   };
 
   // ── Back navigation ──────────────────────────────────────────────────────
-  const handleBackClick = () => {
+  const handleBackClick = useCallback(() => {
     if (currentPath === '/') return;
-    loadFiles(path.posix.join(currentPath, '..') + '/');
-  };
+    void loadFiles(path.posix.join(currentPath, '..') + '/');
+  }, [currentPath, loadFiles]);
+
+  // ── Path editing ───────────────────────────────────────────────────────────
+  const handlePathClick = useCallback(() => {
+    setEditPathValue(currentPath);
+    setIsEditingPath(true);
+  }, [currentPath]);
+
+  // ── Tree collapsed handlers ────────────────────────────────────────────────
+  const handleCollapseTree = useCallback(() => {
+    toggleTree(true);
+  }, [toggleTree]);
+  const handleExpandTree = useCallback(() => {
+    toggleTree(false);
+  }, [toggleTree]);
+
+  // ── Refresh ───────────────────────────────────────────────────────────────
+  const handleRefreshClick = useCallback(() => {
+    void loadFiles(currentPath, false);
+  }, [currentPath, loadFiles]);
+
+  // ── Search ────────────────────────────────────────────────────────────────
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('');
+  }, []);
+
+  // ── Delete dialog ────────────────────────────────────────────────────────
+  const handleDeleteFromSelection = useCallback(() => {
+    openDeleteDialog(Array.from(selectedNames));
+  }, [openDeleteDialog, selectedNames]);
 
   // Shared pull helper — used by toolbar (selection-based) and context-menu (direct)
   const executePull = useCallback(
@@ -681,7 +714,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
         toast.success('Import Complete', { description: output, id: toastId });
         useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
-        loadFiles(currentPath, false);
+        void loadFiles(currentPath, false);
       } catch (error) {
         if (toastId) toast.error('Import Failed', { id: toastId });
         handleError('Import', error);
@@ -699,14 +732,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     try {
       const localPath = await SelectFileToPush();
       if (!localPath) return;
-      const fileName = localPath.replace(/\\/g, '/').split('/').pop() || path.basename(localPath);
+      const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localPath);
       const remotePath = path.posix.join(currentPath, fileName);
       debugLog(`Pushing file ${fileName} to ${remotePath}`);
       toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
       const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
       toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
-      loadFiles(currentPath, false);
+      void loadFiles(currentPath, false);
     } catch (error) {
       if (toastId) toast.error('Import Failed', { id: toastId });
       handleError('Push File', error);
@@ -722,7 +755,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const localFolderPath = await SelectDirectoryToPush();
       if (!localFolderPath) return;
       const folderName =
-        localFolderPath.replace(/\\/g, '/').split('/').pop() || path.basename(localFolderPath);
+        localFolderPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localFolderPath);
       debugLog(`Pushing folder ${folderName} to ${currentPath}`);
       toastId = toast.loading(`Pushing folder ${folderName}…`, {
         description: `To: ${currentPath}`,
@@ -730,7 +763,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       const output = await PushFile(localFolderPath, currentPath, selectedSerialRef.current);
       toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
-      loadFiles(currentPath, false);
+      void loadFiles(currentPath, false);
     } catch (error) {
       if (toastId) toast.error('Import Failed', { id: toastId });
       handleError('Push Folder', error);
@@ -844,7 +877,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+    };
   }, [
     activeView,
     selectedNames,
@@ -870,7 +905,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     >
       <h1 className="sr-only">File Explorer</h1>
       {/* Drag overlay — prevents text selection while resizing */}
-      {isResizing && <div className="fixed inset-0 z-50 cursor-col-resize select-none" />}
+      {isResizing ? <div className="fixed inset-0 z-50 cursor-col-resize select-none" /> : null}
 
       {/* Left: Directory tree */}
       {!isTreeCollapsed && (
@@ -883,7 +918,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 variant="ghost"
                 size="icon"
                 className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => toggleTree(true)}
+                onClick={handleCollapseTree}
               >
                 <PanelLeftClose className="size-3.5" />
               </Button>
@@ -917,21 +952,21 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         {/* Toolbar */}
         <div className="flex items-center gap-1 px-2 h-10 border-b border-border shrink-0">
           {/* Tree restore toggle */}
-          {isTreeCollapsed && (
+          {isTreeCollapsed ? (
             <>
               <ToolbarTooltip label="Show tree panel">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-                  onClick={() => toggleTree(false)}
+                  onClick={handleExpandTree}
                 >
                   <PanelLeft className="size-4" />
                 </Button>
               </ToolbarTooltip>
               <Separator orientation="vertical" className="h-4 mx-0.5" />
             </>
-          )}
+          ) : null}
 
           {/* Back / Forward / Up + Address bar */}
           <div className="flex items-center gap-1 min-w-0 flex-1">
@@ -975,29 +1010,33 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             </ToolbarTooltip>
 
             {isEditingPath ? (
-              <Input
-                value={editPathValue}
-                onChange={(e) => setEditPathValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const t = editPathValue.trim();
-                    loadFiles(t && !t.endsWith('/') ? `${t}/` : t || '/');
+              <div className="relative flex items-center flex-1 min-w-0">
+                <Folder className="absolute left-1.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none shrink-0" />
+                <Input
+                  value={editPathValue}
+                  onChange={(e) => {
+                    setEditPathValue(e.target.value);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const t = editPathValue.trim();
+                      void loadFiles(t && !t.endsWith('/') ? `${t}/` : t || '/');
+                      setIsEditingPath(false);
+                    }
+                    if (e.key === 'Escape') setIsEditingPath(false);
+                  }}
+                  onBlur={() => {
                     setIsEditingPath(false);
-                  }
-                  if (e.key === 'Escape') setIsEditingPath(false);
-                }}
-                onBlur={() => setIsEditingPath(false)}
-                className="font-mono text-xs h-7 flex-1 min-w-0 focus-visible:ring-1 focus-visible:ring-primary"
-                autoFocus
-              />
+                  }}
+                  className="font-mono text-xs h-7 pl-6 pr-2 flex-1 min-w-0 border-input focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                  autoFocus
+                />
+              </div>
             ) : (
               <button
                 className="flex-1 min-w-0 text-left font-mono text-xs truncate text-muted-foreground hover:text-foreground cursor-text px-2 py-1 rounded-sm hover:bg-muted/50 transition-colors"
-                onClick={() => {
-                  setEditPathValue(currentPath);
-                  setIsEditingPath(true);
-                }}
+                onClick={handlePathClick}
                 title="Click to edit path"
               >
                 {currentPath}
@@ -1015,7 +1054,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 variant="ghost"
                 size="icon"
                 className="size-7"
-                onClick={() => loadFiles(currentPath, false)}
+                onClick={handleRefreshClick}
                 disabled={isBusy}
               >
                 {isLoading ? (
@@ -1034,21 +1073,23 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               <Input
                 id="fe-search-input"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
                 placeholder="Filter…"
                 className="h-7 pl-6 pr-6 text-xs w-32 focus-visible:w-48 transition-[width] duration-200"
                 aria-label="Filter files"
               />
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   className="absolute right-1.5 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSearchQuery('')}
+                  onClick={handleClearSearch}
                   aria-label="Clear filter"
                   tabIndex={-1}
                 >
                   <X className="h-3 w-3" />
                 </button>
-              )}
+              ) : null}
             </div>
 
             <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
@@ -1059,7 +1100,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 variant="ghost"
                 size="icon"
                 className="size-7"
-                onClick={() => startCreate('file')}
+                onClick={() => {
+                  startCreate('file');
+                }}
                 disabled={isBusy}
               >
                 <FilePlus2 className="h-4 w-4 shrink-0" />
@@ -1072,7 +1115,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 variant="ghost"
                 size="icon"
                 className="size-7"
-                onClick={() => startCreate('folder')}
+                onClick={() => {
+                  startCreate('folder');
+                }}
                 disabled={isBusy}
               >
                 <FolderPlus className="h-4 w-4 shrink-0" />
@@ -1141,7 +1186,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         </div>
 
         {/* Selection summary bar — only visible in multi-select mode */}
-        {isMultiSelectMode && selectedNames.size > 0 && !renamingName && (
+        {isMultiSelectMode && selectedNames.size > 0 && !renamingName ? (
           <SelectionSummaryBar
             count={selectedNames.size}
             label={selectedNames.size === 1 ? 'item selected' : 'items selected'}
@@ -1152,7 +1197,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 variant="destructive"
                 size="sm"
                 className="h-6 px-2 text-xs"
-                onClick={() => openDeleteDialog(Array.from(selectedNames))}
+                onClick={handleDeleteFromSelection}
                 disabled={isBusy}
               >
                 <Trash2 className="h-3 w-3 shrink-0" />
@@ -1160,7 +1205,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               </Button>
             }
           />
-        )}
+        ) : null}
 
         {/* File table / states */}
         <ContextMenu>
@@ -1200,7 +1245,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       variant="outline"
                       size="sm"
                       className="h-7 gap-1.5 text-xs"
-                      onClick={() => startCreate('file')}
+                      onClick={() => {
+                        startCreate('file');
+                      }}
                       disabled={isBusy}
                     >
                       <FilePlus2 className="h-3.5 w-3.5" />
@@ -1210,7 +1257,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       variant="outline"
                       size="sm"
                       className="h-7 gap-1.5 text-xs"
-                      onClick={() => startCreate('folder')}
+                      onClick={() => {
+                        startCreate('folder');
+                      }}
                       disabled={isBusy}
                     >
                       <FolderPlus className="h-3.5 w-3.5" />
@@ -1222,7 +1271,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 <Table>
                   <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                     <TableRow>
-                      {isMultiSelectMode && (
+                      {isMultiSelectMode ? (
                         <TableHead className="w-10 pl-3">
                           <Checkbox
                             checked={allSelected ? true : someSelected ? 'indeterminate' : false}
@@ -1231,14 +1280,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                             disabled={isBusy}
                           />
                         </TableHead>
-                      )}
+                      ) : null}
                       <TableHead className="w-10" />
                       {/* Clickable sort headers */}
                       {(['name', 'size', 'date'] as const).map((field) => (
                         <TableHead
                           key={field}
                           className="cursor-pointer select-none hover:text-foreground capitalize"
-                          onClick={() => handleSortColumn(field)}
+                          onClick={() => {
+                            handleSortColumn(field);
+                          }}
                         >
                           <span className="inline-flex items-center gap-1">
                             {field}
@@ -1261,7 +1312,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     {/* Phantom row — inline creation of new file or folder */}
                     {creatingType !== null && (
                       <TableRow>
-                        {isMultiSelectMode && <TableCell className="pl-3 pr-0 w-10" />}
+                        {isMultiSelectMode ? <TableCell className="pl-3 pr-0 w-10" /> : null}
                         <TableCell className="w-10 pr-0">
                           {creatingType === 'folder' ? (
                             <Folder className="h-4 w-4 shrink-0 text-primary" />
@@ -1273,7 +1324,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           <div className="flex items-center gap-2">
                             <Input
                               value={createName}
-                              onChange={(e) => handleCreateChange(e.target.value)}
+                              onChange={(e) => {
+                                handleCreateChange(e.target.value);
+                              }}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                   e.preventDefault();
@@ -1285,7 +1338,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 }
                               }}
                               onBlur={cancelCreate}
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                               placeholder={
                                 creatingType === 'folder' ? 'New folder name' : 'filename.ext'
                               }
@@ -1299,14 +1354,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                               autoFocus
                               disabled={isCreating}
                             />
-                            {createError && (
+                            {createError ? (
                               <span className="text-xs text-destructive leading-none shrink-0">
                                 {createError}
                               </span>
-                            )}
-                            {isCreating && (
+                            ) : null}
+                            {isCreating ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-muted-foreground" />
-                            )}
+                            ) : null}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1334,12 +1389,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           <ContextMenuTrigger asChild>
                             <TableRow
                               data-state={isSelected ? 'selected' : ''}
-                              onClick={(e) => handleRowClick(file, e)}
-                              onDoubleClick={() => handleRowDoubleClick(file)}
+                              onClick={(e) => {
+                                handleRowClick(file, e);
+                              }}
+                              onDoubleClick={() => {
+                                handleRowDoubleClick(file);
+                              }}
                               className="cursor-pointer"
                             >
                               {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
-                              {isMultiSelectMode && !isBeingRenamed && (
+                              {isMultiSelectMode && !isBeingRenamed ? (
                                 <TableCell
                                   className="pl-3 pr-0 w-10"
                                   onClick={(e) => {
@@ -1353,7 +1412,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                     tabIndex={-1}
                                   />
                                 </TableCell>
-                              )}
+                              ) : null}
 
                               {/* Type icon */}
                               <TableCell className="w-10">
@@ -1372,11 +1431,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                   <div className="flex flex-col gap-0.5">
                                     <Input
                                       value={renameValue}
-                                      onChange={(e) => handleRenameChange(e.target.value)}
+                                      onChange={(e) => {
+                                        handleRenameChange(e.target.value);
+                                      }}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          handleRenameConfirm();
+                                          void handleRenameConfirm();
                                         }
                                         if (e.key === 'Escape') {
                                           e.preventDefault();
@@ -1384,29 +1445,33 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                         }
                                       }}
                                       onBlur={handleRenameCancel}
-                                      onClick={(e) => e.stopPropagation()}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
                                       className={cn(
                                         'h-7 py-0 px-1.5 font-medium text-sm w-full',
                                         renameError &&
                                           'border-destructive focus-visible:ring-destructive',
                                       )}
                                       autoFocus
-                                      onFocus={(e) => e.target.select()}
+                                      onFocus={(e) => {
+                                        e.target.select();
+                                      }}
                                     />
-                                    {renameError && (
+                                    {renameError ? (
                                       <span className="text-xs text-destructive leading-none">
                                         {renameError}
                                       </span>
-                                    )}
+                                    ) : null}
                                   </div>
                                 ) : (
                                   <div className="flex flex-col gap-0.5">
                                     <span>{file.name}</span>
-                                    {file.type === 'Symlink' && file.linkTarget && (
+                                    {file.type === 'Symlink' && file.linkTarget ? (
                                       <span className="text-[10px] font-mono text-muted-foreground/60 leading-none">
                                         → {file.linkTarget}
                                       </span>
-                                    )}
+                                    ) : null}
                                   </div>
                                 )}
                               </TableCell>
@@ -1422,7 +1487,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           {/* Right-click context menu */}
                           <ContextMenuContent>
                             {/* Select — enters multi-select mode and adds this item */}
-                            <ContextMenuItem onClick={() => handleSelectFromMenu(file.name)}>
+                            <ContextMenuItem
+                              onClick={() => {
+                                handleSelectFromMenu(file.name);
+                              }}
+                            >
                               <SquareCheck className="h-4 w-4 shrink-0" />
                               Select
                             </ContextMenuItem>
@@ -1441,7 +1510,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
                             <ContextMenuSeparator />
 
-                            {isNavigable && (
+                            {isNavigable ? (
                               <>
                                 <ContextMenuItem
                                   onClick={() =>
@@ -1453,14 +1522,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 </ContextMenuItem>
                                 <ContextMenuSeparator />
                               </>
-                            )}
+                            ) : null}
 
                             <ContextMenuItem
                               disabled={
                                 (isSelected && selectedNames.size > 1) ||
                                 (!isSelected && selectedNames.size > 0)
                               }
-                              onClick={() => startRename(file)}
+                              onClick={() => {
+                                startRename(file);
+                              }}
                             >
                               <Pencil className="h-4 w-4 shrink-0" />
                               Rename
@@ -1515,12 +1586,22 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             </ScrollArea>
           </ContextMenuTrigger>
           <ContextMenuContent>
-            <ContextMenuItem onClick={() => startCreate('file')} disabled={isBusy}>
+            <ContextMenuItem
+              onClick={() => {
+                startCreate('file');
+              }}
+              disabled={isBusy}
+            >
               <FilePlus2 className="h-4 w-4 shrink-0" />
               New File
               <span className="ml-auto pl-4 text-xs text-muted-foreground">Ctrl+N</span>
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => startCreate('folder')} disabled={isBusy}>
+            <ContextMenuItem
+              onClick={() => {
+                startCreate('folder');
+              }}
+              disabled={isBusy}
+            >
               <FolderPlus className="h-4 w-4 shrink-0" />
               New Folder
               <span className="ml-auto pl-4 text-xs text-muted-foreground">Ctrl+Shift+N</span>

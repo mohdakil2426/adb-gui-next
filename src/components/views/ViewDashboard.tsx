@@ -115,6 +115,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       const output = await EnableWirelessAdb('5555', selectedSerial);
       toast.success('Wireless mode enabled!', { id: toastId, description: output });
       handleSuccess('Wireless ADB', `Wireless mode enabled: ${output}`);
+      refreshDevices();
     } catch (error) {
       toast.error('Failed to enable wireless mode', { id: toastId });
       handleError('Enable Wireless ADB', error);
@@ -142,7 +143,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     const values = wirelessForm.getValues();
     const parsed = wirelessAdbSchema.safeParse(values);
     if (!parsed.success) {
-      toast.error('Invalid input', { description: parsed.error.issues[0].message });
+      toast.error('Invalid input', {
+        description: parsed.error.issues[0]?.message ?? 'Unknown error',
+      });
       return;
     }
     setIsDisconnecting(true);
@@ -160,14 +163,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsDisconnecting(false);
   };
 
-  const openEditDialog = (device: Device) => {
+  const openEditDialog = useCallback((device: Device) => {
     setCurrentDevice(device);
     setIsEditing(true);
-  };
+  }, []);
 
-  const handleNicknameSaved = () => {
+  const handleNicknameSaved = useCallback(() => {
     forceNicknameRefresh((version) => version + 1);
-  };
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,7 +191,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Wifi className="h-5 w-5" />
+            <Wifi className="size-5" />
             Wireless ADB Connection
           </CardTitle>
         </CardHeader>
@@ -204,9 +207,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
               disabled={isEnablingTcpip || !selectedSerial || isConnecting}
             >
               {isEnablingTcpip ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
               ) : (
-                <Usb className="mr-2 h-4 w-4 shrink-0" />
+                <Usb className="mr-2 size-4 shrink-0" />
               )}
               Enable Wireless Mode (tcpip)
             </Button>
@@ -228,33 +231,37 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                     <Input
                       id="dashboard-wireless-ip"
                       aria-invalid={Boolean(wirelessForm.formState.errors.ip)}
+                      aria-describedby={wirelessForm.formState.errors.ip ? 'ip-error' : undefined}
                       autoComplete="off"
                       placeholder="Device IP Address"
                       {...wirelessForm.register('ip')}
                       disabled={isConnecting || isDisconnecting}
                     />
-                    {wirelessForm.formState.errors.ip && (
-                      <FieldDescription className="text-destructive">
+                    {wirelessForm.formState.errors.ip ? (
+                      <FieldDescription id="ip-error" className="text-destructive">
                         {wirelessForm.formState.errors.ip.message}
                       </FieldDescription>
-                    )}
+                    ) : null}
                   </Field>
                   <Field data-invalid={Boolean(wirelessForm.formState.errors.port)}>
                     <FieldLabel htmlFor="dashboard-wireless-port">Wireless ADB Port</FieldLabel>
                     <Input
                       id="dashboard-wireless-port"
                       aria-invalid={Boolean(wirelessForm.formState.errors.port)}
+                      aria-describedby={
+                        wirelessForm.formState.errors.port ? 'port-error' : undefined
+                      }
                       inputMode="numeric"
                       autoComplete="off"
                       placeholder="Port"
                       {...wirelessForm.register('port')}
                       disabled={isConnecting || isDisconnecting}
                     />
-                    {wirelessForm.formState.errors.port && (
-                      <FieldDescription className="text-destructive">
+                    {wirelessForm.formState.errors.port ? (
+                      <FieldDescription id="port-error" className="text-destructive">
                         {wirelessForm.formState.errors.port.message}
                       </FieldDescription>
-                    )}
+                    ) : null}
                   </Field>
                 </div>
               </FieldGroup>
@@ -265,9 +272,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                   disabled={isConnecting || !watchedIp || isDisconnecting}
                 >
                   {isConnecting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                    <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
                   ) : (
-                    <Wifi className="mr-2 h-4 w-4 shrink-0" />
+                    <Wifi className="mr-2 size-4 shrink-0" />
                   )}
                   Connect
                 </Button>
@@ -279,9 +286,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                   disabled={isDisconnecting || !watchedIp || isConnecting}
                 >
                   {isDisconnecting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin shrink-0" />
+                    <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
                   ) : (
-                    <PlugZap className="mr-2 h-4 w-4 shrink-0" />
+                    <PlugZap className="mr-2 size-4 shrink-0" />
                   )}
                   Disconnect
                 </Button>
@@ -294,7 +301,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2">
-            <Info className="h-5 w-5" />
+            <Info className="size-5" />
             Device Info
           </CardTitle>
           <Button
@@ -303,9 +310,9 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             disabled={isRefreshingInfo || !selectedSerial}
           >
             {isRefreshingInfo ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 size-4" />
             )}
             Refresh Info
           </Button>
@@ -318,64 +325,64 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <InfoItem
-                icon={<Building className="h-4 w-4" />}
+                icon={<Building className="size-4" />}
                 label="Brand"
                 value={deviceInfo.brand}
               />
               <InfoItem
-                icon={<Tag className="h-4 w-4" />}
+                icon={<Tag className="size-4" />}
                 label="Device Name"
                 value={deviceInfo.deviceName}
               />
               <InfoItem
-                icon={<Code className="h-4 w-4" />}
+                icon={<Code className="size-4" />}
                 label="Codename"
                 value={deviceInfo.codename}
               />
               <InfoItem
-                icon={<Smartphone className="h-4 w-4" />}
+                icon={<Smartphone className="size-4" />}
                 label="Model"
                 value={deviceInfo.model}
               />
               <InfoItem
-                icon={<Hash className="h-4 w-4" />}
+                icon={<Hash className="size-4" />}
                 label="Serial Number"
                 value={deviceInfo.serial}
                 copyable
               />
               <InfoItem
-                icon={<Server className="h-4 w-4" />}
+                icon={<Server className="size-4" />}
                 label="Build Number"
                 value={deviceInfo.buildNumber}
               />
               <InfoItem
-                icon={<Info className="h-4 w-4" />}
+                icon={<Info className="size-4" />}
                 label="Android Version"
                 value={deviceInfo.androidVersion}
               />
               <InfoItem
-                icon={<Battery className="h-4 w-4" />}
+                icon={<Battery className="size-4" />}
                 label="Battery"
                 value={deviceInfo.batteryLevel}
               />
               <InfoItem
-                icon={<Cpu className="h-4 w-4" />}
+                icon={<Cpu className="size-4" />}
                 label="Total RAM"
                 value={deviceInfo.ramTotal}
               />
               <InfoItem
-                icon={<Database className="h-4 w-4" />}
+                icon={<Database className="size-4" />}
                 label="Internal Storage"
                 value={deviceInfo.storageInfo}
               />
               <InfoItem
-                icon={<Wifi className="h-4 w-4" />}
+                icon={<Wifi className="size-4" />}
                 label="IP Address"
                 value={deviceInfo.ipAddress}
                 copyable
               />
               <InfoItem
-                icon={<ShieldCheck className="h-4 w-4" />}
+                icon={<ShieldCheck className="size-4" />}
                 label="Root Status"
                 value={deviceInfo.rootStatus}
                 valueClassName={
@@ -392,7 +399,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        serial={currentDevice?.serial || null}
+        serial={currentDevice?.serial ?? null}
         onSaved={handleNicknameSaved}
       />
     </div>
@@ -419,7 +426,7 @@ function InfoItem({
         <div className="text-sm text-muted-foreground truncate">{label}</div>
         <div className={cn('font-semibold truncate', valueClassName)}>{value || 'N/A'}</div>
       </div>
-      {copyable && value && <CopyButton value={value} label={label} />}
+      {copyable && value ? <CopyButton value={value} label={label} /> : null}
     </div>
   );
 }

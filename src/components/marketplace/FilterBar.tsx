@@ -78,7 +78,9 @@ export function FilterBar({ resultCount }: FilterBarProps) {
                   'w-full justify-start text-xs font-medium',
                   !isActive && 'text-muted-foreground',
                 )}
-                onClick={() => toggleProvider(provider.id)}
+                onClick={() => {
+                  toggleProvider(provider.id);
+                }}
               >
                 {provider.label}
               </Button>
@@ -138,7 +140,9 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
               value={sortBy}
-              onValueChange={(value) => setSortBy(value as MarketplaceSortBy)}
+              onValueChange={(value) => {
+                setSortBy(value as MarketplaceSortBy);
+              }}
             >
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenuRadioItem key={option.value} value={option.value}>

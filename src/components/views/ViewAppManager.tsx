@@ -25,7 +25,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
             <Package className="size-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">Applications</h1>
+            <h1 className="sr-only">Applications</h1>
             <p className="text-sm text-muted-foreground">
               Manage, debloat, and install apps on your device.
             </p>
@@ -36,7 +36,12 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       {/* ── Card with flush tabs ─────────────────────────────────────────────── */}
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AppManagerTab)}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              setActiveTab(v as AppManagerTab);
+            }}
+          >
             <TabsList
               variant="line"
               className="w-full justify-start rounded-none rounded-t-xl border-b px-4"

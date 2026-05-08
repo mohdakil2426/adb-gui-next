@@ -22,7 +22,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
   deviceInfo: null,
   lastUpdated: 0,
 
-  setDevices: (devices) =>
+  setDevices: (devices) => {
     set((state) => {
       let { selectedSerial } = state;
       const previousSerial = selectedSerial;
@@ -34,7 +34,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
 
       // If nothing selected and devices available → auto-select first
       if (!selectedSerial && devices.length > 0) {
-        selectedSerial = devices[0].serial;
+        selectedSerial = devices[0]?.serial ?? null;
       }
 
       return {
@@ -43,14 +43,20 @@ export const useDeviceStore = create<DeviceState>((set) => ({
         deviceInfo: selectedSerial === previousSerial ? state.deviceInfo : null,
         lastUpdated: Date.now(),
       };
-    }),
+    });
+  },
 
-  setSelectedSerial: (serial) =>
+  setSelectedSerial: (serial) => {
     set((state) => ({
       selectedSerial: serial,
       deviceInfo: serial === state.selectedSerial ? state.deviceInfo : null,
-    })),
-  setDeviceInfo: (info) => set({ deviceInfo: info }),
+    }));
+  },
+  setDeviceInfo: (info) => {
+    set({ deviceInfo: info });
+  },
 
-  reset: () => set({ devices: [], selectedSerial: null, deviceInfo: null, lastUpdated: 0 }),
+  reset: () => {
+    set({ devices: [], selectedSerial: null, deviceInfo: null, lastUpdated: 0 });
+  },
 }));
