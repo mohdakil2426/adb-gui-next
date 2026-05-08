@@ -8,6 +8,7 @@ import {
   DisconnectWirelessAdb,
 } from '../../lib/desktop/backend';
 import type { backend } from '../../lib/desktop/models';
+
 import { toast } from 'sonner';
 import { handleError, handleSuccess } from '@/lib/errorHandler';
 import { debugLog } from '@/lib/debug';
@@ -43,8 +44,6 @@ import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/components/EditNicknameDialog';
 import { CopyButton } from '@/components/CopyButton';
 
-type Device = backend.Device;
-
 export function ViewDashboard({ activeView }: { activeView: string }) {
   const queriedDevices = useDeviceStore((state) => state.devices);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
@@ -55,9 +54,10 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [, forceNicknameRefresh] = useState(0);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
+  const isEditing = useDeviceStore((state) => state.isEditingNickname);
+  const setIsEditing = useDeviceStore((state) => state.setIsEditingNickname);
+  const editingSerial = useDeviceStore((state) => state.editingDeviceSerial);
+  const setEditingSerial = useDeviceStore((state) => state.setEditingDeviceSerial);
 
   const wirelessForm = useForm<WirelessAdbValues>({
     resolver: zodResolver(wirelessAdbSchema),
@@ -163,14 +163,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsDisconnecting(false);
   };
 
-  const openEditDialog = useCallback((device: Device) => {
-    setCurrentDevice(device);
+  const openEditDialog = useCallback((device: backend.Device) => {
+    setEditingSerial(device.serial);
     setIsEditing(true);
-  }, []);
+  }, [setEditingSerial, setIsEditing]);
 
   const handleNicknameSaved = useCallback(() => {
-    forceNicknameRefresh((version) => version + 1);
-  }, []);
+    refreshDevices();
+  }, [refreshDevices]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -398,8 +398,11 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
       <EditNicknameDialog
         isOpen={isEditing}
-        onOpenChange={setIsEditing}
-        serial={currentDevice?.serial ?? null}
+        onOpenChange={(open) => {
+          setIsEditing(open);
+          if (!open) setEditingSerial(null);
+        }}
+        serial={editingSerial}
         onSaved={handleNicknameSaved}
       />
     </div>

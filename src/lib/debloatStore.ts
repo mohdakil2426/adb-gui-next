@@ -1,11 +1,15 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { backend } from '@/lib/desktop/models';
 
+export type AppManagerTab = 'debloater' | 'installation';
 export type DebloatListFilter = backend.DebloatList | 'All';
 export type RemovalFilter = backend.RemovalTier | 'All';
 export type StateFilter = backend.PkgState | 'All';
 
 interface DebloatState {
+  // ── UI State ────────────────────────────────────────────────────────────────
+  activeTab: AppManagerTab;
   // ── Data ─────────────────────────────────────────────────────────────────
   packages: backend.DebloatPackageRow[];
   listStatus: backend.DebloatListStatus | null;
@@ -47,6 +51,7 @@ interface DebloatState {
   selectAll: () => void;
   unselectAll: () => void;
   setCurrentPackageName: (name: string | null) => void;
+  setActiveTab: (tab: AppManagerTab) => void;
 
   setExpertMode: (v: boolean) => void;
   setDisableMode: (v: boolean) => void;
@@ -62,26 +67,30 @@ interface DebloatState {
   resetFilters: () => void;
 }
 
-export const useDebloatStore = create<DebloatState>((set, get) => ({
-  packages: [],
-  listStatus: null,
-  isLoadingPackages: false,
-  isApplying: false,
+export const useDebloatStore = create<DebloatState>()(
+  persist(
+    (set, get): DebloatState => ({
+      packages: [],
+      listStatus: null,
+      isLoadingPackages: false,
+      isApplying: false,
 
-  searchQuery: '',
-  listFilter: 'All',
-  removalFilter: 'All',
-  stateFilter: 'All',
+      activeTab: 'installation',
 
-  selectedPackages: new Set(),
-  currentPackageName: null,
+      searchQuery: '',
+      listFilter: 'All',
+      removalFilter: 'All',
+      stateFilter: 'All',
 
-  expertMode: false,
-  disableMode: false,
-  multiUserMode: false,
+      selectedPackages: new Set(),
+      currentPackageName: null,
 
-  backups: [],
-  selectedBackupFileName: null,
+      expertMode: false,
+      disableMode: false,
+      multiUserMode: false,
+
+      backups: [],
+      selectedBackupFileName: null,
 
   setPackages: (packages) => {
     set({ packages });
@@ -145,6 +154,10 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
     set({ currentPackageName });
   },
 
+  setActiveTab: (activeTab) => {
+    set({ activeTab });
+  },
+
   setExpertMode: (expertMode) => {
     // Deselect any Unsafe packages if expert mode is turned off
     if (!expertMode) {
@@ -193,7 +206,22 @@ export const useDebloatStore = create<DebloatState>((set, get) => ({
   resetFilters: () => {
     set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' });
   },
-}));
+    }),
+    {
+      name: 'debloat-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeTab: state.activeTab,
+        searchQuery: state.searchQuery,
+        listFilter: state.listFilter,
+        removalFilter: state.removalFilter,
+        stateFilter: state.stateFilter,
+        expertMode: state.expertMode,
+        disableMode: state.disableMode,
+      }),
+    }
+  )
+);
 
 // ── Client-side filter helper (used by components + selectAll) ────────────────
 

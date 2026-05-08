@@ -173,10 +173,25 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // ── Sort ─────────────────────────────────────────────────────────────────
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [sortField, setSortField] = useState<SortField>(() => {
+    const saved = localStorage.getItem('fe.sortField');
+    return (saved as SortField) || 'name';
+  });
+const [sortDir, setSortDir] = useState<SortDir>(() => {
+    const saved = localStorage.getItem('fe.sortDir');
+    return (saved as SortDir) || 'asc';
+  });
 
-  // ── Search ───────────────────────────────────────────────────────────────
+  // Persist sort to localStorage
+  useEffect(() => {
+    localStorage.setItem('fe.sortField', sortField);
+  }, [sortField]);
+
+  useEffect(() => {
+    localStorage.setItem('fe.sortDir', sortDir);
+  }, [sortDir]);
+
+  // ── Search ─────────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
 
   // ── Navigation history ───────────────────────────────────────────────────

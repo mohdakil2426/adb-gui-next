@@ -159,13 +159,25 @@ function DropArea({
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function ViewFlasher() {
-  const [partition, setPartition] = useState('');
-  const [filePath, setFilePath] = useState('');
-  const [sideloadFilePath, setSideloadFilePath] = useState('');
+  const [partition, setPartition] = useState(() => localStorage.getItem('flasher.partition') ?? '');
+  const [filePath, setFilePath] = useState(() => localStorage.getItem('flasher.filePath') ?? '');
+  const [sideloadFilePath, setSideloadFilePath] = useState(() => localStorage.getItem('flasher.sideloadFilePath') ?? '');
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget>('none');
   const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('flasher.partition', partition);
+  }, [partition]);
+
+  useEffect(() => {
+    localStorage.setItem('flasher.filePath', filePath);
+  }, [filePath]);
+
+  useEffect(() => {
+    localStorage.setItem('flasher.sideloadFilePath', sideloadFilePath);
+  }, [sideloadFilePath]);
 
   // Refs for position-based hit-testing
   const flashSectionRef = useRef<HTMLDivElement>(null);

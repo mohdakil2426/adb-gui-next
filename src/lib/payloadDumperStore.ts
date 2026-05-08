@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { backend } from '@/lib/desktop/models';
 
 interface PartitionInfo {
@@ -94,35 +95,37 @@ const initialState = {
   remoteMetadata: null as backend.RemotePayloadMetadata | null,
 };
 
-export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
-  ...initialState,
+export const usePayloadDumperStore = create<PayloadDumperState>()(
+  persist(
+    (set) => ({
+      ...initialState,
 
-  setPayloadPath: (path) => {
-    set({
-      payloadPath: path,
-      // Only reset partitions and extraction state when new file is selected
-      partitions: [],
-      status: 'idle',
-      extractedFiles: [],
-      errorMessage: '',
-      outputDir: '',
-      extractingPartitions: new Set<string>(),
-      completedPartitions: new Set<string>(),
-      remoteMetadata: null,
-    });
-  },
+      setPayloadPath: (path) => {
+        set({
+          payloadPath: path,
+          // Only reset partitions and extraction state when new file is selected
+          partitions: [],
+          status: 'idle',
+          extractedFiles: [],
+          errorMessage: '',
+          outputDir: '',
+          extractingPartitions: new Set<string>(),
+          completedPartitions: new Set<string>(),
+          remoteMetadata: null,
+        });
+      },
 
-  setOutputPath: (path) => {
-    set({ outputPath: path });
-  },
+      setOutputPath: (path) => {
+        set({ outputPath: path });
+      },
 
-  setRemoteUrl: (url) => {
-    set({ remoteUrl: url });
-  },
+      setRemoteUrl: (url) => {
+        set({ remoteUrl: url });
+      },
 
-  setActiveMode: (mode) => {
-    set({ activeMode: mode });
-  },
+      setActiveMode: (mode) => {
+        set({ activeMode: mode });
+      },
 
   setPartitions: (partitions) => {
     set({ partitions });
@@ -250,4 +253,15 @@ export const usePayloadDumperStore = create<PayloadDumperState>((set) => ({
       partitionProgress: new Map(),
     });
   },
-}));
+    }),
+    {
+      name: 'payload-dumper-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        activeMode: state.activeMode,
+        remoteUrl: state.remoteUrl,
+        outputPath: state.outputPath,
+      }),
+    }
+  )
+);

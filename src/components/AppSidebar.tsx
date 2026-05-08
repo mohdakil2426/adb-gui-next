@@ -128,6 +128,9 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
         <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
+            <ThemeToggle />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="About"
               isActive={activeView === 'about'}
@@ -139,9 +142,6 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
               <Info aria-hidden="true" />
               <span>About</span>
             </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <ThemeToggle />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

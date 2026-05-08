@@ -1,16 +1,14 @@
-import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShieldCheck, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DebloaterTab } from './debloater/DebloaterTab';
 import { InstallationTab } from './debloater/InstallationTab';
-import { useDebloatStore } from '@/lib/debloatStore';
-
-type AppManagerTab = 'debloater' | 'installation';
+import { useDebloatStore, type AppManagerTab } from '@/lib/debloatStore';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
-  const [activeTab, setActiveTab] = useState<AppManagerTab>('debloater');
+  const activeTab = useDebloatStore((s) => s.activeTab);
+  const setActiveTab = useDebloatStore((s) => s.setActiveTab);
   const isLoadingPackages = useDebloatStore((s) => s.isLoadingPackages);
 
   // Re-export activeView for auto-load triggers in child tabs
@@ -46,23 +44,23 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               variant="line"
               className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
             >
-              <TabsTrigger value="debloater" className="flex items-center gap-1.5">
-                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-spin')} />
-                Debloater
-              </TabsTrigger>
               <TabsTrigger value="installation" className="flex items-center gap-1.5">
                 <Package className="size-3.5" />
                 Installation
               </TabsTrigger>
+              <TabsTrigger value="debloater" className="flex items-center gap-1.5">
+                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-spin')} />
+                Debloater
+              </TabsTrigger>
             </TabsList>
 
             <div className="p-6">
-              <TabsContent value="debloater">
-                <DebloaterTab />
-              </TabsContent>
-
               <TabsContent value="installation">
                 <InstallationTab />
+              </TabsContent>
+
+              <TabsContent value="debloater">
+                <DebloaterTab />
               </TabsContent>
             </div>
           </Tabs>

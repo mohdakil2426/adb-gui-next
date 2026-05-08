@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import '@/styles/global.css';
 import { Cpu, Terminal, Logs, SquareTerminal } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -268,6 +269,8 @@ export function MainLayout() {
                     </TooltipTrigger>
                     <TooltipContent side="bottom">Launch Terminal</TooltipContent>
                   </Tooltip>
+
+                  <ThemeToggle />
 
                   <Separator
                     orientation="vertical"
