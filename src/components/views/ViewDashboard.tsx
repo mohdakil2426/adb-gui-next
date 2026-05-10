@@ -163,10 +163,13 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     setIsDisconnecting(false);
   };
 
-  const openEditDialog = useCallback((device: backend.Device) => {
-    setEditingSerial(device.serial);
-    setIsEditing(true);
-  }, [setEditingSerial, setIsEditing]);
+  const openEditDialog = useCallback(
+    (device: backend.Device) => {
+      setEditingSerial(device.serial);
+      setIsEditing(true);
+    },
+    [setEditingSerial, setIsEditing],
+  );
 
   const handleNicknameSaved = useCallback(() => {
     refreshDevices();

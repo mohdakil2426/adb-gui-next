@@ -26,6 +26,7 @@ export function ViewPayloadDumper() {
   const remoteUrl = usePayloadDumperStore((state) => state.remoteUrl);
   const activeMode = usePayloadDumperStore((state) => state.activeMode);
   const remoteMetadata = usePayloadDumperStore((state) => state.remoteMetadata);
+  const extractionStats = usePayloadDumperStore((state) => state.extractionStats);
   const setRemoteUrl = usePayloadDumperStore((state) => state.setRemoteUrl);
   const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
   const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
@@ -183,6 +184,7 @@ export function ViewPayloadDumper() {
           extractedFiles={extractedFiles}
           outputDir={outputDir}
           errorMessage={errorMessage}
+          extractionStats={extractionStats}
           onOpenOutputFolder={actions.handleOpenOutputFolder}
         />
       )}

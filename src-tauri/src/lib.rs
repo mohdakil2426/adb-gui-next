@@ -60,6 +60,7 @@ pub fn run() {
             commands::disconnect_wireless_adb,
             commands::enable_wireless_adb,
             commands::extract_payload,
+            commands::extract_delta_payload,
             commands::fetch_magisk_stable_release,
             commands::finalize_avd_root,
             commands::flash_partition,
@@ -98,11 +99,9 @@ pub fn run() {
             commands::stop_avd,
             commands::uninstall_package,
             commands::wipe_data,
-            #[cfg(feature = "remote_zip")]
             commands::check_remote_payload,
-            #[cfg(feature = "remote_zip")]
+            commands::diagnose_payload,
             commands::get_remote_payload_metadata,
-            #[cfg(feature = "remote_zip")]
             commands::list_remote_payload_partitions,
             commands::get_ops_metadata,
             commands::marketplace_search,

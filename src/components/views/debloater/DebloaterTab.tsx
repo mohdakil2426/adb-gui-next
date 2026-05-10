@@ -393,30 +393,30 @@ export function DebloaterTab() {
       {/* ── Action bar ──────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-2">
         <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs"
-            disabled={filteredPackages.length === 0}
-            onClick={() => {
-              if (selectedPackages.size > 0) {
-                unselectAll();
-              } else {
-                selectAll();
-              }
-            }}
-          >
-            {selectedPackages.size > 0 ? (
-              <>
-                <Square data-icon="inline-start" />
-                Unselect All
-              </>
-            ) : (
-              <>
-                <CheckSquare2 data-icon="inline-start" />
-                Select All
-              </>
-            )}
-          </Button>
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs"
+          disabled={filteredPackages.length === 0}
+          onClick={() => {
+            if (selectedPackages.size > 0) {
+              unselectAll();
+            } else {
+              selectAll();
+            }
+          }}
+        >
+          {selectedPackages.size > 0 ? (
+            <>
+              <Square data-icon="inline-start" />
+              Unselect All
+            </>
+          ) : (
+            <>
+              <CheckSquare2 data-icon="inline-start" />
+              Select All
+            </>
+          )}
+        </Button>
 
         <Button
           size="sm"

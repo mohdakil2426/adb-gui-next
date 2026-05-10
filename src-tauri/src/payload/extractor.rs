@@ -11,17 +11,20 @@
 //! as they stream out of the decoder.
 
 use super::parser::load_payload;
+use super::transaction::TransactionGuard;
+use super::write::NonTemporalWriter;
 use super::zip::PayloadCache;
 use crate::payload::chromeos_update_engine;
 use anyhow::Result;
+use prost::Message;
+use rayon::prelude::*;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
     fs,
-    io::{BufWriter, Cursor, Read, Seek, SeekFrom, Write},
+    io::{Cursor, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::Arc,
-    thread,
 };
 use tauri::Emitter;
 
@@ -125,6 +128,7 @@ pub fn extract_payload(
         .map(Path::to_path_buf)
         .unwrap_or_else(|| default_output_dir(payload_path));
     fs::create_dir_all(&output_dir)?;
+    let guard = Arc::new(TransactionGuard::new(output_dir.clone()));
 
     let selected_names = if selected_partitions.is_empty() {
         None
@@ -148,93 +152,73 @@ pub fn extract_payload(
         })
         .collect();
 
-    // Parallel extraction using std::thread::scope.
+    // Parallel extraction using rayon.
     // Each thread receives:
     //   - Arc::clone(&payload.mmap)  — 8-byte pointer, not a 4 GB copy
     //   - app_handle.clone()         — cheap Arc clone, Send + Sync
-    let results: Vec<_> = thread::scope(|s| {
-        let handles: Vec<_> = partitions_to_extract
-            .iter()
-            .map(|partition| {
-                let output_dir = &output_dir;
-                // O(1) Arc pointer clone — shares the OS page cache backing.
-                let mmap = Arc::clone(&payload.mmap);
-                let manifest = &payload.manifest;
-                let data_offset = payload.data_offset;
-                let partition_name = partition.partition_name.clone();
-                // AppHandle is Clone + Send — safe to move into any thread.
-                // Option<AppHandle> clones as None in tests, Some(handle) in production.
-                let app = app_handle.clone();
+    let output_dir = Arc::new(output_dir);
+    let results: Vec<Result<String>> = partitions_to_extract
+        .par_iter()
+        .map(|partition| {
+            let output_dir = Arc::clone(&output_dir);
+            let guard = Arc::clone(&guard);
+            let mmap = Arc::clone(&payload.mmap);
+            let manifest = payload.manifest.clone();
+            let data_offset = payload.data_offset;
+            let partition_name = partition.partition_name.clone();
+            let app = app_handle.clone();
 
-                s.spawn(move || -> Result<String> {
-                    let file_name = format!("{}.img", partition_name);
-                    let image_path = output_dir.join(&file_name);
-                    let image_file = fs::File::create(&image_path)?;
-                    // BufWriter reduces syscall overhead for many small extent writes.
-                    let mut image_writer = BufWriter::with_capacity(1024 * 1024, image_file);
+            let file_name = format!("{}.img", partition_name);
+            let image_path = output_dir.join(&file_name);
+            guard.add_file(image_path.clone());
 
-                    let payload_ref = super::parser::LoadedPayload {
-                        mmap,
-                        manifest: manifest.clone(),
-                        data_offset,
-                    };
+            // Get partition size for NonTemporalWriter pre-allocation.
+            let partition_size =
+                partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
 
-                    // Pre-allocate the output file if partition size is known.
-                    // This makes Zero-type (sparse) operations a pure seek, no write needed,
-                    // and ensures correct file size even if the last operation is Zero.
-                    if let Some(info) = partition.new_partition_info.as_ref().and_then(|i| i.size) {
-                        image_writer.get_ref().set_len(info).unwrap_or(()); // Non-fatal: falls back to normal writes
+            // NonTemporalWriter: mmap-based, non-temporal stores, msync flush.
+            let mut writer = NonTemporalWriter::new(&image_path, partition_size)
+                .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
+
+            let payload_ref = super::parser::LoadedPayload { mmap, manifest, data_offset };
+
+            extract_partition(
+                &payload_ref,
+                partition,
+                &mut writer,
+                block_size,
+                &mut |name, current, total, completed| {
+                    if let Some(ref handle) = app {
+                        let _ = handle.emit(
+                            "payload:progress",
+                            serde_json::json!({
+                                "partitionName": name,
+                                "current": current,
+                                "total": total,
+                                "completed": completed,
+                            }),
+                        );
                     }
+                },
+            )?;
 
-                    extract_partition(
-                        &payload_ref,
-                        partition,
-                        &mut image_writer,
-                        block_size,
-                        // Per-operation real-time event — only emits when AppHandle is present.
-                        &mut |name, current, total, completed| {
-                            if let Some(ref handle) = app {
-                                let _ = handle.emit(
-                                    "payload:progress",
-                                    serde_json::json!({
-                                        "partitionName": name,
-                                        "current": current,
-                                        "total": total,
-                                        "completed": completed,
-                                    }),
-                                );
-                            }
-                        },
-                    )?;
-
-                    image_writer.flush()?;
-                    Ok(file_name)
-                })
-            })
-            .collect();
-
-        handles
-            .into_iter()
-            .map(|h| {
-                h.join().map_err(|e| {
-                    let msg = format!("Extraction thread panicked: {:?}", e);
-                    log::error!("{}", msg);
-                    anyhow::anyhow!(msg)
-                })
-            })
-            .collect::<Vec<_>>()
-    });
+            writer.flush()?;
+            Ok(file_name)
+        })
+        .collect();
 
     let mut extracted_files = Vec::new();
     for result in results {
         match result {
-            Ok(inner_result) => match inner_result {
-                Ok(file_name) => extracted_files.push(file_name),
-                Err(error) => return Err(error),
-            },
-            Err(error) => return Err(error),
+            Ok(file_name) => extracted_files.push(file_name),
+            Err(error) => {
+                guard.abort();
+                return Err(error);
+            }
         }
     }
+
+    guard.commit();
 
     // Fire the outer progress callback once per completed partition.
     // Used by the test suite to assert on completion events without a real Tauri runtime.
@@ -253,7 +237,7 @@ pub fn extract_payload(
 fn extract_partition(
     payload: &super::parser::LoadedPayload,
     partition: &chromeos_update_engine::PartitionUpdate,
-    image_writer: &mut BufWriter<fs::File>,
+    writer: &mut (impl Write + Seek),
     block_size: u32,
     progress: &mut impl FnMut(&str, usize, usize, bool),
 ) -> Result<()> {
@@ -263,9 +247,13 @@ fn extract_partition(
         return Ok(());
     }
 
-    let mut current_pos = 0u64; // Tracks write head to skip seeks when already in position.
+    let mut current_pos = 0u64;
 
     for (index, operation) in partition.operations.iter().enumerate() {
+        // SHA-256 hasher for output verification (Layer 3 — verifies decompressed output).
+        let mut hasher: Option<Sha256> =
+            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
+
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
@@ -279,16 +267,6 @@ fn extract_partition(
             anyhow::bail!("payload operation data exceeds file size");
         }
         let raw_data = &payload.mmap[data_offset..data_end];
-
-        // SHA-256 checksum verification on the compressed/raw input bytes.
-        if let Some(expected_hash) = operation.data_sha256_hash.as_ref()
-            && !expected_hash.is_empty()
-        {
-            let actual_hash = Sha256::digest(raw_data);
-            if actual_hash.as_slice() != expected_hash.as_slice() {
-                anyhow::bail!("payload operation checksum mismatch");
-            }
-        }
 
         use chromeos_update_engine::install_operation::Type;
         let operation_type = Type::try_from(operation.r#type)
@@ -307,7 +285,17 @@ fn extract_partition(
 
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
-            Type::ReplaceXz => Some(Box::new(xz2::read::XzDecoder::new(Cursor::new(raw_data)))),
+            Type::ReplaceXz => {
+                log::debug!(
+                    "partition {} op {}: XZ data at offset {} len {} first_bytes={:?}",
+                    partition.partition_name,
+                    index,
+                    data_offset,
+                    data_length,
+                    raw_data.first().copied(),
+                );
+                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
+            }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(raw_data)))),
             Type::Zstd => Some(Box::new(
                 zstd::stream::read::Decoder::new(Cursor::new(raw_data))
@@ -316,7 +304,21 @@ fn extract_partition(
             _ => anyhow::bail!("unsupported payload operation type: {:?}", operation_type),
         };
 
-        for extent in destination_extents {
+        // For compressed operations, verify data_sha256_hash against the RAW compressed
+        // bytes (as stored in the payload file), NOT the decompressed output.
+        // Per AOSP update_engine: data_sha256_hash = SHA-256(compressed blob in payload).
+        // stream_copy hashes decompressed bytes, so we must compute the compressed hash here
+        // for compressed ops. For raw Replace, raw_data IS the data, so hashing it is correct.
+        let compressed_hash = hasher.as_mut().map(|h| {
+            h.update(raw_data);
+            h.clone().finalize()
+        });
+
+        let extents = destination_extents;
+        let mut ei = 0usize;
+
+        while ei < extents.len() {
+            let extent = &extents[ei];
             let start_block = extent.start_block.unwrap_or_default();
             let num_blocks = extent.num_blocks.unwrap_or_default();
             let start_offset = start_block
@@ -327,53 +329,102 @@ fn extract_partition(
                 .checked_mul(block_size as usize)
                 .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?;
 
-            // Skip seek if the write head is already at the right position.
+            if is_zero {
+                if current_pos != start_offset {
+                    writer.seek(SeekFrom::Start(start_offset))?;
+                    current_pos = start_offset;
+                }
+                writer.seek(SeekFrom::Current(extent_size as i64))?;
+                current_pos += extent_size as u64;
+                ei += 1;
+                continue;
+            }
+
+            if let Some(ref mut dec) = compressed_reader {
+                if current_pos != start_offset {
+                    writer.seek(SeekFrom::Start(start_offset))?;
+                    current_pos = start_offset;
+                }
+                // stream_copy: write decompressed bytes but don't update the hasher
+                // (hasher was already updated with raw_data above)
+                super::copy::stream_copy(dec, writer, &mut buf, extent_size, None)?;
+                current_pos += extent_size as u64;
+                ei += 1;
+                continue;
+            }
+
+            // RAW Replace: coalesce consecutive contiguous extents with contiguous raw_data.
+            // Note: hasher was already updated with raw_data for verification.
+            let coal_start = decoded_offset;
+            let mut coal_size = extent_size;
+            let mut coal_pos = current_pos + extent_size as u64;
+            let mut ej = ei + 1;
+
+            while ej < extents.len() {
+                let next_extent = &extents[ej];
+                let next_start_block = next_extent.start_block.unwrap_or_default();
+                let next_num_blocks = next_extent.num_blocks.unwrap_or_default();
+                let next_start_offset = next_start_block
+                    .checked_mul(block_size as u64)
+                    .ok_or_else(|| anyhow::anyhow!("destination seek overflow"))?;
+                let next_extent_size = usize::try_from(next_num_blocks)
+                    .map_err(|_| anyhow::anyhow!("destination extent block count overflow"))?
+                    .checked_mul(block_size as usize)
+                    .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?;
+
+                // Contiguous in destination AND raw_data source?
+                if next_start_offset == coal_pos
+                    && decoded_offset
+                        .checked_add(coal_size)
+                        .and_then(|end| end.checked_add(next_extent_size))
+                        .is_some()
+                    && decoded_offset + coal_size + next_extent_size <= raw_data.len()
+                {
+                    coal_size += next_extent_size;
+                    coal_pos += next_extent_size as u64;
+                    ej += 1;
+                } else {
+                    break;
+                }
+            }
+
+            // Seek to coal_start position if needed.
             if current_pos != start_offset {
-                image_writer.seek(SeekFrom::Start(start_offset))?;
+                writer.seek(SeekFrom::Start(start_offset))?;
                 current_pos = start_offset;
             }
 
-            if is_zero {
-                // File was pre-allocated with set_len — seek past the zero region.
-                image_writer.seek(SeekFrom::Current(extent_size as i64))?;
-            } else if let Some(ref mut dec) = compressed_reader {
-                // Streaming decompression: consume decoder sequentially across extents.
-                stream_copy(dec, image_writer, &mut buf, extent_size)?;
-            } else {
-                // Raw Replace: slice the next extent_size bytes from raw_data.
-                let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
-                image_writer.write_all(&raw_data[decoded_offset..slice_end])?;
-                decoded_offset = slice_end;
-            }
+            // For raw Replace, the hasher already received the full raw_data above.
+            // Here we just write the relevant slice to disk (coalesced for efficiency).
+            let slice_end = coal_start.saturating_add(coal_size).min(raw_data.len());
+            let slice = &raw_data[coal_start..slice_end];
+            writer.write_all(slice)?;
+            decoded_offset = slice_end;
+            current_pos += coal_size as u64;
 
-            current_pos += extent_size as u64;
+            ei = ej;
+        }
+
+        // SHA-256 verification: compare accumulated hash against expected.
+        // For compressed ops: we hashed raw_data (compressed blob) above, stored in compressed_hash.
+        // For raw Replace: we hashed raw_data above (same result as before), stored in compressed_hash.
+        if let (Some(actual), Some(expected)) =
+            (compressed_hash, operation.data_sha256_hash.as_ref())
+            && actual.as_slice() != expected.as_slice()
+        {
+            log::error!(
+                target: "payload",
+                "partition {} operation {}: SHA-256 mismatch (compressed blob hash)",
+                partition.partition_name,
+                index
+            );
+            anyhow::bail!("payload operation {} compressed data hash mismatch", index);
         }
 
         let completed = index + 1 == total_operations;
         progress(&partition.partition_name, index + 1, total_operations, completed);
     }
 
-    Ok(())
-}
-
-/// Read from `src` into `buf` in a loop, writing each chunk to `dst`, until `limit` bytes
-/// have been written or EOF is reached.
-fn stream_copy(
-    src: &mut impl Read,
-    dst: &mut impl Write,
-    buf: &mut [u8],
-    limit: usize,
-) -> Result<()> {
-    let mut remaining = limit;
-    while remaining > 0 {
-        let to_read = buf.len().min(remaining);
-        let n = src.read(&mut buf[..to_read])?;
-        if n == 0 {
-            break;
-        }
-        dst.write_all(&buf[..n])?;
-        remaining -= n;
-    }
     Ok(())
 }
 
@@ -384,4 +435,85 @@ fn default_output_dir(payload_path: &Path) -> PathBuf {
         .map(|duration| duration.as_secs())
         .unwrap_or_default();
     parent.join(format!("extracted_{timestamp}"))
+}
+
+/// Diagnostics result for a payload file.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayloadDiagnostics {
+    pub format: String,
+    pub partition_count: usize,
+    pub total_operations: usize,
+    pub compression_types: Vec<String>,
+    pub has_sha256_hashes: bool,
+    pub is_sparse: bool,
+    pub warnings: Vec<String>,
+    pub manifest_info: String,
+}
+
+/// Diagnose a CrAU payload file without full extraction.
+pub fn diagnose_payload_file(payload_path: &Path) -> Result<PayloadDiagnostics> {
+    use chromeos_update_engine::install_operation::Type;
+
+    let mmap = super::parser::open_mmap(payload_path)?;
+    let (manifest_bytes, _) = super::parser::parse_header(&mmap)?;
+    let manifest = chromeos_update_engine::DeltaArchiveManifest::decode(&manifest_bytes[..])?;
+
+    let mut compression_types: Vec<String> = Vec::new();
+    let mut total_operations = 0usize;
+    let mut has_sha256_hashes = false;
+    let is_sparse = false;
+    let mut warnings: Vec<String> = Vec::new();
+
+    for partition in &manifest.partitions {
+        for operation in &partition.operations {
+            total_operations += 1;
+            if operation.data_sha256_hash.as_ref().is_some_and(|h| !h.is_empty()) {
+                has_sha256_hashes = true;
+            }
+            let op_type = Type::try_from(operation.r#type).ok();
+            let type_str = match op_type {
+                Some(Type::Replace) => "raw".to_string(),
+                Some(Type::ReplaceXz) => "xz".to_string(),
+                Some(Type::ReplaceBz) => "bz2".to_string(),
+                Some(Type::Zstd) => "zstd".to_string(),
+                Some(Type::Zero) => "zero".to_string(),
+                Some(t) => format!("type_{}", t as i32),
+                None => format!("unknown_{}", operation.r#type),
+            };
+            if !compression_types.contains(&type_str) {
+                compression_types.push(type_str);
+            }
+        }
+        if let Some(ref info) = partition.new_partition_info
+            && let Some(size) = info.size
+            && size == 0
+        {
+            warnings.push(format!(
+                "Partition '{}' has zero size — may be invalid",
+                partition.partition_name
+            ));
+        }
+    }
+
+    let partition_count = manifest.partitions.len();
+    let manifest_info = serde_json::json!({
+        "blockSize": manifest.block_size,
+        "minorVersion": manifest.minor_version,
+        "securityPatchLevel": manifest.security_patch_level,
+        "maxTimestamp": manifest.max_timestamp,
+        "partialUpdate": manifest.partial_update,
+    })
+    .to_string();
+
+    Ok(PayloadDiagnostics {
+        format: "CrAU".to_string(),
+        partition_count,
+        total_operations,
+        compression_types,
+        has_sha256_hashes,
+        is_sparse,
+        warnings,
+        manifest_info,
+    })
 }

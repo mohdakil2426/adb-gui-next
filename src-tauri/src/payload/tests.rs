@@ -335,3 +335,444 @@ mod http_zip_tests {
         assert_eq!(entry.name(), "payload.bin");
     }
 }
+
+// =============================================================================
+// Tests for stream_copy under-read detection
+// =============================================================================
+
+mod stream_copy_tests {
+    use super::super::copy::stream_copy;
+    use sha2::{Digest, Sha256};
+    use std::io::Cursor;
+
+    #[test]
+    fn stream_copy_transfers_all_bytes() {
+        let data = vec![42u8; 8192];
+        let mut src = Cursor::new(&data);
+        let mut dst = Vec::new();
+        let mut buf = [0u8; 1024];
+
+        stream_copy(&mut src, &mut dst, &mut buf, 8192, None).expect("stream_copy should succeed");
+        assert_eq!(dst.len(), 8192);
+        assert!(dst.iter().all(|&b| b == 42));
+    }
+
+    #[test]
+    fn stream_copy_detects_truncated_stream() {
+        // Source has only 100 bytes but we request 1000
+        let data = vec![7u8; 100];
+        let mut src = Cursor::new(&data);
+        let mut dst = Vec::new();
+        let mut buf = [0u8; 64];
+
+        let err = stream_copy(&mut src, &mut dst, &mut buf, 1000, None)
+            .expect_err("should fail on truncated stream");
+        assert_eq!(err.kind(), std::io::ErrorKind::UnexpectedEof);
+        assert!(err.to_string().contains("expected 1000"));
+    }
+
+    #[test]
+    fn stream_copy_accumulates_hash() {
+        let data = vec![1u8; 4096];
+        let mut src = Cursor::new(&data);
+        let mut dst = Vec::new();
+        let mut buf = [0u8; 512];
+        let mut hasher = Sha256::new();
+
+        stream_copy(&mut src, &mut dst, &mut buf, 4096, Some(&mut hasher))
+            .expect("stream_copy with hash");
+
+        let hash = hasher.finalize();
+        let expected = Sha256::digest([1u8; 4096]);
+        assert_eq!(hash.as_slice(), expected.as_slice());
+    }
+
+    #[test]
+    fn stream_copy_zero_length_is_noop() {
+        let data = vec![5u8; 100];
+        let mut src = Cursor::new(&data);
+        let mut dst = Vec::new();
+        let mut buf = [0u8; 64];
+
+        stream_copy(&mut src, &mut dst, &mut buf, 0, None).expect("zero-length should succeed");
+        assert!(dst.is_empty());
+    }
+}
+
+// =============================================================================
+// Tests for TransactionGuard cleanup behavior
+// =============================================================================
+
+mod transaction_guard_tests {
+    use super::super::transaction::TransactionGuard;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn commit_prevents_cleanup_on_drop() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let file_path = output_dir.join("test.img");
+        fs::write(&file_path, b"test data").expect("write file");
+
+        let guard = TransactionGuard::new(output_dir.clone());
+        guard.add_file(file_path.clone());
+        guard.commit();
+
+        // After commit, drop should NOT clean up
+        drop(guard);
+
+        assert!(file_path.exists(), "file should survive after commit+drop");
+        assert!(output_dir.exists(), "dir should survive after commit+drop");
+    }
+
+    #[test]
+    fn abort_cleans_up_files() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let file_path = output_dir.join("test.img");
+        fs::write(&file_path, b"test data").expect("write file");
+
+        let guard = TransactionGuard::new(output_dir.clone());
+        guard.add_file(file_path.clone());
+        guard.abort();
+
+        assert!(!file_path.exists(), "file should be deleted after abort");
+        assert!(!output_dir.exists(), "dir should be deleted after abort");
+    }
+
+    #[test]
+    fn drop_without_commit_cleans_up() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let file_path = output_dir.join("test.img");
+        fs::write(&file_path, b"test data").expect("write file");
+
+        {
+            let guard = TransactionGuard::new(output_dir.clone());
+            guard.add_file(file_path.clone());
+            // No commit — guard drops here
+        }
+
+        assert!(!file_path.exists(), "file should be deleted on drop without commit");
+        assert!(!output_dir.exists(), "dir should be deleted on drop without commit");
+    }
+
+    #[test]
+    fn abort_with_no_files_is_safe() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let guard = TransactionGuard::new(output_dir.clone());
+        guard.abort(); // Should not panic
+    }
+}
+
+// =============================================================================
+// Tests for NonTemporalWriter
+// =============================================================================
+
+mod non_temporal_writer_tests {
+    use super::super::write::NonTemporalWriter;
+    use std::fs;
+    use std::io::{Seek, SeekFrom, Write};
+    use tempfile::tempdir;
+
+    #[test]
+    fn writer_creates_and_writes_file() {
+        let temp = tempdir().expect("tempdir");
+        let path = temp.path().join("test.img");
+
+        let mut writer = NonTemporalWriter::new(&path, 4096).expect("create writer");
+        writer.write_all(&[0xAB; 4096]).expect("write");
+        writer.flush().expect("flush");
+
+        let data = fs::read(&path).expect("read");
+        assert_eq!(data.len(), 4096);
+        assert!(data.iter().all(|&b| b == 0xAB));
+    }
+
+    #[test]
+    fn writer_seek_and_write_at_offset() {
+        let temp = tempdir().expect("tempdir");
+        let path = temp.path().join("test.img");
+
+        let mut writer = NonTemporalWriter::new(&path, 4096).expect("create writer");
+        writer.seek(SeekFrom::Start(2048)).expect("seek");
+        writer.write_all(&[0xCD; 2048]).expect("write");
+        writer.flush().expect("flush");
+
+        let data = fs::read(&path).expect("read");
+        assert_eq!(&data[0..2048], &[0; 2048]); // Pre-allocated zeros
+        assert_eq!(&data[2048..4096], &[0xCD; 2048]); // Written data
+    }
+
+    #[test]
+    fn writer_pre_allocates_size() {
+        let temp = tempdir().expect("tempdir");
+        let path = temp.path().join("test.img");
+
+        let mut writer = NonTemporalWriter::new(&path, 8192).expect("create writer");
+        writer.flush().expect("flush");
+
+        let metadata = fs::metadata(&path).expect("metadata");
+        assert_eq!(metadata.len(), 8192);
+    }
+}
+
+// =============================================================================
+// Tests for SHA-256 verification with correct hash
+// =============================================================================
+
+mod sha256_verification_tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    #[test]
+    fn accepts_payload_with_correct_sha256() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+        let output_dir = temp.path().join("out");
+
+        let image_bytes = vec![0xAB; 4096];
+        let hash = Sha256::digest(&image_bytes);
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "system".to_string(),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(4096),
+                        hash: Some(Vec::new()),
+                    }),
+                    operations: vec![InstallOperation {
+                        r#type: Type::Replace as i32,
+                        data_offset: Some(0),
+                        data_length: Some(4096),
+                        dst_extents: vec![chromeos_update_engine::Extent {
+                            start_block: Some(0),
+                            num_blocks: Some(1),
+                        }],
+                        data_sha256_hash: Some(hash.to_vec()),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &image_bytes,
+        );
+
+        let cache = PayloadCache::default();
+        let result = extract_payload(
+            &payload_path,
+            Some(&output_dir),
+            &[String::from("system")],
+            &cache,
+            None,
+            |_, _, _, _| {},
+        )
+        .expect("extraction should succeed with correct hash");
+
+        assert!(result.success);
+        assert_eq!(fs::read(output_dir.join("system.img")).expect("read"), image_bytes);
+    }
+
+    #[test]
+    fn extracts_all_partitions_when_none_selected() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+        let output_dir = temp.path().join("out");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![
+                    PartitionUpdate {
+                        partition_name: "system".to_string(),
+                        new_partition_info: Some(PartitionInfo {
+                            size: Some(4096),
+                            hash: Some(Vec::new()),
+                        }),
+                        operations: vec![InstallOperation {
+                            r#type: Type::Replace as i32,
+                            data_offset: Some(0),
+                            data_length: Some(4096),
+                            dst_extents: vec![chromeos_update_engine::Extent {
+                                start_block: Some(0),
+                                num_blocks: Some(1),
+                            }],
+                            data_sha256_hash: Some(Vec::new()),
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    },
+                    PartitionUpdate {
+                        partition_name: "vendor".to_string(),
+                        new_partition_info: Some(PartitionInfo {
+                            size: Some(4096),
+                            hash: Some(Vec::new()),
+                        }),
+                        operations: vec![InstallOperation {
+                            r#type: Type::Replace as i32,
+                            data_offset: Some(4096),
+                            data_length: Some(4096),
+                            dst_extents: vec![chromeos_update_engine::Extent {
+                                start_block: Some(0),
+                                num_blocks: Some(1),
+                            }],
+                            data_sha256_hash: Some(Vec::new()),
+                            ..Default::default()
+                        }],
+                        ..Default::default()
+                    },
+                ],
+                ..Default::default()
+            },
+            &[1u8; 8192],
+        );
+
+        let cache = PayloadCache::default();
+        let result = extract_payload(
+            &payload_path,
+            Some(&output_dir),
+            &[], // empty = extract all
+            &cache,
+            None,
+            |_, _, _, _| {},
+        )
+        .expect("extract all partitions");
+
+        assert!(result.success);
+        assert_eq!(result.extracted_files.len(), 2);
+        assert!(output_dir.join("system.img").exists());
+        assert!(output_dir.join("vendor.img").exists());
+    }
+
+    #[test]
+    fn handles_empty_partition_operations() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+        let output_dir = temp.path().join("out");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "empty".to_string(),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(0),
+                        hash: Some(Vec::new()),
+                    }),
+                    operations: vec![], // No operations
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &[], // No data bytes
+        );
+
+        let cache = PayloadCache::default();
+        let result = extract_payload(
+            &payload_path,
+            Some(&output_dir),
+            &[String::from("empty")],
+            &cache,
+            None,
+            |_, _, _, _| {},
+        )
+        .expect("extract empty partition should succeed");
+
+        assert!(result.success);
+        assert!(output_dir.join("empty.img").exists());
+    }
+}
+
+// =============================================================================
+// Tests for diagnose_payload_file
+// =============================================================================
+
+mod diagnostics_tests {
+    use super::super::extractor::diagnose_payload_file;
+    use super::*;
+
+    #[test]
+    fn diagnose_reports_compression_types() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "system".to_string(),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(4096),
+                        hash: Some(Vec::new()),
+                    }),
+                    operations: vec![InstallOperation {
+                        r#type: Type::Replace as i32,
+                        data_offset: Some(0),
+                        data_length: Some(4096),
+                        dst_extents: vec![chromeos_update_engine::Extent {
+                            start_block: Some(0),
+                            num_blocks: Some(1),
+                        }],
+                        data_sha256_hash: Some(Vec::new()),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &[0xFF; 4096],
+        );
+
+        let diag = diagnose_payload_file(&payload_path).expect("diagnose");
+        assert_eq!(diag.format, "CrAU");
+        assert_eq!(diag.partition_count, 1);
+        assert_eq!(diag.total_operations, 1);
+        assert!(diag.compression_types.contains(&"raw".to_string()));
+    }
+
+    #[test]
+    fn diagnose_reports_zero_size_warning() {
+        let temp = tempdir().expect("tempdir");
+        let payload_path = temp.path().join("payload.bin");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "zero_size".to_string(),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(0),
+                        hash: Some(Vec::new()),
+                    }),
+                    operations: vec![InstallOperation {
+                        r#type: Type::Replace as i32,
+                        data_offset: Some(0),
+                        data_length: Some(0),
+                        dst_extents: vec![],
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &[],
+        );
+
+        let diag = diagnose_payload_file(&payload_path).expect("diagnose");
+        assert!(!diag.warnings.is_empty());
+        assert!(diag.warnings[0].contains("zero size"));
+    }
+}

@@ -177,7 +177,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     const saved = localStorage.getItem('fe.sortField');
     return (saved as SortField) || 'name';
   });
-const [sortDir, setSortDir] = useState<SortDir>(() => {
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
     const saved = localStorage.getItem('fe.sortDir');
     return (saved as SortDir) || 'asc';
   });

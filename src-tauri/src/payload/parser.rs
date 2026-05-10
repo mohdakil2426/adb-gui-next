@@ -14,7 +14,7 @@ use std::{path::Path, sync::Arc};
 /// The file is opened in read-only mode. We never modify, truncate, or delete
 /// `payload.bin` while the mapping is held. No other code path in this process
 /// writes to the file. These invariants make the `unsafe` block sound.
-fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
+pub fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
     let file = std::fs::File::open(path)
         .map_err(|e| anyhow::anyhow!("cannot open payload '{}': {e}", path.display()))?;
     // SAFETY: See function-level safety comment above.

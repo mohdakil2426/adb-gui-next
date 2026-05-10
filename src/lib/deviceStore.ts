@@ -86,6 +86,6 @@ export const useDeviceStore = create<DeviceState>()(
         isEditingNickname: state.isEditingNickname,
         editingDeviceSerial: state.editingDeviceSerial,
       }),
-    }
-  )
+    },
+  ),
 );

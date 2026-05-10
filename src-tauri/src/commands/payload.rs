@@ -1,17 +1,16 @@
 use crate::CmdResult;
 use crate::payload::ops;
 use crate::payload::{
-    self, ExtractPayloadResult, PartitionDetail, PayloadCache, RemotePayloadMetadata,
+    self, ExtractPayloadResult, PartitionDetail, PayloadCache, PayloadDiagnostics,
+    RemotePayloadMetadata,
 };
 use log::{error, info};
 use std::path::PathBuf;
 use tauri::{AppHandle, State};
 
-#[cfg(feature = "remote_zip")]
 use serde::Serialize;
 
 /// Information about a remote payload file obtained via HEAD request.
-#[cfg(feature = "remote_zip")]
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemotePayloadInfo {
@@ -49,7 +48,6 @@ pub async fn extract_payload(
         Some(dir.canonicalize().map_err(|e| format!("Cannot resolve output dir: {e}"))?)
     };
 
-    #[cfg(feature = "remote_zip")]
     {
         // Remote URL — route to dedicated remote extraction
         if payload_path.starts_with("http://") || payload_path.starts_with("https://") {
@@ -227,7 +225,6 @@ pub async fn get_ops_metadata(path: String) -> CmdResult<ops::OpsMetadata> {
 // =============================================================================
 
 /// Check if a remote URL supports HTTP range requests and get file size.
-#[cfg(feature = "remote_zip")]
 #[tauri::command]
 pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
     info!("Checking remote payload URL: {}", url.trim());
@@ -245,7 +242,6 @@ pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
 }
 
 /// Get full metadata (HTTP headers + ZIP structure + OTA manifest) for a remote payload.
-#[cfg(feature = "remote_zip")]
 #[tauri::command]
 pub async fn get_remote_payload_metadata(url: String) -> CmdResult<RemotePayloadMetadata> {
     info!("Fetching remote payload metadata for: {}", url.trim());
@@ -258,9 +254,175 @@ pub async fn get_remote_payload_metadata(url: String) -> CmdResult<RemotePayload
 }
 
 /// List partitions from a remote payload URL.
-#[cfg(feature = "remote_zip")]
 #[tauri::command]
 pub async fn list_remote_payload_partitions(url: String) -> CmdResult<Vec<PartitionDetail>> {
     info!("Listing remote payload partitions from {}", url.trim());
     payload::list_remote_payload_partitions(url.trim().to_string()).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn extract_delta_payload(
+    payload_path: String,
+    source_dir: String,
+    output_dir: String,
+    selected_partitions: Vec<String>,
+) -> CmdResult<ExtractPayloadResult> {
+    info!(
+        "Extracting delta payload from {} with source {} (partitions: {})",
+        payload_path,
+        source_dir,
+        selected_partitions.join(", ")
+    );
+
+    let source_path = std::path::Path::new(&source_dir);
+    if !source_path.exists() {
+        return Ok(ExtractPayloadResult {
+            success: false,
+            output_dir: String::new(),
+            extracted_files: Vec::new(),
+            error: Some(format!("Source directory not found: {}", source_dir)),
+        });
+    }
+
+    let output = if output_dir.trim().is_empty() {
+        None
+    } else {
+        let dir = PathBuf::from(output_dir.trim());
+        std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create output dir: {e}"))?;
+        Some(dir)
+    };
+
+    let result = tokio::task::block_in_place(|| {
+        payload::extract_payload(
+            std::path::Path::new(&payload_path),
+            output.as_deref(),
+            &selected_partitions,
+            &PayloadCache::default(),
+            None,
+            |_, _, _, _| {},
+        )
+    });
+
+    match result {
+        Ok(r) => {
+            info!(
+                "Delta payload extraction completed: {} files in {}",
+                r.extracted_files.len(),
+                r.output_dir
+            );
+            Ok(r)
+        }
+        Err(e) => {
+            error!("Delta payload extraction failed: {}", e);
+            Ok(ExtractPayloadResult {
+                success: false,
+                output_dir: String::new(),
+                extracted_files: Vec::new(),
+                error: Some(e.to_string()),
+            })
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn diagnose_payload(payload_path: String) -> CmdResult<PayloadDiagnostics> {
+    info!("Diagnosing payload file: {}", payload_path.trim());
+    let path = std::path::Path::new(payload_path.trim());
+
+    if !path.exists() {
+        return Err(format!("File not found: {}", payload_path.trim()));
+    }
+
+    if ops::extractor::should_use_ops_pipeline(path) {
+        return tokio::task::block_in_place(|| {
+            diagnose_ops_payload(path).map_err(|error| error.to_string())
+        });
+    }
+
+    tokio::task::block_in_place(|| {
+        payload::diagnose_payload_file(path).map_err(|error| error.to_string())
+    })
+}
+
+fn diagnose_ops_payload(path: &std::path::Path) -> anyhow::Result<PayloadDiagnostics> {
+    use crate::payload::ops::detect::{FirmwareFormat, detect_format};
+    use crate::payload::ops::{OpsPartitionEntry, list_ops_partitions};
+
+    let mmap = crate::payload::open_mmap(path)?;
+    let format = detect_format(&mmap)?;
+
+    let format_label = match format {
+        FirmwareFormat::Ops => "OPS",
+        FirmwareFormat::OfpQualcomm => "OFP (Qualcomm)",
+        FirmwareFormat::OfpMediaTek => "OFP (MediaTek)",
+        FirmwareFormat::ZipOfp => "OFP (ZIP)",
+        FirmwareFormat::PayloadBin => "CrAU",
+    };
+
+    let partitions = list_ops_partitions(path)?;
+    let partition_count = partitions.len();
+
+    let mut has_sha256_hashes = false;
+    let mut is_sparse = false;
+    let warnings: Vec<String> = Vec::new();
+
+    let partition_details: Vec<OpsPartitionEntry> = match format {
+        FirmwareFormat::Ops => {
+            let (parts, _, _) = crate::payload::ops::ops_parser::parse_ops(&mmap)?;
+            for p in &parts {
+                if !p.sha256.is_empty() {
+                    has_sha256_hashes = true;
+                }
+                if p.sparse {
+                    is_sparse = true;
+                }
+            }
+            parts
+        }
+        FirmwareFormat::OfpQualcomm => {
+            let (parts, _, _) = crate::payload::ops::ofp_qc::parse_ofp_qc(&mmap)?;
+            for p in &parts {
+                if !p.sha256.is_empty() {
+                    has_sha256_hashes = true;
+                }
+                if p.sparse {
+                    is_sparse = true;
+                }
+            }
+            parts
+        }
+        FirmwareFormat::OfpMediaTek => {
+            let (parts, _, _) = crate::payload::ops::ofp_mtk::parse_ofp_mtk(&mmap)?;
+            for p in &parts {
+                if !p.sha256.is_empty() {
+                    has_sha256_hashes = true;
+                }
+                if p.sparse {
+                    is_sparse = true;
+                }
+            }
+            parts
+        }
+        _ => Vec::new(),
+    };
+
+    let total_operations = partition_details.len();
+    let manifest_info = serde_json::json!({
+        "format": format_label,
+        "partitionCount": partition_count,
+        "hasSha256": has_sha256_hashes,
+        "isSparse": is_sparse,
+    })
+    .to_string();
+
+    Ok(PayloadDiagnostics {
+        format: format_label.to_string(),
+        partition_count,
+        total_operations,
+        compression_types: vec![],
+        has_sha256_hashes,
+        is_sparse,
+        warnings,
+        manifest_info,
+    })
 }

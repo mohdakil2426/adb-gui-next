@@ -276,3 +276,5 @@ Before closing any task, confirm ALL of the following:
 | **type errors**        | Fix TypeScript types. Never use `any` without explicit justification.       |
 | **test failures**      | Fix the failing test or the code. Never skip or delete tests to pass CI.    |
 | **module too large**   | When adding commands, use the existing modular pattern in `commands/`.      |
+
+**Testing Rule:** All testing and implementation must occur within the codebase. Never modify or test against files outside this isolated workspace.

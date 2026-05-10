@@ -14,14 +14,15 @@ use super::chromeos_update_engine::DeltaArchiveManifest;
 use super::http::HttpPayloadReader;
 use super::http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_from_zip_or_direct};
 use super::parser::parse_header;
+use super::write::NonTemporalWriter;
 use anyhow::{Result, anyhow};
 use memmap2::Mmap;
 use prost::Message;
+use rayon::prelude::*;
 use sha2::{Digest, Sha256};
 use std::fs::File;
-use std::io::{BufWriter, Cursor, Read, Seek, SeekFrom, Write};
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
-use std::thread;
 use tempfile::NamedTempFile;
 
 #[cfg(feature = "remote_zip")]
@@ -376,88 +377,77 @@ pub async fn extract_remote_prefetch(
 
     let block_size = manifest.block_size.unwrap_or(4096);
 
-    let results: Vec<_> = thread::scope(|s| {
-        let handles: Vec<_> = partitions_to_extract
-            .iter()
-            .map(|partition| {
-                let output_dir = &output_dir;
-                let mmap = Arc::clone(&mmap);
-                let partition_name = partition.partition_name.clone();
-                let app = app_handle.clone();
+    let output_dir = Arc::new(output_dir);
+    let results: Vec<Result<String>> = partitions_to_extract
+        .par_iter()
+        .map(|partition| {
+            let output_dir = Arc::clone(&output_dir);
+            let mmap = Arc::clone(&mmap);
+            let partition_name = partition.partition_name.clone();
+            let app = app_handle.clone();
 
-                s.spawn(move || -> Result<String> {
-                    let file_name = format!("{}.img", partition_name);
-                    let image_path = output_dir.join(&file_name);
-                    let image_file = std::fs::File::create(&image_path)?;
-                    let mut image_writer = BufWriter::with_capacity(1024 * 1024, image_file);
+            let file_name = format!("{}.img", partition_name);
+            let image_path = output_dir.join(&file_name);
 
-                    if let Some(info) = partition.new_partition_info.as_ref().and_then(|i| i.size) {
-                        image_writer.get_ref().set_len(info).unwrap_or(());
-                    }
+            let partition_size =
+                partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
 
-                    if is_zip {
-                        // For ZIP: need to find payload.bin offset within mmap
-                        // This is a simplification - in production we'd pass zip_info to threads
-                        extract_partition_from_mmap(
-                            &mmap,
-                            data_offset,
-                            block_size,
-                            partition,
-                            &mut image_writer,
-                            |name, current, total, completed| {
-                                if let Some(ref handle) = app {
-                                    let _ = handle.emit(
-                                        "payload:progress",
-                                        serde_json::json!({
-                                            "partitionName": name,
-                                            "current": current,
-                                            "total": total,
-                                            "completed": completed,
-                                        }),
-                                    );
-                                }
-                            },
-                        )?;
-                    } else {
-                        extract_partition_from_mmap(
-                            &mmap,
-                            data_offset,
-                            block_size,
-                            partition,
-                            &mut image_writer,
-                            |name, current, total, completed| {
-                                if let Some(ref handle) = app {
-                                    let _ = handle.emit(
-                                        "payload:progress",
-                                        serde_json::json!({
-                                            "partitionName": name,
-                                            "current": current,
-                                            "total": total,
-                                            "completed": completed,
-                                        }),
-                                    );
-                                }
-                            },
-                        )?;
-                    }
+            let mut writer = NonTemporalWriter::new(&image_path, partition_size)
+                .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-                    image_writer.flush()?;
-                    Ok(file_name)
-                })
-            })
-            .collect();
+            if is_zip {
+                extract_partition_from_mmap(
+                    &mmap,
+                    data_offset,
+                    block_size,
+                    partition,
+                    &mut writer,
+                    |name, current, total, completed| {
+                        if let Some(ref handle) = app {
+                            let _ = handle.emit(
+                                "payload:progress",
+                                serde_json::json!({
+                                    "partitionName": name,
+                                    "current": current,
+                                    "total": total,
+                                    "completed": completed,
+                                }),
+                            );
+                        }
+                    },
+                )?;
+            } else {
+                extract_partition_from_mmap(
+                    &mmap,
+                    data_offset,
+                    block_size,
+                    partition,
+                    &mut writer,
+                    |name, current, total, completed| {
+                        if let Some(ref handle) = app {
+                            let _ = handle.emit(
+                                "payload:progress",
+                                serde_json::json!({
+                                    "partitionName": name,
+                                    "current": current,
+                                    "total": total,
+                                    "completed": completed,
+                                }),
+                            );
+                        }
+                    },
+                )?;
+            }
 
-        handles
-            .into_iter()
-            .map(|h| h.join().map_err(|e| anyhow!("Thread panicked: {:?}", e)))
-            .collect::<Vec<_>>()
-    });
+            writer.flush()?;
+            Ok(file_name)
+        })
+        .collect();
 
     let mut extracted_files = Vec::new();
     for result in results {
         match result {
-            Ok(Ok(f)) => extracted_files.push(f),
-            Ok(Err(e)) => return Err(e),
+            Ok(file_name) => extracted_files.push(file_name),
             Err(e) => return Err(e),
         }
     }
@@ -539,65 +529,56 @@ pub async fn extract_remote_direct(
     let zip_info_arc = zip_info.map(Arc::new);
     let block_size = manifest.block_size.unwrap_or(4096);
 
-    let results: Vec<_> = thread::scope(|s| {
-        let handles: Vec<_> = partitions_to_extract
-            .iter()
-            .map(|partition| {
-                let output_dir = &output_dir;
-                let http = http.clone();
-                let zip_info = zip_info_arc.clone();
-                let partition_name = partition.partition_name.clone();
-                let app = app_handle.clone();
+    let output_dir = Arc::new(output_dir);
+    let results: Vec<Result<String>> = partitions_to_extract
+        .par_iter()
+        .map(|partition| {
+            let output_dir = Arc::clone(&output_dir);
+            let http = http.clone();
+            let zip_info = zip_info_arc.clone();
+            let partition_name = partition.partition_name.clone();
+            let app = app_handle.clone();
 
-                s.spawn(move || -> Result<String> {
-                    let file_name = format!("{}.img", partition_name);
-                    let image_path = output_dir.join(&file_name);
-                    let image_file = std::fs::File::create(&image_path)?;
-                    let mut image_writer = BufWriter::with_capacity(1024 * 1024, image_file);
+            let file_name = format!("{}.img", partition_name);
+            let image_path = output_dir.join(&file_name);
 
-                    if let Some(info) = partition.new_partition_info.as_ref().and_then(|i| i.size) {
-                        image_writer.get_ref().set_len(info).unwrap_or(());
+            let partition_size =
+                partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
+
+            let mut writer = NonTemporalWriter::new(&image_path, partition_size)
+                .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
+
+            extract_partition_from_remote(
+                &http,
+                zip_info.as_deref(),
+                data_offset,
+                block_size,
+                partition,
+                &mut writer,
+                |name, current, total, completed| {
+                    if let Some(ref handle) = app {
+                        let _ = handle.emit(
+                            "payload:progress",
+                            serde_json::json!({
+                                "partitionName": name,
+                                "current": current,
+                                "total": total,
+                                "completed": completed,
+                            }),
+                        );
                     }
+                },
+            )?;
 
-                    extract_partition_from_remote(
-                        &http,
-                        zip_info.as_deref(),
-                        data_offset,
-                        block_size,
-                        partition,
-                        &mut image_writer,
-                        |name, current, total, completed| {
-                            if let Some(ref handle) = app {
-                                let _ = handle.emit(
-                                    "payload:progress",
-                                    serde_json::json!({
-                                        "partitionName": name,
-                                        "current": current,
-                                        "total": total,
-                                        "completed": completed,
-                                    }),
-                                );
-                            }
-                        },
-                    )?;
-
-                    image_writer.flush()?;
-                    Ok(file_name)
-                })
-            })
-            .collect();
-
-        handles
-            .into_iter()
-            .map(|h| h.join().map_err(|e| anyhow!("Thread panicked: {:?}", e)))
-            .collect::<Vec<_>>()
-    });
+            writer.flush()?;
+            Ok(file_name)
+        })
+        .collect();
 
     let mut extracted_files = Vec::new();
     for result in results {
         match result {
-            Ok(Ok(f)) => extracted_files.push(f),
-            Ok(Err(e)) => return Err(e),
+            Ok(file_name) => extracted_files.push(file_name),
             Err(e) => return Err(e),
         }
     }
@@ -620,7 +601,7 @@ fn extract_partition_from_mmap(
     data_offset: usize,
     block_size: u32,
     partition: &super::chromeos_update_engine::PartitionUpdate,
-    image_writer: &mut BufWriter<std::fs::File>,
+    writer: &mut (impl Write + Seek),
     mut progress: impl FnMut(&str, usize, usize, bool),
 ) -> Result<()> {
     use super::chromeos_update_engine::install_operation::Type;
@@ -634,6 +615,10 @@ fn extract_partition_from_mmap(
     let mut current_pos = 0u64;
 
     for (index, operation) in partition.operations.iter().enumerate() {
+        // SHA-256 hasher for output verification (Layer 3).
+        let mut hasher: Option<Sha256> =
+            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
+
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
@@ -647,16 +632,6 @@ fn extract_partition_from_mmap(
         }
         let raw_data = &mmap[data_offset + data_offset_op..data_end];
 
-        // SHA-256 verification
-        if let Some(expected_hash) = operation.data_sha256_hash.as_ref()
-            && !expected_hash.is_empty()
-        {
-            let actual_hash = Sha256::digest(raw_data);
-            if actual_hash.as_slice() != expected_hash.as_slice() {
-                anyhow::bail!("payload operation checksum mismatch");
-            }
-        }
-
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow!("unsupported operation type {}", operation.r#type))?;
 
@@ -666,7 +641,15 @@ fn extract_partition_from_mmap(
 
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
-            Type::ReplaceXz => Some(Box::new(xz2::read::XzDecoder::new(Cursor::new(raw_data)))),
+            Type::ReplaceXz => {
+                log::debug!(
+                    "mmap XZ data at offset {} len {} first_bytes={:?}",
+                    data_offset_op,
+                    data_length,
+                    raw_data.first().copied(),
+                );
+                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
+            }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(raw_data)))),
             Type::Zstd => Some(Box::new(
                 zstd::stream::read::Decoder::new(Cursor::new(raw_data))
@@ -687,21 +670,33 @@ fn extract_partition_from_mmap(
                 .ok_or_else(|| anyhow!("destination extent size overflow"))?;
 
             if current_pos != start_offset {
-                image_writer.seek(SeekFrom::Start(start_offset))?;
+                writer.seek(SeekFrom::Start(start_offset))?;
                 current_pos = start_offset;
             }
 
             if is_zero {
-                image_writer.seek(SeekFrom::Current(extent_size as i64))?;
+                writer.seek(SeekFrom::Current(extent_size as i64))?;
             } else if let Some(ref mut dec) = compressed_reader {
-                stream_copy(dec, image_writer, &mut buf, extent_size)?;
+                super::copy::stream_copy(dec, writer, &mut buf, extent_size, hasher.as_mut())?;
             } else {
                 let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
-                image_writer.write_all(&raw_data[decoded_offset..slice_end])?;
+                let slice = &raw_data[decoded_offset..slice_end];
+                if let Some(ref mut h) = hasher {
+                    h.update(slice);
+                }
+                writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
 
             current_pos += extent_size as u64;
+        }
+
+        // Layer 3 SHA-256 verification.
+        if let (Some(h), Some(expected)) = (hasher.as_mut(), operation.data_sha256_hash.as_ref()) {
+            let actual = h.clone().finalize();
+            if actual.as_slice() != expected.as_slice() {
+                anyhow::bail!("payload operation {} checksum mismatch", index);
+            }
         }
 
         let completed = index + 1 == total_operations;
@@ -720,7 +715,7 @@ fn extract_partition_from_remote(
     data_offset: usize,
     block_size: u32,
     partition: &super::chromeos_update_engine::PartitionUpdate,
-    image_writer: &mut BufWriter<std::fs::File>,
+    writer: &mut (impl Write + Seek),
     mut progress: impl FnMut(&str, usize, usize, bool),
 ) -> Result<()> {
     use super::chromeos_update_engine::install_operation::Type;
@@ -734,6 +729,9 @@ fn extract_partition_from_remote(
     let mut current_pos = 0u64;
 
     for (index, operation) in partition.operations.iter().enumerate() {
+        let mut hasher: Option<Sha256> =
+            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
+
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
@@ -742,25 +740,12 @@ fn extract_partition_from_remote(
         let data_offset_op = operation.data_offset.unwrap_or_default();
         let data_length = operation.data_length.unwrap_or_default();
 
-        // Read data - either directly or from within ZIP
         let raw_data = if let Some(zi) = zip_info {
-            // For ZIP files, we need to read from the payload.bin entry
-            // The data_offset is relative to payload.bin start, so we add zi.offset
             let abs_offset = zi.offset + (data_offset as u64).saturating_add(data_offset_op);
             http.read_range_sync(abs_offset, data_length)?
         } else {
             http.read_range_sync((data_offset as u64).saturating_add(data_offset_op), data_length)?
         };
-
-        // SHA-256 verification
-        if let Some(expected_hash) = operation.data_sha256_hash.as_ref()
-            && !expected_hash.is_empty()
-        {
-            let actual_hash = Sha256::digest(&raw_data);
-            if actual_hash.as_slice() != expected_hash.as_slice() {
-                anyhow::bail!("payload operation checksum mismatch");
-            }
-        }
 
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow!("unsupported operation type {}", operation.r#type))?;
@@ -771,7 +756,9 @@ fn extract_partition_from_remote(
 
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
-            Type::ReplaceXz => Some(Box::new(xz2::read::XzDecoder::new(Cursor::new(&raw_data)))),
+            Type::ReplaceXz => {
+                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(&raw_data))))
+            }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(&raw_data)))),
             Type::Zstd => Some(Box::new(
                 zstd::stream::read::Decoder::new(Cursor::new(&raw_data))
@@ -792,45 +779,37 @@ fn extract_partition_from_remote(
                 .ok_or_else(|| anyhow!("destination extent size overflow"))?;
 
             if current_pos != start_offset {
-                image_writer.seek(SeekFrom::Start(start_offset))?;
+                writer.seek(SeekFrom::Start(start_offset))?;
                 current_pos = start_offset;
             }
 
             if is_zero {
-                image_writer.seek(SeekFrom::Current(extent_size as i64))?;
+                writer.seek(SeekFrom::Current(extent_size as i64))?;
             } else if let Some(ref mut dec) = compressed_reader {
-                stream_copy(dec, image_writer, &mut buf, extent_size)?;
+                super::copy::stream_copy(dec, writer, &mut buf, extent_size, hasher.as_mut())?;
             } else {
                 let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
-                image_writer.write_all(&raw_data[decoded_offset..slice_end])?;
+                let slice = &raw_data[decoded_offset..slice_end];
+                if let Some(ref mut h) = hasher {
+                    h.update(slice);
+                }
+                writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
 
             current_pos += extent_size as u64;
         }
 
+        if let (Some(h), Some(expected)) = (hasher.as_mut(), operation.data_sha256_hash.as_ref()) {
+            let actual = h.clone().finalize();
+            if actual.as_slice() != expected.as_slice() {
+                anyhow::bail!("payload operation {} checksum mismatch", index);
+            }
+        }
+
         let completed = index + 1 == total_operations;
         progress(&partition.partition_name, index + 1, total_operations, completed);
     }
 
-    Ok(())
-}
-
-fn stream_copy(
-    src: &mut impl Read,
-    dst: &mut impl Write,
-    buf: &mut [u8],
-    limit: usize,
-) -> Result<()> {
-    let mut remaining = limit;
-    while remaining > 0 {
-        let to_read = buf.len().min(remaining);
-        let n = src.read(&mut buf[..to_read])?;
-        if n == 0 {
-            break;
-        }
-        dst.write_all(&buf[..n])?;
-        remaining -= n;
-    }
     Ok(())
 }

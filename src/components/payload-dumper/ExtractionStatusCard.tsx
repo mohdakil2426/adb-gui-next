@@ -1,15 +1,39 @@
-import { CheckCircle2, XCircle, FileDown, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, FileDown, ExternalLink, Zap, Clock, HardDrive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import type { backend } from '@/lib/desktop/models';
 
 interface ExtractionStatusCardProps {
   status: 'success' | 'error';
   extractedFiles: string[];
   outputDir: string;
   errorMessage: string;
+  extractionStats?: backend.ExtractionStats | null;
   onOpenOutputFolder: () => void;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+function formatDuration(ms: number): string {
+  if (ms >= 60000) {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.round((ms % 60000) / 1000);
+    return `${minutes}m ${seconds}s`;
+  }
+  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 /**
@@ -22,9 +46,20 @@ export function ExtractionStatusCard({
   extractedFiles,
   outputDir,
   errorMessage,
+  extractionStats,
   onOpenOutputFolder,
 }: ExtractionStatusCardProps) {
-  if (extractedFiles.length === 0) return null;
+  if (extractedFiles.length === 0 && status !== 'success') {
+    return (
+      <Card className="bg-muted/30">
+        <CardContent className="pt-4">
+          <p className="text-sm text-muted-foreground">
+            No files extracted yet. Select partitions and click Extract.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -99,6 +134,29 @@ export function ExtractionStatusCard({
                       <span className="truncate">{file}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+            {extractionStats != null && (
+              <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <HardDrive className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">
+                    {extractionStats.partitionsExtracted} partitions &middot;{' '}
+                    {formatBytes(extractionStats.totalBytes)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">
+                    Extracted in {formatDuration(extractionStats.durationMs)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Zap className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">
+                    Throughput: {extractionStats.throughputMbps.toFixed(0)} MB/s
+                  </span>
                 </div>
               </div>
             )}

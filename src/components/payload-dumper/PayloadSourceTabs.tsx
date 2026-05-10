@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { DropZone } from '@/components/DropZone';
 import { RemoteUrlPanel, type ConnectionStatus } from '@/components/RemoteUrlPanel';
 
+const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'];
+
 interface PayloadSourceTabsProps {
   mode: 'local' | 'remote';
   onModeChange: (mode: 'local' | 'remote') => void;
@@ -66,7 +68,7 @@ export function PayloadSourceTabs({
         <DropZone
           onFilesDropped={onPayloadDrop}
           onBrowse={onSelectPayload}
-          acceptExtensions={['.bin', '.zip', '.ops', '.ofp']}
+          acceptExtensions={ACCEPTED_PAYLOAD_EXTENSIONS}
           rejectMessage="Only payload.bin, .zip, .ops, or .ofp files are accepted"
           icon={FileArchive}
           label="Drop payload.bin, OTA zip, or firmware file here"

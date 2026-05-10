@@ -160,11 +160,19 @@ export namespace backend {
     deviceName: string;
   }
 
+  export interface ExtractionStats {
+    totalBytes: number;
+    durationMs: number;
+    partitionsExtracted: number;
+    throughputMbps: number;
+  }
+
   export interface ExtractPayloadResult {
     success: boolean;
     outputDir: string;
     extractedFiles: string[];
     error?: string;
+    stats?: ExtractionStats;
   }
 
   export interface FileEntry {
@@ -250,6 +258,22 @@ export namespace backend {
     totalPartitions: number;
     totalSize: number;
     sections: string[];
+  }
+
+  export interface PayloadDiagnostics {
+    format: string;
+    partitionCount: number;
+    totalOperations: number;
+    compressionTypes: string[];
+    hasSha256Hashes: boolean;
+    isSparse: boolean;
+    warnings: string[];
+    manifestInfo: string;
+  }
+
+  export interface DeltaPayloadOptions {
+    sourceDir: string;
+    outputDir?: string;
   }
 
   // ─── Marketplace ─────────────────────────────────────────────────────────

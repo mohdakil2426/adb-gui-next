@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { cn, formatBytesNum } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { PartitionRow } from './PartitionRow';
@@ -29,17 +30,23 @@ export function PartitionTable({
   onToggle,
   onToggleAll,
 }: PartitionTableProps) {
+  const { toExtractCount, toExtractSize } = useMemo(() => {
+    let count = 0;
+    let size = 0;
+    for (const p of partitions) {
+      if (p.selected && !completedPartitions.has(p.name)) {
+        count++;
+        size += p.size;
+      }
+    }
+    return { toExtractCount: count, toExtractSize: size };
+  }, [partitions, completedPartitions]);
+
   if (partitions.length === 0) return null;
 
   const selectedCount = partitions.filter((p) => p.selected).length;
   const hasCompletedPartitions = completedPartitions.size > 0;
   const allSelected = partitions.length > 0 && partitions.every((p) => p.selected);
-  const toExtractCount = partitions.filter(
-    (p) => p.selected && !completedPartitions.has(p.name),
-  ).length;
-  const toExtractSize = partitions
-    .filter((p) => p.selected && !completedPartitions.has(p.name))
-    .reduce((acc, p) => acc + p.size, 0);
 
   return (
     <div className="flex flex-col gap-3 min-w-0">

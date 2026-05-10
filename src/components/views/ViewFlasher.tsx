@@ -161,7 +161,9 @@ function DropArea({
 export function ViewFlasher() {
   const [partition, setPartition] = useState(() => localStorage.getItem('flasher.partition') ?? '');
   const [filePath, setFilePath] = useState(() => localStorage.getItem('flasher.filePath') ?? '');
-  const [sideloadFilePath, setSideloadFilePath] = useState(() => localStorage.getItem('flasher.sideloadFilePath') ?? '');
+  const [sideloadFilePath, setSideloadFilePath] = useState(
+    () => localStorage.getItem('flasher.sideloadFilePath') ?? '',
+  );
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget>('none');
   const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);

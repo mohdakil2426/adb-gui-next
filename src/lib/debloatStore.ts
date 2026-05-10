@@ -92,120 +92,120 @@ export const useDebloatStore = create<DebloatState>()(
       backups: [],
       selectedBackupFileName: null,
 
-  setPackages: (packages) => {
-    set({ packages });
-  },
-  setListStatus: (listStatus) => {
-    set({ listStatus });
-  },
-  setIsLoadingPackages: (isLoadingPackages) => {
-    set({ isLoadingPackages });
-  },
-  setIsApplying: (isApplying) => {
-    set({ isApplying });
-  },
+      setPackages: (packages) => {
+        set({ packages });
+      },
+      setListStatus: (listStatus) => {
+        set({ listStatus });
+      },
+      setIsLoadingPackages: (isLoadingPackages) => {
+        set({ isLoadingPackages });
+      },
+      setIsApplying: (isApplying) => {
+        set({ isApplying });
+      },
 
-  setSearchQuery: (searchQuery) => {
-    set({ searchQuery });
-  },
-  setListFilter: (listFilter) => {
-    set({ listFilter });
-  },
-  setRemovalFilter: (removalFilter) => {
-    set({ removalFilter });
-  },
-  setStateFilter: (stateFilter) => {
-    set({ stateFilter });
-  },
+      setSearchQuery: (searchQuery) => {
+        set({ searchQuery });
+      },
+      setListFilter: (listFilter) => {
+        set({ listFilter });
+      },
+      setRemovalFilter: (removalFilter) => {
+        set({ removalFilter });
+      },
+      setStateFilter: (stateFilter) => {
+        set({ stateFilter });
+      },
 
-  togglePackage: (name) => {
-    const { selectedPackages, packages, expertMode } = get();
-    const pkg = packages.find((p) => p.name === name);
-    // Block Unsafe selection without expert mode
-    if (pkg?.removal === 'Unsafe' && !expertMode) return;
-    const next = new Set(selectedPackages);
-    if (next.has(name)) {
-      next.delete(name);
-    } else {
-      next.add(name);
-    }
-    set({ selectedPackages: next });
-  },
+      togglePackage: (name) => {
+        const { selectedPackages, packages, expertMode } = get();
+        const pkg = packages.find((p) => p.name === name);
+        // Block Unsafe selection without expert mode
+        if (pkg?.removal === 'Unsafe' && !expertMode) return;
+        const next = new Set(selectedPackages);
+        if (next.has(name)) {
+          next.delete(name);
+        } else {
+          next.add(name);
+        }
+        set({ selectedPackages: next });
+      },
 
-  selectAll: () => {
-    const { packages, expertMode, listFilter, removalFilter, stateFilter, searchQuery } = get();
-    const filtered = applyFilters(packages, {
-      listFilter,
-      removalFilter,
-      stateFilter,
-      searchQuery,
-    });
-    const next = new Set(
-      filtered.filter((p) => expertMode || p.removal !== 'Unsafe').map((p) => p.name),
-    );
-    set({ selectedPackages: next });
-  },
+      selectAll: () => {
+        const { packages, expertMode, listFilter, removalFilter, stateFilter, searchQuery } = get();
+        const filtered = applyFilters(packages, {
+          listFilter,
+          removalFilter,
+          stateFilter,
+          searchQuery,
+        });
+        const next = new Set(
+          filtered.filter((p) => expertMode || p.removal !== 'Unsafe').map((p) => p.name),
+        );
+        set({ selectedPackages: next });
+      },
 
-  unselectAll: () => {
-    set({ selectedPackages: new Set() });
-  },
+      unselectAll: () => {
+        set({ selectedPackages: new Set() });
+      },
 
-  setCurrentPackageName: (currentPackageName) => {
-    set({ currentPackageName });
-  },
+      setCurrentPackageName: (currentPackageName) => {
+        set({ currentPackageName });
+      },
 
-  setActiveTab: (activeTab) => {
-    set({ activeTab });
-  },
+      setActiveTab: (activeTab) => {
+        set({ activeTab });
+      },
 
-  setExpertMode: (expertMode) => {
-    // Deselect any Unsafe packages if expert mode is turned off
-    if (!expertMode) {
-      const { selectedPackages, packages } = get();
-      const unsafeNames = new Set(
-        packages.filter((p) => p.removal === 'Unsafe').map((p) => p.name),
-      );
-      const next = new Set([...selectedPackages].filter((n) => !unsafeNames.has(n)));
-      set({ expertMode, selectedPackages: next });
-    } else {
-      set({ expertMode });
-    }
-  },
+      setExpertMode: (expertMode) => {
+        // Deselect any Unsafe packages if expert mode is turned off
+        if (!expertMode) {
+          const { selectedPackages, packages } = get();
+          const unsafeNames = new Set(
+            packages.filter((p) => p.removal === 'Unsafe').map((p) => p.name),
+          );
+          const next = new Set([...selectedPackages].filter((n) => !unsafeNames.has(n)));
+          set({ expertMode, selectedPackages: next });
+        } else {
+          set({ expertMode });
+        }
+      },
 
-  setDisableMode: (disableMode) => {
-    set({ disableMode });
-  },
-  setMultiUserMode: (multiUserMode) => {
-    set({ multiUserMode });
-  },
+      setDisableMode: (disableMode) => {
+        set({ disableMode });
+      },
+      setMultiUserMode: (multiUserMode) => {
+        set({ multiUserMode });
+      },
 
-  setBackups: (backups) => {
-    set({ backups });
-  },
-  setSelectedBackupFileName: (selectedBackupFileName) => {
-    set({ selectedBackupFileName });
-  },
+      setBackups: (backups) => {
+        set({ backups });
+      },
+      setSelectedBackupFileName: (selectedBackupFileName) => {
+        set({ selectedBackupFileName });
+      },
 
-  applyResults: (results) => {
-    const { packages } = get();
-    const resultMap = new Map(results.map((r) => [r.packageName, r]));
-    const updated = packages.map((p) => {
-      const result = resultMap.get(p.name);
-      if (result?.success) {
-        return { ...p, state: result.newState };
-      }
-      return p;
-    });
-    // Deselect successfully acted packages
-    const successNames = new Set(results.filter((r) => r.success).map((r) => r.packageName));
-    const { selectedPackages } = get();
-    const next = new Set([...selectedPackages].filter((n) => !successNames.has(n)));
-    set({ packages: updated, selectedPackages: next });
-  },
+      applyResults: (results) => {
+        const { packages } = get();
+        const resultMap = new Map(results.map((r) => [r.packageName, r]));
+        const updated = packages.map((p) => {
+          const result = resultMap.get(p.name);
+          if (result?.success) {
+            return { ...p, state: result.newState };
+          }
+          return p;
+        });
+        // Deselect successfully acted packages
+        const successNames = new Set(results.filter((r) => r.success).map((r) => r.packageName));
+        const { selectedPackages } = get();
+        const next = new Set([...selectedPackages].filter((n) => !successNames.has(n)));
+        set({ packages: updated, selectedPackages: next });
+      },
 
-  resetFilters: () => {
-    set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' });
-  },
+      resetFilters: () => {
+        set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' });
+      },
     }),
     {
       name: 'debloat-storage',
@@ -219,8 +219,8 @@ export const useDebloatStore = create<DebloatState>()(
         expertMode: state.expertMode,
         disableMode: state.disableMode,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ── Client-side filter helper (used by components + selectAll) ────────────────

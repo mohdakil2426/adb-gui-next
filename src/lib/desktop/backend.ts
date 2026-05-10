@@ -34,6 +34,10 @@ export function CleanupPayloadCache(): Promise<void> {
   return call('cleanup_payload_cache');
 }
 
+export function DiagnosePayload(path: string): Promise<backend.PayloadDiagnostics> {
+  return call('diagnose_payload', { path });
+}
+
 export function FinalizeAvdRoot(
   request: backend.RootFinalizeRequest,
 ): Promise<backend.RootFinalizeResult> {
@@ -63,6 +67,20 @@ export function ExtractPayload(
     outputDir,
     selectedPartitions,
     prefetch: prefetch ?? null,
+  });
+}
+
+export function ExtractDeltaPayload(
+  payloadPath: string,
+  sourceDir: string,
+  outputDir: string,
+  selectedPartitions: string[],
+): Promise<backend.ExtractPayloadResult> {
+  return call('extract_delta_payload', {
+    payloadPath,
+    sourceDir,
+    outputDir,
+    selectedPartitions,
   });
 }
 

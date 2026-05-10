@@ -48,6 +48,9 @@ interface PayloadDumperState {
   // Real-time progress per partition
   partitionProgress: Map<string, PartitionProgress>;
 
+  // Extraction stats (after completion)
+  extractionStats: backend.ExtractionStats | null;
+
   // Remote payload metadata (HTTP + ZIP + OTA manifest)
   remoteMetadata: backend.RemotePayloadMetadata | null;
 
@@ -74,6 +77,7 @@ interface PayloadDumperState {
     completed?: boolean,
   ) => void;
   clearPartitionProgress: () => void;
+  setExtractionStats: (stats: backend.ExtractionStats | null) => void;
   setRemoteMetadata: (metadata: backend.RemotePayloadMetadata | null) => void;
   reset: () => void;
   clearExtractionState: () => void;
@@ -93,6 +97,7 @@ const initialState = {
   completedPartitions: new Set<string>(),
   partitionProgress: new Map<string, PartitionProgress>(),
   remoteMetadata: null as backend.RemotePayloadMetadata | null,
+  extractionStats: null as backend.ExtractionStats | null,
 };
 
 export const usePayloadDumperStore = create<PayloadDumperState>()(
@@ -127,132 +132,137 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         set({ activeMode: mode });
       },
 
-  setPartitions: (partitions) => {
-    set({ partitions });
-  },
+      setPartitions: (partitions) => {
+        set({ partitions });
+      },
 
-  togglePartition: (index) => {
-    set((state) => {
-      const updated = [...state.partitions];
-      const partition = updated[index];
-      if (!partition) return { partitions: updated };
-      updated[index] = { ...partition, selected: !partition.selected };
-      return { partitions: updated };
-    });
-  },
+      togglePartition: (index) => {
+        set((state) => {
+          const updated = [...state.partitions];
+          const partition = updated[index];
+          if (!partition) return { partitions: updated };
+          updated[index] = { ...partition, selected: !partition.selected };
+          return { partitions: updated };
+        });
+      },
 
-  toggleAll: (selected) => {
-    set((state) => ({
-      partitions: state.partitions.map((p) => ({ ...p, selected })),
-    }));
-  },
+      toggleAll: (selected) => {
+        set((state) => ({
+          partitions: state.partitions.map((p) => ({ ...p, selected })),
+        }));
+      },
 
-  setStatus: (status) => {
-    set({ status });
-  },
+      setStatus: (status) => {
+        set({ status });
+      },
 
-  setExtractedFiles: (files) => {
-    set({ extractedFiles: files });
-  },
+      setExtractedFiles: (files) => {
+        set({ extractedFiles: files });
+      },
 
-  setErrorMessage: (message) => {
-    set({ errorMessage: message });
-  },
+      setErrorMessage: (message) => {
+        set({ errorMessage: message });
+      },
 
-  setOutputDir: (dir) => {
-    set({ outputDir: dir });
-  },
+      setOutputDir: (dir) => {
+        set({ outputDir: dir });
+      },
 
-  setExtractingPartitions: (partitions) => {
-    set({ extractingPartitions: partitions });
-  },
+      setExtractingPartitions: (partitions) => {
+        set({ extractingPartitions: partitions });
+      },
 
-  setCompletedPartitions: (partitions) => {
-    set({ completedPartitions: partitions });
-  },
+      setCompletedPartitions: (partitions) => {
+        set({ completedPartitions: partitions });
+      },
 
-  // Add newly completed partitions and deselect them
-  addCompletedPartitions: (partitions) => {
-    set((state) => {
-      const updatedCompleted = new Set(state.completedPartitions);
-      partitions.forEach((p) => updatedCompleted.add(p));
+      // Add newly completed partitions and deselect them
+      addCompletedPartitions: (partitions) => {
+        set((state) => {
+          const updatedCompleted = new Set(state.completedPartitions);
+          partitions.forEach((p) => updatedCompleted.add(p));
 
-      // Deselect extracted partitions
-      const updatedPartitions = state.partitions.map((p) =>
-        partitions.includes(p.name) ? { ...p, selected: false } : p,
-      );
+          // Deselect extracted partitions
+          const updatedPartitions = state.partitions.map((p) =>
+            partitions.includes(p.name) ? { ...p, selected: false } : p,
+          );
 
-      return {
-        completedPartitions: updatedCompleted,
-        partitions: updatedPartitions,
-      };
-    });
-  },
+          return {
+            completedPartitions: updatedCompleted,
+            partitions: updatedPartitions,
+          };
+        });
+      },
 
-  // Mark a single partition as completed (called from progress events)
-  markPartitionCompleted: (name) => {
-    set((state) => {
-      const updatedCompleted = new Set(state.completedPartitions);
-      updatedCompleted.add(name);
+      // Mark a single partition as completed (called from progress events)
+      markPartitionCompleted: (name) => {
+        set((state) => {
+          const updatedCompleted = new Set(state.completedPartitions);
+          updatedCompleted.add(name);
 
-      // Remove from extracting set
-      const updatedExtracting = new Set(state.extractingPartitions);
-      updatedExtracting.delete(name);
+          // Remove from extracting set
+          const updatedExtracting = new Set(state.extractingPartitions);
+          updatedExtracting.delete(name);
 
-      // Deselect the completed partition
-      const updatedPartitions = state.partitions.map((p) =>
-        p.name === name ? { ...p, selected: false } : p,
-      );
+          // Deselect the completed partition
+          const updatedPartitions = state.partitions.map((p) =>
+            p.name === name ? { ...p, selected: false } : p,
+          );
 
-      return {
-        completedPartitions: updatedCompleted,
-        extractingPartitions: updatedExtracting,
-        partitions: updatedPartitions,
-      };
-    });
-  },
+          return {
+            completedPartitions: updatedCompleted,
+            extractingPartitions: updatedExtracting,
+            partitions: updatedPartitions,
+          };
+        });
+      },
 
-  // Update real-time progress for a specific partition
-  updatePartitionProgress: (name, current, total) => {
-    set((state) => {
-      const newProgress = new Map(state.partitionProgress);
-      newProgress.set(name, {
-        current,
-        total,
-        percentage: total > 0 ? Math.round((current / total) * 100) : 0,
-      });
-      return { partitionProgress: newProgress };
-    });
-  },
+      // Update real-time progress for a specific partition
+      updatePartitionProgress: (name, current, total) => {
+        set((state) => {
+          const newProgress = new Map(state.partitionProgress);
+          newProgress.set(name, {
+            current,
+            total,
+            percentage: total > 0 ? Math.round((current / total) * 100) : 0,
+          });
+          return { partitionProgress: newProgress };
+        });
+      },
 
-  // Clear all partition progress (after extraction completes)
-  clearPartitionProgress: () => {
-    set({ partitionProgress: new Map() });
-  },
+      // Clear all partition progress (after extraction completes)
+      clearPartitionProgress: () => {
+        set({ partitionProgress: new Map() });
+      },
 
-  setRemoteMetadata: (metadata) => {
-    set({ remoteMetadata: metadata });
-  },
+      setRemoteMetadata: (metadata) => {
+        set({ remoteMetadata: metadata });
+      },
 
-  reset: () => {
-    set({
-      ...initialState,
-      extractingPartitions: new Set<string>(),
-      completedPartitions: new Set<string>(),
-      partitionProgress: new Map(),
-      remoteMetadata: null,
-    });
-  },
+      setExtractionStats: (stats) => {
+        set({ extractionStats: stats });
+      },
 
-  // Clear only extraction state but keep file and partitions
-  clearExtractionState: () => {
-    set({
-      status: 'ready',
-      extractingPartitions: new Set<string>(),
-      errorMessage: '',
-      partitionProgress: new Map(),
-    });
-  },
+      reset: () => {
+        set({
+          ...initialState,
+          extractingPartitions: new Set<string>(),
+          completedPartitions: new Set<string>(),
+          partitionProgress: new Map(),
+          remoteMetadata: null,
+          extractionStats: null,
+        });
+      },
+
+      // Clear only extraction state but keep file and partitions
+      clearExtractionState: () => {
+        set({
+          status: 'ready',
+          extractingPartitions: new Set<string>(),
+          errorMessage: '',
+          partitionProgress: new Map(),
+        });
+      },
     }),
     {
       name: 'payload-dumper-storage',
@@ -262,6 +272,19 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         remoteUrl: state.remoteUrl,
         outputPath: state.outputPath,
       }),
-    }
-  )
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          if (!state.extractingPartitions || !(state.extractingPartitions instanceof Set)) {
+            state.extractingPartitions = new Set<string>();
+          }
+          if (!state.completedPartitions || !(state.completedPartitions instanceof Set)) {
+            state.completedPartitions = new Set<string>();
+          }
+          if (!state.partitionProgress || !(state.partitionProgress instanceof Map)) {
+            state.partitionProgress = new Map<string, PartitionProgress>();
+          }
+        }
+      },
+    },
+  ),
 );

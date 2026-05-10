@@ -10,6 +10,7 @@ use super::{OpsMetadata, OpsPartitionEntry};
 use crate::payload::extractor::{ExtractPayloadResult, PartitionDetail};
 use anyhow::Result;
 use memmap2::Mmap;
+use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
@@ -226,6 +227,9 @@ fn extract_single_partition(
         );
     }
 
+    // SHA-256 hasher for output verification — compute hash of written data.
+    let mut hasher = if !partition.sha256.is_empty() { Some(Sha256::new()) } else { None };
+
     match format {
         FirmwareFormat::Ops if partition.encrypted => {
             // OPS encrypted (SAHARA section) → full decryption with key_custom
@@ -233,7 +237,11 @@ fn extract_single_partition(
             let encrypted = &mmap[start..read_end.min(mmap.len())];
             let decrypted = ops_decrypt(encrypted, variant);
             let out_len = partition.size as usize;
-            writer.write_all(&decrypted[..out_len.min(decrypted.len())])?;
+            let data = &decrypted[..out_len.min(decrypted.len())];
+            if let Some(ref mut h) = hasher {
+                h.update(data);
+            }
+            writer.write_all(data)?;
         }
         FirmwareFormat::OfpQualcomm if partition.encrypted => {
             // OFP-QC → first encrypted_length bytes are AES-CFB encrypted
@@ -243,6 +251,9 @@ fn extract_single_partition(
 
             if actual_enc > 0 && start + actual_enc <= mmap.len() {
                 let decrypted = cipher.decrypt(&mmap[start..start + actual_enc]);
+                if let Some(ref mut h) = hasher {
+                    h.update(&decrypted);
+                }
                 writer.write_all(&decrypted)?;
             }
 
@@ -250,7 +261,11 @@ fn extract_single_partition(
             let plain_start = start + actual_enc;
             let plain_end = byte_end.min(mmap.len());
             if plain_start < plain_end {
-                writer.write_all(&mmap[plain_start..plain_end])?;
+                let data = &mmap[plain_start..plain_end];
+                if let Some(ref mut h) = hasher {
+                    h.update(data);
+                }
+                writer.write_all(data)?;
             }
         }
         FirmwareFormat::OfpMediaTek if partition.encrypted => {
@@ -261,35 +276,69 @@ fn extract_single_partition(
 
             if actual_enc > 0 && start + actual_enc <= mmap.len() {
                 let decrypted = cipher.decrypt(&mmap[start..start + actual_enc]);
+                if let Some(ref mut h) = hasher {
+                    h.update(&decrypted);
+                }
                 writer.write_all(&decrypted)?;
             }
 
             let plain_start = start + actual_enc;
             let plain_end = byte_end.min(mmap.len());
             if plain_start < plain_end {
-                writer.write_all(&mmap[plain_start..plain_end])?;
+                let data = &mmap[plain_start..plain_end];
+                if let Some(ref mut h) = hasher {
+                    h.update(data);
+                }
+                writer.write_all(data)?;
             }
         }
         _ => {
             // Raw copy (UFS_PROVISION, Program sections, or unencrypted)
             let copy_end = byte_end.min(mmap.len());
-            writer.write_all(&mmap[start..copy_end])?;
+            let data = &mmap[start..copy_end];
+            if let Some(ref mut h) = hasher {
+                h.update(data);
+            }
+            writer.write_all(data)?;
         }
     }
 
-    // SHA-256 verification (if hash provided)
-    if !partition.sha256.is_empty() {
+    // SHA-256 verification: compare accumulated digest against expected.
+    if let (Some(h), Some(expected_hex)) = (hasher.as_mut(), hex_to_bytes(&partition.sha256)) {
         writer.flush()?;
-        // Re-read what we just wrote for verification
-        // (In production, we'd compute the hash during writing)
+        let actual = h.clone().finalize();
+        if actual.as_slice() != expected_hex.as_slice() {
+            anyhow::bail!(
+                "Partition '{}' SHA-256 mismatch: expected {}, got {:02x?}",
+                partition.name,
+                partition.sha256,
+                actual,
+            );
+        }
         log::info!(
-            "Partition '{}': SHA-256 verification requested (hash: {}...)",
+            "Partition '{}': SHA-256 verified ({}...)",
             partition.name,
             &partition.sha256[..8.min(partition.sha256.len())]
         );
     }
 
     Ok(())
+}
+
+/// Parse a hex-encoded SHA-256 string into bytes.
+/// Returns `None` if the string is empty or not valid hex.
+fn hex_to_bytes(hex: &str) -> Option<Vec<u8>> {
+    if hex.is_empty() || !hex.len().is_multiple_of(2) {
+        return None;
+    }
+    let mut bytes = Vec::with_capacity(hex.len() / 2);
+    let mut i = 0;
+    while i < hex.len() {
+        let byte = u8::from_str_radix(&hex[i..i + 2], 16).ok()?;
+        bytes.push(byte);
+        i += 2;
+    }
+    Some(bytes)
 }
 
 /// If a file is an Android sparse image, un-sparse it in-place.

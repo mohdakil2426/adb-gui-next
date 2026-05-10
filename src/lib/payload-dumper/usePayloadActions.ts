@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useLogStore } from '@/lib/logStore';
 import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
@@ -33,7 +33,7 @@ interface UsePayloadActionsOptions {
 }
 
 interface PayloadActions {
-  handleCheckUrl: () => Promise<void>;
+  handleCheckUrl: () => void;
   loadRemotePartitions: () => Promise<void>;
   handleCancelLoadPartitions: () => void;
   handlePayloadDrop: (paths: string[]) => Promise<void>;
@@ -74,9 +74,17 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const addCompletedPartitions = usePayloadDumperStore((state) => state.addCompletedPartitions);
   const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
   const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
+  const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
   const reset = usePayloadDumperStore((state) => state.reset);
 
   const cancelLoadingRef = useRef(false);
+  const checkUrlRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (checkUrlRef.current) clearTimeout(checkUrlRef.current);
+    };
+  }, []);
 
   const loadPartitions = useCallback(
     async (path: string) => {
@@ -116,32 +124,35 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     [setStatus, setErrorMessage, setPartitions],
   );
 
-  const handleCheckUrl = useCallback(async () => {
+  const handleCheckUrl = useCallback(() => {
     if (!remoteUrl.trim()) return;
 
-    setConnectionStatus('checking');
-    setEstimatedSize(null);
+    if (checkUrlRef.current) clearTimeout(checkUrlRef.current);
+    checkUrlRef.current = setTimeout(async () => {
+      setConnectionStatus('checking');
+      setEstimatedSize(null);
 
-    try {
-      debugLog(`Checking remote URL: ${remoteUrl}`);
-      const info = await CheckRemotePayload(remoteUrl.trim());
-      if (info.supportsRanges) {
-        setConnectionStatus('ready');
-        setEstimatedSize(formatBytesNum(info.contentLength));
-        toast.success('URL verified - range requests supported');
-        useLogStore
-          .getState()
-          .addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
-      } else {
+      try {
+        debugLog(`Checking remote URL: ${remoteUrl}`);
+        const info = await CheckRemotePayload(remoteUrl.trim());
+        if (info.supportsRanges) {
+          setConnectionStatus('ready');
+          setEstimatedSize(formatBytesNum(info.contentLength));
+          toast.success('URL verified - range requests supported');
+          useLogStore
+            .getState()
+            .addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
+        } else {
+          setConnectionStatus('error');
+          toast.error('Server does not support range requests');
+          useLogStore.getState().addLog('Server does not support range requests', 'error');
+        }
+      } catch (error) {
         setConnectionStatus('error');
-        toast.error('Server does not support range requests');
-        useLogStore.getState().addLog('Server does not support range requests', 'error');
+        toast.error(`Failed to check URL: ${error}`);
+        handleError('Check Remote URL', error);
       }
-    } catch (error) {
-      setConnectionStatus('error');
-      toast.error(`Failed to check URL: ${error}`);
-      handleError('Check Remote URL', error);
-    }
+    }, 500);
   }, [remoteUrl, setConnectionStatus, setEstimatedSize]);
 
   const loadRemotePartitions = useCallback(async () => {
@@ -182,8 +193,9 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
             debugLog('Remote payload metadata loaded');
           })
           .catch((err: unknown) => {
-            debugLog(`Metadata fetch failed (non-blocking): ${err}`);
-            useLogStore.getState().addLog(`Metadata fetch failed: ${err}`, 'warning');
+            const msg = err instanceof Error ? err.message : String(err);
+            toast.error(`Failed to load remote metadata: ${msg}`);
+            useLogStore.getState().addLog(`Metadata fetch failed: ${msg}`, 'error');
           });
       } else {
         setErrorMessage('No partitions found in remote payload');
@@ -326,6 +338,10 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
         setOutputDir(result.outputDir || '');
         setStatus('success');
 
+        if (result.stats) {
+          setExtractionStats(result.stats);
+        }
+
         const newCompleted = newFiles.map((f) => f.replace('.img', ''));
         addCompletedPartitions(newCompleted);
         setExtractingPartitions(new Set());
@@ -367,6 +383,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setExtractingPartitions,
     setExtractedFiles,
     setOutputDir,
+    setExtractionStats,
     addCompletedPartitions,
     clearPartitionProgress,
   ]);

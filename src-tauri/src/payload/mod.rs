@@ -7,9 +7,15 @@ pub mod chromeos_update_engine {
     include!(concat!(env!("OUT_DIR"), "/chromeos_update_engine.rs"));
 }
 
+mod copy;
+mod delta;
+mod error;
 mod extractor;
 pub mod ops;
 mod parser;
+pub mod transaction;
+mod verify;
+mod write;
 mod zip;
 
 #[cfg(feature = "remote_zip")]
@@ -25,9 +31,12 @@ pub mod remote;
 mod tests;
 
 pub use extractor::{
-    DynamicGroupInfo, ExtractPayloadResult, PartitionDetail, RemotePayloadMetadata, extract_payload,
+    DynamicGroupInfo, ExtractPayloadResult, PartitionDetail, PayloadDiagnostics,
+    RemotePayloadMetadata, diagnose_payload_file, extract_payload,
 };
-pub use parser::{LoadedPayload, list_payload_partitions, list_payload_partitions_with_details};
+pub use parser::{
+    LoadedPayload, list_payload_partitions, list_payload_partitions_with_details, open_mmap,
+};
 pub use zip::PayloadCache;
 
 #[cfg(feature = "remote_zip")]
