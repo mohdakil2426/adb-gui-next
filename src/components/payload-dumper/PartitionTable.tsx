@@ -60,26 +60,10 @@ export function PartitionTable({
 
   return (
     <div className="flex flex-col gap-3 min-w-0">
-      {/* Search */}
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Search partitions..."
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-          }}
-          className="max-w-sm h-8 text-sm"
-        />
-        {isFiltered ? (
-          <span className="text-xs text-muted-foreground">
-            {filteredPartitions.length} of {partitions.length}
-          </span>
-        ) : null}
-      </div>
-
       {/* Summary + toggle */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs text-muted-foreground">
+          {isFiltered ? `${filteredPartitions.length} of ${partitions.length} shown \u2022 ` : ''}
           {selectedCount}/{filteredPartitions.length} selected
           {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
           {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
@@ -97,6 +81,17 @@ export function PartitionTable({
 
       {/* Table container */}
       <div className="rounded-lg border bg-muted/30 overflow-hidden">
+        <div className="flex justify-center border-b border-border/50 px-4 py-3">
+          <Input
+            placeholder="Search partitions..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+            }}
+            className="h-8 w-full max-w-xl text-sm"
+          />
+        </div>
+
         {/* Header — adaptive */}
         <div
           className={cn(

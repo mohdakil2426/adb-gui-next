@@ -82,7 +82,7 @@ export const PartitionRow = React.memo(function PartitionRow({
         )}
         <span
           className={cn(
-            'font-medium truncate',
+            'font-medium whitespace-normal break-words leading-snug',
             isCompleted
               ? 'text-success'
               : partition.selected
@@ -90,7 +90,7 @@ export const PartitionRow = React.memo(function PartitionRow({
                 : 'text-muted-foreground',
           )}
         >
-          {partition.name}
+          {partition.name}.img
         </span>
       </div>
 

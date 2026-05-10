@@ -1,5 +1,14 @@
-import { CheckCircle2, XCircle, FileDown, ExternalLink, Zap, Clock, HardDrive } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  CheckCircle2,
+  XCircle,
+  FileDown,
+  ExternalLink,
+  FolderOpen,
+  HardDrive,
+  Clock,
+  Zap,
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -37,9 +46,9 @@ function formatDuration(ms: number): string {
 }
 
 /**
- * Post-extraction status card showing success or error state.
- * On success: displays output directory and extracted file list.
- * On error: displays error message.
+ * Compact post-extraction status card.
+ * Shows success/error header, inline stats, output path, and extracted files
+ * in a tight, borderless layout.
  */
 export function ExtractionStatusCard({
   status,
@@ -61,109 +70,98 @@ export function ExtractionStatusCard({
     );
   }
 
+  const isSuccess = status === 'success';
+
   return (
     <Card
       className={cn(
-        'border-2 min-w-0',
-        status === 'success'
-          ? 'border-success/50 bg-success/5'
-          : 'border-destructive/50 bg-destructive/5',
+        'border min-w-0',
+        isSuccess ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5',
       )}
     >
-      <CardHeader className="pb-3">
-        <CardTitle
-          className={cn(
-            'flex items-center gap-2 text-lg',
-            status === 'success' ? 'text-success' : 'text-destructive',
-          )}
-        >
-          {status === 'success' ? (
-            <>
-              <CheckCircle2 className="h-5 w-5" />
-              Extraction Complete
-            </>
-          ) : (
-            <>
-              <XCircle className="h-5 w-5" />
-              Extraction Failed
-            </>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {status === 'success' && (
-          <div className="flex flex-col gap-3">
-            {outputDir ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground font-medium">Saved to:</span>
-                <div className="flex items-center gap-2 min-w-0">
-                  <code
-                    className="text-xs bg-muted px-3 py-2 rounded flex-1 min-w-0 truncate font-mono border select-all"
-                    title={outputDir}
-                  >
-                    {outputDir}
-                  </code>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={onOpenOutputFolder}
-                        className="h-9 w-9 shrink-0"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">Open in File Explorer</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            ) : null}
-            {extractedFiles.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-muted-foreground">
-                  Extracted {extractedFiles.length} partition(s):
-                </p>
-                <div className="rounded-lg border bg-muted/30 p-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {extractedFiles.map((file) => (
-                    <div
-                      key={file}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                      <FileDown className="h-3.5 w-3.5 text-success shrink-0" />
-                      <span className="truncate">{file}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+      <CardContent className="p-4 flex flex-col gap-3">
+        {/* Header row: status badge + inline stats */}
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <div
+            className={cn(
+              'flex items-center gap-1.5 shrink-0',
+              isSuccess ? 'text-success' : 'text-destructive',
             )}
-            {extractionStats != null && (
-              <div className="flex flex-col gap-1.5 rounded-lg border bg-muted/30 p-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <HardDrive className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">
-                    {extractionStats.partitionsExtracted} partitions &middot;{' '}
-                    {formatBytes(extractionStats.totalBytes)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">
-                    Extracted in {formatDuration(extractionStats.durationMs)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Zap className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">
-                    Throughput: {extractionStats.throughputMbps.toFixed(0)} MB/s
-                  </span>
-                </div>
-              </div>
+          >
+            {isSuccess ? (
+              <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <XCircle className="size-4 shrink-0" aria-hidden="true" />
             )}
+            <span className="text-sm font-semibold">
+              {isSuccess ? 'Extraction Complete' : 'Extraction Failed'}
+            </span>
           </div>
-        )}
-        {status === 'error' && errorMessage ? (
+
+          {extractionStats != null && isSuccess ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+              <HardDrive className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">
+                {extractionStats.partitionsExtracted} partitions
+                <span className="mx-1 text-muted-foreground/50">·</span>
+                {formatBytes(extractionStats.totalBytes)}
+                <span className="mx-1 text-muted-foreground/50">·</span>
+                <Clock className="inline size-3 align-text-bottom" aria-hidden="true" />
+                {formatDuration(extractionStats.durationMs)}
+                <span className="mx-1 text-muted-foreground/50">·</span>
+                <Zap className="inline size-3 align-text-bottom" aria-hidden="true" />
+                {extractionStats.throughputMbps.toFixed(0)} MB/s
+              </span>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Error message */}
+        {!isSuccess && errorMessage ? (
           <p className="text-sm text-destructive">{errorMessage}</p>
+        ) : null}
+
+        {/* Output path */}
+        {isSuccess && outputDir ? (
+          <div className="flex items-center gap-2 min-w-0">
+            <FolderOpen className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <code
+              className="text-xs text-muted-foreground font-mono truncate flex-1 select-all"
+              title={outputDir}
+            >
+              {outputDir}
+            </code>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onOpenOutputFolder}
+                  className="size-6 shrink-0"
+                  aria-label="Open output folder"
+                >
+                  <ExternalLink className="size-3.5" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Open output folder</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : null}
+
+        {/* Extracted files */}
+        {isSuccess && extractedFiles.length > 0 ? (
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {extractedFiles.map((file) => (
+              <span
+                key={file}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+                title={file}
+              >
+                <FileDown className="size-3 text-success shrink-0" aria-hidden="true" />
+                <span className="truncate max-w-[12rem]">{file}</span>
+              </span>
+            ))}
+          </div>
         ) : null}
       </CardContent>
     </Card>

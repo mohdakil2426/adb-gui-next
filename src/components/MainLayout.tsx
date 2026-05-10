@@ -372,7 +372,7 @@ export function MainLayout() {
             ? `${unreadCount} new log${unreadCount === 1 ? '' : 's'}`
             : ''}
         </span>
-        <Toaster position="bottom-right" richColors closeButton />
+        <Toaster position="top-right" richColors closeButton />
       </MotionConfig>
     </ThemeProvider>
   );

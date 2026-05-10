@@ -326,6 +326,7 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 - `shellStore.ts` — Shell history + command history Zustand store
 - 12 terminal CSS variables in `global.css` for light/dark theme support
 - Keyboard shortcut: `Ctrl+\`` to toggle panel
+- Global Sonner toasts mount at `top-right` from `MainLayout.tsx`; treat that as the single app-wide notification position unless the UX intentionally changes everywhere.
 
 ### 10. Action Queue Pattern (Bootloop Recovery)
 
@@ -401,6 +402,7 @@ onClick={() => {
 | Searchable lists | `<Command shouldFilter={false}>` + `<CommandInput>` — never hand-roll search icon+input |
 | Icon buttons | must have `aria-label` for accessibility |
 | Semantic heading | views should use `<h1 className="sr-only">` for screen readers |
+| Global theme control | keep a single theme toggle in the header toolbar; do not duplicate it in the sidebar footer |
 
 ### 12. Layout & Containment (Viewport-Locked Desktop Pattern)
 
@@ -537,6 +539,7 @@ src/components/
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
 - **AppManager virtualizer + Command**: `shouldFilter={false}` is mandatory when using `<Command>` with `@tanstack/react-virtual`. cmdk's built-in filter tries to render all items and conflicts with virtualization.
+- **Payload Dumper loaded-state layout**: treat the banner, selection summary, search field, table, and footer as distinct zones. The banner owns payload identity + source path, the centered search input belongs to the table surface, and the bottom action row uses wide buttons sized to the table width.
 - **AppManager installed icons must stay lazy + fixed-size**: never fetch icons during initial package listing and never let icon arrival change row height. Visible-row lazy loading + placeholder slots keeps the virtualizer stable.
 - **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.
 - **`overflow-x-hidden` not `overflow-hidden` on layout containers**: `overflow-hidden` terminates the scroll-ancestor chain (breaks sticky) and clips both axes. `overflow-x-hidden` clips only horizontal escapes, leaving vertical flex flow intact.

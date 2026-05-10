@@ -40,46 +40,49 @@ export function ActionFooter({
   };
 
   return (
-    <div className="flex items-center justify-between border-t pt-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onReset}
-        disabled={status === 'extracting' || status === 'cancelling'}
-        className="text-muted-foreground"
-      >
-        <RefreshCw className="mr-2 h-3.5 w-3.5" />
-        Reset
-      </Button>
-      <div className="flex gap-2">
+    <div className="border-t pt-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onReset}
+          disabled={status === 'extracting' || status === 'cancelling'}
+          className="h-11 w-full"
+        >
+          <RefreshCw className="mr-2 size-4" />
+          Reset
+        </Button>
         {status === 'extracting' && onCancel ? (
-          <Button variant="destructive" onClick={onCancel}>
-            <StopCircle className="mr-2 h-4 w-4" />
+          <Button variant="destructive" size="lg" onClick={onCancel} className="h-11 w-full">
+            <StopCircle className="mr-2 size-4" />
             Cancel
           </Button>
-        ) : null}
-        <Button
-          onClick={onExtract}
-          disabled={
-            !payloadPath ||
-            status === 'extracting' ||
-            status === 'cancelling' ||
-            status === 'loading-partitions' ||
-            toExtractCount === 0
-          }
-        >
-          {status === 'extracting' || status === 'cancelling' ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 h-4 w-4" />
-              {getExtractLabel()}
-            </>
-          )}
-        </Button>
+        ) : (
+          <Button
+            size="lg"
+            onClick={onExtract}
+            disabled={
+              !payloadPath ||
+              status === 'extracting' ||
+              status === 'cancelling' ||
+              status === 'loading-partitions' ||
+              toExtractCount === 0
+            }
+            className="h-11 w-full"
+          >
+            {status === 'extracting' || status === 'cancelling' ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 size-4" />
+                {getExtractLabel()}
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );

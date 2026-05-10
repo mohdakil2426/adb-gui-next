@@ -58,6 +58,7 @@ export const FileBanner = memo(function FileBanner({
   prefetch,
 }: FileBannerProps) {
   const displayName = isRemote ? remoteUrl : getFileName(payloadPath);
+  const sourceValue = isRemote ? remoteUrl : payloadPath;
   const isDisabled = status === 'extracting' || status === 'loading-partitions';
 
   return (
@@ -72,6 +73,10 @@ export const FileBanner = memo(function FileBanner({
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate min-w-0 max-w-full" title={displayName}>
               {displayName}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground whitespace-normal break-all">
+              <span className="font-medium">Source</span>{' '}
+              <span className="font-mono text-foreground/90 select-all">{sourceValue}</span>
             </p>
           </div>
         </div>

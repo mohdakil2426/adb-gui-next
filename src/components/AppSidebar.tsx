@@ -24,7 +24,6 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { ThemeToggle } from './ThemeToggle';
 
 type ViewType =
   | 'dashboard'
@@ -127,9 +126,6 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
       <SidebarFooter>
         <SidebarSeparator />
         <SidebarMenu>
-          <SidebarMenuItem>
-            <ThemeToggle />
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="About"
