@@ -495,11 +495,8 @@ fn extract_partition(
 
 fn default_output_dir(payload_path: &Path) -> PathBuf {
     let parent = payload_path.parent().unwrap_or_else(|| Path::new("."));
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or_default();
-    parent.join(format!("extracted_{timestamp}"))
+    let stamp = crate::payload::format_datetime();
+    parent.join(format!("extracted_{stamp}"))
 }
 
 /// Diagnostics result for a payload file.

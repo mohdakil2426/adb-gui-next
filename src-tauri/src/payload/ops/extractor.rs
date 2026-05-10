@@ -376,11 +376,8 @@ fn open_mmap_raw(path: &Path) -> Result<Mmap> {
 
 fn default_output_dir(path: &Path) -> PathBuf {
     let parent = path.parent().unwrap_or_else(|| Path::new("."));
-    let timestamp = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or_default();
-    parent.join(format!("extracted_{timestamp}"))
+    let stamp = crate::payload::format_datetime();
+    parent.join(format!("extracted_{stamp}"))
 }
 
 fn sanitize_output_name(name: &str) -> String {

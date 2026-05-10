@@ -357,7 +357,10 @@ pub async fn extract_remote_prefetch(
     let output_dir = output_dir
         .filter(|p| !p.as_os_str().is_empty())
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from("."));
+        .unwrap_or_else(|| {
+            let stamp = crate::payload::format_datetime();
+            std::path::PathBuf::from(format!("extracted_{stamp}"))
+        });
 
     std::fs::create_dir_all(&output_dir)?;
 
@@ -507,7 +510,10 @@ pub async fn extract_remote_direct(
     let output_dir = output_dir
         .filter(|p| !p.as_os_str().is_empty())
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from("."));
+        .unwrap_or_else(|| {
+            let stamp = crate::payload::format_datetime();
+            std::path::PathBuf::from(format!("extracted_{stamp}"))
+        });
 
     std::fs::create_dir_all(&output_dir)?;
 
