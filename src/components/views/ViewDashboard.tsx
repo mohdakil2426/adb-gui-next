@@ -331,21 +331,25 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                 icon={<Building className="size-4" />}
                 label="Brand"
                 value={deviceInfo.brand}
+                copyable
               />
               <InfoItem
                 icon={<Tag className="size-4" />}
                 label="Device Name"
                 value={deviceInfo.deviceName}
+                copyable
               />
               <InfoItem
                 icon={<Code className="size-4" />}
                 label="Codename"
                 value={deviceInfo.codename}
+                copyable
               />
               <InfoItem
                 icon={<Smartphone className="size-4" />}
                 label="Model"
                 value={deviceInfo.model}
+                copyable
               />
               <InfoItem
                 icon={<Hash className="size-4" />}
@@ -357,26 +361,31 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                 icon={<Server className="size-4" />}
                 label="Build Number"
                 value={deviceInfo.buildNumber}
+                copyable
               />
               <InfoItem
                 icon={<Info className="size-4" />}
                 label="Android Version"
                 value={deviceInfo.androidVersion}
+                copyable
               />
               <InfoItem
                 icon={<Battery className="size-4" />}
                 label="Battery"
                 value={deviceInfo.batteryLevel}
+                copyable
               />
               <InfoItem
                 icon={<Cpu className="size-4" />}
                 label="Total RAM"
                 value={deviceInfo.ramTotal}
+                copyable
               />
               <InfoItem
                 icon={<Database className="size-4" />}
                 label="Internal Storage"
                 value={deviceInfo.storageInfo}
+                copyable
               />
               <InfoItem
                 icon={<Wifi className="size-4" />}
@@ -388,6 +397,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                 icon={<ShieldCheck className="size-4" />}
                 label="Root Status"
                 value={deviceInfo.rootStatus}
+                copyable
                 valueClassName={
                   deviceInfo.rootStatus === 'Yes'
                     ? 'text-success font-bold'
@@ -426,13 +436,19 @@ function InfoItem({
   copyable?: boolean;
 }) {
   return (
-    <div className="flex items-center p-3 bg-muted rounded-lg overflow-hidden">
+    <div className="group flex items-center gap-3 rounded-lg bg-muted p-3 overflow-hidden">
       <div className="mr-3 text-primary shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="text-sm text-muted-foreground truncate">{label}</div>
         <div className={cn('font-semibold truncate', valueClassName)}>{value || 'N/A'}</div>
       </div>
-      {copyable && value ? <CopyButton value={value} label={label} /> : null}
+      {copyable && value ? (
+        <CopyButton
+          value={value}
+          label={label}
+          className="opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+        />
+      ) : null}
     </div>
   );
 }
