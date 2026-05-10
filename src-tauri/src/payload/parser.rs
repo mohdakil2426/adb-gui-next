@@ -8,6 +8,8 @@ use memmap2::Mmap;
 use prost::Message;
 use std::{path::Path, sync::Arc};
 
+const MAX_MANIFEST_SIZE: usize = 100_000_000; // 100 MB
+
 /// Opens `payload_path` as a read-only memory-mapped file.
 ///
 /// # Safety
@@ -27,7 +29,7 @@ pub fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
 
 /// Parse the CrAU header and decode the protobuf manifest.
 /// Returns `(manifest_bytes, data_offset)`.
-pub(super) fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
+pub fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
     if payload_bytes.len() < 24 {
         anyhow::bail!("payload is too small");
     }
@@ -50,6 +52,15 @@ pub(super) fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
             .map_err(|_| anyhow::anyhow!("invalid payload: manifest length slice too short"))?,
     ))
     .map_err(|_| anyhow::anyhow!("payload manifest is too large"))?;
+
+    if manifest_len > MAX_MANIFEST_SIZE {
+        anyhow::bail!(
+            "manifest size ({}) exceeds maximum allowed ({}). \
+            This may be a malformed or malicious payload.",
+            manifest_len,
+            MAX_MANIFEST_SIZE
+        );
+    }
 
     let metadata_sig_len =
         usize::try_from(u32::from_be_bytes(payload_bytes[20..24].try_into().map_err(|_| {

@@ -1,11 +1,15 @@
 use crate::CmdResult;
+use crate::payload::cancel::CancellationToken;
 use crate::payload::ops;
 use crate::payload::{
     self, ExtractPayloadResult, PartitionDetail, PayloadCache, PayloadDiagnostics,
     RemotePayloadMetadata,
 };
 use log::{error, info};
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{LazyLock, Mutex};
 use tauri::{AppHandle, State};
 
 use serde::Serialize;
@@ -36,6 +40,7 @@ pub async fn extract_payload(
     output_dir: String,
     selected_partitions: Vec<String>,
     #[allow(unused_variables)] prefetch: Option<bool>,
+    cancel_token_id: Option<String>,
 ) -> CmdResult<ExtractPayloadResult> {
     let payload_path = payload_path.trim();
     let output_dir = if output_dir.trim().is_empty() {
@@ -47,6 +52,13 @@ pub async fn extract_payload(
         std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create output dir: {e}"))?;
         Some(dir.canonicalize().map_err(|e| format!("Cannot resolve output dir: {e}"))?)
     };
+
+    // Resolve cancellation token if provided
+    let cancel_token = cancel_token_id.and_then(|id| {
+        let id: usize = id.parse().ok()?;
+        let registry = TOKEN_REGISTRY.lock().ok()?;
+        registry.get(&id).cloned()
+    });
 
     {
         // Remote URL — route to dedicated remote extraction
@@ -150,7 +162,10 @@ pub async fn extract_payload(
             &selected_partitions,
             &payload_cache,
             Some(app),
+            payload::VerifyMode::default(),
             |_, _, _, _| {},
+            cancel_token.as_ref(),
+            None,
         )
     });
 
@@ -266,6 +281,7 @@ pub async fn extract_delta_payload(
     source_dir: String,
     output_dir: String,
     selected_partitions: Vec<String>,
+    cancel_token_id: Option<String>,
 ) -> CmdResult<ExtractPayloadResult> {
     info!(
         "Extracting delta payload from {} with source {} (partitions: {})",
@@ -292,6 +308,13 @@ pub async fn extract_delta_payload(
         Some(dir)
     };
 
+    // Resolve cancellation token if provided
+    let cancel_token = cancel_token_id.and_then(|id| {
+        let id: usize = id.parse().ok()?;
+        let registry = TOKEN_REGISTRY.lock().ok()?;
+        registry.get(&id).cloned()
+    });
+
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
             std::path::Path::new(&payload_path),
@@ -299,7 +322,10 @@ pub async fn extract_delta_payload(
             &selected_partitions,
             &PayloadCache::default(),
             None,
+            payload::VerifyMode::default(),
             |_, _, _, _| {},
+            cancel_token.as_ref(),
+            Some(source_path),
         )
     });
 
@@ -425,4 +451,39 @@ fn diagnose_ops_payload(path: &std::path::Path) -> anyhow::Result<PayloadDiagnos
         warnings,
         manifest_info,
     })
+}
+
+// =============================================================================
+// Cancellation Token Management
+// =============================================================================
+
+static TOKEN_COUNTER: AtomicUsize = AtomicUsize::new(0);
+static TOKEN_REGISTRY: LazyLock<Mutex<HashMap<usize, CancellationToken>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+#[tauri::command]
+pub fn create_cancellation_token() -> String {
+    let token = CancellationToken::new();
+    let id = TOKEN_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let mut registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
+        log::error!("Lock poisoned, recovering: {}", e);
+        e.into_inner()
+    });
+    registry.insert(id, token);
+    format!("{}", id)
+}
+
+#[tauri::command]
+pub fn cancel_extraction(token_id: String) -> Result<(), String> {
+    let id: usize = token_id.parse().map_err(|e: std::num::ParseIntError| e.to_string())?;
+    let registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
+        log::error!("Lock poisoned, recovering: {}", e);
+        e.into_inner()
+    });
+    if let Some(token) = registry.get(&id) {
+        token.cancel();
+        Ok(())
+    } else {
+        Err("Token not found".to_string())
+    }
 }

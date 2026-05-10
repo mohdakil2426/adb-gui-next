@@ -10,8 +10,10 @@
 //! The full decompressed block is never buffered; bytes are written to the output file
 //! as they stream out of the decoder.
 
+use super::cancel::CancellationToken;
 use super::parser::load_payload;
 use super::transaction::TransactionGuard;
+use super::verify::VerifyMode;
 use super::write::NonTemporalWriter;
 use super::zip::PayloadCache;
 use crate::payload::chromeos_update_engine;
@@ -25,6 +27,7 @@ use std::{
     io::{Cursor, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
     sync::Arc,
+    time::{Duration, Instant},
 };
 use tauri::Emitter;
 
@@ -113,13 +116,17 @@ pub struct DynamicGroupInfo {
 /// * `progress` — Callback `(partition_name, current_op, total_ops, completed)`.
 ///   Fired once per partition at completion; used by the test suite for assertions and
 ///   by the Tauri command for completion logging.
+#[allow(clippy::too_many_arguments)]
 pub fn extract_payload(
     payload_path: &Path,
     output_dir: Option<&Path>,
     selected_partitions: &[String],
     cache: &PayloadCache,
     app_handle: Option<tauri::AppHandle>,
+    verify_mode: VerifyMode,
     mut progress: impl FnMut(&str, usize, usize, bool),
+    cancel_token: Option<&CancellationToken>,
+    source_dir: Option<&Path>,
 ) -> Result<ExtractPayloadResult> {
     let payload = load_payload(payload_path, cache)?;
     let block_size = payload.manifest.block_size.unwrap_or(DEFAULT_BLOCK_SIZE);
@@ -187,19 +194,10 @@ pub fn extract_payload(
                 partition,
                 &mut writer,
                 block_size,
-                &mut |name, current, total, completed| {
-                    if let Some(ref handle) = app {
-                        let _ = handle.emit(
-                            "payload:progress",
-                            serde_json::json!({
-                                "partitionName": name,
-                                "current": current,
-                                "total": total,
-                                "completed": completed,
-                            }),
-                        );
-                    }
-                },
+                verify_mode,
+                app.as_ref(),
+                cancel_token,
+                source_dir,
             )?;
 
             writer.flush()?;
@@ -234,23 +232,77 @@ pub fn extract_payload(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
+fn emit_progress(
+    app_handle: Option<&tauri::AppHandle>,
+    partition_name: &str,
+    current: usize,
+    total: usize,
+    bytes_written: Option<u64>,
+    total_bytes: Option<u64>,
+    throughput_mbps: Option<f64>,
+    eta_seconds: Option<u64>,
+    completed: bool,
+) {
+    if let Some(handle) = app_handle {
+        let _ = handle.emit(
+            "payload:progress",
+            serde_json::json!({
+                "partitionName": partition_name,
+                "current": current,
+                "total": total,
+                "bytesWritten": bytes_written,
+                "totalBytes": total_bytes,
+                "throughputMbps": throughput_mbps,
+                "etaSeconds": eta_seconds,
+                "completed": completed,
+            }),
+        );
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn extract_partition(
     payload: &super::parser::LoadedPayload,
     partition: &chromeos_update_engine::PartitionUpdate,
     writer: &mut (impl Write + Seek),
     block_size: u32,
-    progress: &mut impl FnMut(&str, usize, usize, bool),
+    verify_mode: VerifyMode,
+    app_handle: Option<&tauri::AppHandle>,
+    cancel_token: Option<&CancellationToken>,
+    _source_dir: Option<&Path>,
 ) -> Result<()> {
     let total_operations = partition.operations.len();
     if total_operations == 0 {
-        progress(&partition.partition_name, 0, 0, true);
+        emit_progress(
+            app_handle,
+            &partition.partition_name,
+            0,
+            0,
+            Some(0),
+            Some(0),
+            Some(0.0),
+            Some(0),
+            true,
+        );
         return Ok(());
     }
 
+    if let Some(token) = cancel_token {
+        token.check()?;
+    }
+
     let mut current_pos = 0u64;
+    let mut total_bytes_written = 0u64;
+    let partition_size = partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
+    let mut last_progress_time = Instant::now();
+    let mut last_bytes = 0u64;
+    let progress_interval = Duration::from_millis(250);
 
     for (index, operation) in partition.operations.iter().enumerate() {
-        // SHA-256 hasher for output verification (Layer 3 — verifies decompressed output).
+        if let Some(token) = cancel_token {
+            token.check()?;
+        }
         let mut hasher: Option<Sha256> =
             operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 
@@ -259,7 +311,6 @@ fn extract_partition(
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
         }
 
-        // Validate and slice the raw compressed/raw data from the mmap.
         let data_offset = payload.data_offset + operation.data_offset.unwrap_or_default() as usize;
         let data_length = operation.data_length.unwrap_or_default() as usize;
         let data_end = data_offset.saturating_add(data_length);
@@ -272,13 +323,6 @@ fn extract_partition(
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow::anyhow!("unsupported operation type {}", operation.r#type))?;
 
-        // For compressed operations, build a single streaming decoder before the extent loop.
-        // It is consumed sequentially across extents — correct because a payload operation's
-        // extents form one contiguous decoded byte sequence.
-        //
-        // `None` = raw Replace (use `decoded_offset` into raw_data directly).
-        // `Some(dec)` = streaming decoder for compressed types.
-        // Zero ops are handled via `is_zero` flag (seek, no write).
         let mut buf = [0u8; DECOMP_BUF_SIZE];
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
@@ -301,14 +345,13 @@ fn extract_partition(
                 zstd::stream::read::Decoder::new(Cursor::new(raw_data))
                     .map_err(|e| anyhow::anyhow!("zstd decoder: {e}"))?,
             )),
+            #[cfg(feature = "brotli")]
+            Type::BrotliBsdiff => {
+                Some(Box::new(brotli::Decompressor::new(Cursor::new(raw_data), 4096)))
+            }
             _ => anyhow::bail!("unsupported payload operation type: {:?}", operation_type),
         };
 
-        // For compressed operations, verify data_sha256_hash against the RAW compressed
-        // bytes (as stored in the payload file), NOT the decompressed output.
-        // Per AOSP update_engine: data_sha256_hash = SHA-256(compressed blob in payload).
-        // stream_copy hashes decompressed bytes, so we must compute the compressed hash here
-        // for compressed ops. For raw Replace, raw_data IS the data, so hashing it is correct.
         let compressed_hash = hasher.as_mut().map(|h| {
             h.update(raw_data);
             h.clone().finalize()
@@ -336,6 +379,7 @@ fn extract_partition(
                 }
                 writer.seek(SeekFrom::Current(extent_size as i64))?;
                 current_pos += extent_size as u64;
+                total_bytes_written += extent_size as u64;
                 ei += 1;
                 continue;
             }
@@ -345,16 +389,13 @@ fn extract_partition(
                     writer.seek(SeekFrom::Start(start_offset))?;
                     current_pos = start_offset;
                 }
-                // stream_copy: write decompressed bytes but don't update the hasher
-                // (hasher was already updated with raw_data above)
                 super::copy::stream_copy(dec, writer, &mut buf, extent_size, None)?;
                 current_pos += extent_size as u64;
+                total_bytes_written += extent_size as u64;
                 ei += 1;
                 continue;
             }
 
-            // RAW Replace: coalesce consecutive contiguous extents with contiguous raw_data.
-            // Note: hasher was already updated with raw_data for verification.
             let coal_start = decoded_offset;
             let mut coal_size = extent_size;
             let mut coal_pos = current_pos + extent_size as u64;
@@ -372,7 +413,6 @@ fn extract_partition(
                     .checked_mul(block_size as usize)
                     .ok_or_else(|| anyhow::anyhow!("destination extent size overflow"))?;
 
-                // Contiguous in destination AND raw_data source?
                 if next_start_offset == coal_pos
                     && decoded_offset
                         .checked_add(coal_size)
@@ -388,28 +428,24 @@ fn extract_partition(
                 }
             }
 
-            // Seek to coal_start position if needed.
             if current_pos != start_offset {
                 writer.seek(SeekFrom::Start(start_offset))?;
                 current_pos = start_offset;
             }
 
-            // For raw Replace, the hasher already received the full raw_data above.
-            // Here we just write the relevant slice to disk (coalesced for efficiency).
             let slice_end = coal_start.saturating_add(coal_size).min(raw_data.len());
             let slice = &raw_data[coal_start..slice_end];
             writer.write_all(slice)?;
             decoded_offset = slice_end;
             current_pos += coal_size as u64;
+            total_bytes_written += coal_size as u64;
 
             ei = ej;
         }
 
-        // SHA-256 verification: compare accumulated hash against expected.
-        // For compressed ops: we hashed raw_data (compressed blob) above, stored in compressed_hash.
-        // For raw Replace: we hashed raw_data above (same result as before), stored in compressed_hash.
-        if let (Some(actual), Some(expected)) =
-            (compressed_hash, operation.data_sha256_hash.as_ref())
+        if verify_mode.layer3_enabled
+            && let (Some(actual), Some(expected)) =
+                (compressed_hash, operation.data_sha256_hash.as_ref())
             && actual.as_slice() != expected.as_slice()
         {
             log::error!(
@@ -422,7 +458,36 @@ fn extract_partition(
         }
 
         let completed = index + 1 == total_operations;
-        progress(&partition.partition_name, index + 1, total_operations, completed);
+        let now = Instant::now();
+        let elapsed = now.duration_since(last_progress_time);
+        let (throughput_mbps, eta_seconds) = if elapsed >= progress_interval {
+            let bytes_delta = total_bytes_written.saturating_sub(last_bytes);
+            let tp = if elapsed.as_secs_f64() > 0.0 {
+                (bytes_delta as f64) / (1024.0 * 1024.0) / elapsed.as_secs_f64()
+            } else {
+                0.0
+            };
+            let remaining = partition_size.saturating_sub(total_bytes_written);
+            let eta =
+                if tp > 0.0 { ((remaining as f64) / (1024.0 * 1024.0) / tp) as u64 } else { 0 };
+            last_progress_time = now;
+            last_bytes = total_bytes_written;
+            (Some(tp), Some(eta))
+        } else {
+            (None, None)
+        };
+
+        emit_progress(
+            app_handle,
+            &partition.partition_name,
+            index + 1,
+            total_operations,
+            Some(total_bytes_written),
+            Some(partition_size),
+            throughput_mbps,
+            eta_seconds,
+            completed,
+        );
     }
 
     Ok(())

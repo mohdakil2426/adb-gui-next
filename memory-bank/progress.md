@@ -4,6 +4,8 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+**Ultimate Payload Dumper implementation complete (2026-05-10):** All 22 tasks across 7 phases implemented — DOS protection, 4-layer verification, SIMD optimization, delta OTA support, cancellation, per-byte progress, extraction history, partition search, property-based tests, fuzzing, and benchmarks.
+
 Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
 Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discovery scans `~/.android/avd/*.ini` directly. Root pipeline **fully modernized** 2026-04-16: (1) backend ACL hardened with mandatory TOML permissions and proper capability scoping, (2) `adb_shell_checked()` with `__ADB_GUI_EXIT_STATUS__` marker for diverse shell support, (3) `sanitize_filename()` utility for all user-provided paths, (4) Magisk v25+ binary naming compatibility, (5) 3-phase pipeline overhaul — ramdisk compression detection from magic bytes, stub.xz injection, SHA1 config, auto-shutdown after patching, boot-completion polling, no-snapshot-save cold boot, `EmulatorBootMode` detection and Cold/Normal badge in AvdSwitcher.
@@ -28,7 +30,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 **Emulator Root multi-CPIO + rootAVD-compatible Magisk fix (2026-04-28):** The API 33 Google Play x86_64 AVD root failure was reproduced and resolved against the local rootAVD reference. Automated ramdisk patching now repacks API 30+ multi-CPIO layouts before Magisk patching, and the automatic source uses rootAVD-compatible Magisk v25.2 instead of current latest stable Magisk for the direct ramdisk workflow. Added PowerShell diagnostics/E2E scripts and verified the live `Medium_Phone` emulator reaches `su -c id -u == 0` after stock restore, patch, and cold boot.
 
-**FAKEBOOTIMG manual UI + offline boot polling fix (2026-04-28):** The Root wizard now has a dedicated **Manual Mode (FAKEBOOTIMG)** step wired to the existing `prepare_avd_root` / `finalize_avd_root` IPC commands. Manual mode is accessible before failure from the Source step and from the failure fallback button. It lets users choose a local Magisk `.apk`/`.zip`, create `/sdcard/Download/fakeboot.img`, follow Magisk patch instructions inside the emulator, and finalize the patched ramdisk. The automated boot wait now checks ADB serial online state before running `getprop sys.boot_completed`, reducing repeated `device offline` log spam during emulator startup.
+**FAKEBOOTIMG manual UI + offline boot polling fix (2026-04-28):** The Root wizard now has a dedicated **Manual Mode (FAKEBOOTIMG)** step wired to the existing `prepare_avd_root` / `finalize_avd_root` IPC commands. Manual mode is accessible before failure from the Source step and from the failure fallback button. It lets users choose a local Magisk `.apk`/`.zip`, create `/sdcard/Download/fakeboot.img`, follow Magisk patch instructions inside the emulator, and finalize the patched ramdisk from the UI. The automated boot wait now checks ADB serial online state before running `getprop sys.boot_completed`, reducing repeated `device offline` log spam during emulator startup.
 
 - App shell loads under Vite/React with Strict Mode enabled
 - shadcn Sidebar (`collapsible="icon"` mode) with grouped navigation (Main/Advanced)
@@ -125,48 +127,60 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
 | Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages`, `get_package_icon` *(async)* |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
-| Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata` |
+| Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata`, `diagnose_payload`, `extract_delta_payload` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
 | Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* |
-| Emulator | `list_avds` *(async)*, `launch_avd` *(async)*, `stop_avd` *(async)*, `get_avd_restore_plan` *(async)*, `restore_avd_backups` *(async)*, `prepare_avd_root` *(async)*, `finalize_avd_root` *(async)*, `scan_avd_root_readiness` *(async)* |
+| Emulator | `list_avds` *(async)*, `launch_avd` *(async)*, `stop_avd` *(async)*, `get_avd_restore_plan` *(async)*, `restore_avd_backups` *(async)*, `prepare_avd_root` *(async)*, `finalize_avd_root` *(async)*, `scan_avd_root_readiness` *(async)*, `verify_avd_root` *(async)*, `fetch_magisk_stable_release` *(async)*, `root_avd` *(async)* |
 | Debloat | `get_debloat_packages` *(async)*, `debloat_packages` *(async)*, `load_debloat_lists` *(async)*, `create_debloat_backup` *(async)*, `list_debloat_backups` *(async)*, `restore_debloat_backup` *(async)*, `get_debloat_device_settings` *(async)*, `save_debloat_device_settings` *(async)* |
+| Cancel | `create_cancellation_token`, `cancel_extraction` |
 
-### Payload Dumper
+### Payload Dumper (Ultimate Dumper — Complete)
 
-- Lists partitions from payload files (plain `.bin` or OTA `.zip`)
-- ZIP extraction streams to `NamedTempFile` — no 4–6 GB RAM spike
-- Payload loaded via `Arc<memmap2::Mmap>` — no per-thread heap clone
-- Streaming decompression: 256 KiB stack buffer (XZ, BZ2, Zstd, Replace)
-- Output files pre-allocated with `set_len`; Zero ops do sparse seeks
-- Real-time per-operation `payload:progress` Tauri events from inside threads
-- SHA-256 operation checksum verification
-- Cleans up cached temp files on demand
-- **Remote URL support** (now in default features, no feature flag required):
-  - HTTP range requests for efficient partial downloads
-  - `HttpPayloadReader` with retry logic (3 retries, exponential backoff)
-  - Remote URL panel with connection status display
-  - Tabs UI for Local/Remote mode switching
-  - **ZIP URL support**: detects `.zip` URLs, parses EOCD/CD to find `payload.bin` offset
-  - **Prefetch mode** (`prefetch=true`): download full file, then mmap extract — best for slow/high-latency connections
-  - **Direct mode** (`prefetch=false`): fetch manifest + HTTP ranges on-demand — starts extraction immediately
-  - **Cancel loading**: ref-based cancellation flag, red "Cancel Loading..." button during partition load
-- **UI**: 3-zone layout (file banner + adaptive partition table + sticky action footer)
-- **Adaptive columns**: 3-col pre-extraction, 4-col during/after extraction (`[28px_0.8fr_5fr_72px]`)
-- **Loading overlay**: centered stage indicator during ZIP extraction / manifest parsing
-- **Tooltips**: shadcn `Tooltip` component (not native `title=`) for all icon buttons
-- **DropZone**: shared reusable component with native Tauri drag-drop events + position-based hit-testing (`containerRef` + `getBoundingClientRect`)
-- **Remote Metadata UI**: collapsible details panel (Framer Motion `AnimatePresence`) in `FileBanner` with 7 sections:
-  - OTA Package (from `META-INF/com/android/metadata`): device, Android version, build, fingerprint, OTA type badge, security patch, version, wipe
-  - Payload Properties (from `payload_properties.txt`): SHA-256 hashes (copyable), file/metadata sizes
-  - HTTP: full URL (copyable), content-type, server, last-modified, ETag
-  - ZIP Archive: compression method, payload offset (hex), uncompressed size
-  - OTA Manifest: CrAU version, block size, update type, timestamp, partial update
-  - Dynamic Groups: group names, sizes, partition lists
-  - Extraction: mode (prefetch/direct), output path
-- **URL persistence**: `remoteUrl` in Zustand store survives view navigation
-- **OPS/OFP support**: OnePlus `.ops` (custom S-box cipher, 3 mbox variants) and Oppo `.ofp` (Qualcomm AES-128-CFB with 7 key sets, MediaTek with mtk_shuffle + 9 key sets)
-- **Android sparse image un-sparsing**: 4 chunk types (Raw, Fill, Don't Care, CRC32)
-- **Unified dispatch**: `.ops`/`.ofp` files auto-detected by extension and routed to dedicated pipeline—same `PartitionDetail` output as CrAU
+**Phase 1: Foundation — Security Hardening**
+- **Manifest Size Cap**: `MAX_MANIFEST_SIZE = 100_000_000` (100MB) in `parser.rs` — prevents DOS from malicious 10GB manifest declarations
+- **OPS Hash Verification**: Disk-based SHA-256 verification after flush (not in-memory)
+- **Streaming Unsparse**: `unsparse_streaming()` in `sparse.rs` — 256KB buffer, never loads entire 4GB+ sparse file into RAM
+- **MTK Overflow Protection**: `checked_mul`/`checked_add` arithmetic in `ofp_mtk.rs` + entry count sanity check (≤500)
+- **XML Entity Limit**: `MAX_XML_SIZE = 1MB` enforced in `ops_parser.rs`
+
+**Phase 2: 4-Layer Verification Engine**
+- `VerifyMode` struct with `layer3_enabled` (decompressed stream hash) and `layer4_enabled` (output file hash)
+- `compute_file_sha256()` in `verify.rs` — 64KB chunked file hashing
+- Hash verification wired into extraction loop — conditional on verify mode
+
+**Phase 3: Performance — SIMD & Zero-Copy**
+- **AVX-512 Copy Path**: `copy_avx512()` uses `_mm512_loadu_si512` / `_mm512_storeu_si512` with `_mm_sfence()`; falls back to AVX2 for remainder
+- **Non-Temporal Stores**: `NonTemporalWriter` in `write.rs` — `memmap2::MmapMut` with `madvise(MADV_SEQUENTIAL)` + `msync(MS_SYNC)` flush
+- **Zero-Copy ZIP mmap**: `ZipPayloadMmap` in `zip_mmap.rs` — `Deref<Target=[u8]>` for direct slice access into mmap
+
+**Phase 4: Delta OTA & Full Op Support**
+- `Type::Move` — copies data between extents within partition (reads from output file while writing)
+- `Type::SourceCopy` — Delta OTA: reads from source partition file, writes to destination extents
+- `Type::BrotliBsdiff` — Brotli decompression via `brotli::Decompressor` (behind `brotli` feature)
+
+**Phase 5: Async & Cancellation**
+- `CancellationToken` — `Arc<AtomicBool>` with `cancel()` / `is_cancelled()` / `check()` methods
+- Global `TOKEN_REGISTRY` with `create_cancellation_token` / `cancel_extraction` Tauri commands
+- Cancellation checks at operation boundaries in `extract_partition()`
+- Frontend: Cancel button in `ActionFooter.tsx`, `createAndSetCancellationToken` / `cancelExtraction` in store
+
+**Phase 6: Frontend Improvements**
+- **Per-Byte Progress**: `emit_progress()` calculates throughput (MB/s) and ETA (seconds) every 250ms; events include `bytesWritten`, `totalBytes`, `throughputMbps`, `etaSeconds`
+- **Extraction History**: `ExtractionRecord` interface (id, timestamp, payloadPath, outputDir, partitions, duration, totalBytes, status); persisted to localStorage (last 50 records)
+- **Partition Search/Filter**: Search `<Input>` in `PartitionTable.tsx` filters by partition name; shows "X of Y" count when filtered
+
+**Phase 7: Testing & Benchmarking**
+- **Property-Based Tests**: `tests/proptest.rs` — 4 proptest cases (extent arithmetic, coalescing, header minimum size, header version) using proptest 1.11 closure-style syntax
+- **Fuzzing**: `fuzz/fuzz_targets/parse_header.rs` — libfuzzer target for malformed payload headers
+- **Benchmarks**: `benches/copy_benchmark.rs` — Criterion benchmarks for `copy_raw_slice` across 4 sizes (1KB, 64KB, 1MB, 16MB)
+
+**Core Architecture:**
+- CrAU parser: `Arc<memmap2::Mmap>` shared across threads — 8-byte pointer, not 4GB copy
+- Streaming decompression: 256 KiB stack buffer (XZ/BZ2/Zstd/Brotli/Replace) — never buffers full decompressed block
+- Parallel extraction: `rayon::par_iter()` across partitions
+- Output pre-allocation: `set_len()` before writing; Zero ops do sparse seeks
+- SHA-256 verification: per-operation compressed blob hash (AOSP standard)
+- Transaction guard: `TransactionGuard` auto-cleans on failure/panic
 
 ### Packaging
 
@@ -190,9 +204,10 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 ```
 src-tauri/src/
-├── lib.rs (~95 lines) — thin orchestrator
+├── lib.rs (~136 lines) — orchestrator + 71 registered commands
 ├── helpers.rs — shared utilities (binary resolution, command execution, device info)
-├── commands/
+├── app_icons.rs — installed APK icon extraction + manifest/resource walk
+├── commands/ — 10 focused modules (device, adb, fastboot, files, apps, system, payload, marketplace, emulator, debloat) — 71+ registered commands
 │   ├── mod.rs — re-exports
 │   ├── device.rs — get_devices, get_device_info, get_device_mode, get_fastboot_devices
 │   ├── adb.rs — wireless ADB, run_adb_host_command, run_shell_command
@@ -200,7 +215,7 @@ src-tauri/src/
 │   ├── files.rs — list_files, push_file, pull_file, delete_files, rename_file
 │   ├── apps.rs — install_package, uninstall_package, sideload_package
 │   ├── system.rs — open_folder, save_log, launch_terminal, launch_device_manager
-│   ├── payload.rs — payload command wrappers + remote URL commands + OPS dispatch
+│   ├── payload.rs — payload command wrappers + remote URL commands + OPS dispatch + cancel tokens
 │   ├── marketplace.rs — thin wrappers for search, detail, download, install, trending, versions
 │   └── debloat.rs — 8 thin debloat command wrappers (all spawn_blocking)
 ├── marketplace/ — modular provider architecture
@@ -209,48 +224,68 @@ src-tauri/src/
 │   ├── fdroid.rs       # F-Droid search API (search.f-droid.org/api/search_apps) + detail enrichment
 │   ├── izzy.rs         # IzzyOnDroid cross-reference (checks F-Droid results against packages API)
 │   ├── github.rs       # GitHub Search API (proper URL encoding + PAT + APK filter + trending)
-│   └── aptoide.rs — Aptoide ws75 API (TRUSTED-only, OBB/module skip)
+│   ├── aptoide.rs      # Aptoide ws75 API (TRUSTED-only, OBB/module skip)
+│   ├── auth.rs         # GitHub OAuth device-flow start/poll helpers
+│   ├── cache.rs        # In-memory TTL caches for search/detail/trending
+│   ├── ranking.rs      # Result dedupe + sort/relevance rules
+│   └── service.rs      # Orchestration layer
 ├── debloat/ — UAD debloater backend domain
 │   ├── mod.rs — core types (DebloatPackage, RemovalTier, PackageState, DebloatPackageRow, DebloatListStatus, DebloatSettings)
 │   ├── lists.rs — 3-tier UAD list loading (remote GitHub → disk cache → bundled fallback)
 │   ├── sync.rs — device package state detection + SDK-level merge with UAD metadata
 │   ├── actions.rs — SDK-aware command builder (pm hide / pm disable-user based on API level)
 │   └── backup.rs — timestamped JSON snapshots + per-device settings persistence
+├── emulator/ — AVD management domain
+│   ├── sdk.rs — ANDROID_SDK_ROOT resolution, emulator binary lookup
+│   ├── avd.rs — AVD discovery via ~/.android/avd/*.ini scan, boot mode detection
+│   ├── runtime.rs — launch/stop orchestration, arg building, crash detection
+│   ├── backup.rs — sidecar backup files, restore plans
+│   ├── root.rs — automated ramdisk patching (rootAVD-aligned), scan_avd_root_readiness, verify_avd_root
+│   ├── magisk_package.rs — Magisk APK binary extraction with v25+ naming compatibility
+│   ├── magisk_download.rs — GitHub releases/latest API fetch
+│   └── models.rs — Emulator DTOs (EmulatorBootMode, RootReadinessScan, etc.)
 └── payload/
     ├── mod.rs — re-exports + chromeos_update_engine protobuf
-    ├── parser.rs — CrAU header parsing, protobuf decoding
-    ├── extractor.rs — partition extraction with SHA-256 verification
+    ├── parser.rs — CrAU header parsing, 100MB manifest cap, protobuf decoding
+    ├── extractor.rs — Streaming decompression, SHA-256 verification, parallel extraction, per-byte progress, cancellation checks, verify mode
+    ├── copy.rs — SIMD copy engine (Scalar/SSE2/AVX2/AVX-512)
+    ├── write.rs — NonTemporalWriter with mmap-based non-temporal stores
+    ├── zip_mmap.rs — ZipPayloadMmap for zero-copy STORED ZIP entries
+    ├── cancel.rs — CancellationToken with AtomicBool
+    ├── verify.rs — VerifyMode, compute_file_sha256, plausibility_check
+    ├── transaction.rs — TransactionGuard with lock-poison-safe cleanup
+    ├── delta.rs — Delta OTA SourceCopy operation support
     ├── zip.rs — ZIP payload handling and caching
     ├── http.rs — HTTP range request support (remote_zip feature)
     ├── http_zip.rs — Remote ZIP parsing via HTTP range requests
     ├── remote.rs — Remote payload loading (direct + ZIP URLs, remote_zip feature)
     ├── tests.rs — 13 payload tests (5 local + 8 HTTP ZIP)
     └── ops/ — OPS/OFP firmware format support (9 files)
-        ├── mod.rs — shared types, constants, re-exports
-        ├── detect.rs — format detection (CrAU, ZIP, 0x7CEF footer, MTK brute-force)
-        ├── crypto.rs — OPS S-box cipher + OFP AES-128-CFB + MTK shuffle
-        ├── sbox.bin — 2048-byte S-box lookup table
-        ├── ops_parser.rs — footer + XML manifest parsing
-        ├── ofp_qc.rs — OFP Qualcomm parser
-        ├── ofp_mtk.rs — OFP MediaTek parser
-        ├── sparse.rs — Android sparse image un-sparsing
-        └── extractor.rs — unified extraction + parallel dispatch
+        ├── mod.rs, detect.rs, crypto.rs, sbox.bin
+        ├── ops_parser.rs, ofp_qc.rs, ofp_mtk.rs
+        ├── sparse.rs, extractor.rs
 ```
 
 ## Documentation
 
-- `docs/plans/2026-04-18-debloater-integration.md` — Comprehensive UAD Debloater integration plan covering backend architecture, frontend design, safety model, and UI components (2026-04-18)
-- `docs/guides/ops-ofp-firmware-extraction.md` — Comprehensive OPS/OFP firmware extraction technical guide (2026-04-03)
-- `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit (2026-03-23)
-- `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference (2026-04-01)
-- `docs/reports&audits/marketplace_architecture_audit.md` — Marketplace architecture audit, research, and improvement strategy (2026-04-05)
-- `docs/superpowers/specs/2026-04-05-emulator-manager-design.md` — Emulator Manager feature spec covering scope, UX, backend architecture, root/restore safety, and testing strategy (2026-04-05)
-- `docs/superpowers/plans/2026-04-05-emulator-manager.md` — Step-by-step implementation plan for the Emulator Manager backend, frontend, tests, and memory-bank updates (2026-04-05)
+- `docs/superpowers/plans/2026-05-10-ultimate-payload-dumper.md` — Ultimate Payload Dumper implementation plan (7 phases, 22 tasks)
+- `docs/reports/active/PAYLOAD_RESEARCH_REPORT.md` — Deep-dive analysis of 4 implementations (otaripper, payload-dumper-rust, Go tools, ours)
+- `docs/reports/active/ULTIMATE_DUMPER_ROADMAP.md` — Side-by-side feature matrix, architecture blueprint
+- `docs/plans/2026-04-18-debloater-integration.md` — Comprehensive UAD Debloater integration plan
+- `docs/guides/ops-ofp-firmware-extraction.md` — Comprehensive OPS/OFP firmware extraction technical guide
+- `docs/reports&audits/ui_consistency_audit.md` — Comprehensive UI consistency audit
+- `docs/reports&audits/payload-dumper-optimization-audit.md` — Payload dumper audit vs reference
+- `docs/reports&audits/marketplace_architecture_audit.md` — Marketplace architecture audit
+- `docs/superpowers/specs/2026-04-05-emulator-manager-design.md` — Emulator Manager feature spec
+- `docs/superpowers/plans/2026-04-05-emulator-manager.md` — Step-by-step implementation plan for Emulator Manager
 - `docs/rust-audit-report.md` — Code quality audit
 - `docs/rust-performance-research.md` — Performance optimization research
 
 ## Performance Optimizations (Implemented)
 
+- ✅ AVX-512 SIMD copy: 64-byte `_mm512` intrinsics for 2.8 GB/s throughput target
+- ✅ Non-temporal stores: bypass CPU cache for large sequential writes (>1MB)
+- ✅ Zero-copy ZIP mmap: direct slice access for STORED ZIP entries
 - ✅ Sparse zero handling: `Type::Zero` returns empty vec, seeks past region
 - ✅ Position tracking: skips redundant seeks
 - ✅ Block size from manifest: reads `block_size` field
@@ -258,7 +293,7 @@ src-tauri/src/
 - ✅ `install_package`, `uninstall_package`, `sideload_package`: async + `tokio::task::spawn_blocking` (fixes UI freeze)
 - ✅ `flash_partition`, `wipe_data`: async + `tokio::task::spawn_blocking` (fixes 1-2 min UI freeze during flashing)
 - ✅ Drag-drop position hit-testing: `getBoundingClientRect()` + cursor (x,y) — drop zones only highlight when cursor is physically over them
-- ✅ Parallel partition extraction: `std::thread::scope` (4-8x faster)
+- ✅ Parallel partition extraction: `rayon::par_iter` (4-8x faster)
 
 ## Remaining Work
 
@@ -278,6 +313,7 @@ src-tauri/src/
 | ~~High~~ | ~~Codebase Audit Code Quality Fixes~~ | ✅ Done: 54 parameter renames in backend.ts |
 | ~~High~~ | ~~Codebase Audit Error Handling Fixes~~ | ✅ Done: console.error → logStore in nicknameStore |
 | ~~Medium~~ | ~~Add open folder button to Emulator Restore Tab~~ | ✅ Done: ExternalLink icon with Tooltip, opens parent directory |
+| ~~High~~ | ~~Ultimate Payload Dumper~~ | ✅ Done: All 22 tasks across 7 phases implemented |
 | Low | Migrate GitHub tokens to secure storage | Use `@tauri-apps/plugin-store` instead of localStorage (TODO added) |
 | Low | Virtual list for log entries | react-window for 1000+ entries performance |
 | Low | Extend RHF to ViewFlasher | partition/file form (datalist approach works well for now) |
@@ -295,55 +331,46 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-05-10 | 0.1.0 | **Ultimate Payload Dumper — Complete**: All 22 tasks across 7 phases implemented. Phase 1: 100MB manifest size cap, OPS disk hash verify, streaming unsparse, MTK overflow checks, XML entity limits. Phase 2: 4-layer verification engine (VerifyMode with layer3/layer4). Phase 3: AVX-512 SIMD copy path, non-temporal stores, zero-copy ZIP mmap. Phase 4: Move operation, Delta OTA SourceCopy, Brotli decompression. Phase 5: CancellationToken with global registry, frontend cancel button. Phase 6: Per-byte progress with throughput/ETA, extraction history (localStorage), partition search/filter UI. Phase 7: Property-based tests (proptest), cargo-fuzz target, Criterion benchmarks. Also: lock poisoning fixes, Cargo.toml feature syntax fix, Tauri permission allowlist updates for new commands. All gates pass: `bun run lint`, `bun run format:check`, `bun run build`, `cargo clippy -D warnings`. |
 | 2026-05-08 | 0.1.0 | UI/UX Polish + Toggle Control Standardization + Sidebar Rename: (1) Emulator status chips — replaced emojis (🟢/🟡) with accessible Lucide icons (ShieldCheck/PenTool) and improved contrast using bg-success-light/text-success pattern; (2) Green color consolidation — fixed recovery device status to use success token instead of chart-2, added CSS opacity scale (--success-muted/--success-light/--success-subtle) for consistent backgrounds; (3) DeviceSwitcher ADB badge — unified green pattern to match Emulator Manager (bg-success-light text-success border-success/35); (4) Toggle control audit — changed EmulatorLaunchTab launch option Checkboxes to Switch (binary settings), changed MarketplaceSettings provider Checkbox to Switch (binary on/off), kept Checkbox for confirmation acknowledgments (correct pattern), kept ToggleGroup for mutually exclusive options; (5) Sidebar rename — "Emulator Manager" → "Emulator", "Payload Dumper" → "Dumper", updated toast messages to match; (6) Debloater select toggle — consolidated Select All / Unselect All buttons into single toggle button showing current action; (7) Tests — added deviceStore.test.ts, nicknameStore.test.ts, total now 162 passing tests. All gates pass: `bun run lint:web`, `bun run test` (162), `bun run build`. |
 | 2026-05-08 | 0.1.0 | ESLint Strict Mode + Codebase Audit fixes: (1) ESLint Phase 1 — upgraded warn→error rules, enabled noUnusedLocals/noUnusedParameters in tsconfig; (2) ESLint Phase 2 — added strictTypeChecked + stylisticTypeChecked configs, 6 new tsconfig strict flags (noUncheckedIndexedAccess, noImplicitReturns, noImplicitOverride, exactOptionalPropertyTypes, verbatimModuleSyntax, isolatedModules); (3) ESLint Phase 3 — added type-aware rules (no-floating-promises, no-unsafe-*, prefer-nullish-coalescing, etc.) + React strict rules + import order, fixed 527 lint errors to 0; (4) Accessibility Critical (9 files) — aria-labels, div[role="button"]→button替换, h1→h1.sr-only; (5) Accessibility High (3 files) — aria-describedby for form inputs, aria-live for log panel, TODO for secure storage migration; (6) UI/UX — replaced 50+ icon h-*w-*→size-*, 15 space-y-*→gap-*; (7) Code Quality — renamed 54 arg1/arg2/arg3 to semantic names in backend.ts; (8) Testing — created 3 new test files (debloatStore.test.ts, shellStore.test.ts, logStore.test.ts) with 57 tests, total now 119; (9) Error Handling — replaced console.error with logStore in nicknameStore; (10) Emulator Restore Tab — added open folder icon button (ExternalLink) with Tooltip, opens parent directory of backupPath, consistent with payload dumper pattern. All gates pass: `bun run format:check`, `bun run lint:web` (0 errors), `bun run test` (119 tests), `bun run build`. |
 | 2026-04-30 | 0.1.0 | Device switcher and multi-device routing fix: header device popover now aligns from the trigger start with collision padding to avoid overlapping the collapsed sidebar. Device-scoped ADB/fastboot wrappers and Rust commands now accept/pass `serial` for device info, shell, app install/uninstall/list/sideload, file explorer operations, flasher actions, utilities reboot/slot/wipe, and fastboot host commands. Views now derive behavior from `selectedSerial` instead of the first connected device, clear stale device info/selections on device switch, and disable install/uninstall actions when no selected device exists. Added `deviceSelectionRouting.test.ts` and updated AppManager test setup for selected-device state. Verified `bun run format:check`, `bun run lint`, `bun run test`, `bun run build`, `cargo check --no-default-features --features local_zip,remote_zip`, and `bun run tauri build --debug` with isolated `CARGO_TARGET_DIR`. `cargo test` still hits the known Windows Tauri-linked startup crash (`0xc0000139`). |
-| 2026-04-26 | 0.1.0 | Emulator Root UX Audit: redesigned the root wizard as a guided 4-step flow (Preflight → Source → Rooting → Done). New `scan_avd_root_readiness` Rust command with 10 pre-flight checks (running state, boot completion, boot mode snapshot detection, ABI, API level, ramdisk existence + writability, shared-ramdisk advisory, root state, safe mode). New `RootPreflightStep.tsx` checklist UI with status icons, inline fix actions, summary bar, and Continue gate. `EmulatorRootTab` rewritten with smart Launch/Cold Boot gate (replaces dead-end alert). Boot mode (❄ Cold / ⚠ Normal) and root state (🟢 Rooted / 🟡 Modified) badges added to `ViewEmulatorManager` toolbar. Progress labels rewritten as beginner-friendly; result step adds 4-step post-root guide, always-cold-boot reminder, FAKEBOOTIMG explanation, bootloop safe-mode tip. Source step adds Magisk "why" introduction. `emulatorManagerStore.test.ts` updated for new initial step `'preflight'`. Verified `bun vitest run` ✅ (40/40) · `bun tsc --noEmit` ✅ · `bun run format:check` ✅ · `cargo check` ✅ · `cargo fmt --check` ✅. |
+| 2026-04-26 | 0.1.0 | Emulator Root UX Audit: redesigned the root wizard as a guided 4-step flow (Preflight → Source → Rooting → Done). New `scan_avd_root_readiness` Rust command with 10 pre-flight checks (running state, boot completion, boot mode snapshot detection, ABI, API level, ramdisk existence + writability, shared-ramdisk advisory, root state, safe mode). New `RootPreflightStep.tsx` checklist UI with status icons, inline fix actions, summary bar, and Continue gate. `EmulatorRootTab` rewritten with smart Launch/Cold Boot gate (replaces dead-end alert). Boot mode (❄ Cold Boot / ⚠ Normal Boot) and root state (🟢 Rooted / 🟡 Modified) badges added to `ViewEmulatorManager` toolbar. Progress labels rewritten as beginner-friendly; result step adds 4-step post-root guide, always-cold-boot reminder, FAKEBOOTIMG explanation, bootloop safe-mode tip. Source step adds Magisk "why" introduction. `emulatorManagerStore.test.ts` updated for new initial step `'preflight'`. Verified `bun vitest run` ✅ (40/40) · `bun tsc --noEmit` ✅ · `bun run format:check` ✅ · `cargo check` ✅ · `cargo fmt --check` ✅. |
 | 2026-04-26 | 0.1.0 | Frontend audit remediation follow-up: added semantic device-status CSS tokens, removed remaining native `title` tooltips from shared path/info surfaces, normalized Dashboard wireless ADB and Flasher partition forms to shadcn `Field` composition, migrated the BottomPanel log filter to shadcn `DropdownMenuRadioGroup`, converted connected-devices empty state to the shared `EmptyState` presentation, and clarified marketplace detail/install accessible names. Added focused Vitest coverage for device-status, FileSelector, Dashboard, Flasher, BottomPanel, Marketplace, and connected-devices regressions. Verified `bun run test`, `bun run format:check`, `bun run lint` with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`, and `bun run build`. |
-| 2026-04-24 | 0.1.0 | shadcn frontend audit implementation: added official primitives (`Alert`, `Empty`, `Field`, `InputGroup`, `Select`, `Switch`, `ToggleGroup`, `Textarea`, `RadioGroup`, `Slider`, `Avatar`), migrated custom forms/status panels/mode controls/tables/loading placeholders to shadcn patterns, expanded semantic badge variants, replaced actionable native `title` tooltips with `Tooltip`, improved marketplace card/list semantics and image sizing, added shared formatting helpers with Vitest coverage, and preserved frontend-only scope. Verified `bun run test`, `bun run build`, `bun run format:check`, `bun run lint` with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`, and `bun run tauri build --debug` with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`. `bun run check` still fails only at the known Windows Tauri-linked `cargo test` loader crash (`0xc0000139`). |
+| 2026-04-24 | 0.1.0 | shadcn frontend audit implementation: added official primitives (`Alert`, `Empty`, `Field`, `InputGroup`, `Select`, `Switch`, `ToggleGroup`, `Textarea`, `RadioGroup`, `Slider`, `Avatar`), migrated custom forms/status panels/mode controls/tables/loading placeholders to shadcn patterns, expanded semantic badge variants, replaced actionable native `title` tooltips with `Tooltip`, improved marketplace card/list semantics and image sizing, added shared formatting helpers with Vitest coverage, and preserved frontend-only scope. Verified `bun run test`, `bun run build`, `bun run format:check`, `bun run lint` with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`, and `bun run tauri build --debug` with `CARGO_TARGET_DIR=src-tauri/target-codex-tauri`. `bun run check` still fails only at the known Windows Tauri-linked `cargo test` loader crash (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`). |
 | 2026-04-24 | 0.1.0 | Frontend audit cleanup: improved app shell accessibility and consistency with skip link/main landmark, reduced-motion handling, error boundaries, semantic tab/log regions, accessible icon buttons, stable viewport sizing for BottomPanel, focused Zustand selectors, safer Tauri invoke typing, semantic CSS tokens, heading hierarchy fixes, lazy marketplace imagery, React Hook Form `useWatch` usage, and lint-compatible TanStack Virtual annotations. Added polymorphic `CardTitle` plus tests and updated stale AppManager/EmulatorManager tests. Fixed Rust clippy findings in debloat backend. User requested lint-only verification: `bun run lint` passes with `CARGO_TARGET_DIR=src-tauri/target-codex-lint`; ESLint now ignores `src-tauri/target-*/**` generated Cargo directories. |
 | 2026-04-18 | 0.1.0 | UAD Debloater integration: `ViewAppManager` rewritten as dual-tab shell (Debloater + Installation). New Rust `src-tauri/src/debloat/` domain module (5 files: mod, lists, sync, actions, backup) + `commands/debloat.rs` (8 commands, all `spawn_blocking`). New Zustand `debloatStore`. New frontend components: `DebloaterTab`, `InstallationTab`, `ReviewSelectionDialog`, `DescriptionPanel`, `debloaterUtils`. Critical crash fixed: `CommandInput` outside `<Command>` context throws `Cannot read properties of undefined (reading 'subscribe')` — replaced with plain `<Input>` + `<Search>` icon. Verified `bun run build` ✅ · `bun run format:web` ✅ · `cargo check` ✅. |
-| 2026-04-16 | 0.1.0 | Security hardening & ACL migration: resolved Tauri v2 ACL discovery failures by migrating application permissions to the mandatory TOML format (`autogenerated.toml`) and properly scoping them in `capabilities/default.json` (no prefix lookup). Hardened the rooting pipeline with a robust `__ADB_GUI_EXIT_STATUS__` shell marker in `adb_shell_checked()` and integrated a centralized `sanitize_filename` utility in `helpers.rs` to prevent path traversal in user-provided file operations. Verified clean compilation with `cargo build`. |
+| 2026-04-16 | 0.1.0 | Security hardening & ACL migration: resolved Tauri v2 ACL discovery failures by migrating application permissions to the mandatory TOML format (`autogenerated.toml`) and properly scoping them in `capabilities/default.json` (no prefix lookup). Hardened the rooting pipeline with a robust `__ADB_GUI_EXIT_STATUS__` shell marker in `adb_shell_checked()` and integrated a centralized `sanitize_filename` utility in `helpers.rs` to prevent path traversal and resolve `unused` compiler warnings. Verified clean compilation with `cargo build`. |
 | 2026-04-14 | 0.1.0 | Applications page installed-app icons: added lazy visible-row icon loading with fixed icon slots in the virtualized App Manager list, a new backend `get_package_icon` command, APK manifest/resource parsing in `app_icons.rs`, same-stem raster fallback for adaptive/XML icon resources, and a focused `ViewAppManager.test.tsx`. Verified `pnpm build`, `pnpm lint:web`, `cargo check`, `cargo clippy --all-targets -- -D warnings`, `pnpm format:check`, and `pnpm test -- ViewAppManager.test.tsx` pass. |
 | 2026-04-09 | 0.1.0 | Root pipeline modernization (3-phase, 12 bug fixes): Phase 1 — `adb_shell_checked()` strict error checking, `detect_compression_method()` from magic bytes (removes hardcoded lz4_legacy), SHA1 config, `stub.xz` injection, `wait_for_boot_completed()`, auto-shutdown after patching. Phase 2 — `noSnapshotSave: true`, auto-stopped emulator handling, updated success messaging. Phase 3 — `EmulatorBootMode` enum (`Cold`/`Normal`/`Unknown`), `detect_boot_mode()` via `ro.kernel.androidboot.snapshot_loaded`, Cold/Normal badge in AvdSwitcher. All gates pass: `pnpm build` ✅ · `pnpm lint` ✅ · `pnpm format` ✅ |
 | 2026-04-09 | 0.1.0 | Root pipeline bug fixes: (1) Serde camelCase discriminator mismatch fixed — `RootSource` tag values must be camelCase (`latestStable`/`localFile`) to match `rename_all = "camelCase"`. Fixed in `models.ts` and `RootWizard.tsx`. (2) Magisk v25+ binary naming — `libmagisk64.so` → `libmagisk.so` rename in v25+. Added `extract_lib_binary_as()` helper and cascading fallback in `magisk_package.rs`. (3) Detailed `[root]` step logging added to `root_avd_automated()` — ABI detection, each binary push, patch sequence, pull sizes, APK install result. (4) React Compiler `useCallback` fix in `RootSourceStep.tsx` — removed manual memoization per React Compiler guidance; mount-only `useEffect` with justified `eslint-disable-next-line`. All gates pass: `pnpm build` ✅ · `pnpm lint:web` ✅ · `cargo check` ✅ · `cargo clippy -D warnings` ✅ |
 | 2026-04-08 | 0.1.0 | Emulator Manager bug fix: `avd.rs` replaced `emulator -list-avds` with direct `~/.android/avd/*.ini` scanning (`scan_avd_names()`). `sdk.rs` added `resolve_emulator_binary(env)` + `resolve_emulator_binary_from_current_env()` for SDK-aware binary lookup (no PATH required). `runtime.rs` `launch_avd()` uses SDK resolver with fallback, sets working dir to emulator binary parent, adds 1s crash detection. `ViewEmulatorManager.tsx` surfaces `GetAvdRestorePlan` errors to activity log. `resolve_system_image_dir()` normalises Windows backslashes. All gates pass. |
 | 2026-04-05 | 0.1.0 | Emulator Manager implemented: added a dedicated Rust `emulator/` domain module, new Tauri emulator commands, typed desktop wrappers, Zustand `emulatorManagerStore`, an Advanced `Emulator Manager` view with roster/header/quick actions/tabs/activity log, and frontend tests. Verified `pnpm test`, `pnpm build`, `pnpm lint`, `pnpm format:check`, and `cargo check` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing) and `pnpm tauri build --debug` was blocked in this session by a locked target executable. |
 | 2026-04-05 | 0.1.0 | Emulator Manager planning: created the feature spec and implementation plan for a new Advanced `Emulator Manager` view. Scope is limited to existing official Android Studio AVDs. The planned architecture uses a dedicated Rust `emulator/` domain module, a React hybrid manager layout, safe launch presets, local `.apk`/`.zip` root package import, assisted fake-boot root orchestration, and backup-based restore/unroot. `rootAVD` and `EMU.bat` remain local reference material only, not runtime dependencies. |
-| 2026-04-05 | 0.1.0 | Marketplace Architecture Audit: Deep-dive analysis of `GitHub-Store` reference architecture and research into Rust-native marketplace improvements. Proposed a three-stage roadmap: (1) Core Verification Engine with concurrent release-scanning, (2) Intelligence layer with weighted scoring heuristics and auto-pagination, (3) Security layer with Sigstore/Attestation verification. Created `docs/reports/marketplace_architecture_audit.md`. |
-| 2026-04-04 | 0.1.0 | Marketplace hardening pass: APK downloads now reject non-HTTP(S) and private/internal targets, GitHub cache keys no longer embed token values, GitHub detail/release flows now fail on non-success HTTP responses, GitHub PAT fallback is session-only, device-flow polling keeps the original client ID, stale debounced searches are cancelled before quick-search/filter/auth reruns, external URL opening is validated, AppCard keyboard activation avoids nested interactive controls, and FilterBar view toggles expose accessible labels/state. Verified `pnpm test`, `pnpm lint`, `pnpm build`, `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo fmt --check --manifest-path src-tauri/Cargo.toml`, and `pnpm tauri build --debug` pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
-| 2026-04-04 | 0.1.0 | Marketplace UX overhaul: new frontend hooks (`useMarketplaceSearch`, `useMarketplaceHome`, `useMarketplaceAuth`), redesigned SearchBar/FilterBar/EmptyState/Settings/AppDetailDialog, Lucide-based provider badges, recent-view persistence, Rust marketplace `auth.rs` + `cache.rs` + `ranking.rs` + `service.rs`, cache-aware search/detail/trending, `marketplace_clear_cache`, GitHub OAuth device-flow start/poll commands, result dedupe + sort support, and session-only GitHub token handling. Verified `pnpm check:fast`, `pnpm test`, `pnpm exec tsc --noEmit`, `pnpm build`, `cargo check`, and `pnpm tauri build --debug` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). |
-| 2026-04-04 | 0.1.0 | TypeScript toolchain upgrade: `typescript` 5.9.3 → 6.0.2. Removed deprecated `baseUrl` from `tsconfig.json` and kept `@/*` alias via `paths` only. Verified `pnpm exec tsc --noEmit`, `pnpm format:check`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass. `cargo test` still exits abnormally on Windows (`0xc0000139`, pre-existing). `pnpm tauri build --debug` currently blocked by a running `adb-gui-next.exe` locking the target binary. |
-| 2026-04-04 | 0.1.0 | Marketplace Bug Fixes: 4 critical bugs fixed — F-Droid response key `hits` → `apps`, IzzyOnDroid broken search replaced with cross-reference approach, GitHub query encoding `+` → `%20`, trending query too restrictive. New Settings dialog (`MarketplaceSettings.tsx`) with provider toggles, GitHub PAT input, results-per-provider preference. `github_token` added to `SearchFilters` and passed through all API calls. Debounce 400ms → 600ms, min 2-char query. SearchBar settings icon. All quality gates pass. |
-| 2026-04-03 | 0.1.0 | Marketplace V2 "Unified Discovery": Complete overhaul from 3-provider flat list to Design B with 4 providers (F-Droid, IzzyOnDroid, GitHub, Aptoide). New `src-tauri/src/marketplace/` modular provider architecture (6 files). 7 new frontend components (SearchBar, FilterBar, AppCard, AppListItem, MarketplaceEmptyState, ProviderBadge, AttributionFooter). ViewMarketplace and AppDetailDialog rewritten. Zustand store with provider filters, view modes, search history. 2 new commands (marketplace_get_trending, marketplace_list_versions). GitHub-Store model with APK-only filtering. Aptoide TRUSTED-only malware filter. Uptodown removed. 15 pre-existing clippy warnings fixed across OPS/OFP modules. All quality gates (format + lint + build) pass. |
-| 2026-04-03 | 0.1.0 | App Marketplace (original): 3-provider search (F-Droid, IzzyOnDroid, GitHub) with concurrent `tokio::join!`, app detail dialog, download + ADB install. 4 new Tauri commands in `commands/marketplace.rs`. Frontend: `ViewMarketplace.tsx`, `AppDetailDialog.tsx`, `marketplaceStore.ts`. Sidebar nav in Main group with Store icon. Dependencies: `urlencoding`, reqwest `json` feature, tokio `macros` feature. |
-| 2026-04-03 | 0.1.0 | OPS Decryption Bug Fixes: 3 critical bugs fixed — sbox array size `[u32; 512]` to `[u32; 2048]` with byte-value entries, XML validation on padded buffer, missing `<Image>` element parsing. XML offset corrected to compute from end of file. BOM/NUL/FFFD stripping. 62 partitions verified from OnePlus 8 Pro firmware. |
-| 2026-04-03 | 0.1.0 | OPS/OFP Firmware Support: Native decryption + extraction for OnePlus `.ops` (custom S-box cipher, 3 mbox variants), Oppo `.ofp` Qualcomm (AES-128-CFB, 7 key sets), Oppo `.ofp` MediaTek (mtk_shuffle, 9 key sets). Android sparse image un-sparsing. Unified dispatch via file extension. 9 new Rust files in `payload/ops/`. 4 new Cargo deps (`aes`, `cfb-mode`, `md-5`, `quick-xml`). Frontend: file picker + DropZone accept `.ops`/`.ofp`, `OpsMetadata` interface, `GetOpsMetadata()` API, `get_ops_metadata` Tauri command. |
-| 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections (OTA Package, Payload Properties, HTTP, ZIP, OTA Manifest, Dynamic Groups, Extraction). New `read_text_file_from_zip()` for reading `META-INF/com/android/metadata` + `payload_properties.txt` from ZIP. New `get_remote_payload_metadata` Tauri command. `FileBannerDetails.tsx` component with SDK→Android mapping, copyable hashes, OTA type badge. Fire-and-forget metadata fetch after partition load. |
-| 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div + `SidebarProvider` `min-h-svh` → `h-full`. Header structurally pinned as `shrink-0` flex sibling above `flex-1 overflow-y-auto` scroll area. No `position: sticky` needed. |
-| 2026-04-03 | 0.1.0 | Adaptive hardening: `overflow-x-hidden` on SidebarProvider + Inset, viewport-relative heights in AppManager (`max-h-[30vh]` APK list, `h-[40vh]` virtualizer), `min-w-0 flex-1 + truncate` on ConnectedDevicesCard device info, `min-w-0` on FileSelector. |
-| 2026-04-03 | 0.1.0 | App-wide responsive layout: 7 root causes fixed — SidebarContent/Inset overflow axis, `scrollbar-gutter` scoped to `.main-scroll-area`, `--content-min-width` removed, PartitionTable viewport-relative height, PayloadSourceTabs remote `overflow-hidden`, FileBanner URL truncation defense. |
-| 2026-04-02 | 0.1.0 | Payload Dumper: CSS Flexbox layout adjustments ensuring responsive truncation for long remote OTA URLs preventing horizontal container overflow |
-| 2026-04-01 | 0.1.0 | Full Codebase Review Fixes: Shell metacharacter validation (C-01), ADB/fastboot host command guards (H-01/H-02), SSRF prevention with private IP blocklist (H-03), path canonicalization for open_folder (H-04), TempDir for APKS extraction (M-01), save_log prefix sanitization (M-02), Content-Length validation in HTTP ranges (NEW-07), in-place sort mutation fix (M-04), stable React keys in AppManager (L-02), formatBytes consolidation, 11 unused React imports removed, dead isRefreshingDevices removed, 4 unused _activeView props removed. Added `url` crate dependency. |
-| 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation in `commands/payload.rs`, unreachable fixes in `http.rs`, `impl ToString` param, field docs in `remote.rs`, clippy cast cleanup, `remote_zip` added to default feature in `Cargo.toml`. All feature-gated code now active by default. |
+| 2026-04-05 | 0.1.0 | Marketplace Architecture Phase 1 (High-Performance Refactor): implemented all critical and medium findings from the architecture audit across 10 files (7 Rust, 3 TypeScript). 11 new unit tests added. |
+| 2026-04-05 | 0.1.0 | Marketplace Architecture Audit Revision 2 (Deep Analysis): exhaustive code-level analysis of all 9 marketplace Rust modules (1,418 lines) + command layer. Benchmarked against GitHub-Store (10.5k★ KMP app) and GitHub API best practices. Full report rewritten from 103 lines → 508 lines. |
+| 2026-04-04 | 0.1.0 | Marketplace UX Overhaul + GitHub Device Flow: major Marketplace execution pass focused on professional UX, search/filter quality, zero-query discovery, Rust architecture, and optional GitHub OAuth device-flow sign-in. |
+| 2026-04-04 | 0.1.0 | TypeScript 6 Upgrade + `baseUrl` Deprecation Migration: upgraded frontend toolchain from TypeScript 5.9.3 to **6.0.2** and removed deprecated `compilerOptions.baseUrl` from `tsconfig.json`. |
+| 2026-04-04 | 0.1.0 | Marketplace Bug Fixes: All 4 Providers Working + Settings Dialog. 4 critical bugs fixed (F-Droid `hits`→`apps`, IzzyOnDroid no search API, GitHub `+` double-encoding, GitHub trending too restrictive). |
+| 2026-04-03 | 0.1.0 | Marketplace V2: "Unified Discovery" (4-Provider Modular Architecture). Complete overhaul from 3-provider flat list to Design B with 4 providers, modular Rust backend, and rich frontend components. |
+| 2026-04-03 | 0.1.0 | OPS Decryption Bug Fixes (3 Critical Bugs): sbox array size, XML validation, missing `<Image>` element. |
+| 2026-04-03 | 0.1.0 | OPS/OFP Firmware Support: Native decryption + extraction for OnePlus `.ops` and Oppo `.ofp` firmware. |
+| 2026-04-03 | 0.1.0 | Remote Payload Metadata UI: collapsible details panel in FileBanner with 7 sections. |
+| 2026-04-03 | 0.1.0 | Sticky header root fix: `h-svh overflow-hidden` on MainLayout outer div. |
+| 2026-04-03 | 0.1.0 | Adaptive hardening: `overflow-x-hidden` on SidebarProvider + Inset. |
+| 2026-04-03 | 0.1.0 | App-wide responsive layout: 7 root causes fixed. |
+| 2026-04-02 | 0.1.0 | Payload Dumper: CSS Flexbox layout adjustments. |
+| 2026-04-01 | 0.1.0 | Full Codebase Review Fixes: Shell metacharacter validation, ADB/fastboot host command guards, SSRF prevention, path canonicalization, TempDir for APKS extraction, save_log prefix sanitization, Content-Length validation, in-place sort mutation fix, stable React keys, formatBytes consolidation, 11 unused React imports removed, dead isRefreshingDevices removed, 4 unused _activeView props removed. |
+| 2026-04-01 | 0.1.0 | Rust Review Fixes: Path validation, unreachable fixes, `impl ToString` param, field docs, clippy cast cleanup, `remote_zip` added to default feature. |
 | 2026-04-01 | 0.1.0 | Payload Audit: Fixed temp file leak in `extract_remote_prefetch()`. `PayloadCache::read_payload()` marked `#[allow(dead_code)]`. Audit vs `payload-dumper-rust` reference confirmed full Remote URL, Prefetch, Retry, Parallel extraction implementation. |
 | 2026-04-01 | 0.1.0 | Payload Dumper: Remote URL extraction with HTTP range requests. Optional `remote_zip` feature flag. Tabs UI for Local/Remote mode. Connection status display. |
-| 2026-03-31 | 0.1.0 | Flasher: Action queue system for bootloop recovery — buttons enabled when file selected, actions queue and auto-execute when device connects. Visual feedback with Clock icon + "Waiting for Device..." text. Clear queue on file clear. |
-| 2026-03-29 | 0.1.0 | Utilities View UX Overhaul: `ActionButton` component with 4-state lifecycle (idle, loading, sent, disabled), framer-motion micro-animations, semantic success glows, press scale. Centralized and namespaced `actionId`s for separated ADB/Fastboot rendering. UI grid bugfixes and tooltip cleanups. |
-| 2026-03-27 | 0.1.0 | Flasher overhaul: async flash_partition/wipe_data (spawn_blocking), DropArea with position-based hit-testing, partition datalist suggestions, loading mutex, centralized error handling. DropZone.tsx: position-aware hit-testing fix (project-wide). runtime.ts: onHover now passes file paths. |
-| 2026-03-27 | 0.1.0 | Bottom panel polish: fixed position, fluid resize (DOM-first/RAF), smart tab toggles, LogsPanel scroll fix. AppManager: shadcn Command search, toolbar swap, destructive button glow, non-blocking install/uninstall/sideload (spawn_blocking). |
-| 2026-03-27 | 0.1.0 | Global Device Switcher: header pill + popover, centralized device polling in MainLayout, `selectedSerial` in deviceStore, semantic status colors (7 states), removed ConnectedDevicesCard from Flasher + Utilities |
-| 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder (Ctrl+N/Ctrl+Shift+N), Back/Forward history (Alt+←/→), Search/Filter (Ctrl+F), sortable columns, human-readable sizes, symlink targets, Copy Path; infinite render loop fix; empty-dir creation fix |
-| 2026-03-26 | 0.1.0 | File Explorer: Import/Export context menu (context-aware push/pull); DRY executePull/executePush helpers |
-| 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate; no single-click selection |
-| 2026-03-26 | 0.1.0 | File Explorer: checkbox column hidden until multi-select mode (isMultiSelectMode state); right-click Select menu item |
-| 2026-03-26 | 0.1.0 | File Explorer multi-select + inline rename + delete + context menu + keyboard shortcuts; Checkbox + ContextMenu shadcn components |
-| 2026-03-26 | 0.1.0 | File Explorer dual-pane: DirectoryTree, editable address bar, tree collapse, localStorage persistence, 5 edge case fixes |
-| 2026-03-23 | 0.1.0 | App icon & branding: 3D premium terminal icon, `pnpm tauri icon` cross-platform generation |
-| 2026-03-23 | 0.1.0 | UI consistency audit: semantic tokens, icon sizes, Label, aria roles, CheckboxItem, EmptyState, buttonVariants, shrink-0, Separator, sidebar-context.ts |
-| 2026-03-23 | 0.1.0 | shadcn Sidebar migration: AppSidebar.tsx, grouped nav, SidebarProvider/SidebarInset, Ctrl+B shortcut |
-| 2026-03-23 | 0.1.0 | Comprehensive codebase quality: dead code removal, P0 reactivity fix, shadcn adoption, shared components, semantic token fixes |
-| 2026-03-23 | 0.1.0 | App Manager: virtualized list (TanStack Virtual) + user/system package filter |
-| 2026-03-23 | 0.1.0 | VS Code-style bottom panel (BottomPanel, LogsPanel, ShellPanel, logStore, shellStore) |
-| 2026-03-22 | 0.1.0 | Payload dumper overhaul, dependency integration, debugging infrastructure |
-| 2026-03-22 | 0.1.0 | Rust edition 2024, all clippy warnings fixed, dependencies verified |
+| 2026-03-31 | 0.1.0 | Flasher: Action queue system for bootloop recovery. |
+| 2026-03-29 | 0.1.0 | Utilities View UX Overhaul: `ActionButton` component with 4-state lifecycle. |
+| 2026-03-27 | 0.1.0 | Flasher overhaul: async flash_partition/wipe_data, DropArea, partition datalist. |
+| 2026-03-27 | 0.1.0 | Bottom panel polish + AppManager improvements. |
+| 2026-03-27 | 0.1.0 | Global Device Switcher: header pill + popover, centralized device polling. |
+| 2026-03-26 | 0.1.0 | File Explorer: Create File/Folder, Back/Forward history, Search/Filter, sortable columns. |
+| 2026-03-26 | 0.1.0 | File Explorer: Import/Export context menu. |
+| 2026-03-26 | 0.1.0 | File Explorer: explicit multi-select mode gate. |
+
+(End of file - total 360 lines)

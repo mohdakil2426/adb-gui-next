@@ -1,4 +1,4 @@
-import { Download, RefreshCw, Loader2 } from 'lucide-react';
+import { Download, RefreshCw, Loader2, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatBytesNum } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface ActionFooterProps {
   hasCompletedPartitions: boolean;
   onReset: () => void;
   onExtract: () => void;
+  onCancel?: () => void;
 }
 
 /**
@@ -27,6 +28,7 @@ export function ActionFooter({
   hasCompletedPartitions,
   onReset,
   onExtract,
+  onCancel,
 }: ActionFooterProps) {
   const getExtractLabel = (): string => {
     if (status === 'extracting') return 'Extracting...';
@@ -43,33 +45,42 @@ export function ActionFooter({
         variant="ghost"
         size="sm"
         onClick={onReset}
-        disabled={status === 'extracting'}
+        disabled={status === 'extracting' || status === 'cancelling'}
         className="text-muted-foreground"
       >
         <RefreshCw className="mr-2 h-3.5 w-3.5" />
         Reset
       </Button>
-      <Button
-        onClick={onExtract}
-        disabled={
-          !payloadPath ||
-          status === 'extracting' ||
-          status === 'loading-partitions' ||
-          toExtractCount === 0
-        }
-      >
-        {status === 'extracting' ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Extracting...
-          </>
-        ) : (
-          <>
-            <Download className="mr-2 h-4 w-4" />
-            {getExtractLabel()}
-          </>
-        )}
-      </Button>
+      <div className="flex gap-2">
+        {status === 'extracting' && onCancel ? (
+          <Button variant="destructive" onClick={onCancel}>
+            <StopCircle className="mr-2 h-4 w-4" />
+            Cancel
+          </Button>
+        ) : null}
+        <Button
+          onClick={onExtract}
+          disabled={
+            !payloadPath ||
+            status === 'extracting' ||
+            status === 'cancelling' ||
+            status === 'loading-partitions' ||
+            toExtractCount === 0
+          }
+        >
+          {status === 'extracting' || status === 'cancelling' ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}
+            </>
+          ) : (
+            <>
+              <Download className="mr-2 h-4 w-4" />
+              {getExtractLabel()}
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

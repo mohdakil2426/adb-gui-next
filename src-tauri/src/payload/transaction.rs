@@ -26,13 +26,19 @@ impl TransactionGuard {
     }
 
     pub fn add_file(&self, path: PathBuf) {
-        let mut files = self.files.lock().unwrap();
+        let mut files = self.files.lock().unwrap_or_else(|e| {
+            log::error!("Lock poisoned, recovering: {}", e);
+            e.into_inner()
+        });
         files.push(path);
     }
 
     pub fn abort(&self) {
         let files: Vec<PathBuf> = {
-            let mut files = self.files.lock().unwrap();
+            let mut files = self.files.lock().unwrap_or_else(|e| {
+                log::error!("Lock poisoned, recovering: {}", e);
+                e.into_inner()
+            });
             std::mem::take(&mut *files)
         };
         for file in files {
@@ -42,18 +48,26 @@ impl TransactionGuard {
     }
 
     pub fn commit(&self) {
-        let mut committed = self.committed.lock().unwrap();
+        let mut committed = self.committed.lock().unwrap_or_else(|e| {
+            log::error!("Lock poisoned, recovering: {}", e);
+            e.into_inner()
+        });
         *committed = true;
     }
 }
 
 impl Drop for TransactionGuard {
     fn drop(&mut self) {
-        let is_committed = *self.committed.lock().unwrap();
+        let is_committed = *self.committed.lock().unwrap_or_else(|e| {
+            log::error!("Lock poisoned, recovering: {}", e);
+            e.into_inner()
+        });
         if !is_committed {
-            // Not committed — clean up all registered files and the output directory.
             let files: Vec<PathBuf> = {
-                let mut files = self.files.lock().unwrap();
+                let mut files = self.files.lock().unwrap_or_else(|e| {
+                    log::error!("Lock poisoned, recovering: {}", e);
+                    e.into_inner()
+                });
                 std::mem::take(&mut *files)
             };
             for file in files {

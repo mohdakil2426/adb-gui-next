@@ -1,5 +1,8 @@
 //! Shared I/O utilities for payload extraction.
 
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::{__m512i, _mm512_loadu_si512, _mm512_storeu_si512};
+
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
 use std::sync::OnceLock;
@@ -59,7 +62,7 @@ impl Copier {
             CopyStrategy::Scalar => copy_scalar(dst, src),
             CopyStrategy::Sse2 => copy_sse2(dst, src),
             CopyStrategy::Avx2 => copy_avx2(dst, src),
-            CopyStrategy::Avx512 => copy_avx2(dst, src),
+            CopyStrategy::Avx512 => copy_avx512(dst, src),
         }
     }
 }
@@ -107,6 +110,30 @@ fn copy_avx2(dst: &mut [u8], src: &[u8]) {
     while i < len {
         dst[i] = src[i];
         i += 1;
+    }
+}
+
+#[cfg(target_arch = "x86_64")]
+fn copy_avx512(dst: &mut [u8], src: &[u8]) {
+    use std::arch::x86_64::_mm_sfence;
+    let len = dst.len().min(src.len());
+    let mut i = 0usize;
+
+    while i + 64 <= len {
+        unsafe {
+            let data = _mm512_loadu_si512(src.as_ptr().add(i) as *const __m512i);
+            _mm512_storeu_si512(dst.as_mut_ptr().add(i) as *mut __m512i, data);
+        }
+        i += 64;
+    }
+
+    let remainder = len - i;
+    if remainder > 0 {
+        copy_avx2(&mut dst[i..], &src[i..]);
+    }
+
+    unsafe {
+        _mm_sfence();
     }
 }
 

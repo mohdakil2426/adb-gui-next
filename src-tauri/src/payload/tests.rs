@@ -41,10 +41,13 @@ fn extracts_selected_partition_image() {
         Some(&output_dir),
         &[String::from("system")],
         &cache,
-        None, // No AppHandle in tests — events are silently skipped
-        |name, current, total, completed| {
+        None,
+        VerifyMode::default(),
+        |name: &str, current: usize, total: usize, completed: bool| {
             progress_events.push((name.to_string(), current, total, completed));
         },
+        None,
+        None,
     )
     .expect("extract payload");
 
@@ -134,7 +137,10 @@ fn extracts_multi_extent_and_zero_operations() {
         &[String::from("system")],
         &cache,
         None,
+        VerifyMode::default(),
         |_, _, _, _| {},
+        None,
+        None,
     )
     .expect("extract multi extent payload");
 
@@ -186,7 +192,10 @@ fn rejects_payload_when_data_hash_mismatches() {
         &[String::from("boot")],
         &cache,
         None,
+        VerifyMode::default(),
         |_, _, _, _| {},
+        None,
+        None,
     )
     .expect_err("expected checksum verification failure");
 
@@ -578,7 +587,10 @@ mod sha256_verification_tests {
             &[String::from("system")],
             &cache,
             None,
+            VerifyMode::default(),
             |_, _, _, _| {},
+            None,
+            None,
         )
         .expect("extraction should succeed with correct hash");
 
@@ -647,7 +659,10 @@ mod sha256_verification_tests {
             &[], // empty = extract all
             &cache,
             None,
+            VerifyMode::default(),
             |_, _, _, _| {},
+            None,
+            None,
         )
         .expect("extract all partitions");
 
@@ -687,7 +702,10 @@ mod sha256_verification_tests {
             &[String::from("empty")],
             &cache,
             None,
+            VerifyMode::default(),
             |_, _, _, _| {},
+            None,
+            None,
         )
         .expect("extract empty partition should succeed");
 
@@ -774,5 +792,26 @@ mod diagnostics_tests {
         let diag = diagnose_payload_file(&payload_path).expect("diagnose");
         assert!(!diag.warnings.is_empty());
         assert!(diag.warnings[0].contains("zero size"));
+    }
+}
+
+// =============================================================================
+// Tests for manifest size cap (security)
+// =============================================================================
+
+mod manifest_size_cap_tests {
+    use super::super::parser::parse_header;
+
+    #[test]
+    fn test_manifest_size_cap_rejects_huge_manifest() {
+        let mut header = vec![b'C', b'r', b'A', b'U'];
+        header.extend_from_slice(&2u64.to_be_bytes());
+        header.extend_from_slice(&(10_000_000_000u64).to_be_bytes()); // 10 GB
+        header.extend_from_slice(&0u32.to_be_bytes());
+
+        let result = parse_header(&header);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("exceeds maximum"), "error should mention exceeds maximum: {}", err);
     }
 }

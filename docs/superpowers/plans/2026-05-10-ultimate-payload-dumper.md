@@ -1,6 +1,6 @@
 # Ultimate Payload Dumper — High-Level Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build the world's best Android OTA payload extractor by combining the best features, architectures, and patterns from otaripper (speed), payload-dumper-rust (format breadth), Go tools (verification paranoia), and our unique OPS/OFP/GUI capabilities.
 
@@ -108,7 +108,7 @@ This plan is derived from deep multi-agent research. All reference documents liv
 
 **Context:** Currently, a malicious payload can declare a 10 GB manifest length, causing memory exhaustion before the bounds check fires.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 
 ```rust
 #[test]
@@ -125,12 +125,12 @@ fn test_manifest_size_cap_rejects_huge_manifest() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `cargo test --manifest-path src-tauri/Cargo.toml test_manifest_size_cap`
 Expected: FAIL — no size cap exists
 
-- [ ] **Step 3: Add size cap to parser**
+- [x] **Step 3: Add size cap to parser**
 
 In `src-tauri/src/payload/parser.rs`, add before line 47:
 
@@ -148,12 +148,12 @@ if manifest_len > MAX_MANIFEST_SIZE {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `cargo test --manifest-path src-tauri/Cargo.toml test_manifest_size_cap`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src-tauri/src/payload/parser.rs src-tauri/src/payload/tests.rs
@@ -170,7 +170,7 @@ git commit -m "fix(parser): add 100MB manifest size cap for DOS protection"
 
 **Context:** OPS extractor hashes in-memory buffer before writing. If write fails partially, hash mismatch won't be detected.
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 
 ```rust
 #[test]
@@ -182,7 +182,7 @@ fn test_ops_hash_verified_from_disk() {
 }
 ```
 
-- [ ] **Step 2: Implement disk-based verification**
+- [x] **Step 2: Implement disk-based verification**
 
 In `ops/extractor.rs`, after `writer.flush()`:
 
@@ -202,12 +202,12 @@ if !partition.sha256.is_empty() {
 }
 ```
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `cargo test --manifest-path src-tauri/Cargo.toml ops::`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src-tauri/src/payload/ops/extractor.rs
@@ -224,7 +224,7 @@ git commit -m "fix(ops): verify SHA-256 from disk after flush, not memory"
 
 **Context:** `try_unsparse` calls `std::fs::read(path)` which loads entire partition into RAM. A 4GB `super.img` = 4GB RAM usage.
 
-- [ ] **Step 1: Replace `fs::read` with streaming**
+- [x] **Step 1: Replace `fs::read` with streaming**
 
 Current code:
 ```rust
@@ -239,7 +239,7 @@ let mut output_file = std::fs::File::create(&unsparse_path)?;
 sparse::unsparse_streaming(&input_file, &mut output_file)?;
 ```
 
-- [ ] **Step 2: Add `unsparse_streaming` to sparse.rs**
+- [x] **Step 2: Add `unsparse_streaming` to sparse.rs**
 
 ```rust
 pub fn unsparse_streaming<R: Read, W: Write>(
@@ -254,11 +254,11 @@ pub fn unsparse_streaming<R: Read, W: Write>(
 }
 ```
 
-- [ ] **Step 3: Test with large sparse file**
+- [x] **Step 3: Test with large sparse file**
 
 Create synthetic sparse file (1GB expanded, but only 1MB actual data). Verify memory usage stays under 10MB.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src-tauri/src/payload/ops/extractor.rs src-tauri/src/payload/ops/sparse.rs
@@ -274,7 +274,7 @@ git commit -m "fix(sparse): streaming unsparse to avoid RAM exhaustion"
 
 **Context:** `start_offset` and `total_length` read as `u64` without overflow checks before use.
 
-- [ ] **Step 1: Add checked arithmetic**
+- [x] **Step 1: Add checked arithmetic**
 
 ```rust
 let start_offset = entry.start_offset.checked_mul(SECTOR_SIZE)
@@ -283,7 +283,7 @@ let total_length = entry.total_length
     .ok_or_else(|| anyhow!("MTK entry missing total_length"))?;
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src-tauri/src/payload/ops/ofp_mtk.rs
@@ -297,7 +297,7 @@ git commit -m "fix(ofp-mtk): add checked_mul overflow protection"
 **Files:**
 - Modify: `src-tauri/src/payload/ops/ops_parser.rs`
 
-- [ ] **Step 1: Configure quick_xml reader**
+- [x] **Step 1: Configure quick_xml reader**
 
 ```rust
 use quick_xml::events::Event;
@@ -311,7 +311,7 @@ const MAX_XML_SIZE: usize = 1_000_000; // 1MB already exists
 // Ensure this is enforced before parsing
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src-tauri/src/payload/ops/ops_parser.rs
@@ -350,9 +350,9 @@ pub struct VerificationResult {
 }
 ```
 
-- [ ] **Step 1: Implement `VerifyMode` enum**
+- [x] **Step 1: Implement `VerifyMode` enum**
 
-- [ ] **Step 2: Wire into `extract_payload` signature**
+- [x] **Step 2: Wire into `extract_payload` signature**
 
 ```rust
 pub fn extract_payload(
@@ -365,7 +365,7 @@ pub fn extract_payload(
 ) -> Result<ExtractPayloadResult>
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/verify.rs src-tauri/src/payload/extractor.rs
@@ -382,7 +382,7 @@ git commit -m "feat(verify): add 4-layer verification engine with VerifyMode"
 
 **Context:** Currently `stream_copy` has a `hasher` parameter that's never used. Wire it up for decompressed stream hashing.
 
-- [ ] **Step 1: Wire hasher in compressed ops**
+- [x] **Step 1: Wire hasher in compressed ops**
 
 For compressed operations (XZ/BZ2/Zstd), when `verify_mode >= Standard`:
 ```rust
@@ -399,11 +399,11 @@ stream_copy(
 // post-extraction diagnostics only
 ```
 
-- [ ] **Step 2: Add decompressed hash to results**
+- [x] **Step 2: Add decompressed hash to results**
 
 Include `decompressed_sha256` in per-operation metadata for diagnostics.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/extractor.rs src-tauri/src/payload/copy.rs
@@ -418,7 +418,7 @@ git commit -m "feat(verify): add Layer 3 decompressed stream hashing"
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/payload/verify.rs`
 
-- [ ] **Step 1: Compute file hash after extraction**
+- [x] **Step 1: Compute file hash after extraction**
 
 After `extract_partition` returns successfully:
 ```rust
@@ -437,7 +437,7 @@ if verify_mode >= Strict {
 }
 ```
 
-- [ ] **Step 2: Add `compute_file_sha256` helper**
+- [x] **Step 2: Add `compute_file_sha256` helper**
 
 ```rust
 fn compute_file_sha256(path: &Path) -> Result<Vec<u8>> {
@@ -453,7 +453,7 @@ fn compute_file_sha256(path: &Path) -> Result<Vec<u8>> {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/extractor.rs src-tauri/src/payload/verify.rs
@@ -473,7 +473,7 @@ git commit -m "feat(verify): add Layer 4 output file hash verification"
 - Modify: `src-tauri/src/payload/copy.rs`
 - Test: `src-tauri/src/payload/tests.rs`
 
-- [ ] **Step 1: Implement `copy_avx512`**
+- [x] **Step 1: Implement `copy_avx512`**
 
 ```rust
 #[cfg(target_arch = "x86_64")]
@@ -492,7 +492,7 @@ fn copy_avx512(dst: &mut [u8], src: &[u8]) {
 }
 ```
 
-- [ ] **Step 2: Wire into `detect_copy_strategy`**
+- [x] **Step 2: Wire into `detect_copy_strategy`**
 
 ```rust
 pub fn detect_copy_strategy() -> CopyStrategy {
@@ -503,7 +503,7 @@ pub fn detect_copy_strategy() -> CopyStrategy {
 }
 ```
 
-- [ ] **Step 3: Add test for AVX-512 correctness**
+- [x] **Step 3: Add test for AVX-512 correctness**
 
 ```rust
 #[test]
@@ -519,7 +519,7 @@ fn test_copy_avx512_correctness() {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src-tauri/src/payload/copy.rs src-tauri/src/payload/tests.rs
@@ -533,7 +533,7 @@ git commit -m "perf(copy): implement AVX-512 64-byte SIMD copy path"
 **Files:**
 - Modify: `src-tauri/src/payload/write.rs`
 
-- [ ] **Step 1: Add non-temporal write path**
+- [x] **Step 1: Add non-temporal write path**
 
 For large sequential writes (>1MB), bypass CPU cache:
 
@@ -558,11 +558,11 @@ fn write_non_temporal_avx2(dst: &mut [u8], src: &[u8]) {
 }
 ```
 
-- [ ] **Step 2: Integrate into `NonTemporalWriter`**
+- [x] **Step 2: Integrate into `NonTemporalWriter`**
 
 Use non-temporal path when write size > 1MB and strategy is Avx2/Avx512.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/write.rs
@@ -577,7 +577,7 @@ git commit -m "perf(write): add non-temporal AVX2 stores for large writes"
 - Create: `src-tauri/src/payload/zip_mmap.rs`
 - Modify: `src-tauri/src/payload/remote.rs`
 
-- [ ] **Step 1: Implement zero-copy ZIP mmap**
+- [x] **Step 1: Implement zero-copy ZIP mmap**
 
 ```rust
 pub fn mmap_zip_payload(zip_path: &Path) -> Result<Arc<Mmap>> {
@@ -604,7 +604,7 @@ pub fn mmap_zip_payload(zip_path: &Path) -> Result<Arc<Mmap>> {
 }
 ```
 
-- [ ] **Step 2: Add `ZipPayloadMmap` wrapper**
+- [x] **Step 2: Add `ZipPayloadMmap` wrapper**
 
 ```rust
 pub struct ZipPayloadMmap {
@@ -621,7 +621,7 @@ impl std::ops::Deref for ZipPayloadMmap {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/zip_mmap.rs src-tauri/src/payload/remote.rs
@@ -642,7 +642,7 @@ git commit -m "perf(zip): zero-copy mmap for STORED ZIP entries"
 
 **Context:** Move copies data from source extent to destination extent within the same partition. No payload data involved.
 
-- [ ] **Step 1: Add Move handler**
+- [x] **Step 1: Add Move handler**
 
 ```rust
 Type::Move => {
@@ -677,7 +677,7 @@ Type::Move => {
 
 Alternative: Use a separate `File` handle for reading.
 
-- [ ] **Step 2: Add `read_at` to `NonTemporalWriter`**
+- [x] **Step 2: Add `read_at` to `NonTemporalWriter`**
 
 ```rust
 impl NonTemporalWriter {
@@ -692,7 +692,7 @@ impl NonTemporalWriter {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/extractor.rs src-tauri/src/payload/write.rs
@@ -708,7 +708,7 @@ git commit -m "feat(extractor): implement Move operation type"
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/commands/payload.rs`
 
-- [ ] **Step 1: Wire up `source_dir` parameter**
+- [x] **Step 1: Wire up `source_dir` parameter**
 
 In `commands/payload.rs`:
 ```rust
@@ -734,7 +734,7 @@ async fn extract_delta_payload(
 }
 ```
 
-- [ ] **Step 2: Implement `extract_payload_with_source`**
+- [x] **Step 2: Implement `extract_payload_with_source`**
 
 ```rust
 pub fn extract_payload_with_source(
@@ -751,7 +751,7 @@ pub fn extract_payload_with_source(
 }
 ```
 
-- [ ] **Step 3: Implement `apply_source_copy`**
+- [x] **Step 3: Implement `apply_source_copy`**
 
 ```rust
 fn apply_source_copy(
@@ -785,7 +785,7 @@ fn apply_source_copy(
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src-tauri/src/payload/delta.rs src-tauri/src/payload/extractor.rs src-tauri/src/commands/payload.rs
@@ -800,13 +800,13 @@ git commit -m "feat(delta): implement SourceCopy delta operation"
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/Cargo.toml`
 
-- [ ] **Step 1: Add brotli crate**
+- [x] **Step 1: Add brotli crate**
 
 ```toml
 brotli = { version = "6", optional = true }
 ```
 
-- [ ] **Step 2: Add Brotli handler**
+- [x] **Step 2: Add Brotli handler**
 
 ```rust
 #[cfg(feature = "brotli")]
@@ -817,7 +817,7 @@ Type::BrotliBsdiff => {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/extractor.rs src-tauri/Cargo.toml
@@ -837,7 +837,7 @@ git commit -m "feat(compression): add Brotli decompression support"
 - Create: `src-tauri/src/payload/cancel.rs`
 - Modify: `src-tauri/src/payload/extractor.rs`
 
-- [ ] **Step 1: Implement `CancellationToken`**
+- [x] **Step 1: Implement `CancellationToken`**
 
 ```rust
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -869,7 +869,7 @@ impl CancellationToken {
 }
 ```
 
-- [ ] **Step 2: Check token at boundaries**
+- [x] **Step 2: Check token at boundaries**
 
 In `extract_partition`, before each operation:
 ```rust
@@ -881,7 +881,7 @@ for (index, operation) in partition.operations.iter().enumerate() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/src/payload/cancel.rs src-tauri/src/payload/extractor.rs
@@ -897,7 +897,7 @@ git commit -m "feat(cancel): add CancellationToken for graceful abort"
 - Modify: `src/lib/payloadDumperStore.ts`
 - Modify: `src/lib/desktop/backend.ts`
 
-- [ ] **Step 1: Add cancel command**
+- [x] **Step 1: Add cancel command**
 
 ```rust
 #[tauri::command]
@@ -906,7 +906,7 @@ fn cancel_extraction(token_id: String) {
 }
 ```
 
-- [ ] **Step 2: Add cancel button to frontend**
+- [x] **Step 2: Add cancel button to frontend**
 
 ```tsx
 // ActionFooter.tsx
@@ -918,7 +918,7 @@ fn cancel_extraction(token_id: String) {
 )}
 ```
 
-- [ ] **Step 3: Handle cancelled state**
+- [x] **Step 3: Handle cancelled state**
 
 ```ts
 // payloadDumperStore.ts
@@ -928,7 +928,7 @@ cancelExtraction: () => {
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/components/payload-dumper/ActionFooter.tsx src/lib/payloadDumperStore.ts src/lib/desktop/backend.ts src-tauri/src/commands/payload.rs
@@ -951,7 +951,7 @@ git commit -m "feat(ui): add cancel button and cancellation support"
 - Modify: `src/hooks/usePayloadEvents.ts`
 - Modify: `src/components/payload-dumper/ExtractionProgressBar.tsx`
 
-- [ ] **Step 1: Extend progress schema**
+- [x] **Step 1: Extend progress schema**
 
 ```rust
 #[derive(Serialize)]
@@ -967,7 +967,7 @@ pub struct ProgressEvent {
 }
 ```
 
-- [ ] **Step 2: Emit per-byte events from stream_copy**
+- [x] **Step 2: Emit per-byte events from stream_copy**
 
 ```rust
 pub fn stream_copy(
@@ -992,7 +992,7 @@ pub fn stream_copy(
 }
 ```
 
-- [ ] **Step 3: Calculate throughput and ETA**
+- [x] **Step 3: Calculate throughput and ETA**
 
 ```rust
 let elapsed = start_time.elapsed().as_secs_f64();
@@ -1002,7 +1002,7 @@ let eta = if throughput > 0.0 {
 } else { 0 };
 ```
 
-- [ ] **Step 4: Update frontend progress bar**
+- [x] **Step 4: Update frontend progress bar**
 
 ```tsx
 // ExtractionProgressBar.tsx
@@ -1015,7 +1015,7 @@ let eta = if throughput > 0.0 {
 </div>
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src-tauri/src/payload/extractor.rs src-tauri/src/payload/copy.rs src/lib/desktop/models.ts src/hooks/usePayloadEvents.ts src/components/payload-dumper/ExtractionProgressBar.tsx
@@ -1031,7 +1031,7 @@ git commit -m "feat(progress): per-byte progress with throughput and ETA"
 - Modify: `src/components/views/ViewPayloadDumper.tsx`
 - Create: `src/components/payload-dumper/ExtractionHistory.tsx`
 
-- [ ] **Step 1: Add history to Zustand store**
+- [x] **Step 1: Add history to Zustand store**
 
 ```typescript
 interface ExtractionRecord {
@@ -1075,7 +1075,7 @@ export const usePayloadDumperStore = create<PayloadDumperStore>()(
 );
 ```
 
-- [ ] **Step 2: Create history component**
+- [x] **Step 2: Create history component**
 
 ```tsx
 // ExtractionHistory.tsx
@@ -1106,7 +1106,7 @@ export function ExtractionHistory() {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/lib/payloadDumperStore.ts src/components/payload-dumper/ExtractionHistory.tsx src/components/views/ViewPayloadDumper.tsx
@@ -1121,7 +1121,7 @@ git commit -m "feat(ui): add extraction history with localStorage persistence"
 - Modify: `src/components/payload-dumper/PartitionTable.tsx`
 - Modify: `src/components/payload-dumper/PartitionRow.tsx`
 
-- [ ] **Step 1: Add search input**
+- [x] **Step 1: Add search input**
 
 ```tsx
 // PartitionTable.tsx
@@ -1144,7 +1144,7 @@ return (
 );
 ```
 
-- [ ] **Step 2: Add partition type badges**
+- [x] **Step 2: Add partition type badges**
 
 ```tsx
 // PartitionRow.tsx
@@ -1156,7 +1156,7 @@ return (
 </Badge>
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/components/payload-dumper/PartitionTable.tsx src/components/payload-dumper/PartitionRow.tsx
@@ -1176,14 +1176,14 @@ git commit -m "feat(ui): partition search/filter and type badges"
 - Create: `src-tauri/tests/proptest.rs`
 - Modify: `src-tauri/Cargo.toml`
 
-- [ ] **Step 1: Add proptest dependency**
+- [x] **Step 1: Add proptest dependency**
 
 ```toml
 [dev-dependencies]
 proptest = "1"
 ```
 
-- [ ] **Step 2: Write property tests**
+- [x] **Step 2: Write property tests**
 
 ```rust
 use proptest::prelude::*;
@@ -1228,7 +1228,7 @@ proptest! {
 }
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/tests/proptest.rs src-tauri/Cargo.toml
@@ -1243,14 +1243,14 @@ git commit -m "test(proptest): add property-based tests for extents and arithmet
 - Create: `src-tauri/fuzz/Cargo.toml`
 - Create: `src-tauri/fuzz/fuzz_targets/parse_header.rs`
 
-- [ ] **Step 1: Setup cargo-fuzz**
+- [x] **Step 1: Setup cargo-fuzz**
 
 ```bash
 cargo install cargo-fuzz
 cargo fuzz init
 ```
 
-- [ ] **Step 2: Write fuzz target**
+- [x] **Step 2: Write fuzz target**
 
 ```rust
 // fuzz/fuzz_targets/parse_header.rs
@@ -1262,13 +1262,13 @@ fuzz_target!(|data: &[u8]| {
 });
 ```
 
-- [ ] **Step 3: Run fuzzer**
+- [x] **Step 3: Run fuzzer**
 
 ```bash
 cargo fuzz run parse_header --manifest-path src-tauri/Cargo.toml
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src-tauri/fuzz/
@@ -1283,7 +1283,7 @@ git commit -m "test(fuzz): add cargo-fuzz target for header parsing"
 - Create: `src-tauri/benches/copy_benchmark.rs`
 - Modify: `src-tauri/Cargo.toml`
 
-- [ ] **Step 1: Add criterion dependency**
+- [x] **Step 1: Add criterion dependency**
 
 ```toml
 [dev-dependencies]
@@ -1294,7 +1294,7 @@ name = "copy_benchmark"
 harness = false
 ```
 
-- [ ] **Step 2: Write benchmark**
+- [x] **Step 2: Write benchmark**
 
 ```rust
 // benches/copy_benchmark.rs
@@ -1323,7 +1323,7 @@ criterion_group!(benches, bench_copy_strategies);
 criterion_main!(benches);
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src-tauri/benches/copy_benchmark.rs src-tauri/Cargo.toml

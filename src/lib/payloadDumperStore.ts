@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { backend } from '@/lib/desktop/models';
+import { CreateCancellationToken, CancelExtraction } from '@/lib/desktop/backend';
+import { useLogStore } from './logStore';
+import { toast } from 'sonner';
 
 interface PartitionInfo {
   name: string;
@@ -13,6 +16,10 @@ interface PartitionProgress {
   current: number;
   total: number;
   percentage: number;
+  bytesWritten: number;
+  totalBytes: number;
+  throughputMbps: number;
+  etaSeconds: number;
 }
 
 export type ExtractionStatus =
@@ -20,8 +27,21 @@ export type ExtractionStatus =
   | 'loading-partitions'
   | 'ready'
   | 'extracting'
+  | 'cancelling'
   | 'success'
   | 'error';
+
+export interface ExtractionRecord {
+  id: string;
+  timestamp: number;
+  payloadPath: string;
+  outputDir: string;
+  partitions: string[];
+  duration: number;
+  totalBytes: number;
+  status: 'success' | 'error' | 'cancelled';
+  error?: string;
+}
 
 interface PayloadDumperState {
   // Input/Output paths
@@ -54,6 +74,12 @@ interface PayloadDumperState {
   // Remote payload metadata (HTTP + ZIP + OTA manifest)
   remoteMetadata: backend.RemotePayloadMetadata | null;
 
+  // Cancellation
+  cancelTokenId: string | null;
+
+  // Extraction history (persisted)
+  history: ExtractionRecord[];
+
   // Actions
   setPayloadPath: (path: string) => void;
   setOutputPath: (path: string) => void;
@@ -75,10 +101,19 @@ interface PayloadDumperState {
     current: number,
     total: number,
     completed?: boolean,
+    bytesWritten?: number,
+    totalBytes?: number,
+    throughputMbps?: number,
+    etaSeconds?: number,
   ) => void;
   clearPartitionProgress: () => void;
   setExtractionStats: (stats: backend.ExtractionStats | null) => void;
   setRemoteMetadata: (metadata: backend.RemotePayloadMetadata | null) => void;
+  setCancelTokenId: (id: string | null) => void;
+  createAndSetCancellationToken: () => Promise<void>;
+  cancelExtraction: () => void;
+  addToHistory: (record: ExtractionRecord) => void;
+  clearHistory: () => void;
   reset: () => void;
   clearExtractionState: () => void;
 }
@@ -98,6 +133,8 @@ const initialState = {
   partitionProgress: new Map<string, PartitionProgress>(),
   remoteMetadata: null as backend.RemotePayloadMetadata | null,
   extractionStats: null as backend.ExtractionStats | null,
+  cancelTokenId: null as string | null,
+  history: [] as ExtractionRecord[],
 };
 
 export const usePayloadDumperStore = create<PayloadDumperState>()(
@@ -218,13 +255,26 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
       },
 
       // Update real-time progress for a specific partition
-      updatePartitionProgress: (name, current, total) => {
+      updatePartitionProgress: (
+        name,
+        current,
+        total,
+        _completed,
+        bytesWritten,
+        totalBytes,
+        throughputMbps,
+        etaSeconds,
+      ) => {
         set((state) => {
           const newProgress = new Map(state.partitionProgress);
           newProgress.set(name, {
             current,
             total,
             percentage: total > 0 ? Math.round((current / total) * 100) : 0,
+            bytesWritten: bytesWritten ?? 0,
+            totalBytes: totalBytes ?? 0,
+            throughputMbps: throughputMbps ?? 0,
+            etaSeconds: etaSeconds ?? 0,
           });
           return { partitionProgress: newProgress };
         });
@@ -239,13 +289,52 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         set({ remoteMetadata: metadata });
       },
 
+      setCancelTokenId: (id) => {
+        set({ cancelTokenId: id });
+      },
+
+      createAndSetCancellationToken: async () => {
+        try {
+          const tokenId = await CreateCancellationToken();
+          set({ cancelTokenId: tokenId });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          toast.error(`Failed to create cancellation token: ${message}`);
+          useLogStore.getState().addLog(`Error creating cancellation token: ${message}`, 'error');
+        }
+      },
+
+      cancelExtraction: () => {
+        const tokenId = usePayloadDumperStore.getState().cancelTokenId;
+        if (tokenId) {
+          CancelExtraction(tokenId).catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : String(error);
+            toast.error(`Failed to cancel extraction: ${message}`);
+            useLogStore.getState().addLog(`Error cancelling extraction: ${message}`, 'error');
+          });
+          set({ status: 'cancelling' });
+        }
+      },
+
       setExtractionStats: (stats) => {
         set({ extractionStats: stats });
+      },
+
+      // History actions
+      addToHistory: (record) => {
+        set((state) => ({
+          history: [record, ...state.history].slice(0, 50),
+        }));
+      },
+
+      clearHistory: () => {
+        set({ history: [] });
       },
 
       reset: () => {
         set({
           ...initialState,
+          history: [],
           extractingPartitions: new Set<string>(),
           completedPartitions: new Set<string>(),
           partitionProgress: new Map(),
@@ -271,6 +360,7 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         activeMode: state.activeMode,
         remoteUrl: state.remoteUrl,
         outputPath: state.outputPath,
+        history: state.history,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

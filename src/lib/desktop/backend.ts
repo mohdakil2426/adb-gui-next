@@ -34,6 +34,14 @@ export function CleanupPayloadCache(): Promise<void> {
   return call('cleanup_payload_cache');
 }
 
+export function CreateCancellationToken(): Promise<string> {
+  return call('create_cancellation_token');
+}
+
+export function CancelExtraction(tokenId: string): Promise<void> {
+  return call('cancel_extraction', { tokenId });
+}
+
 export function DiagnosePayload(path: string): Promise<backend.PayloadDiagnostics> {
   return call('diagnose_payload', { path });
 }
@@ -61,12 +69,14 @@ export function ExtractPayload(
   outputDir: string,
   selectedPartitions: string[],
   prefetch?: boolean,
+  cancelTokenId?: string,
 ): Promise<backend.ExtractPayloadResult> {
   return call('extract_payload', {
     payloadPath,
     outputDir,
     selectedPartitions,
     prefetch: prefetch ?? null,
+    cancelTokenId: cancelTokenId ?? null,
   });
 }
 
@@ -75,12 +85,14 @@ export function ExtractDeltaPayload(
   sourceDir: string,
   outputDir: string,
   selectedPartitions: string[],
+  cancelTokenId?: string,
 ): Promise<backend.ExtractPayloadResult> {
   return call('extract_delta_payload', {
     payloadPath,
     sourceDir,
     outputDir,
     selectedPartitions,
+    cancelTokenId: cancelTokenId ?? null,
   });
 }
 

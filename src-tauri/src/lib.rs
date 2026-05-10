@@ -54,6 +54,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::cleanup_payload_cache,
             commands::connect_wireless_adb,
+            commands::create_cancellation_token,
             commands::create_directory,
             commands::create_file,
             commands::delete_files,
@@ -100,6 +101,7 @@ pub fn run() {
             commands::uninstall_package,
             commands::wipe_data,
             commands::check_remote_payload,
+            commands::cancel_extraction,
             commands::diagnose_payload,
             commands::get_remote_payload_metadata,
             commands::list_remote_payload_partitions,

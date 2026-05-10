@@ -14,6 +14,7 @@ import {
   CheckRemotePayload,
   ListRemotePayloadPartitions,
   GetRemotePayloadMetadata,
+  CreateCancellationToken,
 } from '@/lib/desktop/backend';
 import { formatBytesNum } from '@/lib/utils';
 import type { ExtractionStatus } from '@/lib/payloadDumperStore';
@@ -75,8 +76,10 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
   const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
   const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
-  const reset = usePayloadDumperStore((state) => state.reset);
 
+  const setCancelTokenId = usePayloadDumperStore((state) => state.setCancelTokenId);
+
+  const reset = usePayloadDumperStore((state) => state.reset);
   const cancelLoadingRef = useRef(false);
   const checkUrlRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -324,12 +327,16 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       .addLog(`Starting extraction of ${partitionsToExtract.length} partitions...`, 'info');
 
     try {
+      const cancelTokenId = await CreateCancellationToken();
+      setCancelTokenId(cancelTokenId);
+
       const targetOutputPath = outputDir || outputPath;
       const result = await ExtractPayload(
         payloadPath,
         targetOutputPath,
         partitionsToExtract,
         mode === 'remote' ? prefetch : undefined,
+        cancelTokenId,
       );
 
       if (result.success) {
@@ -369,6 +376,8 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       clearPartitionProgress();
       toast.error(`Extraction failed: ${error}`, { id: toastId });
       useLogStore.getState().addLog(`Extraction failed: ${error}`, 'error');
+    } finally {
+      setCancelTokenId(null);
     }
   }, [
     payloadPath,
@@ -386,6 +395,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setExtractionStats,
     addCompletedPartitions,
     clearPartitionProgress,
+    setCancelTokenId,
   ]);
 
   const handleReset = useCallback(() => {

@@ -31,6 +31,7 @@ export function ViewPayloadDumper() {
   const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
   const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
   const toggleAll = usePayloadDumperStore((state) => state.toggleAll);
+  const cancelExtraction = usePayloadDumperStore((state) => state.cancelExtraction);
 
   // Local UI state — transient, doesn't need to survive view switches
   const [prefetch, setPrefetch] = useState(false);
@@ -171,6 +172,7 @@ export function ViewPayloadDumper() {
                 hasCompletedPartitions={hasCompletedPartitions}
                 onReset={actions.handleReset}
                 onExtract={actions.handleExtract}
+                onCancel={cancelExtraction}
               />
             </>
           )}

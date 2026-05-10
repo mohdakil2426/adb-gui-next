@@ -746,72 +746,72 @@ Minimal -- the UI changes are mostly extension additions:
 
 ### Phase 1: Format Detection & Infrastructure (Day 1)
 
-- [ ] Create `src-tauri/src/payload/ops/` module structure
-- [ ] Implement `detect_format()` with magic byte detection
-- [ ] Add `quick-xml` dependency to `Cargo.toml`
-- [ ] Create `OpsPartitionEntry`, `OpsFooter`, `OpsMetadata` types
-- [ ] Update `payload/mod.rs` to export `ops` module
-- [ ] Write detection unit tests
-- [ ] Run `pnpm check`
+- [x] Create `src-tauri/src/payload/ops/` module structure
+- [x] Implement `detect_format()` with magic byte detection
+- [x] Add `quick-xml` dependency to `Cargo.toml`
+- [x] Create `OpsPartitionEntry`, `OpsFooter`, `OpsMetadata` types
+- [x] Update `payload/mod.rs` to export `ops` module
+- [x] Write detection unit tests
+- [x] Run `pnpm check`
 
 ### Phase 2: OPS Crypto & Parser (Day 2)
 
-- [ ] Port the S-box table (2048 bytes) to Rust `const` array
-- [ ] Port 3 mbox key schedule variants to Rust
-- [ ] Implement `gsbox()`, `key_update()`, `key_custom()` in Rust
-- [ ] Implement `OpsCipher::decrypt()` and `try_decrypt_xml()`
-- [ ] Implement `parse_footer()` and `decrypt_xml()`
-- [ ] Implement `parse_manifest_xml()` with `quick-xml`
-- [ ] Write cipher roundtrip tests + XML parsing tests
-- [ ] Run `pnpm check`
+- [x] Port the S-box table (2048 bytes) to Rust `const` array
+- [x] Port 3 mbox key schedule variants to Rust
+- [x] Implement `gsbox()`, `key_update()`, `key_custom()` in Rust
+- [x] Implement `OpsCipher::decrypt()` and `try_decrypt_xml()`
+- [x] Implement `parse_footer()` and `decrypt_xml()`
+- [x] Implement `parse_manifest_xml()` with `quick-xml`
+- [x] Write cipher roundtrip tests + XML parsing tests
+- [x] Run `pnpm check`
 
 ### Phase 3: OPS Extraction (Day 3)
 
-- [ ] Implement `extract_ops_partitions()` with parallel extraction
-- [ ] Handle encrypted (SAHARA) vs raw (Program/UFS) sections
-- [ ] Add SHA-256 verification for Program partitions
-- [ ] Implement path sanitization for XML filenames
-- [ ] Wire into unified dispatch in `commands/payload.rs`
-- [ ] Emit `payload:progress` events (same format as CrAU)
-- [ ] Write extraction unit tests
-- [ ] Run `pnpm check`
+- [x] Implement `extract_ops_partitions()` with parallel extraction
+- [x] Handle encrypted (SAHARA) vs raw (Program/UFS) sections
+- [x] Add SHA-256 verification for Program partitions
+- [x] Implement path sanitization for XML filenames
+- [x] Wire into unified dispatch in `commands/payload.rs`
+- [x] Emit `payload:progress` events (same format as CrAU)
+- [x] Write extraction unit tests
+- [x] Run `pnpm check`
 
 ### Phase 4: Sparse Image Support (Day 3-4)
 
-- [ ] Implement `is_sparse()` detection
-- [ ] Implement `unsparse()` with 4 chunk types
-- [ ] Post-extraction check: if extracted file is sparse -> unsparse to final img
-- [ ] Write sparse unit tests (with known test vectors)
-- [ ] Run `pnpm check`
+- [x] Implement `is_sparse()` detection
+- [x] Implement `unsparse()` with 4 chunk types
+- [x] Post-extraction check: if extracted file is sparse -> unsparse to final img
+- [x] Write sparse unit tests (with known test vectors)
+- [x] Run `pnpm check`
 
 ### Phase 5: OFP Support (Day 4-5)
 
-- [ ] Add `aes`, `cfb-mode`, `md-5` dependencies
-- [ ] Implement OFP-QC key derivation (`deobfuscate()` + MD5)
-- [ ] Implement OFP-QC format detection and extraction
-- [ ] Implement OFP-MTK `mtk_shuffle()` and header parsing
-- [ ] Implement OFP-MTK extraction
-- [ ] Implement ZIP-OFP password detection and unwrapping
-- [ ] Write OFP unit tests
-- [ ] Run `pnpm check`
+- [x] Add `aes`, `cfb-mode`, `md-5` dependencies
+- [x] Implement OFP-QC key derivation (`deobfuscate()` + MD5)
+- [x] Implement OFP-QC format detection and extraction
+- [x] Implement OFP-MTK `mtk_shuffle()` and header parsing
+- [x] Implement OFP-MTK extraction
+- [x] Implement ZIP-OFP password detection and unwrapping
+- [x] Write OFP unit tests
+- [x] Run `pnpm check`
 
 ### Phase 6: Frontend Integration (Day 5)
 
-- [ ] Extend `SelectPayloadFile()` to accept `.ops`/`.ofp`
-- [ ] Extend drag-drop acceptance
-- [ ] Add format badge to `FileBanner.tsx`
-- [ ] Add OPS metadata section to `FileBannerDetails.tsx`
-- [ ] Update view subtitle text
-- [ ] Update store with format-specific metadata
-- [ ] Run `pnpm check`
+- [x] Extend `SelectPayloadFile()` to accept `.ops`/`.ofp`
+- [x] Extend drag-drop acceptance
+- [x] Add format badge to `FileBanner.tsx`
+- [x] Add OPS metadata section to `FileBannerDetails.tsx`
+- [x] Update view subtitle text
+- [x] Update store with format-specific metadata
+- [x] Run `pnpm check`
 
 ### Phase 7: Polish & Docs (Day 6)
 
-- [ ] Update memory bank (activeContext, systemPatterns, progress, techContext)
-- [ ] Run full quality gates: `pnpm format:check` -> `pnpm lint` -> `pnpm build`
-- [ ] Manual testing with real OPS/OFP files
-- [ ] Update AGENTS.md if command count changes
-- [ ] Update docs/descriptions
+- [x] Update memory bank (activeContext, systemPatterns, progress, techContext)
+- [x] Run full quality gates: `pnpm format:check` -> `pnpm lint` -> `pnpm build`
+- [x] Manual testing with real OPS/OFP files
+- [x] Update AGENTS.md if command count changes
+- [x] Update docs/descriptions
 
 ---
 

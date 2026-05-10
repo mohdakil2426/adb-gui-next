@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { cn, formatBytesNum } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { PartitionRow } from './PartitionRow';
 
 interface PartitionTableProps {
@@ -30,30 +31,56 @@ export function PartitionTable({
   onToggle,
   onToggleAll,
 }: PartitionTableProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredPartitions = useMemo(() => {
+    if (!searchQuery.trim()) return partitions;
+    const query = searchQuery.toLowerCase();
+    return partitions.filter((p) => p.name.toLowerCase().includes(query));
+  }, [partitions, searchQuery]);
+
   const { toExtractCount, toExtractSize } = useMemo(() => {
     let count = 0;
     let size = 0;
-    for (const p of partitions) {
+    for (const p of filteredPartitions) {
       if (p.selected && !completedPartitions.has(p.name)) {
         count++;
         size += p.size;
       }
     }
     return { toExtractCount: count, toExtractSize: size };
-  }, [partitions, completedPartitions]);
+  }, [filteredPartitions, completedPartitions]);
 
   if (partitions.length === 0) return null;
 
-  const selectedCount = partitions.filter((p) => p.selected).length;
+  const selectedCount = filteredPartitions.filter((p) => p.selected).length;
   const hasCompletedPartitions = completedPartitions.size > 0;
-  const allSelected = partitions.length > 0 && partitions.every((p) => p.selected);
+  const allSelected = filteredPartitions.length > 0 && filteredPartitions.every((p) => p.selected);
+  const isFiltered = searchQuery.trim().length > 0;
 
   return (
     <div className="flex flex-col gap-3 min-w-0">
+      {/* Search */}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Search partitions..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+          }}
+          className="max-w-sm h-8 text-sm"
+        />
+        {isFiltered ? (
+          <span className="text-xs text-muted-foreground">
+            {filteredPartitions.length} of {partitions.length}
+          </span>
+        ) : null}
+      </div>
+
       {/* Summary + toggle */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs text-muted-foreground">
-          {selectedCount}/{partitions.length} selected
+          {selectedCount}/{filteredPartitions.length} selected
           {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
           {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
         </span>
@@ -87,7 +114,7 @@ export function PartitionTable({
 
         {/* Rows — scrollable */}
         <div className="divide-y divide-border/50 max-h-[40vh] min-h-[120px] overflow-y-auto overflow-x-hidden">
-          {partitions.map((partition, index) => {
+          {filteredPartitions.map((partition, index) => {
             const isRowExtracting = extractingPartitions.has(partition.name);
             const isRowCompleted = completedPartitions.has(partition.name);
             const progress = partitionProgress.get(partition.name);

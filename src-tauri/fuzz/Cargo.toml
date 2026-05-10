@@ -1,0 +1,16 @@
+[package]
+name = "adb-gui-next-fuzz"
+version = "0.0.0"
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.adb-gui-next-lib]
+path = ".."
+
+[profile.release]
+panic = "abort"

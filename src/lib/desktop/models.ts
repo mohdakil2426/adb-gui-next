@@ -167,6 +167,17 @@ export namespace backend {
     throughputMbps: number;
   }
 
+  export interface ProgressEvent {
+    partitionName: string;
+    operationIndex: number;
+    totalOperations: number;
+    bytesWritten: number;
+    totalBytes: number;
+    throughputMbps: number;
+    etaSeconds: number;
+    completed: boolean;
+  }
+
   export interface ExtractPayloadResult {
     success: boolean;
     outputDir: string;
@@ -174,6 +185,8 @@ export namespace backend {
     error?: string;
     stats?: ExtractionStats;
   }
+
+  export type CancelToken = string;
 
   export interface FileEntry {
     name: string;
