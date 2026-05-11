@@ -11,6 +11,7 @@ __tauri_template_tmp/
 .mcp.json
 docs/adb-gui-kit/
 skills-lock.json
+opencode.json
 
 # Local logs and temp files
 dev-tauri.log
