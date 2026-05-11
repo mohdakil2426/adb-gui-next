@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import type { backend } from "./desktop/models";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { backend } from './desktop/models';
 
 type Device = backend.Device;
 type DeviceInfo = backend.DeviceInfo;
@@ -41,10 +41,7 @@ export const useDeviceStore = create<DeviceState>()(
           const previousSerial = selectedSerial;
 
           // If selected device disconnected → clear selection
-          if (
-            selectedSerial &&
-            !devices.some((d) => d.serial === selectedSerial)
-          ) {
+          if (selectedSerial && !devices.some((d) => d.serial === selectedSerial)) {
             selectedSerial = null;
           }
 
@@ -56,8 +53,7 @@ export const useDeviceStore = create<DeviceState>()(
           return {
             devices,
             selectedSerial,
-            deviceInfo:
-              selectedSerial === previousSerial ? state.deviceInfo : null,
+            deviceInfo: selectedSerial === previousSerial ? state.deviceInfo : null,
             lastUpdated: Date.now(),
           };
         });
@@ -89,12 +85,12 @@ export const useDeviceStore = create<DeviceState>()(
       },
     }),
     {
-      name: "device-storage",
+      name: 'device-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         isEditingNickname: state.isEditingNickname,
         editingDeviceSerial: state.editingDeviceSerial,
       }),
-    }
-  )
+    },
+  ),
 );

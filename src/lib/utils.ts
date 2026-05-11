@@ -1,5 +1,5 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -11,20 +11,20 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function getFileName(path: string): string {
   if (!path) {
-    return "";
+    return '';
   }
   const parts = path.split(/[/\\]/);
-  return parts[parts.length - 1] ?? "";
+  return parts[parts.length - 1] ?? '';
 }
 
 /** Format raw byte count string into human-readable size. */
 export function formatBytes(raw: string): string {
   const n = Number.parseInt(raw, 10);
-  if (isNaN(n) || raw === "") {
+  if (isNaN(n) || raw === '') {
     return raw;
   }
   if (n === 0) {
-    return "0 B";
+    return '0 B';
   }
   if (n < 1024) {
     return `${n} B`;
@@ -41,25 +41,25 @@ export function formatBytes(raw: string): string {
 /** Format a number of bytes into human-readable size. */
 export function formatBytesNum(bytes: number): string {
   if (bytes === 0) {
-    return "0 B";
+    return '0 B';
   }
   const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }
 
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes == null || !Number.isFinite(bytes)) {
-    return "";
+    return '';
   }
   if (bytes === 0) {
-    return "0 B";
+    return '0 B';
   }
   if (bytes < 1024) {
     return `${bytes} B`;
   }
-  const units = ["KB", "MB", "GB", "TB"];
+  const units = ['KB', 'MB', 'GB', 'TB'];
   let value = bytes / 1024;
   let unitIndex = 0;
 
@@ -73,17 +73,17 @@ export function formatFileSize(bytes: number | null | undefined): string {
 
 export function formatCompactNumber(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
-    return "";
+    return '';
   }
   return new Intl.NumberFormat(undefined, {
-    notation: "compact",
+    notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
 }
 
 export function formatRating(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
-    return "";
+    return '';
   }
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 1,
@@ -91,18 +91,14 @@ export function formatRating(value: number | null | undefined): string {
   }).format(value);
 }
 
-export function formatDisplayDate(
-  value: string | number | Date | null | undefined
-): string {
+export function formatDisplayDate(value: string | number | Date | null | undefined): string {
   if (!value) {
-    return "";
+    return '';
   }
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
     return String(value);
   }
 
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
-    date
-  );
+  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
 }

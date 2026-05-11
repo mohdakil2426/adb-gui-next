@@ -5,43 +5,32 @@ import {
   Pencil,
   RefreshCw,
   Smartphone,
-} from "lucide-react";
-import { useState } from "react";
-import { useShallow } from "zustand/react/shallow";
-import { EditNicknameDialog } from "@/components/EditNicknameDialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { getStatusConfig } from "@/lib/deviceStatus";
-import { useDeviceStore } from "@/lib/deviceStore";
-import { getNickname } from "@/lib/nicknameStore";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { EditNicknameDialog } from '@/components/EditNicknameDialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { getStatusConfig } from '@/lib/deviceStatus';
+import { useDeviceStore } from '@/lib/deviceStore';
+import { getNickname } from '@/lib/nicknameStore';
+import { cn } from '@/lib/utils';
 
 interface DeviceSwitcherProps {
   isRefreshing: boolean;
   onRefresh: () => void;
 }
 
-export function DeviceSwitcher({
-  isRefreshing,
-  onRefresh,
-}: DeviceSwitcherProps) {
+export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps) {
   const { devices, selectedSerial, setSelectedSerial } = useDeviceStore(
     useShallow((state) => ({
       devices: state.devices,
       selectedSerial: state.selectedSerial,
       setSelectedSerial: state.setSelectedSerial,
-    }))
+    })),
   );
   const [isOpen, setIsOpen] = useState(false);
   const [editingSerial, setEditingSerial] = useState<string | null>(null);
@@ -52,9 +41,7 @@ export function DeviceSwitcher({
   const displayName = selectedDevice
     ? (getNickname(selectedDevice.serial) ?? selectedDevice.serial)
     : null;
-  const statusConfig = selectedDevice
-    ? getStatusConfig(selectedDevice.status)
-    : null;
+  const statusConfig = selectedDevice ? getStatusConfig(selectedDevice.status) : null;
 
   const handleSelect = (serial: string) => {
     setSelectedSerial(serial);
@@ -74,22 +61,20 @@ export function DeviceSwitcher({
             <PopoverTrigger asChild>
               <Button
                 className={cn(
-                  "h-7 gap-1.5 rounded-full border border-border/50 px-2.5 font-medium text-xs",
-                  "transition-colors hover:bg-accent/80",
-                  !selectedDevice && "text-muted-foreground"
+                  'h-7 gap-1.5 rounded-full border border-border/50 px-2.5 font-medium text-xs',
+                  'transition-colors hover:bg-accent/80',
+                  !selectedDevice && 'text-muted-foreground',
                 )}
                 size="sm"
                 variant="ghost"
               >
                 {selectedDevice ? (
                   <>
-                    <span className="max-w-[120px] truncate">
-                      {displayName}
-                    </span>
+                    <span className="max-w-[120px] truncate">{displayName}</span>
                     <Badge
                       className={cn(
-                        "pointer-events-none px-1.5 py-0 text-[10px]",
-                        statusConfig?.badgeClass
+                        'pointer-events-none px-1.5 py-0 text-[10px]',
+                        statusConfig?.badgeClass,
                       )}
                       variant={statusConfig?.variant}
                     >
@@ -98,35 +83,22 @@ export function DeviceSwitcher({
                   </>
                 ) : (
                   <>
-                    <MonitorSmartphone
-                      aria-hidden="true"
-                      className="size-3.5 shrink-0"
-                    />
+                    <MonitorSmartphone aria-hidden="true" className="size-3.5 shrink-0" />
                     <span>No Device</span>
                   </>
                 )}
-                <ChevronDown
-                  aria-hidden="true"
-                  className="size-3 shrink-0 opacity-60"
-                />
+                <ChevronDown aria-hidden="true" className="size-3 shrink-0 opacity-60" />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
           <TooltipContent side="bottom">Device Switcher</TooltipContent>
         </Tooltip>
 
-        <PopoverContent
-          align="start"
-          className="w-72 p-0"
-          collisionPadding={16}
-        >
+        <PopoverContent align="start" className="w-72 p-0" collisionPadding={16}>
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-1.5">
-              <Smartphone
-                aria-hidden="true"
-                className="size-4 text-muted-foreground"
-              />
+              <Smartphone aria-hidden="true" className="size-4 text-muted-foreground" />
               <span className="font-medium text-sm">Connected Devices</span>
             </div>
             <Button
@@ -156,9 +128,7 @@ export function DeviceSwitcher({
                   className="mx-auto size-8 text-muted-foreground/40"
                 />
                 <p className="mt-2 text-muted-foreground text-sm">
-                  {isRefreshing
-                    ? "Scanning for devices…"
-                    : "No devices detected"}
+                  {isRefreshing ? 'Scanning for devices…' : 'No devices detected'}
                 </p>
                 <p className="mt-1 text-muted-foreground/60 text-xs">
                   Ensure USB Debugging is enabled
@@ -176,16 +146,16 @@ export function DeviceSwitcher({
                   return (
                     <button
                       className={cn(
-                        "group/device relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm",
-                        "transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                        isSelected && "bg-accent"
+                        'group/device relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm',
+                        'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                        isSelected && 'bg-accent',
                       )}
                       key={device.serial}
                       onClick={() => {
                         handleSelect(device.serial);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           handleSelect(device.serial);
                         }
@@ -197,10 +167,10 @@ export function DeviceSwitcher({
                       <span
                         aria-hidden
                         className={cn(
-                          "size-2 shrink-0 rounded-full",
+                          'size-2 shrink-0 rounded-full',
                           isSelected
-                            ? "bg-foreground"
-                            : "bg-transparent ring-2 ring-muted-foreground/30"
+                            ? 'bg-foreground'
+                            : 'bg-transparent ring-2 ring-muted-foreground/30',
                         )}
                       />
 
@@ -230,10 +200,7 @@ export function DeviceSwitcher({
 
                       {/* Status badge */}
                       <Badge
-                        className={cn(
-                          "shrink-0 px-1.5 py-0 text-[10px]",
-                          config.badgeClass
-                        )}
+                        className={cn('shrink-0 px-1.5 py-0 text-[10px]', config.badgeClass)}
                         variant={config.variant}
                       >
                         {config.label}

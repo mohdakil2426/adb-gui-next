@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
   ExternalLink,
@@ -6,17 +6,13 @@ import {
   FolderOutput,
   Globe,
   RefreshCw,
-} from "lucide-react";
-import { memo } from "react";
-import { FileBannerDetails } from "@/components/payload-dumper/FileBannerDetails";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { backend } from "@/lib/desktop/models";
-import { cn, formatBytesNum, getFileName } from "@/lib/utils";
+} from 'lucide-react';
+import { memo } from 'react';
+import { FileBannerDetails } from '@/components/payload-dumper/FileBannerDetails';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { backend } from '@/lib/desktop/models';
+import { cn, formatBytesNum, getFileName } from '@/lib/utils';
 
 interface FileBannerProps {
   effectiveOutputPath: string;
@@ -63,7 +59,7 @@ export const FileBanner = memo(function FileBanner({
 }: FileBannerProps) {
   const displayName = isRemote ? remoteUrl : getFileName(payloadPath);
   const sourceValue = isRemote ? remoteUrl : payloadPath;
-  const isDisabled = status === "extracting" || status === "loading-partitions";
+  const isDisabled = status === 'extracting' || status === 'loading-partitions';
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-lg border bg-muted/30 p-3">
@@ -75,17 +71,12 @@ export const FileBanner = memo(function FileBanner({
             <FileArchive className="h-4 w-4 shrink-0 text-primary" />
           )}
           <div className="min-w-0 flex-1">
-            <p
-              className="min-w-0 max-w-full truncate font-medium text-sm"
-              title={displayName}
-            >
+            <p className="min-w-0 max-w-full truncate font-medium text-sm" title={displayName}>
               {displayName}
             </p>
             <p className="mt-1 whitespace-normal break-all text-muted-foreground text-xs">
-              <span className="font-medium">Source</span>{" "}
-              <span className="select-all font-mono text-foreground/90">
-                {sourceValue}
-              </span>
+              <span className="font-medium">Source</span>{' '}
+              <span className="select-all font-mono text-foreground/90">{sourceValue}</span>
             </p>
           </div>
         </div>
@@ -109,18 +100,13 @@ export const FileBanner = memo(function FileBanner({
               <TooltipTrigger asChild>
                 <Button
                   className="h-7 w-7"
-                  disabled={
-                    status === "loading-partitions" || status === "extracting"
-                  }
+                  disabled={status === 'loading-partitions' || status === 'extracting'}
                   onClick={onRefreshPartitions}
                   size="icon"
                   variant="ghost"
                 >
                   <RefreshCw
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      status === "loading-partitions" && "animate-spin"
-                    )}
+                    className={cn('h-3.5 w-3.5', status === 'loading-partitions' && 'animate-spin')}
                   />
                 </Button>
               </TooltipTrigger>
@@ -131,7 +117,7 @@ export const FileBanner = memo(function FileBanner({
             <TooltipTrigger asChild>
               <Button
                 className="h-7 w-7"
-                disabled={status === "extracting"}
+                disabled={status === 'extracting'}
                 onClick={onSelectOutput}
                 size="icon"
                 variant="ghost"
@@ -140,7 +126,7 @@ export const FileBanner = memo(function FileBanner({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              {effectiveOutputPath || "Select Output Directory"}
+              {effectiveOutputPath || 'Select Output Directory'}
             </TooltipContent>
           </Tooltip>
           {effectiveOutputPath ? (
@@ -163,8 +149,7 @@ export const FileBanner = memo(function FileBanner({
       <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
         {partitions.length > 0 && (
           <span>
-            {partitions.length} partitions &bull;{" "}
-            {formatBytesNum(totalPayloadSize)} total
+            {partitions.length} partitions &bull; {formatBytesNum(totalPayloadSize)} total
           </span>
         )}
         {effectiveOutputPath ? (
@@ -172,14 +157,11 @@ export const FileBanner = memo(function FileBanner({
             <span>&bull;</span>
             <div className="min-w-0 flex-1">
               <p
-                className={cn(
-                  "truncate",
-                  outputDir && !outputPath && "text-success"
-                )}
+                className={cn('truncate', outputDir && !outputPath && 'text-success')}
                 title={effectiveOutputPath}
               >
                 {getFileName(effectiveOutputPath)}
-                {outputDir && !outputPath ? " (auto)" : null}
+                {outputDir && !outputPath ? ' (auto)' : null}
               </p>
             </div>
           </>
@@ -191,9 +173,9 @@ export const FileBanner = memo(function FileBanner({
         <>
           <button
             className={cn(
-              "flex w-full items-center justify-center gap-1.5 py-1",
-              "text-muted-foreground text-xs transition-colors hover:text-foreground",
-              "cursor-pointer rounded-md hover:bg-muted/50"
+              'flex w-full items-center justify-center gap-1.5 py-1',
+              'text-muted-foreground text-xs transition-colors hover:text-foreground',
+              'cursor-pointer rounded-md hover:bg-muted/50',
             )}
             onClick={onToggleDetails}
           >
@@ -203,17 +185,17 @@ export const FileBanner = memo(function FileBanner({
             >
               <ChevronDown className="size-3.5" />
             </motion.span>
-            {isDetailsOpen ? "Hide Details" : "Show Details"}
+            {isDetailsOpen ? 'Hide Details' : 'Show Details'}
           </button>
 
           <AnimatePresence initial={false}>
             {isDetailsOpen ? (
               <motion.div
-                animate={{ height: "auto", opacity: 1 }}
+                animate={{ height: 'auto', opacity: 1 }}
                 className="overflow-hidden"
                 exit={{ height: 0, opacity: 0 }}
                 initial={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: "easeInOut" }}
+                transition={{ duration: 0.25, ease: 'easeInOut' }}
               >
                 <FileBannerDetails
                   metadata={remoteMetadata}

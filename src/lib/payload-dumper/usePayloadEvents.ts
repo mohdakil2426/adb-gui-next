@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { EventsOn } from "@/lib/desktop/runtime";
-import { usePayloadDumperStore } from "@/lib/payloadDumperStore";
+import { useEffect } from 'react';
+import { EventsOn } from '@/lib/desktop/runtime';
+import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
 
 /**
  * Subscribes to 'payload:progress' Tauri events from the Rust backend.
@@ -10,28 +10,19 @@ import { usePayloadDumperStore } from "@/lib/payloadDumperStore";
  * Call it once in the component that owns the extraction lifecycle.
  */
 export function usePayloadEvents(): void {
-  const updatePartitionProgress = usePayloadDumperStore(
-    (state) => state.updatePartitionProgress
-  );
-  const markPartitionCompleted = usePayloadDumperStore(
-    (state) => state.markPartitionCompleted
-  );
+  const updatePartitionProgress = usePayloadDumperStore((state) => state.updatePartitionProgress);
+  const markPartitionCompleted = usePayloadDumperStore((state) => state.markPartitionCompleted);
 
   useEffect(() => {
     const unlisten = EventsOn(
-      "payload:progress",
-      (data: {
-        partitionName: string;
-        current: number;
-        total: number;
-        completed: boolean;
-      }) => {
+      'payload:progress',
+      (data: { partitionName: string; current: number; total: number; completed: boolean }) => {
         updatePartitionProgress(data.partitionName, data.current, data.total);
 
         if (data.completed) {
           markPartitionCompleted(data.partitionName);
         }
-      }
+      },
     );
 
     return unlisten;

@@ -1,11 +1,8 @@
-import { Toggle as TogglePrimitive } from "radix-ui";
-import type * as React from "react";
+import { Toggle as TogglePrimitive } from 'radix-ui';
+import type * as React from 'react';
 
-import {
-  type ToggleVariants,
-  toggleVariants,
-} from "@/components/ui/toggle-variants";
-import { cn } from "@/lib/utils";
+import { type ToggleVariants, toggleVariants } from '@/components/ui/toggle-variants';
+import { cn } from '@/lib/utils';
 
 function Toggle({
   className,

@@ -1,15 +1,11 @@
-import { CheckCircle2, ExternalLink, RotateCcw } from "lucide-react";
-import { LoadingButton } from "@/components/LoadingButton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { OpenFolder } from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import { handleError } from "@/lib/errorHandler";
+import { CheckCircle2, ExternalLink, RotateCcw } from 'lucide-react';
+import { LoadingButton } from '@/components/LoadingButton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { OpenFolder } from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import { handleError } from '@/lib/errorHandler';
 
 interface EmulatorRestoreTabProps {
   avd: backend.AvdSummary | null;
@@ -38,29 +34,23 @@ export function EmulatorRestoreTab({
 
   const handleOpenBackupFolder = async (backupPath: string) => {
     try {
-      const folderPath = backupPath.substring(0, backupPath.lastIndexOf("\\"));
+      const folderPath = backupPath.substring(0, backupPath.lastIndexOf('\\'));
       await OpenFolder(folderPath);
     } catch (error) {
-      handleError("Open Backup Folder", error);
+      handleError('Open Backup Folder', error);
     }
   };
 
   return (
     <div className="space-y-5">
       {/* Backup status */}
-      <Alert
-        className={
-          avd.hasBackups ? "border-success/30 bg-success/10 text-success" : ""
-        }
-      >
+      <Alert className={avd.hasBackups ? 'border-success/30 bg-success/10 text-success' : ''}>
         <CheckCircle2 />
-        <AlertTitle>
-          {avd.hasBackups ? "Backups detected" : "No backups yet"}
-        </AlertTitle>
+        <AlertTitle>{avd.hasBackups ? 'Backups detected' : 'No backups yet'}</AlertTitle>
         <AlertDescription>
           {avd.hasBackups
-            ? "Restore will put backed-up files back in place."
-            : "Run a root preparation first to create restore artifacts."}
+            ? 'Restore will put backed-up files back in place.'
+            : 'Run a root preparation first to create restore artifacts.'}
         </AlertDescription>
       </Alert>
 
@@ -70,10 +60,10 @@ export function EmulatorRestoreTab({
           <p className="font-medium text-sm">Restore plan</p>
           <p className="mt-0.5 text-muted-foreground text-sm">
             {isLoadingPlan
-              ? "Refreshing backup metadata…"
+              ? 'Refreshing backup metadata…'
               : hasEntries
                 ? `Source: ${restorePlan?.source}`
-                : "No restorable entries found."}
+                : 'No restorable entries found.'}
           </p>
         </div>
         <LoadingButton
@@ -98,9 +88,7 @@ export function EmulatorRestoreTab({
             >
               <p className="break-all font-medium">{entry.originalPath}</p>
               <div className="mt-1 flex items-center gap-2">
-                <p className="break-all text-muted-foreground text-xs">
-                  ← {entry.backupPath}
-                </p>
+                <p className="break-all text-muted-foreground text-xs">← {entry.backupPath}</p>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -112,9 +100,7 @@ export function EmulatorRestoreTab({
                       <ExternalLink className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    Open backup location
-                  </TooltipContent>
+                  <TooltipContent side="bottom">Open backup location</TooltipContent>
                 </Tooltip>
               </div>
             </div>

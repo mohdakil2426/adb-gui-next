@@ -1,22 +1,22 @@
-import { AlertCircle, CheckCircle2, Globe, Loader2, X } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { AlertCircle, CheckCircle2, Globe, Loader2, X } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
+} from '@/components/ui/field';
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from "@/components/ui/input-group";
-import { Switch } from "@/components/ui/switch";
+} from '@/components/ui/input-group';
+import { Switch } from '@/components/ui/switch';
 
-export type ConnectionStatus = "idle" | "checking" | "ready" | "error";
+export type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
 
 interface RemoteUrlPanelProps {
   connectionStatus: ConnectionStatus;
@@ -39,9 +39,9 @@ export function RemoteUrlPanel({
   onCheckUrl,
   disabled = false,
 }: RemoteUrlPanelProps) {
-  const isChecking = connectionStatus === "checking";
-  const isReady = connectionStatus === "ready";
-  const isError = connectionStatus === "error";
+  const isChecking = connectionStatus === 'checking';
+  const isReady = connectionStatus === 'ready';
+  const isError = connectionStatus === 'error';
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -72,7 +72,7 @@ export function RemoteUrlPanel({
                 <InputGroupButton
                   aria-label="Clear URL"
                   onClick={() => {
-                    onUrlChange("");
+                    onUrlChange('');
                   }}
                   size="icon-xs"
                 >
@@ -123,10 +123,10 @@ export function RemoteUrlPanel({
       </FieldGroup>
 
       {/* Connection Status */}
-      {connectionStatus !== "idle" && (
+      {connectionStatus !== 'idle' && (
         <Alert
-          className={isReady ? "border-success/50 text-success" : undefined}
-          variant={isError ? "destructive" : "default"}
+          className={isReady ? 'border-success/50 text-success' : undefined}
+          variant={isError ? 'destructive' : 'default'}
         >
           {isChecking ? (
             <>
@@ -139,9 +139,7 @@ export function RemoteUrlPanel({
               <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Range requests supported</AlertTitle>
               {estimatedSize ? (
-                <AlertDescription>
-                  Estimated download: {estimatedSize}
-                </AlertDescription>
+                <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
               ) : null}
             </>
           ) : null}

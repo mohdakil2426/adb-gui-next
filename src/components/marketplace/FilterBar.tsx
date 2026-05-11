@@ -1,11 +1,6 @@
-import {
-  ArrowDownWideNarrow,
-  LayoutGrid,
-  List,
-  SlidersHorizontal,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ArrowDownWideNarrow, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,29 +9,26 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { backend } from "@/lib/desktop/models";
-import {
-  getMarketplaceActiveFilterSummary,
-  useMarketplaceStore,
-} from "@/lib/marketplaceStore";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import type { backend } from '@/lib/desktop/models';
+import { getMarketplaceActiveFilterSummary, useMarketplaceStore } from '@/lib/marketplaceStore';
+import { cn } from '@/lib/utils';
 
 type ProviderSource = backend.ProviderSource;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
 
 const PROVIDERS: { id: ProviderSource; label: string }[] = [
-  { id: "F-Droid", label: "F-Droid" },
-  { id: "GitHub", label: "GitHub" },
-  { id: "Aptoide", label: "Aptoide" },
+  { id: 'F-Droid', label: 'F-Droid' },
+  { id: 'GitHub', label: 'GitHub' },
+  { id: 'Aptoide', label: 'Aptoide' },
 ];
 
 const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
-  { value: "relevance", label: "Best match" },
-  { value: "downloads", label: "Most popular" },
-  { value: "recentlyUpdated", label: "Recently updated" },
-  { value: "name", label: "Alphabetical" },
+  { value: 'relevance', label: 'Best match' },
+  { value: 'downloads', label: 'Most popular' },
+  { value: 'recentlyUpdated', label: 'Recently updated' },
+  { value: 'name', label: 'Alphabetical' },
 ];
 
 interface FilterBarProps {
@@ -51,9 +43,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
   const setSortBy = useMarketplaceStore((state) => state.setSortBy);
   const viewMode = useMarketplaceStore((state) => state.viewMode);
   const setViewMode = useMarketplaceStore((state) => state.setViewMode);
-  const resultsPerProvider = useMarketplaceStore(
-    (state) => state.resultsPerProvider
-  );
+  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
 
   const summaries = getMarketplaceActiveFilterSummary({
     activeProviders,
@@ -73,7 +63,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             className="w-full justify-start font-medium text-xs"
             onClick={setAllProviders}
             size="sm"
-            variant={allActive ? "default" : "ghost"}
+            variant={allActive ? 'default' : 'ghost'}
           >
             All sources
           </Button>
@@ -82,15 +72,15 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             return (
               <Button
                 className={cn(
-                  "w-full justify-start font-medium text-xs",
-                  !isActive && "text-muted-foreground"
+                  'w-full justify-start font-medium text-xs',
+                  !isActive && 'text-muted-foreground',
                 )}
                 key={provider.id}
                 onClick={() => {
                   toggleProvider(provider.id);
                 }}
                 size="sm"
-                variant={isActive ? "secondary" : "ghost"}
+                variant={isActive ? 'secondary' : 'ghost'}
               >
                 {provider.label}
               </Button>
@@ -106,7 +96,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         <ToggleGroup
           className="grid w-full grid-cols-2"
           onValueChange={(value) => {
-            if (value === "grid" || value === "list") {
+            if (value === 'grid' || value === 'list') {
               setViewMode(value);
             }
           }}
@@ -115,19 +105,11 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           value={viewMode}
           variant="outline"
         >
-          <ToggleGroupItem
-            aria-label="Grid view"
-            className="gap-2"
-            value="grid"
-          >
+          <ToggleGroupItem aria-label="Grid view" className="gap-2" value="grid">
             <LayoutGrid aria-hidden="true" />
             Grid
           </ToggleGroupItem>
-          <ToggleGroupItem
-            aria-label="List view"
-            className="gap-2"
-            value="list"
-          >
+          <ToggleGroupItem aria-label="List view" className="gap-2" value="list">
             <List aria-hidden="true" />
             List
           </ToggleGroupItem>
@@ -182,7 +164,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           <div className="mb-1 flex w-full items-center gap-2 text-muted-foreground text-xs">
             <SlidersHorizontal aria-hidden="true" className="size-3.5" />
             <span>
-              {resultCount} result{resultCount === 1 ? "" : "s"}
+              {resultCount} result{resultCount === 1 ? '' : 's'}
             </span>
           </div>
           {summaries.length > 0 ? (
@@ -196,9 +178,7 @@ export function FilterBar({ resultCount }: FilterBarProps) {
               </Badge>
             ))
           ) : (
-            <span className="text-muted-foreground text-xs">
-              No active filters
-            </span>
+            <span className="text-muted-foreground text-xs">No active filters</span>
           )}
         </div>
       </div>

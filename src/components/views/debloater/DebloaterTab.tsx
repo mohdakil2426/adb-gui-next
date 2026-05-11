@@ -1,19 +1,11 @@
 /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
 
-import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  CheckSquare2,
-  Filter,
-  Loader2,
-  RefreshCcw,
-  Search,
-  Shield,
-  Square,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-import { CheckboxItem } from "@/components/CheckboxItem";
-import { Button } from "@/components/ui/button";
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { CheckSquare2, Filter, Loader2, RefreshCcw, Search, Shield, Square } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { CheckboxItem } from '@/components/CheckboxItem';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,21 +14,12 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import type {
-  DebloatListFilter,
-  RemovalFilter,
-  StateFilter,
-} from "@/lib/debloatStore";
-import { applyFilters, useDebloatStore } from "@/lib/debloatStore";
+} from '@/components/ui/dropdown-menu';
+import { Field, FieldContent, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import type { DebloatListFilter, RemovalFilter, StateFilter } from '@/lib/debloatStore';
+import { applyFilters, useDebloatStore } from '@/lib/debloatStore';
 import {
   DebloatPackages,
   GetDebloatDeviceSettings,
@@ -44,44 +27,40 @@ import {
   ListDebloatBackups,
   LoadDebloatLists,
   SaveDebloatDeviceSettings,
-} from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import { handleError } from "@/lib/errorHandler";
-import { useLogStore } from "@/lib/logStore";
-import { cn } from "@/lib/utils";
-import { DescriptionPanel } from "./DescriptionPanel";
-import {
-  PKG_STATE_CLASSES,
-  REMOVAL_TIER_CLASSES,
-  REMOVAL_TIER_LABELS,
-} from "./debloaterUtils";
-import { ReviewSelectionDialog } from "./ReviewSelectionDialog";
+} from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import { handleError } from '@/lib/errorHandler';
+import { useLogStore } from '@/lib/logStore';
+import { cn } from '@/lib/utils';
+import { DescriptionPanel } from './DescriptionPanel';
+import { PKG_STATE_CLASSES, REMOVAL_TIER_CLASSES, REMOVAL_TIER_LABELS } from './debloaterUtils';
+import { ReviewSelectionDialog } from './ReviewSelectionDialog';
 
 const LIST_OPTIONS: { value: DebloatListFilter; label: string }[] = [
-  { value: "All", label: "All Lists" },
-  { value: "Aosp", label: "AOSP" },
-  { value: "Google", label: "Google" },
-  { value: "Oem", label: "OEM" },
-  { value: "Carrier", label: "Carrier" },
-  { value: "Misc", label: "Misc" },
-  { value: "Pending", label: "Pending" },
-  { value: "Unlisted", label: "Unlisted" },
+  { value: 'All', label: 'All Lists' },
+  { value: 'Aosp', label: 'AOSP' },
+  { value: 'Google', label: 'Google' },
+  { value: 'Oem', label: 'OEM' },
+  { value: 'Carrier', label: 'Carrier' },
+  { value: 'Misc', label: 'Misc' },
+  { value: 'Pending', label: 'Pending' },
+  { value: 'Unlisted', label: 'Unlisted' },
 ];
 
 const REMOVAL_OPTIONS: { value: RemovalFilter; label: string }[] = [
-  { value: "All", label: "All Safety Tiers" },
-  { value: "Recommended", label: "Recommended" },
-  { value: "Advanced", label: "Advanced" },
-  { value: "Expert", label: "Expert" },
-  { value: "Unsafe", label: "Unsafe" },
-  { value: "Unlisted", label: "Unlisted" },
+  { value: 'All', label: 'All Safety Tiers' },
+  { value: 'Recommended', label: 'Recommended' },
+  { value: 'Advanced', label: 'Advanced' },
+  { value: 'Expert', label: 'Expert' },
+  { value: 'Unsafe', label: 'Unsafe' },
+  { value: 'Unlisted', label: 'Unlisted' },
 ];
 
 const STATE_OPTIONS: { value: StateFilter; label: string }[] = [
-  { value: "All", label: "All States" },
-  { value: "Enabled", label: "Enabled" },
-  { value: "Disabled", label: "Disabled" },
-  { value: "Uninstalled", label: "Uninstalled" },
+  { value: 'All', label: 'All States' },
+  { value: 'Enabled', label: 'Enabled' },
+  { value: 'Disabled', label: 'Disabled' },
+  { value: 'Uninstalled', label: 'Uninstalled' },
 ];
 
 export function DebloaterTab() {
@@ -127,10 +106,7 @@ export function DebloaterTab() {
       setExpertMode(settings.expertMode);
 
       // Load packages + UAD list status
-      const [pkgs, status] = await Promise.all([
-        GetDebloatPackages(),
-        LoadDebloatLists(),
-      ]);
+      const [pkgs, status] = await Promise.all([GetDebloatPackages(), LoadDebloatLists()]);
       setPackages(pkgs);
       setListStatus(status);
 
@@ -138,18 +114,11 @@ export function DebloaterTab() {
       const backups = await ListDebloatBackups();
       setBackups(backups);
     } catch (error) {
-      handleError("Debloater", error);
+      handleError('Debloater', error);
     } finally {
       setIsLoadingPackages(false);
     }
-  }, [
-    setIsLoadingPackages,
-    setDisableMode,
-    setExpertMode,
-    setPackages,
-    setListStatus,
-    setBackups,
-  ]);
+  }, [setIsLoadingPackages, setDisableMode, setExpertMode, setPackages, setListStatus, setBackups]);
 
   useEffect(() => {
     void loadAll();
@@ -185,12 +154,12 @@ export function DebloaterTab() {
         stateFilter,
         searchQuery,
       }),
-    [packages, listFilter, removalFilter, stateFilter, searchQuery]
+    [packages, listFilter, removalFilter, stateFilter, searchQuery],
   );
 
   const currentPackage = useMemo(
     () => packages.find((p) => p.name === currentPackageName) ?? null,
-    [packages, currentPackageName]
+    [packages, currentPackageName],
   );
 
   // Virtualizer
@@ -206,7 +175,7 @@ export function DebloaterTab() {
 
   async function handleApply() {
     const pkgNames = Array.from(selectedPackages);
-    const action: backend.DebloatAction = disableMode ? "disable" : "uninstall";
+    const action: backend.DebloatAction = disableMode ? 'disable' : 'uninstall';
     setIsApplying(true);
     try {
       const results = await DebloatPackages(pkgNames, action, 0);
@@ -217,17 +186,15 @@ export function DebloaterTab() {
 
       if (failed === 0) {
         toast.success(
-          `${action === "disable" ? "Disabled" : "Uninstalled"} ${succeeded} package${succeeded === 1 ? "" : "s"}`
+          `${action === 'disable' ? 'Disabled' : 'Uninstalled'} ${succeeded} package${succeeded === 1 ? '' : 's'}`,
         );
-        useLogStore
-          .getState()
-          .addLog(`Debloat: ${action} ${succeeded} packages`, "success");
+        useLogStore.getState().addLog(`Debloat: ${action} ${succeeded} packages`, 'success');
       } else {
         toast.warning(`Done: ${succeeded} succeeded, ${failed} failed`);
-        useLogStore.getState().addLog(`Debloat: ${failed} failures`, "error");
+        useLogStore.getState().addLog(`Debloat: ${failed} failures`, 'error');
       }
     } catch (error) {
-      handleError("Debloat", error);
+      handleError('Debloat', error);
     } finally {
       setIsApplying(false);
       setReviewOpen(false);
@@ -252,7 +219,7 @@ export function DebloaterTab() {
 
         {/* List filter */}
         <FilterDropdown
-          label={listFilter === "All" ? "All Lists" : listFilter}
+          label={listFilter === 'All' ? 'All Lists' : listFilter}
           onValueChange={(v) => {
             setListFilter(v as DebloatListFilter);
           }}
@@ -262,7 +229,7 @@ export function DebloaterTab() {
 
         {/* Safety filter */}
         <FilterDropdown
-          label={removalFilter === "All" ? "Safety" : removalFilter}
+          label={removalFilter === 'All' ? 'Safety' : removalFilter}
           onValueChange={(v) => {
             setRemovalFilter(v as RemovalFilter);
           }}
@@ -272,7 +239,7 @@ export function DebloaterTab() {
 
         {/* State filter */}
         <FilterDropdown
-          label={stateFilter === "All" ? "State" : stateFilter}
+          label={stateFilter === 'All' ? 'State' : stateFilter}
           onValueChange={(v) => {
             setStateFilter(v as StateFilter);
           }}
@@ -289,9 +256,7 @@ export function DebloaterTab() {
           size="icon"
           variant="ghost"
         >
-          <RefreshCcw
-            className={cn("size-4", isLoadingPackages && "animate-spin")}
-          />
+          <RefreshCcw className={cn('size-4', isLoadingPackages && 'animate-spin')} />
         </Button>
       </div>
 
@@ -299,12 +264,11 @@ export function DebloaterTab() {
       <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
         <span>
           {isLoadingPackages
-            ? "Loading packages…"
+            ? 'Loading packages…'
             : `${filteredPackages.length} of ${packages.length} system packages`}
           {listStatus ? (
             <span className="ml-2">
-              · UAD {listStatus.source === "remote" ? "✓" : "○"}{" "}
-              {listStatus.lastUpdated}
+              · UAD {listStatus.source === 'remote' ? '✓' : '○'} {listStatus.lastUpdated}
             </span>
           ) : null}
         </span>
@@ -320,9 +284,7 @@ export function DebloaterTab() {
               <FieldLabel className="text-xs" htmlFor="debloat-disable-mode">
                 Disable mode
               </FieldLabel>
-              <FieldDescription className="sr-only">
-                Disable instead of uninstall.
-              </FieldDescription>
+              <FieldDescription className="sr-only">Disable instead of uninstall.</FieldDescription>
             </FieldContent>
           </Field>
 
@@ -360,16 +322,14 @@ export function DebloaterTab() {
           </div>
         ) : filteredPackages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-            {searchQuery
-              ? "No packages match your search."
-              : "No packages found."}
+            {searchQuery ? 'No packages match your search.' : 'No packages found.'}
           </div>
         ) : (
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
-              position: "relative",
-              width: "100%",
+              position: 'relative',
+              width: '100%',
             }}
           >
             {virtualRows.map((vRow) => {
@@ -381,17 +341,17 @@ export function DebloaterTab() {
               const isCurrent = currentPackageName === pkg.name;
               const tierClasses = REMOVAL_TIER_CLASSES[pkg.removal];
               const stateClass = PKG_STATE_CLASSES[pkg.state];
-              const isUnsafeBlocked = pkg.removal === "Unsafe" && !expertMode;
+              const isUnsafeBlocked = pkg.removal === 'Unsafe' && !expertMode;
 
               return (
                 <div
                   aria-selected={isSelected}
                   className={cn(
-                    "absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 text-sm transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    isSelected && "bg-accent/60 text-accent-foreground",
-                    isCurrent && !isSelected && "bg-muted/60",
-                    isUnsafeBlocked && "cursor-not-allowed opacity-50"
+                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 text-sm transition-colors',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    isSelected && 'bg-accent/60 text-accent-foreground',
+                    isCurrent && !isSelected && 'bg-muted/60',
+                    isUnsafeBlocked && 'cursor-not-allowed opacity-50',
                   )}
                   key={pkg.name}
                   onClick={() => {
@@ -401,7 +361,7 @@ export function DebloaterTab() {
                     }
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === " " || e.key === "Enter") {
+                    if (e.key === ' ' || e.key === 'Enter') {
                       e.preventDefault();
                       setCurrentPackageName(pkg.name);
                       if (!isUnsafeBlocked) {
@@ -418,13 +378,9 @@ export function DebloaterTab() {
                 >
                   <CheckboxItem checked={isSelected} />
                   {/* State dot */}
-                  <span
-                    className={cn("size-2 shrink-0 rounded-full", stateClass)}
-                  />
+                  <span className={cn('size-2 shrink-0 rounded-full', stateClass)} />
                   {/* Package name */}
-                  <span className="flex-1 truncate font-mono text-xs">
-                    {pkg.name}
-                  </span>
+                  <span className="flex-1 truncate font-mono text-xs">{pkg.name}</span>
                   {/* List badge */}
                   <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium text-[9px] text-muted-foreground">
                     {pkg.list}
@@ -432,8 +388,8 @@ export function DebloaterTab() {
                   {/* Safety badge */}
                   <span
                     className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 font-medium text-[9px]",
-                      tierClasses.badge
+                      'shrink-0 rounded-full px-2 py-0.5 font-medium text-[9px]',
+                      tierClasses.badge,
                     )}
                   >
                     {REMOVAL_TIER_LABELS[pkg.removal]}
@@ -484,13 +440,10 @@ export function DebloaterTab() {
             setReviewOpen(true);
           }}
           size="sm"
-          variant={disableMode ? "outline" : "default"}
+          variant={disableMode ? 'outline' : 'default'}
         >
-          {isApplying ? (
-            <Loader2 className="animate-spin" data-icon="inline-start" />
-          ) : null}
-          Review {disableMode ? "Disable" : "Uninstall"} (
-          {selectedPackages.size})
+          {isApplying ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+          Review {disableMode ? 'Disable' : 'Uninstall'} ({selectedPackages.size})
         </Button>
       </div>
 

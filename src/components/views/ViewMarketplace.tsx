@@ -1,22 +1,16 @@
-import { Store, UserRound } from "lucide-react";
-import { AppCard } from "@/components/marketplace/AppCard";
-import { AppDetailView } from "@/components/marketplace/AppDetailView";
-import { AppListItem } from "@/components/marketplace/AppListItem";
-import { AttributionFooter } from "@/components/marketplace/AttributionFooter";
-import { FilterBar } from "@/components/marketplace/FilterBar";
-import { MarketplaceEmptyState } from "@/components/marketplace/MarketplaceEmptyState";
-import { MarketplaceSettings } from "@/components/marketplace/MarketplaceSettings";
-import { SearchBar } from "@/components/marketplace/SearchBar";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useMarketplaceSearch } from "@/lib/marketplace/useMarketplaceSearch";
-import { useMarketplaceStore } from "@/lib/marketplaceStore";
+import { Store, UserRound } from 'lucide-react';
+import { AppCard } from '@/components/marketplace/AppCard';
+import { AppDetailView } from '@/components/marketplace/AppDetailView';
+import { AppListItem } from '@/components/marketplace/AppListItem';
+import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
+import { FilterBar } from '@/components/marketplace/FilterBar';
+import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
+import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
+import { SearchBar } from '@/components/marketplace/SearchBar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
+import { useMarketplaceStore } from '@/lib/marketplaceStore';
 
 export function ViewMarketplace() {
   const openDetail = useMarketplaceStore((state) => state.openDetail);
@@ -69,7 +63,7 @@ export function ViewMarketplace() {
                     {githubSession.user.login}
                   </span>
                 ) : (
-                  "Anonymous"
+                  'Anonymous'
                 )}
               </Badge>
             </div>
@@ -103,12 +97,10 @@ export function ViewMarketplace() {
           <div className="mt-2 flex flex-col gap-4 pb-12">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm">Search Results</h3>
-              <span className="text-muted-foreground text-xs">
-                Showing {results.length} apps
-              </span>
+              <span className="text-muted-foreground text-xs">Showing {results.length} apps</span>
             </div>
 
-            {viewMode === "grid" ? (
+            {viewMode === 'grid' ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                 {results.map((app) => (
                   <AppCard

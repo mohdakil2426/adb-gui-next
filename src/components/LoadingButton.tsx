@@ -1,6 +1,6 @@
-import { Loader2 } from "lucide-react";
-import type { ComponentProps } from "react";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from 'lucide-react';
+import type { ComponentProps } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
   /** Icon to show when not loading */

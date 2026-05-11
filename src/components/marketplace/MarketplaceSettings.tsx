@@ -8,17 +8,17 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Trash2,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Field,
   FieldContent,
@@ -27,8 +27,8 @@ import {
   FieldLabel,
   FieldSet,
   FieldTitle,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -36,35 +36,34 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { MarketplaceClearCache } from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import { BrowserOpenURL } from "@/lib/desktop/runtime";
-import { useMarketplaceAuth } from "@/lib/marketplace/useMarketplaceAuth";
-import { useMarketplaceStore } from "@/lib/marketplaceStore";
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { MarketplaceClearCache } from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import { BrowserOpenURL } from '@/lib/desktop/runtime';
+import { useMarketplaceAuth } from '@/lib/marketplace/useMarketplaceAuth';
+import { useMarketplaceStore } from '@/lib/marketplaceStore';
 
 type ProviderSource = backend.ProviderSource;
 
-const PROVIDERS: { id: ProviderSource; label: string; description: string }[] =
-  [
-    {
-      id: "F-Droid",
-      label: "F-Droid",
-      description: "Free and open-source Android apps",
-    },
-    {
-      id: "GitHub",
-      label: "GitHub Releases",
-      description: "Open-source repositories with release assets",
-    },
-    {
-      id: "Aptoide",
-      label: "Aptoide",
-      description: "Consumer app store with trusted-package filtering",
-    },
-  ];
+const PROVIDERS: { id: ProviderSource; label: string; description: string }[] = [
+  {
+    id: 'F-Droid',
+    label: 'F-Droid',
+    description: 'Free and open-source Android apps',
+  },
+  {
+    id: 'GitHub',
+    label: 'GitHub Releases',
+    description: 'Open-source repositories with release assets',
+  },
+  {
+    id: 'Aptoide',
+    label: 'Aptoide',
+    description: 'Consumer app store with trusted-package filtering',
+  },
+];
 
 export function MarketplaceSettings() {
   const isSettingsOpen = useMarketplaceStore((state) => state.isSettingsOpen);
@@ -73,27 +72,15 @@ export function MarketplaceSettings() {
   const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
   const githubPat = useMarketplaceStore((state) => state.githubPat);
   const setGithubPat = useMarketplaceStore((state) => state.setGithubPat);
-  const githubOauthClientId = useMarketplaceStore(
-    (state) => state.githubOauthClientId
-  );
-  const setGithubOauthClientId = useMarketplaceStore(
-    (state) => state.setGithubOauthClientId
-  );
-  const resultsPerProvider = useMarketplaceStore(
-    (state) => state.resultsPerProvider
-  );
-  const setResultsPerProvider = useMarketplaceStore(
-    (state) => state.setResultsPerProvider
-  );
-  const clearSearchHistory = useMarketplaceStore(
-    (state) => state.clearSearchHistory
-  );
+  const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
+  const setGithubOauthClientId = useMarketplaceStore((state) => state.setGithubOauthClientId);
+  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const setResultsPerProvider = useMarketplaceStore((state) => state.setResultsPerProvider);
+  const clearSearchHistory = useMarketplaceStore((state) => state.clearSearchHistory);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const githubSession = useMarketplaceStore((state) => state.githubSession);
   const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);
-  const setRecentReleaseApps = useMarketplaceStore(
-    (state) => state.setRecentReleaseApps
-  );
+  const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
   const {
     githubDeviceChallenge,
     isGithubAuthenticating,
@@ -111,10 +98,10 @@ export function MarketplaceSettings() {
     }
 
     if (localClientId.trim()) {
-      return "Ready for GitHub device-flow sign-in";
+      return 'Ready for GitHub device-flow sign-in';
     }
 
-    return "GitHub sign-in is unavailable until an OAuth client ID is configured";
+    return 'GitHub sign-in is unavailable until an OAuth client ID is configured';
   }, [githubSession.user, localClientId]);
 
   const handleSaveLocalSettings = () => {
@@ -139,9 +126,9 @@ export function MarketplaceSettings() {
       await MarketplaceClearCache();
       setTrendingApps([]);
       setRecentReleaseApps([]);
-      toast.success("Marketplace cache cleared");
+      toast.success('Marketplace cache cleared');
     } catch (error) {
-      toast.error("Failed to clear marketplace cache", {
+      toast.error('Failed to clear marketplace cache', {
         description: String(error),
       });
     }
@@ -156,8 +143,7 @@ export function MarketplaceSettings() {
             Marketplace settings
           </DialogTitle>
           <DialogDescription>
-            Tune your providers, result density, cache behavior, and optional
-            GitHub session.
+            Tune your providers, result density, cache behavior, and optional GitHub session.
           </DialogDescription>
         </DialogHeader>
 
@@ -172,8 +158,7 @@ export function MarketplaceSettings() {
                 <Field
                   className="justify-between rounded-lg border px-3 py-3"
                   data-disabled={
-                    activeProviders.includes(provider.id) &&
-                    activeProviders.length <= 1
+                    activeProviders.includes(provider.id) && activeProviders.length <= 1
                   }
                   key={provider.id}
                   orientation="horizontal"
@@ -185,10 +170,7 @@ export function MarketplaceSettings() {
                   <Switch
                     aria-label={`Enable ${provider.label}`}
                     checked={activeProviders.includes(provider.id)}
-                    disabled={
-                      activeProviders.includes(provider.id) &&
-                      activeProviders.length <= 1
-                    }
+                    disabled={activeProviders.includes(provider.id) && activeProviders.length <= 1}
                     onCheckedChange={() => {
                       toggleProvider(provider.id);
                     }}
@@ -210,15 +192,13 @@ export function MarketplaceSettings() {
                 <div>
                   <p className="font-medium text-sm">{authStatus}</p>
                   <p className="mt-1 text-muted-foreground text-xs">
-                    Device-flow sign-in is optional and improves GitHub API rate
-                    limits without affecting anonymous browsing.
+                    Device-flow sign-in is optional and improves GitHub API rate limits without
+                    affecting anonymous browsing.
                   </p>
                 </div>
 
                 <Field>
-                  <FieldLabel htmlFor="github-oauth-client-id">
-                    GitHub OAuth client ID
-                  </FieldLabel>
+                  <FieldLabel htmlFor="github-oauth-client-id">GitHub OAuth client ID</FieldLabel>
                   <Input
                     autoComplete="off"
                     className="font-mono text-xs"
@@ -237,16 +217,14 @@ export function MarketplaceSettings() {
                   <div className="rounded-lg border bg-background/80 p-3 text-muted-foreground text-xs">
                     <div className="flex items-center gap-2 text-foreground">
                       <CheckCircle2 className="size-4" />
-                      <span className="font-medium">
-                        {githubSession.user.login}
-                      </span>
+                      <span className="font-medium">{githubSession.user.login}</span>
                     </div>
                     {githubSession.rateLimit ? (
                       <p className="mt-2">
-                        Remaining API requests:{" "}
+                        Remaining API requests:{' '}
                         <span className="font-medium text-foreground">
                           {githubSession.rateLimit.remaining}
-                        </span>{" "}
+                        </span>{' '}
                         / {githubSession.rateLimit.limit}
                       </p>
                     ) : null}
@@ -255,9 +233,7 @@ export function MarketplaceSettings() {
 
                 {githubDeviceChallenge && isGithubAuthenticating ? (
                   <div className="rounded-lg border bg-background/80 p-3 text-muted-foreground text-xs">
-                    <p className="font-medium text-foreground">
-                      Verification code
-                    </p>
+                    <p className="font-medium text-foreground">Verification code</p>
                     <p className="mt-1 font-mono text-foreground text-sm tracking-[0.2em]">
                       {githubDeviceChallenge.challenge.userCode}
                     </p>
@@ -265,9 +241,8 @@ export function MarketplaceSettings() {
                       <Button
                         onClick={() => {
                           BrowserOpenURL(
-                            githubDeviceChallenge.challenge
-                              .verificationUriComplete ??
-                              githubDeviceChallenge.challenge.verificationUri
+                            githubDeviceChallenge.challenge.verificationUriComplete ??
+                              githubDeviceChallenge.challenge.verificationUri,
                           );
                         }}
                         size="sm"
@@ -275,11 +250,7 @@ export function MarketplaceSettings() {
                       >
                         Open verification page
                       </Button>
-                      <Button
-                        onClick={cancelGithubSignIn}
-                        size="sm"
-                        variant="ghost"
-                      >
+                      <Button onClick={cancelGithubSignIn} size="sm" variant="ghost">
                         Cancel
                       </Button>
                     </div>
@@ -298,10 +269,7 @@ export function MarketplaceSettings() {
                       onClick={() => void handleStartGithubSignIn()}
                     >
                       {isGithubAuthenticating ? (
-                        <Loader2
-                          className="animate-spin"
-                          data-icon="inline-start"
-                        />
+                        <Loader2 className="animate-spin" data-icon="inline-start" />
                       ) : (
                         <GitBranch data-icon="inline-start" />
                       )}
@@ -323,9 +291,7 @@ export function MarketplaceSettings() {
             <FieldSet>
               <FieldGroup className="grid gap-4 sm:grid-cols-2">
                 <Field>
-                  <FieldLabel htmlFor="results-per-provider">
-                    Results per provider
-                  </FieldLabel>
+                  <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
                   <Select
                     onValueChange={(value) => {
                       setResultsPerProvider(Number(value));
@@ -347,9 +313,7 @@ export function MarketplaceSettings() {
                   </Select>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="github-pat">
-                    Advanced fallback token
-                  </FieldLabel>
+                  <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
                   <Input
                     autoComplete="off"
                     className="font-mono text-xs"
@@ -367,9 +331,8 @@ export function MarketplaceSettings() {
               </FieldGroup>
             </FieldSet>
             <FieldDescription>
-              Personal access tokens are optional session-only fallbacks. They
-              are kept in memory for the current app session and are not saved
-              after reload or restart.
+              Personal access tokens are optional session-only fallbacks. They are kept in memory
+              for the current app session and are not saved after reload or restart.
             </FieldDescription>
           </section>
 
@@ -396,8 +359,8 @@ export function MarketplaceSettings() {
             </div>
             <p className="text-muted-foreground text-xs">
               {searchHistory.length > 0
-                ? `${searchHistory.length} recent search${searchHistory.length === 1 ? "" : "es"} saved locally.`
-                : "No local search history saved yet."}
+                ? `${searchHistory.length} recent search${searchHistory.length === 1 ? '' : 'es'} saved locally.`
+                : 'No local search history saved yet.'}
             </p>
           </section>
         </div>

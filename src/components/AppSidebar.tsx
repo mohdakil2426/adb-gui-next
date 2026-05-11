@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import {
   Bot,
   Box,
@@ -9,7 +9,7 @@ import {
   Settings,
   Store,
   Zap,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -23,18 +23,18 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 
 type ViewType =
-  | "dashboard"
-  | "apps"
-  | "files"
-  | "marketplace"
-  | "flasher"
-  | "utils"
-  | "payload"
-  | "emulator"
-  | "about";
+  | 'dashboard'
+  | 'apps'
+  | 'files'
+  | 'marketplace'
+  | 'flasher'
+  | 'utils'
+  | 'payload'
+  | 'emulator'
+  | 'about';
 
 interface NavItem {
   icon: LucideIcon;
@@ -49,21 +49,21 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Main",
+    label: 'Main',
     items: [
-      { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { id: "apps", icon: Box, label: "Applications" },
-      { id: "files", icon: FolderOpen, label: "File Explorer" },
-      { id: "marketplace", icon: Store, label: "Marketplace" },
+      { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { id: 'apps', icon: Box, label: 'Applications' },
+      { id: 'files', icon: FolderOpen, label: 'File Explorer' },
+      { id: 'marketplace', icon: Store, label: 'Marketplace' },
     ],
   },
   {
-    label: "Advanced",
+    label: 'Advanced',
     items: [
-      { id: "flasher", icon: Zap, label: "Flasher" },
-      { id: "utils", icon: Settings, label: "Utilities" },
-      { id: "emulator", icon: Bot, label: "Emulator" },
-      { id: "payload", icon: Package, label: "Dumper" },
+      { id: 'flasher', icon: Zap, label: 'Flasher' },
+      { id: 'utils', icon: Settings, label: 'Utilities' },
+      { id: 'emulator', icon: Bot, label: 'Emulator' },
+      { id: 'payload', icon: Package, label: 'Dumper' },
     ],
   },
 ];
@@ -73,11 +73,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onViewChange: (view: ViewType) => void;
 }
 
-export function AppSidebar({
-  activeView,
-  onViewChange,
-  ...props
-}: AppSidebarProps) {
+export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -93,9 +89,7 @@ export function AppSidebar({
               />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">ADB GUI Next</span>
-                <span className="truncate text-sidebar-foreground/70 text-xs">
-                  Desktop Toolkit
-                </span>
+                <span className="truncate text-sidebar-foreground/70 text-xs">Desktop Toolkit</span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -111,7 +105,7 @@ export function AppSidebar({
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      aria-current={activeView === item.id ? "page" : undefined}
+                      aria-current={activeView === item.id ? 'page' : undefined}
                       isActive={activeView === item.id}
                       onClick={() => {
                         onViewChange(item.id);
@@ -134,10 +128,10 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              aria-current={activeView === "about" ? "page" : undefined}
-              isActive={activeView === "about"}
+              aria-current={activeView === 'about' ? 'page' : undefined}
+              isActive={activeView === 'about'}
               onClick={() => {
-                onViewChange("about");
+                onViewChange('about');
               }}
               tooltip="About"
             >

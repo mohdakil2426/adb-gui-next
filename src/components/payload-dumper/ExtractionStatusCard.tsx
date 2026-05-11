@@ -7,16 +7,12 @@ import {
   HardDrive,
   XCircle,
   Zap,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { backend } from "@/lib/desktop/models";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { backend } from '@/lib/desktop/models';
+import { cn } from '@/lib/utils';
 
 interface ExtractionStatusCardProps {
   errorMessage: string;
@@ -24,7 +20,7 @@ interface ExtractionStatusCardProps {
   extractionStats?: backend.ExtractionStats | null;
   onOpenOutputFolder: () => void;
   outputDir: string;
-  status: "success" | "error";
+  status: 'success' | 'error';
 }
 
 function formatBytes(bytes: number): string {
@@ -62,7 +58,7 @@ export function ExtractionStatusCard({
   extractionStats,
   onOpenOutputFolder,
 }: ExtractionStatusCardProps) {
-  if (extractedFiles.length === 0 && status !== "success") {
+  if (extractedFiles.length === 0 && status !== 'success') {
     return (
       <Card className="bg-muted/30">
         <CardContent className="pt-4">
@@ -74,15 +70,13 @@ export function ExtractionStatusCard({
     );
   }
 
-  const isSuccess = status === "success";
+  const isSuccess = status === 'success';
 
   return (
     <Card
       className={cn(
-        "min-w-0 border",
-        isSuccess
-          ? "border-success/30 bg-success/5"
-          : "border-destructive/30 bg-destructive/5"
+        'min-w-0 border',
+        isSuccess ? 'border-success/30 bg-success/5' : 'border-destructive/30 bg-destructive/5',
       )}
     >
       <CardContent className="flex flex-col gap-3 p-4">
@@ -90,8 +84,8 @@ export function ExtractionStatusCard({
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div
             className={cn(
-              "flex shrink-0 items-center gap-1.5",
-              isSuccess ? "text-success" : "text-destructive"
+              'flex shrink-0 items-center gap-1.5',
+              isSuccess ? 'text-success' : 'text-destructive',
             )}
           >
             {isSuccess ? (
@@ -100,7 +94,7 @@ export function ExtractionStatusCard({
               <XCircle aria-hidden="true" className="size-4 shrink-0" />
             )}
             <span className="font-semibold text-sm">
-              {isSuccess ? "Extraction Complete" : "Extraction Failed"}
+              {isSuccess ? 'Extraction Complete' : 'Extraction Failed'}
             </span>
           </div>
 
@@ -112,16 +106,10 @@ export function ExtractionStatusCard({
                 <span className="mx-1 text-muted-foreground/50">·</span>
                 {formatBytes(extractionStats.totalBytes)}
                 <span className="mx-1 text-muted-foreground/50">·</span>
-                <Clock
-                  aria-hidden="true"
-                  className="inline size-3 align-text-bottom"
-                />
+                <Clock aria-hidden="true" className="inline size-3 align-text-bottom" />
                 {formatDuration(extractionStats.durationMs)}
                 <span className="mx-1 text-muted-foreground/50">·</span>
-                <Zap
-                  aria-hidden="true"
-                  className="inline size-3 align-text-bottom"
-                />
+                <Zap aria-hidden="true" className="inline size-3 align-text-bottom" />
                 {extractionStats.throughputMbps.toFixed(0)} MB/s
               </span>
             </div>
@@ -136,10 +124,7 @@ export function ExtractionStatusCard({
         {/* Output path */}
         {isSuccess && outputDir ? (
           <div className="flex min-w-0 items-center gap-2">
-            <FolderOpen
-              aria-hidden="true"
-              className="size-3.5 shrink-0 text-muted-foreground"
-            />
+            <FolderOpen aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
             <code
               className="flex-1 select-all truncate font-mono text-muted-foreground text-xs"
               title={outputDir}
@@ -172,10 +157,7 @@ export function ExtractionStatusCard({
                 key={file}
                 title={file}
               >
-                <FileDown
-                  aria-hidden="true"
-                  className="size-3 shrink-0 text-success"
-                />
+                <FileDown aria-hidden="true" className="size-3 shrink-0 text-success" />
                 <span className="max-w-[12rem] truncate">{file}</span>
               </span>
             ))}

@@ -1,8 +1,8 @@
-import { CheckCircle2, HardDrive, Loader2 } from "lucide-react";
-import React from "react";
-import { CheckboxItem } from "@/components/CheckboxItem";
-import { cn, formatBytesNum } from "@/lib/utils";
-import { ExtractionProgressBar } from "./ExtractionProgressBar";
+import { CheckCircle2, HardDrive, Loader2 } from 'lucide-react';
+import React from 'react';
+import { CheckboxItem } from '@/components/CheckboxItem';
+import { cn, formatBytesNum } from '@/lib/utils';
+import { ExtractionProgressBar } from './ExtractionProgressBar';
 
 interface PartitionRowProps {
   disabled: boolean;
@@ -34,13 +34,13 @@ export const PartitionRow = React.memo(function PartitionRow({
       aria-checked={isCompleted ? true : partition.selected}
       aria-disabled={disabled || isCompleted}
       className={cn(
-        "grid items-center gap-2 px-4 py-3 text-sm transition-colors",
+        'grid items-center gap-2 px-4 py-3 text-sm transition-colors',
         showProgress
-          ? "grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]"
-          : "grid-cols-[28px_minmax(0,1fr)_72px]",
-        !(disabled || isCompleted) && "cursor-pointer hover:bg-muted/50",
-        partition.selected && !isCompleted && "bg-primary/5",
-        isCompleted && "bg-success/5"
+          ? 'grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]'
+          : 'grid-cols-[28px_minmax(0,1fr)_72px]',
+        !(disabled || isCompleted) && 'cursor-pointer hover:bg-muted/50',
+        partition.selected && !isCompleted && 'bg-primary/5',
+        isCompleted && 'bg-success/5',
       )}
       onClick={() => {
         if (!(disabled || isCompleted)) {
@@ -48,7 +48,7 @@ export const PartitionRow = React.memo(function PartitionRow({
         }
       }}
       onKeyDown={(e) => {
-        if ((e.key === " " || e.key === "Enter") && !disabled && !isCompleted) {
+        if ((e.key === ' ' || e.key === 'Enter') && !disabled && !isCompleted) {
           e.preventDefault();
           onToggle(index);
         }
@@ -70,23 +70,23 @@ export const PartitionRow = React.memo(function PartitionRow({
         ) : (
           <HardDrive
             className={cn(
-              "h-4 w-4 shrink-0",
+              'h-4 w-4 shrink-0',
               isCompleted
-                ? "text-success"
+                ? 'text-success'
                 : partition.selected
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? 'text-primary'
+                  : 'text-muted-foreground',
             )}
           />
         )}
         <span
           className={cn(
-            "whitespace-normal break-words font-medium leading-snug",
+            'whitespace-normal break-words font-medium leading-snug',
             isCompleted
-              ? "text-success"
+              ? 'text-success'
               : partition.selected
-                ? "text-foreground"
-                : "text-muted-foreground"
+                ? 'text-foreground'
+                : 'text-muted-foreground',
           )}
         >
           {partition.name}.img
@@ -107,8 +107,8 @@ export const PartitionRow = React.memo(function PartitionRow({
       {/* Size */}
       <span
         className={cn(
-          "text-right text-xs tabular-nums",
-          isCompleted ? "font-medium text-success" : "text-muted-foreground"
+          'text-right text-xs tabular-nums',
+          isCompleted ? 'font-medium text-success' : 'text-muted-foreground',
         )}
       >
         {formatBytesNum(partition.size)}

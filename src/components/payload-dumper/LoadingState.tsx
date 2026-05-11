@@ -1,8 +1,8 @@
-import { Loader2 } from "lucide-react";
-import { getFileName } from "@/lib/utils";
+import { Loader2 } from 'lucide-react';
+import { getFileName } from '@/lib/utils';
 
 interface LoadingStateProps {
-  mode: "local" | "remote";
+  mode: 'local' | 'remote';
   payloadPath: string;
   remoteUrl: string;
 }
@@ -11,23 +11,19 @@ interface LoadingStateProps {
  * Loading stage indicator shown while partitions are being loaded.
  * Displays contextual messages based on source type (remote URL, ZIP, or plain .bin).
  */
-export function LoadingState({
-  mode,
-  remoteUrl,
-  payloadPath,
-}: LoadingStateProps) {
+export function LoadingState({ mode, remoteUrl, payloadPath }: LoadingStateProps) {
   const getMessage = (): string => {
-    if (mode === "remote") {
-      return "Connecting to remote URL...";
+    if (mode === 'remote') {
+      return 'Connecting to remote URL...';
     }
-    if (payloadPath.toLowerCase().endsWith(".zip")) {
-      return "Extracting payload from ZIP...";
+    if (payloadPath.toLowerCase().endsWith('.zip')) {
+      return 'Extracting payload from ZIP...';
     }
-    return "Parsing partition manifest...";
+    return 'Parsing partition manifest...';
   };
 
   const getSubtitle = (): string => {
-    if (mode === "remote") {
+    if (mode === 'remote') {
       return remoteUrl;
     }
     return getFileName(payloadPath);
@@ -43,10 +39,7 @@ export function LoadingState({
       </div>
       <div className="flex flex-col items-center gap-1.5 text-center">
         <p className="font-medium text-sm">{getMessage()}</p>
-        <p
-          className="max-w-xs truncate text-muted-foreground text-xs"
-          title={getSubtitle()}
-        >
+        <p className="max-w-xs truncate text-muted-foreground text-xs" title={getSubtitle()}>
           {getSubtitle()}
         </p>
       </div>

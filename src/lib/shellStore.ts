@@ -1,8 +1,8 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 export interface HistoryEntry {
   text: string;
-  type: "command" | "result" | "error";
+  type: 'command' | 'result' | 'error';
 }
 
 interface ShellStore {

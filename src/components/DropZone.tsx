@@ -1,10 +1,10 @@
-import { Upload } from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { OnFileDrop, OnFileDropOff } from "@/lib/desktop/runtime";
-import { cn } from "@/lib/utils";
+import { Upload } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { OnFileDrop, OnFileDropOff } from '@/lib/desktop/runtime';
+import { cn } from '@/lib/utils';
 
 interface DropZoneProps {
   /** Allowed file extensions (e.g. ['.apk', '.apks']). Empty = accept all. */
@@ -40,10 +40,10 @@ export function DropZone({
   rejectMessage,
   onBrowse,
   disabled = false,
-  label = "Drop files here",
+  label = 'Drop files here',
   sublabel,
   icon: Icon = Upload,
-  browseLabel = "Browse Files",
+  browseLabel = 'Browse Files',
   className,
 }: DropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
@@ -58,12 +58,10 @@ export function DropZone({
       }
       return paths.filter((p) => {
         const lower = p.toLowerCase();
-        return acceptExtensions.some((ext) =>
-          lower.endsWith(ext.toLowerCase())
-        );
+        return acceptExtensions.some((ext) => lower.endsWith(ext.toLowerCase()));
       });
     },
-    [acceptExtensions]
+    [acceptExtensions],
   );
 
   // Register Tauri native drag-drop handler with position-based hit-testing
@@ -101,10 +99,7 @@ export function DropZone({
 
         const valid = filterFiles(paths);
         if (valid.length === 0) {
-          toast.error(
-            rejectMessage ??
-              `No valid files. Accepted: ${acceptExtensions.join(", ")}`
-          );
+          toast.error(rejectMessage ?? `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
           return;
         }
 
@@ -130,12 +125,12 @@ export function DropZone({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200",
+        'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
         isDragging
-          ? "scale-[1.01] border-primary bg-primary/5 shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]"
-          : "border-muted-foreground/25 hover:border-muted-foreground/40",
-        disabled && "pointer-events-none opacity-50",
-        className
+          ? 'scale-[1.01] border-primary bg-primary/5 shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]'
+          : 'border-muted-foreground/25 hover:border-muted-foreground/40',
+        disabled && 'pointer-events-none opacity-50',
+        className,
       )}
       ref={containerRef}
     >
@@ -154,8 +149,8 @@ export function DropZone({
       {/* Default state */}
       <div
         className={cn(
-          "flex flex-col items-center gap-3 transition-opacity duration-150",
-          isDragging && "opacity-0"
+          'flex flex-col items-center gap-3 transition-opacity duration-150',
+          isDragging && 'opacity-0',
         )}
       >
         <div className="rounded-full bg-muted p-3">
@@ -167,18 +162,11 @@ export function DropZone({
           <p className="text-muted-foreground/50 text-xs">or</p>
         </div>
 
-        <Button
-          disabled={disabled}
-          onClick={onBrowse}
-          size="sm"
-          variant="outline"
-        >
+        <Button disabled={disabled} onClick={onBrowse} size="sm" variant="outline">
           {browseLabel}
         </Button>
 
-        {sublabel ? (
-          <p className="text-muted-foreground/40 text-xs">{sublabel}</p>
-        ) : null}
+        {sublabel ? <p className="text-muted-foreground/40 text-xs">{sublabel}</p> : null}
       </div>
     </div>
   );

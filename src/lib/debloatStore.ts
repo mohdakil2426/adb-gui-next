@@ -1,11 +1,11 @@
-import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
-import type { backend } from "@/lib/desktop/models";
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { backend } from '@/lib/desktop/models';
 
-export type AppManagerTab = "debloater" | "installation";
-export type DebloatListFilter = backend.DebloatList | "All";
-export type RemovalFilter = backend.RemovalTier | "All";
-export type StateFilter = backend.PkgState | "All";
+export type AppManagerTab = 'debloater' | 'installation';
+export type DebloatListFilter = backend.DebloatList | 'All';
+export type RemovalFilter = backend.RemovalTier | 'All';
+export type StateFilter = backend.PkgState | 'All';
 
 interface DebloatState {
   // ── UI State ────────────────────────────────────────────────────────────────
@@ -75,12 +75,12 @@ export const useDebloatStore = create<DebloatState>()(
       isLoadingPackages: false,
       isApplying: false,
 
-      activeTab: "installation",
+      activeTab: 'installation',
 
-      searchQuery: "",
-      listFilter: "All",
-      removalFilter: "All",
-      stateFilter: "All",
+      searchQuery: '',
+      listFilter: 'All',
+      removalFilter: 'All',
+      stateFilter: 'All',
 
       selectedPackages: new Set(),
       currentPackageName: null,
@@ -122,7 +122,7 @@ export const useDebloatStore = create<DebloatState>()(
         const { selectedPackages, packages, expertMode } = get();
         const pkg = packages.find((p) => p.name === name);
         // Block Unsafe selection without expert mode
-        if (pkg?.removal === "Unsafe" && !expertMode) {
+        if (pkg?.removal === 'Unsafe' && !expertMode) {
           return;
         }
         const next = new Set(selectedPackages);
@@ -135,14 +135,7 @@ export const useDebloatStore = create<DebloatState>()(
       },
 
       selectAll: () => {
-        const {
-          packages,
-          expertMode,
-          listFilter,
-          removalFilter,
-          stateFilter,
-          searchQuery,
-        } = get();
+        const { packages, expertMode, listFilter, removalFilter, stateFilter, searchQuery } = get();
         const filtered = applyFilters(packages, {
           listFilter,
           removalFilter,
@@ -150,9 +143,7 @@ export const useDebloatStore = create<DebloatState>()(
           searchQuery,
         });
         const next = new Set(
-          filtered
-            .filter((p) => expertMode || p.removal !== "Unsafe")
-            .map((p) => p.name)
+          filtered.filter((p) => expertMode || p.removal !== 'Unsafe').map((p) => p.name),
         );
         set({ selectedPackages: next });
       },
@@ -176,11 +167,9 @@ export const useDebloatStore = create<DebloatState>()(
         } else {
           const { selectedPackages, packages } = get();
           const unsafeNames = new Set(
-            packages.filter((p) => p.removal === "Unsafe").map((p) => p.name)
+            packages.filter((p) => p.removal === 'Unsafe').map((p) => p.name),
           );
-          const next = new Set(
-            [...selectedPackages].filter((n) => !unsafeNames.has(n))
-          );
+          const next = new Set([...selectedPackages].filter((n) => !unsafeNames.has(n)));
           set({ expertMode, selectedPackages: next });
         }
       },
@@ -210,27 +199,23 @@ export const useDebloatStore = create<DebloatState>()(
           return p;
         });
         // Deselect successfully acted packages
-        const successNames = new Set(
-          results.filter((r) => r.success).map((r) => r.packageName)
-        );
+        const successNames = new Set(results.filter((r) => r.success).map((r) => r.packageName));
         const { selectedPackages } = get();
-        const next = new Set(
-          [...selectedPackages].filter((n) => !successNames.has(n))
-        );
+        const next = new Set([...selectedPackages].filter((n) => !successNames.has(n)));
         set({ packages: updated, selectedPackages: next });
       },
 
       resetFilters: () => {
         set({
-          searchQuery: "",
-          listFilter: "All",
-          removalFilter: "All",
-          stateFilter: "All",
+          searchQuery: '',
+          listFilter: 'All',
+          removalFilter: 'All',
+          stateFilter: 'All',
         });
       },
     }),
     {
-      name: "debloat-storage",
+      name: 'debloat-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeTab: state.activeTab,
@@ -241,8 +226,8 @@ export const useDebloatStore = create<DebloatState>()(
         expertMode: state.expertMode,
         disableMode: state.disableMode,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // ── Client-side filter helper (used by components + selectAll) ────────────────
@@ -256,24 +241,20 @@ interface FilterOptions {
 
 export function applyFilters(
   packages: backend.DebloatPackageRow[],
-  { listFilter, removalFilter, stateFilter, searchQuery }: FilterOptions
+  { listFilter, removalFilter, stateFilter, searchQuery }: FilterOptions,
 ): backend.DebloatPackageRow[] {
   const q = searchQuery.toLowerCase().trim();
   return packages.filter((p) => {
-    if (listFilter !== "All" && p.list !== listFilter) {
+    if (listFilter !== 'All' && p.list !== listFilter) {
       return false;
     }
-    if (removalFilter !== "All" && p.removal !== removalFilter) {
+    if (removalFilter !== 'All' && p.removal !== removalFilter) {
       return false;
     }
-    if (stateFilter !== "All" && p.state !== stateFilter) {
+    if (stateFilter !== 'All' && p.state !== stateFilter) {
       return false;
     }
-    if (
-      q &&
-      !p.name.toLowerCase().includes(q) &&
-      !p.description.toLowerCase().includes(q)
-    ) {
+    if (q && !p.name.toLowerCase().includes(q) && !p.description.toLowerCase().includes(q)) {
       return false;
     }
     return true;

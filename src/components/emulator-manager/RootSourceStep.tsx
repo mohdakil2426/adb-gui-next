@@ -6,19 +6,16 @@ import {
   RefreshCw,
   ShieldCheck,
   WifiOff,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  FetchMagiskStableRelease,
-  SelectRootPackageFile,
-} from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import type { RootWizardSource } from "@/lib/emulatorManagerStore";
-import { cn, formatDisplayDate, formatFileSize } from "@/lib/utils";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import type { RootWizardSource } from '@/lib/emulatorManagerStore';
+import { cn, formatDisplayDate, formatFileSize } from '@/lib/utils';
 
 interface RootSourceStepProps {
   onContinue: () => void;
@@ -28,9 +25,9 @@ interface RootSourceStepProps {
 }
 
 type FetchState =
-  | { status: "loading" }
-  | { status: "ok"; release: backend.MagiskStableRelease }
-  | { status: "error"; message: string };
+  | { status: 'loading' }
+  | { status: 'ok'; release: backend.MagiskStableRelease }
+  | { status: 'error'; message: string };
 
 export function RootSourceStep({
   source,
@@ -38,24 +35,24 @@ export function RootSourceStep({
   onContinue,
   onManualMode,
 }: RootSourceStepProps) {
-  const [mode, setMode] = useState<"download" | "local">(
-    source?.type === "local" ? "local" : "download"
+  const [mode, setMode] = useState<'download' | 'local'>(
+    source?.type === 'local' ? 'local' : 'download',
   );
   const [fetchState, setFetchState] = useState<FetchState>({
-    status: "loading",
+    status: 'loading',
   });
 
   function loadRelease() {
-    setFetchState({ status: "loading" });
+    setFetchState({ status: 'loading' });
     FetchMagiskStableRelease()
       .then((release) => {
-        setFetchState({ status: "ok", release });
-        if (source?.type !== "local") {
-          onSourceChange({ type: "stable" });
+        setFetchState({ status: 'ok', release });
+        if (source?.type !== 'local') {
+          onSourceChange({ type: 'stable' });
         }
       })
       .catch((err: unknown) => {
-        setFetchState({ status: "error", message: String(err) });
+        setFetchState({ status: 'error', message: String(err) });
       });
   }
 
@@ -71,34 +68,31 @@ export function RootSourceStep({
     if (!path) {
       return;
     }
-    onSourceChange({ type: "local", path });
+    onSourceChange({ type: 'local', path });
   }
 
-  function handleSelectMode(next: "download" | "local") {
+  function handleSelectMode(next: 'download' | 'local') {
     setMode(next);
-    if (next === "download") {
+    if (next === 'download') {
       // Switch back to stable source when toggling back to download mode.
-      if (fetchState.status === "ok") {
-        onSourceChange({ type: "stable" });
+      if (fetchState.status === 'ok') {
+        onSourceChange({ type: 'stable' });
       }
     }
   }
 
   const canContinue =
     source !== null &&
-    (source.type === "local" ||
-      (source.type === "stable" && fetchState.status === "ok"));
+    (source.type === 'local' || (source.type === 'stable' && fetchState.status === 'ok'));
 
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h3 className="font-semibold text-base text-foreground">
-          Select Magisk Source
-        </h3>
+        <h3 className="font-semibold text-base text-foreground">Select Magisk Source</h3>
         <p className="mt-1 text-muted-foreground text-sm">
-          Magisk is the tool that gives your emulator root access. Choose the
-          recommended rootAVD-compatible package for automated patching, or pick
-          a local file if you need a specific fork for manual mode.
+          Magisk is the tool that gives your emulator root access. Choose the recommended
+          rootAVD-compatible package for automated patching, or pick a local file if you need a
+          specific fork for manual mode.
         </p>
       </div>
 
@@ -106,7 +100,7 @@ export function RootSourceStep({
       <ToggleGroup
         className="grid w-full grid-cols-2"
         onValueChange={(value) => {
-          if (value === "download" || value === "local") {
+          if (value === 'download' || value === 'local') {
             handleSelectMode(value);
           }
         }}
@@ -122,9 +116,7 @@ export function RootSourceStep({
           <Download />
           <div className="min-w-0">
             <p className="font-medium text-sm">Download</p>
-            <p className="text-muted-foreground text-xs">
-              Official stable from GitHub
-            </p>
+            <p className="text-muted-foreground text-xs">Official stable from GitHub</p>
           </div>
         </ToggleGroupItem>
 
@@ -142,10 +134,10 @@ export function RootSourceStep({
       </ToggleGroup>
 
       {/* Download panel */}
-      {mode === "download" && (
+      {mode === 'download' && (
         <div className="flex flex-col gap-3">
           {/* Loading */}
-          {fetchState.status === "loading" && (
+          {fetchState.status === 'loading' && (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="size-4 animate-spin" />
               Fetching latest stable release…
@@ -153,7 +145,7 @@ export function RootSourceStep({
           )}
 
           {/* Error */}
-          {fetchState.status === "error" && (
+          {fetchState.status === 'error' && (
             <Alert variant="destructive">
               <WifiOff />
               <AlertTitle>Could not reach GitHub</AlertTitle>
@@ -169,24 +161,23 @@ export function RootSourceStep({
                 Retry
               </Button>
               <p className="text-muted-foreground text-xs">
-                No internet? Switch to <strong>Local File</strong> to use a
-                pre-downloaded package.
+                No internet? Switch to <strong>Local File</strong> to use a pre-downloaded package.
               </p>
             </Alert>
           )}
 
           {/* Release card */}
-          {fetchState.status === "ok" && (
+          {fetchState.status === 'ok' && (
             <button
               className={cn(
-                "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors",
-                source?.type === "stable"
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/40"
+                'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
+                source?.type === 'stable'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/40',
               )}
               id="root-source-stable-card"
               onClick={() => {
-                onSourceChange({ type: "stable" });
+                onSourceChange({ type: 'stable' });
               }}
               type="button"
             >
@@ -200,8 +191,7 @@ export function RootSourceStep({
                   </Badge>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  {fetchState.release.assetName} ·{" "}
-                  {formatFileSize(fetchState.release.size)} ·{" "}
+                  {fetchState.release.assetName} · {formatFileSize(fetchState.release.size)} ·{' '}
                   {formatDisplayDate(fetchState.release.publishedAt)}
                 </p>
                 {fetchState.release.sha256 ? (
@@ -214,23 +204,23 @@ export function RootSourceStep({
                 ) : null}
               </div>
 
-              {source?.type === "stable" && (
+              {source?.type === 'stable' && (
                 <CheckCircle2 className="size-5 shrink-0 text-primary" />
               )}
             </button>
           )}
 
-          {fetchState.status === "ok" && (
+          {fetchState.status === 'ok' && (
             <p className="text-muted-foreground text-xs">
-              The APK will be downloaded automatically when you proceed. Already
-              cached packages are reused.
+              The APK will be downloaded automatically when you proceed. Already cached packages are
+              reused.
             </p>
           )}
         </div>
       )}
 
       {/* Local file panel */}
-      {mode === "local" && (
+      {mode === 'local' && (
         <div className="flex flex-col gap-3">
           <Button
             className="h-auto justify-start gap-3 border-dashed px-4 py-6 text-center"
@@ -239,36 +229,27 @@ export function RootSourceStep({
             type="button"
             variant="outline"
           >
-            <FolderOpen
-              className="text-muted-foreground"
-              data-icon="inline-start"
-            />
+            <FolderOpen className="text-muted-foreground" data-icon="inline-start" />
             <div className="text-left">
-              {source?.type === "local" ? (
+              {source?.type === 'local' ? (
                 <>
                   <p className="font-medium text-foreground text-sm">
                     {source.path.split(/[/\\]/).pop()}
                   </p>
-                  <p className="max-w-xs truncate text-muted-foreground text-xs">
-                    {source.path}
-                  </p>
+                  <p className="max-w-xs truncate text-muted-foreground text-xs">{source.path}</p>
                 </>
               ) : (
                 <>
-                  <p className="font-medium text-foreground text-sm">
-                    Click to select a file
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    Supports .apk and .zip packages
-                  </p>
+                  <p className="font-medium text-foreground text-sm">Click to select a file</p>
+                  <p className="text-muted-foreground text-xs">Supports .apk and .zip packages</p>
                 </>
               )}
             </div>
           </Button>
 
           <p className="text-muted-foreground text-xs">
-            Local packages are best for manual FAKEBOOTIMG mode or when testing
-            a specific Magisk fork.
+            Local packages are best for manual FAKEBOOTIMG mode or when testing a specific Magisk
+            fork.
           </p>
         </div>
       )}
@@ -294,8 +275,8 @@ export function RootSourceStep({
           Manual Mode (FAKEBOOTIMG)
         </Button>
         <p className="text-center text-muted-foreground text-xs">
-          Use this when automated ramdisk patching fails or when you want Magisk
-          inside the emulator to patch the fake boot image itself.
+          Use this when automated ramdisk patching fails or when you want Magisk inside the emulator
+          to patch the fake boot image itself.
         </p>
       </div>
     </div>

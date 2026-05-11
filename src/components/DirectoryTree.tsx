@@ -1,16 +1,9 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  File,
-  Folder,
-  FolderOpen,
-  Loader2,
-} from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListFiles } from "@/lib/desktop/backend";
-import { cn } from "@/lib/utils";
+import { ChevronDown, ChevronRight, File, Folder, FolderOpen, Loader2 } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ListFiles } from '@/lib/desktop/backend';
+import { cn } from '@/lib/utils';
 
 interface TreeNode {
   children: TreeNode[] | null; // null = not yet loaded (dirs only)
@@ -23,24 +16,24 @@ interface TreeNode {
 
 const INITIAL_NODES: TreeNode[] = [
   {
-    path: "/sdcard/",
-    name: "sdcard",
+    path: '/sdcard/',
+    name: 'sdcard',
     isDirectory: true,
     isExpanded: false,
     children: null,
     isLoading: false,
   },
   {
-    path: "/storage/",
-    name: "storage",
+    path: '/storage/',
+    name: 'storage',
     isDirectory: true,
     isExpanded: false,
     children: null,
     isLoading: false,
   },
   {
-    path: "/data/",
-    name: "data",
+    path: '/data/',
+    name: 'data',
     isDirectory: true,
     isExpanded: false,
     children: null,
@@ -62,7 +55,7 @@ function makeNode(path: string, name: string, isDirectory: boolean): TreeNode {
 function applyToNode(
   nodes: TreeNode[],
   targetPath: string,
-  updater: (n: TreeNode) => TreeNode
+  updater: (n: TreeNode) => TreeNode,
 ): TreeNode[] {
   return nodes.map((node) => {
     if (node.path === targetPath) {
@@ -96,22 +89,17 @@ function findNode(nodes: TreeNode[], path: string): TreeNode | null {
 /** Ancestor directory paths for a given path (excluding self).
  *  /storage/emulated/0/ → ['/storage/', '/storage/emulated/'] */
 function getAncestorPaths(path: string): string[] {
-  const segments = path.split("/").filter(Boolean);
-  return segments
-    .slice(0, -1)
-    .map((_, i) => "/" + segments.slice(0, i + 1).join("/") + "/");
+  const segments = path.split('/').filter(Boolean);
+  return segments.slice(0, -1).map((_, i) => '/' + segments.slice(0, i + 1).join('/') + '/');
 }
 
 /** Load all entries (files + dirs) for a path and return as TreeNode[]. */
-function loadDirEntries(
-  path: string,
-  serial?: string | null
-): Promise<TreeNode[]> {
+function loadDirEntries(path: string, serial?: string | null): Promise<TreeNode[]> {
   return ListFiles(path, serial).then((entries) =>
     entries
       .sort((a, b) => {
-        const aIsDir = a.type === "Directory" || a.type === "Symlink";
-        const bIsDir = b.type === "Directory" || b.type === "Symlink";
+        const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
+        const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
         if (aIsDir && !bIsDir) {
           return -1;
         }
@@ -121,13 +109,9 @@ function loadDirEntries(
         return a.name.localeCompare(b.name);
       })
       .map((e) => {
-        const isDir = e.type === "Directory" || e.type === "Symlink";
-        return makeNode(
-          isDir ? `${path}${e.name}/` : `${path}${e.name}`,
-          e.name,
-          isDir
-        );
-      })
+        const isDir = e.type === 'Directory' || e.type === 'Symlink';
+        return makeNode(isDir ? `${path}${e.name}/` : `${path}${e.name}`, e.name, isDir);
+      }),
   );
 }
 
@@ -139,16 +123,9 @@ interface TreeRowProps {
   onToggle: (path: string) => void;
 }
 
-function TreeRow({
-  node,
-  depth,
-  currentPath,
-  onSelect,
-  onToggle,
-}: TreeRowProps) {
+function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps) {
   const isActive = currentPath === node.path || currentPath === `${node.path}/`;
-  const isAncestor =
-    !isActive && node.isDirectory && currentPath.startsWith(node.path);
+  const isAncestor = !isActive && node.isDirectory && currentPath.startsWith(node.path);
 
   return (
     <>
@@ -156,48 +133,42 @@ function TreeRow({
         aria-expanded={node.isDirectory ? node.isExpanded : undefined}
         aria-selected={isActive}
         className={cn(
-          "flex cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-          isActive && "bg-accent font-medium text-accent-foreground",
-          isAncestor && "text-foreground",
-          !(isActive || isAncestor) && "text-muted-foreground"
+          'flex cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors',
+          'hover:bg-accent hover:text-accent-foreground',
+          isActive && 'bg-accent font-medium text-accent-foreground',
+          isAncestor && 'text-foreground',
+          !(isActive || isAncestor) && 'text-muted-foreground',
         )}
         onClick={() => {
           if (node.isDirectory) {
             onSelect(node.path);
           } else {
             // Navigate right pane to the directory that contains this file
-            const parentPath = node.path.substring(
-              0,
-              node.path.lastIndexOf("/") + 1
-            );
+            const parentPath = node.path.substring(0, node.path.lastIndexOf('/') + 1);
             onSelect(parentPath);
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
+          if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             if (node.isDirectory) {
               onSelect(node.path);
             } else {
-              const parentPath = node.path.substring(
-                0,
-                node.path.lastIndexOf("/") + 1
-              );
+              const parentPath = node.path.substring(0, node.path.lastIndexOf('/') + 1);
               onSelect(parentPath);
             }
           }
-          if (e.key === "ArrowRight" && node.isDirectory) {
+          if (e.key === 'ArrowRight' && node.isDirectory) {
             e.preventDefault();
             onToggle(node.path);
           }
-          if (e.key === "ArrowLeft" && node.isDirectory && node.isExpanded) {
+          if (e.key === 'ArrowLeft' && node.isDirectory && node.isExpanded) {
             e.preventDefault();
             onToggle(node.path);
           }
         }}
         role="treeitem"
-        style={{ paddingLeft: `${depth * 14 + 6}px`, paddingRight: "6px" }}
+        style={{ paddingLeft: `${depth * 14 + 6}px`, paddingRight: '6px' }}
         tabIndex={0}
       >
         {/* Expand chevron — only for directories */}
@@ -232,10 +203,8 @@ function TreeRow({
           ) : (
             <Folder
               className={cn(
-                "size-4 shrink-0",
-                isActive || isAncestor
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                'size-4 shrink-0',
+                isActive || isAncestor ? 'text-primary' : 'text-muted-foreground',
               )}
             />
           )
@@ -361,7 +330,7 @@ export function DirectoryTree({
           });
       }
     },
-    [serial]
+    [serial],
   );
 
   useEffect(() => {
@@ -387,9 +356,7 @@ export function DirectoryTree({
     }
 
     if (node.isExpanded) {
-      setNodes((prev) =>
-        applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true }))
-      );
+      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
       loadDirEntries(currentPath, serial)
         .then((entries) => {
           setNodes((prev) =>
@@ -397,19 +364,15 @@ export function DirectoryTree({
               ...n,
               isLoading: false,
               children: entries,
-            }))
+            })),
           );
         })
         .catch(() => {
-          setNodes((prev) =>
-            applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false }))
-          );
+          setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })));
         });
     } else {
       // Invalidate cache so it refetches on next expand
-      setNodes((prev) =>
-        applyToNode(prev, currentPath, (n) => ({ ...n, children: null }))
-      );
+      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
     }
   }, [refreshTrigger, currentPath, serial, setNodes]);
 
@@ -447,16 +410,14 @@ export function DirectoryTree({
               isLoading: false,
               isExpanded: true,
               children: entries,
-            }))
+            })),
           );
         })
         .catch(() => {
-          setNodes((prev) =>
-            applyToNode(prev, path, (n) => ({ ...n, isLoading: false }))
-          );
+          setNodes((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
         });
     },
-    [serial, setNodes]
+    [serial, setNodes],
   );
 
   return (

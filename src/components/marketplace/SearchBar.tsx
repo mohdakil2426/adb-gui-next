@@ -1,17 +1,9 @@
-import { Clock3, Loader2, Search, Settings2, X } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Clock3, Loader2, Search, Settings2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SearchBarProps {
   isSearching: boolean;
@@ -25,14 +17,11 @@ interface SearchBarProps {
 }
 
 function getShortcutLabel(): string {
-  if (
-    typeof navigator !== "undefined" &&
-    /Mac|iPhone|iPad/.test(navigator.platform)
-  ) {
-    return "⌘K";
+  if (typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)) {
+    return '⌘K';
   }
 
-  return "Ctrl K";
+  return 'Ctrl K';
 }
 
 export function SearchBar({
@@ -43,23 +32,23 @@ export function SearchBar({
   onSelectHistory,
   isSearching,
   searchHistory,
-  placeholder = "Search apps, packages, or GitHub repositories…",
+  placeholder = 'Search apps, packages, or GitHub repositories…',
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const shortcutLabel = useMemo(() => getShortcutLabel(), []);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         inputRef.current?.focus();
         inputRef.current?.select();
       }
     };
 
-    window.addEventListener("keydown", handler);
+    window.addEventListener('keydown', handler);
     return () => {
-      window.removeEventListener("keydown", handler);
+      window.removeEventListener('keydown', handler);
     };
   }, []);
 
@@ -77,9 +66,7 @@ export function SearchBar({
           value={value}
         />
         <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center gap-1">
-          {isSearching ? (
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
-          ) : null}
+          {isSearching ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
 
           {searchHistory.length > 0 && (
             <Popover>

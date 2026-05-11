@@ -1,59 +1,46 @@
-import { useQuery } from "@tanstack/react-query";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
-import "@/styles/global.css";
-import {
-  AnimatePresence,
-  MotionConfig,
-  motion,
-  useReducedMotion,
-} from "framer-motion";
-import { Cpu, Logs, SquareTerminal, Terminal } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { Toaster } from "@/components/ui/sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { LaunchDeviceManager, LaunchTerminal } from "@/lib/desktop/backend";
-import { useDeviceStore } from "@/lib/deviceStore";
-import { useLogStore } from "@/lib/logStore";
-import { fetchAllDevices, queryKeys, STALE_TIME } from "@/lib/queries";
-import { cn } from "@/lib/utils";
-import { AppSidebar } from "./AppSidebar";
-import { BottomPanel } from "./BottomPanel";
-import { DeviceSwitcher } from "./DeviceSwitcher";
-import { ErrorBoundary } from "./ErrorBoundary";
-import { ThemeProvider } from "./ThemeProvider";
-import { ThemeToggle } from "./ThemeToggle";
-import { ViewAbout } from "./views/ViewAbout";
-import { ViewAppManager } from "./views/ViewAppManager";
-import { ViewDashboard } from "./views/ViewDashboard";
-import { ViewEmulatorManager } from "./views/ViewEmulatorManager";
-import { ViewFileExplorer } from "./views/ViewFileExplorer";
-import { ViewFlasher } from "./views/ViewFlasher";
-import { ViewMarketplace } from "./views/ViewMarketplace";
-import { ViewPayloadDumper } from "./views/ViewPayloadDumper";
-import { ViewUtilities } from "./views/ViewUtilities";
-import { WelcomeScreen } from "./WelcomeScreen";
+import { useQuery } from '@tanstack/react-query';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
+import '@/styles/global.css';
+import { AnimatePresence, MotionConfig, motion, useReducedMotion } from 'framer-motion';
+import { Cpu, Logs, SquareTerminal, Terminal } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Toaster } from '@/components/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { LaunchDeviceManager, LaunchTerminal } from '@/lib/desktop/backend';
+import { useDeviceStore } from '@/lib/deviceStore';
+import { useLogStore } from '@/lib/logStore';
+import { fetchAllDevices, queryKeys, STALE_TIME } from '@/lib/queries';
+import { cn } from '@/lib/utils';
+import { AppSidebar } from './AppSidebar';
+import { BottomPanel } from './BottomPanel';
+import { DeviceSwitcher } from './DeviceSwitcher';
+import { ErrorBoundary } from './ErrorBoundary';
+import { ThemeProvider } from './ThemeProvider';
+import { ThemeToggle } from './ThemeToggle';
+import { ViewAbout } from './views/ViewAbout';
+import { ViewAppManager } from './views/ViewAppManager';
+import { ViewDashboard } from './views/ViewDashboard';
+import { ViewEmulatorManager } from './views/ViewEmulatorManager';
+import { ViewFileExplorer } from './views/ViewFileExplorer';
+import { ViewFlasher } from './views/ViewFlasher';
+import { ViewMarketplace } from './views/ViewMarketplace';
+import { ViewPayloadDumper } from './views/ViewPayloadDumper';
+import { ViewUtilities } from './views/ViewUtilities';
+import { WelcomeScreen } from './WelcomeScreen';
 
 const VIEWS = {
-  DASHBOARD: "dashboard",
-  APPS: "apps",
-  FILES: "files",
-  MARKETPLACE: "marketplace",
-  FLASHER: "flasher",
-  UTILS: "utils",
-  PAYLOAD: "payload",
-  EMULATOR: "emulator",
-  ABOUT: "about",
+  DASHBOARD: 'dashboard',
+  APPS: 'apps',
+  FILES: 'files',
+  MARKETPLACE: 'marketplace',
+  FLASHER: 'flasher',
+  UTILS: 'utils',
+  PAYLOAD: 'payload',
+  EMULATOR: 'emulator',
+  ABOUT: 'about',
 } as const;
 
 type ViewType = (typeof VIEWS)[keyof typeof VIEWS];
@@ -79,9 +66,7 @@ export function MainLayout() {
   const [activeView, setActiveView] = useState<ViewType>(VIEWS.DASHBOARD);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(
-    () => window.innerHeight
-  );
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
 
   const togglePanel = useLogStore((state) => state.togglePanel);
   const isLogOpen = useLogStore((state) => state.isOpen);
@@ -112,7 +97,7 @@ export function MainLayout() {
   const handleLaunchDeviceManager = useCallback(async () => {
     try {
       await LaunchDeviceManager();
-      toast.success("Device Manager launched successfully");
+      toast.success('Device Manager launched successfully');
     } catch (error) {
       toast.error(`Failed to launch Device Manager: ${error}`);
     }
@@ -121,7 +106,7 @@ export function MainLayout() {
   const handleLaunchTerminal = useCallback(async () => {
     try {
       await LaunchTerminal();
-      toast.success("Terminal launched successfully");
+      toast.success('Terminal launched successfully');
     } catch (error) {
       toast.error(`Failed to launch Terminal: ${error}`);
     }
@@ -131,22 +116,22 @@ export function MainLayout() {
   const handleOpenShellPanel = useCallback(() => {
     if (!isLogOpen) {
       togglePanel();
-      setActiveTab("shell");
-    } else if (activeTab === "shell") {
+      setActiveTab('shell');
+    } else if (activeTab === 'shell') {
       togglePanel(); // already on shell tab — close
     } else {
-      setActiveTab("shell"); // open on different tab — just switch
+      setActiveTab('shell'); // open on different tab — just switch
     }
   }, [activeTab, isLogOpen, setActiveTab, togglePanel]);
 
   const handleOpenLogsPanel = useCallback(() => {
     if (!isLogOpen) {
       togglePanel();
-      setActiveTab("logs");
-    } else if (activeTab === "logs") {
+      setActiveTab('logs');
+    } else if (activeTab === 'logs') {
       togglePanel(); // already on logs tab — close
     } else {
-      setActiveTab("logs"); // open on different tab — just switch
+      setActiveTab('logs'); // open on different tab — just switch
     }
   }, [activeTab, isLogOpen, setActiveTab, togglePanel]);
 
@@ -192,9 +177,9 @@ export function MainLayout() {
       setViewportHeight(window.innerHeight);
     };
 
-    window.addEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
     return () => {
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener('resize', handleResize);
     };
   }, []);
 
@@ -205,12 +190,7 @@ export function MainLayout() {
       : undefined;
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      disableTransitionOnChange
-      enableSystem
-    >
+    <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
       <MotionConfig reducedMotion="user">
         <AnimatePresence>
           {isLoading ? (
@@ -227,10 +207,8 @@ export function MainLayout() {
         </AnimatePresence>
         <div
           className={cn(
-            "h-svh overflow-hidden",
-            isLoading
-              ? "opacity-0"
-              : "opacity-100 transition-opacity duration-500 ease-in-out"
+            'h-svh overflow-hidden',
+            isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 ease-in-out',
           )}
         >
           <a
@@ -241,10 +219,7 @@ export function MainLayout() {
           </a>
           <SidebarProvider>
             <ErrorBoundary viewName="Sidebar">
-              <AppSidebar
-                activeView={activeView}
-                onViewChange={handleViewChange}
-              />
+              <AppSidebar activeView={activeView} onViewChange={handleViewChange} />
             </ErrorBoundary>
             <SidebarInset>
               {/* Header bar — sits above scroll area in the flex-col SidebarInset, never scrolls */}
@@ -257,10 +232,7 @@ export function MainLayout() {
 
                 {/* Device Switcher — global device status + multi-device dropdown */}
                 <ErrorBoundary viewName="Device Switcher">
-                  <DeviceSwitcher
-                    isRefreshing={isDeviceRefreshing}
-                    onRefresh={refreshDevices}
-                  />
+                  <DeviceSwitcher isRefreshing={isDeviceRefreshing} onRefresh={refreshDevices} />
                 </ErrorBoundary>
 
                 {/* Toolbar — pushed to the right */}
@@ -277,9 +249,7 @@ export function MainLayout() {
                         <Cpu aria-hidden="true" className="size-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      Device Manager
-                    </TooltipContent>
+                    <TooltipContent side="bottom">Device Manager</TooltipContent>
                   </Tooltip>
 
                   <Tooltip>
@@ -294,9 +264,7 @@ export function MainLayout() {
                         <SquareTerminal aria-hidden="true" className="size-4" />
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      Launch Terminal
-                    </TooltipContent>
+                    <TooltipContent side="bottom">Launch Terminal</TooltipContent>
                   </Tooltip>
 
                   <ThemeToggle />
@@ -311,15 +279,11 @@ export function MainLayout() {
                     <TooltipTrigger asChild>
                       <Button
                         aria-label={
-                          isLogOpen && activeTab === "shell"
-                            ? "Close Shell"
-                            : "Open Shell"
+                          isLogOpen && activeTab === 'shell' ? 'Close Shell' : 'Open Shell'
                         }
                         className={cn(
-                          "size-8",
-                          isLogOpen &&
-                            activeTab === "shell" &&
-                            "bg-accent text-accent-foreground"
+                          'size-8',
+                          isLogOpen && activeTab === 'shell' && 'bg-accent text-accent-foreground',
                         )}
                         onClick={handleOpenShellPanel}
                         size="icon"
@@ -329,9 +293,7 @@ export function MainLayout() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      {isLogOpen && activeTab === "shell"
-                        ? "Close Shell"
-                        : "Shell (Ctrl+`)"}
+                      {isLogOpen && activeTab === 'shell' ? 'Close Shell' : 'Shell (Ctrl+`)'}
                     </TooltipContent>
                   </Tooltip>
 
@@ -339,16 +301,10 @@ export function MainLayout() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        aria-label={
-                          isLogOpen && activeTab === "logs"
-                            ? "Close Logs"
-                            : "Open Logs"
-                        }
+                        aria-label={isLogOpen && activeTab === 'logs' ? 'Close Logs' : 'Open Logs'}
                         className={cn(
-                          "relative size-8",
-                          isLogOpen &&
-                            activeTab === "logs" &&
-                            "bg-accent text-accent-foreground"
+                          'relative size-8',
+                          isLogOpen && activeTab === 'logs' && 'bg-accent text-accent-foreground',
                         )}
                         onClick={handleOpenLogsPanel}
                         size="icon"
@@ -360,15 +316,13 @@ export function MainLayout() {
                             aria-hidden="true"
                             className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 font-bold text-[9px] text-white"
                           >
-                            {unreadCount > 99 ? "99+" : unreadCount}
+                            {unreadCount > 99 ? '99+' : unreadCount}
                           </span>
                         )}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      {isLogOpen && activeTab === "logs"
-                        ? "Close Logs"
-                        : "Logs"}
+                      {isLogOpen && activeTab === 'logs' ? 'Close Logs' : 'Logs'}
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -391,7 +345,7 @@ export function MainLayout() {
                         exit={{ opacity: 0 }}
                         initial={{ opacity: 0 }}
                         key={activeView}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
                       >
                         <ErrorBoundary key={activeView} viewName={activeView}>
                           {activeViewContent}
@@ -412,8 +366,8 @@ export function MainLayout() {
         </div>
         <span aria-live="polite" className="sr-only">
           {!isLogOpen && unreadCount > 0
-            ? `${unreadCount} new log${unreadCount === 1 ? "" : "s"}`
-            : ""}
+            ? `${unreadCount} new log${unreadCount === 1 ? '' : 's'}`
+            : ''}
         </span>
         <Toaster closeButton position="top-right" richColors />
       </MotionConfig>

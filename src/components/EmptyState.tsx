@@ -1,12 +1,12 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import {
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
-} from "@/components/ui/empty";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/empty';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
   className?: string;
@@ -15,14 +15,9 @@ interface EmptyStateProps {
   title?: string;
 }
 
-export function EmptyState({
-  icon: Icon,
-  title,
-  description,
-  className,
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, className }: EmptyStateProps) {
   return (
-    <Empty className={cn("border-0 py-8", className)}>
+    <Empty className={cn('border-0 py-8', className)}>
       <EmptyHeader>
         {Icon ? (
           <EmptyMedia variant="icon">

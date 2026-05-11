@@ -1,10 +1,10 @@
-import { Loader2, Pencil, RefreshCw, Smartphone } from "lucide-react";
-import { EmptyState } from "@/components/EmptyState";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getStatusConfig } from "@/lib/deviceStatus";
-import { getNickname } from "@/lib/nicknameStore";
+import { Loader2, Pencil, RefreshCw, Smartphone } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getStatusConfig } from '@/lib/deviceStatus';
+import { getNickname } from '@/lib/nicknameStore';
 
 export interface DeviceData {
   serial: string;
@@ -26,7 +26,7 @@ export function ConnectedDevicesCard({
   isLoading,
   onRefresh,
   onEdit,
-  emptyText = "No device detected. Ensure USB Debugging is enabled.",
+  emptyText = 'No device detected. Ensure USB Debugging is enabled.',
   className,
   isRefreshDisabled,
 }: ConnectedDevicesCardProps) {
@@ -55,23 +55,16 @@ export function ConnectedDevicesCard({
         {devices.length === 0 ? (
           <EmptyState
             className="py-6"
-            description={
-              isLoading ? "Looking for connected Android devices." : emptyText
-            }
+            description={isLoading ? 'Looking for connected Android devices.' : emptyText}
             icon={Smartphone}
-            title={
-              isLoading ? "Scanning for devices..." : "No devices detected"
-            }
+            title={isLoading ? 'Scanning for devices...' : 'No devices detected'}
           />
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((device) => {
               const displayName = getNickname(device.serial) ?? device.serial;
-              const description =
-                displayName === device.serial ? undefined : device.serial;
-              const { label, variant, badgeClass } = getStatusConfig(
-                device.status
-              );
+              const description = displayName === device.serial ? undefined : device.serial;
+              const { label, variant, badgeClass } = getStatusConfig(device.status);
 
               return (
                 <div
@@ -80,9 +73,7 @@ export function ConnectedDevicesCard({
                 >
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-center gap-1">
-                      <span className="truncate font-semibold text-lg">
-                        {displayName}
-                      </span>
+                      <span className="truncate font-semibold text-lg">{displayName}</span>
                       <Button
                         className="size-6 opacity-0 transition-opacity group-hover:opacity-100"
                         onClick={() => {

@@ -1,7 +1,7 @@
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { cn } from "@/lib/utils";
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import { cn } from '@/lib/utils';
 
 interface FileSelectorProps {
   className?: string;
@@ -31,7 +31,7 @@ export function FileSelector({
   label,
   path,
   onSelect,
-  placeholder = "Select file...",
+  placeholder = 'Select file...',
   isLoading = false,
   disabled = false,
   icon,
@@ -39,7 +39,7 @@ export function FileSelector({
   className,
 }: FileSelectorProps) {
   return (
-    <Field className={cn("min-w-0 gap-1.5", className)}>
+    <Field className={cn('min-w-0 gap-1.5', className)}>
       <FieldLabel>{label}</FieldLabel>
       <div className="flex min-w-0 gap-2">
         <Button
@@ -51,21 +51,13 @@ export function FileSelector({
           {isLoading ? (
             <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
           ) : icon ? (
-            <span className="mr-2 flex h-4 w-4 shrink-0 items-center">
-              {icon}
-            </span>
+            <span className="mr-2 flex h-4 w-4 shrink-0 items-center">{icon}</span>
           ) : null}
-          <span className="truncate">
-            {path ? path.split(/[/\\]/).pop() : placeholder}
-          </span>
+          <span className="truncate">{path ? path.split(/[/\\]/).pop() : placeholder}</span>
         </Button>
         {trailingAction}
       </div>
-      {path ? (
-        <FieldDescription className="break-all text-xs">
-          {path}
-        </FieldDescription>
-      ) : null}
+      {path ? <FieldDescription className="break-all text-xs">{path}</FieldDescription> : null}
     </Field>
   );
 }

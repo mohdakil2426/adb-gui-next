@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -8,10 +8,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { getNickname, setNickname } from "@/lib/nicknameStore";
+} from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { getNickname, setNickname } from '@/lib/nicknameStore';
 
 interface EditNicknameDialogProps {
   isOpen: boolean;
@@ -26,11 +26,11 @@ export function EditNicknameDialog({
   serial,
   onSaved,
 }: EditNicknameDialogProps) {
-  const [newNickname, setNewNickname] = useState("");
+  const [newNickname, setNewNickname] = useState('');
 
   useEffect(() => {
     if (isOpen && serial) {
-      setNewNickname(getNickname(serial) ?? "");
+      setNewNickname(getNickname(serial) ?? '');
     }
   }, [isOpen, serial]);
 
@@ -50,9 +50,7 @@ export function EditNicknameDialog({
           <DialogTitle>Edit Nickname</DialogTitle>
           <DialogDescription>
             Give a nickname to the device:
-            <span className="mt-2 block font-mono text-foreground">
-              {serial}
-            </span>
+            <span className="mt-2 block font-mono text-foreground">{serial}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -67,7 +65,7 @@ export function EditNicknameDialog({
                 setNewNickname(e.target.value);
               }}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === 'Enter') {
                   handleSaveNickname();
                 }
               }}

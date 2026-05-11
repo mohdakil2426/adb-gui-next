@@ -1,5 +1,5 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Battery,
   Building,
@@ -17,36 +17,31 @@ import {
   Tag,
   Usb,
   Wifi,
-} from "lucide-react";
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
-import { ConnectedDevicesCard } from "@/components/ConnectedDevicesCard";
-import { CopyButton } from "@/components/CopyButton";
-import { EditNicknameDialog } from "@/components/EditNicknameDialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { debugLog } from "@/lib/debug";
-import { useDeviceStore } from "@/lib/deviceStore";
-import { handleError, handleSuccess } from "@/lib/errorHandler";
-import { queryKeys } from "@/lib/queries";
-import { type WirelessAdbValues, wirelessAdbSchema } from "@/lib/schemas";
-import { cn } from "@/lib/utils";
+} from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { toast } from 'sonner';
+import { ConnectedDevicesCard } from '@/components/ConnectedDevicesCard';
+import { CopyButton } from '@/components/CopyButton';
+import { EditNicknameDialog } from '@/components/EditNicknameDialog';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { debugLog } from '@/lib/debug';
+import { useDeviceStore } from '@/lib/deviceStore';
+import { handleError, handleSuccess } from '@/lib/errorHandler';
+import { queryKeys } from '@/lib/queries';
+import { type WirelessAdbValues, wirelessAdbSchema } from '@/lib/schemas';
+import { cn } from '@/lib/utils';
 import {
   ConnectWirelessAdb,
   DisconnectWirelessAdb,
   EnableWirelessAdb,
   GetDeviceInfo,
-} from "../../lib/desktop/backend";
-import type { backend } from "../../lib/desktop/models";
+} from '../../lib/desktop/backend';
+import type { backend } from '../../lib/desktop/models';
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
   const queriedDevices = useDeviceStore((state) => state.devices);
@@ -61,18 +56,16 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const isEditing = useDeviceStore((state) => state.isEditingNickname);
   const setIsEditing = useDeviceStore((state) => state.setIsEditingNickname);
   const editingSerial = useDeviceStore((state) => state.editingDeviceSerial);
-  const setEditingSerial = useDeviceStore(
-    (state) => state.setEditingDeviceSerial
-  );
+  const setEditingSerial = useDeviceStore((state) => state.setEditingDeviceSerial);
 
   const wirelessForm = useForm<WirelessAdbValues>({
     resolver: zodResolver(wirelessAdbSchema),
-    defaultValues: { ip: "", port: "5555" },
+    defaultValues: { ip: '', port: '5555' },
   });
   const watchedIp = useWatch({
     control: wirelessForm.control,
-    name: "ip",
-    defaultValue: "",
+    name: 'ip',
+    defaultValue: '',
   });
 
   const refreshDevices = useCallback(() => {
@@ -87,12 +80,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
     setIsRefreshingInfo(true);
     try {
-      debugLog("Refreshing device info");
+      debugLog('Refreshing device info');
       const result = await GetDeviceInfo(selectedSerial);
       setDeviceInfo(result);
-      debugLog("Device info refreshed:", result);
+      debugLog('Device info refreshed:', result);
     } catch (error) {
-      handleError("Refresh Device Info", error);
+      handleError('Refresh Device Info', error);
       setDeviceInfo(null);
     } finally {
       setIsRefreshingInfo(false);
@@ -100,14 +93,14 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   }, [selectedSerial, setDeviceInfo]);
 
   useEffect(() => {
-    if (activeView === "dashboard" && selectedSerial && !deviceInfo) {
+    if (activeView === 'dashboard' && selectedSerial && !deviceInfo) {
       void refreshInfo();
     }
   }, [activeView, selectedSerial, deviceInfo, refreshInfo]);
 
   useEffect(() => {
-    if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith("N/A")) {
-      wirelessForm.setValue("ip", deviceInfo.ipAddress, {
+    if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {
+      wirelessForm.setValue('ip', deviceInfo.ipAddress, {
         shouldValidate: false,
       });
     }
@@ -115,45 +108,40 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
   const handleEnableTcpip = async () => {
     setIsEnablingTcpip(true);
-    const toastId = toast.loading("Enabling wireless mode (port 5555)...", {
-      description: "Please wait... Device must be connected via USB.",
+    const toastId = toast.loading('Enabling wireless mode (port 5555)...', {
+      description: 'Please wait... Device must be connected via USB.',
     });
     try {
-      debugLog("Enabling wireless ADB on port 5555");
-      const output = await EnableWirelessAdb("5555", selectedSerial);
-      toast.success("Wireless mode enabled!", {
+      debugLog('Enabling wireless ADB on port 5555');
+      const output = await EnableWirelessAdb('5555', selectedSerial);
+      toast.success('Wireless mode enabled!', {
         id: toastId,
         description: output,
       });
-      handleSuccess("Wireless ADB", `Wireless mode enabled: ${output}`);
+      handleSuccess('Wireless ADB', `Wireless mode enabled: ${output}`);
       refreshDevices();
     } catch (error) {
-      toast.error("Failed to enable wireless mode", { id: toastId });
-      handleError("Enable Wireless ADB", error);
+      toast.error('Failed to enable wireless mode', { id: toastId });
+      handleError('Enable Wireless ADB', error);
     }
     setIsEnablingTcpip(false);
   };
 
   const handleConnect = async (values: WirelessAdbValues) => {
     setIsConnecting(true);
-    const toastId = toast.loading(
-      `Connecting to ${values.ip}:${values.port}...`
-    );
+    const toastId = toast.loading(`Connecting to ${values.ip}:${values.port}...`);
     try {
       debugLog(`Connecting to ${values.ip}:${values.port}`);
       const output = await ConnectWirelessAdb(values.ip, values.port);
-      toast.success("Connection successful!", {
+      toast.success('Connection successful!', {
         id: toastId,
         description: output,
       });
-      handleSuccess(
-        "Wireless ADB",
-        `Connected to ${values.ip}:${values.port}: ${output}`
-      );
+      handleSuccess('Wireless ADB', `Connected to ${values.ip}:${values.port}: ${output}`);
       refreshDevices();
     } catch (error) {
-      toast.error("Connection failed", { id: toastId });
-      handleError("Wireless ADB Connect", error);
+      toast.error('Connection failed', { id: toastId });
+      handleError('Wireless ADB Connect', error);
     }
     setIsConnecting(false);
   };
@@ -162,27 +150,22 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
     const values = wirelessForm.getValues();
     const parsed = wirelessAdbSchema.safeParse(values);
     if (!parsed.success) {
-      toast.error("Invalid input", {
-        description: parsed.error.issues[0]?.message ?? "Unknown error",
+      toast.error('Invalid input', {
+        description: parsed.error.issues[0]?.message ?? 'Unknown error',
       });
       return;
     }
     setIsDisconnecting(true);
-    const toastId = toast.loading(
-      `Disconnecting from ${values.ip}:${values.port}...`
-    );
+    const toastId = toast.loading(`Disconnecting from ${values.ip}:${values.port}...`);
     try {
       debugLog(`Disconnecting from ${values.ip}:${values.port}`);
       const output = await DisconnectWirelessAdb(values.ip, values.port);
-      toast.success("Disconnected", { id: toastId, description: output });
-      handleSuccess(
-        "Wireless ADB",
-        `Disconnected from ${values.ip}:${values.port}: ${output}`
-      );
+      toast.success('Disconnected', { id: toastId, description: output });
+      handleSuccess('Wireless ADB', `Disconnected from ${values.ip}:${values.port}: ${output}`);
       refreshDevices();
     } catch (error) {
-      toast.error("Disconnect failed", { id: toastId });
-      handleError("Wireless ADB Disconnect", error);
+      toast.error('Disconnect failed', { id: toastId });
+      handleError('Wireless ADB Disconnect', error);
     }
     setIsDisconnecting(false);
   };
@@ -192,7 +175,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       setEditingSerial(device.serial);
       setIsEditing(true);
     },
-    [setEditingSerial, setIsEditing]
+    [setEditingSerial, setIsEditing],
   );
 
   const handleNicknameSaved = useCallback(() => {
@@ -228,8 +211,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
           <div className="flex flex-col gap-3">
             <p className="font-medium">Step 1: Enable (via USB)</p>
             <p className="text-muted-foreground text-sm">
-              Make sure the device is connected with a USB cable, then click
-              this button..
+              Make sure the device is connected with a USB cable, then click this button..
             </p>
             <Button
               className="h-auto w-full whitespace-normal"
@@ -256,59 +238,39 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
             >
               <FieldGroup>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem]">
-                  <Field
-                    data-invalid={Boolean(wirelessForm.formState.errors.ip)}
-                  >
-                    <FieldLabel htmlFor="dashboard-wireless-ip">
-                      Device IP Address
-                    </FieldLabel>
+                  <Field data-invalid={Boolean(wirelessForm.formState.errors.ip)}>
+                    <FieldLabel htmlFor="dashboard-wireless-ip">Device IP Address</FieldLabel>
                     <Input
-                      aria-describedby={
-                        wirelessForm.formState.errors.ip
-                          ? "ip-error"
-                          : undefined
-                      }
+                      aria-describedby={wirelessForm.formState.errors.ip ? 'ip-error' : undefined}
                       aria-invalid={Boolean(wirelessForm.formState.errors.ip)}
                       autoComplete="off"
                       id="dashboard-wireless-ip"
                       placeholder="Device IP Address"
-                      {...wirelessForm.register("ip")}
+                      {...wirelessForm.register('ip')}
                       disabled={isConnecting || isDisconnecting}
                     />
                     {wirelessForm.formState.errors.ip ? (
-                      <FieldDescription
-                        className="text-destructive"
-                        id="ip-error"
-                      >
+                      <FieldDescription className="text-destructive" id="ip-error">
                         {wirelessForm.formState.errors.ip.message}
                       </FieldDescription>
                     ) : null}
                   </Field>
-                  <Field
-                    data-invalid={Boolean(wirelessForm.formState.errors.port)}
-                  >
-                    <FieldLabel htmlFor="dashboard-wireless-port">
-                      Wireless ADB Port
-                    </FieldLabel>
+                  <Field data-invalid={Boolean(wirelessForm.formState.errors.port)}>
+                    <FieldLabel htmlFor="dashboard-wireless-port">Wireless ADB Port</FieldLabel>
                     <Input
                       aria-describedby={
-                        wirelessForm.formState.errors.port
-                          ? "port-error"
-                          : undefined
+                        wirelessForm.formState.errors.port ? 'port-error' : undefined
                       }
                       aria-invalid={Boolean(wirelessForm.formState.errors.port)}
                       autoComplete="off"
                       id="dashboard-wireless-port"
                       inputMode="numeric"
                       placeholder="Port"
-                      {...wirelessForm.register("port")}
+                      {...wirelessForm.register('port')}
                       disabled={isConnecting || isDisconnecting}
                     />
                     {wirelessForm.formState.errors.port ? (
-                      <FieldDescription
-                        className="text-destructive"
-                        id="port-error"
-                      >
+                      <FieldDescription className="text-destructive" id="port-error">
                         {wirelessForm.formState.errors.port.message}
                       </FieldDescription>
                     ) : null}
@@ -443,21 +405,17 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
                   label="Root Status"
                   value={deviceInfo.rootStatus}
                   valueClassName={
-                    deviceInfo.rootStatus === "Yes"
-                      ? "text-success font-bold"
-                      : "text-muted-foreground"
+                    deviceInfo.rootStatus === 'Yes'
+                      ? 'text-success font-bold'
+                      : 'text-muted-foreground'
                   }
                 />
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                Click "Refresh Info" to load data.
-              </p>
+              <p className="text-muted-foreground">Click "Refresh Info" to load data.</p>
             )
           ) : (
-            <p className="text-muted-foreground">
-              Connect a device to see info.
-            </p>
+            <p className="text-muted-foreground">Connect a device to see info.</p>
           )}
         </CardContent>
       </Card>
@@ -495,9 +453,7 @@ function InfoItem({
       <div className="mr-3 shrink-0 text-primary">{icon}</div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-muted-foreground text-sm">{label}</div>
-        <div className={cn("truncate font-semibold", valueClassName)}>
-          {value || "N/A"}
-        </div>
+        <div className={cn('truncate font-semibold', valueClassName)}>{value || 'N/A'}</div>
       </div>
       {copyable && value ? (
         <CopyButton

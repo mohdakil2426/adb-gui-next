@@ -1,11 +1,6 @@
-import type { QueryClient } from "@tanstack/react-query";
-import {
-  GetDevices,
-  GetFastbootDevices,
-  GetInstalledPackages,
-  ListAvds,
-} from "./desktop/backend";
-import type { backend } from "./desktop/models";
+import type { QueryClient } from '@tanstack/react-query';
+import { GetDevices, GetFastbootDevices, GetInstalledPackages, ListAvds } from './desktop/backend';
+import type { backend } from './desktop/models';
 
 type Device = backend.Device;
 type AvdSummary = backend.AvdSummary;
@@ -14,26 +9,24 @@ type AvdSummary = backend.AvdSummary;
 // Query key factory — single source of truth for all TanStack Query keys.
 // ---------------------------------------------------------------------------
 export const queryKeys = {
-  devices: () => ["devices"] as const,
-  fastbootDevices: () => ["fastbootDevices"] as const,
-  allDevices: () => ["allDevices"] as const,
-  packages: () => ["packages"] as const,
-  avds: () => ["avds"] as const,
-  deviceInfo: (serial: string) => ["deviceInfo", serial] as const,
+  devices: () => ['devices'] as const,
+  fastbootDevices: () => ['fastbootDevices'] as const,
+  allDevices: () => ['allDevices'] as const,
+  packages: () => ['packages'] as const,
+  avds: () => ['avds'] as const,
+  deviceInfo: (serial: string) => ['deviceInfo', serial] as const,
   emulator: {
-    list: ["emulator", "list"] as const,
-    restorePlan: (avdName: string) =>
-      ["emulator", "restorePlan", avdName] as const,
+    list: ['emulator', 'list'] as const,
+    restorePlan: (avdName: string) => ['emulator', 'restorePlan', avdName] as const,
   },
   marketplace: {
-    search: (query: string, filters: object) =>
-      ["marketplace", "search", query, filters] as const,
-    trending: ["marketplace", "trending"] as const,
-    appDetail: (appId: string) => ["marketplace", "appDetail", appId] as const,
+    search: (query: string, filters: object) => ['marketplace', 'search', query, filters] as const,
+    trending: ['marketplace', 'trending'] as const,
+    appDetail: (appId: string) => ['marketplace', 'appDetail', appId] as const,
   },
   debloat: {
-    packages: (serial: string) => ["debloat", "packages", serial] as const,
-    lists: ["debloat", "lists"] as const,
+    packages: (serial: string) => ['debloat', 'packages', serial] as const,
+    lists: ['debloat', 'lists'] as const,
   },
 } as const;
 
@@ -61,32 +54,28 @@ export const STALE_TIME = {
 
 export const fetchDevices = (): Promise<Device[]> => GetDevices();
 
-export const fetchFastbootDevices = (): Promise<Device[]> =>
-  GetFastbootDevices();
+export const fetchFastbootDevices = (): Promise<Device[]> => GetFastbootDevices();
 
 /** Fetches ADB + fastboot devices, merges and deduplicates by serial. */
 export const fetchAllDevices = async (): Promise<Device[]> => {
-  const [adbDevices, fastbootDevices] = await Promise.all([
-    GetDevices(),
-    GetFastbootDevices(),
-  ]);
+  const [adbDevices, fastbootDevices] = await Promise.all([GetDevices(), GetFastbootDevices()]);
 
   const merged: Device[] = [];
 
   if (Array.isArray(fastbootDevices)) {
     merged.push(
       ...fastbootDevices
-        .filter((d) => !!d && typeof d.serial === "string")
-        .map((d) => ({ serial: d.serial, status: d.status ?? "fastboot" }))
+        .filter((d) => !!d && typeof d.serial === 'string')
+        .map((d) => ({ serial: d.serial, status: d.status ?? 'fastboot' })),
     );
   }
 
   if (Array.isArray(adbDevices)) {
     merged.push(
       ...adbDevices
-        .filter((d) => !!d && typeof d.serial === "string")
+        .filter((d) => !!d && typeof d.serial === 'string')
         .filter((d) => !merged.some((m) => m.serial === d.serial))
-        .map((d) => ({ serial: d.serial, status: d.status }))
+        .map((d) => ({ serial: d.serial, status: d.status })),
     );
   }
 

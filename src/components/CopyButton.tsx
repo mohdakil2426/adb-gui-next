@@ -1,9 +1,9 @@
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { Check, Copy } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface CopyButtonProps {
   /** Extra class names for the button */
@@ -20,11 +20,7 @@ interface CopyButtonProps {
  *
  * Shows a temporary checkmark after a successful copy.
  */
-export function CopyButton({
-  value,
-  label = "Value",
-  className,
-}: CopyButtonProps) {
+export function CopyButton({ value, label = 'Value', className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -39,25 +35,21 @@ export function CopyButton({
         setCopied(false);
       }, 2000);
     } catch {
-      toast.error("Failed to copy to clipboard");
+      toast.error('Failed to copy to clipboard');
     }
   };
 
   return (
     <Button
       aria-label={`Copy ${label}`}
-      className={cn("h-7 w-7 shrink-0", className)}
+      className={cn('h-7 w-7 shrink-0', className)}
       disabled={!value}
       onClick={handleCopy}
       size="icon"
       type="button"
       variant="ghost"
     >
-      {copied ? (
-        <Check className="size-3.5 text-success" />
-      ) : (
-        <Copy className="size-3.5" />
-      )}
+      {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
     </Button>
   );
 }

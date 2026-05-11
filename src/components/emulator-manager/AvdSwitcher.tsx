@@ -1,25 +1,12 @@
-import {
-  ChevronDown,
-  Loader2,
-  MonitorSmartphone,
-  RefreshCw,
-} from "lucide-react";
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import type { backend } from "@/lib/desktop/models";
-import { cn } from "@/lib/utils";
+import { ChevronDown, Loader2, MonitorSmartphone, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { backend } from '@/lib/desktop/models';
+import { cn } from '@/lib/utils';
 
 interface AvdSwitcherProps {
   avds: backend.AvdSummary[];
@@ -31,14 +18,14 @@ interface AvdSwitcherProps {
 
 function rootStateLabel(state: backend.AvdRootState): string {
   switch (state) {
-    case "rooted":
-      return "Rooted";
-    case "modified":
-      return "Modified";
-    case "unknown":
-      return "Unknown";
+    case 'rooted':
+      return 'Rooted';
+    case 'modified':
+      return 'Modified';
+    case 'unknown':
+      return 'Unknown';
     default:
-      return "Stock";
+      return 'Stock';
   }
 }
 
@@ -65,27 +52,25 @@ export function AvdSwitcher({
           <PopoverTrigger asChild>
             <Button
               className={cn(
-                "h-7 gap-1.5 rounded-full border border-border/50 px-2.5 font-medium text-xs",
-                "transition-colors hover:bg-accent/80",
-                !selectedAvd && "text-muted-foreground"
+                'h-7 gap-1.5 rounded-full border border-border/50 px-2.5 font-medium text-xs',
+                'transition-colors hover:bg-accent/80',
+                !selectedAvd && 'text-muted-foreground',
               )}
               size="sm"
               variant="ghost"
             >
               {selectedAvd ? (
                 <>
-                  <span className="max-w-[160px] truncate">
-                    {selectedAvd.name}
-                  </span>
+                  <span className="max-w-[160px] truncate">{selectedAvd.name}</span>
                   <Badge
                     className={cn(
-                      "pointer-events-none rounded-full px-1.5 py-0 text-[10px]",
+                      'pointer-events-none rounded-full px-1.5 py-0 text-[10px]',
                       selectedAvd.isRunning
-                        ? "bg-success/15 text-success"
-                        : "border border-border bg-transparent text-muted-foreground"
+                        ? 'bg-success/15 text-success'
+                        : 'border border-border bg-transparent text-muted-foreground',
                     )}
                   >
-                    {selectedAvd.isRunning ? "Running" : "Stopped"}
+                    {selectedAvd.isRunning ? 'Running' : 'Stopped'}
                   </Badge>
                 </>
               ) : (
@@ -108,9 +93,7 @@ export function AvdSwitcher({
             <MonitorSmartphone className="size-4 text-muted-foreground" />
             <span className="font-medium text-sm">Emulators</span>
             {avds.length > 0 && (
-              <span className="text-muted-foreground text-xs">
-                ({avds.length})
-              </span>
+              <span className="text-muted-foreground text-xs">({avds.length})</span>
             )}
           </div>
           <Button
@@ -137,7 +120,7 @@ export function AvdSwitcher({
             <div className="px-3 py-6 text-center">
               <MonitorSmartphone className="mx-auto size-8 text-muted-foreground/40" />
               <p className="mt-2 text-muted-foreground text-sm">
-                {isRefreshing ? "Scanning for AVDs…" : "No AVDs found"}
+                {isRefreshing ? 'Scanning for AVDs…' : 'No AVDs found'}
               </p>
               <p className="mt-1 text-muted-foreground/60 text-xs">
                 Create an AVD in Android Studio first
@@ -151,16 +134,16 @@ export function AvdSwitcher({
                 return (
                   <button
                     className={cn(
-                      "relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm",
-                      "transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                      isSelected && "bg-accent"
+                      'relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm',
+                      'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      isSelected && 'bg-accent',
                     )}
                     key={avd.name}
                     onClick={() => {
                       handleSelect(avd.name);
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
+                      if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
                         handleSelect(avd.name);
                       }
@@ -172,50 +155,46 @@ export function AvdSwitcher({
                     <span
                       aria-hidden
                       className={cn(
-                        "size-2 shrink-0 rounded-full",
+                        'size-2 shrink-0 rounded-full',
                         isSelected
-                          ? "bg-foreground"
-                          : "bg-transparent ring-2 ring-muted-foreground/30"
+                          ? 'bg-foreground'
+                          : 'bg-transparent ring-2 ring-muted-foreground/30',
                       )}
                     />
 
                     {/* AVD info */}
                     <div className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">
-                        {avd.name}
-                      </span>
+                      <span className="block truncate font-medium">{avd.name}</span>
                       <span className="block truncate text-muted-foreground text-xs">
-                        API {avd.apiLevel ?? "?"}
-                        {avd.abi ? ` · ${avd.abi}` : ""}
-                        {avd.rootState === "stock"
-                          ? ""
-                          : ` · ${rootStateLabel(avd.rootState)}`}
+                        API {avd.apiLevel ?? '?'}
+                        {avd.abi ? ` · ${avd.abi}` : ''}
+                        {avd.rootState === 'stock' ? '' : ` · ${rootStateLabel(avd.rootState)}`}
                       </span>
                     </div>
 
                     {/* Running / Stopped badge */}
                     <Badge
                       className={cn(
-                        "shrink-0 rounded-full px-1.5 py-0 text-[10px]",
+                        'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
                         avd.isRunning
-                          ? "bg-success/15 text-success"
-                          : "border border-border bg-transparent text-muted-foreground"
+                          ? 'bg-success/15 text-success'
+                          : 'border border-border bg-transparent text-muted-foreground',
                       )}
                     >
-                      {avd.isRunning ? "Running" : "Stopped"}
+                      {avd.isRunning ? 'Running' : 'Stopped'}
                     </Badge>
 
                     {/* Boot mode badge — only for running emulators */}
-                    {avd.isRunning && avd.bootMode !== "unknown" ? (
+                    {avd.isRunning && avd.bootMode !== 'unknown' ? (
                       <Badge
                         className={cn(
-                          "shrink-0 rounded-full px-1.5 py-0 text-[10px]",
-                          avd.bootMode === "cold"
-                            ? "bg-primary/10 text-primary"
-                            : "bg-warning/15 text-warning-foreground"
+                          'shrink-0 rounded-full px-1.5 py-0 text-[10px]',
+                          avd.bootMode === 'cold'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-warning/15 text-warning-foreground',
                         )}
                       >
-                        {avd.bootMode === "cold" ? "Cold" : "Normal"}
+                        {avd.bootMode === 'cold' ? 'Cold' : 'Normal'}
                       </Badge>
                     ) : null}
                   </button>

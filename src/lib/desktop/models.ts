@@ -1,6 +1,6 @@
 export namespace backend {
-  export type AvdRootState = "stock" | "rooted" | "modified" | "unknown";
-  export type EmulatorBootMode = "cold" | "normal" | "unknown";
+  export type AvdRootState = 'stock' | 'rooted' | 'modified' | 'unknown';
+  export type EmulatorBootMode = 'cold' | 'normal' | 'unknown';
 
   export interface AvdSummary {
     abi: string | null;
@@ -64,9 +64,7 @@ export namespace backend {
 
   // ─── Automated root pipeline ────────────────────────────────────────────────
 
-  export type RootSource =
-    | { type: "localFile"; value: string }
-    | { type: "latestStable" };
+  export type RootSource = { type: 'localFile'; value: string } | { type: 'latestStable' };
 
   /** Latest official stable Magisk release metadata from the GitHub releases API. */
   export interface MagiskStableRelease {
@@ -99,10 +97,7 @@ export namespace backend {
     totalSteps: number;
   }
 
-  export type RootActivationStatus =
-    | "patchInstalled"
-    | "verified"
-    | "verificationFailed";
+  export type RootActivationStatus = 'patchInstalled' | 'verified' | 'verificationFailed';
 
   export interface RootAvdResult {
     activationStatus: RootActivationStatus;
@@ -122,7 +117,7 @@ export namespace backend {
 
   // ─── Pre-flight readiness scan ──────────────────────────────────────────────
 
-  export type CheckStatus = "pass" | "warn" | "fail" | "info";
+  export type CheckStatus = 'pass' | 'warn' | 'fail' | 'info';
 
   export interface ReadinessCheck {
     detail: string | null;
@@ -133,10 +128,10 @@ export namespace backend {
   }
 
   export type RecommendedAction =
-    | { type: "launchEmulator" }
-    | { type: "coldBoot" }
-    | { type: "restoreFirst" }
-    | { type: "unsupported"; reason: string };
+    | { type: 'launchEmulator' }
+    | { type: 'coldBoot' }
+    | { type: 'restoreFirst' }
+    | { type: 'unsupported'; reason: string };
 
   export interface RootReadinessScan {
     canProceed: boolean;
@@ -296,12 +291,8 @@ export namespace backend {
 
   // ─── Marketplace ─────────────────────────────────────────────────────────
 
-  export type ProviderSource = "F-Droid" | "GitHub" | "Aptoide";
-  export type MarketplaceSortBy =
-    | "relevance"
-    | "name"
-    | "recentlyUpdated"
-    | "downloads";
+  export type ProviderSource = 'F-Droid' | 'GitHub' | 'Aptoide';
+  export type MarketplaceSortBy = 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
 
   export interface MarketplaceApp {
     availableSources: string[];
@@ -393,22 +384,10 @@ export namespace backend {
 
   // ── Debloater ──────────────────────────────────────────────────────────────
 
-  export type DebloatList =
-    | "Aosp"
-    | "Carrier"
-    | "Google"
-    | "Misc"
-    | "Oem"
-    | "Pending"
-    | "Unlisted";
-  export type RemovalTier =
-    | "Recommended"
-    | "Advanced"
-    | "Expert"
-    | "Unsafe"
-    | "Unlisted";
-  export type PkgState = "Enabled" | "Disabled" | "Uninstalled";
-  export type DebloatAction = "uninstall" | "disable" | "restore";
+  export type DebloatList = 'Aosp' | 'Carrier' | 'Google' | 'Misc' | 'Oem' | 'Pending' | 'Unlisted';
+  export type RemovalTier = 'Recommended' | 'Advanced' | 'Expert' | 'Unsafe' | 'Unlisted';
+  export type PkgState = 'Enabled' | 'Disabled' | 'Uninstalled';
+  export type DebloatAction = 'uninstall' | 'disable' | 'restore';
 
   export interface DebloatPackageRow {
     dependencies: string[];

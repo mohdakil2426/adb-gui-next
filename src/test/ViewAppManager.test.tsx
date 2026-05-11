@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ViewAppManager } from "@/components/views/ViewAppManager";
-import { useDeviceStore } from "@/lib/deviceStore";
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ViewAppManager } from '@/components/views/ViewAppManager';
+import { useDeviceStore } from '@/lib/deviceStore';
 
 const getInstalledPackagesMock = vi.fn();
 const getDebloatPackagesMock = vi.fn();
@@ -10,13 +10,13 @@ const loadDebloatListsMock = vi.fn();
 const getDebloatDeviceSettingsMock = vi.fn();
 const listDebloatBackupsMock = vi.fn();
 
-vi.mock("@tanstack/react-virtual", () => ({
+vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: () => ({
     getTotalSize: () => 36,
     getVirtualItems: () => [
       {
         index: 0,
-        key: "com.example.camera",
+        key: 'com.example.camera',
         size: 36,
         start: 0,
       },
@@ -24,12 +24,11 @@ vi.mock("@tanstack/react-virtual", () => ({
   }),
 }));
 
-vi.mock("@/lib/desktop/backend", () => ({
+vi.mock('@/lib/desktop/backend', () => ({
   DebloatPackages: vi.fn(),
   GetDebloatDeviceSettings: () => getDebloatDeviceSettingsMock(),
   GetDebloatPackages: () => getDebloatPackagesMock(),
-  GetInstalledPackages: (serial?: string | null) =>
-    getInstalledPackagesMock(serial),
+  GetInstalledPackages: (serial?: string | null) => getInstalledPackagesMock(serial),
   InstallPackage: vi.fn(),
   ListDebloatBackups: () => listDebloatBackupsMock(),
   LoadDebloatLists: () => loadDebloatListsMock(),
@@ -38,17 +37,15 @@ vi.mock("@/lib/desktop/backend", () => ({
   UninstallPackage: vi.fn(),
 }));
 
-vi.mock("@/lib/desktop/runtime", () => ({
+vi.mock('@/lib/desktop/runtime', () => ({
   OnFileDrop: vi.fn(() => () => {}),
   OnFileDropOff: vi.fn(),
 }));
 
-describe("ViewAppManager", () => {
+describe('ViewAppManager', () => {
   beforeEach(() => {
     useDeviceStore.getState().reset();
-    useDeviceStore
-      .getState()
-      .setDevices([{ serial: "device-a", status: "device" }]);
+    useDeviceStore.getState().setDevices([{ serial: 'device-a', status: 'device' }]);
     getInstalledPackagesMock.mockReset();
     getDebloatPackagesMock.mockReset();
     loadDebloatListsMock.mockReset();
@@ -56,12 +53,12 @@ describe("ViewAppManager", () => {
     listDebloatBackupsMock.mockReset();
     getDebloatPackagesMock.mockResolvedValue([]);
     loadDebloatListsMock.mockResolvedValue({
-      source: "bundled",
-      lastUpdated: "2026-01-01T00:00:00Z",
+      source: 'bundled',
+      lastUpdated: '2026-01-01T00:00:00Z',
       totalEntries: 0,
     });
     getDebloatDeviceSettingsMock.mockResolvedValue({
-      deviceId: "",
+      deviceId: '',
       disableMode: false,
       multiUserMode: false,
       expertMode: false,
@@ -69,23 +66,21 @@ describe("ViewAppManager", () => {
     listDebloatBackupsMock.mockResolvedValue([]);
   });
 
-  it("renders a package icon for each visible row", async () => {
+  it('renders a package icon for each visible row', async () => {
     const user = userEvent.setup();
     getInstalledPackagesMock.mockResolvedValue([
       {
-        name: "com.example.camera",
-        packageType: "user",
+        name: 'com.example.camera',
+        packageType: 'user',
       },
     ]);
 
     render(<ViewAppManager activeView="apps" />);
 
-    await user.click(screen.getByRole("tab", { name: /installation/i }));
+    await user.click(screen.getByRole('tab', { name: /installation/i }));
 
-    expect(await screen.findByText("com.example.camera")).toBeInTheDocument();
-    expect(
-      screen.getByText("com.example.camera").closest('[role="option"]')
-    ).toBeInTheDocument();
-    expect(getInstalledPackagesMock).toHaveBeenCalledWith("device-a");
+    expect(await screen.findByText('com.example.camera')).toBeInTheDocument();
+    expect(screen.getByText('com.example.camera').closest('[role="option"]')).toBeInTheDocument();
+    expect(getInstalledPackagesMock).toHaveBeenCalledWith('device-a');
   });
 });

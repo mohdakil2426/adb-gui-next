@@ -1,10 +1,10 @@
-import { Package, ShieldCheck } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type AppManagerTab, useDebloatStore } from "@/lib/debloatStore";
-import { cn } from "@/lib/utils";
-import { DebloaterTab } from "./debloater/DebloaterTab";
-import { InstallationTab } from "./debloater/InstallationTab";
+import { Package, ShieldCheck } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { type AppManagerTab, useDebloatStore } from '@/lib/debloatStore';
+import { cn } from '@/lib/utils';
+import { DebloaterTab } from './debloater/DebloaterTab';
+import { InstallationTab } from './debloater/InstallationTab';
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const activeTab = useDebloatStore((s) => s.activeTab);
@@ -44,23 +44,12 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
               className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
               variant="line"
             >
-              <TabsTrigger
-                className="flex items-center gap-1.5"
-                value="installation"
-              >
+              <TabsTrigger className="flex items-center gap-1.5" value="installation">
                 <Package className="size-3.5" />
                 Installation
               </TabsTrigger>
-              <TabsTrigger
-                className="flex items-center gap-1.5"
-                value="debloater"
-              >
-                <ShieldCheck
-                  className={cn(
-                    "size-3.5",
-                    isLoadingPackages && "animate-spin"
-                  )}
-                />
+              <TabsTrigger className="flex items-center gap-1.5" value="debloater">
+                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-spin')} />
                 Debloater
               </TabsTrigger>
             </TabsList>

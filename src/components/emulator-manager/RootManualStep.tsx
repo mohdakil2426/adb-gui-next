@@ -6,20 +6,20 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
-} from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { DropZone } from "@/components/DropZone";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { DropZone } from '@/components/DropZone';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   FinalizeAvdRoot,
   PrepareAvdRoot,
   SelectPatchedRootImageFile,
   SelectRootPackageFile,
-} from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
+} from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
 
 interface RootManualStepProps {
   avdName: string;
@@ -28,18 +28,11 @@ interface RootManualStepProps {
   serial: string | null;
 }
 
-export function RootManualStep({
-  avdName,
-  serial,
-  onBack,
-  onColdBoot,
-}: RootManualStepProps) {
+export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManualStepProps) {
   const [packagePath, setPackagePath] = useState<string | null>(null);
   const [patchedImagePath, setPatchedImagePath] = useState<string | null>(null);
-  const [prepareResult, setPrepareResult] =
-    useState<backend.RootPreparationResult | null>(null);
-  const [finalizeResult, setFinalizeResult] =
-    useState<backend.RootFinalizeResult | null>(null);
+  const [prepareResult, setPrepareResult] = useState<backend.RootPreparationResult | null>(null);
+  const [finalizeResult, setFinalizeResult] = useState<backend.RootFinalizeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPreparing, setIsPreparing] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -82,7 +75,7 @@ export function RootManualStep({
       setPrepareResult(result);
       setPatchedImagePath(null);
       setFinalizeResult(null);
-      toast.success("fakeboot.img created and Magisk launched");
+      toast.success('fakeboot.img created and Magisk launched');
     } catch (err) {
       const message = String(err);
       setError(message);
@@ -106,7 +99,7 @@ export function RootManualStep({
         ...(patchedImagePath ? { patchedImagePath } : {}),
       });
       setFinalizeResult(result);
-      toast.success("Manual patch installed");
+      toast.success('Manual patch installed');
     } catch (err) {
       const message = String(err);
       setError(message);
@@ -123,12 +116,10 @@ export function RootManualStep({
     <div className="flex flex-col gap-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-base text-foreground">
-            Manual Mode (FAKEBOOTIMG)
-          </h3>
+          <h3 className="font-semibold text-base text-foreground">Manual Mode (FAKEBOOTIMG)</h3>
           <p className="mt-1 text-muted-foreground text-sm">
-            Create a temporary fake boot image, patch it in Magisk inside the
-            emulator, then install the patched output back into the AVD ramdisk.
+            Create a temporary fake boot image, patch it in Magisk inside the emulator, then install
+            the patched output back into the AVD ramdisk.
           </p>
         </div>
         <Badge variant="secondary">Fallback</Badge>
@@ -139,8 +130,7 @@ export function RootManualStep({
           <ShieldCheck />
           <AlertTitle>Emulator is not online</AlertTitle>
           <AlertDescription>
-            Launch the AVD and wait until ADB shows it as online before creating
-            fakeboot.img.
+            Launch the AVD and wait until ADB shows it as online before creating fakeboot.img.
           </AlertDescription>
         </Alert>
       )}
@@ -161,16 +151,13 @@ export function RootManualStep({
           type="button"
           variant="outline"
         >
-          <FolderOpen
-            className="text-muted-foreground"
-            data-icon="inline-start"
-          />
+          <FolderOpen className="text-muted-foreground" data-icon="inline-start" />
           <span className="min-w-0">
             <span className="block font-medium text-sm">
-              {packageName ?? "Choose Magisk Package"}
+              {packageName ?? 'Choose Magisk Package'}
             </span>
             <span className="block truncate text-muted-foreground text-xs">
-              {packagePath ?? "Supports .apk and .zip packages"}
+              {packagePath ?? 'Supports .apk and .zip packages'}
             </span>
           </span>
         </Button>
@@ -196,9 +183,7 @@ export function RootManualStep({
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
             <div className="min-w-0">
-              <p className="font-semibold text-foreground text-sm">
-                fakeboot.img is ready
-              </p>
+              <p className="font-semibold text-foreground text-sm">fakeboot.img is ready</p>
               <p className="mt-1 font-mono text-muted-foreground text-xs">
                 {prepareResult.fakeBootRemotePath}
               </p>
@@ -207,21 +192,18 @@ export function RootManualStep({
 
           <ol className="grid gap-2 text-muted-foreground text-sm">
             {prepareResult.instructions.map((instruction) => (
-              <li
-                className="rounded-md border bg-background px-3 py-2"
-                key={instruction}
-              >
+              <li className="rounded-md border bg-background px-3 py-2" key={instruction}>
                 {instruction}
               </li>
             ))}
           </ol>
 
           <DropZone
-            acceptExtensions={[".img"]}
+            acceptExtensions={['.img']}
             browseLabel="Select Patched Image"
             className="py-5"
             icon={FileCheck2}
-            label={patchedImageName ?? "Drop patched Magisk image here"}
+            label={patchedImageName ?? 'Drop patched Magisk image here'}
             onBrowse={handleChoosePatchedImage}
             onFilesDropped={(paths) => {
               setPatchedImagePath(paths[0] ?? null);
@@ -229,10 +211,7 @@ export function RootManualStep({
               setError(null);
             }}
             rejectMessage="Drop the Magisk patched .img file."
-            sublabel={
-              patchedImagePath ??
-              "Optional: use this if ADB auto-detect cannot find it"
-            }
+            sublabel={patchedImagePath ?? 'Optional: use this if ADB auto-detect cannot find it'}
           />
 
           <Button
@@ -257,29 +236,19 @@ export function RootManualStep({
           <CheckCircle2 />
           <AlertTitle>Manual Patch Installed</AlertTitle>
           <AlertDescription>
-            {finalizeResult.nextBootRecommendation} Restored{" "}
-            {finalizeResult.restoredFiles.length} file
-            {finalizeResult.restoredFiles.length === 1 ? "" : "s"}.
+            {finalizeResult.nextBootRecommendation} Restored {finalizeResult.restoredFiles.length}{' '}
+            file
+            {finalizeResult.restoredFiles.length === 1 ? '' : 's'}.
           </AlertDescription>
         </Alert>
       ) : null}
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button
-          className="gap-2"
-          onClick={onBack}
-          type="button"
-          variant="outline"
-        >
+        <Button className="gap-2" onClick={onBack} type="button" variant="outline">
           <ArrowLeft data-icon="inline-start" />
           Back
         </Button>
-        <Button
-          className="gap-2"
-          onClick={onColdBoot}
-          type="button"
-          variant="outline"
-        >
+        <Button className="gap-2" onClick={onColdBoot} type="button" variant="outline">
           <RefreshCw data-icon="inline-start" />
           Cold Boot
         </Button>

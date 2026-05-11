@@ -1,8 +1,8 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 const MAX_LOGS = 1000;
 
-export type LogLevel = "info" | "error" | "success" | "warning";
+export type LogLevel = 'info' | 'error' | 'success' | 'warning';
 
 export interface LogEntry {
   id: string;
@@ -12,11 +12,11 @@ export interface LogEntry {
 }
 
 interface LogStore {
-  activeTab: "logs" | "shell";
+  activeTab: 'logs' | 'shell';
 
   addLog: (message: string, type: LogLevel) => void;
   clearLogs: () => void;
-  filter: LogLevel | "all";
+  filter: LogLevel | 'all';
   isFollowing: boolean;
   isOpen: boolean;
   isPanelMaximized: boolean;
@@ -24,8 +24,8 @@ interface LogStore {
   panelHeight: number;
   resetUnreadCount: () => void;
   searchQuery: string;
-  setActiveTab: (tab: "logs" | "shell") => void;
-  setFilter: (filter: LogLevel | "all") => void;
+  setActiveTab: (tab: 'logs' | 'shell') => void;
+  setFilter: (filter: LogLevel | 'all') => void;
   setIsFollowing: (following: boolean) => void;
   setPanelHeight: (height: number) => void;
   setPanelOpen: (isOpen: boolean) => void;
@@ -42,11 +42,11 @@ function formatTimestamp(): string {
 export const useLogStore = create<LogStore>((set) => ({
   logs: [],
   isOpen: false,
-  filter: "all",
-  searchQuery: "",
+  filter: 'all',
+  searchQuery: '',
   isFollowing: true,
   isPanelMaximized: false,
-  activeTab: "logs",
+  activeTab: 'logs',
   unreadCount: 0,
   panelHeight: 300,
 
@@ -80,7 +80,7 @@ export const useLogStore = create<LogStore>((set) => ({
     set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
   },
 
-  setFilter: (filter: LogLevel | "all") => {
+  setFilter: (filter: LogLevel | 'all') => {
     set({ filter });
   },
   setSearchQuery: (query: string) => {
@@ -92,7 +92,7 @@ export const useLogStore = create<LogStore>((set) => ({
   toggleMaximized: () => {
     set((state: LogStore) => ({ isPanelMaximized: !state.isPanelMaximized }));
   },
-  setActiveTab: (tab: "logs" | "shell") => {
+  setActiveTab: (tab: 'logs' | 'shell') => {
     set({ activeTab: tab });
   },
   resetUnreadCount: () => {

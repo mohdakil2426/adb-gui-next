@@ -1,14 +1,11 @@
-"use client";
+'use client';
 
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-} from "next-themes";
+import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from 'next-themes';
 
 export function ThemeProvider({
   children,
-  attribute = "class",
-  defaultTheme = "system",
+  attribute = 'class',
+  defaultTheme = 'system',
   enableSystem = true,
   ...props
 }: ThemeProviderProps) {

@@ -1,15 +1,13 @@
-import { useLogStore } from "@/lib/logStore";
+import { useLogStore } from '@/lib/logStore';
 
-const NICKNAME_STORAGE_KEY = "adb-kit-nicknames";
+const NICKNAME_STORAGE_KEY = 'adb-kit-nicknames';
 
 function getNicknames(): Record<string, string> {
   try {
     const nicknames = localStorage.getItem(NICKNAME_STORAGE_KEY);
     return nicknames ? (JSON.parse(nicknames) as Record<string, string>) : {};
   } catch {
-    useLogStore
-      .getState()
-      .addLog("Failed to parse nicknames from localStorage", "error");
+    useLogStore.getState().addLog('Failed to parse nicknames from localStorage', 'error');
     return {};
   }
 }

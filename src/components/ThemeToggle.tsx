@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { Laptop, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Laptop, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 
 export function ThemeToggle() {
   const { setTheme } = useTheme();
@@ -47,7 +47,7 @@ export function ThemeToggle() {
         <DropdownMenuItem
           className="flex items-center gap-2"
           onClick={() => {
-            setTheme("light");
+            setTheme('light');
           }}
         >
           <Sun className="size-4" />
@@ -56,7 +56,7 @@ export function ThemeToggle() {
         <DropdownMenuItem
           className="flex items-center gap-2"
           onClick={() => {
-            setTheme("dark");
+            setTheme('dark');
           }}
         >
           <Moon className="size-4" />
@@ -65,7 +65,7 @@ export function ThemeToggle() {
         <DropdownMenuItem
           className="flex items-center gap-2"
           onClick={() => {
-            setTheme("system");
+            setTheme('system');
           }}
         >
           <Laptop className="size-4" />

@@ -1,22 +1,20 @@
-import { Snowflake } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { backend } from "@/lib/desktop/models";
-import { RootWizard } from "./RootWizard";
+import { Snowflake } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { backend } from '@/lib/desktop/models';
+import { RootWizard } from './RootWizard';
 
 interface EmulatorRootTabProps {
   avd: backend.AvdSummary | null;
   onLaunch: (options: backend.EmulatorLaunchOptions) => void;
 }
 
-function createLaunchOptions(
-  preset: "default" | "coldBoot"
-): backend.EmulatorLaunchOptions {
+function createLaunchOptions(preset: 'default' | 'coldBoot'): backend.EmulatorLaunchOptions {
   return {
     wipeData: false,
     writableSystem: false,
-    coldBoot: preset === "coldBoot",
-    noSnapshotLoad: preset === "coldBoot",
-    noSnapshotSave: preset === "coldBoot",
+    coldBoot: preset === 'coldBoot',
+    noSnapshotLoad: preset === 'coldBoot',
+    noSnapshotSave: preset === 'coldBoot',
     noBootAnim: false,
   };
 }
@@ -47,7 +45,7 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
             <Button
               id="root-gate-launch-btn"
               onClick={() => {
-                onLaunch(createLaunchOptions("default"));
+                onLaunch(createLaunchOptions('default'));
               }}
               size="sm"
             >
@@ -56,7 +54,7 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
             <Button
               id="root-gate-cold-boot-btn"
               onClick={() => {
-                onLaunch(createLaunchOptions("coldBoot"));
+                onLaunch(createLaunchOptions('coldBoot'));
               }}
               size="sm"
               variant="outline"
@@ -66,9 +64,8 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
             </Button>
           </div>
           <p className="mt-3 text-muted-foreground text-xs">
-            ℹ️ <strong>Cold Boot</strong> is recommended for rooting — it starts
-            the emulator fresh without loading a saved state, so your root patch
-            won't be overwritten by a snapshot.
+            ℹ️ <strong>Cold Boot</strong> is recommended for rooting — it starts the emulator fresh
+            without loading a saved state, so your root patch won't be overwritten by a snapshot.
           </p>
         </div>
       </div>

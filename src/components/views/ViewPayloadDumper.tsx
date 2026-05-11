@@ -1,22 +1,16 @@
-import { FileArchive, Package } from "lucide-react";
-import { useMemo, useState } from "react";
-import { ActionFooter } from "@/components/payload-dumper/ActionFooter";
-import { ExtractionStatusCard } from "@/components/payload-dumper/ExtractionStatusCard";
-import { FileBanner } from "@/components/payload-dumper/FileBanner";
-import { LoadingState } from "@/components/payload-dumper/LoadingState";
-import { PartitionTable } from "@/components/payload-dumper/PartitionTable";
-import { PayloadSourceTabs } from "@/components/payload-dumper/PayloadSourceTabs";
-import type { ConnectionStatus } from "@/components/RemoteUrlPanel";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { usePayloadActions } from "@/lib/payload-dumper/usePayloadActions";
-import { usePayloadEvents } from "@/lib/payload-dumper/usePayloadEvents";
-import { usePayloadDumperStore } from "@/lib/payloadDumperStore";
+import { FileArchive, Package } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ActionFooter } from '@/components/payload-dumper/ActionFooter';
+import { ExtractionStatusCard } from '@/components/payload-dumper/ExtractionStatusCard';
+import { FileBanner } from '@/components/payload-dumper/FileBanner';
+import { LoadingState } from '@/components/payload-dumper/LoadingState';
+import { PartitionTable } from '@/components/payload-dumper/PartitionTable';
+import { PayloadSourceTabs } from '@/components/payload-dumper/PayloadSourceTabs';
+import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { usePayloadActions } from '@/lib/payload-dumper/usePayloadActions';
+import { usePayloadEvents } from '@/lib/payload-dumper/usePayloadEvents';
+import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
 
 export function ViewPayloadDumper() {
   const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
@@ -26,35 +20,22 @@ export function ViewPayloadDumper() {
   const extractedFiles = usePayloadDumperStore((state) => state.extractedFiles);
   const errorMessage = usePayloadDumperStore((state) => state.errorMessage);
   const outputDir = usePayloadDumperStore((state) => state.outputDir);
-  const extractingPartitions = usePayloadDumperStore(
-    (state) => state.extractingPartitions
-  );
-  const completedPartitions = usePayloadDumperStore(
-    (state) => state.completedPartitions
-  );
-  const partitionProgress = usePayloadDumperStore(
-    (state) => state.partitionProgress
-  );
+  const extractingPartitions = usePayloadDumperStore((state) => state.extractingPartitions);
+  const completedPartitions = usePayloadDumperStore((state) => state.completedPartitions);
+  const partitionProgress = usePayloadDumperStore((state) => state.partitionProgress);
   const remoteUrl = usePayloadDumperStore((state) => state.remoteUrl);
   const activeMode = usePayloadDumperStore((state) => state.activeMode);
   const remoteMetadata = usePayloadDumperStore((state) => state.remoteMetadata);
-  const extractionStats = usePayloadDumperStore(
-    (state) => state.extractionStats
-  );
+  const extractionStats = usePayloadDumperStore((state) => state.extractionStats);
   const setRemoteUrl = usePayloadDumperStore((state) => state.setRemoteUrl);
   const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
-  const togglePartition = usePayloadDumperStore(
-    (state) => state.togglePartition
-  );
+  const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
   const toggleAll = usePayloadDumperStore((state) => state.toggleAll);
-  const cancelExtraction = usePayloadDumperStore(
-    (state) => state.cancelExtraction
-  );
+  const cancelExtraction = usePayloadDumperStore((state) => state.cancelExtraction);
 
   // Local UI state — transient, doesn't need to survive view switches
   const [prefetch, setPrefetch] = useState(false);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus>("idle");
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -76,25 +57,20 @@ export function ViewPayloadDumper() {
 
   // Derived values
   const selectedNotExtracted = useMemo(
-    () =>
-      partitions.filter((p) => p.selected && !completedPartitions.has(p.name)),
-    [partitions, completedPartitions]
+    () => partitions.filter((p) => p.selected && !completedPartitions.has(p.name)),
+    [partitions, completedPartitions],
   );
   const toExtractCount = selectedNotExtracted.length;
-  const toExtractSize = selectedNotExtracted.reduce(
-    (acc, p) => acc + p.size,
-    0
-  );
-  const allSelected =
-    partitions.length > 0 && partitions.every((p) => p.selected);
+  const toExtractSize = selectedNotExtracted.reduce((acc, p) => acc + p.size, 0);
+  const allSelected = partitions.length > 0 && partitions.every((p) => p.selected);
   const hasCompletedPartitions = completedPartitions.size > 0;
-  const isExtractionActive = status === "extracting" || hasCompletedPartitions;
+  const isExtractionActive = status === 'extracting' || hasCompletedPartitions;
   const totalPayloadSize = partitions.reduce((acc, p) => acc + p.size, 0);
   const effectiveOutputPath = outputDir || outputPath;
   const isRemote =
-    activeMode === "remote" ||
-    payloadPath.startsWith("http://") ||
-    payloadPath.startsWith("https://");
+    activeMode === 'remote' ||
+    payloadPath.startsWith('http://') ||
+    payloadPath.startsWith('https://');
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6 pb-10">
@@ -109,8 +85,7 @@ export function ViewPayloadDumper() {
         <div>
           <h1 className="sr-only">Payload Dumper</h1>
           <p className="text-muted-foreground text-sm">
-            Extract partition images from Android OTA, OnePlus OPS, and Oppo OFP
-            files
+            Extract partition images from Android OTA, OnePlus OPS, and Oppo OFP files
           </p>
         </div>
       </div>
@@ -122,19 +97,13 @@ export function ViewPayloadDumper() {
             <FileArchive aria-hidden="true" className="h-5 w-5" />
             Extraction Setup
           </CardTitle>
-          <CardDescription>
-            Select payload file and output directory for extraction
-          </CardDescription>
+          <CardDescription>Select payload file and output directory for extraction</CardDescription>
         </CardHeader>
         <CardContent className="flex w-full min-w-0 flex-col gap-4 overflow-hidden">
           {payloadPath ? (
-            status === "loading-partitions" && partitions.length === 0 ? (
+            status === 'loading-partitions' && partitions.length === 0 ? (
               /* State: Loading — stage indicator */
-              <LoadingState
-                mode={activeMode}
-                payloadPath={payloadPath}
-                remoteUrl={remoteUrl}
-              />
+              <LoadingState mode={activeMode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
             ) : (
               /* State: Loaded — banner + table + footer */
               <>
@@ -193,11 +162,9 @@ export function ViewPayloadDumper() {
             /* State: Empty — Tabs for Local/Remote */
             <PayloadSourceTabs
               connectionStatus={connectionStatus}
-              disabled={
-                status === "extracting" || status === "loading-partitions"
-              }
+              disabled={status === 'extracting' || status === 'loading-partitions'}
               estimatedSize={estimatedSize}
-              isLoadingPartitions={status === "loading-partitions"}
+              isLoadingPartitions={status === 'loading-partitions'}
               mode={activeMode}
               onCancelLoadPartitions={actions.handleCancelLoadPartitions}
               onCheckUrl={actions.handleCheckUrl}
@@ -215,17 +182,16 @@ export function ViewPayloadDumper() {
       </Card>
 
       {/* Status / Results Card */}
-      {(status === "success" || status === "error") &&
-        extractedFiles.length > 0 && (
-          <ExtractionStatusCard
-            errorMessage={errorMessage}
-            extractedFiles={extractedFiles}
-            extractionStats={extractionStats}
-            onOpenOutputFolder={actions.handleOpenOutputFolder}
-            outputDir={outputDir}
-            status={status}
-          />
-        )}
+      {(status === 'success' || status === 'error') && extractedFiles.length > 0 && (
+        <ExtractionStatusCard
+          errorMessage={errorMessage}
+          extractedFiles={extractedFiles}
+          extractionStats={extractionStats}
+          onOpenOutputFolder={actions.handleOpenOutputFolder}
+          outputDir={outputDir}
+          status={status}
+        />
+      )}
     </div>
   );
 }

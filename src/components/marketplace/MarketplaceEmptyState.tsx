@@ -1,26 +1,11 @@
-import {
-  Clock3,
-  Compass,
-  Loader2,
-  Search,
-  Sparkles,
-  TrendingUp,
-  UserRound,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useMarketplaceHome } from "@/lib/marketplace/useMarketplaceHome";
-import { useMarketplaceStore } from "@/lib/marketplaceStore";
-import { AppCard } from "./AppCard";
+import { Clock3, Compass, Loader2, Search, Sparkles, TrendingUp, UserRound } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useMarketplaceHome } from '@/lib/marketplace/useMarketplaceHome';
+import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { AppCard } from './AppCard';
 
-const COLLECTIONS = [
-  "Privacy",
-  "Media",
-  "Developer Tools",
-  "File Tools",
-  "Messaging",
-  "Browsers",
-];
+const COLLECTIONS = ['Privacy', 'Media', 'Developer Tools', 'File Tools', 'Messaging', 'Browsers'];
 
 interface MarketplaceEmptyStateProps {
   hasQuery: boolean;
@@ -44,9 +29,7 @@ function SectionHeader({
           <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
           <span>{title}</span>
         </div>
-        {description ? (
-          <p className="text-muted-foreground text-xs">{description}</p>
-        ) : null}
+        {description ? <p className="text-muted-foreground text-xs">{description}</p> : null}
       </div>
     </div>
   );
@@ -58,23 +41,13 @@ export function MarketplaceEmptyState({
   onQuickSearch,
 }: MarketplaceEmptyStateProps) {
   const trendingApps = useMarketplaceStore((state) => state.trendingApps);
-  const isTrendingLoading = useMarketplaceStore(
-    (state) => state.isTrendingLoading
-  );
-  const recentReleaseApps = useMarketplaceStore(
-    (state) => state.recentReleaseApps
-  );
-  const isRecentReleaseLoading = useMarketplaceStore(
-    (state) => state.isRecentReleaseLoading
-  );
+  const isTrendingLoading = useMarketplaceStore((state) => state.isTrendingLoading);
+  const recentReleaseApps = useMarketplaceStore((state) => state.recentReleaseApps);
+  const isRecentReleaseLoading = useMarketplaceStore((state) => state.isRecentReleaseLoading);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
-  const recentlyViewedApps = useMarketplaceStore(
-    (state) => state.recentlyViewedApps
-  );
+  const recentlyViewedApps = useMarketplaceStore((state) => state.recentlyViewedApps);
   const githubSession = useMarketplaceStore((state) => state.githubSession);
-  const githubOauthClientId = useMarketplaceStore(
-    (state) => state.githubOauthClientId
-  );
+  const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
   const openSettings = useMarketplaceStore((state) => state.openSettings);
 
@@ -84,12 +57,8 @@ export function MarketplaceEmptyState({
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
         <Loader2 aria-hidden="true" className="mb-3 size-8 animate-spin" />
-        <p className="font-medium text-sm">
-          Searching across your selected sources…
-        </p>
-        <p className="mt-1 text-xs">
-          Results update as soon as the latest request completes.
-        </p>
+        <p className="font-medium text-sm">Searching across your selected sources…</p>
+        <p className="mt-1 text-xs">Results update as soon as the latest request completes.</p>
       </div>
     );
   }
@@ -99,9 +68,7 @@ export function MarketplaceEmptyState({
       <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
         <Search aria-hidden="true" className="mb-3 size-8 opacity-60" />
         <p className="font-medium text-sm">No apps matched that search</p>
-        <p className="mt-1 text-xs">
-          Try a different term, open more sources, or change the sort.
-        </p>
+        <p className="mt-1 text-xs">Try a different term, open more sources, or change the sort.</p>
       </div>
     );
   }
@@ -110,15 +77,12 @@ export function MarketplaceEmptyState({
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 font-semibold text-lg">
-          <Compass
-            aria-hidden="true"
-            className="size-5 text-muted-foreground"
-          />
+          <Compass aria-hidden="true" className="size-5 text-muted-foreground" />
           Discover Android apps faster
         </div>
         <p className="max-w-2xl text-muted-foreground text-sm">
-          Search when you know what you want, or start with recent activity,
-          curated collections, and trusted sources when you are exploring.
+          Search when you know what you want, or start with recent activity, curated collections,
+          and trusted sources when you are exploring.
         </p>
       </div>
 
@@ -193,10 +157,7 @@ export function MarketplaceEmptyState({
             />
             {isTrendingLoading ? (
               <div className="flex items-center justify-center py-10">
-                <Loader2
-                  aria-hidden="true"
-                  className="size-5 animate-spin text-muted-foreground"
-                />
+                <Loader2 aria-hidden="true" className="size-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -221,10 +182,7 @@ export function MarketplaceEmptyState({
             />
             {isRecentReleaseLoading ? (
               <div className="flex items-center justify-center py-10">
-                <Loader2
-                  aria-hidden="true"
-                  className="size-5 animate-spin text-muted-foreground"
-                />
+                <Loader2 aria-hidden="true" className="size-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -247,23 +205,23 @@ export function MarketplaceEmptyState({
             <SectionHeader
               description={
                 githubSession.user
-                  ? "Signed-in sessions can help with GitHub rate limits and richer discovery."
-                  : "Sign in with GitHub to improve rate limits and future GitHub-powered discovery features."
+                  ? 'Signed-in sessions can help with GitHub rate limits and richer discovery.'
+                  : 'Sign in with GitHub to improve rate limits and future GitHub-powered discovery features.'
               }
               icon={UserRound}
               title={
                 githubSession.user
                   ? `Signed in as ${githubSession.user.login}`
-                  : "Optional GitHub sign-in"
+                  : 'Optional GitHub sign-in'
               }
             />
             {githubSession.rateLimit ? (
               <div className="rounded-lg border bg-background/70 p-3 text-muted-foreground text-xs">
                 <p>
-                  API remaining:{" "}
+                  API remaining:{' '}
                   <span className="font-medium text-foreground">
                     {githubSession.rateLimit.remaining}
-                  </span>{" "}
+                  </span>{' '}
                   / {githubSession.rateLimit.limit}
                 </p>
               </div>
@@ -272,13 +230,13 @@ export function MarketplaceEmptyState({
             <Button
               className="w-full"
               onClick={openSettings}
-              variant={githubSession.user ? "outline" : "default"}
+              variant={githubSession.user ? 'outline' : 'default'}
             >
               {githubSession.user
-                ? "Manage GitHub session"
+                ? 'Manage GitHub session'
                 : githubOauthClientId
-                  ? "Configure GitHub sign-in"
-                  : "Add GitHub OAuth client ID"}
+                  ? 'Configure GitHub sign-in'
+                  : 'Add GitHub OAuth client ID'}
             </Button>
             <p className="text-muted-foreground text-xs">
               Anonymous browsing remains available even if you do not sign in.

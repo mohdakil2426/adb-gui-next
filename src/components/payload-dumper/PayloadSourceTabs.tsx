@@ -1,24 +1,21 @@
-import { FileArchive, Globe, XCircle } from "lucide-react";
-import { DropZone } from "@/components/DropZone";
-import {
-  type ConnectionStatus,
-  RemoteUrlPanel,
-} from "@/components/RemoteUrlPanel";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileArchive, Globe, XCircle } from 'lucide-react';
+import { DropZone } from '@/components/DropZone';
+import { type ConnectionStatus, RemoteUrlPanel } from '@/components/RemoteUrlPanel';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const ACCEPTED_PAYLOAD_EXTENSIONS = [".bin", ".zip", ".ops", ".ofp"];
+const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'];
 
 interface PayloadSourceTabsProps {
   connectionStatus: ConnectionStatus;
   disabled: boolean;
   estimatedSize: string | null;
   isLoadingPartitions: boolean;
-  mode: "local" | "remote";
+  mode: 'local' | 'remote';
   onCancelLoadPartitions: () => void;
   onCheckUrl: () => void;
   onLoadRemotePartitions: () => void;
-  onModeChange: (mode: "local" | "remote") => void;
+  onModeChange: (mode: 'local' | 'remote') => void;
   onPayloadDrop: (paths: string[]) => void;
   onPrefetchChange: (prefetch: boolean) => void;
   onSelectPayload: () => void;
@@ -52,7 +49,7 @@ export function PayloadSourceTabs({
     <Tabs
       className="w-full"
       onValueChange={(v) => {
-        onModeChange(v as "local" | "remote");
+        onModeChange(v as 'local' | 'remote');
       }}
       value={mode}
     >
@@ -92,14 +89,10 @@ export function PayloadSourceTabs({
           prefetch={prefetch}
           url={remoteUrl}
         />
-        {connectionStatus === "ready" && (
+        {connectionStatus === 'ready' && (
           <div className="mt-4 flex min-w-0 gap-2">
             {isLoadingPartitions ? (
-              <Button
-                className="flex-1"
-                onClick={onCancelLoadPartitions}
-                variant="destructive"
-              >
+              <Button className="flex-1" onClick={onCancelLoadPartitions} variant="destructive">
                 <XCircle className="mr-2 h-4 w-4" />
                 Cancel Loading...
               </Button>

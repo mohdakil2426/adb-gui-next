@@ -1,5 +1,5 @@
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 interface ExtractionProgressBarProps {
   isCompleted: boolean;
@@ -24,13 +24,13 @@ export function ExtractionProgressBar({
   return (
     <div className="flex w-full items-center gap-2">
       <Progress
-        className={cn("h-1.5 flex-1", isCompleted ? "[&>div]:bg-success" : "")}
+        className={cn('h-1.5 flex-1', isCompleted ? '[&>div]:bg-success' : '')}
         value={displayProgress}
       />
       <span
         className={cn(
-          "w-8 shrink-0 text-right font-medium text-[10px] tabular-nums",
-          isCompleted ? "text-success" : "text-primary"
+          'w-8 shrink-0 text-right font-medium text-[10px] tabular-nums',
+          isCompleted ? 'text-success' : 'text-primary',
         )}
       >
         {Math.round(displayProgress)}%

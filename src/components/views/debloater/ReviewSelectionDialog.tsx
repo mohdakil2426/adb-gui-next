@@ -1,8 +1,8 @@
-import { AlertTriangle, HardDrive, Loader2, Shield } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, HardDrive, Loader2, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Table,
   TableBody,
@@ -18,19 +18,19 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { useDebloatStore } from "@/lib/debloatStore";
-import { CreateDebloatBackup, ListDebloatBackups } from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import { handleError } from "@/lib/errorHandler";
-import { useLogStore } from "@/lib/logStore";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import { useDebloatStore } from '@/lib/debloatStore';
+import { CreateDebloatBackup, ListDebloatBackups } from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import { handleError } from '@/lib/errorHandler';
+import { useLogStore } from '@/lib/logStore';
+import { cn } from '@/lib/utils';
 import {
   ALL_REMOVAL_TIERS,
   countByTier,
   REMOVAL_TIER_CLASSES,
   REMOVAL_TIER_LABELS,
-} from "./debloaterUtils";
+} from './debloaterUtils';
 
 interface ReviewSelectionDialogProps {
   disableMode: boolean;
@@ -58,7 +58,7 @@ export function ReviewSelectionDialog({
   const selectedRows = packages.filter((p) => selectedPackages.has(p.name));
   const tierCounts = countByTier(packages, selectedPackages);
   const hasUnsafe = tierCounts.Unsafe > 0;
-  const actionLabel = disableMode ? "Disable" : "Uninstall";
+  const actionLabel = disableMode ? 'Disable' : 'Uninstall';
 
   async function handleCreateBackup() {
     setIsCreatingBackup(true);
@@ -71,20 +71,17 @@ export function ReviewSelectionDialog({
       const backups = await ListDebloatBackups();
       setBackups(backups);
       setBackupCreated(true);
-      useLogStore.getState().addLog("Debloat backup created", "success");
-      toast.success("Backup created successfully");
+      useLogStore.getState().addLog('Debloat backup created', 'success');
+      toast.success('Backup created successfully');
     } catch (error) {
-      handleError("Create Backup", error);
+      handleError('Create Backup', error);
     } finally {
       setIsCreatingBackup(false);
     }
   }
 
   return (
-    <Dialog
-      onOpenChange={isApplying ? () => undefined : onOpenChange}
-      open={open}
-    >
+    <Dialog onOpenChange={isApplying ? () => undefined : onOpenChange} open={open}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -93,8 +90,7 @@ export function ReviewSelectionDialog({
           </DialogTitle>
           <DialogDescription>
             {selectedPackages.size} package
-            {selectedPackages.size === 1 ? "" : "s"} will be{" "}
-            {actionLabel.toLowerCase()}d.
+            {selectedPackages.size === 1 ? '' : 's'} will be {actionLabel.toLowerCase()}d.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,19 +115,15 @@ export function ReviewSelectionDialog({
                     <TableCell>
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-[10px]",
-                          classes.badge
+                          'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-[10px]',
+                          classes.badge,
                         )}
                       >
-                        <span
-                          className={cn("size-1.5 rounded-full", classes.dot)}
-                        />
+                        <span className={cn('size-1.5 rounded-full', classes.dot)} />
                         {REMOVAL_TIER_LABELS[tier]}
                       </span>
                     </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {count}
-                    </TableCell>
+                    <TableCell className="text-right font-mono">{count}</TableCell>
                   </TableRow>
                 );
               })}
@@ -150,8 +142,8 @@ export function ReviewSelectionDialog({
               >
                 <span
                   className={cn(
-                    "shrink-0 rounded-full px-1.5 py-0.5 font-medium text-[9px]",
-                    classes.badge
+                    'shrink-0 rounded-full px-1.5 py-0.5 font-medium text-[9px]',
+                    classes.badge,
                   )}
                 >
                   {pkg.removal}
@@ -159,13 +151,11 @@ export function ReviewSelectionDialog({
                 <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium text-[9px] text-muted-foreground">
                   {pkg.list}
                 </span>
-                <span className="flex-1 truncate font-mono text-foreground">
-                  {pkg.name}
-                </span>
+                <span className="flex-1 truncate font-mono text-foreground">{pkg.name}</span>
                 <span
                   className={cn(
-                    "shrink-0 font-medium text-[9px]",
-                    disableMode ? "text-warning-foreground" : "text-destructive"
+                    'shrink-0 font-medium text-[9px]',
+                    disableMode ? 'text-warning-foreground' : 'text-destructive',
                   )}
                 >
                   {actionLabel}
@@ -180,8 +170,8 @@ export function ReviewSelectionDialog({
           <HardDrive className="size-4 shrink-0 text-muted-foreground" />
           <div className="flex-1 text-muted-foreground text-xs">
             {backupCreated
-              ? "✓ Backup created — you can restore later from the Backup tab."
-              : "Create a device backup before applying to restore if needed."}
+              ? '✓ Backup created — you can restore later from the Backup tab.'
+              : 'Create a device backup before applying to restore if needed.'}
           </div>
           {!backupCreated && (
             <Button
@@ -205,8 +195,7 @@ export function ReviewSelectionDialog({
             <AlertTriangle />
             <AlertTitle>Unsafe packages selected</AlertTitle>
             <AlertDescription>
-              These may cause system instability or bootloops. Ensure you have a
-              backup.
+              These may cause system instability or bootloops. Ensure you have a backup.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -215,9 +204,8 @@ export function ReviewSelectionDialog({
           <AlertTriangle />
           <AlertTitle>Disclaimer</AlertTitle>
           <AlertDescription className="text-warning-foreground/90">
-            You cannot brick your device with user-space debloating, but
-            removing essential packages may cause a bootloop requiring a factory
-            reset. Always backup first.
+            You cannot brick your device with user-space debloating, but removing essential packages
+            may cause a bootloop requiring a factory reset. Always backup first.
           </AlertDescription>
         </Alert>
 
@@ -234,14 +222,12 @@ export function ReviewSelectionDialog({
           <Button
             disabled={isApplying}
             onClick={() => void onConfirm()}
-            variant={hasUnsafe ? "destructive" : "default"}
+            variant={hasUnsafe ? 'destructive' : 'default'}
           >
-            {isApplying ? (
-              <Loader2 className="animate-spin" data-icon="inline-start" />
-            ) : null}
+            {isApplying ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
             {isApplying
-              ? "Applying…"
-              : `Apply ${selectedPackages.size} Action${selectedPackages.size === 1 ? "" : "s"}`}
+              ? 'Applying…'
+              : `Apply ${selectedPackages.size} Action${selectedPackages.size === 1 ? '' : 's'}`}
           </Button>
         </DialogFooter>
       </DialogContent>

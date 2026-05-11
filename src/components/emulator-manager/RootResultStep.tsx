@@ -5,9 +5,9 @@ import {
   RefreshCcw,
   RotateCcw,
   ShieldCheck,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { backend } from "@/lib/desktop/models";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import type { backend } from '@/lib/desktop/models';
 
 interface RootResultStepProps {
   avdName: string;
@@ -36,7 +36,7 @@ export function RootResultStep({
   onReset,
 }: RootResultStepProps) {
   const success = result !== null && error === null;
-  const verified = verification?.status === "verified";
+  const verified = verification?.status === 'verified';
 
   if (success) {
     return (
@@ -47,32 +47,22 @@ export function RootResultStep({
           <div>
             {verified ? (
               <>
-                <h3 className="font-semibold text-base text-foreground">
-                  Root Verified
-                </h3>
+                <h3 className="font-semibold text-base text-foreground">Root Verified</h3>
                 <p className="text-muted-foreground text-sm">
-                  <span className="font-medium text-foreground">{avdName}</span>{" "}
-                  has working Magisk root.{" "}
-                  <code className="ml-1 rounded bg-muted px-1 text-xs">
-                    su -c id -u
-                  </code>{" "}
-                  returned{" "}
-                  <code className="ml-1 rounded bg-muted px-1 text-xs">0</code>.
+                  <span className="font-medium text-foreground">{avdName}</span> has working Magisk
+                  root. <code className="ml-1 rounded bg-muted px-1 text-xs">su -c id -u</code>{' '}
+                  returned <code className="ml-1 rounded bg-muted px-1 text-xs">0</code>.
                 </p>
               </>
             ) : (
               <>
-                <h3 className="font-semibold text-base text-foreground">
-                  Patch Installed
-                </h3>
+                <h3 className="font-semibold text-base text-foreground">Patch Installed</h3>
                 <p className="text-muted-foreground text-sm">
-                  <span className="font-medium text-foreground">{avdName}</span>{" "}
-                  has a patched ramdisk. Cold boot it, then verify root before
-                  using root-only tools.
+                  <span className="font-medium text-foreground">{avdName}</span> has a patched
+                  ramdisk. Cold boot it, then verify root before using root-only tools.
                   {!result.managerInstalled && (
                     <span className="ml-1 text-warning-foreground">
-                      Magisk Manager install failed — install manually from your
-                      package file.
+                      Magisk Manager install failed — install manually from your package file.
                     </span>
                   )}
                 </p>
@@ -83,12 +73,8 @@ export function RootResultStep({
 
         {verification && !verified ? (
           <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
-            <p className="font-medium text-warning-foreground text-xs">
-              Verification result
-            </p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {verification.message}
-            </p>
+            <p className="font-medium text-warning-foreground text-xs">Verification result</p>
+            <p className="mt-1 text-muted-foreground text-xs">{verification.message}</p>
           </div>
         ) : null}
 
@@ -102,21 +88,21 @@ export function RootResultStep({
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[10px] text-primary-foreground">
                 1
               </span>
-              The emulator was stopped automatically. Click{" "}
-              <strong>Cold Boot</strong> below to start it with root applied.
+              The emulator was stopped automatically. Click <strong>Cold Boot</strong> below to
+              start it with root applied.
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[10px] text-primary-foreground">
                 2
               </span>
-              Open <strong>Magisk Manager</strong> and accept the{" "}
+              Open <strong>Magisk Manager</strong> and accept the{' '}
               <strong>"Additional Setup"</strong> prompt if it appears.
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-[10px] text-primary-foreground">
                 3
               </span>
-              Verify root: open a terminal and run{" "}
+              Verify root: open a terminal and run{' '}
               <code className="rounded bg-muted px-1 text-xs">su</code>.
             </li>
             <li className="flex items-start gap-2">
@@ -124,9 +110,9 @@ export function RootResultStep({
                 4
               </span>
               <span className="text-muted-foreground">
-                If the emulator gets stuck in a bootloop, hold{" "}
-                <strong className="text-foreground">Volume Down</strong> during
-                boot to enter Safe Mode and disable Magisk modules.
+                If the emulator gets stuck in a bootloop, hold{' '}
+                <strong className="text-foreground">Volume Down</strong> during boot to enter Safe
+                Mode and disable Magisk modules.
               </span>
             </li>
           </ol>
@@ -134,21 +120,17 @@ export function RootResultStep({
 
         {/* Always cold boot reminder */}
         <div className="rounded-md bg-warning/10 px-3 py-2 text-warning-foreground text-xs">
-          ⚠️ <strong>Always Cold Boot</strong> after rooting. Normal Boot may
-          load a snapshot that overwrites your root patch.
+          ⚠️ <strong>Always Cold Boot</strong> after rooting. Normal Boot may load a snapshot that
+          overwrites your root patch.
         </div>
 
         {/* Actions */}
         <div className="flex flex-col gap-2">
-          <Button
-            className="w-full"
-            id="root-result-cold-boot"
-            onClick={onColdBoot}
-          >
+          <Button className="w-full" id="root-result-cold-boot" onClick={onColdBoot}>
             <RefreshCcw data-icon="inline-start" />
             Cold Boot Emulator
           </Button>
-          {result.activationStatus === "patchInstalled" && (
+          {result.activationStatus === 'patchInstalled' && (
             <Button
               className="w-full"
               disabled={isVerifying}
@@ -193,9 +175,7 @@ export function RootResultStep({
       <div className="flex items-start gap-3">
         <AlertTriangle className="mt-0.5 size-8 shrink-0 text-destructive" />
         <div>
-          <h3 className="font-semibold text-base text-foreground">
-            Root Failed
-          </h3>
+          <h3 className="font-semibold text-base text-foreground">Root Failed</h3>
           <p className="mt-1 text-muted-foreground text-sm">
             The automated pipeline encountered an error.
           </p>
@@ -206,9 +186,7 @@ export function RootResultStep({
       {error ? (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
           <p className="font-medium text-destructive text-xs">Error details</p>
-          <p className="mt-1 break-words text-muted-foreground text-xs">
-            {error}
-          </p>
+          <p className="mt-1 break-words text-muted-foreground text-xs">{error}</p>
         </div>
       ) : null}
 
@@ -223,16 +201,10 @@ export function RootResultStep({
           Try Manual Mode (FAKEBOOTIMG)
         </Button>
         <p className="text-muted-foreground text-xs">
-          Manual mode opens the Magisk app inside the emulator so it can patch
-          the boot image itself. Use this as a fallback if the automated
-          pipeline fails.
+          Manual mode opens the Magisk app inside the emulator so it can patch the boot image
+          itself. Use this as a fallback if the automated pipeline fails.
         </p>
-        <Button
-          className="w-full"
-          id="root-result-retry"
-          onClick={onReset}
-          variant="ghost"
-        >
+        <Button className="w-full" id="root-result-retry" onClick={onReset} variant="ghost">
           Try Again
         </Button>
       </div>

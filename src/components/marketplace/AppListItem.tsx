@@ -1,20 +1,10 @@
-import {
-  Check,
-  Download,
-  ExternalLink,
-  Loader2,
-  Package,
-  Star,
-} from "lucide-react";
-import { memo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import type { backend } from "@/lib/desktop/models";
-import {
-  formatDownloadCount,
-  installMarketplacePackage,
-} from "@/lib/marketplace/install";
-import { cn, formatRating } from "@/lib/utils";
-import { ProviderBadge } from "./ProviderBadge";
+import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import type { backend } from '@/lib/desktop/models';
+import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
+import { cn, formatRating } from '@/lib/utils';
+import { ProviderBadge } from './ProviderBadge';
 
 type MarketplaceApp = backend.MarketplaceApp;
 
@@ -23,13 +13,8 @@ interface AppListItemProps {
   onSelect: () => void;
 }
 
-export const AppListItem = memo(function AppListItem({
-  app,
-  onSelect,
-}: AppListItemProps) {
-  const [installState, setInstallState] = useState<"idle" | "running" | "done">(
-    "idle"
-  );
+export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListItemProps) {
+  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
 
   const handleInstall = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -40,14 +25,14 @@ export const AppListItem = memo(function AppListItem({
     }
 
     try {
-      setInstallState("running");
+      setInstallState('running');
       await installMarketplacePackage(app.name, app.downloadUrl);
-      setInstallState("done");
+      setInstallState('done');
       setTimeout(() => {
-        setInstallState("idle");
+        setInstallState('idle');
       }, 2000);
     } catch {
-      setInstallState("idle");
+      setInstallState('idle');
     }
   };
 
@@ -68,7 +53,7 @@ export const AppListItem = memo(function AppListItem({
               className="size-10 object-cover"
               height={40}
               onError={(event) => {
-                (event.target as HTMLImageElement).style.display = "none";
+                (event.target as HTMLImageElement).style.display = 'none';
               }}
               src={app.iconUrl}
               width={40}
@@ -85,15 +70,15 @@ export const AppListItem = memo(function AppListItem({
             {app.availableSources.length > 1 && (
               <span className="text-[10px] text-muted-foreground">
                 +{app.availableSources.length - 1} source
-                {app.availableSources.length > 2 ? "s" : ""}
+                {app.availableSources.length > 2 ? 's' : ''}
               </span>
             )}
           </div>
           <p className="truncate text-muted-foreground text-xs">
-            {app.summary || "No description available yet."}
+            {app.summary || 'No description available yet.'}
           </p>
           <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            <span>{app.version || "Unknown version"}</span>
+            <span>{app.version || 'Unknown version'}</span>
             {app.rating != null && app.rating > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Star className="size-3.5 fill-current" />
@@ -111,23 +96,16 @@ export const AppListItem = memo(function AppListItem({
       </button>
 
       <Button
-        aria-label={
-          app.downloadUrl
-            ? `Install ${app.name}`
-            : `View details for ${app.name}`
-        }
-        className={cn(
-          "h-8 gap-1.5",
-          installState === "done" && "pointer-events-none"
-        )}
-        disabled={installState === "running"}
+        aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
+        className={cn('h-8 gap-1.5', installState === 'done' && 'pointer-events-none')}
+        disabled={installState === 'running'}
         onClick={handleInstall}
         size="sm"
-        variant={installState === "done" ? "default" : "outline"}
+        variant={installState === 'done' ? 'default' : 'outline'}
       >
-        {installState === "done" ? (
+        {installState === 'done' ? (
           <Check data-icon="inline-start" />
-        ) : installState === "idle" ? (
+        ) : installState === 'idle' ? (
           app.downloadUrl ? (
             <Download data-icon="inline-start" />
           ) : (
@@ -136,13 +114,13 @@ export const AppListItem = memo(function AppListItem({
         ) : (
           <Loader2 className="animate-spin" data-icon="inline-start" />
         )}
-        {installState === "running"
-          ? "Installing"
-          : installState === "done"
-            ? "Installed"
+        {installState === 'running'
+          ? 'Installing'
+          : installState === 'done'
+            ? 'Installed'
             : app.downloadUrl
-              ? "Install"
-              : "Details"}
+              ? 'Install'
+              : 'Details'}
       </Button>
     </div>
   );

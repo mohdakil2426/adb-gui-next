@@ -1,7 +1,7 @@
-import { AlertTriangle } from "lucide-react";
-import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { debugLog } from "@/lib/debug";
+import { AlertTriangle } from 'lucide-react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { debugLog } from '@/lib/debug';
 
 interface Props {
   children: ReactNode;
@@ -30,11 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    debugLog(
-      "[ErrorBoundary] Uncaught render error:",
-      error,
-      info.componentStack
-    );
+    debugLog('[ErrorBoundary] Uncaught render error:', error, info.componentStack);
   }
 
   private handleRetry = (): void => {
@@ -51,21 +47,15 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-destructive/20 blur-xl" />
             <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
-              <AlertTriangle
-                aria-hidden="true"
-                className="h-6 w-6 text-destructive"
-              />
+              <AlertTriangle aria-hidden="true" className="h-6 w-6 text-destructive" />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <p className="font-semibold">
-              {this.props.viewName
-                ? `${this.props.viewName} crashed`
-                : "View crashed"}
+              {this.props.viewName ? `${this.props.viewName} crashed` : 'View crashed'}
             </p>
             <p className="text-muted-foreground text-sm">
-              {this.state.error?.message ??
-                "An unexpected render error occurred."}
+              {this.state.error?.message ?? 'An unexpected render error occurred.'}
             </p>
           </div>
           <Button onClick={this.handleRetry} size="sm" variant="outline">

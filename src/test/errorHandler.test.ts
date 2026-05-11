@@ -1,12 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  handleError,
-  handleInfo,
-  handleSuccess,
-  handleWarning,
-} from "../lib/errorHandler";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handleError, handleInfo, handleSuccess, handleWarning } from '../lib/errorHandler';
 
-vi.mock("sonner", () => ({
+vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(() => {}),
     success: vi.fn(() => {}),
@@ -15,77 +10,77 @@ vi.mock("sonner", () => ({
 }));
 
 const mockAddLog = vi.fn();
-vi.mock("../lib/logStore", () => ({
+vi.mock('../lib/logStore', () => ({
   useLogStore: {
     getState: () => ({ addLog: mockAddLog }),
   },
 }));
 
-describe("handleError", () => {
+describe('handleError', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("returns a formatted message string", () => {
-    const msg = handleError("TestCtx", new Error("something broke"));
-    expect(msg).toBe("[TestCtx] something broke");
+  it('returns a formatted message string', () => {
+    const msg = handleError('TestCtx', new Error('something broke'));
+    expect(msg).toBe('[TestCtx] something broke');
   });
 
-  it("stringifies non-Error values", () => {
-    const msg = handleError("TestCtx", "plain string error");
-    expect(msg).toBe("[TestCtx] plain string error");
+  it('stringifies non-Error values', () => {
+    const msg = handleError('TestCtx', 'plain string error');
+    expect(msg).toBe('[TestCtx] plain string error');
   });
 
-  it("calls addLog with error level", () => {
-    handleError("TestCtx", "oops");
-    expect(mockAddLog).toHaveBeenCalledWith("[TestCtx] oops", "error");
+  it('calls addLog with error level', () => {
+    handleError('TestCtx', 'oops');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] oops', 'error');
   });
 
-  it("handles empty error message", () => {
-    const msg = handleError("TestCtx", "");
-    expect(msg).toBe("[TestCtx] ");
+  it('handles empty error message', () => {
+    const msg = handleError('TestCtx', '');
+    expect(msg).toBe('[TestCtx] ');
   });
 
-  it("handles numeric error value", () => {
-    const msg = handleError("TestCtx", 404);
-    expect(msg).toBe("[TestCtx] 404");
+  it('handles numeric error value', () => {
+    const msg = handleError('TestCtx', 404);
+    expect(msg).toBe('[TestCtx] 404');
   });
 });
 
-describe("handleSuccess", () => {
+describe('handleSuccess', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls addLog with success level", () => {
-    handleSuccess("TestCtx", "it worked");
-    expect(mockAddLog).toHaveBeenCalledWith("[TestCtx] it worked", "success");
+  it('calls addLog with success level', () => {
+    handleSuccess('TestCtx', 'it worked');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] it worked', 'success');
   });
 
-  it("handles empty message", () => {
-    handleSuccess("TestCtx", "");
-    expect(mockAddLog).toHaveBeenCalledWith("[TestCtx] ", "success");
+  it('handles empty message', () => {
+    handleSuccess('TestCtx', '');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] ', 'success');
   });
 });
 
-describe("handleInfo", () => {
+describe('handleInfo', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls addLog with info level", () => {
-    handleInfo("TestCtx", "fyi");
-    expect(mockAddLog).toHaveBeenCalledWith("[TestCtx] fyi", "info");
+  it('calls addLog with info level', () => {
+    handleInfo('TestCtx', 'fyi');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] fyi', 'info');
   });
 });
 
-describe("handleWarning", () => {
+describe('handleWarning', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("calls addLog with warning level", () => {
-    handleWarning("TestCtx", "watch out");
-    expect(mockAddLog).toHaveBeenCalledWith("[TestCtx] watch out", "warning");
+  it('calls addLog with warning level', () => {
+    handleWarning('TestCtx', 'watch out');
+    expect(mockAddLog).toHaveBeenCalledWith('[TestCtx] watch out', 'warning');
   });
 });

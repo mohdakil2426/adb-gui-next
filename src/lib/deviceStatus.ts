@@ -9,7 +9,7 @@
  * DeviceSwitcher.tsx and ConnectedDevicesCard.tsx.
  */
 
-export type BadgeVariant = "default" | "secondary" | "destructive" | "outline";
+export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
 
 export interface StatusConfig {
   badgeClass: string;
@@ -19,53 +19,53 @@ export interface StatusConfig {
 
 const STATUS_CONFIG: Record<string, StatusConfig> = {
   device: {
-    label: "adb",
-    variant: "default",
-    badgeClass: "bg-success-light text-success border-success/35",
+    label: 'adb',
+    variant: 'default',
+    badgeClass: 'bg-success-light text-success border-success/35',
   },
   fastboot: {
-    label: "fastboot",
-    variant: "outline",
+    label: 'fastboot',
+    variant: 'outline',
     badgeClass:
-      "bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]",
+      'bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]',
   },
   bootloader: {
-    label: "bootloader",
-    variant: "outline",
+    label: 'bootloader',
+    variant: 'outline',
     badgeClass:
-      "bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]",
+      'bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]',
   },
   recovery: {
-    label: "recovery",
-    variant: "outline",
+    label: 'recovery',
+    variant: 'outline',
     badgeClass:
-      "bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]",
+      'bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]',
   },
   sideload: {
-    label: "sideload",
-    variant: "outline",
+    label: 'sideload',
+    variant: 'outline',
     badgeClass:
-      "bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]",
+      'bg-[var(--device-status-recovery-bg)] text-[var(--device-status-recovery-fg)] border-[var(--device-status-recovery-border)]',
   },
   unauthorized: {
-    label: "unauthorized",
-    variant: "destructive",
+    label: 'unauthorized',
+    variant: 'destructive',
     badgeClass:
-      "bg-[var(--device-status-unauthorized-bg)] text-[var(--device-status-unauthorized-fg)] border-[var(--device-status-unauthorized-border)]",
+      'bg-[var(--device-status-unauthorized-bg)] text-[var(--device-status-unauthorized-fg)] border-[var(--device-status-unauthorized-border)]',
   },
   offline: {
-    label: "offline",
-    variant: "destructive",
+    label: 'offline',
+    variant: 'destructive',
     badgeClass:
-      "bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]",
+      'bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]',
   },
 };
 
 const DEFAULT_STATUS_CONFIG: StatusConfig = {
-  label: "",
-  variant: "outline",
+  label: '',
+  variant: 'outline',
   badgeClass:
-    "bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]",
+    'bg-[var(--device-status-neutral-bg)] text-[var(--device-status-neutral-fg)] border-[var(--device-status-neutral-border)]',
 };
 
 /**

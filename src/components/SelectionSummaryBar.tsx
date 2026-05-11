@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface SelectionSummaryBarProps {
   /** Optional action buttons rendered to the right of the count (before Clear) */
@@ -34,8 +34,8 @@ export function SelectionSummaryBar({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 border-border border-b bg-muted/60 px-3 py-1.5 text-muted-foreground text-sm",
-        className
+        'flex items-center gap-2 border-border border-b bg-muted/60 px-3 py-1.5 text-muted-foreground text-sm',
+        className,
       )}
     >
       <span className="flex-1">

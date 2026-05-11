@@ -1,20 +1,13 @@
 /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
 
-import { useQueryClient } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  FileUp,
-  Filter,
-  Loader2,
-  Package,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-import { CheckboxItem } from "@/components/CheckboxItem";
-import { DropZone } from "@/components/DropZone";
-import { SelectionSummaryBar } from "@/components/SelectionSummaryBar";
+import { useQueryClient } from '@tanstack/react-query';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { FileUp, Filter, Loader2, Package, RefreshCw, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { CheckboxItem } from '@/components/CheckboxItem';
+import { DropZone } from '@/components/DropZone';
+import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,11 +18,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { buttonVariants } from "@/components/ui/button-variants";
-import { Command, CommandEmpty, CommandInput } from "@/components/ui/command";
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button-variants';
+import { Command, CommandEmpty, CommandInput } from '@/components/ui/command';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,20 +31,20 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
 import {
   GetInstalledPackages,
   InstallPackage,
   SelectMultipleApkFiles,
   UninstallPackage,
-} from "@/lib/desktop/backend";
-import type { backend } from "@/lib/desktop/models";
-import { useDeviceStore } from "@/lib/deviceStore";
-import { handleError } from "@/lib/errorHandler";
-import { useLogStore } from "@/lib/logStore";
-import { invalidatePackages } from "@/lib/queries";
-import { cn, getFileName } from "@/lib/utils";
+} from '@/lib/desktop/backend';
+import type { backend } from '@/lib/desktop/models';
+import { useDeviceStore } from '@/lib/deviceStore';
+import { handleError } from '@/lib/errorHandler';
+import { useLogStore } from '@/lib/logStore';
+import { invalidatePackages } from '@/lib/queries';
+import { cn, getFileName } from '@/lib/utils';
 
 export function InstallationTab() {
   // ── Install state ─────────────────────────────────────────────────────────
@@ -65,13 +58,9 @@ export function InstallationTab() {
   // ── Uninstall state ───────────────────────────────────────────────────────
   const [packages, setPackages] = useState<backend.InstalledPackage[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
-  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(
-    new Set()
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [packageFilter, setPackageFilter] = useState<"all" | "user" | "system">(
-    "all"
-  );
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [packageFilter, setPackageFilter] = useState<'all' | 'user' | 'system'>('all');
   const [isUninstalling, setIsUninstalling] = useState(false);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const queryClient = useQueryClient();
@@ -86,7 +75,7 @@ export function InstallationTab() {
       const list = await GetInstalledPackages(selectedSerial);
       setPackages(list ?? []);
     } catch (error) {
-      handleError("Load Packages", error);
+      handleError('Load Packages', error);
     } finally {
       setIsLoadingPackages(false);
     }
@@ -101,7 +90,7 @@ export function InstallationTab() {
     const q = searchQuery.toLowerCase();
     return packages
       .filter((pkg) => {
-        if (packageFilter !== "all" && pkg.packageType !== packageFilter) {
+        if (packageFilter !== 'all' && pkg.packageType !== packageFilter) {
           return false;
         }
         return pkg.name.toLowerCase().includes(q);
@@ -149,7 +138,7 @@ export function InstallationTab() {
         toast.info(`${paths.length} file(s) selected`);
       }
     } catch (error) {
-      handleError("Select APK Files", error);
+      handleError('Select APK Files', error);
     }
   }
 
@@ -162,7 +151,7 @@ export function InstallationTab() {
     }
     setIsInstalling(true);
     setInstallProgress({ current: 0, total: apkPaths.length });
-    const toastId = toast.loading("Starting installation…");
+    const toastId = toast.loading('Starting installation…');
     let ok = 0;
     let fail = 0;
     for (let i = 0; i < apkPaths.length; i++) {
@@ -177,13 +166,11 @@ export function InstallationTab() {
       setInstallProgress({ current: i + 1, total: apkPaths.length });
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       try {
-        await InstallPackage(path, selectedSerial ?? "");
+        await InstallPackage(path, selectedSerial ?? '');
         ok++;
-        useLogStore.getState().addLog(`Installed APK: ${name}`, "success");
+        useLogStore.getState().addLog(`Installed APK: ${name}`, 'success');
       } catch (error) {
-        useLogStore
-          .getState()
-          .addLog(`Failed to install ${name}: ${error}`, "error");
+        useLogStore.getState().addLog(`Failed to install ${name}: ${error}`, 'error');
         fail++;
       }
     }
@@ -218,14 +205,10 @@ export function InstallationTab() {
       toast.loading(`Uninstalling: ${pkg}…`, { id: toastId });
       try {
         const output = await UninstallPackage(pkg, selectedSerial);
-        useLogStore
-          .getState()
-          .addLog(`Uninstalled: ${pkg}: ${output}`, "success");
+        useLogStore.getState().addLog(`Uninstalled: ${pkg}: ${output}`, 'success');
         ok++;
       } catch (error) {
-        useLogStore
-          .getState()
-          .addLog(`Failed to uninstall ${pkg}: ${error}`, "error");
+        useLogStore.getState().addLog(`Failed to uninstall ${pkg}: ${error}`, 'error');
         fail++;
       }
     }
@@ -259,7 +242,7 @@ export function InstallationTab() {
 
         {apkPaths.length === 0 ? (
           <DropZone
-            acceptExtensions={[".apk", ".apks"]}
+            acceptExtensions={['.apk', '.apks']}
             browseLabel="Select App Files"
             disabled={isInstalling || !selectedSerial}
             icon={FileUp}
@@ -297,9 +280,7 @@ export function InstallationTab() {
                   >
                     <div className="mr-2 flex min-w-0 flex-1 items-center gap-2">
                       <Package className="size-4 shrink-0 opacity-70" />
-                      <span className="truncate">
-                        {path.split(/[/\\]/).pop()}
-                      </span>
+                      <span className="truncate">{path.split(/[/\\]/).pop()}</span>
                     </div>
                     <Button
                       className="size-6 opacity-0 hover:bg-transparent hover:text-destructive group-hover:opacity-100"
@@ -363,7 +344,7 @@ export function InstallationTab() {
             <p className="font-medium text-sm">Uninstall Package</p>
             <p className="text-muted-foreground text-xs">
               {isLoadingPackages
-                ? "Loading…"
+                ? 'Loading…'
                 : `${filteredPackages.length} of ${packages.length} packages`}
             </p>
           </div>
@@ -371,13 +352,9 @@ export function InstallationTab() {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  className="h-8 gap-1.5 text-xs"
-                  size="sm"
-                  variant="outline"
-                >
+                <Button className="h-8 gap-1.5 text-xs" size="sm" variant="outline">
                   <Filter className="size-3.5" />
-                  {packageFilter === "all" ? "All" : packageFilter}
+                  {packageFilter === 'all' ? 'All' : packageFilter}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
@@ -385,20 +362,16 @@ export function InstallationTab() {
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   onValueChange={(v) => {
-                    setPackageFilter(v as "all" | "user" | "system");
+                    setPackageFilter(v as 'all' | 'user' | 'system');
                   }}
                   value={packageFilter}
                 >
-                  <DropdownMenuRadioItem value="all">
-                    All ({packages.length})
-                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="all">All ({packages.length})</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="user">
-                    User (
-                    {packages.filter((p) => p.packageType === "user").length})
+                    User ({packages.filter((p) => p.packageType === 'user').length})
                   </DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="system">
-                    System (
-                    {packages.filter((p) => p.packageType === "system").length})
+                    System ({packages.filter((p) => p.packageType === 'system').length})
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
@@ -420,10 +393,7 @@ export function InstallationTab() {
           </div>
         </div>
 
-        <Command
-          className="overflow-hidden rounded-lg border shadow-sm"
-          shouldFilter={false}
-        >
+        <Command className="overflow-hidden rounded-lg border shadow-sm" shouldFilter={false}>
           <CommandInput
             onValueChange={setSearchQuery}
             placeholder="Search packages…"
@@ -438,16 +408,14 @@ export function InstallationTab() {
           >
             {filteredPackages.length === 0 ? (
               <CommandEmpty>
-                {searchQuery
-                  ? "No packages match your search."
-                  : "No packages found."}
+                {searchQuery ? 'No packages match your search.' : 'No packages found.'}
               </CommandEmpty>
             ) : (
               <div
                 style={{
                   height: `${rowVirtualizer.getTotalSize()}px`,
-                  width: "100%",
-                  position: "relative",
+                  width: '100%',
+                  position: 'relative',
                 }}
               >
                 {virtualRows.map((vRow) => {
@@ -460,15 +428,15 @@ export function InstallationTab() {
                     <div
                       aria-selected={isSelected}
                       className={cn(
-                        "absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                        isSelected && "bg-accent text-accent-foreground"
+                        'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                        isSelected && 'bg-accent text-accent-foreground',
                       )}
                       key={pkg.name}
                       onClick={() => {
                         togglePackage(pkg.name);
                       }}
                       onKeyDown={(e) => {
-                        if (e.key === " " || e.key === "Enter") {
+                        if (e.key === ' ' || e.key === 'Enter') {
                           e.preventDefault();
                           togglePackage(pkg.name);
                         }
@@ -484,14 +452,10 @@ export function InstallationTab() {
                       <div className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
                         <Package className="size-3.5 text-muted-foreground" />
                       </div>
-                      <span className="flex-1 truncate text-xs">
-                        {pkg.name}
-                      </span>
+                      <span className="flex-1 truncate text-xs">{pkg.name}</span>
                       <Badge
                         className="ml-2 shrink-0 px-1.5 py-0 text-[10px]"
-                        variant={
-                          pkg.packageType === "user" ? "secondary" : "outline"
-                        }
+                        variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
                       >
                         {pkg.packageType}
                       </Badge>
@@ -515,9 +479,7 @@ export function InstallationTab() {
           <AlertDialogTrigger asChild>
             <Button
               className="w-full"
-              disabled={
-                isUninstalling || selectedPackages.size === 0 || !selectedSerial
-              }
+              disabled={isUninstalling || selectedPackages.size === 0 || !selectedSerial}
               variant="destructive"
             >
               <Trash2 className="mr-2 size-4" />
@@ -530,10 +492,8 @@ export function InstallationTab() {
               <AlertDialogDescription asChild>
                 <div>
                   <p>
-                    You are about to uninstall{" "}
-                    <span className="font-semibold text-foreground">
-                      {selectedPackages.size}
-                    </span>{" "}
+                    You are about to uninstall{' '}
+                    <span className="font-semibold text-foreground">{selectedPackages.size}</span>{' '}
                     package(s).
                   </p>
                   <div className="mt-2 max-h-24 overflow-y-auto rounded bg-muted p-2 text-xs">
@@ -544,9 +504,9 @@ export function InstallationTab() {
                     ))}
                   </div>
                   <div className="mt-3 rounded-md border border-warning/20 bg-warning/10 p-3 text-left text-warning-foreground text-xs">
-                    <span className="font-bold">Disclaimer:</span> ADB GUI Next
-                    is not responsible for any system instability, bootloops, or
-                    data loss resulting from uninstalling packages.
+                    <span className="font-bold">Disclaimer:</span> ADB GUI Next is not responsible
+                    for any system instability, bootloops, or data loss resulting from uninstalling
+                    packages.
                   </div>
                 </div>
               </AlertDialogDescription>
@@ -554,7 +514,7 @@ export function InstallationTab() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                className={buttonVariants({ variant: "destructive" })}
+                className={buttonVariants({ variant: 'destructive' })}
                 disabled={isUninstalling || !selectedSerial}
                 onClick={() => void handleUninstall()}
               >

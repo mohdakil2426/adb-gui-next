@@ -1,11 +1,11 @@
-import { AlertTriangle, Play } from "lucide-react";
-import { useState } from "react";
-import { LoadingButton } from "@/components/LoadingButton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import type { backend } from "@/lib/desktop/models";
+import { AlertTriangle, Play } from 'lucide-react';
+import { useState } from 'react';
+import { LoadingButton } from '@/components/LoadingButton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import type { backend } from '@/lib/desktop/models';
 
 interface EmulatorLaunchTabProps {
   avd: backend.AvdSummary | null;
@@ -13,11 +13,7 @@ interface EmulatorLaunchTabProps {
   onLaunch: (options: backend.EmulatorLaunchOptions) => Promise<void>;
 }
 
-export function EmulatorLaunchTab({
-  avd,
-  isLaunching,
-  onLaunch,
-}: EmulatorLaunchTabProps) {
+export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunchTabProps) {
   const [wipeData, setWipeData] = useState(false);
   const [writableSystem, setWritableSystem] = useState(false);
   const [coldBoot, setColdBoot] = useState(false);
@@ -28,8 +24,7 @@ export function EmulatorLaunchTab({
   const [confirmWritableSystem, setConfirmWritableSystem] = useState(false);
 
   const destructiveBlocked =
-    (wipeData && !confirmWipeData) ||
-    (writableSystem && !confirmWritableSystem);
+    (wipeData && !confirmWipeData) || (writableSystem && !confirmWritableSystem);
 
   if (!avd) {
     return (
@@ -45,38 +40,38 @@ export function EmulatorLaunchTab({
         {(
           [
             {
-              id: "coldBoot",
-              label: "Cold boot",
+              id: 'coldBoot',
+              label: 'Cold boot',
               value: coldBoot,
               onChange: setColdBoot,
             },
             {
-              id: "noSnapLoad",
-              label: "Skip snapshot load",
+              id: 'noSnapLoad',
+              label: 'Skip snapshot load',
               value: noSnapshotLoad,
               onChange: setNoSnapshotLoad,
             },
             {
-              id: "noSnapSave",
-              label: "Skip snapshot save",
+              id: 'noSnapSave',
+              label: 'Skip snapshot save',
               value: noSnapshotSave,
               onChange: setNoSnapshotSave,
             },
             {
-              id: "noBootAnim",
-              label: "Disable boot animation",
+              id: 'noBootAnim',
+              label: 'Disable boot animation',
               value: noBootAnim,
               onChange: setNoBootAnim,
             },
             {
-              id: "writableSystem",
-              label: "Writable system",
+              id: 'writableSystem',
+              label: 'Writable system',
               value: writableSystem,
               onChange: setWritableSystem,
             },
             {
-              id: "wipeData",
-              label: "Wipe user data",
+              id: 'wipeData',
+              label: 'Wipe user data',
               value: wipeData,
               onChange: setWipeData,
             },
@@ -122,8 +117,7 @@ export function EmulatorLaunchTab({
                     setConfirmWritableSystem(checked);
                   }}
                 />
-                I understand writable-system can leave this AVD in a modified
-                state.
+                I understand writable-system can leave this AVD in a modified state.
               </Label>
             ) : null}
           </div>

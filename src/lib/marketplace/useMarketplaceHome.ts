@@ -1,39 +1,23 @@
-import { useEffect, useRef } from "react";
-import { MarketplaceGetTrending } from "@/lib/desktop/backend";
-import { handleError } from "@/lib/errorHandler";
-import {
-  getMarketplaceEffectiveGithubToken,
-  useMarketplaceStore,
-} from "@/lib/marketplaceStore";
+import { useEffect, useRef } from 'react';
+import { MarketplaceGetTrending } from '@/lib/desktop/backend';
+import { handleError } from '@/lib/errorHandler';
+import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
 
 export function useMarketplaceHome(hasQuery: boolean) {
   const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);
-  const setIsTrendingLoading = useMarketplaceStore(
-    (state) => state.setIsTrendingLoading
-  );
-  const setRecentReleaseApps = useMarketplaceStore(
-    (state) => state.setRecentReleaseApps
-  );
-  const setIsRecentReleaseLoading = useMarketplaceStore(
-    (state) => state.setIsRecentReleaseLoading
-  );
+  const setIsTrendingLoading = useMarketplaceStore((state) => state.setIsTrendingLoading);
+  const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
+  const setIsRecentReleaseLoading = useMarketplaceStore((state) => state.setIsRecentReleaseLoading);
 
-  const trendingLength = useMarketplaceStore(
-    (state) => state.trendingApps.length
-  );
-  const recentLength = useMarketplaceStore(
-    (state) => state.recentReleaseApps.length
-  );
+  const trendingLength = useMarketplaceStore((state) => state.trendingApps.length);
+  const recentLength = useMarketplaceStore((state) => state.recentReleaseApps.length);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const fetchedTokenRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     // If the token changes, we clear the apps so they fetch again
-    if (
-      fetchedTokenRef.current !== undefined &&
-      fetchedTokenRef.current !== githubToken
-    ) {
+    if (fetchedTokenRef.current !== undefined && fetchedTokenRef.current !== githubToken) {
       setTrendingApps([]);
       setRecentReleaseApps([]);
     }
@@ -48,7 +32,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
     let cancelled = false;
     setIsTrendingLoading(true);
 
-    MarketplaceGetTrending("stars", githubToken, 6)
+    MarketplaceGetTrending('stars', githubToken, 6)
       .then((apps) => {
         if (!cancelled) {
           setTrendingApps(apps);
@@ -56,7 +40,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          handleError("Marketplace Trending", error);
+          handleError('Marketplace Trending', error);
         }
       })
       .finally(() => {
@@ -68,13 +52,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [
-    githubToken,
-    hasQuery,
-    trendingLength,
-    setTrendingApps,
-    setIsTrendingLoading,
-  ]);
+  }, [githubToken, hasQuery, trendingLength, setTrendingApps, setIsTrendingLoading]);
 
   useEffect(() => {
     if (hasQuery || recentLength > 0) {
@@ -84,7 +62,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
     let cancelled = false;
     setIsRecentReleaseLoading(true);
 
-    MarketplaceGetTrending("updated", githubToken, 6)
+    MarketplaceGetTrending('updated', githubToken, 6)
       .then((apps) => {
         if (!cancelled) {
           setRecentReleaseApps(apps);
@@ -92,7 +70,7 @@ export function useMarketplaceHome(hasQuery: boolean) {
       })
       .catch((error: unknown) => {
         if (!cancelled) {
-          handleError("Marketplace Recent Releases", error);
+          handleError('Marketplace Recent Releases', error);
         }
       })
       .finally(() => {
@@ -104,11 +82,5 @@ export function useMarketplaceHome(hasQuery: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [
-    githubToken,
-    hasQuery,
-    recentLength,
-    setRecentReleaseApps,
-    setIsRecentReleaseLoading,
-  ]);
+  }, [githubToken, hasQuery, recentLength, setRecentReleaseApps, setIsRecentReleaseLoading]);
 }
