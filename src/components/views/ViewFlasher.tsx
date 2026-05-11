@@ -1,24 +1,18 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useLogStore } from '@/lib/logStore';
-import { useDeviceStore } from '@/lib/deviceStore';
-import { handleError } from '@/lib/errorHandler';
-import { debugLog } from '@/lib/debug';
-import { cn, getFileName } from '@/lib/utils';
-import { partitionSchema } from '@/lib/schemas';
-import { OnFileDrop, OnFileDropOff } from '@/lib/desktop/runtime';
-
 import {
-  WipeData,
-  FlashPartition,
-  SelectImageFile,
-  SelectZipFile,
-  SideloadPackage,
-} from '@/lib/desktop/backend';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+  AlertTriangle,
+  Clock,
+  FileUp,
+  HardDrive,
+  Loader2,
+  Package,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { FileSelector } from "@/components/FileSelector";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,79 +23,94 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { buttonVariants } from '@/components/ui/button-variants';
-import { FileSelector } from '@/components/FileSelector';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
-  Loader2,
-  AlertTriangle,
-  FileUp,
-  Trash2,
-  Package,
-  HardDrive,
-  Upload,
-  X,
-  Clock,
-} from 'lucide-react';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { debugLog } from "@/lib/debug";
+import {
+  FlashPartition,
+  SelectImageFile,
+  SelectZipFile,
+  SideloadPackage,
+  WipeData,
+} from "@/lib/desktop/backend";
+import { OnFileDrop, OnFileDropOff } from "@/lib/desktop/runtime";
+import { useDeviceStore } from "@/lib/deviceStore";
+import { handleError } from "@/lib/errorHandler";
+import { useLogStore } from "@/lib/logStore";
+import { partitionSchema } from "@/lib/schemas";
+import { cn, getFileName } from "@/lib/utils";
 
 const COMMON_PARTITIONS = [
-  'boot',
-  'vendor_boot',
-  'init_boot',
-  'recovery',
-  'dtbo',
-  'vbmeta',
-  'vbmeta_system',
-  'vbmeta_vendor',
-  'system',
-  'vendor',
-  'product',
-  'system_ext',
-  'super',
-  'modem',
-  'radio',
-  'persist',
-  'metadata',
-  'cache',
-  'userdata',
+  "boot",
+  "vendor_boot",
+  "init_boot",
+  "recovery",
+  "dtbo",
+  "vbmeta",
+  "vbmeta_system",
+  "vbmeta_vendor",
+  "system",
+  "vendor",
+  "product",
+  "system_ext",
+  "super",
+  "modem",
+  "radio",
+  "persist",
+  "metadata",
+  "cache",
+  "userdata",
 ] as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isImgFile(path: string): boolean {
-  return path.toLowerCase().endsWith('.img');
+  return path.toLowerCase().endsWith(".img");
 }
 
 function isZipFile(path: string): boolean {
-  return path.toLowerCase().endsWith('.zip');
+  return path.toLowerCase().endsWith(".zip");
 }
 
 function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
-type DragTarget = 'none' | 'flash' | 'sideload';
+type DragTarget = "none" | "flash" | "sideload";
 
 // ─── Queued action for device connection ────────────────────────────────────
 
 interface QueuedAction {
-  type: 'flash' | 'sideload';
-  partition?: string;
   filePath: string;
+  partition?: string;
+  type: "flash" | "sideload";
 }
 
 // ─── Visual-only drop area ───────────────────────────────────────────────────
 
 interface DropAreaProps {
-  isDragging: boolean;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  sublabel: string;
   browseLabel: string;
-  onBrowse: () => void;
   disabled?: boolean;
+  icon: React.ComponentType<{ className?: string }>;
+  isDragging: boolean;
+  label: string;
+  onBrowse: () => void;
+  sublabel: string;
 }
 
 function DropArea({
@@ -116,41 +125,46 @@ function DropArea({
   return (
     <div
       className={cn(
-        'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
+        "relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200",
         isDragging
-          ? 'border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]'
-          : 'border-muted-foreground/25 hover:border-muted-foreground/40',
-        disabled && 'pointer-events-none opacity-50',
+          ? "scale-[1.01] border-primary bg-primary/5 shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]"
+          : "border-muted-foreground/25 hover:border-muted-foreground/40",
+        disabled && "pointer-events-none opacity-50"
       )}
     >
       {isDragging ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-2 text-primary animate-in fade-in zoom-in-95 duration-150">
+          <div className="fade-in zoom-in-95 flex animate-in flex-col items-center gap-2 text-primary duration-150">
             <div className="rounded-full bg-primary/10 p-4">
               <Upload className="size-8 animate-bounce" />
             </div>
-            <p className="text-sm font-semibold">Drop to add file</p>
+            <p className="font-semibold text-sm">Drop to add file</p>
           </div>
         </div>
       ) : null}
 
       <div
         className={cn(
-          'flex flex-col items-center gap-3 transition-opacity duration-150',
-          isDragging && 'opacity-0',
+          "flex flex-col items-center gap-3 transition-opacity duration-150",
+          isDragging && "opacity-0"
         )}
       >
         <div className="rounded-full bg-muted p-3">
           <Icon className="size-6 text-muted-foreground/50" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="text-xs text-muted-foreground/50">or</p>
+          <p className="font-medium text-muted-foreground text-sm">{label}</p>
+          <p className="text-muted-foreground/50 text-xs">or</p>
         </div>
-        <Button variant="outline" size="sm" onClick={onBrowse} disabled={disabled}>
+        <Button
+          disabled={disabled}
+          onClick={onBrowse}
+          size="sm"
+          variant="outline"
+        >
           {browseLabel}
         </Button>
-        <p className="text-xs text-muted-foreground/40">{sublabel}</p>
+        <p className="text-muted-foreground/40 text-xs">{sublabel}</p>
       </div>
     </div>
   );
@@ -159,26 +173,30 @@ function DropArea({
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export function ViewFlasher() {
-  const [partition, setPartition] = useState(() => localStorage.getItem('flasher.partition') ?? '');
-  const [filePath, setFilePath] = useState(() => localStorage.getItem('flasher.filePath') ?? '');
+  const [partition, setPartition] = useState(
+    () => localStorage.getItem("flasher.partition") ?? ""
+  );
+  const [filePath, setFilePath] = useState(
+    () => localStorage.getItem("flasher.filePath") ?? ""
+  );
   const [sideloadFilePath, setSideloadFilePath] = useState(
-    () => localStorage.getItem('flasher.sideloadFilePath') ?? '',
+    () => localStorage.getItem("flasher.sideloadFilePath") ?? ""
   );
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [dragTarget, setDragTarget] = useState<DragTarget>('none');
+  const [dragTarget, setDragTarget] = useState<DragTarget>("none");
   const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('flasher.partition', partition);
+    localStorage.setItem("flasher.partition", partition);
   }, [partition]);
 
   useEffect(() => {
-    localStorage.setItem('flasher.filePath', filePath);
+    localStorage.setItem("flasher.filePath", filePath);
   }, [filePath]);
 
   useEffect(() => {
-    localStorage.setItem('flasher.sideloadFilePath', sideloadFilePath);
+    localStorage.setItem("flasher.sideloadFilePath", sideloadFilePath);
   }, [sideloadFilePath]);
 
   // Refs for position-based hit-testing
@@ -189,25 +207,27 @@ export function ViewFlasher() {
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const selectedDevice = useMemo(
     () => devices.find((device) => device.serial === selectedSerial) ?? null,
-    [devices, selectedSerial],
+    [devices, selectedSerial]
   );
 
   const selectedFastbootSerial = useMemo(
     () =>
       selectedDevice &&
-      (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader')
+      (selectedDevice.status === "fastboot" ||
+        selectedDevice.status === "bootloader")
         ? selectedDevice.serial
         : null,
-    [selectedDevice],
+    [selectedDevice]
   );
 
   const selectedSideloadSerial = useMemo(
     () =>
       selectedDevice &&
-      (selectedDevice.status === 'sideload' || selectedDevice.status === 'recovery')
+      (selectedDevice.status === "sideload" ||
+        selectedDevice.status === "recovery")
         ? selectedDevice.serial
         : null,
-    [selectedDevice],
+    [selectedDevice]
   );
 
   const isGlobalLoading = !!loadingAction;
@@ -217,40 +237,55 @@ export function ViewFlasher() {
   useEffect(() => {
     OnFileDrop({
       onHover: (x, y, paths) => {
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+        }
 
-        let target: DragTarget = 'none';
+        let target: DragTarget = "none";
 
         // 1. Position check: which section is the cursor over?
         const flashRect = flashSectionRef.current?.getBoundingClientRect();
-        const sideloadRect = sideloadSectionRef.current?.getBoundingClientRect();
+        const sideloadRect =
+          sideloadSectionRef.current?.getBoundingClientRect();
         const overFlash = flashRect ? isPointInRect(x, y, flashRect) : false;
-        const overSideload = sideloadRect ? isPointInRect(x, y, sideloadRect) : false;
+        const overSideload = sideloadRect
+          ? isPointInRect(x, y, sideloadRect)
+          : false;
 
         // 2. Extension check: does the file type match the hovered section?
         //    If paths unavailable, allow position-only highlighting.
         if (overFlash) {
-          const extensionOk = !paths || paths.length === 0 || paths.some(isImgFile);
-          if (extensionOk) target = 'flash';
+          const extensionOk =
+            !paths || paths.length === 0 || paths.some(isImgFile);
+          if (extensionOk) {
+            target = "flash";
+          }
         } else if (overSideload) {
-          const extensionOk = !paths || paths.length === 0 || paths.some(isZipFile);
-          if (extensionOk) target = 'sideload';
+          const extensionOk =
+            !paths || paths.length === 0 || paths.some(isZipFile);
+          if (extensionOk) {
+            target = "sideload";
+          }
         }
 
         setDragTarget(target);
         hoverTimeoutRef.current = setTimeout(() => {
-          setDragTarget('none');
+          setDragTarget("none");
         }, 150);
       },
 
       onDrop: (paths) => {
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setDragTarget('none');
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+        }
+        setDragTarget("none");
 
-        if (paths.length === 0) return;
+        if (paths.length === 0) {
+          return;
+        }
 
-        let lastImg = '';
-        let lastZip = '';
+        let lastImg = "";
+        let lastZip = "";
         let rejectedCount = 0;
 
         for (const p of paths) {
@@ -273,24 +308,29 @@ export function ViewFlasher() {
         }
 
         if (rejectedCount > 0 && !lastImg && !lastZip) {
-          toast.error('Unsupported file type', {
-            description: 'Only .img (flash) and .zip (sideload) files are accepted.',
+          toast.error("Unsupported file type", {
+            description:
+              "Only .img (flash) and .zip (sideload) files are accepted.",
           });
         } else if (rejectedCount > 0) {
           toast.warning(`${rejectedCount} unsupported file(s) skipped`, {
-            description: 'Only .img and .zip files are accepted.',
+            description: "Only .img and .zip files are accepted.",
           });
         }
       },
 
       onCancel: () => {
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setDragTarget('none');
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+        }
+        setDragTarget("none");
       },
     });
 
     return () => {
-      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
       OnFileDropOff();
     };
   }, []);
@@ -299,37 +339,39 @@ export function ViewFlasher() {
 
   const handleSelectImageFile = useCallback(async () => {
     try {
-      debugLog('Selecting image file');
+      debugLog("Selecting image file");
       const selected = await SelectImageFile();
       if (selected) {
         setFilePath(selected);
         toast.info(`File selected: ${getFileName(selected)}`);
       }
     } catch (error) {
-      handleError('Select Image File', error);
+      handleError("Select Image File", error);
     }
   }, []);
 
   const handleSelectSideloadFile = useCallback(async () => {
     try {
-      debugLog('Selecting ZIP file for sideload');
+      debugLog("Selecting ZIP file for sideload");
       const selected = await SelectZipFile();
       if (selected) {
         setSideloadFilePath(selected);
         toast.info(`ZIP selected: ${getFileName(selected)}`);
       }
     } catch (error) {
-      handleError('Select ZIP File', error);
+      handleError("Select ZIP File", error);
     }
   }, []);
 
   // ─── Queued action execution when device connects ───────────────────────
 
   useEffect(() => {
-    if (!queuedAction || isGlobalLoading) return;
+    if (!queuedAction || isGlobalLoading) {
+      return;
+    }
 
     const isReady =
-      queuedAction.type === 'flash'
+      queuedAction.type === "flash"
         ? Boolean(selectedFastbootSerial)
         : Boolean(selectedSideloadSerial);
 
@@ -337,55 +379,71 @@ export function ViewFlasher() {
       const action = queuedAction;
       setQueuedAction(null);
 
-      if (action.type === 'flash') {
+      if (action.type === "flash") {
         const partitionName = action.partition;
         if (partitionName && selectedFastbootSerial) {
-          void executeFlash(partitionName, action.filePath, selectedFastbootSerial);
+          void executeFlash(
+            partitionName,
+            action.filePath,
+            selectedFastbootSerial
+          );
         }
       } else {
         void executeSideload(action.filePath, selectedSideloadSerial);
       }
     }
-  }, [queuedAction, selectedFastbootSerial, selectedSideloadSerial, isGlobalLoading]);
+  }, [
+    queuedAction,
+    selectedFastbootSerial,
+    selectedSideloadSerial,
+    isGlobalLoading,
+  ]);
 
   // ─── Action handlers ───────────────────────────────────────────────
 
   async function executeFlash(
     partitionName: string,
     imgPath: string,
-    serial: string | null,
+    serial: string | null
   ): Promise<void> {
-    setLoadingAction('flash');
+    setLoadingAction("flash");
     const toastId = toast.loading(`Flashing ${partitionName} partition...`);
 
     try {
       await FlashPartition(partitionName, imgPath, serial);
-      toast.success('Flash Complete', {
+      toast.success("Flash Complete", {
         description: `${partitionName} flashed successfully.`,
         id: toastId,
       });
-      useLogStore.getState().addLog(`Flashed partition ${partitionName}: Success`, 'success');
+      useLogStore
+        .getState()
+        .addLog(`Flashed partition ${partitionName}: Success`, "success");
     } catch (error) {
       toast.dismiss(toastId);
-      handleError('Flash Partition', error);
+      handleError("Flash Partition", error);
     } finally {
       setLoadingAction(null);
     }
   }
 
-  async function executeSideload(zipPath: string, serial: string | null): Promise<void> {
+  async function executeSideload(
+    zipPath: string,
+    serial: string | null
+  ): Promise<void> {
     const fileName = getFileName(zipPath);
-    setLoadingAction('sideload');
+    setLoadingAction("sideload");
     const toastId = toast.loading(`Sideloading ${fileName}...`);
 
     try {
       const output = await SideloadPackage(zipPath, serial);
       const description = output || `${fileName} sideloaded successfully.`;
-      toast.success('Sideload Complete', { description, id: toastId });
-      useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
+      toast.success("Sideload Complete", { description, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Sideloaded ${fileName}: ${description}`, "success");
     } catch (error) {
       toast.dismiss(toastId);
-      handleError('Recovery Sideload', error);
+      handleError("Recovery Sideload", error);
     } finally {
       setLoadingAction(null);
     }
@@ -394,53 +452,60 @@ export function ViewFlasher() {
   const handleFlash = () => {
     const parsed = partitionSchema.safeParse(partition);
     if (!parsed.success) {
-      toast.error('Invalid partition name', {
-        description: parsed.error.issues[0]?.message ?? 'Unknown error',
+      toast.error("Invalid partition name", {
+        description: parsed.error.issues[0]?.message ?? "Unknown error",
       });
       return;
     }
     if (!filePath) {
-      toast.error('No file selected.');
+      toast.error("No file selected.");
       return;
     }
 
     if (selectedFastbootSerial) {
       void executeFlash(partition, filePath, selectedFastbootSerial);
     } else {
-      setQueuedAction({ type: 'flash', partition, filePath });
-      toast.info('Waiting for fastboot device...', {
-        description: 'Action will execute automatically when a fastboot device connects.',
+      setQueuedAction({ type: "flash", partition, filePath });
+      toast.info("Waiting for fastboot device...", {
+        description:
+          "Action will execute automatically when a fastboot device connects.",
       });
     }
   };
 
   const handleSideload = () => {
     if (!sideloadFilePath) {
-      toast.error('No update package selected.');
+      toast.error("No update package selected.");
       return;
     }
 
     if (selectedSideloadSerial) {
       void executeSideload(sideloadFilePath, selectedSideloadSerial);
     } else {
-      setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
-      toast.info('Waiting for sideload device...', {
-        description: 'Action will execute automatically when a sideload/recovery device connects.',
+      setQueuedAction({ type: "sideload", filePath: sideloadFilePath });
+      toast.info("Waiting for sideload device...", {
+        description:
+          "Action will execute automatically when a sideload/recovery device connects.",
       });
     }
   };
 
   const handleWipe = async () => {
-    setLoadingAction('wipe');
-    const toastId = toast.loading('Wiping data... Device will factory reset.');
+    setLoadingAction("wipe");
+    const toastId = toast.loading("Wiping data... Device will factory reset.");
 
     try {
       await WipeData(selectedFastbootSerial);
-      toast.success('Wipe Complete', { description: 'Device data has been erased.', id: toastId });
-      useLogStore.getState().addLog('Device data wiped (Factory Reset): Success', 'success');
+      toast.success("Wipe Complete", {
+        description: "Device data has been erased.",
+        id: toastId,
+      });
+      useLogStore
+        .getState()
+        .addLog("Device data wiped (Factory Reset): Success", "success");
     } catch (error) {
       toast.dismiss(toastId);
-      handleError('Wipe Data', error);
+      handleError("Wipe Data", error);
     } finally {
       setLoadingAction(null);
     }
@@ -463,16 +528,18 @@ export function ViewFlasher() {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <Field>
-              <FieldLabel htmlFor="flasher-partition">Partition Name</FieldLabel>
+              <FieldLabel htmlFor="flasher-partition">
+                Partition Name
+              </FieldLabel>
               <Input
+                disabled={isGlobalLoading}
                 id="flasher-partition"
                 list="partition-suggestions"
-                placeholder="e.g., boot, recovery, vendor_boot"
-                value={partition}
                 onChange={(e) => {
                   setPartition(e.target.value);
                 }}
-                disabled={isGlobalLoading}
+                placeholder="e.g., boot, recovery, vendor_boot"
+                value={partition}
               />
               <FieldDescription>
                 Choose a fastboot partition name or type a custom one.
@@ -484,34 +551,26 @@ export function ViewFlasher() {
               </datalist>
             </Field>
 
-            {!filePath ? (
-              <DropArea
-                isDragging={dragTarget === 'flash'}
-                icon={FileUp}
-                label="Drop an image file here"
-                sublabel="Accepted: .img files only"
-                browseLabel="Browse Image"
-                onBrowse={handleSelectImageFile}
-                disabled={isGlobalLoading}
-              />
-            ) : (
+            {filePath ? (
               <FileSelector
-                label="Image File"
-                path={filePath}
-                onSelect={handleSelectImageFile}
-                icon={<FileUp className="size-4" />}
                 disabled={isGlobalLoading}
+                icon={<FileUp className="size-4" />}
+                label="Image File"
+                onSelect={handleSelectImageFile}
+                path={filePath}
                 trailingAction={
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        disabled={isGlobalLoading}
+                        onClick={() => {
+                          setFilePath("");
+                          if (queuedAction?.type === "flash") {
+                            setQueuedAction(null);
+                          }
+                        }}
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          setFilePath('');
-                          if (queuedAction?.type === 'flash') setQueuedAction(null);
-                        }}
-                        disabled={isGlobalLoading}
                       >
                         <X className="size-4" />
                       </Button>
@@ -520,6 +579,16 @@ export function ViewFlasher() {
                   </Tooltip>
                 }
               />
+            ) : (
+              <DropArea
+                browseLabel="Browse Image"
+                disabled={isGlobalLoading}
+                icon={FileUp}
+                isDragging={dragTarget === "flash"}
+                label="Drop an image file here"
+                onBrowse={handleSelectImageFile}
+                sublabel="Accepted: .img files only"
+              />
             )}
 
             <Button
@@ -527,16 +596,16 @@ export function ViewFlasher() {
               disabled={isGlobalLoading || !partition || !filePath}
               onClick={handleFlash}
             >
-              {loadingAction === 'flash' ? (
-                <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
-              ) : queuedAction?.type === 'flash' ? (
+              {loadingAction === "flash" ? (
+                <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
+              ) : queuedAction?.type === "flash" ? (
                 <Clock className="mr-2 size-4 shrink-0" />
               ) : (
                 <FileUp className="mr-2 size-4 shrink-0" />
               )}
-              {queuedAction?.type === 'flash' && loadingAction !== 'flash'
-                ? 'Waiting for Device...'
-                : 'Flash Partition'}
+              {queuedAction?.type === "flash" && loadingAction !== "flash"
+                ? "Waiting for Device..."
+                : "Flash Partition"}
             </Button>
           </CardContent>
         </Card>
@@ -551,39 +620,32 @@ export function ViewFlasher() {
               Recovery Sideload
             </CardTitle>
             <CardDescription>
-              Send a flashable ZIP via adb sideload while your device is in recovery.
+              Send a flashable ZIP via adb sideload while your device is in
+              recovery.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {!sideloadFilePath ? (
-              <DropArea
-                isDragging={dragTarget === 'sideload'}
-                icon={Package}
-                label="Drop a flashable ZIP here"
-                sublabel="Accepted: .zip files only"
-                browseLabel="Browse ZIP"
-                onBrowse={handleSelectSideloadFile}
-                disabled={isGlobalLoading}
-              />
-            ) : (
+            {sideloadFilePath ? (
               <FileSelector
-                label="Flashable ZIP"
-                path={sideloadFilePath}
-                onSelect={handleSelectSideloadFile}
-                placeholder="Select a flashable .zip file..."
-                icon={<Package className="size-4" />}
                 disabled={isGlobalLoading}
+                icon={<Package className="size-4" />}
+                label="Flashable ZIP"
+                onSelect={handleSelectSideloadFile}
+                path={sideloadFilePath}
+                placeholder="Select a flashable .zip file..."
                 trailingAction={
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
+                        disabled={isGlobalLoading}
+                        onClick={() => {
+                          setSideloadFilePath("");
+                          if (queuedAction?.type === "sideload") {
+                            setQueuedAction(null);
+                          }
+                        }}
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          setSideloadFilePath('');
-                          if (queuedAction?.type === 'sideload') setQueuedAction(null);
-                        }}
-                        disabled={isGlobalLoading}
                       >
                         <X className="size-4" />
                       </Button>
@@ -592,10 +654,21 @@ export function ViewFlasher() {
                   </Tooltip>
                 }
               />
+            ) : (
+              <DropArea
+                browseLabel="Browse ZIP"
+                disabled={isGlobalLoading}
+                icon={Package}
+                isDragging={dragTarget === "sideload"}
+                label="Drop a flashable ZIP here"
+                onBrowse={handleSelectSideloadFile}
+                sublabel="Accepted: .zip files only"
+              />
             )}
 
-            <p className="text-sm text-muted-foreground">
-              Ensure the device shows &quot;sideload&quot; mode in recovery before starting.
+            <p className="text-muted-foreground text-sm">
+              Ensure the device shows &quot;sideload&quot; mode in recovery
+              before starting.
             </p>
 
             <Button
@@ -603,16 +676,16 @@ export function ViewFlasher() {
               disabled={isGlobalLoading || !sideloadFilePath}
               onClick={handleSideload}
             >
-              {loadingAction === 'sideload' ? (
-                <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
-              ) : queuedAction?.type === 'sideload' ? (
+              {loadingAction === "sideload" ? (
+                <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
+              ) : queuedAction?.type === "sideload" ? (
                 <Clock className="mr-2 size-4 shrink-0" />
               ) : (
                 <Package className="mr-2 size-4 shrink-0" />
               )}
-              {queuedAction?.type === 'sideload' && loadingAction !== 'sideload'
-                ? 'Waiting for Device...'
-                : 'Sideload Package'}
+              {queuedAction?.type === "sideload" && loadingAction !== "sideload"
+                ? "Waiting for Device..."
+                : "Sideload Package"}
             </Button>
           </CardContent>
         </Card>
@@ -633,12 +706,12 @@ export function ViewFlasher() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
-                variant="destructive"
                 className="w-full"
                 disabled={isGlobalLoading || !selectedFastbootSerial}
+                variant="destructive"
               >
-                {loadingAction === 'wipe' ? (
-                  <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
+                {loadingAction === "wipe" ? (
+                  <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
                 ) : (
                   <Trash2 className="mr-2 size-4 shrink-0" />
                 )}
@@ -649,14 +722,15 @@ export function ViewFlasher() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. This will permanently erase all user data (photos,
-                  files, settings) from your device, performing a full factory reset.
+                  This action cannot be undone. This will permanently erase all
+                  user data (photos, files, settings) from your device,
+                  performing a full factory reset.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className={buttonVariants({ variant: 'destructive' })}
+                  className={buttonVariants({ variant: "destructive" })}
                   onClick={handleWipe}
                 >
                   Yes, Wipe Data

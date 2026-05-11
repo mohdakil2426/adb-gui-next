@@ -1,11 +1,11 @@
-import { LoadingButton } from '@/components/LoadingButton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import type { backend } from '@/lib/desktop/models';
-import { AlertTriangle, Play } from 'lucide-react';
-import { useState } from 'react';
+import { AlertTriangle, Play } from "lucide-react";
+import { useState } from "react";
+import { LoadingButton } from "@/components/LoadingButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import type { backend } from "@/lib/desktop/models";
 
 interface EmulatorLaunchTabProps {
   avd: backend.AvdSummary | null;
@@ -13,7 +13,11 @@ interface EmulatorLaunchTabProps {
   onLaunch: (options: backend.EmulatorLaunchOptions) => Promise<void>;
 }
 
-export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunchTabProps) {
+export function EmulatorLaunchTab({
+  avd,
+  isLaunching,
+  onLaunch,
+}: EmulatorLaunchTabProps) {
   const [wipeData, setWipeData] = useState(false);
   const [writableSystem, setWritableSystem] = useState(false);
   const [coldBoot, setColdBoot] = useState(false);
@@ -24,11 +28,12 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
   const [confirmWritableSystem, setConfirmWritableSystem] = useState(false);
 
   const destructiveBlocked =
-    (wipeData && !confirmWipeData) || (writableSystem && !confirmWritableSystem);
+    (wipeData && !confirmWipeData) ||
+    (writableSystem && !confirmWritableSystem);
 
   if (!avd) {
     return (
-      <p className="py-4 text-sm text-muted-foreground">
+      <p className="py-4 text-muted-foreground text-sm">
         Select an AVD to configure advanced launch options.
       </p>
     );
@@ -39,38 +44,48 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
       <div className="grid gap-3 sm:grid-cols-2">
         {(
           [
-            { id: 'coldBoot', label: 'Cold boot', value: coldBoot, onChange: setColdBoot },
             {
-              id: 'noSnapLoad',
-              label: 'Skip snapshot load',
+              id: "coldBoot",
+              label: "Cold boot",
+              value: coldBoot,
+              onChange: setColdBoot,
+            },
+            {
+              id: "noSnapLoad",
+              label: "Skip snapshot load",
               value: noSnapshotLoad,
               onChange: setNoSnapshotLoad,
             },
             {
-              id: 'noSnapSave',
-              label: 'Skip snapshot save',
+              id: "noSnapSave",
+              label: "Skip snapshot save",
               value: noSnapshotSave,
               onChange: setNoSnapshotSave,
             },
             {
-              id: 'noBootAnim',
-              label: 'Disable boot animation',
+              id: "noBootAnim",
+              label: "Disable boot animation",
               value: noBootAnim,
               onChange: setNoBootAnim,
             },
             {
-              id: 'writableSystem',
-              label: 'Writable system',
+              id: "writableSystem",
+              label: "Writable system",
               value: writableSystem,
               onChange: setWritableSystem,
             },
-            { id: 'wipeData', label: 'Wipe user data', value: wipeData, onChange: setWipeData },
+            {
+              id: "wipeData",
+              label: "Wipe user data",
+              value: wipeData,
+              onChange: setWipeData,
+            },
           ] as const
         ).map((opt) => (
-          <Label key={opt.id} className="flex items-center gap-2.5 text-sm">
+          <Label className="flex items-center gap-2.5 text-sm" key={opt.id}>
             <Switch
-              id={`launch-opt-${opt.id}`}
               checked={opt.value}
+              id={`launch-opt-${opt.id}`}
               onCheckedChange={(checked) => {
                 opt.onChange(checked);
               }}
@@ -107,7 +122,8 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
                     setConfirmWritableSystem(checked);
                   }}
                 />
-                I understand writable-system can leave this AVD in a modified state.
+                I understand writable-system can leave this AVD in a modified
+                state.
               </Label>
             ) : null}
           </div>
@@ -115,10 +131,10 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
       ) : null}
 
       <LoadingButton
-        isLoading={isLaunching}
-        icon={<Play className="size-4" />}
-        loadingLabel="Launching…"
         disabled={destructiveBlocked}
+        icon={<Play className="size-4" />}
+        isLoading={isLaunching}
+        loadingLabel="Launching…"
         onClick={() =>
           void onLaunch({
             wipeData,

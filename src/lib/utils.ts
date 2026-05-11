@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -10,36 +10,56 @@ export function cn(...inputs: ClassValue[]) {
  * Handles both Windows (`\`) and POSIX (`/`) path separators.
  */
 export function getFileName(path: string): string {
-  if (!path) return '';
+  if (!path) {
+    return "";
+  }
   const parts = path.split(/[/\\]/);
-  return parts[parts.length - 1] ?? '';
+  return parts[parts.length - 1] ?? "";
 }
 
 /** Format raw byte count string into human-readable size. */
 export function formatBytes(raw: string): string {
-  const n = parseInt(raw, 10);
-  if (isNaN(n) || raw === '') return raw;
-  if (n === 0) return '0 B';
-  if (n < 1_024) return `${n} B`;
-  if (n < 1_048_576) return `${(n / 1_024).toFixed(1)} KB`;
-  if (n < 1_073_741_824) return `${(n / 1_048_576).toFixed(1)} MB`;
+  const n = Number.parseInt(raw, 10);
+  if (isNaN(n) || raw === "") {
+    return raw;
+  }
+  if (n === 0) {
+    return "0 B";
+  }
+  if (n < 1024) {
+    return `${n} B`;
+  }
+  if (n < 1_048_576) {
+    return `${(n / 1024).toFixed(1)} KB`;
+  }
+  if (n < 1_073_741_824) {
+    return `${(n / 1_048_576).toFixed(1)} MB`;
+  }
   return `${(n / 1_073_741_824).toFixed(1)} GB`;
 }
 
 /** Format a number of bytes into human-readable size. */
 export function formatBytesNum(bytes: number): string {
-  if (bytes === 0) return '0 B';
+  if (bytes === 0) {
+    return "0 B";
+  }
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  return `${Number.parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 }
 
 export function formatFileSize(bytes: number | null | undefined): string {
-  if (bytes == null || !Number.isFinite(bytes)) return '';
-  if (bytes === 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ['KB', 'MB', 'GB', 'TB'];
+  if (bytes == null || !Number.isFinite(bytes)) {
+    return "";
+  }
+  if (bytes === 0) {
+    return "0 B";
+  }
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+  const units = ["KB", "MB", "GB", "TB"];
   let value = bytes / 1024;
   let unitIndex = 0;
 
@@ -52,25 +72,37 @@ export function formatFileSize(bytes: number | null | undefined): string {
 }
 
 export function formatCompactNumber(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return '';
+  if (value == null || !Number.isFinite(value)) {
+    return "";
+  }
   return new Intl.NumberFormat(undefined, {
-    notation: 'compact',
+    notation: "compact",
     maximumFractionDigits: 1,
   }).format(value);
 }
 
 export function formatRating(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return '';
+  if (value == null || !Number.isFinite(value)) {
+    return "";
+  }
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(value);
 }
 
-export function formatDisplayDate(value: string | number | Date | null | undefined): string {
-  if (!value) return '';
+export function formatDisplayDate(
+  value: string | number | Date | null | undefined
+): string {
+  if (!value) {
+    return "";
+  }
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
 
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+    date
+  );
 }

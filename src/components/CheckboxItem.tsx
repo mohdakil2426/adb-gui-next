@@ -1,11 +1,11 @@
-import { memo } from 'react';
-import { Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Check } from "lucide-react";
+import { memo } from "react";
+import { cn } from "@/lib/utils";
 
 interface CheckboxItemProps {
   checked: boolean;
-  disabled?: boolean;
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -20,13 +20,13 @@ export const CheckboxItem = memo(function CheckboxItem({
   return (
     <div
       className={cn(
-        'h-4 w-4 shrink-0 rounded flex items-center justify-center border transition-colors',
+        "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
         checked
-          ? 'bg-primary border-primary'
+          ? "border-primary bg-primary"
           : disabled
-            ? 'border-muted-foreground/30 opacity-50'
-            : 'border-muted-foreground/50',
-        className,
+            ? "border-muted-foreground/30 opacity-50"
+            : "border-muted-foreground/50",
+        className
       )}
     >
       {checked ? <Check className="h-3 w-3 text-primary-foreground" /> : null}

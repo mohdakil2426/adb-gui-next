@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import type { backend } from './desktop/models';
+import { create } from "zustand";
+import type { backend } from "./desktop/models";
 
 type MarketplaceApp = backend.MarketplaceApp;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
@@ -8,14 +8,14 @@ type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
 
-const ALL_PROVIDERS: ProviderSource[] = ['F-Droid', 'GitHub', 'Aptoide'];
+const ALL_PROVIDERS: ProviderSource[] = ["F-Droid", "GitHub", "Aptoide"];
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
 
 interface GithubSessionState {
   accessToken: string | null;
-  user: GithubUserSummary | null;
   rateLimit: GithubRateLimitSummary | null;
+  user: GithubUserSummary | null;
 }
 
 interface ActiveGithubDeviceChallenge {
@@ -24,57 +24,59 @@ interface ActiveGithubDeviceChallenge {
 }
 
 interface MarketplaceState {
-  query: string;
-  results: MarketplaceApp[];
-  isSearching: boolean;
-  selectedApp: MarketplaceApp | null;
-  isDetailOpen: boolean;
   activeProviders: ProviderSource[];
-  sortBy: MarketplaceSortBy;
-  viewMode: 'grid' | 'list';
-  trendingApps: MarketplaceApp[];
-  isTrendingLoading: boolean;
-  recentReleaseApps: MarketplaceApp[];
-  isRecentReleaseLoading: boolean;
-  searchHistory: string[];
-  recentlyViewedApps: MarketplaceApp[];
-  isSettingsOpen: boolean;
-  githubPat: string;
-  githubOauthClientId: string;
-  resultsPerProvider: number;
-  githubSession: GithubSessionState;
+  addToSearchHistory: (query: string) => void;
+  clearGithubSession: () => void;
+  clearSearchHistory: () => void;
+  closeDetail: () => void;
+  closeSettings: () => void;
   githubDeviceChallenge: ActiveGithubDeviceChallenge | null;
+  githubOauthClientId: string;
+  githubPat: string;
+  githubSession: GithubSessionState;
+  isDetailOpen: boolean;
   isGithubAuthenticating: boolean;
+  isRecentReleaseLoading: boolean;
+  isSearching: boolean;
+  isSettingsOpen: boolean;
+  isTrendingLoading: boolean;
+  openDetail: (app: MarketplaceApp) => void;
+  openSettings: () => void;
+  query: string;
+  recentlyViewedApps: MarketplaceApp[];
+  recentReleaseApps: MarketplaceApp[];
+  reset: () => void;
+  results: MarketplaceApp[];
+  resultsPerProvider: number;
+  searchHistory: string[];
+  selectedApp: MarketplaceApp | null;
+  setAllProviders: () => void;
+  setGithubDeviceChallenge: (
+    challenge: ActiveGithubDeviceChallenge | null
+  ) => void;
+  setGithubOauthClientId: (clientId: string) => void;
+  setGithubPat: (githubPat: string) => void;
+  setGithubSession: (session: Partial<GithubSessionState>) => void;
+  setIsGithubAuthenticating: (isGithubAuthenticating: boolean) => void;
+  setIsRecentReleaseLoading: (isRecentReleaseLoading: boolean) => void;
+  setIsSearching: (isSearching: boolean) => void;
+  setIsTrendingLoading: (isTrendingLoading: boolean) => void;
 
   setQuery: (query: string) => void;
-  setResults: (results: MarketplaceApp[]) => void;
-  setIsSearching: (isSearching: boolean) => void;
-  openDetail: (app: MarketplaceApp) => void;
-  closeDetail: () => void;
-  toggleProvider: (provider: ProviderSource) => void;
-  setAllProviders: () => void;
-  setSortBy: (sortBy: MarketplaceSortBy) => void;
-  setViewMode: (viewMode: 'grid' | 'list') => void;
-  setTrendingApps: (apps: MarketplaceApp[]) => void;
-  setIsTrendingLoading: (isTrendingLoading: boolean) => void;
   setRecentReleaseApps: (apps: MarketplaceApp[]) => void;
-  setIsRecentReleaseLoading: (isRecentReleaseLoading: boolean) => void;
-  addToSearchHistory: (query: string) => void;
-  clearSearchHistory: () => void;
-  openSettings: () => void;
-  closeSettings: () => void;
-  setGithubPat: (githubPat: string) => void;
-  setGithubOauthClientId: (clientId: string) => void;
+  setResults: (results: MarketplaceApp[]) => void;
   setResultsPerProvider: (resultsPerProvider: number) => void;
-  setGithubSession: (session: Partial<GithubSessionState>) => void;
-  clearGithubSession: () => void;
-  setGithubDeviceChallenge: (challenge: ActiveGithubDeviceChallenge | null) => void;
-  setIsGithubAuthenticating: (isGithubAuthenticating: boolean) => void;
-  reset: () => void;
+  setSortBy: (sortBy: MarketplaceSortBy) => void;
+  setTrendingApps: (apps: MarketplaceApp[]) => void;
+  setViewMode: (viewMode: "grid" | "list") => void;
+  sortBy: MarketplaceSortBy;
+  toggleProvider: (provider: ProviderSource) => void;
+  trendingApps: MarketplaceApp[];
+  viewMode: "grid" | "list";
 }
 
 function loadFromStorage<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return fallback;
   }
 
@@ -87,7 +89,7 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 }
 
 function saveToStorage(key: string, value: unknown): void {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return;
   }
 
@@ -98,52 +100,75 @@ function saveToStorage(key: string, value: unknown): void {
   }
 }
 
-function uniqueRecentApps(apps: MarketplaceApp[], nextApp: MarketplaceApp): MarketplaceApp[] {
-  return [nextApp, ...apps.filter((app) => app.packageName !== nextApp.packageName)].slice(
-    0,
-    RECENTLY_VIEWED_LIMIT,
-  );
+function uniqueRecentApps(
+  apps: MarketplaceApp[],
+  nextApp: MarketplaceApp
+): MarketplaceApp[] {
+  return [
+    nextApp,
+    ...apps.filter((app) => app.packageName !== nextApp.packageName),
+  ].slice(0, RECENTLY_VIEWED_LIMIT);
 }
 
-export function getMarketplaceEffectiveGithubToken(state: MarketplaceState): string | null {
+export function getMarketplaceEffectiveGithubToken(
+  state: MarketplaceState
+): string | null {
   return state.githubSession.accessToken ?? (state.githubPat || null);
 }
 
 export function getMarketplaceActiveFilterSummary(
-  state: Pick<MarketplaceState, 'activeProviders' | 'sortBy' | 'resultsPerProvider'>,
+  state: Pick<
+    MarketplaceState,
+    "activeProviders" | "sortBy" | "resultsPerProvider"
+  >
 ): string[] {
-  const summaries = [`Sort: ${state.sortBy}`, `${state.resultsPerProvider}/provider`];
+  const summaries = [
+    `Sort: ${state.sortBy}`,
+    `${state.resultsPerProvider}/provider`,
+  ];
 
-  if (state.activeProviders.length !== ALL_PROVIDERS.length) {
-    summaries.unshift(
-      `${state.activeProviders.length} source${state.activeProviders.length !== 1 ? 's' : ''}`,
-    );
+  if (state.activeProviders.length === ALL_PROVIDERS.length) {
+    summaries.unshift("All sources");
   } else {
-    summaries.unshift('All sources');
+    summaries.unshift(
+      `${state.activeProviders.length} source${state.activeProviders.length === 1 ? "" : "s"}`
+    );
   }
 
   return summaries;
 }
 
 export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
-  query: '',
+  query: "",
   results: [],
   isSearching: false,
   selectedApp: null,
   isDetailOpen: false,
-  activeProviders: loadFromStorage<ProviderSource[]>('marketplace_providers', ALL_PROVIDERS),
-  sortBy: loadFromStorage<MarketplaceSortBy>('marketplace_sort', 'relevance'),
-  viewMode: loadFromStorage<'grid' | 'list'>('marketplace_view', 'grid'),
+  activeProviders: loadFromStorage<ProviderSource[]>(
+    "marketplace_providers",
+    ALL_PROVIDERS
+  ),
+  sortBy: loadFromStorage<MarketplaceSortBy>("marketplace_sort", "relevance"),
+  viewMode: loadFromStorage<"grid" | "list">("marketplace_view", "grid"),
   trendingApps: [],
   isTrendingLoading: false,
   recentReleaseApps: [],
   isRecentReleaseLoading: false,
-  searchHistory: loadFromStorage<string[]>('marketplace_history', []),
-  recentlyViewedApps: loadFromStorage<MarketplaceApp[]>('marketplace_recently_viewed', []),
+  searchHistory: loadFromStorage<string[]>("marketplace_history", []),
+  recentlyViewedApps: loadFromStorage<MarketplaceApp[]>(
+    "marketplace_recently_viewed",
+    []
+  ),
   isSettingsOpen: false,
-  githubPat: '',
-  githubOauthClientId: loadFromStorage<string>('marketplace_github_client_id', ''),
-  resultsPerProvider: loadFromStorage<number>('marketplace_results_per_provider', 12),
+  githubPat: "",
+  githubOauthClientId: loadFromStorage<string>(
+    "marketplace_github_client_id",
+    ""
+  ),
+  resultsPerProvider: loadFromStorage<number>(
+    "marketplace_results_per_provider",
+    12
+  ),
   githubSession: {
     accessToken: null,
     user: null,
@@ -164,7 +189,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
 
   openDetail: (app) => {
     const recentlyViewedApps = uniqueRecentApps(get().recentlyViewedApps, app);
-    saveToStorage('marketplace_recently_viewed', recentlyViewedApps);
+    saveToStorage("marketplace_recently_viewed", recentlyViewedApps);
     set({ selectedApp: app, isDetailOpen: true, recentlyViewedApps });
   },
   closeDetail: () => {
@@ -179,23 +204,24 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
         : current
       : [...current, provider];
 
-    const normalized = next.length === ALL_PROVIDERS.length ? [...ALL_PROVIDERS] : next;
-    saveToStorage('marketplace_providers', normalized);
+    const normalized =
+      next.length === ALL_PROVIDERS.length ? [...ALL_PROVIDERS] : next;
+    saveToStorage("marketplace_providers", normalized);
     set({ activeProviders: normalized });
   },
 
   setAllProviders: () => {
-    saveToStorage('marketplace_providers', ALL_PROVIDERS);
+    saveToStorage("marketplace_providers", ALL_PROVIDERS);
     set({ activeProviders: [...ALL_PROVIDERS] });
   },
 
   setSortBy: (sortBy) => {
-    saveToStorage('marketplace_sort', sortBy);
+    saveToStorage("marketplace_sort", sortBy);
     set({ sortBy });
   },
 
   setViewMode: (viewMode) => {
-    saveToStorage('marketplace_view', viewMode);
+    saveToStorage("marketplace_view", viewMode);
     set({ viewMode });
   },
 
@@ -214,18 +240,20 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
 
   addToSearchHistory: (query) => {
     const trimmed = query.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      return;
+    }
 
-    const next = [trimmed, ...get().searchHistory.filter((entry) => entry !== trimmed)].slice(
-      0,
-      SEARCH_HISTORY_LIMIT,
-    );
-    saveToStorage('marketplace_history', next);
+    const next = [
+      trimmed,
+      ...get().searchHistory.filter((entry) => entry !== trimmed),
+    ].slice(0, SEARCH_HISTORY_LIMIT);
+    saveToStorage("marketplace_history", next);
     set({ searchHistory: next });
   },
 
   clearSearchHistory: () => {
-    saveToStorage('marketplace_history', []);
+    saveToStorage("marketplace_history", []);
     set({ searchHistory: [] });
   },
 
@@ -250,12 +278,12 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   },
 
   setGithubOauthClientId: (githubOauthClientId) => {
-    saveToStorage('marketplace_github_client_id', githubOauthClientId);
+    saveToStorage("marketplace_github_client_id", githubOauthClientId);
     set({ githubOauthClientId });
   },
 
   setResultsPerProvider: (resultsPerProvider) => {
-    saveToStorage('marketplace_results_per_provider', resultsPerProvider);
+    saveToStorage("marketplace_results_per_provider", resultsPerProvider);
     set({ resultsPerProvider });
   },
 
@@ -294,7 +322,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
 
   reset: () => {
     set({
-      query: '',
+      query: "",
       results: [],
       isSearching: false,
       selectedApp: null,

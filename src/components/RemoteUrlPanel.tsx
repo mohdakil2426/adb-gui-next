@@ -1,32 +1,32 @@
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle2, Globe, Loader2, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
-} from '@/components/ui/field';
+} from "@/components/ui/field";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
-} from '@/components/ui/input-group';
-import { Switch } from '@/components/ui/switch';
-import { Loader2, CheckCircle2, AlertCircle, X, Globe } from 'lucide-react';
+} from "@/components/ui/input-group";
+import { Switch } from "@/components/ui/switch";
 
-export type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
+export type ConnectionStatus = "idle" | "checking" | "ready" | "error";
 
 interface RemoteUrlPanelProps {
-  url: string;
-  onUrlChange: (url: string) => void;
-  prefetch: boolean;
-  onPrefetchChange: (prefetch: boolean) => void;
   connectionStatus: ConnectionStatus;
+  disabled?: boolean;
   estimatedSize: string | null;
   onCheckUrl: () => void;
-  disabled?: boolean;
+  onPrefetchChange: (prefetch: boolean) => void;
+  onUrlChange: (url: string) => void;
+  prefetch: boolean;
+  url: string;
 }
 
 export function RemoteUrlPanel({
@@ -39,42 +39,42 @@ export function RemoteUrlPanel({
   onCheckUrl,
   disabled = false,
 }: RemoteUrlPanelProps) {
-  const isChecking = connectionStatus === 'checking';
-  const isReady = connectionStatus === 'ready';
-  const isError = connectionStatus === 'error';
+  const isChecking = connectionStatus === "checking";
+  const isReady = connectionStatus === "ready";
+  const isError = connectionStatus === "error";
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {/* URL Input */}
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="remote-url" className="flex items-center gap-2">
+          <FieldLabel className="flex items-center gap-2" htmlFor="remote-url">
             <Globe className="h-4 w-4" />
             Payload URL
           </FieldLabel>
           <InputGroup>
             <InputGroupInput
-              id="remote-url"
-              name="remote-payload-url"
-              type="url"
-              inputMode="url"
               autoComplete="off"
-              placeholder="https://example.com/ota.zip"
-              value={url}
+              className="min-w-0 flex-1"
+              disabled={disabled}
+              id="remote-url"
+              inputMode="url"
+              name="remote-payload-url"
               onChange={(e) => {
                 onUrlChange(e.target.value);
               }}
-              className="flex-1 min-w-0"
-              disabled={disabled}
+              placeholder="https://example.com/ota.zip"
+              type="url"
+              value={url}
             />
             {url && !disabled ? (
               <InputGroupAddon align="inline-end">
                 <InputGroupButton
-                  size="icon-xs"
                   aria-label="Clear URL"
                   onClick={() => {
-                    onUrlChange('');
+                    onUrlChange("");
                   }}
+                  size="icon-xs"
                 >
                   <X className="h-4 w-4" />
                 </InputGroupButton>
@@ -86,14 +86,14 @@ export function RemoteUrlPanel({
 
       {/* Check URL Button */}
       <Button
-        variant="outline"
-        onClick={onCheckUrl}
-        disabled={!url.trim() || isChecking || disabled}
         className="w-full"
+        disabled={!url.trim() || isChecking || disabled}
+        onClick={onCheckUrl}
+        variant="outline"
       >
         {isChecking ? (
           <>
-            <Loader2 data-icon="inline-start" className="animate-spin" />
+            <Loader2 className="animate-spin" data-icon="inline-start" />
             Checking connection...
           </>
         ) : (
@@ -106,14 +106,14 @@ export function RemoteUrlPanel({
 
       {/* Options */}
       <FieldGroup>
-        <Field orientation="horizontal" data-disabled={disabled}>
+        <Field data-disabled={disabled} orientation="horizontal">
           <Switch
-            id="prefetch"
             checked={prefetch}
+            disabled={disabled}
+            id="prefetch"
             onCheckedChange={(checked) => {
               onPrefetchChange(checked);
             }}
-            disabled={disabled}
           />
           <FieldContent>
             <FieldLabel htmlFor="prefetch">Prefetch mode</FieldLabel>
@@ -123,10 +123,10 @@ export function RemoteUrlPanel({
       </FieldGroup>
 
       {/* Connection Status */}
-      {connectionStatus !== 'idle' && (
+      {connectionStatus !== "idle" && (
         <Alert
-          variant={isError ? 'destructive' : 'default'}
-          className={isReady ? 'border-success/50 text-success' : undefined}
+          className={isReady ? "border-success/50 text-success" : undefined}
+          variant={isError ? "destructive" : "default"}
         >
           {isChecking ? (
             <>
@@ -139,7 +139,9 @@ export function RemoteUrlPanel({
               <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Range requests supported</AlertTitle>
               {estimatedSize ? (
-                <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
+                <AlertDescription>
+                  Estimated download: {estimatedSize}
+                </AlertDescription>
               ) : null}
             </>
           ) : null}

@@ -1,47 +1,24 @@
-import { useState, useMemo, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-
-import { debugLog } from '@/lib/debug';
-import { queryKeys } from '@/lib/queries';
-
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Reboot,
-  RunAdbHostCommand,
-  RunFastbootHostCommand,
-  WipeData,
-  SaveLog,
-} from '../../lib/desktop/backend';
-
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  RotateCw,
+  FileJson,
+  Info,
   Loader2,
   Power,
-  Terminal,
-  Zap,
   RefreshCw,
-  Server,
-  Trash2,
-  FileJson,
-  Smartphone,
-  Info,
+  RotateCw,
   Save,
-} from 'lucide-react';
-import { useLogStore } from '@/lib/logStore';
-import { useDeviceStore } from '@/lib/deviceStore';
-import { EditNicknameDialog } from '@/components/EditNicknameDialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { CopyButton } from '@/components/CopyButton';
-import { SectionHeader } from '@/components/SectionHeader';
+  Server,
+  Smartphone,
+  Terminal,
+  Trash2,
+  Zap,
+} from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ActionButton } from "@/components/ActionButton";
+import { CopyButton } from "@/components/CopyButton";
+import { EditNicknameDialog } from "@/components/EditNicknameDialog";
+import { SectionHeader } from "@/components/SectionHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,13 +29,43 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { buttonVariants } from '@/components/ui/button-variants';
-import { ActionButton } from '@/components/ActionButton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { debugLog } from "@/lib/debug";
+import { useDeviceStore } from "@/lib/deviceStore";
+import { useLogStore } from "@/lib/logStore";
+import { queryKeys } from "@/lib/queries";
+import {
+  Reboot,
+  RunAdbHostCommand,
+  RunFastbootHostCommand,
+  SaveLog,
+  WipeData,
+} from "../../lib/desktop/backend";
 
-type RebootMode = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
-type DeviceConnectionMode = 'adb' | 'fastboot' | 'unknown';
+type RebootMode = "system" | "recovery" | "bootloader" | "fastboot" | null;
+type DeviceConnectionMode = "adb" | "fastboot" | "unknown";
 
 export function ViewUtilities() {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -66,7 +73,7 @@ export function ViewUtilities() {
 
   // GetVar Dialog State
   const [showGetVarDialog, setShowGetVarDialog] = useState(false);
-  const [getVarContent, setGetVarContent] = useState('');
+  const [getVarContent, setGetVarContent] = useState("");
 
   // Nickname Editing State
   const [isEditing, setIsEditing] = useState(false);
@@ -75,55 +82,81 @@ export function ViewUtilities() {
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const queryClient = useQueryClient();
 
-  const refetchDevices = () => queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
+  const refetchDevices = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
 
   const { deviceMode, deviceSerial } = useMemo(() => {
-    if (!allDevices.length)
+    if (!allDevices.length) {
       return {
-        deviceMode: 'unknown' as DeviceConnectionMode,
+        deviceMode: "unknown" as DeviceConnectionMode,
         deviceSerial: null,
       };
-    const selectedDevice = allDevices.find((device) => device.serial === selectedSerial);
+    }
+    const selectedDevice = allDevices.find(
+      (device) => device.serial === selectedSerial
+    );
     if (!selectedDevice) {
-      return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
-    }
-    if (selectedDevice.status === 'device' || selectedDevice.status === 'recovery') {
-      debugLog('Device mode: adb');
       return {
-        deviceMode: 'adb' as DeviceConnectionMode,
+        deviceMode: "unknown" as DeviceConnectionMode,
+        deviceSerial: null,
+      };
+    }
+    if (
+      selectedDevice.status === "device" ||
+      selectedDevice.status === "recovery"
+    ) {
+      debugLog("Device mode: adb");
+      return {
+        deviceMode: "adb" as DeviceConnectionMode,
         deviceSerial: selectedDevice.serial,
       };
     }
-    if (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader') {
-      debugLog('Device mode: fastboot');
+    if (
+      selectedDevice.status === "fastboot" ||
+      selectedDevice.status === "bootloader"
+    ) {
+      debugLog("Device mode: fastboot");
       return {
-        deviceMode: 'fastboot' as DeviceConnectionMode,
+        deviceMode: "fastboot" as DeviceConnectionMode,
         deviceSerial: selectedDevice.serial,
       };
     }
-    return { deviceMode: 'unknown' as DeviceConnectionMode, deviceSerial: null };
+    return {
+      deviceMode: "unknown" as DeviceConnectionMode,
+      deviceSerial: null,
+    };
   }, [allDevices, selectedSerial]);
 
-  const handleReboot = async (mode: string, modeId: RebootMode, actionId: string) => {
-    if (loadingAction || sentAction) return;
+  const handleReboot = async (
+    mode: string,
+    modeId: RebootMode,
+    actionId: string
+  ) => {
+    if (loadingAction || sentAction) {
+      return;
+    }
 
     setLoadingAction(actionId);
-    const toastId = toast.loading(`Sending reboot command...`);
+    const toastId = toast.loading("Sending reboot command...");
     try {
       await Reboot(mode, deviceSerial);
-      toast.success(`Reboot to ${modeId ?? 'system'} initiated`, { id: toastId });
-      useLogStore.getState().addLog(`Rebooting to ${modeId ?? 'system'}...`, 'info');
+      toast.success(`Reboot to ${modeId ?? "system"} initiated`, {
+        id: toastId,
+      });
+      useLogStore
+        .getState()
+        .addLog(`Rebooting to ${modeId ?? "system"}...`, "info");
       setSentAction(actionId);
       setTimeout(() => {
         setSentAction(null);
       }, 2000);
     } catch (error) {
       debugLog(`Error rebooting to ${modeId}:`, error);
-      toast.error('Failed to send reboot command', {
+      toast.error("Failed to send reboot command", {
         id: toastId,
         description: String(error),
       });
-      useLogStore.getState().addLog(`Reboot failed: ${error}`, 'error');
+      useLogStore.getState().addLog(`Reboot failed: ${error}`, "error");
     }
 
     setLoadingAction(null);
@@ -131,92 +164,125 @@ export function ViewUtilities() {
   };
 
   const handleRestartServer = async () => {
-    if (loadingAction || sentAction) return;
-    setLoadingAction('restart_server');
-    const toastId = toast.loading('Restarting ADB Server...');
+    if (loadingAction || sentAction) {
+      return;
+    }
+    setLoadingAction("restart_server");
+    const toastId = toast.loading("Restarting ADB Server...");
     try {
-      await RunAdbHostCommand('kill-server');
-      await RunAdbHostCommand('start-server');
-      toast.success('ADB Server Restarted', { id: toastId });
-      useLogStore.getState().addLog('ADB Server restarted', 'success');
-      setSentAction('restart_server');
+      await RunAdbHostCommand("kill-server");
+      await RunAdbHostCommand("start-server");
+      toast.success("ADB Server Restarted", { id: toastId });
+      useLogStore.getState().addLog("ADB Server restarted", "success");
+      setSentAction("restart_server");
       setTimeout(() => {
         setSentAction(null);
       }, 2000);
       void refetchDevices();
     } catch (error) {
-      toast.error('Failed to restart server', { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Failed to restart ADB server: ${error}`, 'error');
+      toast.error("Failed to restart server", {
+        id: toastId,
+        description: String(error),
+      });
+      useLogStore
+        .getState()
+        .addLog(`Failed to restart ADB server: ${error}`, "error");
     }
     setLoadingAction(null);
   };
 
   const handleKillServer = async () => {
-    if (loadingAction || sentAction) return;
-    setLoadingAction('kill_server');
-    const toastId = toast.loading('Killing ADB Server...');
+    if (loadingAction || sentAction) {
+      return;
+    }
+    setLoadingAction("kill_server");
+    const toastId = toast.loading("Killing ADB Server...");
     try {
-      await RunAdbHostCommand('kill-server');
-      toast.success('ADB Server Killed', { id: toastId });
-      useLogStore.getState().addLog('ADB Server killed', 'warning');
-      setSentAction('kill_server');
+      await RunAdbHostCommand("kill-server");
+      toast.success("ADB Server Killed", { id: toastId });
+      useLogStore.getState().addLog("ADB Server killed", "warning");
+      setSentAction("kill_server");
       setTimeout(() => {
         setSentAction(null);
       }, 2000);
       void refetchDevices();
     } catch (error) {
-      toast.error('Failed to kill server', { id: toastId, description: String(error) });
+      toast.error("Failed to kill server", {
+        id: toastId,
+        description: String(error),
+      });
     }
     setLoadingAction(null);
   };
 
   const handleSetActiveSlot = async (slot: string) => {
-    if (loadingAction || sentAction) return;
+    if (loadingAction || sentAction) {
+      return;
+    }
     setLoadingAction(`set_active_${slot}`);
-    const toastId = toast.loading(`Setting active slot to ${slot.toUpperCase()}...`);
+    const toastId = toast.loading(
+      `Setting active slot to ${slot.toUpperCase()}...`
+    );
     try {
       await RunFastbootHostCommand(`--set-active=${slot}`, deviceSerial);
-      toast.success(`Active slot set to ${slot.toUpperCase()}`, { id: toastId });
-      useLogStore.getState().addLog(`Set active slot to ${slot}`, 'success');
+      toast.success(`Active slot set to ${slot.toUpperCase()}`, {
+        id: toastId,
+      });
+      useLogStore.getState().addLog(`Set active slot to ${slot}`, "success");
       setSentAction(`set_active_${slot}`);
       setTimeout(() => {
         setSentAction(null);
       }, 2000);
     } catch (error) {
-      toast.error(`Failed to set slot ${slot}`, { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Failed to set active slot ${slot}: ${error}`, 'error');
+      toast.error(`Failed to set slot ${slot}`, {
+        id: toastId,
+        description: String(error),
+      });
+      useLogStore
+        .getState()
+        .addLog(`Failed to set active slot ${slot}: ${error}`, "error");
     }
     setLoadingAction(null);
   };
 
   const handleFastbootGetVars = async () => {
-    if (loadingAction || sentAction) return;
-    setLoadingAction('get_vars');
+    if (loadingAction || sentAction) {
+      return;
+    }
+    setLoadingAction("get_vars");
     try {
-      const output = await RunFastbootHostCommand('getvar all', deviceSerial);
+      const output = await RunFastbootHostCommand("getvar all", deviceSerial);
       setGetVarContent(output);
       setShowGetVarDialog(true);
-      useLogStore.getState().addLog('Fetched fastboot variables', 'success');
-      setSentAction('get_vars');
+      useLogStore.getState().addLog("Fetched fastboot variables", "success");
+      setSentAction("get_vars");
       setTimeout(() => {
         setSentAction(null);
       }, 2000);
     } catch (error) {
-      toast.error('Failed to get variables', { description: String(error) });
-      useLogStore.getState().addLog(`Failed to get fastboot vars: ${error}`, 'error');
+      toast.error("Failed to get variables", { description: String(error) });
+      useLogStore
+        .getState()
+        .addLog(`Failed to get fastboot vars: ${error}`, "error");
     }
     setLoadingAction(null);
   };
 
   const handleSaveGetVars = async () => {
-    if (!getVarContent) return;
+    if (!getVarContent) {
+      return;
+    }
     try {
-      const prefix = deviceSerial ? `${deviceSerial}-getvarall` : 'unknown-device-getvarall';
+      const prefix = deviceSerial
+        ? `${deviceSerial}-getvarall`
+        : "unknown-device-getvarall";
       const path = await SaveLog(getVarContent, prefix);
       toast.success(`Saved to ${path}`);
-      useLogStore.getState().addLog(`Saved fastboot vars to ${path}`, 'success');
+      useLogStore
+        .getState()
+        .addLog(`Saved fastboot vars to ${path}`, "success");
     } catch (error) {
-      toast.error('Failed to save log', { description: String(error) });
+      toast.error("Failed to save log", { description: String(error) });
     }
   };
 
@@ -225,15 +291,19 @@ export function ViewUtilities() {
   }, []);
 
   const handleWipeData = async () => {
-    setLoadingAction('wipe_data');
-    const toastId = toast.loading('Wiping User Data (this may take a while)...');
+    setLoadingAction("wipe_data");
+    const toastId = toast.loading(
+      "Wiping User Data (this may take a while)..."
+    );
     try {
       await WipeData(deviceSerial);
-      toast.success('Device Wiped Successfully', { id: toastId });
-      useLogStore.getState().addLog('Device user data wiped (fastboot -w)', 'success');
+      toast.success("Device Wiped Successfully", { id: toastId });
+      useLogStore
+        .getState()
+        .addLog("Device user data wiped (fastboot -w)", "success");
     } catch (error) {
-      toast.error('Wipe Failed', { id: toastId, description: String(error) });
-      useLogStore.getState().addLog(`Wipe failed: ${error}`, 'error');
+      toast.error("Wipe Failed", { id: toastId, description: String(error) });
+      useLogStore.getState().addLog(`Wipe failed: ${error}`, "error");
     }
     setLoadingAction(null);
   };
@@ -246,8 +316,8 @@ export function ViewUtilities() {
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        serial={deviceSerial}
         onSaved={() => void refetchDevices()}
+        serial={deviceSerial}
       />
 
       <div className="flex flex-col gap-6">
@@ -258,82 +328,90 @@ export function ViewUtilities() {
               <Smartphone className="size-5" />
               ADB Utilities
             </CardTitle>
-            <CardDescription>Operations requiring USB Debugging enabled.</CardDescription>
+            <CardDescription>
+              Operations requiring USB Debugging enabled.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <ActionButton
                   actionId="adb_system"
+                  disabled={deviceMode !== "adb"}
                   icon={Power}
                   label="Reboot System"
                   loadingAction={loadingAction}
+                  onClick={() => handleReboot("", "system", "adb_system")}
                   sentAction={sentAction}
-                  onClick={() => handleReboot('', 'system', 'adb_system')}
-                  disabled={deviceMode !== 'adb'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
                 <ActionButton
                   actionId="adb_recovery"
+                  disabled={deviceMode !== "adb"}
                   icon={RotateCw}
                   label="Reboot Recovery"
                   loadingAction={loadingAction}
+                  onClick={() =>
+                    handleReboot("recovery", "recovery", "adb_recovery")
+                  }
                   sentAction={sentAction}
-                  onClick={() => handleReboot('recovery', 'recovery', 'adb_recovery')}
-                  disabled={deviceMode !== 'adb'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
                 <ActionButton
                   actionId="adb_bootloader"
+                  disabled={deviceMode !== "adb"}
                   icon={Terminal}
                   label="Reboot Bootloader"
                   loadingAction={loadingAction}
+                  onClick={() =>
+                    handleReboot("bootloader", "bootloader", "adb_bootloader")
+                  }
                   sentAction={sentAction}
-                  onClick={() => handleReboot('bootloader', 'bootloader', 'adb_bootloader')}
-                  disabled={deviceMode !== 'adb'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
                 <ActionButton
                   actionId="adb_fastboot"
+                  disabled={deviceMode !== "adb"}
                   icon={Zap}
                   label="Reboot Fastbootd"
                   loadingAction={loadingAction}
+                  onClick={() =>
+                    handleReboot("fastboot", "fastboot", "adb_fastboot")
+                  }
                   sentAction={sentAction}
-                  onClick={() => handleReboot('fastboot', 'fastboot', 'adb_fastboot')}
-                  disabled={deviceMode !== 'adb'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-3">
               <SectionHeader>Server Control</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <ActionButton
                   actionId="restart_server"
                   icon={RefreshCw}
+                  justifyStart
                   label="Restart ADB Server"
                   loadingAction={loadingAction}
-                  sentAction={sentAction}
                   onClick={handleRestartServer}
+                  sentAction={sentAction}
                   variant="secondary"
-                  justifyStart
                 />
                 <ActionButton
                   actionId="kill_server"
+                  className="hover:bg-destructive/10 hover:text-destructive"
                   icon={Server}
+                  justifyStart
                   label="Kill ADB Server"
                   loadingAction={loadingAction}
-                  sentAction={sentAction}
                   onClick={handleKillServer}
+                  sentAction={sentAction}
                   variant="secondary"
-                  justifyStart
-                  className="hover:bg-destructive/10 hover:text-destructive"
                 />
               </div>
             </div>
@@ -347,44 +425,50 @@ export function ViewUtilities() {
               <Zap className="size-5" />
               Fastboot Utilities
             </CardTitle>
-            <CardDescription>Operations requiring Bootloader/Fastboot mode.</CardDescription>
+            <CardDescription>
+              Operations requiring Bootloader/Fastboot mode.
+            </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
               <SectionHeader>Power Menu</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <ActionButton
                   actionId="fb_system"
+                  disabled={deviceMode !== "fastboot"}
                   icon={Power}
                   label="Reboot System"
                   loadingAction={loadingAction}
+                  onClick={() => handleReboot("", "system", "fb_system")}
                   sentAction={sentAction}
-                  onClick={() => handleReboot('', 'system', 'fb_system')}
-                  disabled={deviceMode !== 'fastboot'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
                 <ActionButton
                   actionId="fb_bootloader"
+                  disabled={deviceMode !== "fastboot"}
                   icon={Terminal}
                   label="Reboot Bootloader"
                   loadingAction={loadingAction}
+                  onClick={() =>
+                    handleReboot("bootloader", "bootloader", "fb_bootloader")
+                  }
                   sentAction={sentAction}
-                  onClick={() => handleReboot('bootloader', 'bootloader', 'fb_bootloader')}
-                  disabled={deviceMode !== 'fastboot'}
-                  variant="outline"
                   tall
+                  variant="outline"
                 />
                 <ActionButton
                   actionId="fb_recovery"
+                  disabled={deviceMode !== "fastboot"}
                   icon={RotateCw}
                   label="Reboot Recovery"
                   loadingAction={loadingAction}
+                  onClick={() =>
+                    handleReboot("recovery", "recovery", "fb_recovery")
+                  }
                   sentAction={sentAction}
-                  onClick={() => handleReboot('recovery', 'recovery', 'fb_recovery')}
-                  disabled={deviceMode !== 'fastboot'}
-                  variant="outline"
                   tall
+                  variant="outline"
                   wrapperClassName="col-span-1 sm:col-span-2"
                 />
               </div>
@@ -392,28 +476,28 @@ export function ViewUtilities() {
 
             <div className="flex flex-col gap-3">
               <SectionHeader>Slot Management</SectionHeader>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <ActionButton
                   actionId="set_active_a"
+                  disabled={deviceMode !== "fastboot"}
                   icon={Zap}
+                  justifyStart
                   label="Activate Slot A"
                   loadingAction={loadingAction}
+                  onClick={() => handleSetActiveSlot("a")}
                   sentAction={sentAction}
-                  onClick={() => handleSetActiveSlot('a')}
-                  disabled={deviceMode !== 'fastboot'}
                   variant="secondary"
-                  justifyStart
                 />
                 <ActionButton
                   actionId="set_active_b"
+                  disabled={deviceMode !== "fastboot"}
                   icon={Zap}
+                  justifyStart
                   label="Activate Slot B"
                   loadingAction={loadingAction}
+                  onClick={() => handleSetActiveSlot("b")}
                   sentAction={sentAction}
-                  onClick={() => handleSetActiveSlot('b')}
-                  disabled={deviceMode !== 'fastboot'}
                   variant="secondary"
-                  justifyStart
                 />
               </div>
             </div>
@@ -423,25 +507,25 @@ export function ViewUtilities() {
               <div className="grid grid-cols-1 gap-3">
                 <ActionButton
                   actionId="get_vars"
+                  disabled={deviceMode !== "fastboot"}
                   icon={Info}
+                  justifyStart
                   label="Get Device Variables (GetVar All)"
                   loadingAction={loadingAction}
-                  sentAction={sentAction}
                   onClick={handleFastbootGetVars}
-                  disabled={deviceMode !== 'fastboot'}
+                  sentAction={sentAction}
                   variant="secondary"
-                  justifyStart
                 />
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
-                      variant="destructive"
-                      disabled={isGlobalLoading || deviceMode !== 'fastboot'}
                       className="w-full justify-start pl-4"
+                      disabled={isGlobalLoading || deviceMode !== "fastboot"}
+                      variant="destructive"
                     >
-                      {loadingAction === 'wipe_data' ? (
-                        <Loader2 className="mr-2 size-4 animate-spin shrink-0" />
+                      {loadingAction === "wipe_data" ? (
+                        <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
                       ) : (
                         <Trash2 className="mr-2 size-4" />
                       )}
@@ -451,17 +535,20 @@ export function ViewUtilities() {
 
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Are you absolutely sure?
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will perform a <strong>fastboot -w</strong> which erases all user data.
-                        This action cannot be undone. Ensure you have backed up your data.
+                        This will perform a <strong>fastboot -w</strong> which
+                        erases all user data. This action cannot be undone.
+                        Ensure you have backed up your data.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
+                        className={buttonVariants({ variant: "destructive" })}
                         onClick={handleWipeData}
-                        className={buttonVariants({ variant: 'destructive' })}
                       >
                         Yes, Wipe Data
                       </AlertDialogAction>
@@ -475,8 +562,8 @@ export function ViewUtilities() {
       </div>
 
       {/* Dialog for GetVar All Output */}
-      <Dialog open={showGetVarDialog} onOpenChange={setShowGetVarDialog}>
-        <DialogContent className="w-[95vw] max-w-2xl max-h-[80vh] flex flex-col">
+      <Dialog onOpenChange={setShowGetVarDialog} open={showGetVarDialog}>
+        <DialogContent className="flex max-h-[80vh] w-[95vw] max-w-2xl flex-col">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
@@ -489,15 +576,15 @@ export function ViewUtilities() {
                 </DialogDescription>
               </div>
               <div className="flex gap-2">
-                <CopyButton value={getVarContent} label="Variables" />
+                <CopyButton label="Variables" value={getVarContent} />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      aria-label="Save to Log"
+                      disabled={!getVarContent}
+                      onClick={handleSaveGetVars}
                       size="icon"
                       variant="outline"
-                      onClick={handleSaveGetVars}
-                      disabled={!getVarContent}
-                      aria-label="Save to Log"
                     >
                       <Save className="size-4" />
                     </Button>
@@ -507,13 +594,13 @@ export function ViewUtilities() {
               </div>
             </div>
           </DialogHeader>
-          <div className="rounded-md border bg-muted/50 p-4 max-h-[60vh] overflow-y-auto w-full">
-            <pre className="text-xs font-mono whitespace-pre-wrap text-muted-foreground">
-              {getVarContent || 'No output received.'}
+          <div className="max-h-[60vh] w-full overflow-y-auto rounded-md border bg-muted/50 p-4">
+            <pre className="whitespace-pre-wrap font-mono text-muted-foreground text-xs">
+              {getVarContent || "No output received."}
             </pre>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCloseGetVarDialog}>
+            <Button onClick={handleCloseGetVarDialog} variant="outline">
               Close
             </Button>
           </DialogFooter>

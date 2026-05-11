@@ -1,18 +1,21 @@
-import { useMemo, useState } from 'react';
-import { cn, formatBytesNum } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PartitionRow } from './PartitionRow';
+import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn, formatBytesNum } from "@/lib/utils";
+import { PartitionRow } from "./PartitionRow";
 
 interface PartitionTableProps {
-  partitions: { name: string; size: number; selected: boolean }[];
-  extractingPartitions: Set<string>;
   completedPartitions: Set<string>;
-  partitionProgress: Map<string, { current: number; total: number; percentage: number }>;
+  extractingPartitions: Set<string>;
   isExtractionActive: boolean;
-  status: string;
   onToggle: (index: number) => void;
   onToggleAll: () => void;
+  partitionProgress: Map<
+    string,
+    { current: number; total: number; percentage: number }
+  >;
+  partitions: { name: string; size: number; selected: boolean }[];
+  status: string;
 }
 
 /**
@@ -31,10 +34,12 @@ export function PartitionTable({
   onToggle,
   onToggleAll,
 }: PartitionTableProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   const filteredPartitions = useMemo(() => {
-    if (!searchQuery.trim()) return partitions;
+    if (!searchQuery.trim()) {
+      return partitions;
+    }
     const query = searchQuery.toLowerCase();
     return partitions.filter((p) => p.name.toLowerCase().includes(query));
   }, [partitions, searchQuery]);
@@ -51,64 +56,75 @@ export function PartitionTable({
     return { toExtractCount: count, toExtractSize: size };
   }, [filteredPartitions, completedPartitions]);
 
-  if (partitions.length === 0) return null;
+  if (partitions.length === 0) {
+    return null;
+  }
 
   const selectedCount = filteredPartitions.filter((p) => p.selected).length;
   const hasCompletedPartitions = completedPartitions.size > 0;
-  const allSelected = filteredPartitions.length > 0 && filteredPartitions.every((p) => p.selected);
+  const allSelected =
+    filteredPartitions.length > 0 &&
+    filteredPartitions.every((p) => p.selected);
   const isFiltered = searchQuery.trim().length > 0;
 
   return (
-    <div className="flex flex-col gap-3 min-w-0">
+    <div className="flex min-w-0 flex-col gap-3">
       {/* Summary + toggle */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="text-xs text-muted-foreground">
-          {isFiltered ? `${filteredPartitions.length} of ${partitions.length} shown \u2022 ` : ''}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-muted-foreground text-xs">
+          {isFiltered
+            ? `${filteredPartitions.length} of ${partitions.length} shown \u2022 `
+            : ""}
           {selectedCount}/{filteredPartitions.length} selected
-          {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
-          {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
+          {hasCompletedPartitions
+            ? ` \u2022 ${completedPartitions.size} extracted`
+            : null}
+          {toExtractCount > 0 &&
+            ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
         </span>
         <Button
-          variant="ghost"
-          size="sm"
+          className="h-7 text-xs"
+          disabled={status === "extracting"}
           onClick={onToggleAll}
-          className="text-xs h-7"
-          disabled={status === 'extracting'}
+          size="sm"
+          variant="ghost"
         >
-          {allSelected ? 'Deselect All' : 'Select All'}
+          {allSelected ? "Deselect All" : "Select All"}
         </Button>
       </div>
 
       {/* Table container */}
-      <div className="rounded-lg border bg-muted/30 overflow-hidden">
-        <div className="flex justify-center border-b border-border/50 px-4 py-3">
+      <div className="overflow-hidden rounded-lg border bg-muted/30">
+        <div className="flex justify-center border-border/50 border-b px-4 py-3">
           <Input
-            placeholder="Search partitions..."
-            value={searchQuery}
+            className="h-8 w-full max-w-xl text-sm"
             onChange={(e) => {
               setSearchQuery(e.target.value);
             }}
-            className="h-8 w-full max-w-xl text-sm"
+            placeholder="Search partitions..."
+            value={searchQuery}
           />
         </div>
 
         {/* Header — adaptive */}
         <div
           className={cn(
-            'grid gap-2 px-4 py-2.5 bg-muted/50 border-b text-xs font-semibold uppercase tracking-wider text-muted-foreground',
+            "grid gap-2 border-b bg-muted/50 px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider",
             isExtractionActive
-              ? 'grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]'
-              : 'grid-cols-[28px_minmax(0,1fr)_72px]',
+              ? "grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]"
+              : "grid-cols-[28px_minmax(0,1fr)_72px]"
           )}
         >
-          <span></span>
+          <span />
           <span>Partition</span>
-          {isExtractionActive ? <span className="text-center">Progress</span> : null}
+          {isExtractionActive ? (
+            <span className="text-center">Progress</span>
+          ) : null}
           <span className="text-right">Size</span>
         </div>
 
         {/* Rows — scrollable */}
-        <div className="divide-y divide-border/50 max-h-[40vh] min-h-[120px] overflow-y-auto overflow-x-hidden">
+        <div className="max-h-[40vh] min-h-[120px] divide-y divide-border/50 overflow-y-auto overflow-x-hidden">
           {filteredPartitions.map((partition, index) => {
             const isRowExtracting = extractingPartitions.has(partition.name);
             const isRowCompleted = completedPartitions.has(partition.name);
@@ -117,15 +133,15 @@ export function PartitionTable({
 
             return (
               <PartitionRow
-                key={partition.name}
-                partition={partition}
+                disabled={status === "extracting"}
                 index={index}
-                isExtracting={isRowExtracting}
                 isCompleted={isRowCompleted}
+                isExtracting={isRowExtracting}
+                key={partition.name}
+                onToggle={onToggle}
+                partition={partition}
                 progressPercent={realProgressPercent}
                 showProgress={isExtractionActive}
-                onToggle={onToggle}
-                disabled={status === 'extracting'}
               />
             );
           })}

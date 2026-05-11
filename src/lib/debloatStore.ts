@@ -1,70 +1,70 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { backend } from '@/lib/desktop/models';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import type { backend } from "@/lib/desktop/models";
 
-export type AppManagerTab = 'debloater' | 'installation';
-export type DebloatListFilter = backend.DebloatList | 'All';
-export type RemovalFilter = backend.RemovalTier | 'All';
-export type StateFilter = backend.PkgState | 'All';
+export type AppManagerTab = "debloater" | "installation";
+export type DebloatListFilter = backend.DebloatList | "All";
+export type RemovalFilter = backend.RemovalTier | "All";
+export type StateFilter = backend.PkgState | "All";
 
 interface DebloatState {
   // ── UI State ────────────────────────────────────────────────────────────────
   activeTab: AppManagerTab;
-  // ── Data ─────────────────────────────────────────────────────────────────
-  packages: backend.DebloatPackageRow[];
-  listStatus: backend.DebloatListStatus | null;
-  isLoadingPackages: boolean;
-  isApplying: boolean;
-
-  // ── Filters ───────────────────────────────────────────────────────────────
-  searchQuery: string;
-  listFilter: DebloatListFilter;
-  removalFilter: RemovalFilter;
-  stateFilter: StateFilter;
-
-  // ── Selection ─────────────────────────────────────────────────────────────
-  selectedPackages: Set<string>;
-  /** Currently highlighted package for the description panel */
-  currentPackageName: string | null;
-
-  // ── Settings (synced with per-device backend settings) ────────────────────
-  expertMode: boolean;
-  disableMode: boolean;
-  multiUserMode: boolean;
-
-  // ── Backups ───────────────────────────────────────────────────────────────
-  backups: backend.BackupSummary[];
-  selectedBackupFileName: string | null;
-
-  // ── Actions ───────────────────────────────────────────────────────────────
-  setPackages: (packages: backend.DebloatPackageRow[]) => void;
-  setListStatus: (status: backend.DebloatListStatus | null) => void;
-  setIsLoadingPackages: (loading: boolean) => void;
-  setIsApplying: (applying: boolean) => void;
-
-  setSearchQuery: (q: string) => void;
-  setListFilter: (f: DebloatListFilter) => void;
-  setRemovalFilter: (f: RemovalFilter) => void;
-  setStateFilter: (f: StateFilter) => void;
-
-  togglePackage: (name: string) => void;
-  selectAll: () => void;
-  unselectAll: () => void;
-  setCurrentPackageName: (name: string | null) => void;
-  setActiveTab: (tab: AppManagerTab) => void;
-
-  setExpertMode: (v: boolean) => void;
-  setDisableMode: (v: boolean) => void;
-  setMultiUserMode: (v: boolean) => void;
-
-  setBackups: (backups: backend.BackupSummary[]) => void;
-  setSelectedBackupFileName: (name: string | null) => void;
 
   /** Update states of packages after a batch action. */
   applyResults: (results: backend.DebloatActionResult[]) => void;
 
+  // ── Backups ───────────────────────────────────────────────────────────────
+  backups: backend.BackupSummary[];
+  /** Currently highlighted package for the description panel */
+  currentPackageName: string | null;
+  disableMode: boolean;
+
+  // ── Settings (synced with per-device backend settings) ────────────────────
+  expertMode: boolean;
+  isApplying: boolean;
+  isLoadingPackages: boolean;
+  listFilter: DebloatListFilter;
+  listStatus: backend.DebloatListStatus | null;
+  multiUserMode: boolean;
+  // ── Data ─────────────────────────────────────────────────────────────────
+  packages: backend.DebloatPackageRow[];
+  removalFilter: RemovalFilter;
+
   /** Reset all filters and selection. */
   resetFilters: () => void;
+
+  // ── Filters ───────────────────────────────────────────────────────────────
+  searchQuery: string;
+  selectAll: () => void;
+  selectedBackupFileName: string | null;
+
+  // ── Selection ─────────────────────────────────────────────────────────────
+  selectedPackages: Set<string>;
+  setActiveTab: (tab: AppManagerTab) => void;
+
+  setBackups: (backups: backend.BackupSummary[]) => void;
+  setCurrentPackageName: (name: string | null) => void;
+  setDisableMode: (v: boolean) => void;
+
+  setExpertMode: (v: boolean) => void;
+  setIsApplying: (applying: boolean) => void;
+  setIsLoadingPackages: (loading: boolean) => void;
+  setListFilter: (f: DebloatListFilter) => void;
+  setListStatus: (status: backend.DebloatListStatus | null) => void;
+  setMultiUserMode: (v: boolean) => void;
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  setPackages: (packages: backend.DebloatPackageRow[]) => void;
+  setRemovalFilter: (f: RemovalFilter) => void;
+
+  setSearchQuery: (q: string) => void;
+  setSelectedBackupFileName: (name: string | null) => void;
+  setStateFilter: (f: StateFilter) => void;
+  stateFilter: StateFilter;
+
+  togglePackage: (name: string) => void;
+  unselectAll: () => void;
 }
 
 export const useDebloatStore = create<DebloatState>()(
@@ -75,12 +75,12 @@ export const useDebloatStore = create<DebloatState>()(
       isLoadingPackages: false,
       isApplying: false,
 
-      activeTab: 'installation',
+      activeTab: "installation",
 
-      searchQuery: '',
-      listFilter: 'All',
-      removalFilter: 'All',
-      stateFilter: 'All',
+      searchQuery: "",
+      listFilter: "All",
+      removalFilter: "All",
+      stateFilter: "All",
 
       selectedPackages: new Set(),
       currentPackageName: null,
@@ -122,7 +122,9 @@ export const useDebloatStore = create<DebloatState>()(
         const { selectedPackages, packages, expertMode } = get();
         const pkg = packages.find((p) => p.name === name);
         // Block Unsafe selection without expert mode
-        if (pkg?.removal === 'Unsafe' && !expertMode) return;
+        if (pkg?.removal === "Unsafe" && !expertMode) {
+          return;
+        }
         const next = new Set(selectedPackages);
         if (next.has(name)) {
           next.delete(name);
@@ -133,7 +135,14 @@ export const useDebloatStore = create<DebloatState>()(
       },
 
       selectAll: () => {
-        const { packages, expertMode, listFilter, removalFilter, stateFilter, searchQuery } = get();
+        const {
+          packages,
+          expertMode,
+          listFilter,
+          removalFilter,
+          stateFilter,
+          searchQuery,
+        } = get();
         const filtered = applyFilters(packages, {
           listFilter,
           removalFilter,
@@ -141,7 +150,9 @@ export const useDebloatStore = create<DebloatState>()(
           searchQuery,
         });
         const next = new Set(
-          filtered.filter((p) => expertMode || p.removal !== 'Unsafe').map((p) => p.name),
+          filtered
+            .filter((p) => expertMode || p.removal !== "Unsafe")
+            .map((p) => p.name)
         );
         set({ selectedPackages: next });
       },
@@ -160,15 +171,17 @@ export const useDebloatStore = create<DebloatState>()(
 
       setExpertMode: (expertMode) => {
         // Deselect any Unsafe packages if expert mode is turned off
-        if (!expertMode) {
+        if (expertMode) {
+          set({ expertMode });
+        } else {
           const { selectedPackages, packages } = get();
           const unsafeNames = new Set(
-            packages.filter((p) => p.removal === 'Unsafe').map((p) => p.name),
+            packages.filter((p) => p.removal === "Unsafe").map((p) => p.name)
           );
-          const next = new Set([...selectedPackages].filter((n) => !unsafeNames.has(n)));
+          const next = new Set(
+            [...selectedPackages].filter((n) => !unsafeNames.has(n))
+          );
           set({ expertMode, selectedPackages: next });
-        } else {
-          set({ expertMode });
         }
       },
 
@@ -197,18 +210,27 @@ export const useDebloatStore = create<DebloatState>()(
           return p;
         });
         // Deselect successfully acted packages
-        const successNames = new Set(results.filter((r) => r.success).map((r) => r.packageName));
+        const successNames = new Set(
+          results.filter((r) => r.success).map((r) => r.packageName)
+        );
         const { selectedPackages } = get();
-        const next = new Set([...selectedPackages].filter((n) => !successNames.has(n)));
+        const next = new Set(
+          [...selectedPackages].filter((n) => !successNames.has(n))
+        );
         set({ packages: updated, selectedPackages: next });
       },
 
       resetFilters: () => {
-        set({ searchQuery: '', listFilter: 'All', removalFilter: 'All', stateFilter: 'All' });
+        set({
+          searchQuery: "",
+          listFilter: "All",
+          removalFilter: "All",
+          stateFilter: "All",
+        });
       },
     }),
     {
-      name: 'debloat-storage',
+      name: "debloat-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeTab: state.activeTab,
@@ -219,8 +241,8 @@ export const useDebloatStore = create<DebloatState>()(
         expertMode: state.expertMode,
         disableMode: state.disableMode,
       }),
-    },
-  ),
+    }
+  )
 );
 
 // ── Client-side filter helper (used by components + selectAll) ────────────────
@@ -228,21 +250,32 @@ export const useDebloatStore = create<DebloatState>()(
 interface FilterOptions {
   listFilter: DebloatListFilter;
   removalFilter: RemovalFilter;
-  stateFilter: StateFilter;
   searchQuery: string;
+  stateFilter: StateFilter;
 }
 
 export function applyFilters(
   packages: backend.DebloatPackageRow[],
-  { listFilter, removalFilter, stateFilter, searchQuery }: FilterOptions,
+  { listFilter, removalFilter, stateFilter, searchQuery }: FilterOptions
 ): backend.DebloatPackageRow[] {
   const q = searchQuery.toLowerCase().trim();
   return packages.filter((p) => {
-    if (listFilter !== 'All' && p.list !== listFilter) return false;
-    if (removalFilter !== 'All' && p.removal !== removalFilter) return false;
-    if (stateFilter !== 'All' && p.state !== stateFilter) return false;
-    if (q && !p.name.toLowerCase().includes(q) && !p.description.toLowerCase().includes(q))
+    if (listFilter !== "All" && p.list !== listFilter) {
       return false;
+    }
+    if (removalFilter !== "All" && p.removal !== removalFilter) {
+      return false;
+    }
+    if (stateFilter !== "All" && p.state !== stateFilter) {
+      return false;
+    }
+    if (
+      q &&
+      !p.name.toLowerCase().includes(q) &&
+      !p.description.toLowerCase().includes(q)
+    ) {
+      return false;
+    }
     return true;
   });
 }

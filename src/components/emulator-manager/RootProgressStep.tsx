@@ -1,38 +1,45 @@
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { backend } from '@/lib/desktop/models';
+import { CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { backend } from "@/lib/desktop/models";
+import { cn } from "@/lib/utils";
 
 const STEP_LABELS = [
-  'Checking your emulator is ready…',
-  'Downloading Magisk (root toolkit)…',
-  'Unpacking Magisk files…',
-  'Sending files to your emulator…',
-  'Applying root patch to boot image…',
-  'Retrieving patched boot image…',
-  'Saving patch and stopping emulator…',
-  'Patch installed. Cold boot to verify root…',
+  "Checking your emulator is ready…",
+  "Downloading Magisk (root toolkit)…",
+  "Unpacking Magisk files…",
+  "Sending files to your emulator…",
+  "Applying root patch to boot image…",
+  "Retrieving patched boot image…",
+  "Saving patch and stopping emulator…",
+  "Patch installed. Cold boot to verify root…",
 ];
 
 interface RootProgressStepProps {
-  progress: backend.RootProgress | null;
-  error: string | null;
   avdName: string;
+  error: string | null;
   onCancel: () => void;
+  progress: backend.RootProgress | null;
 }
 
-export function RootProgressStep({ progress, error, avdName, onCancel }: RootProgressStepProps) {
+export function RootProgressStep({
+  progress,
+  error,
+  avdName,
+  onCancel,
+}: RootProgressStepProps) {
   const currentStep = progress?.step ?? 0;
-  const percent = progress ? Math.round((progress.step / progress.totalSteps) * 100) : 0;
+  const percent = progress
+    ? Math.round((progress.step / progress.totalSteps) * 100)
+    : 0;
   const failed = error !== null;
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h3 className="text-base font-semibold text-foreground">
-          {failed ? 'Rooting Failed' : 'Rooting in Progress'}
+        <h3 className="font-semibold text-base text-foreground">
+          {failed ? "Rooting Failed" : "Rooting in Progress"}
         </h3>
-        <p className="mt-0.5 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-muted-foreground text-sm">
           {failed
             ? error
             : `The boot image on ${avdName} is being modified to include Magisk's root tools.`}
@@ -49,15 +56,15 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
 
           return (
             <div
-              key={stepNumber}
-              id={`root-step-${stepNumber}`}
               className={cn(
-                'flex items-start gap-3 text-sm',
-                isDone && 'text-foreground',
-                isActive && 'text-foreground font-medium',
-                isFailed && 'text-destructive font-medium',
-                !isDone && !isActive && !isFailed && 'text-muted-foreground',
+                "flex items-start gap-3 text-sm",
+                isDone && "text-foreground",
+                isActive && "font-medium text-foreground",
+                isFailed && "font-medium text-destructive",
+                !(isDone || isActive || isFailed) && "text-muted-foreground"
               )}
+              id={`root-step-${stepNumber}`}
+              key={stepNumber}
             >
               <span className="mt-0.5 shrink-0">
                 {isFailed ? (
@@ -73,7 +80,9 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
               <div>
                 <span>{label}</span>
                 {isActive && progress?.detail ? (
-                  <p className="mt-0.5 text-xs text-muted-foreground">{progress.detail}</p>
+                  <p className="mt-0.5 text-muted-foreground text-xs">
+                    {progress.detail}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -90,13 +99,18 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
               style={{ width: `${percent}%` }}
             />
           </div>
-          <p className="text-right text-xs text-muted-foreground">{percent}%</p>
+          <p className="text-right text-muted-foreground text-xs">{percent}%</p>
         </div>
       )}
 
       {/* Cancel */}
       {!failed && (
-        <Button id="root-cancel-button" variant="outline" className="w-full" onClick={onCancel}>
+        <Button
+          className="w-full"
+          id="root-cancel-button"
+          onClick={onCancel}
+          variant="outline"
+        >
           Cancel
         </Button>
       )}

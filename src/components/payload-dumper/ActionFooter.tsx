@@ -1,17 +1,17 @@
-import { Download, RefreshCw, Loader2, StopCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { formatBytesNum } from '@/lib/utils';
+import { Download, Loader2, RefreshCw, StopCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { formatBytesNum } from "@/lib/utils";
 
 interface ActionFooterProps {
+  hasCompletedPartitions: boolean;
+  onCancel?: () => void;
+  onExtract: () => void;
+  onReset: () => void;
   payloadPath: string;
+  selectedCount: number;
   status: string;
   toExtractCount: number;
   toExtractSize: number;
-  selectedCount: number;
-  hasCompletedPartitions: boolean;
-  onReset: () => void;
-  onExtract: () => void;
-  onCancel?: () => void;
 }
 
 /**
@@ -31,49 +31,58 @@ export function ActionFooter({
   onCancel,
 }: ActionFooterProps) {
   const getExtractLabel = (): string => {
-    if (status === 'extracting') return 'Extracting...';
+    if (status === "extracting") {
+      return "Extracting...";
+    }
     if (toExtractCount > 0) {
       return `Extract (${toExtractCount}) \u2014 ${formatBytesNum(toExtractSize)}`;
     }
-    if (selectedCount > 0 && hasCompletedPartitions) return 'Already Extracted';
-    return 'Select Partitions';
+    if (selectedCount > 0 && hasCompletedPartitions) {
+      return "Already Extracted";
+    }
+    return "Select Partitions";
   };
 
   return (
     <div className="border-t pt-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Button
-          variant="outline"
-          size="lg"
-          onClick={onReset}
-          disabled={status === 'extracting' || status === 'cancelling'}
           className="h-11 w-full"
+          disabled={status === "extracting" || status === "cancelling"}
+          onClick={onReset}
+          size="lg"
+          variant="outline"
         >
           <RefreshCw className="mr-2 size-4" />
           Reset
         </Button>
-        {status === 'extracting' && onCancel ? (
-          <Button variant="destructive" size="lg" onClick={onCancel} className="h-11 w-full">
+        {status === "extracting" && onCancel ? (
+          <Button
+            className="h-11 w-full"
+            onClick={onCancel}
+            size="lg"
+            variant="destructive"
+          >
             <StopCircle className="mr-2 size-4" />
             Cancel
           </Button>
         ) : (
           <Button
-            size="lg"
-            onClick={onExtract}
+            className="h-11 w-full"
             disabled={
               !payloadPath ||
-              status === 'extracting' ||
-              status === 'cancelling' ||
-              status === 'loading-partitions' ||
+              status === "extracting" ||
+              status === "cancelling" ||
+              status === "loading-partitions" ||
               toExtractCount === 0
             }
-            className="h-11 w-full"
+            onClick={onExtract}
+            size="lg"
           >
-            {status === 'extracting' || status === 'cancelling' ? (
+            {status === "extracting" || status === "cancelling" ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}
+                {status === "cancelling" ? "Cancelling..." : "Extracting..."}
               </>
             ) : (
               <>

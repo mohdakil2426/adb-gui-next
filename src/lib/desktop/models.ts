@@ -1,87 +1,89 @@
 export namespace backend {
-  export type AvdRootState = 'stock' | 'rooted' | 'modified' | 'unknown';
-  export type EmulatorBootMode = 'cold' | 'normal' | 'unknown';
+  export type AvdRootState = "stock" | "rooted" | "modified" | "unknown";
+  export type EmulatorBootMode = "cold" | "normal" | "unknown";
 
   export interface AvdSummary {
-    name: string;
-    iniPath: string;
-    avdPath: string;
-    target: string | null;
-    apiLevel: number | null;
     abi: string | null;
-    deviceName: string | null;
-    ramdiskPath: string | null;
-    hasBackups: boolean;
-    rootState: AvdRootState;
+    apiLevel: number | null;
+    avdPath: string;
     bootMode: EmulatorBootMode;
+    deviceName: string | null;
+    hasBackups: boolean;
+    iniPath: string;
     isRunning: boolean;
+    name: string;
+    ramdiskPath: string | null;
+    rootState: AvdRootState;
     serial: string | null;
+    target: string | null;
     warnings: string[];
   }
 
   export interface EmulatorLaunchOptions {
-    wipeData: boolean;
-    writableSystem: boolean;
     coldBoot: boolean;
+    noBootAnim: boolean;
     noSnapshotLoad: boolean;
     noSnapshotSave: boolean;
-    noBootAnim: boolean;
+    wipeData: boolean;
+    writableSystem: boolean;
   }
 
   export interface BackupEntry {
-    originalPath: string;
     backupPath: string;
+    originalPath: string;
   }
 
   export interface RestorePlan {
-    entries: BackupEntry[];
     createdAt: string;
+    entries: BackupEntry[];
     source: string;
   }
 
   export interface RootPreparationRequest {
     avdName: string;
-    serial: string;
     rootPackagePath: string;
+    serial: string;
   }
 
   export interface RootPreparationResult {
-    normalizedPackagePath: string;
     fakeBootRemotePath: string;
     instructions: string[];
+    normalizedPackagePath: string;
   }
 
   export interface RootFinalizeRequest {
     avdName: string;
-    serial: string | null;
     patchedImagePath?: string | null;
+    serial: string | null;
   }
 
   export interface RootFinalizeResult {
-    restoredFiles: string[];
     nextBootRecommendation: string;
+    restoredFiles: string[];
   }
 
   // ─── Automated root pipeline ────────────────────────────────────────────────
 
-  export type RootSource = { type: 'localFile'; value: string } | { type: 'latestStable' };
+  export type RootSource =
+    | { type: "localFile"; value: string }
+    | { type: "latestStable" };
 
   /** Latest official stable Magisk release metadata from the GitHub releases API. */
   export interface MagiskStableRelease {
-    /** Human-readable version string (e.g. "Magisk v30.7"). */
-    version: string;
-    /** Git tag name (e.g. "v30.7"). */
-    tag: string;
     /** Exact filename of the APK asset (e.g. "Magisk-v30.7.apk"). */
     assetName: string;
     /** Direct download URL for the APK. */
     downloadUrl: string;
-    /** File size in bytes. */
-    size: number;
-    /** SHA-256 hex digest (without "sha256:" prefix), if provided by GitHub. */
-    sha256: string | null;
     /** ISO-8601 publish timestamp. */
     publishedAt: string;
+    /** SHA-256 hex digest (without "sha256:" prefix), if provided by GitHub. */
+    sha256: string | null;
+    /** File size in bytes. */
+    size: number;
+    /** Git tag name (e.g. "v30.7"). */
+    tag: string;
+    /** Human-readable version string (e.g. "Magisk v30.7"). */
+    version: string;
   }
 
   export interface RootAvdRequest {
@@ -91,51 +93,54 @@ export namespace backend {
   }
 
   export interface RootProgress {
+    detail: string | null;
+    label: string;
     step: number;
     totalSteps: number;
-    label: string;
-    detail: string | null;
   }
 
-  export type RootActivationStatus = 'patchInstalled' | 'verified' | 'verificationFailed';
+  export type RootActivationStatus =
+    | "patchInstalled"
+    | "verified"
+    | "verificationFailed";
 
   export interface RootAvdResult {
-    magiskVersion: string;
-    patchedRamdiskPath: string;
-    managerInstalled: boolean;
     activationStatus: RootActivationStatus;
+    magiskVersion: string;
+    managerInstalled: boolean;
     message: string;
+    patchedRamdiskPath: string;
   }
 
   export interface RootVerificationResult {
-    status: RootActivationStatus;
     bootCompleted: boolean;
-    suUid: string | null;
     magiskPackage: string | null;
     message: string;
+    status: RootActivationStatus;
+    suUid: string | null;
   }
 
   // ─── Pre-flight readiness scan ──────────────────────────────────────────────
 
-  export type CheckStatus = 'pass' | 'warn' | 'fail' | 'info';
+  export type CheckStatus = "pass" | "warn" | "fail" | "info";
 
   export interface ReadinessCheck {
+    detail: string | null;
     id: string;
     label: string;
-    status: CheckStatus;
     message: string;
-    detail: string | null;
+    status: CheckStatus;
   }
 
   export type RecommendedAction =
-    | { type: 'launchEmulator' }
-    | { type: 'coldBoot' }
-    | { type: 'restoreFirst' }
-    | { type: 'unsupported'; reason: string };
+    | { type: "launchEmulator" }
+    | { type: "coldBoot" }
+    | { type: "restoreFirst" }
+    | { type: "unsupported"; reason: string };
 
   export interface RootReadinessScan {
-    checks: ReadinessCheck[];
     canProceed: boolean;
+    checks: ReadinessCheck[];
     hasWarnings: boolean;
     recommendedAction: RecommendedAction | null;
   }
@@ -146,57 +151,57 @@ export namespace backend {
   }
 
   export interface DeviceInfo {
-    model: string;
     androidVersion: string;
-    buildNumber: string;
     batteryLevel: string;
-    serial: string;
-    ipAddress: string;
-    rootStatus: string;
-    codename: string;
-    ramTotal: string;
-    storageInfo: string;
     brand: string;
+    buildNumber: string;
+    codename: string;
     deviceName: string;
+    ipAddress: string;
+    model: string;
+    ramTotal: string;
+    rootStatus: string;
+    serial: string;
+    storageInfo: string;
   }
 
   export interface ExtractionStats {
-    totalBytes: number;
     durationMs: number;
     partitionsExtracted: number;
     throughputMbps: number;
+    totalBytes: number;
   }
 
   export interface ProgressEvent {
-    partitionName: string;
-    operationIndex: number;
-    totalOperations: number;
     bytesWritten: number;
-    totalBytes: number;
-    throughputMbps: number;
-    etaSeconds: number;
     completed: boolean;
+    etaSeconds: number;
+    operationIndex: number;
+    partitionName: string;
+    throughputMbps: number;
+    totalBytes: number;
+    totalOperations: number;
   }
 
   export interface ExtractPayloadResult {
-    success: boolean;
-    outputDir: string;
-    extractedFiles: string[];
     error?: string;
+    extractedFiles: string[];
+    outputDir: string;
     stats?: ExtractionStats;
+    success: boolean;
   }
 
   export type CancelToken = string;
 
   export interface FileEntry {
-    name: string;
-    type: string;
-    size: string;
-    permissions: string;
     date: string;
-    time: string;
     /** For symlinks: resolved target (e.g. "/proc/self/fd"). Empty for files/dirs. */
     linkTarget: string;
+    name: string;
+    permissions: string;
+    size: string;
+    time: string;
+    type: string;
   }
 
   export interface InstalledPackage {
@@ -212,137 +217,141 @@ export namespace backend {
   /** Information about a remote payload file obtained via HEAD request. */
   export interface RemotePayloadInfo {
     contentLength: number;
-    supportsRanges: boolean;
     contentType: string | null;
+    etag: string | null;
     lastModified: string | null;
     server: string | null;
-    etag: string | null;
+    supportsRanges: boolean;
   }
 
   /** Full metadata about a remote OTA payload — HTTP, ZIP, and OTA manifest layers. */
   export interface RemotePayloadMetadata {
+    blockSize: number;
     contentLength: number;
     contentType: string | null;
-    lastModified: string | null;
-    server: string | null;
-    etag: string | null;
-    isZip: boolean;
-    zipPayloadOffset: number | null;
-    zipCompressedSize: number | null;
-    zipUncompressedSize: number | null;
-    zipCompressionMethod: string | null;
-    blockSize: number;
-    payloadVersion: number;
-    minorVersion: number | null;
-    securityPatchLevel: string | null;
-    maxTimestamp: number | null;
-    partialUpdate: boolean | null;
     dynamicGroups: DynamicGroupInfo[];
-    partitionCount: number;
-    totalSize: number;
+    etag: string | null;
+    fileHash: string | null;
+    fileSize: number | null;
+    isZip: boolean;
+    lastModified: string | null;
+    maxTimestamp: number | null;
+    metadataHash: string | null;
+    metadataSize: number | null;
+    minorVersion: number | null;
     otaType: string | null;
-    preDevice: string | null;
+    otaVersion: string | null;
+    partialUpdate: boolean | null;
+    partitionCount: number;
+    payloadVersion: number;
     postBuild: string | null;
     postBuildIncremental: string | null;
     postSdkLevel: string | null;
     postSecurityPatchLevel: string | null;
     postTimestamp: string | null;
-    otaVersion: string | null;
+    preDevice: string | null;
+    securityPatchLevel: string | null;
+    server: string | null;
+    totalSize: number;
     wipe: boolean | null;
-    fileHash: string | null;
-    fileSize: number | null;
-    metadataHash: string | null;
-    metadataSize: number | null;
+    zipCompressedSize: number | null;
+    zipCompressionMethod: string | null;
+    zipPayloadOffset: number | null;
+    zipUncompressedSize: number | null;
   }
 
   export interface DynamicGroupInfo {
     name: string;
-    size: number | null;
     partitions: string[];
+    size: number | null;
   }
 
   export interface OpsMetadata {
+    cpu: string | null;
+    encryption: string;
+    firmwareName: string | null;
+    flashType: string | null;
     format: string;
     projectId: string | null;
-    firmwareName: string | null;
-    cpu: string | null;
-    flashType: string | null;
-    encryption: string;
+    sections: string[];
     totalPartitions: number;
     totalSize: number;
-    sections: string[];
   }
 
   export interface PayloadDiagnostics {
-    format: string;
-    partitionCount: number;
-    totalOperations: number;
     compressionTypes: string[];
+    format: string;
     hasSha256Hashes: boolean;
     isSparse: boolean;
-    warnings: string[];
     manifestInfo: string;
+    partitionCount: number;
+    totalOperations: number;
+    warnings: string[];
   }
 
   export interface DeltaPayloadOptions {
-    sourceDir: string;
     outputDir?: string;
+    sourceDir: string;
   }
 
   // ─── Marketplace ─────────────────────────────────────────────────────────
 
-  export type ProviderSource = 'F-Droid' | 'GitHub' | 'Aptoide';
-  export type MarketplaceSortBy = 'relevance' | 'name' | 'recentlyUpdated' | 'downloads';
+  export type ProviderSource = "F-Droid" | "GitHub" | "Aptoide";
+  export type MarketplaceSortBy =
+    | "relevance"
+    | "name"
+    | "recentlyUpdated"
+    | "downloads";
 
   export interface MarketplaceApp {
-    name: string;
-    packageName: string;
-    version: string;
-    summary: string;
-    iconUrl: string | null;
-    source: string;
     availableSources: string[];
-    downloadUrl: string | null;
-    repoUrl: string | null;
-    size: number | null;
-    rating: number | null;
-    downloadsCount: number | null;
-    malwareStatus: string | null;
     categories: string[];
-    updatedAt: string | null;
+    downloadsCount: number | null;
+    downloadUrl: string | null;
+    iconUrl: string | null;
     installable: boolean;
     language: string | null;
+    malwareStatus: string | null;
+    name: string;
+    packageName: string;
+    rating: number | null;
+    repoUrl: string | null;
+    size: number | null;
+    source: string;
+    summary: string;
+    updatedAt: string | null;
+    version: string;
   }
 
   export interface MarketplaceAppDetail {
+    author: string | null;
+    changelog: string | null;
+    description: string;
+    downloadsCount: number | null;
+    downloadUrl: string | null;
+    iconUrl: string | null;
+    license: string | null;
     name: string;
     packageName: string;
-    version: string;
-    description: string;
-    iconUrl: string | null;
-    source: string;
-    downloadUrl: string | null;
-    repoUrl: string | null;
-    size: number | null;
-    license: string | null;
-    author: string | null;
-    sourcesAvailable: string[];
-    screenshots: string[];
-    changelog: string | null;
-    versions: VersionInfo[];
-    repoStars: number | null;
-    repoForks: number | null;
     rating: number | null;
-    downloadsCount: number | null;
+    repoForks: number | null;
+    repoStars: number | null;
+    repoUrl: string | null;
+    screenshots: string[];
+    size: number | null;
+    source: string;
+    sourcesAvailable: string[];
     updatedAt: string | null;
+    version: string;
+    versions: VersionInfo[];
   }
 
   export interface VersionInfo {
-    versionName: string;
-    versionCode: number;
-    size: number | null;
     downloadUrl: string | null;
     publishedAt: string | null;
+    size: number | null;
+    versionCode: number;
+    versionName: string;
   }
 
   export interface GithubRateLimitSummary {
@@ -352,64 +361,76 @@ export namespace backend {
   }
 
   export interface GithubUserSummary {
-    login: string;
     avatarUrl: string | null;
+    login: string;
     profileUrl: string | null;
   }
 
   export interface GithubDeviceFlowChallenge {
     deviceCode: string;
+    expiresIn: number;
+    interval: number;
     userCode: string;
     verificationUri: string;
     verificationUriComplete: string | null;
-    expiresIn: number;
-    interval: number;
   }
 
   export interface GithubDeviceFlowPollResult {
-    status: string;
     accessToken: string | null;
     interval: number | null;
     message: string | null;
-    user: GithubUserSummary | null;
     rateLimit: GithubRateLimitSummary | null;
+    status: string;
+    user: GithubUserSummary | null;
   }
 
   export interface MarketplaceSearchFilters {
-    providers: ProviderSource[];
-    sortBy: MarketplaceSortBy;
     githubToken?: string | null;
+    providers: ProviderSource[];
     resultsPerProvider?: number;
+    sortBy: MarketplaceSortBy;
   }
 
   // ── Debloater ──────────────────────────────────────────────────────────────
 
-  export type DebloatList = 'Aosp' | 'Carrier' | 'Google' | 'Misc' | 'Oem' | 'Pending' | 'Unlisted';
-  export type RemovalTier = 'Recommended' | 'Advanced' | 'Expert' | 'Unsafe' | 'Unlisted';
-  export type PkgState = 'Enabled' | 'Disabled' | 'Uninstalled';
-  export type DebloatAction = 'uninstall' | 'disable' | 'restore';
+  export type DebloatList =
+    | "Aosp"
+    | "Carrier"
+    | "Google"
+    | "Misc"
+    | "Oem"
+    | "Pending"
+    | "Unlisted";
+  export type RemovalTier =
+    | "Recommended"
+    | "Advanced"
+    | "Expert"
+    | "Unsafe"
+    | "Unlisted";
+  export type PkgState = "Enabled" | "Disabled" | "Uninstalled";
+  export type DebloatAction = "uninstall" | "disable" | "restore";
 
   export interface DebloatPackageRow {
-    name: string;
-    state: PkgState;
+    dependencies: string[];
     description: string;
     list: DebloatList;
-    removal: RemovalTier;
-    dependencies: string[];
+    name: string;
     neededBy: string[];
+    removal: RemovalTier;
+    state: PkgState;
   }
 
   export interface DebloatListStatus {
-    source: string;
     lastUpdated: string;
+    source: string;
     totalEntries: number;
   }
 
   export interface DebloatActionResult {
-    packageName: string;
-    success: boolean;
     error: string | null;
     newState: PkgState;
+    packageName: string;
+    success: boolean;
   }
 
   export interface PackageSnapshot {
@@ -418,15 +439,15 @@ export namespace backend {
   }
 
   export interface BackupSummary {
-    fileName: string;
     createdAt: string;
     deviceId: string;
+    fileName: string;
     packageCount: number;
   }
 
   export interface PerDeviceSettings {
     disableMode: boolean;
-    multiUserMode: boolean;
     expertMode: boolean;
+    multiUserMode: boolean;
   }
 }

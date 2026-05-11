@@ -1,27 +1,27 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { backend } from './desktop/models';
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import type { backend } from "./desktop/models";
 
 type Device = backend.Device;
 type DeviceInfo = backend.DeviceInfo;
 
 interface DeviceState {
+  deviceInfo: DeviceInfo | null;
   // ── Device Data ────────────────────────────────────────────────────────────
   devices: Device[];
-  selectedSerial: string | null;
-  deviceInfo: DeviceInfo | null;
-  lastUpdated: number;
+  editingDeviceSerial: string | null;
 
   // ── UI State (for persistence) ──────────────────────────────────────────────
   isEditingNickname: boolean;
-  editingDeviceSerial: string | null;
+  lastUpdated: number;
+  reset: () => void;
+  selectedSerial: string | null;
+  setDeviceInfo: (info: DeviceInfo | null) => void;
 
   setDevices: (devices: Device[]) => void;
-  setSelectedSerial: (serial: string | null) => void;
-  setDeviceInfo: (info: DeviceInfo | null) => void;
-  setIsEditingNickname: (editing: boolean) => void;
   setEditingDeviceSerial: (serial: string | null) => void;
-  reset: () => void;
+  setIsEditingNickname: (editing: boolean) => void;
+  setSelectedSerial: (serial: string | null) => void;
 }
 
 export const useDeviceStore = create<DeviceState>()(
@@ -41,7 +41,10 @@ export const useDeviceStore = create<DeviceState>()(
           const previousSerial = selectedSerial;
 
           // If selected device disconnected → clear selection
-          if (selectedSerial && !devices.some((d) => d.serial === selectedSerial)) {
+          if (
+            selectedSerial &&
+            !devices.some((d) => d.serial === selectedSerial)
+          ) {
             selectedSerial = null;
           }
 
@@ -53,7 +56,8 @@ export const useDeviceStore = create<DeviceState>()(
           return {
             devices,
             selectedSerial,
-            deviceInfo: selectedSerial === previousSerial ? state.deviceInfo : null,
+            deviceInfo:
+              selectedSerial === previousSerial ? state.deviceInfo : null,
             lastUpdated: Date.now(),
           };
         });
@@ -76,16 +80,21 @@ export const useDeviceStore = create<DeviceState>()(
       },
 
       reset: () => {
-        set({ devices: [], selectedSerial: null, deviceInfo: null, lastUpdated: 0 });
+        set({
+          devices: [],
+          selectedSerial: null,
+          deviceInfo: null,
+          lastUpdated: 0,
+        });
       },
     }),
     {
-      name: 'device-storage',
+      name: "device-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         isEditingNickname: state.isEditingNickname,
         editingDeviceSerial: state.editingDeviceSerial,
       }),
-    },
-  ),
+    }
+  )
 );

@@ -1,7 +1,7 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
-import { debugLog } from '@/lib/debug';
+import { AlertTriangle } from "lucide-react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { debugLog } from "@/lib/debug";
 
 interface Props {
   children: ReactNode;
@@ -10,8 +10,8 @@ interface Props {
 }
 
 interface State {
-  hasError: boolean;
   error: Error | null;
+  hasError: boolean;
 }
 
 /**
@@ -30,7 +30,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    debugLog('[ErrorBoundary] Uncaught render error:', error, info.componentStack);
+    debugLog(
+      "[ErrorBoundary] Uncaught render error:",
+      error,
+      info.componentStack
+    );
   }
 
   private handleRetry = (): void => {
@@ -41,24 +45,30 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
+          className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-8 text-center"
           role="alert"
-          className="flex flex-col items-center justify-center gap-4 p-8 min-h-[200px] text-center"
         >
           <div className="relative">
-            <div className="absolute inset-0 bg-destructive/20 blur-xl rounded-full" />
-            <div className="relative h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="h-6 w-6 text-destructive" aria-hidden="true" />
+            <div className="absolute inset-0 rounded-full bg-destructive/20 blur-xl" />
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
+              <AlertTriangle
+                aria-hidden="true"
+                className="h-6 w-6 text-destructive"
+              />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <p className="font-semibold">
-              {this.props.viewName ? `${this.props.viewName} crashed` : 'View crashed'}
+              {this.props.viewName
+                ? `${this.props.viewName} crashed`
+                : "View crashed"}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {this.state.error?.message ?? 'An unexpected render error occurred.'}
+            <p className="text-muted-foreground text-sm">
+              {this.state.error?.message ??
+                "An unexpected render error occurred."}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={this.handleRetry}>
+          <Button onClick={this.handleRetry} size="sm" variant="outline">
             Retry
           </Button>
         </div>

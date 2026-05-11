@@ -1,18 +1,18 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export interface HistoryEntry {
-  type: 'command' | 'result' | 'error';
   text: string;
+  type: "command" | "result" | "error";
 }
 
 interface ShellStore {
-  history: HistoryEntry[];
-  commandHistory: string[];
+  addCommand: (command: string) => void;
 
   addHistoryEntry: (entry: HistoryEntry) => void;
-  setHistory: (history: HistoryEntry[]) => void;
   clearHistory: () => void;
-  addCommand: (command: string) => void;
+  commandHistory: string[];
+  history: HistoryEntry[];
+  setHistory: (history: HistoryEntry[]) => void;
 }
 
 export const useShellStore = create<ShellStore>((set) => ({

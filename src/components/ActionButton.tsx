@@ -1,34 +1,40 @@
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Loader2, type LucideIcon } from 'lucide-react';
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Loader2, type LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export interface ActionButtonProps {
   actionId: string;
-  icon: LucideIcon;
-  label: string;
-  sentLabel?: string;
-  loadingAction: string | null;
-  sentAction: string | null;
-  onClick: () => void;
-  disabled?: boolean;
-  variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
-  tall?: boolean;
   className?: string;
-  wrapperClassName?: string;
+  disabled?: boolean;
+  icon: LucideIcon;
   justifyStart?: boolean;
+  label: string;
+  loadingAction: string | null;
+  onClick: () => void;
+  sentAction: string | null;
+  sentLabel?: string;
+  tall?: boolean;
+  variant?:
+    | "default"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link"
+    | "destructive";
+  wrapperClassName?: string;
 }
 
 export function ActionButton({
   actionId,
   icon: Icon,
   label,
-  sentLabel = 'Sent!',
+  sentLabel = "Sent!",
   loadingAction,
   sentAction,
   onClick,
   disabled = false,
-  variant = 'outline',
+  variant = "outline",
   tall = false,
   className,
   wrapperClassName,
@@ -43,50 +49,54 @@ export function ActionButton({
 
   return (
     <Button
-      variant={variant}
       className={cn(
-        'w-full active:scale-[0.97] transition-all duration-200',
-        tall ? 'h-20 flex flex-col items-center justify-center gap-2' : 'gap-2',
-        justifyStart && 'justify-start pl-4',
+        "w-full transition-all duration-200 active:scale-[0.97]",
+        tall ? "flex h-20 flex-col items-center justify-center gap-2" : "gap-2",
+        justifyStart && "justify-start pl-4",
         isSent &&
-          'ring-2 ring-success/50 shadow-[0_0_12px_color-mix(in_oklch,var(--success)_40%,transparent)]',
+          "shadow-[0_0_12px_color-mix(in_oklch,var(--success)_40%,transparent)] ring-2 ring-success/50",
         className,
-        wrapperClassName,
+        wrapperClassName
       )}
-      onClick={onClick}
       disabled={isDisabled}
+      onClick={onClick}
+      variant={variant}
     >
       <AnimatePresence mode="wait">
         {isSent ? (
           <motion.div
-            key="check"
-            initial={{ scale: 0 }}
             animate={{ scale: 1 }}
+            className={tall ? "" : "shrink-0"}
             exit={{ scale: 0 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-            className={tall ? '' : 'shrink-0'}
+            initial={{ scale: 0 }}
+            key="check"
+            transition={{ type: "spring", stiffness: 500, damping: 25 }}
           >
-            <Check className={cn('text-success', tall ? 'size-5' : 'size-4 mr-2')} />
+            <Check
+              className={cn("text-success", tall ? "size-5" : "mr-2 size-4")}
+            />
           </motion.div>
         ) : isLoading ? (
           <motion.div
-            key="spin"
-            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            className={tall ? "" : "shrink-0"}
             exit={{ opacity: 0 }}
-            className={tall ? '' : 'shrink-0'}
+            initial={{ opacity: 0 }}
+            key="spin"
           >
-            <Loader2 className={cn('animate-spin', tall ? 'size-5' : 'size-4 mr-2')} />
+            <Loader2
+              className={cn("animate-spin", tall ? "size-5" : "mr-2 size-4")}
+            />
           </motion.div>
         ) : (
           <motion.div
-            key="icon"
-            initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            className={tall ? "" : "shrink-0"}
             exit={{ opacity: 0 }}
-            className={tall ? '' : 'shrink-0'}
+            initial={{ opacity: 0 }}
+            key="icon"
           >
-            <Icon className={cn(tall ? 'size-5' : 'size-4 mr-2')} />
+            <Icon className={cn(tall ? "size-5" : "mr-2 size-4")} />
           </motion.div>
         )}
       </AnimatePresence>

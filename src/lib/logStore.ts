@@ -1,38 +1,38 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 const MAX_LOGS = 1000;
 
-export type LogLevel = 'info' | 'error' | 'success' | 'warning';
+export type LogLevel = "info" | "error" | "success" | "warning";
 
 export interface LogEntry {
   id: string;
   message: string;
-  type: LogLevel;
   timestamp: string;
+  type: LogLevel;
 }
 
 interface LogStore {
-  logs: LogEntry[];
-  isOpen: boolean;
-  filter: LogLevel | 'all';
-  searchQuery: string;
-  isFollowing: boolean;
-  isPanelMaximized: boolean;
-  activeTab: 'logs' | 'shell';
-  unreadCount: number;
-  panelHeight: number;
+  activeTab: "logs" | "shell";
 
   addLog: (message: string, type: LogLevel) => void;
   clearLogs: () => void;
-  togglePanel: () => void;
-  setPanelOpen: (isOpen: boolean) => void;
-  setFilter: (filter: LogLevel | 'all') => void;
-  setSearchQuery: (query: string) => void;
-  setIsFollowing: (following: boolean) => void;
-  toggleMaximized: () => void;
-  setActiveTab: (tab: 'logs' | 'shell') => void;
+  filter: LogLevel | "all";
+  isFollowing: boolean;
+  isOpen: boolean;
+  isPanelMaximized: boolean;
+  logs: LogEntry[];
+  panelHeight: number;
   resetUnreadCount: () => void;
+  searchQuery: string;
+  setActiveTab: (tab: "logs" | "shell") => void;
+  setFilter: (filter: LogLevel | "all") => void;
+  setIsFollowing: (following: boolean) => void;
   setPanelHeight: (height: number) => void;
+  setPanelOpen: (isOpen: boolean) => void;
+  setSearchQuery: (query: string) => void;
+  toggleMaximized: () => void;
+  togglePanel: () => void;
+  unreadCount: number;
 }
 
 function formatTimestamp(): string {
@@ -42,11 +42,11 @@ function formatTimestamp(): string {
 export const useLogStore = create<LogStore>((set) => ({
   logs: [],
   isOpen: false,
-  filter: 'all',
-  searchQuery: '',
+  filter: "all",
+  searchQuery: "",
   isFollowing: true,
   isPanelMaximized: false,
-  activeTab: 'logs',
+  activeTab: "logs",
   unreadCount: 0,
   panelHeight: 300,
 
@@ -72,7 +72,7 @@ export const useLogStore = create<LogStore>((set) => ({
   togglePanel: () => {
     set((state: LogStore) => ({
       isOpen: !state.isOpen,
-      unreadCount: !state.isOpen ? 0 : state.unreadCount,
+      unreadCount: state.isOpen ? state.unreadCount : 0,
     }));
   },
 
@@ -80,7 +80,7 @@ export const useLogStore = create<LogStore>((set) => ({
     set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
   },
 
-  setFilter: (filter: LogLevel | 'all') => {
+  setFilter: (filter: LogLevel | "all") => {
     set({ filter });
   },
   setSearchQuery: (query: string) => {
@@ -92,7 +92,7 @@ export const useLogStore = create<LogStore>((set) => ({
   toggleMaximized: () => {
     set((state: LogStore) => ({ isPanelMaximized: !state.isPanelMaximized }));
   },
-  setActiveTab: (tab: 'logs' | 'shell') => {
+  setActiveTab: (tab: "logs" | "shell") => {
     set({ activeTab: tab });
   },
   resetUnreadCount: () => {

@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { MarketplaceSearch } from '@/lib/desktop/backend';
-import { handleError } from '@/lib/errorHandler';
-import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MarketplaceSearch } from "@/lib/desktop/backend";
+import { handleError } from "@/lib/errorHandler";
+import {
+  getMarketplaceEffectiveGithubToken,
+  useMarketplaceStore,
+} from "@/lib/marketplaceStore";
 
 const DEBOUNCE_MS = 450;
 const MIN_QUERY_LENGTH = 2;
@@ -12,11 +15,15 @@ export function useMarketplaceSearch() {
   const isSearching = useMarketplaceStore((state) => state.isSearching);
   const activeProviders = useMarketplaceStore((state) => state.activeProviders);
   const sortBy = useMarketplaceStore((state) => state.sortBy);
-  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const resultsPerProvider = useMarketplaceStore(
+    (state) => state.resultsPerProvider
+  );
   const setQuery = useMarketplaceStore((state) => state.setQuery);
   const setResults = useMarketplaceStore((state) => state.setResults);
   const setIsSearching = useMarketplaceStore((state) => state.setIsSearching);
-  const addToSearchHistory = useMarketplaceStore((state) => state.addToSearchHistory);
+  const addToSearchHistory = useMarketplaceStore(
+    (state) => state.addToSearchHistory
+  );
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
@@ -36,7 +43,7 @@ export function useMarketplaceSearch() {
       const requestId = ++requestIdRef.current;
 
       if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
-        setQuery('');
+        setQuery("");
         setResults([]);
         setIsSearching(false);
         return;
@@ -59,7 +66,7 @@ export function useMarketplaceSearch() {
         }
       } catch (error) {
         if (requestId === requestIdRef.current) {
-          handleError('Marketplace Search', error);
+          handleError("Marketplace Search", error);
           setResults([]);
         }
       } finally {
@@ -77,7 +84,7 @@ export function useMarketplaceSearch() {
       setQuery,
       setResults,
       sortBy,
-    ],
+    ]
   );
 
   const handleInputChange = useCallback(
@@ -87,7 +94,7 @@ export function useMarketplaceSearch() {
 
       if (!value.trim() || value.trim().length < MIN_QUERY_LENGTH) {
         requestIdRef.current += 1;
-        setQuery('');
+        setQuery("");
         setResults([]);
         setIsSearching(false);
         return;
@@ -98,14 +105,14 @@ export function useMarketplaceSearch() {
         void performSearch(value);
       }, DEBOUNCE_MS);
     },
-    [clearPendingDebounce, performSearch, setIsSearching, setQuery, setResults],
+    [clearPendingDebounce, performSearch, setIsSearching, setQuery, setResults]
   );
 
   const handleClear = useCallback(() => {
     clearPendingDebounce();
     requestIdRef.current += 1;
-    setLocalQuery('');
-    setQuery('');
+    setLocalQuery("");
+    setQuery("");
     setResults([]);
     setIsSearching(false);
   }, [clearPendingDebounce, setIsSearching, setQuery, setResults]);
@@ -116,7 +123,7 @@ export function useMarketplaceSearch() {
       setLocalQuery(quickQuery);
       void performSearch(quickQuery);
     },
-    [clearPendingDebounce, performSearch],
+    [clearPendingDebounce, performSearch]
   );
 
   useEffect(() => {
@@ -131,7 +138,7 @@ export function useMarketplaceSearch() {
     () => () => {
       clearPendingDebounce();
     },
-    [clearPendingDebounce],
+    [clearPendingDebounce]
   );
 
   return {

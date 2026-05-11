@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,18 +8,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { getNickname, setNickname } from '@/lib/nicknameStore';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { getNickname, setNickname } from "@/lib/nicknameStore";
 
 interface EditNicknameDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  serial: string | null;
   onSaved: () => void;
+  serial: string | null;
 }
 
 export function EditNicknameDialog({
@@ -26,11 +26,11 @@ export function EditNicknameDialog({
   serial,
   onSaved,
 }: EditNicknameDialogProps) {
-  const [newNickname, setNewNickname] = useState('');
+  const [newNickname, setNewNickname] = useState("");
 
   useEffect(() => {
     if (isOpen && serial) {
-      setNewNickname(getNickname(serial) ?? '');
+      setNewNickname(getNickname(serial) ?? "");
     }
   }, [isOpen, serial]);
 
@@ -44,13 +44,15 @@ export function EditNicknameDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog onOpenChange={onOpenChange} open={isOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Edit Nickname</DialogTitle>
           <DialogDescription>
             Give a nickname to the device:
-            <span className="block font-mono text-foreground mt-2">{serial}</span>
+            <span className="mt-2 block font-mono text-foreground">
+              {serial}
+            </span>
           </DialogDescription>
         </DialogHeader>
 
@@ -58,27 +60,29 @@ export function EditNicknameDialog({
           <Field>
             <FieldLabel htmlFor="nickname">Nickname</FieldLabel>
             <Input
+              autoComplete="off"
               id="nickname"
               name="nickname"
-              autoComplete="off"
-              value={newNickname}
               onChange={(e) => {
                 setNewNickname(e.target.value);
               }}
-              placeholder="Ex: My Device"
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveNickname();
+                if (e.key === "Enter") {
+                  handleSaveNickname();
+                }
               }}
+              placeholder="Ex: My Device"
+              value={newNickname}
             />
           </Field>
         </FieldGroup>
 
         <DialogFooter>
           <Button
-            variant="outline"
             onClick={() => {
               onOpenChange(false);
             }}
+            variant="outline"
           >
             Cancel
           </Button>

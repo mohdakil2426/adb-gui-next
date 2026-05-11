@@ -1,17 +1,17 @@
-import { writeText } from '@tauri-apps/plugin-clipboard-manager';
-import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CopyButtonProps {
-  /** The text value to copy to clipboard */
-  value: string;
-  /** Optional label for the toast and aria-label. Defaults to "Value" */
-  label?: string;
   /** Extra class names for the button */
   className?: string;
+  /** Optional label for the toast and aria-label. Defaults to "Value" */
+  label?: string;
+  /** The text value to copy to clipboard */
+  value: string;
 }
 
 /**
@@ -20,11 +20,17 @@ interface CopyButtonProps {
  *
  * Shows a temporary checkmark after a successful copy.
  */
-export function CopyButton({ value, label = 'Value', className }: CopyButtonProps) {
+export function CopyButton({
+  value,
+  label = "Value",
+  className,
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    if (!value) return;
+    if (!value) {
+      return;
+    }
     try {
       await writeText(value);
       setCopied(true);
@@ -33,21 +39,25 @@ export function CopyButton({ value, label = 'Value', className }: CopyButtonProp
         setCopied(false);
       }, 2000);
     } catch {
-      toast.error('Failed to copy to clipboard');
+      toast.error("Failed to copy to clipboard");
     }
   };
 
   return (
     <Button
+      aria-label={`Copy ${label}`}
+      className={cn("h-7 w-7 shrink-0", className)}
+      disabled={!value}
+      onClick={handleCopy}
+      size="icon"
       type="button"
       variant="ghost"
-      size="icon"
-      className={cn('shrink-0 h-7 w-7', className)}
-      onClick={handleCopy}
-      aria-label={`Copy ${label}`}
-      disabled={!value}
     >
-      {copied ? <Check className="size-3.5 text-success" /> : <Copy className="size-3.5" />}
+      {copied ? (
+        <Check className="size-3.5 text-success" />
+      ) : (
+        <Copy className="size-3.5" />
+      )}
     </Button>
   );
 }

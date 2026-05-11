@@ -1,8 +1,11 @@
-import * as React from 'react';
-import { Toggle as TogglePrimitive } from 'radix-ui';
+import { Toggle as TogglePrimitive } from "radix-ui";
+import type * as React from "react";
 
-import { toggleVariants, type ToggleVariants } from '@/components/ui/toggle-variants';
-import { cn } from '@/lib/utils';
+import {
+  type ToggleVariants,
+  toggleVariants,
+} from "@/components/ui/toggle-variants";
+import { cn } from "@/lib/utils";
 
 function Toggle({
   className,
@@ -12,8 +15,8 @@ function Toggle({
 }: React.ComponentProps<typeof TogglePrimitive.Root> & ToggleVariants) {
   return (
     <TogglePrimitive.Root
-      data-slot="toggle"
       className={cn(toggleVariants({ variant, size, className }))}
+      data-slot="toggle"
       {...props}
     />
   );

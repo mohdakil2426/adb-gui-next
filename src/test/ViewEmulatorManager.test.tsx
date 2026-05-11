@@ -1,18 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewEmulatorManager } from '@/components/views/ViewEmulatorManager';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ViewEmulatorManager } from "@/components/views/ViewEmulatorManager";
+import { useEmulatorManagerStore } from "@/lib/emulatorManagerStore";
 
 const fetchAvdsMock = vi.fn();
 const getAvdRestorePlanMock = vi.fn();
 
-vi.mock('@/lib/queries', () => ({
-  queryKeys: { avds: () => ['avds'] },
+vi.mock("@/lib/queries", () => ({
+  queryKeys: { avds: () => ["avds"] },
   fetchAvds: () => fetchAvdsMock(),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock("@/lib/desktop/backend", () => ({
   FinalizeAvdRoot: vi.fn(),
   GetAvdRestorePlan: (...args: unknown[]) => getAvdRestorePlanMock(...args),
   LaunchAvd: vi.fn(),
@@ -36,57 +36,58 @@ function renderWithQueryClient() {
   return render(
     <QueryClientProvider client={queryClient}>
       <ViewEmulatorManager />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
-describe('ViewEmulatorManager', () => {
+describe("ViewEmulatorManager", () => {
   beforeEach(() => {
     fetchAvdsMock.mockReset();
     getAvdRestorePlanMock.mockReset();
     useEmulatorManagerStore.getState().reset();
   });
 
-  it('renders the page heading', async () => {
+  it("renders the page heading", async () => {
     fetchAvdsMock.mockResolvedValue([]);
 
     renderWithQueryClient();
 
-    expect(await screen.findByText('Emulator Manager')).toBeInTheDocument();
-    expect(await screen.findByText('No AVD selected')).toBeInTheDocument();
+    expect(await screen.findByText("Emulator Manager")).toBeInTheDocument();
+    expect(await screen.findByText("No AVD selected")).toBeInTheDocument();
   });
 
-  it('renders the selected avd when discovery returns data', async () => {
+  it("renders the selected avd when discovery returns data", async () => {
     fetchAvdsMock.mockResolvedValue([
       {
-        name: 'Pixel_8_API_34',
-        iniPath: 'C:/Users/test/.android/avd/Pixel_8_API_34.ini',
-        avdPath: 'C:/Users/test/.android/avd/Pixel_8_API_34.avd',
-        target: 'Google Play',
+        name: "Pixel_8_API_34",
+        iniPath: "C:/Users/test/.android/avd/Pixel_8_API_34.ini",
+        avdPath: "C:/Users/test/.android/avd/Pixel_8_API_34.avd",
+        target: "Google Play",
         apiLevel: 34,
-        abi: 'x86_64',
-        deviceName: 'pixel_8',
-        ramdiskPath: 'C:/Sdk/system-images/android-34/google_apis_playstore/x86_64/ramdisk.img',
+        abi: "x86_64",
+        deviceName: "pixel_8",
+        ramdiskPath:
+          "C:/Sdk/system-images/android-34/google_apis_playstore/x86_64/ramdisk.img",
         hasBackups: false,
-        rootState: 'stock',
+        rootState: "stock",
         isRunning: false,
         serial: null,
-        warnings: ['Ramdisk backup has not been created yet.'],
+        warnings: ["Ramdisk backup has not been created yet."],
       },
     ]);
     getAvdRestorePlanMock.mockResolvedValue({
-      createdAt: '0',
-      source: 'Pixel_8_API_34',
+      createdAt: "0",
+      source: "Pixel_8_API_34",
       entries: [],
     });
 
     renderWithQueryClient();
 
-    expect(await screen.findByText('Pixel_8_API_34')).toBeInTheDocument();
+    expect(await screen.findByText("Pixel_8_API_34")).toBeInTheDocument();
     expect(await screen.findByText(/API 34/)).toBeInTheDocument();
-    expect(await screen.findByText('Stopped')).toBeInTheDocument();
+    expect(await screen.findByText("Stopped")).toBeInTheDocument();
     expect(
-      await screen.findByRole('button', { name: /launch with these options/i }),
+      await screen.findByRole("button", { name: /launch with these options/i })
     ).toBeInTheDocument();
   });
 });

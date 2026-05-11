@@ -1,18 +1,18 @@
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface SelectionSummaryBarProps {
+  /** Optional action buttons rendered to the right of the count (before Clear) */
+  actions?: React.ReactNode;
+  className?: string;
   /** Number of currently selected items */
   count: number;
+  /** Disables the clear button */
+  disabled?: boolean;
   /** Noun for items — e.g. "package(s)", "file(s)" */
   label: string;
   /** Called when the clear button is clicked */
   onClear: () => void;
-  /** Optional action buttons rendered to the right of the count (before Clear) */
-  actions?: React.ReactNode;
-  /** Disables the clear button */
-  disabled?: boolean;
-  className?: string;
 }
 
 /**
@@ -27,13 +27,15 @@ export function SelectionSummaryBar({
   disabled = false,
   className,
 }: SelectionSummaryBarProps) {
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
 
   return (
     <div
       className={cn(
-        'text-sm text-muted-foreground px-3 py-1.5 bg-muted/60 border-b border-border flex items-center gap-2',
-        className,
+        "flex items-center gap-2 border-border border-b bg-muted/60 px-3 py-1.5 text-muted-foreground text-sm",
+        className
       )}
     >
       <span className="flex-1">
@@ -41,11 +43,11 @@ export function SelectionSummaryBar({
       </span>
       {actions}
       <Button
-        variant="ghost"
-        size="sm"
         className="h-6 px-2 text-xs hover:text-destructive"
-        onClick={onClear}
         disabled={disabled}
+        onClick={onClear}
+        size="sm"
+        variant="ghost"
       >
         Clear
       </Button>

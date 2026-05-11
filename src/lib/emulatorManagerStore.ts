@@ -1,28 +1,41 @@
-import { create } from 'zustand';
-import type { backend } from '@/lib/desktop/models';
+import { create } from "zustand";
+import type { backend } from "@/lib/desktop/models";
 
-export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
-export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
+export type EmulatorManagerTab = "overview" | "launch" | "root" | "restore";
+export type EmulatorPendingAction =
+  | "launch"
+  | "stop"
+  | "restore"
+  | "refreshPlan"
+  | null;
 
 /** Wizard step for the root flow. */
-export type RootWizardStep = 'preflight' | 'source' | 'manual' | 'progress' | 'result';
+export type RootWizardStep =
+  | "preflight"
+  | "source"
+  | "manual"
+  | "progress"
+  | "result";
 
 /** Describes where the Magisk package will come from. */
-export type RootWizardSource = { type: 'stable' } | { type: 'local'; path: string } | null;
+export type RootWizardSource =
+  | { type: "stable" }
+  | { type: "local"; path: string }
+  | null;
 
 export interface RootWizardState {
-  step: RootWizardStep;
-  source: RootWizardSource;
+  error: string | null;
+  isVerifying: boolean;
+  preflightScan: backend.RootReadinessScan | null;
   progress: backend.RootProgress | null;
   result: backend.RootAvdResult | null;
+  source: RootWizardSource;
+  step: RootWizardStep;
   verification: backend.RootVerificationResult | null;
-  isVerifying: boolean;
-  error: string | null;
-  preflightScan: backend.RootReadinessScan | null;
 }
 
 const INITIAL_ROOT_WIZARD: RootWizardState = {
-  step: 'preflight',
+  step: "preflight",
   source: null,
   progress: null,
   result: null,
@@ -33,29 +46,34 @@ const INITIAL_ROOT_WIZARD: RootWizardState = {
 };
 
 interface EmulatorManagerState {
-  selectedAvdName: string | null;
   activeTab: EmulatorManagerTab;
-  rootWizard: RootWizardState;
-  restorePlan: backend.RestorePlan | null;
   pendingAction: EmulatorPendingAction;
-  setSelectedAvdName: (name: string | null) => void;
-  setActiveTab: (tab: EmulatorManagerTab) => void;
-  setRootWizardStep: (step: RootWizardStep) => void;
-  setRootWizardSource: (source: RootWizardSource) => void;
-  setRootWizardProgress: (progress: backend.RootProgress | null) => void;
-  setRootWizardResult: (result: backend.RootAvdResult | null, error?: string | null) => void;
-  setRootVerification: (verification: backend.RootVerificationResult | null) => void;
-  setRootVerifying: (isVerifying: boolean) => void;
-  setPreflightScan: (scan: backend.RootReadinessScan | null) => void;
-  resetRootWizard: () => void;
-  setRestorePlan: (plan: backend.RestorePlan | null) => void;
-  setPendingAction: (action: EmulatorPendingAction) => void;
   reset: () => void;
+  resetRootWizard: () => void;
+  restorePlan: backend.RestorePlan | null;
+  rootWizard: RootWizardState;
+  selectedAvdName: string | null;
+  setActiveTab: (tab: EmulatorManagerTab) => void;
+  setPendingAction: (action: EmulatorPendingAction) => void;
+  setPreflightScan: (scan: backend.RootReadinessScan | null) => void;
+  setRestorePlan: (plan: backend.RestorePlan | null) => void;
+  setRootVerification: (
+    verification: backend.RootVerificationResult | null
+  ) => void;
+  setRootVerifying: (isVerifying: boolean) => void;
+  setRootWizardProgress: (progress: backend.RootProgress | null) => void;
+  setRootWizardResult: (
+    result: backend.RootAvdResult | null,
+    error?: string | null
+  ) => void;
+  setRootWizardSource: (source: RootWizardSource) => void;
+  setRootWizardStep: (step: RootWizardStep) => void;
+  setSelectedAvdName: (name: string | null) => void;
 }
 
 const INITIAL_STATE = {
   selectedAvdName: null,
-  activeTab: 'overview' as EmulatorManagerTab,
+  activeTab: "overview" as EmulatorManagerTab,
   rootWizard: INITIAL_ROOT_WIZARD,
   restorePlan: null as backend.RestorePlan | null,
   pendingAction: null as EmulatorPendingAction,
@@ -91,7 +109,7 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
         verification: null,
         isVerifying: false,
         error,
-        step: 'result',
+        step: "result",
       },
     }));
   },

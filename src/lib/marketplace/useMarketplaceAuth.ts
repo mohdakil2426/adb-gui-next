@@ -1,20 +1,37 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { toast } from 'sonner';
-import { MarketplaceGithubDevicePoll, MarketplaceGithubDeviceStart } from '@/lib/desktop/backend';
-import { BrowserOpenURL } from '@/lib/desktop/runtime';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
+import {
+  MarketplaceGithubDevicePoll,
+  MarketplaceGithubDeviceStart,
+} from "@/lib/desktop/backend";
+import { BrowserOpenURL } from "@/lib/desktop/runtime";
+import { useMarketplaceStore } from "@/lib/marketplaceStore";
 
-const AUTH_SCOPES = ['read:user'];
+const AUTH_SCOPES = ["read:user"];
 const SLOW_DOWN_MS = 5000;
 
 export function useMarketplaceAuth() {
-  const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
-  const githubDeviceChallenge = useMarketplaceStore((state) => state.githubDeviceChallenge);
-  const isGithubAuthenticating = useMarketplaceStore((state) => state.isGithubAuthenticating);
-  const setGithubDeviceChallenge = useMarketplaceStore((state) => state.setGithubDeviceChallenge);
-  const setGithubSession = useMarketplaceStore((state) => state.setGithubSession);
-  const clearGithubSession = useMarketplaceStore((state) => state.clearGithubSession);
-  const setIsGithubAuthenticating = useMarketplaceStore((state) => state.setIsGithubAuthenticating);
+  const githubOauthClientId = useMarketplaceStore(
+    (state) => state.githubOauthClientId
+  );
+  const githubDeviceChallenge = useMarketplaceStore(
+    (state) => state.githubDeviceChallenge
+  );
+  const isGithubAuthenticating = useMarketplaceStore(
+    (state) => state.isGithubAuthenticating
+  );
+  const setGithubDeviceChallenge = useMarketplaceStore(
+    (state) => state.setGithubDeviceChallenge
+  );
+  const setGithubSession = useMarketplaceStore(
+    (state) => state.setGithubSession
+  );
+  const clearGithubSession = useMarketplaceStore(
+    (state) => state.clearGithubSession
+  );
+  const setIsGithubAuthenticating = useMarketplaceStore(
+    (state) => state.setIsGithubAuthenticating
+  );
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -30,7 +47,7 @@ export function useMarketplaceAuth() {
       const resolvedClientId = (clientIdOverride ?? githubOauthClientId).trim();
 
       if (!resolvedClientId) {
-        toast.error('GitHub OAuth client ID is required before sign-in');
+        toast.error("GitHub OAuth client ID is required before sign-in");
         return;
       }
 
@@ -38,21 +55,31 @@ export function useMarketplaceAuth() {
       setIsGithubAuthenticating(true);
 
       try {
-        const challenge = await MarketplaceGithubDeviceStart(resolvedClientId, AUTH_SCOPES);
+        const challenge = await MarketplaceGithubDeviceStart(
+          resolvedClientId,
+          AUTH_SCOPES
+        );
         setGithubDeviceChallenge({ challenge, clientId: resolvedClientId });
-        BrowserOpenURL(challenge.verificationUriComplete ?? challenge.verificationUri);
-        toast.success('GitHub verification started', {
+        BrowserOpenURL(
+          challenge.verificationUriComplete ?? challenge.verificationUri
+        );
+        toast.success("GitHub verification started", {
           description: `Enter code ${challenge.userCode} in your browser if the page did not open automatically.`,
         });
       } catch (error) {
         setIsGithubAuthenticating(false);
         setGithubDeviceChallenge(null);
-        toast.error('GitHub sign-in failed to start', {
+        toast.error("GitHub sign-in failed to start", {
           description: String(error),
         });
       }
     },
-    [clearPendingPoll, githubOauthClientId, setGithubDeviceChallenge, setIsGithubAuthenticating],
+    [
+      clearPendingPoll,
+      githubOauthClientId,
+      setGithubDeviceChallenge,
+      setIsGithubAuthenticating,
+    ]
   );
 
   const cancelGithubSignIn = useCallback(() => {
@@ -62,7 +89,7 @@ export function useMarketplaceAuth() {
   }, [clearPendingPoll, setGithubDeviceChallenge, setIsGithubAuthenticating]);
 
   useEffect(() => {
-    if (!githubDeviceChallenge || !isGithubAuthenticating) {
+    if (!(githubDeviceChallenge && isGithubAuthenticating)) {
       return;
     }
 
@@ -72,14 +99,14 @@ export function useMarketplaceAuth() {
       try {
         const result = await MarketplaceGithubDevicePoll(
           githubDeviceChallenge.clientId,
-          githubDeviceChallenge.challenge.deviceCode,
+          githubDeviceChallenge.challenge.deviceCode
         );
 
         if (cancelled) {
           return;
         }
 
-        if (result.status === 'authorized' && result.accessToken) {
+        if (result.status === "authorized" && result.accessToken) {
           setGithubSession({
             accessToken: result.accessToken,
             user: result.user,
@@ -87,52 +114,58 @@ export function useMarketplaceAuth() {
           });
           setGithubDeviceChallenge(null);
           setIsGithubAuthenticating(false);
-          toast.success('Signed in with GitHub');
+          toast.success("Signed in with GitHub");
           return;
         }
 
-        if (result.status === 'authorization_pending') {
+        if (result.status === "authorization_pending") {
           const nextIntervalMs =
-            (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000;
+            (result.interval ?? githubDeviceChallenge.challenge.interval) *
+            1000;
           timeoutRef.current = setTimeout(() => {
             void poll();
           }, nextIntervalMs);
           return;
         }
 
-        if (result.status === 'slow_down') {
+        if (result.status === "slow_down") {
           const nextIntervalMs =
-            (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000 + SLOW_DOWN_MS;
+            (result.interval ?? githubDeviceChallenge.challenge.interval) *
+              1000 +
+            SLOW_DOWN_MS;
           timeoutRef.current = setTimeout(() => {
             void poll();
           }, nextIntervalMs);
           return;
         }
 
-        if (result.status === 'access_denied' || result.status === 'expired_token') {
+        if (
+          result.status === "access_denied" ||
+          result.status === "expired_token"
+        ) {
           setGithubDeviceChallenge(null);
           setIsGithubAuthenticating(false);
           toast.error(
-            result.status === 'access_denied'
-              ? 'GitHub sign-in was cancelled'
-              : 'GitHub code expired',
+            result.status === "access_denied"
+              ? "GitHub sign-in was cancelled"
+              : "GitHub code expired",
             {
               description: result.message ?? undefined,
-            },
+            }
           );
           return;
         }
 
         setGithubDeviceChallenge(null);
         setIsGithubAuthenticating(false);
-        toast.error('GitHub sign-in failed', {
+        toast.error("GitHub sign-in failed", {
           description: result.message ?? result.status,
         });
       } catch (error) {
         if (!cancelled) {
           setGithubDeviceChallenge(null);
           setIsGithubAuthenticating(false);
-          toast.error('GitHub sign-in polling failed', {
+          toast.error("GitHub sign-in polling failed", {
             description: String(error),
           });
         }

@@ -9,7 +9,7 @@ interface SectionHeaderProps {
  */
 export function SectionHeader({ children }: SectionHeaderProps) {
   return (
-    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
       {children}
     </h4>
   );

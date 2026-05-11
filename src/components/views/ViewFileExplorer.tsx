@@ -1,53 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ReactElement } from 'react';
-import { useLogStore } from '@/lib/logStore';
-import { useDeviceStore } from '@/lib/deviceStore';
-import { handleError } from '@/lib/errorHandler';
-import { debugLog } from '@/lib/debug';
-import path from 'path-browserify';
-
 import {
-  ListFiles,
-  PushFile,
-  PullFile,
-  SelectFileToPush,
-  SelectSaveDirectory,
-  SelectDirectoryForPull,
-  SelectDirectoryToPush,
-  DeleteFiles,
-  RenameFile,
-  CreateFile,
-  CreateDirectory,
-} from '../../lib/desktop/backend';
-import type { backend } from '../../lib/desktop/models';
-
-import { Button } from '@/components/ui/button';
-import { buttonVariants } from '@/components/ui/button-variants';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronUp,
+  Copy,
+  Download,
+  File,
+  FilePlus2,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  Layers,
+  Link,
+  Loader2,
+  Lock,
+  MonitorOff,
+  PanelLeft,
+  PanelLeftClose,
+  Pencil,
+  RefreshCw,
+  Search,
+  SquareCheck,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import path from "path-browserify";
+import type { ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { DirectoryTree } from "@/components/DirectoryTree";
+import { SelectionSummaryBar } from "@/components/SelectionSummaryBar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,48 +43,64 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
-import { DirectoryTree } from '@/components/DirectoryTree';
-import { cn, formatBytes } from '@/lib/utils';
-import { toast } from 'sonner';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Loader2,
-  RefreshCw,
-  Upload,
-  Download,
-  Folder,
-  FolderOpen,
-  File,
-  Link,
-  ArrowUp,
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
-  Layers,
-  Lock,
-  MonitorOff,
-  AlertCircle,
-  PanelLeftClose,
-  PanelLeft,
-  Trash2,
-  Pencil,
-  SquareCheck,
-  FilePlus2,
-  FolderPlus,
-  Copy,
-  Search,
-  X,
-} from 'lucide-react';
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { debugLog } from "@/lib/debug";
+import { useDeviceStore } from "@/lib/deviceStore";
+import { handleError } from "@/lib/errorHandler";
+import { useLogStore } from "@/lib/logStore";
+import { cn, formatBytes } from "@/lib/utils";
+import {
+  CreateDirectory,
+  CreateFile,
+  DeleteFiles,
+  ListFiles,
+  PullFile,
+  PushFile,
+  RenameFile,
+  SelectDirectoryForPull,
+  SelectDirectoryToPush,
+  SelectFileToPush,
+  SelectSaveDirectory,
+} from "../../lib/desktop/backend";
+import type { backend } from "../../lib/desktop/models";
 
 type FileEntry = backend.FileEntry;
-type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
-type CreatingType = 'file' | 'folder' | null;
-type SortField = 'name' | 'size' | 'date';
-type SortDir = 'asc' | 'desc';
+type LoadError = "permission_denied" | "no_device" | "unknown" | null;
+type CreatingType = "file" | "folder" | null;
+type SortField = "name" | "size" | "date";
+type SortDir = "asc" | "desc";
 
 const MIN_LEFT_WIDTH = 180;
 const MAX_LEFT_WIDTH = 420;
@@ -108,7 +110,13 @@ const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
 
-function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
+function ToolbarTooltip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactElement;
+}) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
@@ -118,50 +126,62 @@ function ToolbarTooltip({ label, children }: { label: string; children: ReactEle
 }
 
 /** Sort a file list by field + direction, always keeping dirs before files. */
-function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir): FileEntry[] {
+function sortEntries(
+  entries: FileEntry[],
+  field: SortField,
+  dir: SortDir
+): FileEntry[] {
   return [...entries].sort((a, b) => {
-    const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
-    const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
+    const aIsDir = a.type === "Directory" || a.type === "Symlink";
+    const bIsDir = b.type === "Directory" || b.type === "Symlink";
     // Directories always float to the top regardless of sort
-    if (aIsDir && !bIsDir) return -1;
-    if (!aIsDir && bIsDir) return 1;
-
-    if (field === 'name') {
-      const cmp = a.name.localeCompare(b.name);
-      return dir === 'asc' ? cmp : -cmp;
+    if (aIsDir && !bIsDir) {
+      return -1;
     }
-    if (field === 'size') {
+    if (!aIsDir && bIsDir) {
+      return 1;
+    }
+
+    if (field === "name") {
+      const cmp = a.name.localeCompare(b.name);
+      return dir === "asc" ? cmp : -cmp;
+    }
+    if (field === "size") {
       // Compare as integers; non-numeric sizes fall back to lexical
-      const aNum = parseInt(a.size, 10);
-      const bNum = parseInt(b.size, 10);
-      const cmp = isNaN(aNum) || isNaN(bNum) ? a.size.localeCompare(b.size) : aNum - bNum;
-      return dir === 'asc' ? cmp : -cmp;
+      const aNum = Number.parseInt(a.size, 10);
+      const bNum = Number.parseInt(b.size, 10);
+      const cmp =
+        isNaN(aNum) || isNaN(bNum) ? a.size.localeCompare(b.size) : aNum - bNum;
+      return dir === "asc" ? cmp : -cmp;
     }
     // date: 'YYYY-MM-DD HH:MM' is lexically sortable
     const cmp = (a.date + a.time).localeCompare(b.date + b.time);
-    return dir === 'asc' ? cmp : -cmp;
+    return dir === "asc" ? cmp : -cmp;
   });
 }
 
 function categorizeError(err: unknown): LoadError {
   const msg = String(err).toLowerCase();
-  if (msg.includes('permission denied')) return 'permission_denied';
+  if (msg.includes("permission denied")) {
+    return "permission_denied";
+  }
   if (
-    msg.includes('no devices') ||
-    msg.includes('device not found') ||
-    msg.includes('no device') ||
-    msg.includes('adb: error') ||
-    msg.includes('unable to locate')
-  )
-    return 'no_device';
-  return 'unknown';
+    msg.includes("no devices") ||
+    msg.includes("device not found") ||
+    msg.includes("no device") ||
+    msg.includes("adb: error") ||
+    msg.includes("unable to locate")
+  ) {
+    return "no_device";
+  }
+  return "unknown";
 }
 
 export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // ── Navigation ──────────────────────────────────────────────────────────
   const [fileList, setFileList] = useState<FileEntry[]>([]);
   const [currentPath, setCurrentPath] = useState(
-    () => localStorage.getItem('fe.currentPath') ?? '/sdcard/',
+    () => localStorage.getItem("fe.currentPath") ?? "/sdcard/"
   );
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<LoadError>(null);
@@ -174,29 +194,29 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Sort ─────────────────────────────────────────────────────────────────
   const [sortField, setSortField] = useState<SortField>(() => {
-    const saved = localStorage.getItem('fe.sortField');
-    return (saved as SortField) || 'name';
+    const saved = localStorage.getItem("fe.sortField");
+    return (saved as SortField) || "name";
   });
   const [sortDir, setSortDir] = useState<SortDir>(() => {
-    const saved = localStorage.getItem('fe.sortDir');
-    return (saved as SortDir) || 'asc';
+    const saved = localStorage.getItem("fe.sortDir");
+    return (saved as SortDir) || "asc";
   });
 
   // Persist sort to localStorage
   useEffect(() => {
-    localStorage.setItem('fe.sortField', sortField);
+    localStorage.setItem("fe.sortField", sortField);
   }, [sortField]);
 
   useEffect(() => {
-    localStorage.setItem('fe.sortDir', sortDir);
+    localStorage.setItem("fe.sortDir", sortDir);
   }, [sortDir]);
 
   // ── Search ─────────────────────────────────────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // ── Navigation history ───────────────────────────────────────────────────
   const [navHistory, setNavHistory] = useState<string[]>(() => [
-    localStorage.getItem('fe.currentPath') ?? '/sdcard/',
+    localStorage.getItem("fe.currentPath") ?? "/sdcard/",
   ]);
   const [historyIndex, setHistoryIndex] = useState(0);
   // Ref mirrors historyIndex so loadFiles can read it without closing over it.
@@ -208,8 +228,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Inline rename ────────────────────────────────────────────────────────
   const [renamingName, setRenamingName] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const [renameError, setRenameError] = useState('');
+  const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
   // ── Delete ───────────────────────────────────────────────────────────────
@@ -219,8 +239,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Create (new file / new folder) ──────────────────────────────────────
   const [creatingType, setCreatingType] = useState<CreatingType>(null);
-  const [createName, setCreateName] = useState('');
-  const [createError, setCreateError] = useState('');
+  const [createName, setCreateName] = useState("");
+  const [createError, setCreateError] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   // ── Transfer (push/pull) ─────────────────────────────────────────────────
@@ -231,14 +251,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(
-    () => localStorage.getItem('fe.treeCollapsed') === 'true',
+    () => localStorage.getItem("fe.treeCollapsed") === "true"
   );
   const [isEditingPath, setIsEditingPath] = useState(false);
-  const [editPathValue, setEditPathValue] = useState('');
+  const [editPathValue, setEditPathValue] = useState("");
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const currentPathRef = useRef(localStorage.getItem('fe.currentPath') ?? '/sdcard/');
+  const currentPathRef = useRef(
+    localStorage.getItem("fe.currentPath") ?? "/sdcard/"
+  );
   const selectedSerialRef = useRef<string | null>(selectedSerial);
   // Tracks whether the tree was auto-collapsed by responsive resize (not by user).
   // When true, expanding the window past the threshold will auto-restore the tree.
@@ -253,25 +275,34 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // ── Derived ──────────────────────────────────────────────────────────────
   const selectedList = fileList.filter((f) => selectedNames.has(f.name));
   const singleSelected = selectedList.length === 1 ? selectedList[0] : null;
-  const allSelected = fileList.length > 0 && selectedNames.size === fileList.length;
+  const allSelected =
+    fileList.length > 0 && selectedNames.size === fileList.length;
   const someSelected = selectedNames.size > 0 && !allSelected;
-  const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
+  const isBusy =
+    isLoading ||
+    isPushing ||
+    isPulling ||
+    isDeleting ||
+    isRenaming ||
+    isCreating;
   const isPullDisabled = isPulling || !singleSelected;
 
   // Filtered + sorted list shown in the table
   const visibleList = sortEntries(
     searchQuery
-      ? fileList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? fileList.filter((f) =>
+          f.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       : fileList,
     sortField,
-    sortDir,
+    sortDir
   );
 
   // ── Tree toggle ──────────────────────────────────────────────────────────
   const toggleTree = useCallback((collapsed: boolean) => {
     wasResponsiveCollapsedRef.current = false; // user took manual control
     setIsTreeCollapsed(collapsed);
-    localStorage.setItem('fe.treeCollapsed', String(collapsed));
+    localStorage.setItem("fe.treeCollapsed", String(collapsed));
   }, []);
 
   // ── Resize ───────────────────────────────────────────────────────────────
@@ -284,19 +315,26 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   }, []);
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (!isResizing || !containerRef.current) return;
+      if (!(isResizing && containerRef.current)) {
+        return;
+      }
       const rect = containerRef.current.getBoundingClientRect();
-      setLeftWidth(Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, e.clientX - rect.left)));
+      setLeftWidth(
+        Math.max(
+          MIN_LEFT_WIDTH,
+          Math.min(MAX_LEFT_WIDTH, e.clientX - rect.left)
+        )
+      );
     },
-    [isResizing],
+    [isResizing]
   );
 
   useEffect(() => {
-    window.addEventListener('mousemove', resize);
-    window.addEventListener('mouseup', stopResizing);
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
     return () => {
-      window.removeEventListener('mousemove', resize);
-      window.removeEventListener('mouseup', stopResizing);
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
     };
   }, [resize, stopResizing]);
 
@@ -308,7 +346,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     let prevWasSmall = window.innerWidth <= RESPONSIVE_COLLAPSE_WIDTH;
 
     // Initial check: if window is already small on mount, auto-collapse
-    if (prevWasSmall && localStorage.getItem('fe.treeCollapsed') !== 'true') {
+    if (prevWasSmall && localStorage.getItem("fe.treeCollapsed") !== "true") {
       wasResponsiveCollapsedRef.current = true;
       setIsTreeCollapsed(true);
     }
@@ -321,7 +359,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         // Window just shrank below threshold → auto-collapse
         wasResponsiveCollapsedRef.current = true;
         setIsTreeCollapsed(true);
-      } else if (!isSmall && prevWasSmall && wasResponsiveCollapsedRef.current) {
+      } else if (
+        !isSmall &&
+        prevWasSmall &&
+        wasResponsiveCollapsedRef.current
+      ) {
         // Window just grew above threshold and we were the ones who collapsed it → restore
         wasResponsiveCollapsedRef.current = false;
         setIsTreeCollapsed(false);
@@ -330,9 +372,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       prevWasSmall = isSmall;
     };
 
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener("resize", onWindowResize);
     return () => {
-      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener("resize", onWindowResize);
     };
   }, []);
 
@@ -345,29 +387,35 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       setSelectedNames(new Set());
       setIsMultiSelectMode(false);
       setRenamingName(null);
-      setSearchQuery('');
+      setSearchQuery("");
       // Reset create state on every navigation
       setCreatingType(null);
-      setCreateName('');
-      setCreateError('');
+      setCreateName("");
+      setCreateError("");
       try {
         debugLog(`Listing files at: ${targetPath}`);
         const files = await ListFiles(targetPath, selectedSerialRef.current);
         // Discard stale results — a newer request has already been dispatched.
-        if (requestId !== loadRequestIdRef.current) return;
+        if (requestId !== loadRequestIdRef.current) {
+          return;
+        }
         // Raw sort only for initial load; table may re-sort via sortField/sortDir
         const sorted = [...files].sort((a, b) => {
-          const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
-          const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
-          if (aIsDir && !bIsDir) return -1;
-          if (!aIsDir && bIsDir) return 1;
+          const aIsDir = a.type === "Directory" || a.type === "Symlink";
+          const bIsDir = b.type === "Directory" || b.type === "Symlink";
+          if (aIsDir && !bIsDir) {
+            return -1;
+          }
+          if (!aIsDir && bIsDir) {
+            return 1;
+          }
           return a.name.localeCompare(b.name);
         });
         setFileList(sorted);
         setLoadError(null);
         setCurrentPath(targetPath);
         currentPathRef.current = targetPath;
-        localStorage.setItem('fe.currentPath', targetPath);
+        localStorage.setItem("fe.currentPath", targetPath);
         setTreeRefreshKey((k) => k + 1);
         if (pushToHistory) {
           // Read from ref — never from stale closure — to avoid infinite re-renders
@@ -375,20 +423,26 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           setNavHistory((prev) => {
             const truncated = prev.slice(0, currentIdx + 1);
             // Skip push if same path as current head
-            if (truncated[truncated.length - 1] === targetPath) return truncated;
+            if (truncated[truncated.length - 1] === targetPath) {
+              return truncated;
+            }
             const next = [...truncated, targetPath];
             // Enforce max history depth
-            return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
+            return next.length > MAX_HISTORY
+              ? next.slice(next.length - MAX_HISTORY)
+              : next;
           });
           const newIdx = Math.min(currentIdx + 1, MAX_HISTORY - 1);
           historyIndexRef.current = newIdx; // update ref synchronously
           setHistoryIndex(newIdx); // schedule React state update
         }
       } catch (error) {
-        if (requestId !== loadRequestIdRef.current) return;
+        if (requestId !== loadRequestIdRef.current) {
+          return;
+        }
         setLoadError(categorizeError(error));
         setFileList([]);
-        handleError('List Files', error);
+        handleError("List Files", error);
         setCurrentPath(targetPath);
         currentPathRef.current = targetPath;
       } finally {
@@ -397,7 +451,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         }
       }
     },
-    [], // stable — all mutable values accessed via refs, not closure
+    [] // stable — all mutable values accessed via refs, not closure
   );
 
   useEffect(() => {
@@ -405,21 +459,25 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     setFileList([]);
     setSelectedNames(new Set());
     setIsMultiSelectMode(false);
-    if (activeView === 'files' && selectedSerial) {
+    if (activeView === "files" && selectedSerial) {
       void loadFiles(currentPathRef.current, false);
     }
   }, [activeView, selectedSerial, loadFiles]);
 
   const handleGoBack = useCallback(() => {
     const currentIdx = historyIndexRef.current;
-    if (currentIdx <= 0) return;
+    if (currentIdx <= 0) {
+      return;
+    }
     const newIndex = currentIdx - 1;
     // Update ref immediately so the load reads the correct index
     historyIndexRef.current = newIndex;
     setHistoryIndex(newIndex);
     setNavHistory((prev) => {
       const targetPath = prev[newIndex];
-      if (targetPath) void loadFiles(targetPath, false);
+      if (targetPath) {
+        void loadFiles(targetPath, false);
+      }
       return prev;
     });
   }, [loadFiles]);
@@ -427,12 +485,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const handleGoForward = useCallback(() => {
     const currentIdx = historyIndexRef.current;
     setNavHistory((prev) => {
-      if (currentIdx >= prev.length - 1) return prev;
+      if (currentIdx >= prev.length - 1) {
+        return prev;
+      }
       const newIndex = currentIdx + 1;
       historyIndexRef.current = newIndex;
       setHistoryIndex(newIndex);
       const targetPath = prev[newIndex];
-      if (targetPath) void loadFiles(targetPath, false);
+      if (targetPath) {
+        void loadFiles(targetPath, false);
+      }
       return prev;
     });
   }, [loadFiles]);
@@ -440,9 +502,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const handleSortColumn = useCallback((field: SortField) => {
     setSortField((prev) => {
       if (prev === field) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       } else {
-        setSortDir('asc');
+        setSortDir("asc");
       }
       return field;
     });
@@ -451,41 +513,55 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // ── Selection handlers ───────────────────────────────────────────────────
   const handleRowClick = useCallback(
     (file: FileEntry, e: React.MouseEvent) => {
-      if (renamingName) return;
+      if (renamingName) {
+        return;
+      }
       // Plain click does NOT select — only Ctrl+Click enters multi-select mode.
       if (e.ctrlKey || e.metaKey) {
         setIsMultiSelectMode(true);
         setSelectedNames((prev) => {
           const next = new Set(prev);
-          if (next.has(file.name)) next.delete(file.name);
-          else next.add(file.name);
+          if (next.has(file.name)) {
+            next.delete(file.name);
+          } else {
+            next.add(file.name);
+          }
           // Auto-exit if nothing left selected
-          if (next.size === 0) setIsMultiSelectMode(false);
+          if (next.size === 0) {
+            setIsMultiSelectMode(false);
+          }
           return next;
         });
       }
       // No else: plain click does nothing to selection state
     },
-    [renamingName],
+    [renamingName]
   );
 
   const handleRowDoubleClick = useCallback(
     (file: FileEntry) => {
-      if (renamingName) return;
-      if (file.type === 'Directory' || file.type === 'Symlink') {
-        void loadFiles(path.posix.join(currentPath, file.name) + '/');
+      if (renamingName) {
+        return;
+      }
+      if (file.type === "Directory" || file.type === "Symlink") {
+        void loadFiles(path.posix.join(currentPath, file.name) + "/");
       }
     },
-    [renamingName, currentPath, loadFiles],
+    [renamingName, currentPath, loadFiles]
   );
 
   const toggleCheckbox = useCallback((name: string) => {
     setSelectedNames((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
       // Auto-exit multi-select mode when all checkboxes cleared
-      if (next.size === 0) setIsMultiSelectMode(false);
+      if (next.size === 0) {
+        setIsMultiSelectMode(false);
+      }
       return next;
     });
   }, []);
@@ -518,29 +594,31 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const startRename = useCallback((file: FileEntry) => {
     // Cancel any active creation before renaming
     setCreatingType(null);
-    setCreateName('');
-    setCreateError('');
+    setCreateName("");
+    setCreateError("");
     setSelectedNames(new Set([file.name]));
     setRenamingName(file.name);
     setRenameValue(file.name);
-    setRenameError('');
+    setRenameError("");
   }, []);
 
   const handleRenameChange = useCallback((val: string) => {
     setRenameValue(val);
     if (!val.trim()) {
-      setRenameError('Name cannot be empty');
+      setRenameError("Name cannot be empty");
       return;
     }
     if (FORBIDDEN_CHARS.test(val)) {
       setRenameError('Invalid characters: / \\ : * ? " < > |');
       return;
     }
-    setRenameError('');
+    setRenameError("");
   }, []);
 
   const handleRenameConfirm = useCallback(async () => {
-    if (!renamingName) return;
+    if (!renamingName) {
+      return;
+    }
     const trimmed = renameValue.trim();
     // Cancel conditions: empty, same name, or has forbidden chars
     if (!trimmed || trimmed === renamingName || FORBIDDEN_CHARS.test(trimmed)) {
@@ -553,12 +631,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     try {
       await RenameFile(oldPath, newPath, selectedSerialRef.current);
       toast.success(`Renamed to "${trimmed}"`);
-      useLogStore.getState().addLog(`Renamed ${renamingName} → ${trimmed}`, 'success');
+      useLogStore
+        .getState()
+        .addLog(`Renamed ${renamingName} → ${trimmed}`, "success");
       setRenamingName(null);
       setSelectedNames(new Set([trimmed]));
       void loadFiles(currentPath);
     } catch (error) {
-      handleError('Rename', error);
+      handleError("Rename", error);
       setRenamingName(null);
     } finally {
       setIsRenaming(false);
@@ -567,29 +647,29 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const handleRenameCancel = useCallback(() => {
     setRenamingName(null);
-    setRenameError('');
+    setRenameError("");
   }, []);
 
   // ── Create ───────────────────────────────────────────────────────────────
-  const startCreate = useCallback((type: 'file' | 'folder') => {
+  const startCreate = useCallback((type: "file" | "folder") => {
     // Cancel any active rename before creating
     setRenamingName(null);
-    setRenameError('');
+    setRenameError("");
     setCreatingType(type);
-    setCreateName('');
-    setCreateError('');
+    setCreateName("");
+    setCreateError("");
   }, []);
 
   const cancelCreate = useCallback(() => {
     setCreatingType(null);
-    setCreateName('');
-    setCreateError('');
+    setCreateName("");
+    setCreateError("");
   }, []);
 
   const handleCreateChange = useCallback((val: string) => {
     setCreateName(val);
     if (!val.trim()) {
-      setCreateError('Name cannot be empty');
+      setCreateError("Name cannot be empty");
       return;
     }
     if (FORBIDDEN_CHARS.test(val)) {
@@ -597,32 +677,39 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       return;
     }
     if (RESERVED_NAMES.test(val.trim())) {
-      setCreateError('Reserved name: use a different name');
+      setCreateError("Reserved name: use a different name");
       return;
     }
-    setCreateError('');
+    setCreateError("");
   }, []);
 
   const handleCreateConfirm = useCallback(async () => {
-    if (!creatingType) return;
+    if (!creatingType) {
+      return;
+    }
     const trimmed = createName.trim();
-    if (!trimmed || createError) return;
+    if (!trimmed || createError) {
+      return;
+    }
     const fullPath = path.posix.join(currentPath, trimmed);
     setIsCreating(true);
     try {
-      if (creatingType === 'file') {
+      if (creatingType === "file") {
         await CreateFile(fullPath, selectedSerialRef.current);
         toast.success(`Created file "${trimmed}"`);
-        useLogStore.getState().addLog(`Created file: ${fullPath}`, 'success');
+        useLogStore.getState().addLog(`Created file: ${fullPath}`, "success");
       } else {
         await CreateDirectory(fullPath, selectedSerialRef.current);
         toast.success(`Created folder "${trimmed}"`);
-        useLogStore.getState().addLog(`Created folder: ${fullPath}`, 'success');
+        useLogStore.getState().addLog(`Created folder: ${fullPath}`, "success");
       }
       setCreatingType(null);
       void loadFiles(currentPath);
     } catch (error) {
-      handleError(creatingType === 'file' ? 'Create File' : 'Create Folder', error);
+      handleError(
+        creatingType === "file" ? "Create File" : "Create Folder",
+        error
+      );
     } finally {
       setIsCreating(false);
     }
@@ -640,13 +727,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     setIsDeleting(true);
     try {
       await DeleteFiles(paths, selectedSerialRef.current);
-      const label = names.length === 1 ? `"${names[0]}"` : `${names.length} items`;
+      const label =
+        names.length === 1 ? `"${names[0]}"` : `${names.length} items`;
       toast.success(`Deleted ${label}`);
-      useLogStore.getState().addLog(`Deleted from ${currentPath}: ${names.join(', ')}`, 'success');
+      useLogStore
+        .getState()
+        .addLog(`Deleted from ${currentPath}: ${names.join(", ")}`, "success");
       setSelectedNames(new Set());
       void loadFiles(currentPath);
     } catch (error) {
-      handleError('Delete', error);
+      handleError("Delete", error);
     } finally {
       setIsDeleting(false);
       setDeleteDialogOpen(false);
@@ -655,8 +745,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Back navigation ──────────────────────────────────────────────────────
   const handleBackClick = useCallback(() => {
-    if (currentPath === '/') return;
-    void loadFiles(path.posix.join(currentPath, '..') + '/');
+    if (currentPath === "/") {
+      return;
+    }
+    void loadFiles(path.posix.join(currentPath, "..") + "/");
   }, [currentPath, loadFiles]);
 
   // ── Path editing ───────────────────────────────────────────────────────────
@@ -680,7 +772,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Search ────────────────────────────────────────────────────────────────
   const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
+    setSearchQuery("");
   }, []);
 
   // ── Delete dialog ────────────────────────────────────────────────────────
@@ -692,72 +784,111 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const executePull = useCallback(
     async (file: FileEntry) => {
       setIsPulling(true);
-      let toastId: string | number = '';
+      let toastId: string | number = "";
       try {
         const remotePath = path.posix.join(currentPath, file.name);
-        let localPath = '';
-        if (file.type === 'Directory' || file.type === 'Symlink') {
-          toast.info('Select a folder to save the directory into.');
+        let localPath = "";
+        if (file.type === "Directory" || file.type === "Symlink") {
+          toast.info("Select a folder to save the directory into.");
           localPath = await SelectDirectoryForPull();
         } else {
           localPath = await SelectSaveDirectory(file.name);
         }
-        if (!localPath) return;
-        toastId = toast.loading(`Pulling ${file.name}…`, { description: `From: ${remotePath}` });
-        const output = await PullFile(remotePath, localPath, selectedSerialRef.current);
-        toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
-        useLogStore.getState().addLog(`Pulled ${file.name} to ${localPath}: ${output}`, 'success');
+        if (!localPath) {
+          return;
+        }
+        toastId = toast.loading(`Pulling ${file.name}…`, {
+          description: `From: ${remotePath}`,
+        });
+        const output = await PullFile(
+          remotePath,
+          localPath,
+          selectedSerialRef.current
+        );
+        toast.success("Export Complete", {
+          description: `Saved to ${localPath}`,
+          id: toastId,
+        });
+        useLogStore
+          .getState()
+          .addLog(`Pulled ${file.name} to ${localPath}: ${output}`, "success");
       } catch (error) {
-        if (toastId) toast.error('Export Failed', { id: toastId });
-        handleError('Export', error);
+        if (toastId) {
+          toast.error("Export Failed", { id: toastId });
+        }
+        handleError("Export", error);
       } finally {
         setIsPulling(false);
       }
     },
-    [currentPath],
+    [currentPath]
   );
 
   // Shared push helper — used by all Import variants
   const executePush = useCallback(
     async (localPath: string, targetDir: string) => {
       setIsPushing(true);
-      let toastId: string | number = '';
+      let toastId: string | number = "";
       try {
-        const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? '';
+        const fileName = localPath.replace(/\\/g, "/").split("/").pop() ?? "";
         const remotePath = path.posix.join(targetDir, fileName);
-        toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-        const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
-        toast.success('Import Complete', { description: output, id: toastId });
-        useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
+        toastId = toast.loading(`Pushing ${fileName}…`, {
+          description: `To: ${remotePath}`,
+        });
+        const output = await PushFile(
+          localPath,
+          remotePath,
+          selectedSerialRef.current
+        );
+        toast.success("Import Complete", { description: output, id: toastId });
+        useLogStore
+          .getState()
+          .addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, "success");
         void loadFiles(currentPath, false);
       } catch (error) {
-        if (toastId) toast.error('Import Failed', { id: toastId });
-        handleError('Import', error);
+        if (toastId) {
+          toast.error("Import Failed", { id: toastId });
+        }
+        handleError("Import", error);
       } finally {
         setIsPushing(false);
       }
     },
-    [currentPath, loadFiles],
+    [currentPath, loadFiles]
   );
 
   // ── Push ─────────────────────────────────────────────────────────────────
   const handlePushFile = async () => {
     setIsPushing(true);
-    let toastId: string | number = '';
+    let toastId: string | number = "";
     try {
       const localPath = await SelectFileToPush();
-      if (!localPath) return;
-      const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localPath);
+      if (!localPath) {
+        return;
+      }
+      const fileName =
+        localPath.replace(/\\/g, "/").split("/").pop() ??
+        path.basename(localPath);
       const remotePath = path.posix.join(currentPath, fileName);
       debugLog(`Pushing file ${fileName} to ${remotePath}`);
-      toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-      const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
-      toast.success('Import Complete', { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
+      toastId = toast.loading(`Pushing ${fileName}…`, {
+        description: `To: ${remotePath}`,
+      });
+      const output = await PushFile(
+        localPath,
+        remotePath,
+        selectedSerialRef.current
+      );
+      toast.success("Import Complete", { description: output, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, "success");
       void loadFiles(currentPath, false);
     } catch (error) {
-      if (toastId) toast.error('Import Failed', { id: toastId });
-      handleError('Push File', error);
+      if (toastId) {
+        toast.error("Import Failed", { id: toastId });
+      }
+      handleError("Push File", error);
     } finally {
       setIsPushing(false);
     }
@@ -765,23 +896,34 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   const handlePushFolder = async () => {
     setIsPushing(true);
-    let toastId: string | number = '';
+    let toastId: string | number = "";
     try {
       const localFolderPath = await SelectDirectoryToPush();
-      if (!localFolderPath) return;
+      if (!localFolderPath) {
+        return;
+      }
       const folderName =
-        localFolderPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localFolderPath);
+        localFolderPath.replace(/\\/g, "/").split("/").pop() ??
+        path.basename(localFolderPath);
       debugLog(`Pushing folder ${folderName} to ${currentPath}`);
       toastId = toast.loading(`Pushing folder ${folderName}…`, {
         description: `To: ${currentPath}`,
       });
-      const output = await PushFile(localFolderPath, currentPath, selectedSerialRef.current);
-      toast.success('Import Complete', { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
+      const output = await PushFile(
+        localFolderPath,
+        currentPath,
+        selectedSerialRef.current
+      );
+      toast.success("Import Complete", { description: output, id: toastId });
+      useLogStore
+        .getState()
+        .addLog(`Pushed folder ${folderName} to ${currentPath}`, "success");
       void loadFiles(currentPath, false);
     } catch (error) {
-      if (toastId) toast.error('Import Failed', { id: toastId });
-      handleError('Push Folder', error);
+      if (toastId) {
+        toast.error("Import Failed", { id: toastId });
+      }
+      handleError("Push Folder", error);
     } finally {
       setIsPushing(false);
     }
@@ -790,110 +932,120 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // Toolbar pull (selection-based)
   const handlePull = async () => {
     if (!singleSelected) {
-      toast.error('Select a single item to export.');
+      toast.error("Select a single item to export.");
       return;
     }
     await executePull(singleSelected);
   };
 
   // Context-menu pull — exports the right-clicked item directly, no selection needed
-  const handlePullItem = useCallback((file: FileEntry) => executePull(file), [executePull]);
+  const handlePullItem = useCallback(
+    (file: FileEntry) => executePull(file),
+    [executePull]
+  );
 
   // Context-menu push — imports a file from the host into a specific target directory
   const handlePushFileToDir = useCallback(
     async (targetDir: string) => {
       const localPath = await SelectFileToPush();
-      if (!localPath) return;
+      if (!localPath) {
+        return;
+      }
       await executePush(localPath, targetDir);
     },
-    [executePush],
+    [executePush]
   );
 
   // ── Keyboard shortcuts ───────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (activeView !== 'files') return;
+      if (activeView !== "files") {
+        return;
+      }
       const tag = (document.activeElement as HTMLElement)?.tagName;
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA';
+      const isInput = tag === "INPUT" || tag === "TEXTAREA";
 
       // New File: Ctrl+N / Cmd+N
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'n') {
-        if (!isInput) {
-          e.preventDefault();
-          startCreate('file');
-          return;
-        }
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.shiftKey &&
+        e.key === "n" &&
+        !isInput
+      ) {
+        e.preventDefault();
+        startCreate("file");
+        return;
       }
 
       // New Folder: Ctrl+Shift+N / Cmd+Shift+N
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
-        if (!isInput) {
-          e.preventDefault();
-          startCreate('folder');
-          return;
-        }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "N" && !isInput) {
+        e.preventDefault();
+        startCreate("folder");
+        return;
       }
 
       // Back: Alt+Left
-      if (e.altKey && e.key === 'ArrowLeft') {
+      if (e.altKey && e.key === "ArrowLeft") {
         e.preventDefault();
         handleGoBack();
         return;
       }
 
       // Forward: Alt+Right
-      if (e.altKey && e.key === 'ArrowRight') {
+      if (e.altKey && e.key === "ArrowRight") {
         e.preventDefault();
         handleGoForward();
         return;
       }
 
       // Search focus: Ctrl+F / Cmd+F
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        if (!isInput) {
-          e.preventDefault();
-          document.getElementById('fe-search-input')?.focus();
-          return;
-        }
+      if ((e.ctrlKey || e.metaKey) && e.key === "f" && !isInput) {
+        e.preventDefault();
+        document.getElementById("fe-search-input")?.focus();
+        return;
       }
 
       // Escape: cancel create → cancel rename → clear search → clear selection
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         if (creatingType) {
           cancelCreate();
         } else if (renamingName) {
           handleRenameCancel();
         } else if (searchQuery) {
-          setSearchQuery('');
+          setSearchQuery("");
         } else if (!isInput && selectedNames.size > 0) {
           clearSelection();
         }
         return;
       }
 
-      if (isInput) return;
+      if (isInput) {
+        return;
+      }
 
-      if (e.key === 'Delete' && selectedNames.size > 0) {
+      if (e.key === "Delete" && selectedNames.size > 0) {
         e.preventDefault();
         openDeleteDialog(Array.from(selectedNames));
         return;
       }
-      if (e.key === 'F2' && selectedNames.size === 1) {
+      if (e.key === "F2" && selectedNames.size === 1) {
         e.preventDefault();
         const name = Array.from(selectedNames)[0];
         const file = fileList.find((f) => f.name === name);
-        if (file) startRename(file);
+        if (file) {
+          startRename(file);
+        }
         return;
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         setIsMultiSelectMode(true);
         setSelectedNames(new Set(fileList.map((f) => f.name)));
       }
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("keydown", onKey);
     };
   }, [
     activeView,
@@ -915,25 +1067,32 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div
-      ref={containerRef}
       className="flex h-[calc(100svh-4rem)] overflow-hidden rounded-lg border border-border"
+      ref={containerRef}
     >
       <h1 className="sr-only">File Explorer</h1>
       {/* Drag overlay — prevents text selection while resizing */}
-      {isResizing ? <div className="fixed inset-0 z-50 cursor-col-resize select-none" /> : null}
+      {isResizing ? (
+        <div className="fixed inset-0 z-50 cursor-col-resize select-none" />
+      ) : null}
 
       {/* Left: Directory tree */}
       {!isTreeCollapsed && (
-        <div className="shrink-0 flex flex-col overflow-hidden" style={{ width: `${leftWidth}px` }}>
-          <div className="flex items-center gap-2 px-3 h-10 border-b border-border shrink-0 bg-muted/30">
-            <Layers className="size-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-medium text-muted-foreground flex-1">Device</span>
+        <div
+          className="flex shrink-0 flex-col overflow-hidden"
+          style={{ width: `${leftWidth}px` }}
+        >
+          <div className="flex h-10 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
+            <Layers className="size-4 shrink-0 text-muted-foreground" />
+            <span className="flex-1 font-medium text-muted-foreground text-sm">
+              Device
+            </span>
             <ToolbarTooltip label="Collapse tree panel">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={handleCollapseTree}
+                size="icon"
+                variant="ghost"
               >
                 <PanelLeftClose className="size-3.5" />
               </Button>
@@ -941,8 +1100,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           </div>
           <div className="flex-1 overflow-hidden">
             <DirectoryTree
-              key={selectedSerial ?? 'no-device'}
               currentPath={currentPath}
+              key={selectedSerial ?? "no-device"}
               onNavigate={loadFiles}
               refreshTrigger={treeRefreshKey}
               serial={selectedSerial}
@@ -955,44 +1114,44 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       {!isTreeCollapsed && (
         <div
           className={cn(
-            'w-px shrink-0 cursor-col-resize transition-colors bg-border hover:bg-primary/60 active:bg-primary',
-            isResizing && 'bg-primary',
+            "w-px shrink-0 cursor-col-resize bg-border transition-colors hover:bg-primary/60 active:bg-primary",
+            isResizing && "bg-primary"
           )}
           onMouseDown={startResizing}
         />
       )}
 
       {/* Right: File list pane */}
-      <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex items-center gap-1 px-2 h-10 border-b border-border shrink-0">
+        <div className="flex h-10 shrink-0 items-center gap-1 border-border border-b px-2">
           {/* Tree restore toggle */}
           {isTreeCollapsed ? (
             <>
               <ToolbarTooltip label="Show tree panel">
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={handleExpandTree}
+                  size="icon"
+                  variant="ghost"
                 >
                   <PanelLeft className="size-4" />
                 </Button>
               </ToolbarTooltip>
-              <Separator orientation="vertical" className="h-4 mx-0.5" />
+              <Separator className="mx-0.5 h-4" orientation="vertical" />
             </>
           ) : null}
 
           {/* Back / Forward / Up + Address bar */}
-          <div className="flex items-center gap-1 min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
             {/* Back */}
             <ToolbarTooltip label="Back (Alt+Left)">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7 shrink-0"
-                onClick={handleGoBack}
                 disabled={!canGoBack || isBusy}
+                onClick={handleGoBack}
+                size="icon"
+                variant="ghost"
               >
                 <ArrowLeft className="h-4 w-4 shrink-0" />
               </Button>
@@ -1001,11 +1160,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Forward */}
             <ToolbarTooltip label="Forward (Alt+Right)">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7 shrink-0"
-                onClick={handleGoForward}
                 disabled={!canGoForward || isBusy}
+                onClick={handleGoForward}
+                size="icon"
+                variant="ghost"
               >
                 <ArrowRight className="h-4 w-4 shrink-0" />
               </Button>
@@ -1014,43 +1173,47 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Up */}
             <ToolbarTooltip label="Go up">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7 shrink-0"
+                disabled={currentPath === "/" || isBusy}
                 onClick={handleBackClick}
-                disabled={currentPath === '/' || isBusy}
+                size="icon"
+                variant="ghost"
               >
                 <ArrowUp className="h-4 w-4 shrink-0" />
               </Button>
             </ToolbarTooltip>
 
             {isEditingPath ? (
-              <div className="relative flex items-center flex-1 min-w-0">
-                <Folder className="absolute left-1.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none shrink-0" />
+              <div className="relative flex min-w-0 flex-1 items-center">
+                <Folder className="pointer-events-none absolute left-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <Input
-                  value={editPathValue}
+                  autoFocus
+                  className="h-7 min-w-0 flex-1 border-input pr-2 pl-6 font-mono text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  onBlur={() => {
+                    setIsEditingPath(false);
+                  }}
                   onChange={(e) => {
                     setEditPathValue(e.target.value);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       e.preventDefault();
                       const t = editPathValue.trim();
-                      void loadFiles(t && !t.endsWith('/') ? `${t}/` : t || '/');
+                      void loadFiles(
+                        t && !t.endsWith("/") ? `${t}/` : t || "/"
+                      );
                       setIsEditingPath(false);
                     }
-                    if (e.key === 'Escape') setIsEditingPath(false);
+                    if (e.key === "Escape") {
+                      setIsEditingPath(false);
+                    }
                   }}
-                  onBlur={() => {
-                    setIsEditingPath(false);
-                  }}
-                  className="font-mono text-xs h-7 pl-6 pr-2 flex-1 min-w-0 border-input focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                  autoFocus
+                  value={editPathValue}
                 />
               </div>
             ) : (
               <button
-                className="flex-1 min-w-0 text-left font-mono text-xs truncate text-muted-foreground hover:text-foreground cursor-text px-2 py-1 rounded-sm hover:bg-muted/50 transition-colors"
+                className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground"
                 onClick={handlePathClick}
                 title="Click to edit path"
               >
@@ -1059,47 +1222,47 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             )}
           </div>
 
-          <Separator orientation="vertical" className="h-4 mx-1 shrink-0" />
+          <Separator className="mx-1 h-4 shrink-0" orientation="vertical" />
 
           {/* Action buttons */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex shrink-0 items-center gap-1">
             {/* Refresh */}
             <ToolbarTooltip label="Refresh (F5)">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7"
-                onClick={handleRefreshClick}
                 disabled={isBusy}
+                onClick={handleRefreshClick}
+                size="icon"
+                variant="ghost"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 ) : (
                   <RefreshCw className="h-4 w-4 shrink-0" />
                 )}
               </Button>
             </ToolbarTooltip>
 
-            <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
+            <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
 
             {/* Search */}
             <div className="relative flex items-center">
-              <Search className="absolute left-1.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none shrink-0" />
+              <Search className="pointer-events-none absolute left-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               <Input
+                aria-label="Filter files"
+                className="h-7 w-32 pr-6 pl-6 text-xs transition-[width] duration-200 focus-visible:w-48"
                 id="fe-search-input"
-                value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                 }}
                 placeholder="Filter…"
-                className="h-7 pl-6 pr-6 text-xs w-32 focus-visible:w-48 transition-[width] duration-200"
-                aria-label="Filter files"
+                value={searchQuery}
               />
               {searchQuery ? (
                 <button
+                  aria-label="Clear filter"
                   className="absolute right-1.5 text-muted-foreground hover:text-foreground"
                   onClick={handleClearSearch}
-                  aria-label="Clear filter"
                   tabIndex={-1}
                 >
                   <X className="h-3 w-3" />
@@ -1107,18 +1270,18 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               ) : null}
             </div>
 
-            <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
+            <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
 
             {/* New File */}
             <ToolbarTooltip label="New File (Ctrl+N)">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7"
-                onClick={() => {
-                  startCreate('file');
-                }}
                 disabled={isBusy}
+                onClick={() => {
+                  startCreate("file");
+                }}
+                size="icon"
+                variant="ghost"
               >
                 <FilePlus2 className="h-4 w-4 shrink-0" />
               </Button>
@@ -1127,31 +1290,31 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* New Folder */}
             <ToolbarTooltip label="New Folder (Ctrl+Shift+N)">
               <Button
-                variant="ghost"
-                size="icon"
                 className="size-7"
-                onClick={() => {
-                  startCreate('folder');
-                }}
                 disabled={isBusy}
+                onClick={() => {
+                  startCreate("folder");
+                }}
+                size="icon"
+                variant="ghost"
               >
                 <FolderPlus className="h-4 w-4 shrink-0" />
               </Button>
             </ToolbarTooltip>
 
-            <Separator orientation="vertical" className="h-4 mx-0.5 shrink-0" />
+            <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
 
             {/* Split Import button */}
             <div className="flex items-stretch">
               <Button
-                variant="outline"
-                size="sm"
                 className="rounded-r-none border-r-0 pr-2"
-                onClick={handlePushFile}
                 disabled={isBusy}
+                onClick={handlePushFile}
+                size="sm"
+                variant="outline"
               >
                 {isPushing ? (
-                  <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                  <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
                 ) : (
                   <Upload className="h-4 w-4 shrink-0" />
                 )}
@@ -1160,11 +1323,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="outline"
-                    size="sm"
+                    aria-label="Import options"
                     className="rounded-l-none px-1.5"
                     disabled={isBusy}
-                    aria-label="Import options"
+                    size="sm"
+                    variant="outline"
                   >
                     <ChevronDown className="h-3.5 w-3.5 shrink-0" />
                   </Button>
@@ -1184,14 +1347,18 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
             {/* Export */}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePull}
               disabled={isPullDisabled || isBusy}
-              title={selectedNames.size > 1 ? 'Select a single item to export' : undefined}
+              onClick={handlePull}
+              size="sm"
+              title={
+                selectedNames.size > 1
+                  ? "Select a single item to export"
+                  : undefined
+              }
+              variant="outline"
             >
               {isPulling ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
               ) : (
                 <Download className="h-4 w-4 shrink-0" />
               )}
@@ -1203,22 +1370,24 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         {/* Selection summary bar — only visible in multi-select mode */}
         {isMultiSelectMode && selectedNames.size > 0 && !renamingName ? (
           <SelectionSummaryBar
-            count={selectedNames.size}
-            label={selectedNames.size === 1 ? 'item selected' : 'items selected'}
-            onClear={clearSelection}
-            disabled={isBusy}
             actions={
               <Button
-                variant="destructive"
-                size="sm"
                 className="h-6 px-2 text-xs"
-                onClick={handleDeleteFromSelection}
                 disabled={isBusy}
+                onClick={handleDeleteFromSelection}
+                size="sm"
+                variant="destructive"
               >
                 <Trash2 className="h-3 w-3 shrink-0" />
-                <span className="hidden sm:inline ml-1">Delete</span>
+                <span className="ml-1 hidden sm:inline">Delete</span>
               </Button>
             }
+            count={selectedNames.size}
+            disabled={isBusy}
+            label={
+              selectedNames.size === 1 ? "item selected" : "items selected"
+            }
+            onClear={clearSelection}
           />
         ) : null}
 
@@ -1230,52 +1399,54 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 <div className="flex h-40 items-center justify-center">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              ) : loadError === 'permission_denied' ? (
-                <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              ) : loadError === "permission_denied" ? (
+                <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Lock className="h-8 w-8 opacity-40" />
-                  <p className="text-sm font-medium">Access Denied</p>
+                  <p className="font-medium text-sm">Access Denied</p>
                   <p className="text-xs opacity-60">
                     This location requires elevated permissions or root access.
                   </p>
                 </div>
-              ) : loadError === 'no_device' ? (
-                <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              ) : loadError === "no_device" ? (
+                <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
                   <MonitorOff className="h-8 w-8 opacity-40" />
-                  <p className="text-sm font-medium">No Device Connected</p>
+                  <p className="font-medium text-sm">No Device Connected</p>
                   <p className="text-xs opacity-60">
                     Connect a device via USB or wireless ADB and try again.
                   </p>
                 </div>
-              ) : loadError === 'unknown' ? (
-                <div className="flex flex-col h-40 items-center justify-center gap-2 text-muted-foreground">
+              ) : loadError === "unknown" ? (
+                <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
                   <AlertCircle className="h-8 w-8 opacity-40" />
-                  <p className="text-sm font-medium">Failed to Load</p>
-                  <p className="text-xs opacity-60">Check the logs panel for details.</p>
+                  <p className="font-medium text-sm">Failed to Load</p>
+                  <p className="text-xs opacity-60">
+                    Check the logs panel for details.
+                  </p>
                 </div>
               ) : fileList.length === 0 && creatingType === null ? (
-                <div className="flex flex-col h-40 items-center justify-center gap-3 text-muted-foreground">
+                <div className="flex h-40 flex-col items-center justify-center gap-3 text-muted-foreground">
                   <p className="text-sm">This directory is empty.</p>
                   <div className="flex items-center gap-2">
                     <Button
-                      variant="outline"
-                      size="sm"
                       className="h-7 gap-1.5 text-xs"
-                      onClick={() => {
-                        startCreate('file');
-                      }}
                       disabled={isBusy}
+                      onClick={() => {
+                        startCreate("file");
+                      }}
+                      size="sm"
+                      variant="outline"
                     >
                       <FilePlus2 className="h-3.5 w-3.5" />
                       New File
                     </Button>
                     <Button
-                      variant="outline"
-                      size="sm"
                       className="h-7 gap-1.5 text-xs"
-                      onClick={() => {
-                        startCreate('folder');
-                      }}
                       disabled={isBusy}
+                      onClick={() => {
+                        startCreate("folder");
+                      }}
+                      size="sm"
+                      variant="outline"
                     >
                       <FolderPlus className="h-3.5 w-3.5" />
                       New Folder
@@ -1289,19 +1460,25 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       {isMultiSelectMode ? (
                         <TableHead className="w-10 pl-3">
                           <Checkbox
-                            checked={allSelected ? true : someSelected ? 'indeterminate' : false}
-                            onCheckedChange={handleSelectAll}
                             aria-label="Select all"
+                            checked={
+                              allSelected
+                                ? true
+                                : someSelected
+                                  ? "indeterminate"
+                                  : false
+                            }
                             disabled={isBusy}
+                            onCheckedChange={handleSelectAll}
                           />
                         </TableHead>
                       ) : null}
                       <TableHead className="w-10" />
                       {/* Clickable sort headers */}
-                      {(['name', 'size', 'date'] as const).map((field) => (
+                      {(["name", "size", "date"] as const).map((field) => (
                         <TableHead
+                          className="cursor-pointer select-none capitalize hover:text-foreground"
                           key={field}
-                          className="cursor-pointer select-none hover:text-foreground capitalize"
                           onClick={() => {
                             handleSortColumn(field);
                           }}
@@ -1309,7 +1486,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           <span className="inline-flex items-center gap-1">
                             {field}
                             {sortField === field ? (
-                              sortDir === 'asc' ? (
+                              sortDir === "asc" ? (
                                 <ChevronUp className="h-3 w-3" />
                               ) : (
                                 <ChevronDown className="h-3 w-3" />
@@ -1327,9 +1504,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     {/* Phantom row — inline creation of new file or folder */}
                     {creatingType !== null && (
                       <TableRow>
-                        {isMultiSelectMode ? <TableCell className="pl-3 pr-0 w-10" /> : null}
+                        {isMultiSelectMode ? (
+                          <TableCell className="w-10 pr-0 pl-3" />
+                        ) : null}
                         <TableCell className="w-10 pr-0">
-                          {creatingType === 'folder' ? (
+                          {creatingType === "folder" ? (
                             <Folder className="h-4 w-4 shrink-0 text-primary" />
                           ) : (
                             <File className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -1338,44 +1517,49 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                         <TableCell colSpan={4}>
                           <div className="flex items-center gap-2">
                             <Input
-                              value={createName}
+                              aria-label={
+                                creatingType === "folder"
+                                  ? "New folder name"
+                                  : "New file name"
+                              }
+                              autoFocus
+                              className={cn(
+                                "h-7 max-w-xs px-1.5 py-0 font-mono text-sm",
+                                createError &&
+                                  "border-destructive focus-visible:ring-destructive"
+                              )}
+                              disabled={isCreating}
+                              onBlur={cancelCreate}
                               onChange={(e) => {
                                 handleCreateChange(e.target.value);
                               }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
+                                if (e.key === "Enter") {
                                   e.preventDefault();
                                   void handleCreateConfirm();
                                 }
-                                if (e.key === 'Escape') {
+                                if (e.key === "Escape") {
                                   e.preventDefault();
                                   cancelCreate();
                                 }
                               }}
-                              onBlur={cancelCreate}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
                               placeholder={
-                                creatingType === 'folder' ? 'New folder name' : 'filename.ext'
+                                creatingType === "folder"
+                                  ? "New folder name"
+                                  : "filename.ext"
                               }
-                              className={cn(
-                                'h-7 py-0 px-1.5 text-sm font-mono max-w-xs',
-                                createError && 'border-destructive focus-visible:ring-destructive',
-                              )}
-                              aria-label={
-                                creatingType === 'folder' ? 'New folder name' : 'New file name'
-                              }
-                              autoFocus
-                              disabled={isCreating}
+                              value={createName}
                             />
                             {createError ? (
-                              <span className="text-xs text-destructive leading-none shrink-0">
+                              <span className="shrink-0 text-destructive text-xs leading-none">
                                 {createError}
                               </span>
                             ) : null}
                             {isCreating ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-muted-foreground" />
+                              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
                             ) : null}
                           </div>
                         </TableCell>
@@ -1386,8 +1570,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       // Search returned no results
                       <TableRow>
                         <TableCell
+                          className="h-32 text-center text-muted-foreground text-sm"
                           colSpan={isMultiSelectMode ? 6 : 5}
-                          className="h-32 text-center text-sm text-muted-foreground"
                         >
                           No files match &ldquo;{searchQuery}&rdquo;
                         </TableCell>
@@ -1397,33 +1581,34 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     {visibleList.map((file) => {
                       const isSelected = selectedNames.has(file.name);
                       const isBeingRenamed = renamingName === file.name;
-                      const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
+                      const isNavigable =
+                        file.type === "Directory" || file.type === "Symlink";
 
                       return (
                         <ContextMenu key={file.name}>
                           <ContextMenuTrigger asChild>
                             <TableRow
-                              data-state={isSelected ? 'selected' : ''}
+                              className="cursor-pointer"
+                              data-state={isSelected ? "selected" : ""}
                               onClick={(e) => {
                                 handleRowClick(file, e);
                               }}
                               onDoubleClick={() => {
                                 handleRowDoubleClick(file);
                               }}
-                              className="cursor-pointer"
                             >
                               {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
                               {isMultiSelectMode && !isBeingRenamed ? (
                                 <TableCell
-                                  className="pl-3 pr-0 w-10"
+                                  className="w-10 pr-0 pl-3"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     toggleCheckbox(file.name);
                                   }}
                                 >
                                   <Checkbox
-                                    checked={isSelected}
                                     aria-label={`Select ${file.name}`}
+                                    checked={isSelected}
                                     tabIndex={-1}
                                   />
                                 </TableCell>
@@ -1431,9 +1616,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
                               {/* Type icon */}
                               <TableCell className="w-10">
-                                {file.type === 'Directory' ? (
+                                {file.type === "Directory" ? (
                                   <Folder className="h-4 w-4 shrink-0 text-primary" />
-                                ) : file.type === 'Symlink' ? (
+                                ) : file.type === "Symlink" ? (
                                   <Link className="h-4 w-4 shrink-0 text-primary/70" />
                                 ) : (
                                   <File className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -1445,36 +1630,36 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 {isBeingRenamed ? (
                                   <div className="flex flex-col gap-0.5">
                                     <Input
-                                      value={renameValue}
+                                      autoFocus
+                                      className={cn(
+                                        "h-7 w-full px-1.5 py-0 font-medium text-sm",
+                                        renameError &&
+                                          "border-destructive focus-visible:ring-destructive"
+                                      )}
+                                      onBlur={handleRenameCancel}
                                       onChange={(e) => {
                                         handleRenameChange(e.target.value);
                                       }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                      onFocus={(e) => {
+                                        e.target.select();
+                                      }}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
+                                        if (e.key === "Enter") {
                                           e.preventDefault();
                                           void handleRenameConfirm();
                                         }
-                                        if (e.key === 'Escape') {
+                                        if (e.key === "Escape") {
                                           e.preventDefault();
                                           handleRenameCancel();
                                         }
                                       }}
-                                      onBlur={handleRenameCancel}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                      className={cn(
-                                        'h-7 py-0 px-1.5 font-medium text-sm w-full',
-                                        renameError &&
-                                          'border-destructive focus-visible:ring-destructive',
-                                      )}
-                                      autoFocus
-                                      onFocus={(e) => {
-                                        e.target.select();
-                                      }}
+                                      value={renameValue}
                                     />
                                     {renameError ? (
-                                      <span className="text-xs text-destructive leading-none">
+                                      <span className="text-destructive text-xs leading-none">
                                         {renameError}
                                       </span>
                                     ) : null}
@@ -1482,8 +1667,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 ) : (
                                   <div className="flex flex-col gap-0.5">
                                     <span>{file.name}</span>
-                                    {file.type === 'Symlink' && file.linkTarget ? (
-                                      <span className="text-[10px] font-mono text-muted-foreground/60 leading-none">
+                                    {file.type === "Symlink" &&
+                                    file.linkTarget ? (
+                                      <span className="font-mono text-[10px] text-muted-foreground/60 leading-none">
                                         → {file.linkTarget}
                                       </span>
                                     ) : null}
@@ -1491,8 +1677,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 )}
                               </TableCell>
 
-                              <TableCell className="tabular-nums text-muted-foreground text-xs">
-                                {file.type === 'Directory' ? '—' : formatBytes(file.size)}
+                              <TableCell className="text-muted-foreground text-xs tabular-nums">
+                                {file.type === "Directory"
+                                  ? "—"
+                                  : formatBytes(file.size)}
                               </TableCell>
                               <TableCell>{file.date}</TableCell>
                               <TableCell>{file.time}</TableCell>
@@ -1515,7 +1703,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                             <ContextMenuItem
                               onClick={() =>
                                 void navigator.clipboard.writeText(
-                                  path.posix.join(currentPath, file.name),
+                                  path.posix.join(currentPath, file.name)
                                 )
                               }
                             >
@@ -1529,7 +1717,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                               <>
                                 <ContextMenuItem
                                   onClick={() =>
-                                    loadFiles(path.posix.join(currentPath, file.name) + '/')
+                                    loadFiles(
+                                      path.posix.join(currentPath, file.name) +
+                                        "/"
+                                    )
                                   }
                                 >
                                   <FolderOpen className="h-4 w-4 shrink-0" />
@@ -1565,7 +1756,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                               <Trash2 className="h-4 w-4 shrink-0" />
                               {isSelected && selectedNames.size > 1
                                 ? `Delete ${selectedNames.size} items`
-                                : 'Delete'}
+                                : "Delete"}
                             </ContextMenuItem>
 
                             <ContextMenuSeparator />
@@ -1577,17 +1768,23 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                               onClick={() =>
                                 handlePushFileToDir(
                                   isNavigable
-                                    ? path.posix.join(currentPath, file.name) + '/'
-                                    : currentPath,
+                                    ? path.posix.join(currentPath, file.name) +
+                                        "/"
+                                    : currentPath
                                 )
                               }
                             >
                               <Upload className="h-4 w-4 shrink-0" />
-                              {isNavigable ? `Import into "${file.name}"` : 'Import File'}
+                              {isNavigable
+                                ? `Import into "${file.name}"`
+                                : "Import File"}
                             </ContextMenuItem>
 
                             {/* Export — pulls this exact row's item, no selection needed */}
-                            <ContextMenuItem disabled={isBusy} onClick={() => handlePullItem(file)}>
+                            <ContextMenuItem
+                              disabled={isBusy}
+                              onClick={() => handlePullItem(file)}
+                            >
                               <Download className="h-4 w-4 shrink-0" />
                               Export
                             </ContextMenuItem>
@@ -1602,31 +1799,35 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           </ContextMenuTrigger>
           <ContextMenuContent>
             <ContextMenuItem
-              onClick={() => {
-                startCreate('file');
-              }}
               disabled={isBusy}
+              onClick={() => {
+                startCreate("file");
+              }}
             >
               <FilePlus2 className="h-4 w-4 shrink-0" />
               New File
-              <span className="ml-auto pl-4 text-xs text-muted-foreground">Ctrl+N</span>
+              <span className="ml-auto pl-4 text-muted-foreground text-xs">
+                Ctrl+N
+              </span>
             </ContextMenuItem>
             <ContextMenuItem
-              onClick={() => {
-                startCreate('folder');
-              }}
               disabled={isBusy}
+              onClick={() => {
+                startCreate("folder");
+              }}
             >
               <FolderPlus className="h-4 w-4 shrink-0" />
               New Folder
-              <span className="ml-auto pl-4 text-xs text-muted-foreground">Ctrl+Shift+N</span>
+              <span className="ml-auto pl-4 text-muted-foreground text-xs">
+                Ctrl+Shift+N
+              </span>
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </div>
 
       {/* ── Delete confirmation dialog ─────────────────────────────────── */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -1638,18 +1839,18 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               <div>
                 <p>
                   {filesToDelete.length === 1
-                    ? 'This item will be permanently deleted from the device. This action cannot be undone.'
-                    : 'These items will be permanently deleted from the device. This action cannot be undone.'}
+                    ? "This item will be permanently deleted from the device. This action cannot be undone."
+                    : "These items will be permanently deleted from the device. This action cannot be undone."}
                 </p>
                 {filesToDelete.length > 1 && (
-                  <ul className="mt-2 space-y-0.5 text-xs font-mono">
+                  <ul className="mt-2 space-y-0.5 font-mono text-xs">
                     {filesToDelete.slice(0, 5).map((name) => {
                       const f = fileList.find((x) => x.name === name);
                       return (
-                        <li key={name} className="flex items-center gap-1.5">
-                          {f?.type === 'Directory' ? (
+                        <li className="flex items-center gap-1.5" key={name}>
+                          {f?.type === "Directory" ? (
                             <Folder className="h-3 w-3 shrink-0" />
-                          ) : f?.type === 'Symlink' ? (
+                          ) : f?.type === "Symlink" ? (
                             <Link className="h-3 w-3 shrink-0" />
                           ) : (
                             <File className="h-3 w-3 shrink-0" />
@@ -1671,12 +1872,12 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className={buttonVariants({ variant: 'destructive' })}
-              onClick={handleConfirmDelete}
+              className={buttonVariants({ variant: "destructive" })}
               disabled={isDeleting}
+              onClick={handleConfirmDelete}
             >
               {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
               ) : (
                 <Trash2 className="h-4 w-4 shrink-0" />
               )}

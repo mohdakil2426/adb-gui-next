@@ -1,10 +1,10 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShieldCheck, Package } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { DebloaterTab } from './debloater/DebloaterTab';
-import { InstallationTab } from './debloater/InstallationTab';
-import { useDebloatStore, type AppManagerTab } from '@/lib/debloatStore';
+import { Package, ShieldCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type AppManagerTab, useDebloatStore } from "@/lib/debloatStore";
+import { cn } from "@/lib/utils";
+import { DebloaterTab } from "./debloater/DebloaterTab";
+import { InstallationTab } from "./debloater/InstallationTab";
 
 export function ViewAppManager({ activeView }: { activeView: string }) {
   const activeTab = useDebloatStore((s) => s.activeTab);
@@ -24,7 +24,7 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
           </div>
           <div>
             <h1 className="sr-only">Applications</h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Manage, debloat, and install apps on your device.
             </p>
           </div>
@@ -35,21 +35,32 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
       <Card>
         <CardContent className="p-0">
           <Tabs
-            value={activeTab}
             onValueChange={(v) => {
               setActiveTab(v as AppManagerTab);
             }}
+            value={activeTab}
           >
             <TabsList
-              variant="line"
               className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
+              variant="line"
             >
-              <TabsTrigger value="installation" className="flex items-center gap-1.5">
+              <TabsTrigger
+                className="flex items-center gap-1.5"
+                value="installation"
+              >
                 <Package className="size-3.5" />
                 Installation
               </TabsTrigger>
-              <TabsTrigger value="debloater" className="flex items-center gap-1.5">
-                <ShieldCheck className={cn('size-3.5', isLoadingPackages && 'animate-spin')} />
+              <TabsTrigger
+                className="flex items-center gap-1.5"
+                value="debloater"
+              >
+                <ShieldCheck
+                  className={cn(
+                    "size-3.5",
+                    isLoadingPackages && "animate-spin"
+                  )}
+                />
                 Debloater
               </TabsTrigger>
             </TabsList>

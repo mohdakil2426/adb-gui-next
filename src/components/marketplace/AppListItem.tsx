@@ -1,10 +1,20 @@
-import { useState, memo } from 'react';
-import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn, formatRating } from '@/lib/utils';
-import { ProviderBadge } from './ProviderBadge';
-import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
-import type { backend } from '@/lib/desktop/models';
+import {
+  Check,
+  Download,
+  ExternalLink,
+  Loader2,
+  Package,
+  Star,
+} from "lucide-react";
+import { memo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import type { backend } from "@/lib/desktop/models";
+import {
+  formatDownloadCount,
+  installMarketplacePackage,
+} from "@/lib/marketplace/install";
+import { cn, formatRating } from "@/lib/utils";
+import { ProviderBadge } from "./ProviderBadge";
 
 type MarketplaceApp = backend.MarketplaceApp;
 
@@ -13,8 +23,13 @@ interface AppListItemProps {
   onSelect: () => void;
 }
 
-export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListItemProps) {
-  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
+export const AppListItem = memo(function AppListItem({
+  app,
+  onSelect,
+}: AppListItemProps) {
+  const [installState, setInstallState] = useState<"idle" | "running" | "done">(
+    "idle"
+  );
 
   const handleInstall = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -25,14 +40,14 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
     }
 
     try {
-      setInstallState('running');
+      setInstallState("running");
       await installMarketplacePackage(app.name, app.downloadUrl);
-      setInstallState('done');
+      setInstallState("done");
       setTimeout(() => {
-        setInstallState('idle');
+        setInstallState("idle");
       }, 2000);
     } catch {
-      setInstallState('idle');
+      setInstallState("idle");
     }
   };
 
@@ -41,22 +56,22 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-accent/50">
       <button
-        type="button"
         aria-label={`View details for ${app.name}`}
         className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"
         onClick={onSelect}
+        type="button"
       >
         <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
           {app.iconUrl ? (
             <img
-              src={app.iconUrl}
               alt=""
-              width={40}
-              height={40}
               className="size-10 object-cover"
+              height={40}
               onError={(event) => {
-                (event.target as HTMLImageElement).style.display = 'none';
+                (event.target as HTMLImageElement).style.display = "none";
               }}
+              src={app.iconUrl}
+              width={40}
             />
           ) : (
             <Package className="size-4 text-muted-foreground" />
@@ -65,20 +80,20 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
 
         <div className="min-w-0 gap-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="truncate text-sm font-medium">{app.name}</span>
+            <span className="truncate font-medium text-sm">{app.name}</span>
             <ProviderBadge source={app.source} />
             {app.availableSources.length > 1 && (
               <span className="text-[10px] text-muted-foreground">
                 +{app.availableSources.length - 1} source
-                {app.availableSources.length > 2 ? 's' : ''}
+                {app.availableSources.length > 2 ? "s" : ""}
               </span>
             )}
           </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {app.summary || 'No description available yet.'}
+          <p className="truncate text-muted-foreground text-xs">
+            {app.summary || "No description available yet."}
           </p>
           <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            <span>{app.version || 'Unknown version'}</span>
+            <span>{app.version || "Unknown version"}</span>
             {app.rating != null && app.rating > 0 && (
               <span className="inline-flex items-center gap-1">
                 <Star className="size-3.5 fill-current" />
@@ -87,7 +102,7 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
             )}
             {downloadsLabel ? <span>{downloadsLabel}</span> : null}
             {app.language ? (
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium">
+              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[10px]">
                 {app.language}
               </span>
             ) : null}
@@ -96,31 +111,38 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
       </button>
 
       <Button
-        aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
-        variant={installState === 'done' ? 'default' : 'outline'}
-        size="sm"
-        className={cn('h-8 gap-1.5', installState === 'done' && 'pointer-events-none')}
+        aria-label={
+          app.downloadUrl
+            ? `Install ${app.name}`
+            : `View details for ${app.name}`
+        }
+        className={cn(
+          "h-8 gap-1.5",
+          installState === "done" && "pointer-events-none"
+        )}
+        disabled={installState === "running"}
         onClick={handleInstall}
-        disabled={installState === 'running'}
+        size="sm"
+        variant={installState === "done" ? "default" : "outline"}
       >
-        {installState === 'done' ? (
+        {installState === "done" ? (
           <Check data-icon="inline-start" />
-        ) : installState === 'idle' ? (
+        ) : installState === "idle" ? (
           app.downloadUrl ? (
             <Download data-icon="inline-start" />
           ) : (
             <ExternalLink data-icon="inline-start" />
           )
         ) : (
-          <Loader2 data-icon="inline-start" className="animate-spin" />
+          <Loader2 className="animate-spin" data-icon="inline-start" />
         )}
-        {installState === 'running'
-          ? 'Installing'
-          : installState === 'done'
-            ? 'Installed'
+        {installState === "running"
+          ? "Installing"
+          : installState === "done"
+            ? "Installed"
             : app.downloadUrl
-              ? 'Install'
-              : 'Details'}
+              ? "Install"
+              : "Details"}
       </Button>
     </div>
   );

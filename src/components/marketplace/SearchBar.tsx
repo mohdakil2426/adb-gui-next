@@ -1,27 +1,38 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { Clock3, Loader2, Search, Settings2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Clock3, Loader2, Search, Settings2, X } from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SearchBarProps {
-  value: string;
+  isSearching: boolean;
   onChange: (value: string) => void;
   onClear: () => void;
-  onSettings: () => void;
   onSelectHistory: (value: string) => void;
-  isSearching: boolean;
-  searchHistory: string[];
+  onSettings: () => void;
   placeholder?: string;
+  searchHistory: string[];
+  value: string;
 }
 
 function getShortcutLabel(): string {
-  if (typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)) {
-    return '⌘K';
+  if (
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad/.test(navigator.platform)
+  ) {
+    return "⌘K";
   }
 
-  return 'Ctrl K';
+  return "Ctrl K";
 }
 
 export function SearchBar({
@@ -32,41 +43,43 @@ export function SearchBar({
   onSelectHistory,
   isSearching,
   searchHistory,
-  placeholder = 'Search apps, packages, or GitHub repositories…',
+  placeholder = "Search apps, packages, or GitHub repositories…",
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const shortcutLabel = useMemo(() => getShortcutLabel(), []);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         inputRef.current?.focus();
         inputRef.current?.select();
       }
     };
 
-    window.addEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
     return () => {
-      window.removeEventListener('keydown', handler);
+      window.removeEventListener("keydown", handler);
     };
   }, []);
 
   return (
     <div className="relative flex items-center gap-2">
       <div className="relative min-w-0 flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          ref={inputRef}
-          value={value}
-          placeholder={placeholder}
+          className="h-11 pr-28 pl-9"
           onChange={(event) => {
             onChange(event.target.value);
           }}
-          className="h-11 pl-9 pr-28"
+          placeholder={placeholder}
+          ref={inputRef}
+          value={value}
         />
-        <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-          {isSearching ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
+        <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center gap-1">
+          {isSearching ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          ) : null}
 
           {searchHistory.length > 0 && (
             <Popover>
@@ -74,10 +87,10 @@ export function SearchBar({
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="size-7 text-muted-foreground"
                       aria-label="Recent searches"
+                      className="size-7 text-muted-foreground"
+                      size="icon"
+                      variant="ghost"
                     >
                       <Clock3 className="size-3.5" />
                     </Button>
@@ -87,17 +100,17 @@ export function SearchBar({
               </Tooltip>
               <PopoverContent align="end" className="w-72 p-2">
                 <div className="space-y-1">
-                  <p className="px-2 pt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="px-2 pt-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                     Recent searches
                   </p>
                   {searchHistory.map((entry) => (
                     <Button
-                      key={entry}
-                      variant="ghost"
                       className="h-8 w-full justify-start px-2 text-sm"
+                      key={entry}
                       onClick={() => {
                         onSelectHistory(entry);
                       }}
+                      variant="ghost"
                     >
                       <Clock3 className="mr-2 size-3.5 text-muted-foreground" />
                       <span className="truncate">{entry}</span>
@@ -112,10 +125,10 @@ export function SearchBar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="size-7 text-muted-foreground"
                   onClick={onClear}
+                  size="icon"
+                  variant="ghost"
                 >
                   <X className="size-3.5" />
                 </Button>
@@ -123,7 +136,7 @@ export function SearchBar({
               <TooltipContent side="bottom">Clear search</TooltipContent>
             </Tooltip>
           ) : (
-            <kbd className="hidden rounded border bg-muted px-1.5 py-1 text-[10px] font-medium text-muted-foreground sm:inline-flex">
+            <kbd className="hidden rounded border bg-muted px-1.5 py-1 font-medium text-[10px] text-muted-foreground sm:inline-flex">
               {shortcutLabel}
             </kbd>
           )}
@@ -133,10 +146,10 @@ export function SearchBar({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant="outline"
-            size="sm"
             className="h-11 shrink-0 gap-2 px-3"
             onClick={onSettings}
+            size="sm"
+            variant="outline"
           >
             <Settings2 className="size-4" />
             <span className="hidden sm:inline">Settings</span>

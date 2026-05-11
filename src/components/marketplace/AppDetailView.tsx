@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -8,29 +7,44 @@ import {
   GitBranch,
   Loader2,
   Package,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ProviderBadge } from '@/components/marketplace/ProviderBadge';
-import { MarketplaceGetAppDetail } from '@/lib/desktop/backend';
-import { BrowserOpenURL } from '@/lib/desktop/runtime';
-import { handleError } from '@/lib/errorHandler';
-import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
-import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
-import { formatDisplayDate, formatFileSize } from '@/lib/utils';
-import type { backend } from '@/lib/desktop/models';
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ProviderBadge } from "@/components/marketplace/ProviderBadge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MarketplaceGetAppDetail } from "@/lib/desktop/backend";
+import type { backend } from "@/lib/desktop/models";
+import { BrowserOpenURL } from "@/lib/desktop/runtime";
+import { handleError } from "@/lib/errorHandler";
+import {
+  formatDownloadCount,
+  installMarketplacePackage,
+} from "@/lib/marketplace/install";
+import {
+  getMarketplaceEffectiveGithubToken,
+  useMarketplaceStore,
+} from "@/lib/marketplaceStore";
+import { formatDisplayDate, formatFileSize } from "@/lib/utils";
 
 type AppDetail = backend.MarketplaceAppDetail;
 
-function MetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
-  if (!value) return null;
+function MetadataItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  if (!value) {
+    return null;
+  }
   return (
     <div className="flex flex-col">
-      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
         {label}
       </span>
-      <span className="mt-0.5 text-sm font-medium">{value}</span>
+      <span className="mt-0.5 font-medium text-sm">{value}</span>
     </div>
   );
 }
@@ -42,15 +56,17 @@ export function AppDetailView() {
 
   const [detail, setDetail] = useState<AppDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [primaryInstallState, setPrimaryInstallState] = useState<'idle' | 'running' | 'done'>(
-    'idle',
+  const [primaryInstallState, setPrimaryInstallState] = useState<
+    "idle" | "running" | "done"
+  >("idle");
+  const [activeVersionName, setActiveVersionName] = useState<string | null>(
+    null
   );
-  const [activeVersionName, setActiveVersionName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!selectedApp) {
       setDetail(null);
-      setPrimaryInstallState('idle');
+      setPrimaryInstallState("idle");
       setActiveVersionName(null);
       return;
     }
@@ -58,15 +74,25 @@ export function AppDetailView() {
     let cancelled = false;
     setIsLoadingDetail(true);
 
-    MarketplaceGetAppDetail(selectedApp.packageName, selectedApp.source, githubToken)
+    MarketplaceGetAppDetail(
+      selectedApp.packageName,
+      selectedApp.source,
+      githubToken
+    )
       .then((nextDetail) => {
-        if (!cancelled) setDetail(nextDetail);
+        if (!cancelled) {
+          setDetail(nextDetail);
+        }
       })
       .catch((error: unknown) => {
-        if (!cancelled) handleError('Marketplace Detail', error);
+        if (!cancelled) {
+          handleError("Marketplace Detail", error);
+        }
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingDetail(false);
+        if (!cancelled) {
+          setIsLoadingDetail(false);
+        }
       });
 
     return () => {
@@ -74,53 +100,64 @@ export function AppDetailView() {
     };
   }, [githubToken, selectedApp]);
 
-  const displayName = detail?.name ?? selectedApp?.name ?? 'App';
+  const displayName = detail?.name ?? selectedApp?.name ?? "App";
   const effectiveDownloadUrl = detail?.downloadUrl ?? selectedApp?.downloadUrl;
   const downloadsLabel = useMemo(
-    () => formatDownloadCount(detail?.downloadsCount ?? selectedApp?.downloadsCount ?? null),
-    [detail?.downloadsCount, selectedApp?.downloadsCount],
+    () =>
+      formatDownloadCount(
+        detail?.downloadsCount ?? selectedApp?.downloadsCount ?? null
+      ),
+    [detail?.downloadsCount, selectedApp?.downloadsCount]
   );
 
   const handlePrimaryInstall = async () => {
     if (!effectiveDownloadUrl) {
-      toast.error('No downloadable APK is available for this app');
+      toast.error("No downloadable APK is available for this app");
       return;
     }
     try {
-      setPrimaryInstallState('running');
+      setPrimaryInstallState("running");
       await installMarketplacePackage(displayName, effectiveDownloadUrl);
-      setPrimaryInstallState('done');
+      setPrimaryInstallState("done");
       setTimeout(() => {
-        setPrimaryInstallState('idle');
+        setPrimaryInstallState("idle");
       }, 2000);
     } catch {
-      setPrimaryInstallState('idle');
+      setPrimaryInstallState("idle");
     }
   };
 
-  const handleVersionInstall = async (versionName: string, downloadUrl: string) => {
+  const handleVersionInstall = async (
+    versionName: string,
+    downloadUrl: string
+  ) => {
     try {
       setActiveVersionName(versionName);
-      await installMarketplacePackage(`${displayName} ${versionName}`, downloadUrl);
+      await installMarketplacePackage(
+        `${displayName} ${versionName}`,
+        downloadUrl
+      );
       setActiveVersionName(null);
     } catch {
       setActiveVersionName(null);
     }
   };
 
-  if (!selectedApp) return null;
+  if (!selectedApp) {
+    return null;
+  }
 
   return (
-    <div className="mt-2 flex flex-col gap-8 pb-12 animate-in fade-in duration-300">
+    <div className="fade-in mt-2 flex animate-in flex-col gap-8 pb-12 duration-300">
       {/* Back Header */}
       <div>
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={closeDetail}
           className="-ml-3 text-muted-foreground hover:text-foreground"
+          onClick={closeDetail}
+          size="sm"
+          variant="ghost"
         >
-          <ArrowLeft className="mr-2 size-4" aria-hidden="true" />
+          <ArrowLeft aria-hidden="true" className="mr-2 size-4" />
           Back to results
         </Button>
       </div>
@@ -131,31 +168,36 @@ export function AppDetailView() {
           <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-muted/40 shadow-sm sm:size-24">
             {selectedApp.iconUrl ? (
               <img
-                src={selectedApp.iconUrl}
                 alt=""
-                width={96}
-                height={96}
                 className="size-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                height={96}
                 loading="lazy"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+                src={selectedApp.iconUrl}
+                width={96}
               />
             ) : (
-              <Package className="size-10 text-muted-foreground" aria-hidden="true" />
+              <Package
+                aria-hidden="true"
+                className="size-10 text-muted-foreground"
+              />
             )}
           </div>
           <div className="flex min-w-0 flex-col gap-2 pt-1">
-            <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="truncate font-bold text-2xl tracking-tight sm:text-3xl">
               {displayName}
             </h1>
-            <p className="truncate text-sm text-muted-foreground">
+            <p className="truncate text-muted-foreground text-sm">
               {detail?.packageName ?? selectedApp.packageName}
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <ProviderBadge source={selectedApp.source} />
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                {detail?.repoStars ? <span>★ {detail.repoStars.toLocaleString()}</span> : null}
+              <div className="flex items-center gap-2 font-medium text-muted-foreground text-xs">
+                {detail?.repoStars ? (
+                  <span>★ {detail.repoStars.toLocaleString()}</span>
+                ) : null}
                 {downloadsLabel ? (
                   <>
                     <span>•</span>
@@ -169,25 +211,31 @@ export function AppDetailView() {
 
         <div className="shrink-0 sm:pt-2">
           <Button
-            size="lg"
             className="w-full px-8 font-semibold shadow-sm sm:w-auto"
+            disabled={
+              !effectiveDownloadUrl || primaryInstallState === "running"
+            }
             onClick={handlePrimaryInstall}
-            disabled={!effectiveDownloadUrl || primaryInstallState === 'running'}
+            size="lg"
           >
-            {primaryInstallState === 'done' ? (
-              <Check data-icon="inline-start" aria-hidden="true" />
-            ) : primaryInstallState === 'running' ? (
-              <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+            {primaryInstallState === "done" ? (
+              <Check aria-hidden="true" data-icon="inline-start" />
+            ) : primaryInstallState === "running" ? (
+              <Loader2
+                aria-hidden="true"
+                className="animate-spin"
+                data-icon="inline-start"
+              />
             ) : (
-              <Download data-icon="inline-start" aria-hidden="true" />
+              <Download aria-hidden="true" data-icon="inline-start" />
             )}
-            {primaryInstallState === 'done'
-              ? 'Installed'
-              : primaryInstallState === 'running'
-                ? 'Installing…'
+            {primaryInstallState === "done"
+              ? "Installed"
+              : primaryInstallState === "running"
+                ? "Installing…"
                 : effectiveDownloadUrl
-                  ? `Install ${detail?.size ? `(${formatFileSize(detail.size)})` : ''}`
-                  : 'No APK available'}
+                  ? `Install ${detail?.size ? `(${formatFileSize(detail.size)})` : ""}`
+                  : "No APK available"}
           </Button>
         </div>
       </div>
@@ -205,13 +253,13 @@ export function AppDetailView() {
           <div className="custom-scroll flex snap-x gap-4 overflow-x-auto pb-4">
             {detail.screenshots.map((url, i) => (
               <img
-                key={`${url}-${i}`}
-                src={url}
                 alt=""
-                width={320}
-                height={320}
-                loading="lazy"
                 className="h-64 shrink-0 snap-start rounded-xl border bg-muted/20 object-contain shadow-sm sm:h-80"
+                height={320}
+                key={`${url}-${i}`}
+                loading="lazy"
+                src={url}
+                width={320}
               />
             ))}
           </div>
@@ -223,18 +271,22 @@ export function AppDetailView() {
         {/* Main Content Column */}
         <div className="min-w-0 gap-10">
           <section className="gap-4">
-            <h2 className="text-xl font-semibold tracking-tight">About this app</h2>
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed text-muted-foreground">
+            <h2 className="font-semibold text-xl tracking-tight">
+              About this app
+            </h2>
+            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground leading-relaxed">
               {detail?.description ??
                 selectedApp.summary ??
-                'No description is available for this app yet.'}
+                "No description is available for this app yet."}
             </div>
           </section>
 
           {detail?.changelog ? (
             <section className="gap-4">
-              <h2 className="text-xl font-semibold tracking-tight">What's New</h2>
-              <div className="whitespace-pre-wrap rounded-xl border bg-muted/10 p-5 text-sm leading-relaxed text-muted-foreground">
+              <h2 className="font-semibold text-xl tracking-tight">
+                What's New
+              </h2>
+              <div className="whitespace-pre-wrap rounded-xl border bg-muted/10 p-5 text-muted-foreground text-sm leading-relaxed">
                 {detail.changelog}
               </div>
             </section>
@@ -244,14 +296,19 @@ export function AppDetailView() {
         {/* Sidebar Info Column */}
         <div className="gap-8">
           <section className="gap-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <h3 className="font-semibold text-muted-foreground text-sm uppercase tracking-wider">
               App Information
             </h3>
             <div className="grid grid-cols-2 gap-x-4 gap-y-6">
-              <MetadataItem label="Version" value={detail?.version ?? selectedApp.version} />
+              <MetadataItem
+                label="Version"
+                value={detail?.version ?? selectedApp.version}
+              />
               <MetadataItem
                 label="Updated"
-                value={detail?.updatedAt ? formatDisplayDate(detail.updatedAt) : null}
+                value={
+                  detail?.updatedAt ? formatDisplayDate(detail.updatedAt) : null
+                }
               />
               <MetadataItem label="License" value={detail?.license} />
               <MetadataItem label="Author" value={detail?.author} />
@@ -259,86 +316,101 @@ export function AppDetailView() {
             {(detail?.repoUrl ?? selectedApp.repoUrl) ? (
               <div className="pt-2">
                 <Button
-                  variant="outline"
                   className="w-full"
                   onClick={() => {
                     const url = detail?.repoUrl ?? selectedApp.repoUrl;
-                    if (url) BrowserOpenURL(url);
+                    if (url) {
+                      BrowserOpenURL(url);
+                    }
                   }}
+                  variant="outline"
                 >
-                  {selectedApp.source === 'GitHub' ? (
-                    <GitBranch data-icon="inline-start" aria-hidden="true" />
+                  {selectedApp.source === "GitHub" ? (
+                    <GitBranch aria-hidden="true" data-icon="inline-start" />
                   ) : (
-                    <ExternalLink data-icon="inline-start" aria-hidden="true" />
+                    <ExternalLink aria-hidden="true" data-icon="inline-start" />
                   )}
                   Open Repository
                 </Button>
               </div>
             ) : null}
             <Button
-              variant="ghost"
               className="mt-2 w-full text-muted-foreground hover:text-foreground"
               onClick={async () => {
                 try {
                   await navigator.clipboard.writeText(
-                    detail?.packageName ?? selectedApp.packageName,
+                    detail?.packageName ?? selectedApp.packageName
                   );
-                  toast.success('Package name copied');
+                  toast.success("Package name copied");
                 } catch {
-                  toast.error('Unable to copy package name');
+                  toast.error("Unable to copy package name");
                 }
               }}
+              variant="ghost"
             >
-              <Copy data-icon="inline-start" aria-hidden="true" /> Copy Package ID
+              <Copy aria-hidden="true" data-icon="inline-start" /> Copy Package
+              ID
             </Button>
           </section>
 
           {detail?.versions && detail.versions.length > 0 ? (
             <section className="gap-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              <h3 className="font-semibold text-muted-foreground text-sm uppercase tracking-wider">
                 Recent Versions
               </h3>
               <div className="gap-3">
                 {detail.versions.slice(0, 5).map((version) => {
-                  const isInstallingVersion = activeVersionName === version.versionName;
+                  const isInstallingVersion =
+                    activeVersionName === version.versionName;
                   return (
                     <div
-                      key={version.versionName}
                       className="flex flex-col gap-2 rounded-xl border bg-muted/10 p-3"
+                      key={version.versionName}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="truncate text-sm font-medium">{version.versionName}</span>
+                        <span className="truncate font-medium text-sm">
+                          {version.versionName}
+                        </span>
                         {version.publishedAt ? (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {formatDisplayDate(version.publishedAt)}
                           </span>
                         ) : null}
                       </div>
                       {version.downloadUrl ? (
                         <div className="mt-1 flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            {version.size != null ? formatFileSize(version.size) : 'APK'}
+                          <span className="text-muted-foreground text-xs">
+                            {version.size == null
+                              ? "APK"
+                              : formatFileSize(version.size)}
                           </span>
                           <Button
-                            variant="secondary"
-                            size="sm"
                             className="h-7 px-3 text-xs"
+                            disabled={
+                              isInstallingVersion ||
+                              primaryInstallState === "running"
+                            }
                             onClick={() => {
                               const url = version.downloadUrl;
-                              if (url)
+                              if (url) {
                                 // eslint-disable-next-line @typescript-eslint/no-floating-promises
                                 handleVersionInstall(version.versionName, url);
+                              }
                             }}
-                            disabled={isInstallingVersion || primaryInstallState === 'running'}
+                            size="sm"
+                            variant="secondary"
                           >
                             {isInstallingVersion ? (
                               <Loader2
-                                data-icon="inline-start"
-                                className="animate-spin"
                                 aria-hidden="true"
+                                className="animate-spin"
+                                data-icon="inline-start"
                               />
                             ) : (
-                              <Download data-icon="inline-start" aria-hidden="true" />
+                              <Download
+                                aria-hidden="true"
+                                data-icon="inline-start"
+                              />
                             )}
                             Install
                           </Button>

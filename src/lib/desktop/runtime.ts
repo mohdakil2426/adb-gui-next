@@ -1,9 +1,9 @@
-import * as eventApi from '@tauri-apps/api/event';
-import type { Event } from '@tauri-apps/api/event';
-import { getCurrentWebview } from '@tauri-apps/api/webview';
-import type { DragDropEvent } from '@tauri-apps/api/webview';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { toast } from 'sonner';
+import type { Event } from "@tauri-apps/api/event";
+import * as eventApi from "@tauri-apps/api/event";
+import type { DragDropEvent } from "@tauri-apps/api/webview";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { toast } from "sonner";
 
 // Generic event callback — T is the event payload type.
 type EventCallback<T = unknown> = (data: T) => void;
@@ -32,7 +32,7 @@ function removeListener(eventName: string, entry: ListenerEntry): void {
 
 function registerEventListener<T = unknown>(
   eventName: string,
-  callback: EventCallback<T>,
+  callback: EventCallback<T>
 ): () => void {
   const current = eventListeners.get(eventName) ?? new Set<ListenerEntry>();
   eventListeners.set(eventName, current);
@@ -86,7 +86,7 @@ function registerEventListener<T = unknown>(
 function toSafeExternalUrl(url: string | URL): string | null {
   try {
     const parsed = url instanceof URL ? url : new URL(url.trim());
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
       return null;
     }
     return parsed.toString();
@@ -98,24 +98,30 @@ function toSafeExternalUrl(url: string | URL): string | null {
 export function BrowserOpenURL(url: string | URL): void {
   const safeUrl = toSafeExternalUrl(url);
   if (!safeUrl) {
-    toast.error('Unable to open link', {
-      description: 'Only valid HTTP/HTTPS URLs are allowed.',
+    toast.error("Unable to open link", {
+      description: "Only valid HTTP/HTTPS URLs are allowed.",
     });
     return;
   }
 
   void openUrl(safeUrl).catch((error: unknown) => {
-    toast.error('Unable to open link', {
+    toast.error("Unable to open link", {
       description: String(error),
     });
   });
 }
 
-export function EventsOn<T = unknown>(eventName: string, callback: EventCallback<T>): () => void {
+export function EventsOn<T = unknown>(
+  eventName: string,
+  callback: EventCallback<T>
+): () => void {
   return registerEventListener<T>(eventName, callback);
 }
 
-export function EventsOff(eventName: string, ...additionalEventNames: string[]): void {
+export function EventsOff(
+  eventName: string,
+  ...additionalEventNames: string[]
+): void {
   [eventName, ...additionalEventNames].forEach((name) => {
     const current = eventListeners.get(name);
     if (!current) {
@@ -135,16 +141,16 @@ export function EventsOffAll(): void {
 }
 
 export interface DragDropHandler {
+  onCancel?: () => void;
   onDrop: (paths: string[], x: number, y: number) => void;
   /** Called continuously while files are dragged over the window. `paths` may
    *  be available on some platforms / Tauri versions — always treat as optional. */
   onHover?: (x: number, y: number, paths?: string[]) => void;
-  onCancel?: () => void;
 }
 
 export function OnFileDrop(
   callbackOrHandler: FileDropCallback | DragDropHandler,
-  _useDropTarget?: boolean,
+  _useDropTarget?: boolean
 ): void {
   if (fileDropCleanup) {
     fileDropCleanup();
@@ -155,7 +161,7 @@ export function OnFileDrop(
 
   // Normalize to DragDropHandler
   const handler: DragDropHandler =
-    typeof callbackOrHandler === 'function'
+    typeof callbackOrHandler === "function"
       ? {
           onDrop: (paths, x, y) => {
             callbackOrHandler(x, y, paths);
@@ -166,17 +172,25 @@ export function OnFileDrop(
   void getCurrentWebview()
     .onDragDropEvent((event: Event<DragDropEvent>) => {
       const payload = event.payload;
-      if (!payload.type) return;
+      if (!payload.type) {
+        return;
+      }
 
-      if (payload.type === 'enter' || payload.type === 'over') {
+      if (payload.type === "enter" || payload.type === "over") {
         const pos = payload.position ?? { x: 0, y: 0 };
         const paths =
-          'paths' in payload && Array.isArray(payload.paths) ? payload.paths : undefined;
+          "paths" in payload && Array.isArray(payload.paths)
+            ? payload.paths
+            : undefined;
         handler.onHover?.(pos.x, pos.y, paths);
-      } else if (payload.type === 'drop' && 'paths' in payload && Array.isArray(payload.paths)) {
+      } else if (
+        payload.type === "drop" &&
+        "paths" in payload &&
+        Array.isArray(payload.paths)
+      ) {
         const pos = payload.position ?? { x: 0, y: 0 };
         handler.onDrop(payload.paths, pos.x, pos.y);
-      } else if (payload.type === 'leave') {
+      } else if (payload.type === "leave") {
         handler.onCancel?.();
       }
     })

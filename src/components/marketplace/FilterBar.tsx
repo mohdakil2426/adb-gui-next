@@ -1,7 +1,11 @@
-import { ArrowDownWideNarrow, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import {
+  ArrowDownWideNarrow,
+  LayoutGrid,
+  List,
+  SlidersHorizontal,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,25 +14,29 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { getMarketplaceActiveFilterSummary, useMarketplaceStore } from '@/lib/marketplaceStore';
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { backend } from "@/lib/desktop/models";
+import {
+  getMarketplaceActiveFilterSummary,
+  useMarketplaceStore,
+} from "@/lib/marketplaceStore";
+import { cn } from "@/lib/utils";
 
 type ProviderSource = backend.ProviderSource;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
 
 const PROVIDERS: { id: ProviderSource; label: string }[] = [
-  { id: 'F-Droid', label: 'F-Droid' },
-  { id: 'GitHub', label: 'GitHub' },
-  { id: 'Aptoide', label: 'Aptoide' },
+  { id: "F-Droid", label: "F-Droid" },
+  { id: "GitHub", label: "GitHub" },
+  { id: "Aptoide", label: "Aptoide" },
 ];
 
 const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
-  { value: 'relevance', label: 'Best match' },
-  { value: 'downloads', label: 'Most popular' },
-  { value: 'recentlyUpdated', label: 'Recently updated' },
-  { value: 'name', label: 'Alphabetical' },
+  { value: "relevance", label: "Best match" },
+  { value: "downloads", label: "Most popular" },
+  { value: "recentlyUpdated", label: "Recently updated" },
+  { value: "name", label: "Alphabetical" },
 ];
 
 interface FilterBarProps {
@@ -43,7 +51,9 @@ export function FilterBar({ resultCount }: FilterBarProps) {
   const setSortBy = useMarketplaceStore((state) => state.setSortBy);
   const viewMode = useMarketplaceStore((state) => state.viewMode);
   const setViewMode = useMarketplaceStore((state) => state.setViewMode);
-  const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const resultsPerProvider = useMarketplaceStore(
+    (state) => state.resultsPerProvider
+  );
 
   const summaries = getMarketplaceActiveFilterSummary({
     activeProviders,
@@ -55,15 +65,15 @@ export function FilterBar({ resultCount }: FilterBarProps) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
           Sources
         </h4>
         <div className="flex flex-col gap-1">
           <Button
-            variant={allActive ? 'default' : 'ghost'}
-            size="sm"
-            className="w-full justify-start text-xs font-medium"
+            className="w-full justify-start font-medium text-xs"
             onClick={setAllProviders}
+            size="sm"
+            variant={allActive ? "default" : "ghost"}
           >
             All sources
           </Button>
@@ -71,16 +81,16 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             const isActive = activeProviders.includes(provider.id);
             return (
               <Button
-                key={provider.id}
-                variant={isActive ? 'secondary' : 'ghost'}
-                size="sm"
                 className={cn(
-                  'w-full justify-start text-xs font-medium',
-                  !isActive && 'text-muted-foreground',
+                  "w-full justify-start font-medium text-xs",
+                  !isActive && "text-muted-foreground"
                 )}
+                key={provider.id}
                 onClick={() => {
                   toggleProvider(provider.id);
                 }}
+                size="sm"
+                variant={isActive ? "secondary" : "ghost"}
               >
                 {provider.label}
               </Button>
@@ -90,24 +100,34 @@ export function FilterBar({ resultCount }: FilterBarProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
           View Mode
         </h4>
         <ToggleGroup
+          className="grid w-full grid-cols-2"
+          onValueChange={(value) => {
+            if (value === "grid" || value === "list") {
+              setViewMode(value);
+            }
+          }}
+          size="sm"
           type="single"
           value={viewMode}
-          onValueChange={(value) => {
-            if (value === 'grid' || value === 'list') setViewMode(value);
-          }}
           variant="outline"
-          size="sm"
-          className="grid w-full grid-cols-2"
         >
-          <ToggleGroupItem value="grid" aria-label="Grid view" className="gap-2">
+          <ToggleGroupItem
+            aria-label="Grid view"
+            className="gap-2"
+            value="grid"
+          >
             <LayoutGrid aria-hidden="true" />
             Grid
           </ToggleGroupItem>
-          <ToggleGroupItem value="list" aria-label="List view" className="gap-2">
+          <ToggleGroupItem
+            aria-label="List view"
+            className="gap-2"
+            value="list"
+          >
             <List aria-hidden="true" />
             List
           </ToggleGroupItem>
@@ -115,22 +135,22 @@ export function FilterBar({ resultCount }: FilterBarProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
           Sort By
         </h4>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
+              className="w-full justify-start gap-2 font-normal text-muted-foreground text-xs"
               size="sm"
-              className="w-full justify-start gap-2 text-xs text-muted-foreground font-normal"
+              variant="outline"
             >
               <ArrowDownWideNarrow
-                data-icon="inline-start"
-                className="text-foreground"
                 aria-hidden="true"
+                className="text-foreground"
+                data-icon="inline-start"
               />
-              <span className="text-foreground font-medium">
+              <span className="font-medium text-foreground">
                 {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
               </span>
             </Button>
@@ -139,10 +159,10 @@ export function FilterBar({ resultCount }: FilterBarProps) {
             <DropdownMenuLabel>Sort results</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
-              value={sortBy}
               onValueChange={(value) => {
                 setSortBy(value as MarketplaceSortBy);
               }}
+              value={sortBy}
             >
               {SORT_OPTIONS.map((option) => (
                 <DropdownMenuRadioItem key={option.value} value={option.value}>
@@ -155,28 +175,30 @@ export function FilterBar({ resultCount }: FilterBarProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
           Active Filters
         </h4>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex w-full items-center gap-2 text-xs text-muted-foreground mb-1">
-            <SlidersHorizontal className="size-3.5" aria-hidden="true" />
+          <div className="mb-1 flex w-full items-center gap-2 text-muted-foreground text-xs">
+            <SlidersHorizontal aria-hidden="true" className="size-3.5" />
             <span>
-              {resultCount} result{resultCount !== 1 ? 's' : ''}
+              {resultCount} result{resultCount === 1 ? "" : "s"}
             </span>
           </div>
           {summaries.length > 0 ? (
             summaries.map((summary) => (
               <Badge
+                className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground"
                 key={summary}
                 variant="outline"
-                className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground"
               >
                 {summary}
               </Badge>
             ))
           ) : (
-            <span className="text-xs text-muted-foreground">No active filters</span>
+            <span className="text-muted-foreground text-xs">
+              No active filters
+            </span>
           )}
         </div>
       </div>

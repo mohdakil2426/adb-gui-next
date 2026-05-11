@@ -1,100 +1,105 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { ConnectedDevicesCard } from '../components/ConnectedDevicesCard';
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { ConnectedDevicesCard } from "../components/ConnectedDevicesCard";
 
 // Mock nicknameStore — return undefined (no nicknames set)
-vi.mock('../lib/nicknameStore', () => ({
+vi.mock("../lib/nicknameStore", () => ({
   getNickname: vi.fn(() => undefined),
 }));
 
 const mockOnRefresh = vi.fn();
 const mockOnEdit = vi.fn();
 
-describe('ConnectedDevicesCard', () => {
+describe("ConnectedDevicesCard", () => {
   it('renders the "Connected Devices" heading', () => {
     render(
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
-      />,
+        onRefresh={mockOnRefresh}
+      />
     );
-    expect(screen.getByText('Connected Devices')).toBeInTheDocument();
+    expect(screen.getByText("Connected Devices")).toBeInTheDocument();
   });
 
-  it('shows the default empty state message when no devices', () => {
+  it("shows the default empty state message when no devices", () => {
     render(
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
-      />,
+        onRefresh={mockOnRefresh}
+      />
     );
-    expect(screen.getByText('No devices detected')).toBeInTheDocument();
+    expect(screen.getByText("No devices detected")).toBeInTheDocument();
     expect(
-      screen.getByText('No device detected. Ensure USB Debugging is enabled.'),
+      screen.getByText("No device detected. Ensure USB Debugging is enabled.")
     ).toBeInTheDocument();
   });
 
-  it('shows a custom empty text message', () => {
+  it("shows a custom empty text message", () => {
     render(
       <ConnectedDevicesCard
         devices={[]}
-        isLoading={false}
-        onRefresh={mockOnRefresh}
-        onEdit={mockOnEdit}
         emptyText="Custom empty state"
-      />,
+        isLoading={false}
+        onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
+      />
     );
-    expect(screen.getByText('Custom empty state')).toBeInTheDocument();
+    expect(screen.getByText("Custom empty state")).toBeInTheDocument();
   });
 
-  it('shows scanning message when loading with no devices', () => {
-    render(
-      <ConnectedDevicesCard devices={[]} isLoading onRefresh={mockOnRefresh} onEdit={mockOnEdit} />,
-    );
-    expect(screen.getByText('Scanning for devices...')).toBeInTheDocument();
-  });
-
-  it('renders a device with its serial number', () => {
+  it("shows scanning message when loading with no devices", () => {
     render(
       <ConnectedDevicesCard
-        devices={[{ serial: 'abc123', status: 'device' }]}
-        isLoading={false}
-        onRefresh={mockOnRefresh}
+        devices={[]}
+        isLoading
         onEdit={mockOnEdit}
-      />,
+        onRefresh={mockOnRefresh}
+      />
     );
-    expect(screen.getByText('abc123')).toBeInTheDocument();
+    expect(screen.getByText("Scanning for devices...")).toBeInTheDocument();
+  });
+
+  it("renders a device with its serial number", () => {
+    render(
+      <ConnectedDevicesCard
+        devices={[{ serial: "abc123", status: "device" }]}
+        isLoading={false}
+        onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
+      />
+    );
+    expect(screen.getByText("abc123")).toBeInTheDocument();
   });
 
   it('shows "adb" status text for device in adb mode', () => {
     render(
       <ConnectedDevicesCard
-        devices={[{ serial: 'abc123', status: 'device' }]}
+        devices={[{ serial: "abc123", status: "device" }]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
-      />,
+        onRefresh={mockOnRefresh}
+      />
     );
-    expect(screen.getByText('adb')).toBeInTheDocument();
+    expect(screen.getByText("adb")).toBeInTheDocument();
   });
 
-  it('calls onRefresh when refresh button is clicked', async () => {
+  it("calls onRefresh when refresh button is clicked", async () => {
     const user = userEvent.setup();
     render(
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
-      />,
+        onRefresh={mockOnRefresh}
+      />
     );
     // The refresh button is the only button in empty state
-    const button = screen.getByRole('button');
+    const button = screen.getByRole("button");
     await user.click(button);
     expect(mockOnRefresh).toHaveBeenCalledOnce();
   });

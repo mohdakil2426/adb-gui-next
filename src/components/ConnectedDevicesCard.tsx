@@ -1,10 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Smartphone, RefreshCw, Loader2, Pencil } from 'lucide-react';
-import { getNickname } from '@/lib/nicknameStore';
-import { getStatusConfig } from '@/lib/deviceStatus';
-import { EmptyState } from '@/components/EmptyState';
+import { Loader2, Pencil, RefreshCw, Smartphone } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getStatusConfig } from "@/lib/deviceStatus";
+import { getNickname } from "@/lib/nicknameStore";
 
 export interface DeviceData {
   serial: string;
@@ -12,13 +12,13 @@ export interface DeviceData {
 }
 
 interface ConnectedDevicesCardProps {
-  devices: DeviceData[];
-  isLoading: boolean;
-  onRefresh: () => void;
-  onEdit: (serial: string) => void;
-  emptyText?: string;
   className?: string;
+  devices: DeviceData[];
+  emptyText?: string;
+  isLoading: boolean;
   isRefreshDisabled?: boolean;
+  onEdit: (serial: string) => void;
+  onRefresh: () => void;
 }
 
 export function ConnectedDevicesCard({
@@ -26,23 +26,23 @@ export function ConnectedDevicesCard({
   isLoading,
   onRefresh,
   onEdit,
-  emptyText = 'No device detected. Ensure USB Debugging is enabled.',
+  emptyText = "No device detected. Ensure USB Debugging is enabled.",
   className,
   isRefreshDisabled,
 }: ConnectedDevicesCardProps) {
   return (
     <Card className={className}>
-      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <CardTitle className="flex items-center gap-2">
           <Smartphone className="h-5 w-5" />
           Connected Devices
         </CardTitle>
         <Button
-          variant="ghost"
-          size="icon"
-          onClick={onRefresh}
-          disabled={isLoading || isRefreshDisabled}
           aria-label="Refresh device list"
+          disabled={isLoading || isRefreshDisabled}
+          onClick={onRefresh}
+          size="icon"
+          variant="ghost"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -54,45 +54,54 @@ export function ConnectedDevicesCard({
       <CardContent>
         {devices.length === 0 ? (
           <EmptyState
-            icon={Smartphone}
-            title={isLoading ? 'Scanning for devices...' : 'No devices detected'}
-            description={isLoading ? 'Looking for connected Android devices.' : emptyText}
             className="py-6"
+            description={
+              isLoading ? "Looking for connected Android devices." : emptyText
+            }
+            icon={Smartphone}
+            title={
+              isLoading ? "Scanning for devices..." : "No devices detected"
+            }
           />
         ) : (
           <div className="flex flex-col gap-2">
             {devices.map((device) => {
               const displayName = getNickname(device.serial) ?? device.serial;
-              const description = displayName !== device.serial ? device.serial : undefined;
-              const { label, variant, badgeClass } = getStatusConfig(device.status);
+              const description =
+                displayName === device.serial ? undefined : device.serial;
+              const { label, variant, badgeClass } = getStatusConfig(
+                device.status
+              );
 
               return (
                 <div
+                  className="group flex items-center justify-between rounded-lg bg-muted p-3"
                   key={device.serial}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg group"
                 >
-                  <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex min-w-0 flex-1 flex-col">
                     <div className="flex items-center gap-1">
-                      <span className="font-semibold text-lg truncate">{displayName}</span>
+                      <span className="truncate font-semibold text-lg">
+                        {displayName}
+                      </span>
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="size-6 opacity-0 transition-opacity group-hover:opacity-100"
                         onClick={() => {
                           onEdit(device.serial);
                         }}
+                        size="icon"
+                        variant="ghost"
                       >
                         <Pencil className="size-3.5" />
                       </Button>
                     </div>
                     {description ? (
-                      <span className="font-mono text-xs text-muted-foreground truncate">
+                      <span className="truncate font-mono text-muted-foreground text-xs">
                         {description}
                       </span>
                     ) : null}
                   </div>
 
-                  <Badge variant={variant} className={badgeClass}>
+                  <Badge className={badgeClass} variant={variant}>
                     {label}
                   </Badge>
                 </div>

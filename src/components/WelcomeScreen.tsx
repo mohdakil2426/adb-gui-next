@@ -1,4 +1,4 @@
-import { Progress } from '@/components/ui/progress';
+import { Progress } from "@/components/ui/progress";
 
 interface WelcomeScreenProps {
   progress: number;
@@ -11,16 +11,22 @@ export function WelcomeScreen({ progress }: WelcomeScreenProps) {
     <div className="flex h-svh w-full flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-6">
         <img
-          src="/logo.png"
           alt="ADB GUI Next logo"
-          width={80}
-          height={80}
           className="size-20 object-contain"
+          height={80}
+          src="/logo.png"
+          width={80}
         />
 
-        <div className="w-56 flex flex-col gap-2">
-          <h1 className="text-xl font-bold text-foreground text-center">ADB GUI Next</h1>
-          <Progress value={clampedProgress} className="h-2" aria-label="Loading ADB GUI Next" />
+        <div className="flex w-56 flex-col gap-2">
+          <h1 className="text-center font-bold text-foreground text-xl">
+            ADB GUI Next
+          </h1>
+          <Progress
+            aria-label="Loading ADB GUI Next"
+            className="h-2"
+            value={clampedProgress}
+          />
         </div>
       </div>
     </div>

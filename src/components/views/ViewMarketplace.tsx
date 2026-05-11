@@ -1,16 +1,22 @@
-import { Store, UserRound } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { SearchBar } from '@/components/marketplace/SearchBar';
-import { FilterBar } from '@/components/marketplace/FilterBar';
-import { AppCard } from '@/components/marketplace/AppCard';
-import { AppListItem } from '@/components/marketplace/AppListItem';
-import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
-import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
-import { AppDetailView } from '@/components/marketplace/AppDetailView';
-import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
-import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
+import { Store, UserRound } from "lucide-react";
+import { AppCard } from "@/components/marketplace/AppCard";
+import { AppDetailView } from "@/components/marketplace/AppDetailView";
+import { AppListItem } from "@/components/marketplace/AppListItem";
+import { AttributionFooter } from "@/components/marketplace/AttributionFooter";
+import { FilterBar } from "@/components/marketplace/FilterBar";
+import { MarketplaceEmptyState } from "@/components/marketplace/MarketplaceEmptyState";
+import { MarketplaceSettings } from "@/components/marketplace/MarketplaceSettings";
+import { SearchBar } from "@/components/marketplace/SearchBar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useMarketplaceSearch } from "@/lib/marketplace/useMarketplaceSearch";
+import { useMarketplaceStore } from "@/lib/marketplaceStore";
 
 export function ViewMarketplace() {
   const openDetail = useMarketplaceStore((state) => state.openDetail);
@@ -33,14 +39,14 @@ export function ViewMarketplace() {
   const hasResults = results.length > 0;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 relative">
+    <div className="relative flex flex-col gap-6 lg:flex-row">
       <h1 className="sr-only">Marketplace</h1>
       {/* Left Sidebar */}
-      <div className="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64 lg:sticky lg:top-2 h-fit z-10">
+      <div className="z-10 flex h-fit w-full shrink-0 flex-col gap-4 lg:sticky lg:top-2 lg:w-56 xl:w-64">
         <Card>
           <CardHeader className="gap-2 pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Store className="size-5" aria-hidden="true" />
+              <Store aria-hidden="true" className="size-5" />
               Marketplace
             </CardTitle>
             <CardDescription className="text-xs">
@@ -48,22 +54,22 @@ export function ViewMarketplace() {
             </CardDescription>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge
-                variant="outline"
                 className="rounded-full px-2 py-0 text-[10px] text-muted-foreground"
+                variant="outline"
               >
                 4 providers
               </Badge>
               <Badge
-                variant="outline"
                 className="rounded-full px-2 py-0 text-[10px] text-muted-foreground"
+                variant="outline"
               >
                 {githubSession.user ? (
                   <span className="flex items-center gap-1">
-                    <UserRound className="size-3" aria-hidden="true" />
+                    <UserRound aria-hidden="true" className="size-3" />
                     {githubSession.user.login}
                   </span>
                 ) : (
-                  'Anonymous'
+                  "Anonymous"
                 )}
               </Badge>
             </div>
@@ -79,33 +85,35 @@ export function ViewMarketplace() {
 
       {/* Right Content */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md pb-4 pt-1 -mx-2 px-2">
+        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pt-1 pb-4 backdrop-blur-md">
           <SearchBar
-            value={localQuery}
+            isSearching={isSearching}
             onChange={handleInputChange}
             onClear={handleClear}
-            onSettings={openSettings}
             onSelectHistory={handleQuickSearch}
-            isSearching={isSearching}
+            onSettings={openSettings}
             searchHistory={searchHistory}
+            value={localQuery}
           />
         </div>
 
         {selectedApp && isDetailOpen ? (
           <AppDetailView />
         ) : hasResults ? (
-          <div className="flex flex-col gap-4 pb-12 mt-2">
+          <div className="mt-2 flex flex-col gap-4 pb-12">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium">Search Results</h3>
-              <span className="text-xs text-muted-foreground">Showing {results.length} apps</span>
+              <h3 className="font-medium text-sm">Search Results</h3>
+              <span className="text-muted-foreground text-xs">
+                Showing {results.length} apps
+              </span>
             </div>
 
-            {viewMode === 'grid' ? (
+            {viewMode === "grid" ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
                 {results.map((app) => (
                   <AppCard
-                    key={`${app.source}-${app.packageName}`}
                     app={app}
+                    key={`${app.source}-${app.packageName}`}
                     onSelect={() => {
                       openDetail(app);
                     }}
@@ -116,8 +124,8 @@ export function ViewMarketplace() {
               <div className="flex flex-col gap-2">
                 {results.map((app) => (
                   <AppListItem
-                    key={`${app.source}-${app.packageName}`}
                     app={app}
+                    key={`${app.source}-${app.packageName}`}
                     onSelect={() => {
                       openDetail(app);
                     }}
@@ -131,13 +139,13 @@ export function ViewMarketplace() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 pb-12 mt-2">
+          <div className="mt-2 flex-1 pb-12">
             <MarketplaceEmptyState
-              isSearching={isSearching}
               hasQuery={hasQuery}
+              isSearching={isSearching}
               onQuickSearch={handleQuickSearch}
             />
-            {!hasQuery && !isSearching && (
+            {!(hasQuery || isSearching) && (
               <div className="mt-12">
                 <AttributionFooter />
               </div>

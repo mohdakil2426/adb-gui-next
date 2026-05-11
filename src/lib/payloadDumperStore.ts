@@ -1,101 +1,114 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { backend } from '@/lib/desktop/models';
-import { CreateCancellationToken, CancelExtraction } from '@/lib/desktop/backend';
-import { useLogStore } from './logStore';
-import { toast } from 'sonner';
+import { toast } from "sonner";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  CancelExtraction,
+  CreateCancellationToken,
+} from "@/lib/desktop/backend";
+import type { backend } from "@/lib/desktop/models";
+import { useLogStore } from "./logStore";
 
 interface PartitionInfo {
   name: string;
-  size: number;
   selected: boolean;
+  size: number;
 }
 
 // Real-time progress info per partition
 interface PartitionProgress {
-  current: number;
-  total: number;
-  percentage: number;
   bytesWritten: number;
-  totalBytes: number;
-  throughputMbps: number;
+  current: number;
   etaSeconds: number;
+  percentage: number;
+  throughputMbps: number;
+  total: number;
+  totalBytes: number;
 }
 
 export type ExtractionStatus =
-  | 'idle'
-  | 'loading-partitions'
-  | 'ready'
-  | 'extracting'
-  | 'cancelling'
-  | 'success'
-  | 'error';
+  | "idle"
+  | "loading-partitions"
+  | "ready"
+  | "extracting"
+  | "cancelling"
+  | "success"
+  | "error";
 
 export interface ExtractionRecord {
+  duration: number;
+  error?: string;
   id: string;
-  timestamp: number;
-  payloadPath: string;
   outputDir: string;
   partitions: string[];
-  duration: number;
+  payloadPath: string;
+  status: "success" | "error" | "cancelled";
+  timestamp: number;
   totalBytes: number;
-  status: 'success' | 'error' | 'cancelled';
-  error?: string;
 }
 
 interface PayloadDumperState {
-  // Input/Output paths
-  payloadPath: string;
-  outputPath: string;
+  activeMode: "local" | "remote";
+  addCompletedPartitions: (partitions: string[]) => void;
+  addToHistory: (record: ExtractionRecord) => void;
+  cancelExtraction: () => void;
 
-  // Remote mode
-  remoteUrl: string;
-  activeMode: 'local' | 'remote';
-
-  // Partitions
-  partitions: PartitionInfo[];
-
-  // Status
-  status: ExtractionStatus;
-  extractedFiles: string[];
+  // Cancellation
+  cancelTokenId: string | null;
+  clearExtractionState: () => void;
+  clearHistory: () => void;
+  clearPartitionProgress: () => void;
+  completedPartitions: Set<string>;
+  createAndSetCancellationToken: () => Promise<void>;
   errorMessage: string;
-  outputDir: string;
+  extractedFiles: string[];
 
   // Extraction tracking (persisted)
   extractingPartitions: Set<string>;
-  completedPartitions: Set<string>;
-
-  // Real-time progress per partition
-  partitionProgress: Map<string, PartitionProgress>;
 
   // Extraction stats (after completion)
   extractionStats: backend.ExtractionStats | null;
 
+  // Extraction history (persisted)
+  history: ExtractionRecord[];
+  markPartitionCompleted: (name: string) => void;
+  outputDir: string;
+  outputPath: string;
+
+  // Real-time progress per partition
+  partitionProgress: Map<string, PartitionProgress>;
+
+  // Partitions
+  partitions: PartitionInfo[];
+  // Input/Output paths
+  payloadPath: string;
+
   // Remote payload metadata (HTTP + ZIP + OTA manifest)
   remoteMetadata: backend.RemotePayloadMetadata | null;
 
-  // Cancellation
-  cancelTokenId: string | null;
-
-  // Extraction history (persisted)
-  history: ExtractionRecord[];
+  // Remote mode
+  remoteUrl: string;
+  reset: () => void;
+  setActiveMode: (mode: "local" | "remote") => void;
+  setCancelTokenId: (id: string | null) => void;
+  setCompletedPartitions: (partitions: Set<string>) => void;
+  setErrorMessage: (message: string) => void;
+  setExtractedFiles: (files: string[]) => void;
+  setExtractingPartitions: (partitions: Set<string>) => void;
+  setExtractionStats: (stats: backend.ExtractionStats | null) => void;
+  setOutputDir: (dir: string) => void;
+  setOutputPath: (path: string) => void;
+  setPartitions: (partitions: PartitionInfo[]) => void;
 
   // Actions
   setPayloadPath: (path: string) => void;
-  setOutputPath: (path: string) => void;
+  setRemoteMetadata: (metadata: backend.RemotePayloadMetadata | null) => void;
   setRemoteUrl: (url: string) => void;
-  setActiveMode: (mode: 'local' | 'remote') => void;
-  setPartitions: (partitions: PartitionInfo[]) => void;
-  togglePartition: (index: number) => void;
-  toggleAll: (selected: boolean) => void;
   setStatus: (status: ExtractionStatus) => void;
-  setExtractedFiles: (files: string[]) => void;
-  setErrorMessage: (message: string) => void;
-  setOutputDir: (dir: string) => void;
-  setExtractingPartitions: (partitions: Set<string>) => void;
-  setCompletedPartitions: (partitions: Set<string>) => void;
-  addCompletedPartitions: (partitions: string[]) => void;
-  markPartitionCompleted: (name: string) => void;
+
+  // Status
+  status: ExtractionStatus;
+  toggleAll: (selected: boolean) => void;
+  togglePartition: (index: number) => void;
   updatePartitionProgress: (
     name: string,
     current: number,
@@ -104,30 +117,20 @@ interface PayloadDumperState {
     bytesWritten?: number,
     totalBytes?: number,
     throughputMbps?: number,
-    etaSeconds?: number,
+    etaSeconds?: number
   ) => void;
-  clearPartitionProgress: () => void;
-  setExtractionStats: (stats: backend.ExtractionStats | null) => void;
-  setRemoteMetadata: (metadata: backend.RemotePayloadMetadata | null) => void;
-  setCancelTokenId: (id: string | null) => void;
-  createAndSetCancellationToken: () => Promise<void>;
-  cancelExtraction: () => void;
-  addToHistory: (record: ExtractionRecord) => void;
-  clearHistory: () => void;
-  reset: () => void;
-  clearExtractionState: () => void;
 }
 
 const initialState = {
-  payloadPath: '',
-  outputPath: '',
-  remoteUrl: '',
-  activeMode: 'local' as 'local' | 'remote',
+  payloadPath: "",
+  outputPath: "",
+  remoteUrl: "",
+  activeMode: "local" as "local" | "remote",
   partitions: [] as PartitionInfo[],
-  status: 'idle' as ExtractionStatus,
+  status: "idle" as ExtractionStatus,
   extractedFiles: [] as string[],
-  errorMessage: '',
-  outputDir: '',
+  errorMessage: "",
+  outputDir: "",
   extractingPartitions: new Set<string>(),
   completedPartitions: new Set<string>(),
   partitionProgress: new Map<string, PartitionProgress>(),
@@ -147,10 +150,10 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
           payloadPath: path,
           // Only reset partitions and extraction state when new file is selected
           partitions: [],
-          status: 'idle',
+          status: "idle",
           extractedFiles: [],
-          errorMessage: '',
-          outputDir: '',
+          errorMessage: "",
+          outputDir: "",
           extractingPartitions: new Set<string>(),
           completedPartitions: new Set<string>(),
           remoteMetadata: null,
@@ -177,7 +180,9 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         set((state) => {
           const updated = [...state.partitions];
           const partition = updated[index];
-          if (!partition) return { partitions: updated };
+          if (!partition) {
+            return { partitions: updated };
+          }
           updated[index] = { ...partition, selected: !partition.selected };
           return { partitions: updated };
         });
@@ -221,7 +226,7 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
 
           // Deselect extracted partitions
           const updatedPartitions = state.partitions.map((p) =>
-            partitions.includes(p.name) ? { ...p, selected: false } : p,
+            partitions.includes(p.name) ? { ...p, selected: false } : p
           );
 
           return {
@@ -243,7 +248,7 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
 
           // Deselect the completed partition
           const updatedPartitions = state.partitions.map((p) =>
-            p.name === name ? { ...p, selected: false } : p,
+            p.name === name ? { ...p, selected: false } : p
           );
 
           return {
@@ -263,7 +268,7 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         bytesWritten,
         totalBytes,
         throughputMbps,
-        etaSeconds,
+        etaSeconds
       ) => {
         set((state) => {
           const newProgress = new Map(state.partitionProgress);
@@ -298,9 +303,12 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
           const tokenId = await CreateCancellationToken();
           set({ cancelTokenId: tokenId });
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
+          const message =
+            error instanceof Error ? error.message : String(error);
           toast.error(`Failed to create cancellation token: ${message}`);
-          useLogStore.getState().addLog(`Error creating cancellation token: ${message}`, 'error');
+          useLogStore
+            .getState()
+            .addLog(`Error creating cancellation token: ${message}`, "error");
         }
       },
 
@@ -308,11 +316,14 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         const tokenId = usePayloadDumperStore.getState().cancelTokenId;
         if (tokenId) {
           CancelExtraction(tokenId).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
+            const message =
+              error instanceof Error ? error.message : String(error);
             toast.error(`Failed to cancel extraction: ${message}`);
-            useLogStore.getState().addLog(`Error cancelling extraction: ${message}`, 'error');
+            useLogStore
+              .getState()
+              .addLog(`Error cancelling extraction: ${message}`, "error");
           });
-          set({ status: 'cancelling' });
+          set({ status: "cancelling" });
         }
       },
 
@@ -346,15 +357,15 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
       // Clear only extraction state but keep file and partitions
       clearExtractionState: () => {
         set({
-          status: 'ready',
+          status: "ready",
           extractingPartitions: new Set<string>(),
-          errorMessage: '',
+          errorMessage: "",
           partitionProgress: new Map(),
         });
       },
     }),
     {
-      name: 'payload-dumper-storage',
+      name: "payload-dumper-storage",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         activeMode: state.activeMode,
@@ -364,17 +375,29 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          if (!state.extractingPartitions || !(state.extractingPartitions instanceof Set)) {
+          if (
+            !(
+              state.extractingPartitions &&
+              state.extractingPartitions instanceof Set
+            )
+          ) {
             state.extractingPartitions = new Set<string>();
           }
-          if (!state.completedPartitions || !(state.completedPartitions instanceof Set)) {
+          if (
+            !(
+              state.completedPartitions &&
+              state.completedPartitions instanceof Set
+            )
+          ) {
             state.completedPartitions = new Set<string>();
           }
-          if (!state.partitionProgress || !(state.partitionProgress instanceof Map)) {
+          if (
+            !(state.partitionProgress && state.partitionProgress instanceof Map)
+          ) {
             state.partitionProgress = new Map<string, PartitionProgress>();
           }
         }
       },
-    },
-  ),
+    }
+  )
 );

@@ -1,38 +1,46 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, Loader2, File } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ListFiles } from '@/lib/desktop/backend';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  ChevronDown,
+  ChevronRight,
+  File,
+  Folder,
+  FolderOpen,
+  Loader2,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ListFiles } from "@/lib/desktop/backend";
+import { cn } from "@/lib/utils";
 
 interface TreeNode {
-  path: string;
-  name: string;
+  children: TreeNode[] | null; // null = not yet loaded (dirs only)
   isDirectory: boolean;
   isExpanded: boolean;
-  children: TreeNode[] | null; // null = not yet loaded (dirs only)
   isLoading: boolean;
+  name: string;
+  path: string;
 }
 
 const INITIAL_NODES: TreeNode[] = [
   {
-    path: '/sdcard/',
-    name: 'sdcard',
+    path: "/sdcard/",
+    name: "sdcard",
     isDirectory: true,
     isExpanded: false,
     children: null,
     isLoading: false,
   },
   {
-    path: '/storage/',
-    name: 'storage',
+    path: "/storage/",
+    name: "storage",
     isDirectory: true,
     isExpanded: false,
     children: null,
     isLoading: false,
   },
   {
-    path: '/data/',
-    name: 'data',
+    path: "/data/",
+    name: "data",
     isDirectory: true,
     isExpanded: false,
     children: null,
@@ -41,18 +49,30 @@ const INITIAL_NODES: TreeNode[] = [
 ];
 
 function makeNode(path: string, name: string, isDirectory: boolean): TreeNode {
-  return { path, name, isDirectory, isExpanded: false, children: null, isLoading: false };
+  return {
+    path,
+    name,
+    isDirectory,
+    isExpanded: false,
+    children: null,
+    isLoading: false,
+  };
 }
 
 function applyToNode(
   nodes: TreeNode[],
   targetPath: string,
-  updater: (n: TreeNode) => TreeNode,
+  updater: (n: TreeNode) => TreeNode
 ): TreeNode[] {
   return nodes.map((node) => {
-    if (node.path === targetPath) return updater(node);
+    if (node.path === targetPath) {
+      return updater(node);
+    }
     if (node.children) {
-      return { ...node, children: applyToNode(node.children, targetPath, updater) };
+      return {
+        ...node,
+        children: applyToNode(node.children, targetPath, updater),
+      };
     }
     return node;
   });
@@ -60,10 +80,14 @@ function applyToNode(
 
 function findNode(nodes: TreeNode[], path: string): TreeNode | null {
   for (const node of nodes) {
-    if (node.path === path) return node;
+    if (node.path === path) {
+      return node;
+    }
     if (node.children) {
       const found = findNode(node.children, path);
-      if (found) return found;
+      if (found) {
+        return found;
+      }
     }
   }
   return null;
@@ -72,87 +96,113 @@ function findNode(nodes: TreeNode[], path: string): TreeNode | null {
 /** Ancestor directory paths for a given path (excluding self).
  *  /storage/emulated/0/ → ['/storage/', '/storage/emulated/'] */
 function getAncestorPaths(path: string): string[] {
-  const segments = path.split('/').filter(Boolean);
-  return segments.slice(0, -1).map((_, i) => '/' + segments.slice(0, i + 1).join('/') + '/');
+  const segments = path.split("/").filter(Boolean);
+  return segments
+    .slice(0, -1)
+    .map((_, i) => "/" + segments.slice(0, i + 1).join("/") + "/");
 }
 
 /** Load all entries (files + dirs) for a path and return as TreeNode[]. */
-function loadDirEntries(path: string, serial?: string | null): Promise<TreeNode[]> {
+function loadDirEntries(
+  path: string,
+  serial?: string | null
+): Promise<TreeNode[]> {
   return ListFiles(path, serial).then((entries) =>
     entries
       .sort((a, b) => {
-        const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
-        const bIsDir = b.type === 'Directory' || b.type === 'Symlink';
-        if (aIsDir && !bIsDir) return -1;
-        if (!aIsDir && bIsDir) return 1;
+        const aIsDir = a.type === "Directory" || a.type === "Symlink";
+        const bIsDir = b.type === "Directory" || b.type === "Symlink";
+        if (aIsDir && !bIsDir) {
+          return -1;
+        }
+        if (!aIsDir && bIsDir) {
+          return 1;
+        }
         return a.name.localeCompare(b.name);
       })
       .map((e) => {
-        const isDir = e.type === 'Directory' || e.type === 'Symlink';
-        return makeNode(isDir ? `${path}${e.name}/` : `${path}${e.name}`, e.name, isDir);
-      }),
+        const isDir = e.type === "Directory" || e.type === "Symlink";
+        return makeNode(
+          isDir ? `${path}${e.name}/` : `${path}${e.name}`,
+          e.name,
+          isDir
+        );
+      })
   );
 }
 
 interface TreeRowProps {
-  node: TreeNode;
-  depth: number;
   currentPath: string;
+  depth: number;
+  node: TreeNode;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
 }
 
-function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps) {
+function TreeRow({
+  node,
+  depth,
+  currentPath,
+  onSelect,
+  onToggle,
+}: TreeRowProps) {
   const isActive = currentPath === node.path || currentPath === `${node.path}/`;
-  const isAncestor = !isActive && node.isDirectory && currentPath.startsWith(node.path);
+  const isAncestor =
+    !isActive && node.isDirectory && currentPath.startsWith(node.path);
 
   return (
     <>
       <div
-        role="treeitem"
         aria-expanded={node.isDirectory ? node.isExpanded : undefined}
         aria-selected={isActive}
-        tabIndex={0}
         className={cn(
-          'flex items-center gap-2 py-[3px] rounded-sm text-sm cursor-pointer select-none transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-          isActive && 'bg-accent text-accent-foreground font-medium',
-          isAncestor && 'text-foreground',
-          !isActive && !isAncestor && 'text-muted-foreground',
+          "flex cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors",
+          "hover:bg-accent hover:text-accent-foreground",
+          isActive && "bg-accent font-medium text-accent-foreground",
+          isAncestor && "text-foreground",
+          !(isActive || isAncestor) && "text-muted-foreground"
         )}
-        style={{ paddingLeft: `${depth * 14 + 6}px`, paddingRight: '6px' }}
         onClick={() => {
           if (node.isDirectory) {
             onSelect(node.path);
           } else {
             // Navigate right pane to the directory that contains this file
-            const parentPath = node.path.substring(0, node.path.lastIndexOf('/') + 1);
+            const parentPath = node.path.substring(
+              0,
+              node.path.lastIndexOf("/") + 1
+            );
             onSelect(parentPath);
           }
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             if (node.isDirectory) {
               onSelect(node.path);
             } else {
-              const parentPath = node.path.substring(0, node.path.lastIndexOf('/') + 1);
+              const parentPath = node.path.substring(
+                0,
+                node.path.lastIndexOf("/") + 1
+              );
               onSelect(parentPath);
             }
           }
-          if (e.key === 'ArrowRight' && node.isDirectory) {
+          if (e.key === "ArrowRight" && node.isDirectory) {
             e.preventDefault();
             onToggle(node.path);
           }
-          if (e.key === 'ArrowLeft' && node.isDirectory && node.isExpanded) {
+          if (e.key === "ArrowLeft" && node.isDirectory && node.isExpanded) {
             e.preventDefault();
             onToggle(node.path);
           }
         }}
+        role="treeitem"
+        style={{ paddingLeft: `${depth * 14 + 6}px`, paddingRight: "6px" }}
+        tabIndex={0}
       >
         {/* Expand chevron — only for directories */}
         <span
-          className="shrink-0 flex items-center justify-center size-4"
+          className="flex size-4 shrink-0 items-center justify-center"
           onClick={
             node.isDirectory
               ? (e: React.MouseEvent) => {
@@ -164,12 +214,14 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
         >
           {node.isLoading ? (
             <Loader2 className="size-3.5 animate-spin" />
-          ) : !node.isDirectory ? (
-            <span className="size-4" /> // spacer for file alignment
-          ) : node.isExpanded ? (
-            <ChevronDown className="size-4" />
+          ) : node.isDirectory ? (
+            node.isExpanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4 opacity-50" />
+            )
           ) : (
-            <ChevronRight className="size-4 opacity-50" />
+            <span className="size-4" /> // spacer for file alignment
           )}
         </span>
 
@@ -180,8 +232,10 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
           ) : (
             <Folder
               className={cn(
-                'size-4 shrink-0',
-                isActive || isAncestor ? 'text-primary' : 'text-muted-foreground',
+                "size-4 shrink-0",
+                isActive || isAncestor
+                  ? "text-primary"
+                  : "text-muted-foreground"
               )}
             />
           )
@@ -197,7 +251,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
         <>
           {node.children.length === 0 ? (
             <div
-              className="py-1 text-xs text-muted-foreground italic"
+              className="py-1 text-muted-foreground text-xs italic"
               style={{ paddingLeft: `${(depth + 1) * 14 + 28}px` }}
             >
               Empty
@@ -205,10 +259,10 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
           ) : (
             node.children.map((child) => (
               <TreeRow
+                currentPath={currentPath}
+                depth={depth + 1}
                 key={child.path}
                 node={child}
-                depth={depth + 1}
-                currentPath={currentPath}
                 onSelect={onSelect}
                 onToggle={onToggle}
               />
@@ -259,15 +313,22 @@ export function DirectoryTree({
 
       for (const ancestor of ancestors) {
         const node = findNode(result, ancestor);
-        if (!node || !node.isDirectory || node.isLoading) break;
+        if (!(node && node.isDirectory) || node.isLoading) {
+          break;
+        }
         if (!node.isExpanded) {
-          if (node.children !== null) {
-            result = applyToNode(result, ancestor, (n) => ({ ...n, isExpanded: true }));
-          } else {
+          if (node.children === null) {
             firstToLoad = ancestor;
-            result = applyToNode(result, ancestor, (n) => ({ ...n, isLoading: true }));
+            result = applyToNode(result, ancestor, (n) => ({
+              ...n,
+              isLoading: true,
+            }));
             break;
           }
+          result = applyToNode(result, ancestor, (n) => ({
+            ...n,
+            isExpanded: true,
+          }));
         }
       }
 
@@ -300,7 +361,7 @@ export function DirectoryTree({
           });
       }
     },
-    [serial],
+    [serial]
   );
 
   useEffect(() => {
@@ -315,14 +376,20 @@ export function DirectoryTree({
   // Refresh stale children of currentPath when right pane reloads
   const prevRefreshTriggerRef = useRef(0);
   useEffect(() => {
-    if (!refreshTrigger || refreshTrigger === prevRefreshTriggerRef.current) return;
+    if (!refreshTrigger || refreshTrigger === prevRefreshTriggerRef.current) {
+      return;
+    }
     prevRefreshTriggerRef.current = refreshTrigger;
 
     const node = findNode(nodesRef.current, currentPath);
-    if (!node?.isDirectory) return;
+    if (!node?.isDirectory) {
+      return;
+    }
 
     if (node.isExpanded) {
-      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
+      setNodes((prev) =>
+        applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true }))
+      );
       loadDirEntries(currentPath, serial)
         .then((entries) => {
           setNodes((prev) =>
@@ -330,15 +397,19 @@ export function DirectoryTree({
               ...n,
               isLoading: false,
               children: entries,
-            })),
+            }))
           );
         })
         .catch(() => {
-          setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })));
+          setNodes((prev) =>
+            applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false }))
+          );
         });
     } else {
       // Invalidate cache so it refetches on next expand
-      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
+      setNodes((prev) =>
+        applyToNode(prev, currentPath, (n) => ({ ...n, children: null }))
+      );
     }
   }, [refreshTrigger, currentPath, serial, setNodes]);
 
@@ -349,7 +420,9 @@ export function DirectoryTree({
 
       setNodes((prev) => {
         const node = findNode(prev, path);
-        if (!node || !node.isDirectory || node.isLoading) return prev;
+        if (!(node && node.isDirectory) || node.isLoading) {
+          return prev;
+        }
 
         if (node.isExpanded) {
           return applyToNode(prev, path, (n) => ({ ...n, isExpanded: false }));
@@ -362,7 +435,9 @@ export function DirectoryTree({
         return applyToNode(prev, path, (n) => ({ ...n, isLoading: true }));
       });
 
-      if (!shouldLoad) return;
+      if (!shouldLoad) {
+        return;
+      }
 
       loadDirEntries(path, serial)
         .then((entries) => {
@@ -372,25 +447,27 @@ export function DirectoryTree({
               isLoading: false,
               isExpanded: true,
               children: entries,
-            })),
+            }))
           );
         })
         .catch(() => {
-          setNodes((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
+          setNodes((prev) =>
+            applyToNode(prev, path, (n) => ({ ...n, isLoading: false }))
+          );
         });
     },
-    [serial, setNodes],
+    [serial, setNodes]
   );
 
   return (
     <ScrollArea className="h-full w-full">
-      <div role="tree" aria-label="Device filesystem" className="py-1 pr-1">
+      <div aria-label="Device filesystem" className="py-1 pr-1" role="tree">
         {nodes.map((node) => (
           <TreeRow
+            currentPath={currentPath}
+            depth={0}
             key={node.path}
             node={node}
-            depth={0}
-            currentPath={currentPath}
             onSelect={onNavigate}
             onToggle={handleToggle}
           />

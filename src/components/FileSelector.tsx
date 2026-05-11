@@ -1,26 +1,26 @@
-import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 
 interface FileSelectorProps {
-  /** Label above the button (e.g. "Payload File") */
-  label: string;
-  /** Currently selected path to display */
-  path: string;
-  /** Callback when the select button is clicked */
-  onSelect: () => void;
-  /** Placeholder shown in the button when no path is selected */
-  placeholder?: string;
-  /** Whether a selection/loading operation is in progress */
-  isLoading?: boolean;
+  className?: string;
   /** Whether the selector should be fully disabled */
   disabled?: boolean;
   /** Icon shown at the start of the button (replaces spinner when not loading) */
   icon?: React.ReactNode;
+  /** Whether a selection/loading operation is in progress */
+  isLoading?: boolean;
+  /** Label above the button (e.g. "Payload File") */
+  label: string;
+  /** Callback when the select button is clicked */
+  onSelect: () => void;
+  /** Currently selected path to display */
+  path: string;
+  /** Placeholder shown in the button when no path is selected */
+  placeholder?: string;
   /** Optional trailing action button (e.g. Refresh or Open Folder) */
   trailingAction?: React.ReactNode;
-  className?: string;
 }
 
 /**
@@ -31,7 +31,7 @@ export function FileSelector({
   label,
   path,
   onSelect,
-  placeholder = 'Select file...',
+  placeholder = "Select file...",
   isLoading = false,
   disabled = false,
   icon,
@@ -39,25 +39,33 @@ export function FileSelector({
   className,
 }: FileSelectorProps) {
   return (
-    <Field className={cn('min-w-0 gap-1.5', className)}>
+    <Field className={cn("min-w-0 gap-1.5", className)}>
       <FieldLabel>{label}</FieldLabel>
-      <div className="flex gap-2 min-w-0">
+      <div className="flex min-w-0 gap-2">
         <Button
-          variant="secondary"
-          className="flex-1 min-w-0 justify-start pl-4 overflow-hidden"
-          onClick={onSelect}
+          className="min-w-0 flex-1 justify-start overflow-hidden pl-4"
           disabled={disabled || isLoading}
+          onClick={onSelect}
+          variant="secondary"
         >
           {isLoading ? (
             <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
           ) : icon ? (
-            <span className="mr-2 h-4 w-4 shrink-0 flex items-center">{icon}</span>
+            <span className="mr-2 flex h-4 w-4 shrink-0 items-center">
+              {icon}
+            </span>
           ) : null}
-          <span className="truncate">{path ? path.split(/[/\\]/).pop() : placeholder}</span>
+          <span className="truncate">
+            {path ? path.split(/[/\\]/).pop() : placeholder}
+          </span>
         </Button>
         {trailingAction}
       </div>
-      {path ? <FieldDescription className="break-all text-xs">{path}</FieldDescription> : null}
+      {path ? (
+        <FieldDescription className="break-all text-xs">
+          {path}
+        </FieldDescription>
+      ) : null}
     </Field>
   );
 }
