@@ -22,10 +22,8 @@ import type { DebloatListFilter, RemovalFilter, StateFilter } from '@/lib/debloa
 import { applyFilters, useDebloatStore } from '@/lib/debloatStore';
 import {
   DebloatPackages,
+  GetDebloatData,
   GetDebloatDeviceSettings,
-  GetDebloatPackages,
-  ListDebloatBackups,
-  LoadDebloatLists,
   SaveDebloatDeviceSettings,
 } from '@/lib/desktop/backend';
 import type { backend } from '@/lib/desktop/models';
@@ -100,19 +98,12 @@ export function DebloaterTab() {
   const loadAll = useCallback(async () => {
     setIsLoadingPackages(true);
     try {
-      // Load per-device settings
-      const settings = await GetDebloatDeviceSettings();
-      setDisableMode(settings.disableMode);
-      setExpertMode(settings.expertMode);
-
-      // Load packages + UAD list status
-      const [pkgs, status] = await Promise.all([GetDebloatPackages(), LoadDebloatLists()]);
-      setPackages(pkgs);
-      setListStatus(status);
-
-      // Load backups
-      const backups = await ListDebloatBackups();
-      setBackups(backups);
+      const data = await GetDebloatData();
+      setPackages(data.packages);
+      setListStatus(data.list_status);
+      setDisableMode(data.settings.disableMode);
+      setExpertMode(data.settings.expertMode);
+      setBackups(data.backups);
     } catch (error) {
       handleError('Debloater', error);
     } finally {
@@ -423,12 +414,12 @@ export function DebloaterTab() {
         >
           {selectedPackages.size > 0 ? (
             <>
-              <Square data-icon="inline-start" />
+              <CheckSquare2 data-icon="inline-start" />
               Unselect All
             </>
           ) : (
             <>
-              <CheckSquare2 data-icon="inline-start" />
+              <Square data-icon="inline-start" />
               Select All
             </>
           )}

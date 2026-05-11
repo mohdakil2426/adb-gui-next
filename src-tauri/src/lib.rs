@@ -43,6 +43,7 @@ pub fn run() {
         .manage(payload::PayloadCache::default())
         .manage(marketplace::ManagedMarketplaceCache::default())
         .manage(marketplace::ManagedHttpClient::default())
+        .manage(debloat::cache::DebloatCache::default())
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main")
                 && let Some(icon) = app.default_window_icon()
@@ -124,6 +125,8 @@ pub fn run() {
             commands::restore_debloat_backup,
             commands::get_debloat_device_settings,
             commands::save_debloat_device_settings,
+            commands::get_debloat_data,
+            commands::refresh_debloat_data,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

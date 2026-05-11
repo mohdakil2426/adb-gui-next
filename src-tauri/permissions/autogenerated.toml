@@ -68,6 +68,8 @@ commands.allow = [
   "list_remote_payload_partitions",
   "load_debloat_lists",
   "get_debloat_packages",
+  "get_debloat_data",
+  "refresh_debloat_data",
   "debloat_packages",
   "create_debloat_backup",
   "list_debloat_backups",

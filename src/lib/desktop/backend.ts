@@ -563,3 +563,21 @@ export function SaveDebloatDeviceSettings(settings: backend.PerDeviceSettings): 
 export function GetDeviceSdk(): Promise<number> {
   return call('get_device_sdk');
 }
+
+/** Combined response for all initial debloater data. */
+export interface DebloatData {
+  backups: backend.BackupSummary[];
+  list_status: backend.DebloatListStatus;
+  packages: backend.DebloatPackageRow[];
+  settings: backend.PerDeviceSettings;
+}
+
+/** Get all debloater data in one call. Uses in-memory cache when available. */
+export function GetDebloatData(): Promise<DebloatData> {
+  return call('get_debloat_data');
+}
+
+/** Force refresh all debloater data (invalidates cache). */
+export function RefreshDebloatData(): Promise<DebloatData> {
+  return call('refresh_debloat_data');
+}

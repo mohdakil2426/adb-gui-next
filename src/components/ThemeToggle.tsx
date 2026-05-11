@@ -23,6 +23,7 @@ export function ThemeToggle() {
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
     }
+    return;
   }, [theme]);
 
   const cycleTheme = useCallback(() => {

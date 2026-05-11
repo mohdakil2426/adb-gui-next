@@ -1,5 +1,6 @@
 pub mod actions;
 pub mod backup;
+pub mod cache;
 pub mod lists;
 pub mod sync;
 
