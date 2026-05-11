@@ -2,76 +2,85 @@
 
 import { Laptop, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <Button className="size-9" size="icon" title="Theme" variant="ghost">
-        <Sun className="size-4" />
-        <span className="sr-only">Loading theme</span>
-      </Button>
-    );
-  }
+  // Watch for system theme changes and force re-render
+  useEffect(() => {
+    if (theme === 'system' || !theme) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = () => setTick((t) => t + 1);
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    }
+  }, [theme]);
+
+  const cycleTheme = useCallback(() => {
+    // Use theme instead of resolvedTheme for setting
+    if (theme === 'light') {
+      setTheme('dark');
+    } else if (theme === 'dark') {
+      setTheme('system');
+    } else {
+      setTheme('light');
+    }
+  }, [theme, setTheme]);
+
+  const getIcon = () => {
+    if (!mounted) {
+      return <Sun className="size-4" />;
+    }
+    // Use theme for icon display
+    if (theme === 'dark') {
+      return <Moon className="size-4" />;
+    }
+    if (theme === 'system') {
+      return <Laptop className="size-4" />;
+    }
+    return <Sun className="size-4" />;
+  };
+
+  const getTooltipText = () => {
+    if (!mounted) {
+      return 'Theme';
+    }
+    if (theme === 'dark') {
+      return 'Dark mode';
+    }
+    if (theme === 'system') {
+      return 'System theme';
+    }
+    return 'Light mode';
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          aria-label="Select theme"
-          className="size-9"
-          size="icon"
-          title="Theme"
-          variant="ghost"
-        >
-          <Sun className="size-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute size-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={4}>
-        <DropdownMenuItem
-          className="flex items-center gap-2"
-          onClick={() => {
-            setTheme('light');
-          }}
-        >
-          <Sun className="size-4" />
-          <span>Light</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="flex items-center gap-2"
-          onClick={() => {
-            setTheme('dark');
-          }}
-        >
-          <Moon className="size-4" />
-          <span>Dark</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="flex items-center gap-2"
-          onClick={() => {
-            setTheme('system');
-          }}
-        >
-          <Laptop className="size-4" />
-          <span>System</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="relative">
+          <Button
+            aria-label="Toggle theme"
+            className="size-9"
+            onClick={cycleTheme}
+            size="icon"
+            variant="ghost"
+          >
+            {getIcon()}
+          </Button>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{getTooltipText()}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
