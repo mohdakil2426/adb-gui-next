@@ -1,3 +1,4 @@
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AlertCircle,
   ArrowLeft,
@@ -243,6 +244,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const currentPathRef = useRef(localStorage.getItem('fe.currentPath') ?? '/sdcard/');
   const selectedSerialRef = useRef<string | null>(selectedSerial);
   // Tracks whether the tree was auto-collapsed by responsive resize (not by user).
@@ -271,6 +273,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     sortField,
     sortDir,
   );
+
+  const rowVirtualizer = useVirtualizer({
+    count: visibleList.length,
+    getScrollElement: () => tableContainerRef.current?.parentElement ?? null,
+    estimateSize: () => 40,
+    overscan: 10,
+  });
 
   // ── Tree toggle ──────────────────────────────────────────────────────────
   const toggleTree = useCallback((collapsed: boolean) => {
@@ -475,7 +484,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
   // ── Selection handlers ───────────────────────────────────────────────────
   const handleRowClick = useCallback(
-    (file: FileEntry, e: React.MouseEvent) => {
+    (file: FileEntry, e: React.MouseEvent | React.KeyboardEvent) => {
       if (renamingName) {
         return;
       }
@@ -1357,320 +1366,359 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                   </div>
                 </div>
               ) : (
-                <Table>
-                  <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
-                    <TableRow>
-                      {isMultiSelectMode ? (
-                        <TableHead className="w-10 pl-3">
-                          <Checkbox
-                            aria-label="Select all"
-                            checked={allSelected ? true : someSelected ? 'indeterminate' : false}
-                            disabled={isBusy}
-                            onCheckedChange={handleSelectAll}
-                          />
-                        </TableHead>
-                      ) : null}
-                      <TableHead className="w-10" />
-                      {/* Clickable sort headers */}
-                      {(['name', 'size', 'date'] as const).map((field) => (
-                        <TableHead
-                          className="cursor-pointer select-none capitalize hover:text-foreground"
-                          key={field}
-                          onClick={() => {
-                            handleSortColumn(field);
-                          }}
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            {field}
-                            {sortField === field ? (
-                              sortDir === 'asc' ? (
-                                <ChevronUp className="h-3 w-3" />
-                              ) : (
-                                <ChevronDown className="h-3 w-3" />
-                              )
-                            ) : (
-                              <ChevronsUpDown className="h-3 w-3 opacity-30" />
-                            )}
-                          </span>
-                        </TableHead>
-                      ))}
-                      <TableHead>Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {/* Phantom row — inline creation of new file or folder */}
-                    {creatingType !== null && (
+                <div className="relative w-full" ref={tableContainerRef}>
+                  <Table>
+                    <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
                       <TableRow>
-                        {isMultiSelectMode ? <TableCell className="w-10 pr-0 pl-3" /> : null}
-                        <TableCell className="w-10 pr-0">
-                          {creatingType === 'folder' ? (
-                            <Folder className="h-4 w-4 shrink-0 text-primary" />
-                          ) : (
-                            <File className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          )}
-                        </TableCell>
-                        <TableCell colSpan={4}>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              aria-label={
-                                creatingType === 'folder' ? 'New folder name' : 'New file name'
-                              }
-                              autoFocus
-                              className={cn(
-                                'h-7 max-w-xs px-1.5 py-0 font-mono text-sm',
-                                createError && 'border-destructive focus-visible:ring-destructive',
-                              )}
-                              disabled={isCreating}
-                              onBlur={cancelCreate}
-                              onChange={(e) => {
-                                handleCreateChange(e.target.value);
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
-                                  void handleCreateConfirm();
-                                }
-                                if (e.key === 'Escape') {
-                                  e.preventDefault();
-                                  cancelCreate();
-                                }
-                              }}
-                              placeholder={
-                                creatingType === 'folder' ? 'New folder name' : 'filename.ext'
-                              }
-                              value={createName}
+                        {isMultiSelectMode ? (
+                          <TableHead className="w-10 pl-3">
+                            <Checkbox
+                              aria-label="Select all"
+                              checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+                              disabled={isBusy}
+                              onCheckedChange={handleSelectAll}
                             />
-                            {createError ? (
-                              <span className="shrink-0 text-destructive text-xs leading-none">
-                                {createError}
-                              </span>
-                            ) : null}
-                            {isCreating ? (
-                              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
-                            ) : null}
-                          </div>
-                        </TableCell>
+                          </TableHead>
+                        ) : null}
+                        <TableHead className="w-10" />
+                        {/* Clickable sort headers */}
+                        {(['name', 'size', 'date'] as const).map((field) => (
+                          <TableHead
+                            className="cursor-pointer select-none capitalize hover:text-foreground"
+                            key={field}
+                            onClick={() => {
+                              handleSortColumn(field);
+                            }}
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              {field}
+                              {sortField === field ? (
+                                sortDir === 'asc' ? (
+                                  <ChevronUp className="h-3 w-3" />
+                                ) : (
+                                  <ChevronDown className="h-3 w-3" />
+                                )
+                              ) : (
+                                <ChevronsUpDown className="h-3 w-3 opacity-30" />
+                              )}
+                            </span>
+                          </TableHead>
+                        ))}
+                        <TableHead>Time</TableHead>
                       </TableRow>
-                    )}
+                    </TableHeader>
+                    <TableBody
+                      style={{
+                        position: 'relative',
+                        height: `${rowVirtualizer.getTotalSize()}px`,
+                      }}
+                    >
+                      {/* Phantom row — inline creation of new file or folder */}
+                      {creatingType !== null && (
+                        <TableRow>
+                          {isMultiSelectMode ? <TableCell className="w-10 pr-0 pl-3" /> : null}
+                          <TableCell className="w-10 pr-0">
+                            {creatingType === 'folder' ? (
+                              <Folder className="h-4 w-4 shrink-0 text-primary" />
+                            ) : (
+                              <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            )}
+                          </TableCell>
+                          <TableCell colSpan={4}>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                aria-label={
+                                  creatingType === 'folder' ? 'New folder name' : 'New file name'
+                                }
+                                autoFocus
+                                className={cn(
+                                  'h-7 max-w-xs px-1.5 py-0 font-mono text-sm',
+                                  createError &&
+                                    'border-destructive focus-visible:ring-destructive',
+                                )}
+                                disabled={isCreating}
+                                onBlur={cancelCreate}
+                                onChange={(e) => {
+                                  handleCreateChange(e.target.value);
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    void handleCreateConfirm();
+                                  }
+                                  if (e.key === 'Escape') {
+                                    e.preventDefault();
+                                    cancelCreate();
+                                  }
+                                }}
+                                placeholder={
+                                  creatingType === 'folder' ? 'New folder name' : 'filename.ext'
+                                }
+                                value={createName}
+                              />
+                              {createError ? (
+                                <span className="shrink-0 text-destructive text-xs leading-none">
+                                  {createError}
+                                </span>
+                              ) : null}
+                              {isCreating ? (
+                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
 
-                    {fileList.length > 0 && visibleList.length === 0 ? (
-                      // Search returned no results
-                      <TableRow>
-                        <TableCell
-                          className="h-32 text-center text-muted-foreground text-sm"
-                          colSpan={isMultiSelectMode ? 6 : 5}
-                        >
-                          No files match &ldquo;{searchQuery}&rdquo;
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
+                      {fileList.length > 0 && visibleList.length === 0 ? (
+                        // Search returned no results
+                        <TableRow>
+                          <TableCell
+                            className="h-32 text-center text-muted-foreground text-sm"
+                            colSpan={isMultiSelectMode ? 6 : 5}
+                          >
+                            No files match &ldquo;{searchQuery}&rdquo;
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
 
-                    {visibleList.map((file) => {
-                      const isSelected = selectedNames.has(file.name);
-                      const isBeingRenamed = renamingName === file.name;
-                      const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const file = visibleList[virtualRow.index];
+                        if (!file) {
+                          return null;
+                        }
+                        const isSelected = selectedNames.has(file.name);
+                        const isBeingRenamed = renamingName === file.name;
+                        const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
 
-                      return (
-                        <ContextMenu key={file.name}>
-                          <ContextMenuTrigger asChild>
-                            <TableRow
-                              className="cursor-pointer"
-                              data-state={isSelected ? 'selected' : ''}
-                              onClick={(e) => {
-                                handleRowClick(file, e);
-                              }}
-                              onDoubleClick={() => {
-                                handleRowDoubleClick(file);
-                              }}
-                            >
-                              {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
-                              {isMultiSelectMode && !isBeingRenamed ? (
-                                <TableCell
-                                  className="w-10 pr-0 pl-3"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleCheckbox(file.name);
-                                  }}
-                                >
-                                  <Checkbox
-                                    aria-label={`Select ${file.name}`}
-                                    checked={isSelected}
-                                    tabIndex={-1}
-                                  />
+                        return (
+                          <ContextMenu key={virtualRow.key}>
+                            <ContextMenuTrigger asChild>
+                              <TableRow
+                                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                                data-index={virtualRow.index}
+                                data-state={isSelected ? 'selected' : ''}
+                                onClick={(e) => {
+                                  handleRowClick(file, e);
+                                }}
+                                onDoubleClick={() => {
+                                  handleRowDoubleClick(file);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handleRowClick(file, e);
+                                  }
+                                  if (e.key === 'ArrowRight' && isNavigable) {
+                                    e.preventDefault();
+                                    loadFiles(path.posix.join(currentPath, file.name) + '/');
+                                  }
+                                  if (e.key === 'Delete') {
+                                    e.preventDefault();
+                                    openDeleteDialog([file.name]);
+                                  }
+                                }}
+                                ref={rowVirtualizer.measureElement}
+                                style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  width: '100%',
+                                  transform: `translateY(${virtualRow.start}px)`,
+                                }}
+                                tabIndex={0}
+                              >
+                                {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
+                                {isMultiSelectMode && !isBeingRenamed ? (
+                                  <TableCell
+                                    className="w-10 pr-0 pl-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleCheckbox(file.name);
+                                    }}
+                                  >
+                                    <Checkbox
+                                      aria-label={`Select ${file.name}`}
+                                      checked={isSelected}
+                                      tabIndex={-1}
+                                    />
+                                  </TableCell>
+                                ) : null}
+
+                                {/* Type icon */}
+                                <TableCell className="w-10">
+                                  {file.type === 'Directory' ? (
+                                    <Folder className="h-4 w-4 shrink-0 text-primary" />
+                                  ) : file.type === 'Symlink' ? (
+                                    <Link className="h-4 w-4 shrink-0 text-primary/70" />
+                                  ) : (
+                                    <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                  )}
                                 </TableCell>
+
+                                {/* Name cell — rename is F2 or right-click only */}
+                                <TableCell className="font-medium">
+                                  {isBeingRenamed ? (
+                                    <div className="flex flex-col gap-0.5">
+                                      <Input
+                                        autoFocus
+                                        className={cn(
+                                          'h-7 w-full px-1.5 py-0 font-medium text-sm',
+                                          renameError &&
+                                            'border-destructive focus-visible:ring-destructive',
+                                        )}
+                                        onBlur={handleRenameCancel}
+                                        onChange={(e) => {
+                                          handleRenameChange(e.target.value);
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                        }}
+                                        onFocus={(e) => {
+                                          e.target.select();
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            void handleRenameConfirm();
+                                          }
+                                          if (e.key === 'Escape') {
+                                            e.preventDefault();
+                                            handleRenameCancel();
+                                          }
+                                        }}
+                                        value={renameValue}
+                                      />
+                                      {renameError ? (
+                                        <span className="text-destructive text-xs leading-none">
+                                          {renameError}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col gap-0.5">
+                                      <span>{file.name}</span>
+                                      {file.type === 'Symlink' && file.linkTarget ? (
+                                        <span className="font-mono text-[10px] text-muted-foreground/60 leading-none">
+                                          → {file.linkTarget}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  )}
+                                </TableCell>
+
+                                <TableCell className="text-muted-foreground text-xs tabular-nums">
+                                  {file.type === 'Directory' ? '—' : formatBytes(file.size)}
+                                </TableCell>
+                                <TableCell>{file.date}</TableCell>
+                                <TableCell>{file.time}</TableCell>
+                              </TableRow>
+                            </ContextMenuTrigger>
+
+                            {/* Right-click context menu */}
+                            <ContextMenuContent>
+                              {/* Select — enters multi-select mode and adds this item */}
+                              <ContextMenuItem
+                                onClick={() => {
+                                  handleSelectFromMenu(file.name);
+                                }}
+                              >
+                                <SquareCheck className="h-4 w-4 shrink-0" />
+                                Select
+                              </ContextMenuItem>
+
+                              {/* Copy full path to clipboard */}
+                              <ContextMenuItem
+                                onClick={() =>
+                                  void navigator.clipboard.writeText(
+                                    path.posix.join(currentPath, file.name),
+                                  )
+                                }
+                              >
+                                <Copy className="h-4 w-4 shrink-0" />
+                                Copy Path
+                              </ContextMenuItem>
+
+                              <ContextMenuSeparator />
+
+                              {isNavigable ? (
+                                <>
+                                  <ContextMenuItem
+                                    onClick={() =>
+                                      loadFiles(path.posix.join(currentPath, file.name) + '/')
+                                    }
+                                  >
+                                    <FolderOpen className="h-4 w-4 shrink-0" />
+                                    Open
+                                  </ContextMenuItem>
+                                  <ContextMenuSeparator />
+                                </>
                               ) : null}
 
-                              {/* Type icon */}
-                              <TableCell className="w-10">
-                                {file.type === 'Directory' ? (
-                                  <Folder className="h-4 w-4 shrink-0 text-primary" />
-                                ) : file.type === 'Symlink' ? (
-                                  <Link className="h-4 w-4 shrink-0 text-primary/70" />
-                                ) : (
-                                  <File className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                )}
-                              </TableCell>
+                              <ContextMenuItem
+                                disabled={
+                                  (isSelected && selectedNames.size > 1) ||
+                                  (!isSelected && selectedNames.size > 0)
+                                }
+                                onClick={() => {
+                                  startRename(file);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4 shrink-0" />
+                                Rename
+                              </ContextMenuItem>
 
-                              {/* Name cell — rename is F2 or right-click only */}
-                              <TableCell className="font-medium">
-                                {isBeingRenamed ? (
-                                  <div className="flex flex-col gap-0.5">
-                                    <Input
-                                      autoFocus
-                                      className={cn(
-                                        'h-7 w-full px-1.5 py-0 font-medium text-sm',
-                                        renameError &&
-                                          'border-destructive focus-visible:ring-destructive',
-                                      )}
-                                      onBlur={handleRenameCancel}
-                                      onChange={(e) => {
-                                        handleRenameChange(e.target.value);
-                                      }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                      }}
-                                      onFocus={(e) => {
-                                        e.target.select();
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.preventDefault();
-                                          void handleRenameConfirm();
-                                        }
-                                        if (e.key === 'Escape') {
-                                          e.preventDefault();
-                                          handleRenameCancel();
-                                        }
-                                      }}
-                                      value={renameValue}
-                                    />
-                                    {renameError ? (
-                                      <span className="text-destructive text-xs leading-none">
-                                        {renameError}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                ) : (
-                                  <div className="flex flex-col gap-0.5">
-                                    <span>{file.name}</span>
-                                    {file.type === 'Symlink' && file.linkTarget ? (
-                                      <span className="font-mono text-[10px] text-muted-foreground/60 leading-none">
-                                        → {file.linkTarget}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                )}
-                              </TableCell>
+                              <ContextMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  const namesToDelete =
+                                    isSelected && selectedNames.size > 0
+                                      ? Array.from(selectedNames)
+                                      : [file.name];
+                                  openDeleteDialog(namesToDelete);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 shrink-0" />
+                                {isSelected && selectedNames.size > 1
+                                  ? `Delete ${selectedNames.size} items`
+                                  : 'Delete'}
+                              </ContextMenuItem>
 
-                              <TableCell className="text-muted-foreground text-xs tabular-nums">
-                                {file.type === 'Directory' ? '—' : formatBytes(file.size)}
-                              </TableCell>
-                              <TableCell>{file.date}</TableCell>
-                              <TableCell>{file.time}</TableCell>
-                            </TableRow>
-                          </ContextMenuTrigger>
+                              <ContextMenuSeparator />
 
-                          {/* Right-click context menu */}
-                          <ContextMenuContent>
-                            {/* Select — enters multi-select mode and adds this item */}
-                            <ContextMenuItem
-                              onClick={() => {
-                                handleSelectFromMenu(file.name);
-                              }}
-                            >
-                              <SquareCheck className="h-4 w-4 shrink-0" />
-                              Select
-                            </ContextMenuItem>
-
-                            {/* Copy full path to clipboard */}
-                            <ContextMenuItem
-                              onClick={() =>
-                                void navigator.clipboard.writeText(
-                                  path.posix.join(currentPath, file.name),
-                                )
-                              }
-                            >
-                              <Copy className="h-4 w-4 shrink-0" />
-                              Copy Path
-                            </ContextMenuItem>
-
-                            <ContextMenuSeparator />
-
-                            {isNavigable ? (
-                              <>
-                                <ContextMenuItem
-                                  onClick={() =>
-                                    loadFiles(path.posix.join(currentPath, file.name) + '/')
-                                  }
-                                >
-                                  <FolderOpen className="h-4 w-4 shrink-0" />
-                                  Open
-                                </ContextMenuItem>
-                                <ContextMenuSeparator />
-                              </>
-                            ) : null}
-
-                            <ContextMenuItem
-                              disabled={
-                                (isSelected && selectedNames.size > 1) ||
-                                (!isSelected && selectedNames.size > 0)
-                              }
-                              onClick={() => {
-                                startRename(file);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 shrink-0" />
-                              Rename
-                            </ContextMenuItem>
-
-                            <ContextMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                const namesToDelete =
-                                  isSelected && selectedNames.size > 0
-                                    ? Array.from(selectedNames)
-                                    : [file.name];
-                                openDeleteDialog(namesToDelete);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 shrink-0" />
-                              {isSelected && selectedNames.size > 1
-                                ? `Delete ${selectedNames.size} items`
-                                : 'Delete'}
-                            </ContextMenuItem>
-
-                            <ContextMenuSeparator />
-
-                            {/* Import — pushes a file from host into the right-clicked folder,
+                              {/* Import — pushes a file from host into the right-clicked folder,
                                 or into the current directory for files. */}
-                            <ContextMenuItem
-                              disabled={isBusy}
-                              onClick={() =>
-                                handlePushFileToDir(
-                                  isNavigable
-                                    ? path.posix.join(currentPath, file.name) + '/'
-                                    : currentPath,
-                                )
-                              }
-                            >
-                              <Upload className="h-4 w-4 shrink-0" />
-                              {isNavigable ? `Import into "${file.name}"` : 'Import File'}
-                            </ContextMenuItem>
+                              <ContextMenuItem
+                                disabled={isBusy}
+                                onClick={() =>
+                                  handlePushFileToDir(
+                                    isNavigable
+                                      ? path.posix.join(currentPath, file.name) + '/'
+                                      : currentPath,
+                                  )
+                                }
+                              >
+                                <Upload className="h-4 w-4 shrink-0" />
+                                {isNavigable ? `Import into "${file.name}"` : 'Import File'}
+                              </ContextMenuItem>
 
-                            {/* Export — pulls this exact row's item, no selection needed */}
-                            <ContextMenuItem disabled={isBusy} onClick={() => handlePullItem(file)}>
-                              <Download className="h-4 w-4 shrink-0" />
-                              Export
-                            </ContextMenuItem>
-                          </ContextMenuContent>
-                        </ContextMenu>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                              {/* Export — pulls this exact row's item, no selection needed */}
+                              <ContextMenuItem
+                                disabled={isBusy}
+                                onClick={() => handlePullItem(file)}
+                              >
+                                <Download className="h-4 w-4 shrink-0" />
+                                Export
+                              </ContextMenuItem>
+                            </ContextMenuContent>
+                          </ContextMenu>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </ScrollArea>
           </ContextMenuTrigger>
