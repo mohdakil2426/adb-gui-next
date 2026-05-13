@@ -1143,8 +1143,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
               </div>
             ) : (
               <button
-                className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground"
+                className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={handlePathClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handlePathClick();
+                  }
+                }}
                 title="Click to edit path"
               >
                 {currentPath}
@@ -1394,11 +1400,19 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                         {/* Clickable sort headers */}
                         {(['name', 'size', 'date'] as const).map((field) => (
                           <TableHead
+                            aria-sort={
+                              sortField === field
+                                ? sortDir === 'asc'
+                                  ? 'ascending'
+                                  : 'descending'
+                                : 'none'
+                            }
                             className="cursor-pointer select-none capitalize hover:text-foreground"
                             key={field}
                             onClick={() => {
                               handleSortColumn(field);
                             }}
+                            role="columnheader"
                           >
                             <span className="inline-flex items-center gap-1">
                               {field}
