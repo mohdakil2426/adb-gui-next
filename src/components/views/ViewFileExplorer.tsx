@@ -106,6 +106,7 @@ const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
+const PHANTOM_ROW_HEIGHT = 40;
 
 function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
   return (
@@ -228,6 +229,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [createName, setCreateName] = useState('');
   const [createError, setCreateError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const phantomOffset = creatingType === null ? 0 : PHANTOM_ROW_HEIGHT;
 
   // ── Transfer (push/pull) ─────────────────────────────────────────────────
   const [isPushing, setIsPushing] = useState(false);
@@ -1410,12 +1412,20 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     <TableBody
                       style={{
                         position: 'relative',
-                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        height: `${rowVirtualizer.getTotalSize() + phantomOffset}px`,
                       }}
                     >
                       {/* Phantom row — inline creation of new file or folder */}
                       {creatingType !== null && (
-                        <TableRow>
+                        <TableRow
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: PHANTOM_ROW_HEIGHT,
+                          }}
+                        >
                           {isMultiSelectMode ? <TableCell className="w-10 pr-0 pl-3" /> : null}
                           <TableCell className="w-10 pr-0">
                             {creatingType === 'folder' ? (
@@ -1474,7 +1484,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
 
                       {fileList.length > 0 && visibleList.length === 0 ? (
                         // Search returned no results
-                        <TableRow>
+                        <TableRow
+                          style={{
+                            position: 'absolute',
+                            top: phantomOffset,
+                            left: 0,
+                            width: '100%',
+                          }}
+                        >
                           <TableCell
                             className="h-32 text-center text-muted-foreground text-sm"
                             colSpan={isMultiSelectMode ? 6 : 5}
@@ -1497,6 +1514,8 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           <ContextMenu key={virtualRow.key}>
                             <ContextMenuTrigger asChild>
                               <TableRow
+                                aria-posinset={virtualRow.index + 1}
+                                aria-setsize={visibleList.length}
                                 className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                                 data-index={virtualRow.index}
                                 data-state={isSelected ? 'selected' : ''}
@@ -1526,7 +1545,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                   top: 0,
                                   left: 0,
                                   width: '100%',
-                                  transform: `translateY(${virtualRow.start}px)`,
+                                  transform: `translateY(${virtualRow.start + phantomOffset}px)`,
                                 }}
                                 tabIndex={0}
                               >
