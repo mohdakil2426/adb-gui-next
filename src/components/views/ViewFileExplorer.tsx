@@ -254,28 +254,21 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const wasResponsiveCollapsedRef = useRef(false);
   // Request sequencing — incremented on each loadFiles call; stale responses are dropped.
   const loadRequestIdRef = useRef(0);
+  const fileListRef = useRef<FileEntry[]>([]);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
 
+  useEffect(() => {
+    fileListRef.current = fileList;
+  }, [fileList]);
+
   // ── Derived ──────────────────────────────────────────────────────────────
-  const selectedList = useMemo(
-    () => fileList.filter((f) => selectedNames.has(f.name)),
-    [fileList, selectedNames],
-  );
-  const singleSelected = useMemo(
-    () => (selectedList.length === 1 ? selectedList[0] : null),
-    [selectedList],
-  );
-  const allSelected = useMemo(
-    () => fileList.length > 0 && selectedNames.size === fileList.length,
-    [fileList, selectedNames],
-  );
-  const someSelected = useMemo(
-    () => selectedNames.size > 0 && !allSelected,
-    [selectedNames, allSelected],
-  );
+  const selectedList = fileList.filter((f) => selectedNames.has(f.name));
+  const singleSelected = selectedList.length === 1 ? selectedList[0] : null;
+  const allSelected = fileList.length > 0 && selectedNames.size === fileList.length;
+  const someSelected = selectedNames.size > 0 && !allSelected;
   const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
   const isPullDisabled = isPulling || !singleSelected;
 
@@ -978,7 +971,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       if (e.key === 'F2' && selectedNames.size === 1) {
         e.preventDefault();
         const name = Array.from(selectedNames)[0];
-        const file = fileList.find((f) => f.name === name);
+        const file = fileListRef.current.find((f) => f.name === name);
         if (file) {
           startRename(file);
         }
@@ -987,7 +980,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
         e.preventDefault();
         setIsMultiSelectMode(true);
-        setSelectedNames(new Set(fileList.map((f) => f.name)));
+        setSelectedNames(new Set(fileListRef.current.map((f) => f.name)));
       }
     };
     window.addEventListener('keydown', onKey);
@@ -1000,7 +993,6 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
     renamingName,
     creatingType,
     searchQuery,
-    fileList,
     startRename,
     startCreate,
     cancelCreate,
