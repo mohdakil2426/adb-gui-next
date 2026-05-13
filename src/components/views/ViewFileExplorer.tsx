@@ -108,6 +108,20 @@ const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
 const PHANTOM_ROW_HEIGHT = 40;
 
+function isValidDevicePath(path: string | null): path is string {
+  if (!path || typeof path !== 'string') {
+    return false;
+  }
+  const trimmed = path.trim();
+  if (!trimmed.startsWith('/')) {
+    return false;
+  }
+  if (trimmed.includes('..')) {
+    return false;
+  }
+  return true;
+}
+
 function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
   return (
     <Tooltip>
@@ -167,9 +181,10 @@ function categorizeError(err: unknown): LoadError {
 export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // ── Navigation ──────────────────────────────────────────────────────────
   const [fileList, setFileList] = useState<FileEntry[]>([]);
-  const [currentPath, setCurrentPath] = useState(
-    () => localStorage.getItem('fe.currentPath') ?? '/sdcard/',
-  );
+  const [currentPath, setCurrentPath] = useState(() => {
+    const saved = localStorage.getItem('fe.currentPath');
+    return isValidDevicePath(saved) ? saved : '/sdcard/';
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<LoadError>(null);
   const [treeRefreshKey, setTreeRefreshKey] = useState(0);
@@ -202,9 +217,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   // ── Navigation history ───────────────────────────────────────────────────
-  const [navHistory, setNavHistory] = useState<string[]>(() => [
-    localStorage.getItem('fe.currentPath') ?? '/sdcard/',
-  ]);
+  const [navHistory, setNavHistory] = useState<string[]>(() => {
+    const saved = localStorage.getItem('fe.currentPath');
+    return [isValidDevicePath(saved) ? saved : '/sdcard/'];
+  });
   const [historyIndex, setHistoryIndex] = useState(0);
   // Ref mirrors historyIndex so loadFiles can read it without closing over it.
   // This prevents loadFiles from needing historyIndex in its useCallback deps,
