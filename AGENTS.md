@@ -27,13 +27,13 @@ Current stack:
 ```mermaid
 flowchart TB
     subgraph FE["Frontend: React 19 + TypeScript + Vite"]
-        entry["src/main.tsx<br/>App.tsx"]
-        shell["MainLayout<br/>SidebarProvider + header + view switcher + BottomPanel"]
+        entry["src/main.tsx<br/>src/app/App.tsx"]
+        shell["src/app/shell<br/>SidebarProvider + header + view switcher + BottomPanel"]
         views["9 views<br/>Dashboard · AppManager · FileExplorer · Flasher · Utilities<br/>PayloadDumper · Marketplace · Emulator · About"]
-        featureUI["Feature UI components<br/>payload-dumper/ · marketplace/ · emulator-manager/ · ui/"]
+        featureUI["Feature modules<br/>src/features/<feature>/{ui,hooks,model,utils}"]
         stores["Zustand stores<br/>device · log · shell · payloadDumper · marketplace<br/>emulatorManager · debloat · nickname"]
         query["TanStack Query<br/>single 3s all-devices poll in MainLayout"]
-        desktop["Desktop abstraction<br/>src/lib/desktop/backend.ts · runtime.ts · models.ts"]
+        desktop["Desktop abstraction<br/>src/desktop/backend.ts · runtime.ts · models.ts"]
 
         entry --> shell
         shell --> views
@@ -92,25 +92,29 @@ flowchart TB
 Core flow:
 
 ```text
-UI event -> view/component -> Zustand or local state -> src/lib/desktop/backend.ts -> Tauri invoke -> commands/*.rs -> domain module/helper -> result/event -> store/log/toast
+UI event -> feature view/component -> Zustand or local state -> src/desktop/backend.ts -> Tauri invoke -> commands/*.rs -> domain module/helper -> result/event -> store/log/toast
 ```
 
 ## Hard Boundaries
 
-| Concern                          | Correct location                                        | Do not do this                                        |
-| -------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- |
-| Tauri command surface            | `src-tauri/src/commands/*.rs`                           | Put command handlers inside domain modules            |
-| Rust domain logic                | `src-tauri/src/{payload,marketplace,emulator,debloat}/` | Inline complex logic in command wrappers              |
-| Shared Rust process/path helpers | `src-tauri/src/helpers.rs`                              | Duplicate command execution or path sanitization      |
-| Frontend IPC wrappers            | `src/lib/desktop/backend.ts`                            | Scatter raw `invoke()` calls in components            |
-| Tauri events/file drops          | `src/lib/desktop/runtime.ts`                            | Use raw Tauri event APIs directly in views            |
-| Frontend DTOs                    | `src/lib/desktop/models.ts`                             | Define Rust IPC shapes inline in components           |
-| Shared state                     | `src/lib/*Store.ts`                                     | Recreate shared app state in individual views         |
-| shadcn primitives                | `src/components/ui/`                                    | Hand-roll primitive controls for forms/dialogs/tables |
-| Feature views                    | `src/components/views/`                                 | Move view orchestration elsewhere without a reason    |
-| Feature subcomponents            | `src/components/{feature-name}/`                        | Grow view files into rats nests                       |
-| Theme tokens                     | `src/styles/global.css`                                 | Use raw hex/rgb colors in components                  |
-| Tests                            | `src/test/*.test.{ts,tsx}`                              | Add frontend tests outside `src/test/`                |
+| Concern | Correct location | Do not do this |
+| --- | --- | --- |
+| App bootstrap | `src/main.tsx`, `src/app/App.tsx` | Put feature logic in bootstrap |
+| App shell and view switching | `src/app/shell/` | Add a router or per-view polling |
+| Tauri command surface | `src-tauri/src/commands/*.rs` | Put command handlers inside domain modules |
+| Rust domain logic | `src-tauri/src/{payload,marketplace,emulator,debloat}/` | Inline complex logic in command wrappers |
+| Shared Rust process/path helpers | `src-tauri/src/helpers.rs` | Duplicate command execution or path sanitization |
+| Tauri IPC wrappers | `src/desktop/backend.ts` | Scatter raw `invoke()` calls in features |
+| Tauri events/file drops | `src/desktop/runtime.ts` | Use raw Tauri event APIs directly in views |
+| Frontend DTOs | `src/desktop/models.ts` | Define Rust IPC shapes inline in components |
+| shadcn primitives | `src/shared/ui/` | Hand-roll primitive controls |
+| Cross-feature components | `src/shared/components/` | Put feature-only UI in shared |
+| Cross-feature stores | `src/shared/stores/` | Put feature state in app-wide stores |
+| Feature implementation | `src/features/<feature>/` | Add new code under legacy `components/views` |
+| Feature hooks | `src/features/<feature>/hooks/` | Hide stateful feature logic in view files |
+| Feature utilities | `src/features/<feature>/utils/` | Create generic `utils.ts` dumping grounds |
+| Theme tokens | `src/styles/global.css` | Use raw hex/rgb colors in components |
+| Tests | `src/test/` | Add frontend tests outside `src/test/` |
 
 ## Commands
 
@@ -136,7 +140,7 @@ Known Windows issue: bare `cargo test` can fail with Tauri-linked loader error `
 - Source changes require relevant tests plus lint/build for the touched layer.
 - Frontend-only source change: run `bun run format:check`, `bun run lint:web`, `bun run test`, and `bun run build`.
 - Rust source change: run `bun run format:rust:check`, `bun run lint:rust`, and targeted `cargo test --manifest-path src-tauri/Cargo.toml` when practical.
-- IPC contract change: also verify `src/lib/desktop/backend.ts`, `src/lib/desktop/models.ts`, `src-tauri/src/lib.rs`, `src-tauri/src/commands/mod.rs`, and `src-tauri/permissions/autogenerated.toml`.
+- IPC contract change: also verify `src/desktop/backend.ts`, `src/desktop/models.ts`, `src-tauri/src/lib.rs`, `src-tauri/src/commands/mod.rs`, and `src-tauri/permissions/autogenerated.toml`.
 - Packaging-sensitive change: run `bun run tauri build --debug` or state the exact blocker.
 - Docs-only change: run `bun run format:web:check` or a focused Ultracite check on the edited Markdown.
 - Never claim success without command output or a clear manual verification note.
@@ -353,7 +357,7 @@ Most formatting and common issues are automatically fixed by Biome. Run `bun x u
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **adb-gui-next** (6438 symbols, 11525 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **adb-gui-next** (6682 symbols, 11954 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

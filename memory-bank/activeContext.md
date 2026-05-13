@@ -9,10 +9,19 @@ Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (co
 Emulator Manager is implemented and **fully working** on Windows. Root pipeline has been **fully modernized** (3-phase overhaul). **Universal Android Debloater (UAD) Integration is now complete** with Rust-side caching.
 **Payload Dumper interaction polish is complete (2026-05-11).**
 **File Explorer layout hardening is complete (2026-05-14): table columns are grid-aligned and delete confirmation filenames wrap safely.**
+**Frontend feature architecture migration is complete (2026-05-14): app shell is under `src/app`, Tauri IPC under `src/desktop`, shared code under `src/shared`, and product code under `src/features/<feature>`. Legacy `src/components` and `src/lib` folders are removed.**
 
 ---
 
 ## Recently Completed
+
+### 2026-05-14 - Frontend Feature Architecture Migration
+
+**Change:** Migrated the frontend to a strict feature-first layout: `src/app` owns the app shell, `src/desktop` owns the Tauri boundary, `src/shared` owns cross-feature primitives/components/stores/utils, and `src/features/<feature>` owns product feature code.
+
+**File Explorer:** Split the large view into feature-local hooks, model/constants/types, utilities, and focused UI modules. `FileExplorerView.tsx` is now under the architecture size gate, and `frontendArchitecture.test.ts` enforces no legacy frontend folders/imports, raw Tauri invoke confinement, and no feature implementation file over 300 lines.
+
+**Verification:** Focused architecture/File Explorer tests and `bun run lint:web` pass in the current session. Full final gate is pending.
 
 ### 2026-05-14 - File Explorer Table Alignment + Delete Dialog Wrapping
 

@@ -7,14 +7,13 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                     Frontend (React 19 + TypeScript + Vite)             │
-│  main.tsx → App.tsx → MainLayout (SidebarProvider → AppSidebar + views) │
-│  9 Views: Dashboard │ AppManager │ FileExplorer │ Flasher │             │
-│           Utilities │ PayloadDumper │ Marketplace │ Emulator │ About     │
+│  main.tsx → src/app/App.tsx → src/app/shell/MainLayout                  │
+│  9 feature views under src/features/<feature>/                           │
 │  Bottom Panel: BottomPanel (Logs tab + Shell tab)                      │
 │  AppManager is dual-tab: Debloater (UAD) + Installation                │
 │  Zustand Stores: deviceStore │ logStore │ shellStore │ payloadDumperStore│
 │                 marketplaceStore │ emulatorManagerStore │ debloatStore    │
-│  Desktop Layer: src/lib/desktop/ (backend.ts, runtime.ts, models.ts)   │
+│  Desktop Layer: src/desktop/ (backend.ts, runtime.ts, models.ts)       │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                     Tauri 2 IPC Bridge                                  │
 │  backend.ts → core.invoke<T>(command, args) → Rust commands            │
@@ -39,7 +38,7 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 
 ### 1. Desktop Abstraction Layer
 
-`src/lib/desktop/` wraps every Tauri command:
+`src/desktop/` wraps every Tauri command:
 - `backend.ts` — All `invoke<T>()` wrappers (including `DeleteFiles`, `RenameFile`)
 - `runtime.ts` — Event listeners, file drop (with position-aware `DragDropHandler`), URL opener
 - `models.ts` — DTO interfaces matching Rust structs
@@ -98,10 +97,10 @@ OnFileDrop({
 
 Marketplace now follows a hybrid state/orchestration pattern:
 - `marketplaceStore.ts` keeps durable UI state and persisted preferences (providers, sort, view mode, history, OAuth client ID). GitHub PAT fallback is session-only and must not be persisted.
-- `src/lib/marketplace/useMarketplaceSearch.ts` owns debounce cancellation + stale-response protection + request orchestration
-- `src/lib/marketplace/useMarketplaceHome.ts` loads zero-query discovery sections (trending + fresh releases)
-- `src/lib/marketplace/useMarketplaceAuth.ts` manages optional GitHub OAuth device-flow state in the frontend and polls using the exact client ID captured at challenge start
-- `src/lib/marketplace/install.ts` centralizes APK download/install toast workflow for cards and dialogs
+- `src/features/marketplace/hooks/useMarketplaceSearch.ts` owns debounce cancellation + stale-response protection + request orchestration
+- `src/features/marketplace/hooks/useMarketplaceHome.ts` loads zero-query discovery sections (trending + fresh releases)
+- `src/features/marketplace/hooks/useMarketplaceAuth.ts` manages optional GitHub OAuth device-flow state in the frontend and polls using the exact client ID captured at challenge start
+- `src/features/marketplace/utils/install.ts` centralizes APK download/install toast workflow for cards and dialogs
 
 ### 3b. Marketplace Backend Service Layer
 
@@ -119,9 +118,9 @@ This keeps provider-specific parsing isolated in `fdroid.rs`, `izzy.rs`, `github
 Emulator Manager follows the same thin-command + focused-domain pattern as Marketplace:
 - `src-tauri/src/emulator/` owns AVD discovery, SDK path resolution, runtime mapping, backup planning, and assisted root/restore orchestration.
 - `src-tauri/src/commands/emulator.rs` exposes only the Tauri command surface (`list_avds`, `launch_avd`, `stop_avd`, `get_avd_restore_plan`, `restore_avd_backups`, `prepare_avd_root`, `finalize_avd_root`).
-- `src/lib/desktop/models.ts` and `backend.ts` define the typed DTO/IPC contract for the new view.
-- `src/lib/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
-- `src/components/views/ViewEmulatorManager.tsx` is the orchestration shell. Feature components under `src/components/emulator-manager/` stay presentational and callback-driven.
+- `src/desktop/models.ts` and `backend.ts` define the typed DTO/IPC contract for the new view.
+- `src/features/emulator/model/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
+- `src/features/emulator/EmulatorView.tsx` is the orchestration shell. Feature components under `src/features/emulator/ui/` stay presentational and callback-driven.
 - Automated root mirrors rootAVD's API 30+ ramdisk behavior: decompress, repack multi-CPIO ramdisks into one `newc` CPIO with busybox when multiple `TRAILER!!!` markers are detected, then run Magisk patching. The automatic package source is pinned to the rootAVD-compatible Magisk v25.2 path; newer Magisk/forks belong in manual FAKEBOOTIMG/local workflows.
 
 ### 3d. App Manager Installed Icon Pipeline
@@ -135,7 +134,9 @@ Applications page icons follow a 2-phase pattern so package list load stays fast
 
 ### 3e. File Explorer — State Model & Critical Patterns
 
-`ViewFileExplorer` uses several carefully designed state patterns:
+`src/features/file-explorer/FileExplorerView.tsx` is now a thin coordinator over feature-local hooks and UI modules. The File Explorer feature owns its model, hooks, UI, and utilities under `src/features/file-explorer/`.
+
+The feature uses several carefully designed state patterns:
 
 **Multi-select gate (`isMultiSelectMode`):**
 | State | Checkbox column | SelectionSummaryBar |
@@ -457,54 +458,26 @@ className="max-h-[40vh] min-h-30 overflow-y-auto"
 className="max-h-100"  // 400px — too small on large monitors, too large on small windows
 ```
 
-## Component Architecture
+## Frontend Feature Architecture
 
 ```text
-src/components/
-├── MainLayout.tsx           # App shell: SidebarProvider + SidebarInset + header + views
-├── AppSidebar.tsx           # shadcn Sidebar (grouped nav, header, footer, rail)
-├── ThemeProvider.tsx        # next-themes provider
-├── ThemeToggle.tsx          # Theme toggle using SidebarMenuButton
-├── BottomPanel.tsx          # VS Code-style bottom panel (tabs, resize, actions)
-├── LogsPanel.tsx            # Filtered log viewer with search highlight
-├── ShellPanel.tsx           # Interactive ADB/fastboot terminal
-├── DirectoryTree.tsx        # Lazy-loaded file system tree for File Explorer left pane
-├── WelcomeScreen.tsx        # 750ms animated splash with Progress
-├── ConnectedDevicesCard.tsx # Device list card (Dashboard only)
-├── DeviceSwitcher.tsx       # Global header device pill + popover dropdown
-├── EditNicknameDialog.tsx   # Shared nickname edit dialog
-├── CheckboxItem.tsx         # Shared checkbox indicator (AppManager, PayloadDumper)
-├── EmptyState.tsx           # Shared empty-state component
-├── CopyButton.tsx           # Shared copy-to-clipboard button
-├── FileSelector.tsx         # Shared file/dir picker (label + button + path hint)
-├── LoadingButton.tsx        # Shared button with loading spinner
-├── SectionHeader.tsx        # Shared section sub-header (Utilities, PayloadDumper)
-├── SelectionSummaryBar.tsx  # Shared selection count + clear + actions bar
-├── RemoteUrlPanel.tsx       # Remote URL input with connection status (PayloadDumper)
-├── AppDetailDialog.tsx      # Marketplace app detail dialog (download + install + versions)
-├── emulator-manager/        # Emulator Manager UI surface
-│   ├── AvdSwitcher.tsx      # DeviceSwitcher-style AVD picker pill + popover
-│   ├── EmulatorLaunchTab.tsx
-│   ├── EmulatorRootTab.tsx  # Smart gate: Launch/Cold Boot buttons when emulator is stopped
-│   ├── EmulatorRestoreTab.tsx    # includes open folder button (ExternalLink icon) to open backup location
-│   ├── RootPreflightStep.tsx # 10-check pre-flight checklist with inline fix actions (NEW)
-│   ├── RootSourceStep.tsx   # Stable-release or local-package source selection (w/ Magisk why text)
-│   ├── RootProgressStep.tsx # Root progress stage UI (beginner-friendly labels)
-│   ├── RootResultStep.tsx   # Post-root: 4-step guide, cold-boot reminder, FAKEBOOTIMG explanation
-│   └── RootWizard.tsx       # 4-step orchestration: Preflight→Source→Rooting→Done
-├── marketplace/             # 8 marketplace UI components
-│   ├── SearchBar.tsx        # Ctrl+K shortcut, 600ms debounced search, settings icon
-│   ├── FilterBar.tsx        # Provider chips, grid/list toggle, result count
-│   ├── AppCard.tsx          # Grid card with icon, provider badge, install
-│   ├── AppListItem.tsx      # Compact list row
-│   ├── MarketplaceEmptyState.tsx  # Hero, popular chips, trending GitHub apps
-│   ├── MarketplaceSettings.tsx    # Settings dialog: providers, GitHub PAT, preferences
-│   ├── ProviderBadge.tsx    # Color-coded source badges (F-Droid/Izzy/GitHub/Aptoide)
-│   └── AttributionFooter.tsx  # "Powered by" provider links
-├── ui/                      # 35+ shadcn primitives (incl. Alert, Empty, Field, InputGroup, Select, Switch, ToggleGroup, Table)
-└── views/                   # 9 feature views (Dashboard, AppManager, FileExplorer,
-                             #   Flasher, Utilities, PayloadDumper, Marketplace, Emulator, About)
+src/
+├── app/                     # App root and no-router shell
+├── desktop/                 # Tauri backend/runtime/models boundary
+├── shared/                  # Cross-feature UI, components, stores, hooks, utils
+└── features/                # Product feature modules
+    ├── dashboard/
+    ├── app-manager/
+    ├── file-explorer/
+    ├── flasher/
+    ├── utilities/
+    ├── payload-dumper/
+    ├── marketplace/
+    ├── emulator/
+    └── about/
 ```
+
+Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must move to `src/shared`, and raw Tauri IPC remains confined to `src/desktop`.
 
 
 ## Known Architectural Notes

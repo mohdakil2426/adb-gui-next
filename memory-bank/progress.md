@@ -7,6 +7,7 @@ ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 **Ultimate Payload Dumper implementation complete (2026-05-10):** All 22 tasks across 7 phases implemented — DOS protection, 4-layer verification, SIMD optimization, delta OTA support, cancellation, per-byte progress, extraction history, partition search, property-based tests, fuzzing, and benchmarks.
 **Payload Dumper loaded-state UI polish complete (2026-05-11):** added explicit source-path disclosure under the payload title, moved the partition search field into the table surface, widened the footer action buttons, compacted the extraction status card, and let partition filenames wrap with their `.img` display. Also removed the duplicate sidebar theme toggle and moved Sonner toasts to the top-right.
 **File Explorer layout hardening complete (2026-05-14):** the file table now uses one explicit grid column model for header, create, empty, and virtualized rows so name/size/date/time stay aligned. Long filenames and symlink targets wrap inside the name column, and long filenames in delete confirmation dialogs wrap instead of overflowing the modal.
+**Frontend feature architecture migration complete (2026-05-14):** frontend code now uses `src/app`, `src/desktop`, `src/shared`, and `src/features/<feature>` boundaries. Legacy `src/components` and `src/lib` folders are removed, raw Tauri invoke calls are confined to `src/desktop/backend.ts`, and the architecture test enforces feature implementation files under 300 lines.
 
 Marketplace now has Phase 1 architecture refactor complete: singleton HTTP client (connection pooling via `ManagedHttpClient`), APK verification engine (ghost result elimination via JoinSet + Semaphore), heuristic-based ranking (8 weighted signals: topics, language, freshness, installability), bounded cache (capacity limits with eviction), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date. Phase 2 deferred: ETag caching, rate limit tracking, per-provider error reporting.
 
@@ -86,7 +87,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
   - Lazy visible-row icon loading via `GetPackageIcon(packageName)` — package list still appears immediately
   - Fixed icon slot per row — no layout shift in the virtualized list
   - Backend APK icon extraction from installed packages via `pm path` + manifest/resource resolution + same-stem raster fallback for adaptive-icon XML entries
-- **File Explorer (full-featured dual-pane)**:
+- **File Explorer (full-featured dual-pane, split feature modules)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
   - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
   - 5 edge cases: permission denied, spaces in paths, symlinks, device disconnect, responsive
@@ -105,6 +106,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
   - **Aligned table grid**: header, phantom create row, search-empty row, and virtualized rows share the same grid columns so size/date/time stay aligned
   - **Long-name wrapping**: file names, symlink targets, and delete-dialog filenames break within their containers instead of overflowing
   - **No in-place array mutation** — all sorts use spread copy
+  - Feature code lives under `src/features/file-explorer/` with model, hooks, utils, and UI modules; `FileExplorerView.tsx` stays a coordinator.
 - Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing), `RemoteUrlPanel`
 - `getFileName()`, `formatBytes()`, `formatBytesNum()` utilities in `lib/utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
@@ -337,6 +339,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-05-14 | 0.2.0 | Frontend feature architecture migration: moved the app shell to `src/app`, Tauri IPC to `src/desktop`, shared primitives/components/stores/utils to `src/shared`, and product code to `src/features/<feature>`. Removed legacy `src/components` and `src/lib`, split oversized feature files, and added strict frontend architecture tests. |
 | 2026-05-14 | 0.2.0 | File Explorer layout hardening: fixed table row/header drift with a shared explicit grid column model, preserved fixed size/date/time alignment, wrapped long names and symlink targets in the name column, and fixed delete confirmation overflow for long filenames. Added `ViewFileExplorer.test.tsx` regression coverage. |
 | 2026-05-11 | 0.1.0 | Payload Dumper UI polish + app-shell cleanup: added wrapped source-path disclosure under the payload title, moved the partition search field into the table surface, widened the bottom action buttons, compacted the extraction status card, wrapped partition names with `.img` display, removed the duplicate sidebar theme toggle, and moved Sonner toasts to top-right. Verified `bun run lint:web` and `bun run build`. |
 | 2026-05-10 | 0.1.0 | **Ultimate Payload Dumper — Complete**: All 22 tasks across 7 phases implemented. Phase 1: 100MB manifest size cap, OPS disk hash verify, streaming unsparse, MTK overflow checks, XML entity limits. Phase 2: 4-layer verification engine (VerifyMode with layer3/layer4). Phase 3: AVX-512 SIMD copy path, non-temporal stores, zero-copy ZIP mmap. Phase 4: Move operation, Delta OTA SourceCopy, Brotli decompression. Phase 5: CancellationToken with global registry, frontend cancel button. Phase 6: Per-byte progress with throughput/ETA, extraction history (localStorage), partition search/filter UI. Phase 7: Property-based tests (proptest), cargo-fuzz target, Criterion benchmarks. Also: lock poisoning fixes, Cargo.toml feature syntax fix, Tauri permission allowlist updates for new commands. All gates pass: `bun run lint`, `bun run format:check`, `bun run build`, `cargo clippy -D warnings`. |
