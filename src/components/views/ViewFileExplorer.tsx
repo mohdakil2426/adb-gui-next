@@ -107,6 +107,8 @@ const RESERVED_NAMES = /^\.{1,2}$/;
 const MAX_HISTORY = 50;
 const RESPONSIVE_COLLAPSE_WIDTH = 1024;
 const PHANTOM_ROW_HEIGHT = 40;
+const FILE_TABLE_COLUMNS = '40px minmax(16rem, 1fr) 8rem 8rem 6rem';
+const FILE_TABLE_COLUMNS_WITH_SELECTION = '40px 40px minmax(16rem, 1fr) 8rem 8rem 6rem';
 
 function isValidDevicePath(path: string | null): path is string {
   if (!path || typeof path !== 'string') {
@@ -246,6 +248,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [createError, setCreateError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const phantomOffset = creatingType === null ? 0 : PHANTOM_ROW_HEIGHT;
+  const fileTableColumns = isMultiSelectMode
+    ? FILE_TABLE_COLUMNS_WITH_SELECTION
+    : FILE_TABLE_COLUMNS;
 
   // ── Transfer (push/pull) ─────────────────────────────────────────────────
   const [isPushing, setIsPushing] = useState(false);
@@ -1442,11 +1447,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                 </div>
               ) : (
                 <div className="relative w-full" ref={tableContainerRef}>
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-muted/50 backdrop-blur-sm">
-                      <TableRow>
+                  <Table className="min-w-[46rem]">
+                    <TableHeader className="sticky top-0 z-10 block bg-muted/50 backdrop-blur-sm">
+                      <TableRow
+                        className="grid hover:bg-transparent"
+                        style={{ gridTemplateColumns: fileTableColumns }}
+                      >
                         {isMultiSelectMode ? (
-                          <TableHead className="w-10 pl-3">
+                          <TableHead className="min-w-0 pl-3">
                             <Checkbox
                               aria-label="Select all"
                               checked={allSelected ? true : someSelected ? 'indeterminate' : false}
@@ -1455,7 +1463,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                             />
                           </TableHead>
                         ) : null}
-                        <TableHead className="w-10" />
+                        <TableHead className="min-w-0" />
                         {/* Clickable sort headers */}
                         {(['name', 'size', 'date'] as const).map((field) => (
                           <TableHead
@@ -1466,14 +1474,14 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                   : 'descending'
                                 : 'none'
                             }
-                            className="cursor-pointer select-none capitalize hover:text-foreground"
+                            className="min-w-0 cursor-pointer select-none capitalize hover:text-foreground"
                             key={field}
                             onClick={() => {
                               handleSortColumn(field);
                             }}
                             role="columnheader"
                           >
-                            <span className="inline-flex items-center gap-1">
+                            <span className="inline-flex min-w-0 items-center gap-1">
                               {field}
                               {sortField === field ? (
                                 sortDir === 'asc' ? (
@@ -1487,10 +1495,11 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                             </span>
                           </TableHead>
                         ))}
-                        <TableHead>Time</TableHead>
+                        <TableHead className="min-w-0">Time</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody
+                      className="block"
                       style={{
                         position: 'relative',
                         height: `${rowVirtualizer.getTotalSize() + phantomOffset}px`,
@@ -1499,24 +1508,26 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       {/* Phantom row — inline creation of new file or folder */}
                       {creatingType !== null && (
                         <TableRow
+                          className="grid"
                           style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
                             width: '100%',
                             height: PHANTOM_ROW_HEIGHT,
+                            gridTemplateColumns: fileTableColumns,
                           }}
                         >
-                          {isMultiSelectMode ? <TableCell className="w-10 pr-0 pl-3" /> : null}
-                          <TableCell className="w-10 pr-0">
+                          {isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-3" /> : null}
+                          <TableCell className="min-w-0 pr-0">
                             {creatingType === 'folder' ? (
                               <Folder className="h-4 w-4 shrink-0 text-primary" />
                             ) : (
                               <File className="h-4 w-4 shrink-0 text-muted-foreground" />
                             )}
                           </TableCell>
-                          <TableCell colSpan={4}>
-                            <div className="flex items-center gap-2">
+                          <TableCell className="col-span-4 min-w-0" colSpan={4}>
+                            <div className="flex min-w-0 items-center gap-2">
                               <Input
                                 aria-label={
                                   creatingType === 'folder' ? 'New folder name' : 'New file name'
@@ -1566,15 +1577,17 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                       {fileList.length > 0 && visibleList.length === 0 ? (
                         // Search returned no results
                         <TableRow
+                          className="grid"
                           style={{
                             position: 'absolute',
                             top: phantomOffset,
                             left: 0,
                             width: '100%',
+                            gridTemplateColumns: fileTableColumns,
                           }}
                         >
                           <TableCell
-                            className="h-32 text-center text-muted-foreground text-sm"
+                            className="col-span-full h-32 text-center text-muted-foreground text-sm"
                             colSpan={isMultiSelectMode ? 6 : 5}
                           >
                             No files match &ldquo;{searchQuery}&rdquo;
@@ -1597,7 +1610,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                               <TableRow
                                 aria-posinset={virtualRow.index + 1}
                                 aria-setsize={visibleList.length}
-                                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                                className="grid cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                                 data-index={virtualRow.index}
                                 data-state={isSelected ? 'selected' : ''}
                                 onClick={(e) => {
@@ -1627,28 +1640,33 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                   left: 0,
                                   width: '100%',
                                   transform: `translateY(${virtualRow.start + phantomOffset}px)`,
+                                  gridTemplateColumns: fileTableColumns,
                                 }}
                                 tabIndex={0}
                               >
-                                {/* Checkbox cell — only rendered in multi-select mode, absent while renaming */}
-                                {isMultiSelectMode && !isBeingRenamed ? (
+                                {/* Checkbox cell — only rendered in multi-select mode */}
+                                {isMultiSelectMode ? (
                                   <TableCell
-                                    className="w-10 pr-0 pl-3"
+                                    className="min-w-0 pr-0 pl-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      toggleCheckbox(file.name);
+                                      if (!isBeingRenamed) {
+                                        toggleCheckbox(file.name);
+                                      }
                                     }}
                                   >
-                                    <Checkbox
-                                      aria-label={`Select ${file.name}`}
-                                      checked={isSelected}
-                                      tabIndex={-1}
-                                    />
+                                    {isBeingRenamed ? null : (
+                                      <Checkbox
+                                        aria-label={`Select ${file.name}`}
+                                        checked={isSelected}
+                                        tabIndex={-1}
+                                      />
+                                    )}
                                   </TableCell>
                                 ) : null}
 
                                 {/* Type icon */}
-                                <TableCell className="w-10">
+                                <TableCell className="min-w-0">
                                   {file.type === 'Directory' ? (
                                     <Folder className="h-4 w-4 shrink-0 text-primary" />
                                   ) : file.type === 'Symlink' ? (
@@ -1659,9 +1677,9 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                 </TableCell>
 
                                 {/* Name cell — rename is F2 or right-click only */}
-                                <TableCell className="font-medium">
+                                <TableCell className="min-w-0 whitespace-normal break-words font-medium">
                                   {isBeingRenamed ? (
-                                    <div className="flex flex-col gap-0.5">
+                                    <div className="flex min-w-0 flex-col gap-0.5">
                                       <Input
                                         autoFocus
                                         className={cn(
@@ -1698,10 +1716,12 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                       ) : null}
                                     </div>
                                   ) : (
-                                    <div className="flex flex-col gap-0.5">
-                                      <span>{file.name}</span>
+                                    <div className="flex min-w-0 flex-col gap-0.5">
+                                      <span className="min-w-0 break-words leading-tight">
+                                        {file.name}
+                                      </span>
                                       {file.type === 'Symlink' && file.linkTarget ? (
-                                        <span className="font-mono text-[10px] text-muted-foreground/60 leading-none">
+                                        <span className="min-w-0 break-words font-mono text-[10px] text-muted-foreground/60 leading-none">
                                           → {file.linkTarget}
                                         </span>
                                       ) : null}
@@ -1709,11 +1729,15 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                                   )}
                                 </TableCell>
 
-                                <TableCell className="text-muted-foreground text-xs tabular-nums">
+                                <TableCell className="min-w-0 text-muted-foreground text-xs tabular-nums">
                                   {file.type === 'Directory' ? '—' : formatBytes(file.size)}
                                 </TableCell>
-                                <TableCell>{file.date}</TableCell>
-                                <TableCell>{file.time}</TableCell>
+                                <TableCell className="min-w-0 text-xs tabular-nums">
+                                  {file.date}
+                                </TableCell>
+                                <TableCell className="min-w-0 text-xs tabular-nums">
+                                  {file.time}
+                                </TableCell>
                               </TableRow>
                             </ContextMenuTrigger>
 
@@ -1851,7 +1875,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       <AlertDialog onOpenChange={setDeleteDialogOpen} open={deleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
+            <AlertDialogTitle className="max-w-full whitespace-normal break-words">
               {filesToDelete.length === 1
                 ? `Delete "${filesToDelete[0]}"?`
                 : `Delete ${filesToDelete.length} items?`}
@@ -1868,7 +1892,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                     {filesToDelete.slice(0, 5).map((name) => {
                       const f = fileList.find((x) => x.name === name);
                       return (
-                        <li className="flex items-center gap-1.5" key={name}>
+                        <li className="flex min-w-0 items-start gap-1.5" key={name}>
                           {f?.type === 'Directory' ? (
                             <Folder className="h-3 w-3 shrink-0" />
                           ) : f?.type === 'Symlink' ? (
@@ -1876,7 +1900,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
                           ) : (
                             <File className="h-3 w-3 shrink-0" />
                           )}
-                          {name}
+                          <span className="min-w-0 break-words">{name}</span>
                         </li>
                       );
                     })}

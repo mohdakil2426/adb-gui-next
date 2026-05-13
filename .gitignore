@@ -45,5 +45,6 @@ Desktop.ini
 .kilocode
 .clinerules
 .omx/
-.codex/
+.codex/config.toml
 .superpowers/
+.claude/
