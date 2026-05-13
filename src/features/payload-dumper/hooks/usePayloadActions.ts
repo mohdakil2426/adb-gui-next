@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
-import { debugLog } from '@/lib/debug';
 import {
-  CheckRemotePayload,
   CleanupPayloadCache,
-  CreateCancellationToken,
-  ExtractPayload,
-  GetRemotePayloadMetadata,
-  ListPayloadPartitionsWithDetails,
-  ListRemotePayloadPartitions,
   OpenFolder,
   SelectOutputDirectory,
   SelectPayloadFile,
-} from '@/lib/desktop/backend';
-import { handleError, handleSuccess } from '@/lib/errorHandler';
-import { useLogStore } from '@/lib/logStore';
-import type { ExtractionStatus } from '@/lib/payloadDumperStore';
-import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
-import { formatBytesNum } from '@/lib/utils';
+} from '@/desktop/backend';
+import {
+  runExtractPayload,
+  runResetPayloadDumper,
+} from '@/features/payload-dumper/hooks/payloadExtractionActions';
+import {
+  checkRemoteUrl,
+  loadLocalPartitions,
+  loadRemotePartitions as runLoadRemotePartitions,
+} from '@/features/payload-dumper/hooks/payloadPartitionLoaders';
+import type { ExtractionStatus } from '@/features/payload-dumper/model/payloadDumperStore';
+import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
+import { useLogStore } from '@/shared/stores/logStore';
+import { debugLog } from '@/shared/utils/debug';
+import { handleError } from '@/shared/utils/errorHandler';
 
 interface UsePayloadActionsOptions {
   mode: 'local' | 'remote';
@@ -31,7 +33,6 @@ interface UsePayloadActionsOptions {
   setRemoteUrl: (url: string) => void;
   status: ExtractionStatus;
 }
-
 interface PayloadActions {
   handleCancelLoadPartitions: () => void;
   handleCheckUrl: () => void;
@@ -44,7 +45,6 @@ interface PayloadActions {
   handleSelectPayload: () => Promise<void>;
   loadRemotePartitions: () => Promise<void>;
 }
-
 export function usePayloadActions(options: UsePayloadActionsOptions): PayloadActions {
   const {
     mode,
@@ -57,7 +57,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setPrefetch,
     status,
   } = options;
-
   const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
   const outputPath = usePayloadDumperStore((state) => state.outputPath);
   const partitions = usePayloadDumperStore((state) => state.partitions);
@@ -75,13 +74,10 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
   const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
   const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
-
   const setCancelTokenId = usePayloadDumperStore((state) => state.setCancelTokenId);
-
   const reset = usePayloadDumperStore((state) => state.reset);
   const cancelLoadingRef = useRef(false);
   const checkUrlRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(
     () => () => {
       if (checkUrlRef.current) {
@@ -90,150 +86,55 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     },
     [],
   );
-
   const loadPartitions = useCallback(
     async (path: string) => {
-      if (!path) {
-        return;
-      }
-
-      setStatus('loading-partitions');
-      setErrorMessage('');
-      useLogStore.getState().addLog('Loading partitions from payload...', 'info');
-
-      try {
-        debugLog(`Loading partitions from: ${path}`);
-        const partitionList = await ListPayloadPartitionsWithDetails(path);
-        if (partitionList && partitionList.length > 0) {
-          const currentCompleted = usePayloadDumperStore.getState().completedPartitions;
-
-          setPartitions(
-            partitionList.map((p) => ({
-              name: p.name,
-              size: p.size,
-              selected: !currentCompleted.has(p.name),
-            })),
-          );
-          setStatus('ready');
-          toast.success(`Found ${partitionList.length} partitions`);
-          handleSuccess('Load Partitions', `Found ${partitionList.length} partitions`);
-        } else {
-          setErrorMessage('No partitions found in payload');
-          setStatus('error');
-          useLogStore.getState().addLog('No partitions found in payload', 'error');
-        }
-      } catch (error) {
-        setErrorMessage(String(error));
-        setStatus('error');
-        handleError('Load Partitions', error);
-      }
+      await loadLocalPartitions(path, {
+        setErrorMessage,
+        setPartitions,
+        setPayloadPath,
+        setRemoteMetadata,
+        setStatus,
+      });
     },
-    [setStatus, setErrorMessage, setPartitions],
+    [setErrorMessage, setPartitions, setPayloadPath, setRemoteMetadata, setStatus],
   );
-
   const handleCheckUrl = useCallback(() => {
     if (!remoteUrl.trim()) {
       return;
     }
-
     if (checkUrlRef.current) {
       clearTimeout(checkUrlRef.current);
     }
-    checkUrlRef.current = setTimeout(async () => {
-      setConnectionStatus('checking');
-      setEstimatedSize(null);
-
-      try {
-        debugLog(`Checking remote URL: ${remoteUrl}`);
-        const info = await CheckRemotePayload(remoteUrl.trim());
-        if (info.supportsRanges) {
-          setConnectionStatus('ready');
-          setEstimatedSize(formatBytesNum(info.contentLength));
-          toast.success('URL verified - range requests supported');
-          useLogStore
-            .getState()
-            .addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
-        } else {
-          setConnectionStatus('error');
-          toast.error('Server does not support range requests');
-          useLogStore.getState().addLog('Server does not support range requests', 'error');
-        }
-      } catch (error) {
-        setConnectionStatus('error');
-        toast.error(`Failed to check URL: ${error}`);
-        handleError('Check Remote URL', error);
-      }
+    checkUrlRef.current = setTimeout(() => {
+      debugLog(`Checking remote URL: ${remoteUrl}`);
+      void checkRemoteUrl(remoteUrl, setConnectionStatus, setEstimatedSize);
     }, 500);
   }, [remoteUrl, setConnectionStatus, setEstimatedSize]);
-
   const loadRemotePartitions = useCallback(async () => {
     if (!remoteUrl.trim()) {
       return;
     }
-
     cancelLoadingRef.current = false;
-    setStatus('loading-partitions');
-    setErrorMessage('');
-    useLogStore.getState().addLog('Loading partitions from remote URL...', 'info');
-
-    try {
-      debugLog(`Loading remote partitions from: ${remoteUrl}`);
-      const partitionList = await ListRemotePayloadPartitions(remoteUrl.trim());
-
-      if (cancelLoadingRef.current) {
-        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
-        setStatus('idle');
-        return;
-      }
-
-      if (partitionList && partitionList.length > 0) {
-        setPayloadPath(remoteUrl.trim());
-        setPartitions(
-          partitionList.map((p) => ({
-            name: p.name,
-            size: p.size,
-            selected: true,
-          })),
-        );
-        setStatus('ready');
-        toast.success(`Found ${partitionList.length} partitions`);
-        handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
-
-        // Fire-and-forget metadata fetch — non-blocking, failure logged silently
-        GetRemotePayloadMetadata(remoteUrl.trim())
-          .then((metadata) => {
-            setRemoteMetadata(metadata);
-            debugLog('Remote payload metadata loaded');
-          })
-          .catch((err: unknown) => {
-            const msg = err instanceof Error ? err.message : String(err);
-            toast.error(`Failed to load remote metadata: ${msg}`);
-            useLogStore.getState().addLog(`Metadata fetch failed: ${msg}`, 'error');
-          });
-      } else {
-        setErrorMessage('No partitions found in remote payload');
-        setStatus('error');
-        useLogStore.getState().addLog('No partitions found in remote payload', 'error');
-      }
-    } catch (error) {
-      if (cancelLoadingRef.current) {
-        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
-        return;
-      }
-      setErrorMessage(String(error));
-      setStatus('error');
-      handleError('Load Remote Partitions', error);
-    } finally {
-      cancelLoadingRef.current = false;
-    }
+    await runLoadRemotePartitions(
+      remoteUrl,
+      {
+        setErrorMessage,
+        setPartitions,
+        setPayloadPath,
+        setRemoteMetadata,
+        setStatus,
+      },
+      () => cancelLoadingRef.current,
+      () => {
+        cancelLoadingRef.current = false;
+      },
+    );
   }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage, setRemoteMetadata]);
-
   const handleCancelLoadPartitions = useCallback(() => {
     cancelLoadingRef.current = true;
     setStatus('idle');
     useLogStore.getState().addLog('Cancelling partition loading...', 'info');
   }, [setStatus]);
-
   const handlePayloadDrop = useCallback(
     async (paths: string[]) => {
       if (status === 'extracting' || status === 'loading-partitions') {
@@ -242,7 +143,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       if (paths.length === 0) {
         return;
       }
-
       const filePath = paths[0];
       if (!filePath) {
         return;
@@ -255,7 +155,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     },
     [status, setPayloadPath, loadPartitions],
   );
-
   const handleSelectPayload = useCallback(async () => {
     try {
       debugLog('Selecting payload file');
@@ -271,7 +170,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       handleError('Select Payload File', error);
     }
   }, [setPayloadPath, loadPartitions]);
-
   const handleSelectOutput = useCallback(async () => {
     try {
       debugLog('Selecting output directory');
@@ -285,7 +183,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       handleError('Select Output Directory', error);
     }
   }, [setOutputPath]);
-
   const handleOpenOutputFolder = useCallback(async () => {
     const effectiveOutputPath = outputDir || outputPath;
     if (!effectiveOutputPath) {
@@ -299,7 +196,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       handleError('Open Output Folder', error);
     }
   }, [outputDir, outputPath]);
-
   const handleRefreshPartitions = useCallback(async () => {
     if (!payloadPath) {
       return;
@@ -314,89 +210,25 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       await loadPartitions(payloadPath);
     }
   }, [payloadPath, mode, loadRemotePartitions, loadPartitions]);
-
   const handleExtract = useCallback(async () => {
-    if (!payloadPath) {
-      toast.error('Please select a payload file');
-      return;
-    }
-
-    const partitionsToExtract = partitions
-      .filter((p) => p.selected && !completedPartitions.has(p.name))
-      .map((p) => p.name);
-
-    if (partitionsToExtract.length === 0) {
-      const selectedCount = partitions.filter((p) => p.selected).length;
-      if (selectedCount > 0 && completedPartitions.size > 0) {
-        toast.info('All selected partitions have already been extracted');
-      } else {
-        toast.error('Please select at least one partition');
-      }
-      return;
-    }
-
-    setStatus('extracting');
-    setErrorMessage('');
-    setExtractingPartitions(new Set(partitionsToExtract));
-
-    const toastId = toast.loading(`Extracting ${partitionsToExtract.length} partition(s)...`);
-    useLogStore
-      .getState()
-      .addLog(`Starting extraction of ${partitionsToExtract.length} partitions...`, 'info');
-
-    try {
-      const cancelTokenId = await CreateCancellationToken();
-      setCancelTokenId(cancelTokenId);
-
-      const targetOutputPath = outputDir || outputPath;
-      const result = await ExtractPayload(
-        payloadPath,
-        targetOutputPath,
-        partitionsToExtract,
-        mode === 'remote' ? prefetch : undefined,
-        cancelTokenId,
-      );
-
-      if (result.success) {
-        const newFiles = result.extractedFiles || [];
-        setExtractedFiles([...usePayloadDumperStore.getState().extractedFiles, ...newFiles]);
-        setOutputDir(result.outputDir || '');
-        setStatus('success');
-
-        if (result.stats) {
-          setExtractionStats(result.stats);
-        }
-
-        const newCompleted = newFiles.map((f) => f.replace('.img', ''));
-        addCompletedPartitions(newCompleted);
-        setExtractingPartitions(new Set());
-        clearPartitionProgress();
-
-        toast.success(`Extraction complete! ${newFiles.length} files extracted`, { id: toastId });
-        useLogStore
-          .getState()
-          .addLog(
-            `Extraction complete: ${newFiles.length} files to ${result.outputDir}`,
-            'success',
-          );
-      } else {
-        setErrorMessage(result.error ?? 'Unknown error');
-        setStatus('error');
-        setExtractingPartitions(new Set());
-        clearPartitionProgress();
-        toast.error(`Extraction failed: ${result.error}`, { id: toastId });
-        useLogStore.getState().addLog(`Extraction failed: ${result.error}`, 'error');
-      }
-    } catch (error) {
-      setErrorMessage(String(error));
-      setStatus('error');
-      setExtractingPartitions(new Set());
-      clearPartitionProgress();
-      toast.error(`Extraction failed: ${error}`, { id: toastId });
-      useLogStore.getState().addLog(`Extraction failed: ${error}`, 'error');
-    } finally {
-      setCancelTokenId(null);
-    }
+    await runExtractPayload({
+      addCompletedPartitions,
+      clearPartitionProgress,
+      completedPartitions,
+      mode,
+      outputDir,
+      outputPath,
+      partitions,
+      payloadPath,
+      prefetch,
+      setCancelTokenId,
+      setErrorMessage,
+      setExtractedFiles,
+      setExtractingPartitions,
+      setExtractionStats,
+      setOutputDir,
+      setStatus,
+    });
   }, [
     payloadPath,
     partitions,
@@ -415,17 +247,17 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     clearPartitionProgress,
     setCancelTokenId,
   ]);
-
   const handleReset = useCallback(() => {
-    reset();
-    setMode('local');
-    setRemoteUrl('');
-    setPrefetch(false);
-    setConnectionStatus('idle');
-    setEstimatedSize(null);
-    setRemoteMetadata(null);
-    cancelLoadingRef.current = false;
-    useLogStore.getState().addLog('Dumper reset', 'info');
+    runResetPayloadDumper(
+      reset,
+      setMode,
+      setRemoteUrl,
+      setPrefetch,
+      setConnectionStatus,
+      setEstimatedSize,
+      setRemoteMetadata,
+      cancelLoadingRef,
+    );
   }, [
     reset,
     setMode,
@@ -435,7 +267,6 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setEstimatedSize,
     setRemoteMetadata,
   ]);
-
   return {
     handleCheckUrl,
     loadRemotePartitions,

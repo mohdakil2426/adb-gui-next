@@ -1,6 +1,6 @@
 import { Download, Loader2, RefreshCw, StopCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { formatBytesNum } from '@/lib/utils';
+import { Button } from '@/shared/ui/button';
+import { formatBytesNum } from '@/shared/utils/formatting';
 
 interface ActionFooterProps {
   hasCompletedPartitions: boolean;

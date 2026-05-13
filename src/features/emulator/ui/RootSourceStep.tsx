@@ -8,14 +8,15 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import type { RootWizardSource } from '@/lib/emulatorManagerStore';
-import { cn, formatDisplayDate, formatFileSize } from '@/lib/utils';
+import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import type { RootWizardSource } from '@/features/emulator/model/emulatorManagerStore';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
+import { cn } from '@/shared/utils/cn';
+import { formatDisplayDate, formatFileSize } from '@/shared/utils/formatting';
 
 interface RootSourceStepProps {
   onContinue: () => void;

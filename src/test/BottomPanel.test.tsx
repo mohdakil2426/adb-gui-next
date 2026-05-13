@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BottomPanel } from '@/components/BottomPanel';
-import { useLogStore } from '@/lib/logStore';
+import { BottomPanel } from '@/app/shell/BottomPanel/BottomPanel';
+import { useLogStore } from '@/shared/stores/logStore';
 
-vi.mock('@/components/ui/sidebar', () => ({
+vi.mock('@/shared/ui/sidebar', () => ({
   useSidebar: () => ({ state: 'expanded' }),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   SaveLog: vi.fn(),
 }));
 

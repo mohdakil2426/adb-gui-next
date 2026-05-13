@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { MarketplaceGithubDevicePoll, MarketplaceGithubDeviceStart } from '@/lib/desktop/backend';
-import { BrowserOpenURL } from '@/lib/desktop/runtime';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { MarketplaceGithubDevicePoll, MarketplaceGithubDeviceStart } from '@/desktop/backend';
+import { BrowserOpenURL } from '@/desktop/runtime';
+import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 
 const AUTH_SCOPES = ['read:user'];
 const SLOW_DOWN_MS = 5000;

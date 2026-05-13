@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useLogStore } from '@/lib/logStore';
+import { useLogStore } from '@/shared/stores/logStore';
 
 describe('logStore', () => {
   beforeEach(() => {

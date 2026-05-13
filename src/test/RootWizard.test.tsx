@@ -1,9 +1,9 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { RootWizard } from '@/components/emulator-manager/RootWizard';
-import type { backend } from '@/lib/desktop/models';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
+import type { backend } from '@/desktop/models';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
+import { RootWizard } from '@/features/emulator/ui/RootWizard';
 
 const scanAvdRootReadinessMock = vi.fn();
 const rootAvdMock = vi.fn();
@@ -19,12 +19,12 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
 }));
 
-vi.mock('@/lib/desktop/runtime', () => ({
+vi.mock('@/desktop/runtime', () => ({
   OnFileDrop: (...args: unknown[]) => onFileDropMock(...args),
   OnFileDropOff: (...args: unknown[]) => onFileDropOffMock(...args),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   FetchMagiskStableRelease: vi.fn().mockResolvedValue({
     version: '30.7',
     tag: 'v30.7',

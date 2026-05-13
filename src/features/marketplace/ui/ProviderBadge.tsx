@@ -1,7 +1,7 @@
 import { GitBranch, Package, Store } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { Badge } from '@/shared/ui/badge';
+import { cn } from '@/shared/utils/cn';
 
 type ProviderSource = backend.ProviderSource;
 

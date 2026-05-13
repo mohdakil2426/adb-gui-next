@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { getFileName } from '@/lib/utils';
+import { getFileName } from '@/shared/utils/formatting';
 
 interface LoadingStateProps {
   mode: 'local' | 'remote';

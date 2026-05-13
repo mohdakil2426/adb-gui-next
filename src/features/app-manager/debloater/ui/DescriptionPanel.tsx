@@ -1,5 +1,5 @@
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { cn } from '@/shared/utils/cn';
 import {
   PKG_STATE_CLASSES,
   PKG_STATE_LABELS,

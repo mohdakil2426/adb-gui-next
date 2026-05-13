@@ -9,17 +9,17 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { DropZone } from '@/components/DropZone';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   FinalizeAvdRoot,
   PrepareAvdRoot,
   SelectPatchedRootImageFile,
   SelectRootPackageFile,
-} from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
+} from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import { DropZone } from '@/shared/components/DropZone';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
 
 interface RootManualStepProps {
   avdName: string;

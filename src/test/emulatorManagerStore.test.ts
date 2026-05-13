@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
 
 describe('emulatorManagerStore', () => {
   beforeEach(() => {

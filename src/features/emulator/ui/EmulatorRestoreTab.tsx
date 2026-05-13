@@ -1,11 +1,11 @@
 import { CheckCircle2, ExternalLink, RotateCcw } from 'lucide-react';
-import { LoadingButton } from '@/components/LoadingButton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { OpenFolder } from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import { handleError } from '@/lib/errorHandler';
+import { OpenFolder } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import { LoadingButton } from '@/shared/components/LoadingButton';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Button } from '@/shared/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
+import { handleError } from '@/shared/utils/errorHandler';
 
 interface EmulatorRestoreTabProps {
   avd: backend.AvdSummary | null;

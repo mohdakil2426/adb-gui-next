@@ -1,69 +1,24 @@
-import {
-  CheckCircle2,
-  GitBranch,
-  Loader2,
-  LogOut,
-  RefreshCw,
-  Settings,
-  ShieldCheck,
-  SlidersHorizontal,
-  Trash2,
-} from 'lucide-react';
+import { CheckCircle2, GitBranch, Loader2, LogOut, Settings } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { MarketplaceClearCache } from '@/desktop/backend';
+import { BrowserOpenURL } from '@/desktop/runtime';
+import { useMarketplaceAuth } from '@/features/marketplace/hooks/useMarketplaceAuth';
+import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
+import { CacheHistorySection } from '@/features/marketplace/ui/settings/CacheHistorySection';
+import { SearchPreferencesSection } from '@/features/marketplace/ui/settings/SearchPreferencesSection';
+import { SourceSelectionSection } from '@/features/marketplace/ui/settings/SourceSelectionSection';
+import { Button } from '@/shared/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-  FieldTitle,
-} from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { MarketplaceClearCache } from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import { BrowserOpenURL } from '@/lib/desktop/runtime';
-import { useMarketplaceAuth } from '@/lib/marketplace/useMarketplaceAuth';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
-
-type ProviderSource = backend.ProviderSource;
-
-const PROVIDERS: { id: ProviderSource; label: string; description: string }[] = [
-  {
-    id: 'F-Droid',
-    label: 'F-Droid',
-    description: 'Free and open-source Android apps',
-  },
-  {
-    id: 'GitHub',
-    label: 'GitHub Releases',
-    description: 'Open-source repositories with release assets',
-  },
-  {
-    id: 'Aptoide',
-    label: 'Aptoide',
-    description: 'Consumer app store with trusted-package filtering',
-  },
-];
+} from '@/shared/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/shared/ui/field';
+import { Input } from '@/shared/ui/input';
+import { Separator } from '@/shared/ui/separator';
 
 export function MarketplaceSettings() {
   const isSettingsOpen = useMarketplaceStore((state) => state.isSettingsOpen);
@@ -148,37 +103,10 @@ export function MarketplaceSettings() {
         </DialogHeader>
 
         <div className="flex flex-col gap-6 py-1">
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 font-medium text-sm">
-              <ShieldCheck className="size-4 text-muted-foreground" />
-              Source selection
-            </div>
-            <FieldGroup>
-              {PROVIDERS.map((provider) => (
-                <Field
-                  className="justify-between rounded-lg border px-3 py-3"
-                  data-disabled={
-                    activeProviders.includes(provider.id) && activeProviders.length <= 1
-                  }
-                  key={provider.id}
-                  orientation="horizontal"
-                >
-                  <FieldContent className="pr-4">
-                    <FieldTitle>{provider.label}</FieldTitle>
-                    <FieldDescription>{provider.description}</FieldDescription>
-                  </FieldContent>
-                  <Switch
-                    aria-label={`Enable ${provider.label}`}
-                    checked={activeProviders.includes(provider.id)}
-                    disabled={activeProviders.includes(provider.id) && activeProviders.length <= 1}
-                    onCheckedChange={() => {
-                      toggleProvider(provider.id);
-                    }}
-                  />
-                </Field>
-              ))}
-            </FieldGroup>
-          </section>
+          <SourceSelectionSection
+            activeProviders={activeProviders}
+            toggleProvider={toggleProvider}
+          />
 
           <Separator />
 
@@ -283,86 +211,22 @@ export function MarketplaceSettings() {
 
           <Separator />
 
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 font-medium text-sm">
-              <SlidersHorizontal className="size-4 text-muted-foreground" />
-              Search preferences
-            </div>
-            <FieldSet>
-              <FieldGroup className="grid gap-4 sm:grid-cols-2">
-                <Field>
-                  <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      setResultsPerProvider(Number(value));
-                    }}
-                    value={String(resultsPerProvider)}
-                  >
-                    <SelectTrigger className="w-full" id="results-per-provider">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {[6, 8, 12, 16].map((value) => (
-                          <SelectItem key={value} value={String(value)}>
-                            {value}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-                <Field>
-                  <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
-                  <Input
-                    autoComplete="off"
-                    className="font-mono text-xs"
-                    id="github-pat"
-                    name="github-pat"
-                    onChange={(event) => {
-                      setLocalPat(event.target.value);
-                    }}
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                    spellCheck={false}
-                    type="password"
-                    value={localPat}
-                  />
-                </Field>
-              </FieldGroup>
-            </FieldSet>
-            <FieldDescription>
-              Personal access tokens are optional session-only fallbacks. They are kept in memory
-              for the current app session and are not saved after reload or restart.
-            </FieldDescription>
-          </section>
+          <SearchPreferencesSection
+            localPat={localPat}
+            onLocalPatChange={setLocalPat}
+            onResultsPerProviderChange={setResultsPerProvider}
+            resultsPerProvider={resultsPerProvider}
+          />
 
           <Separator />
 
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 font-medium text-sm">
-              <RefreshCw className="size-4 text-muted-foreground" />
-              Cache and history
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={handleClearCache} variant="outline">
-                <RefreshCw data-icon="inline-start" />
-                Clear cache
-              </Button>
-              <Button
-                disabled={searchHistory.length === 0}
-                onClick={clearSearchHistory}
-                variant="outline"
-              >
-                <Trash2 data-icon="inline-start" />
-                Clear search history
-              </Button>
-            </div>
-            <p className="text-muted-foreground text-xs">
-              {searchHistory.length > 0
-                ? `${searchHistory.length} recent search${searchHistory.length === 1 ? '' : 'es'} saved locally.`
-                : 'No local search history saved yet.'}
-            </p>
-          </section>
+          <CacheHistorySection
+            onClearCache={() => {
+              void handleClearCache();
+            }}
+            onClearSearchHistory={clearSearchHistory}
+            searchHistoryCount={searchHistory.length}
+          />
         </div>
       </DialogContent>
     </Dialog>

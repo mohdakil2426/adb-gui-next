@@ -8,11 +8,12 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { memo } from 'react';
-import { FileBannerDetails } from '@/components/payload-dumper/FileBannerDetails';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { backend } from '@/lib/desktop/models';
-import { cn, formatBytesNum, getFileName } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { FileBannerDetails } from '@/features/payload-dumper/ui/FileBannerDetails';
+import { Button } from '@/shared/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
+import { cn } from '@/shared/utils/cn';
+import { formatBytesNum, getFileName } from '@/shared/utils/formatting';
 
 interface FileBannerProps {
   effectiveOutputPath: string;

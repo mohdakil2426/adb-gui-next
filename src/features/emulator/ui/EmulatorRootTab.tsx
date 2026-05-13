@@ -1,6 +1,6 @@
 import { Snowflake } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
+import { Button } from '@/shared/ui/button';
 import { RootWizard } from './RootWizard';
 
 interface EmulatorRootTabProps {

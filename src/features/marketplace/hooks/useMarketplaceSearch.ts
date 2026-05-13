@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MarketplaceSearch } from '@/lib/desktop/backend';
-import { handleError } from '@/lib/errorHandler';
-import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
+import { MarketplaceSearch } from '@/desktop/backend';
+import {
+  getMarketplaceEffectiveGithubToken,
+  useMarketplaceStore,
+} from '@/features/marketplace/model/marketplaceStore';
+import { handleError } from '@/shared/utils/errorHandler';
 
 const DEBOUNCE_MS = 450;
 const MIN_QUERY_LENGTH = 2;

@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { MarketplaceDownloadApk, MarketplaceInstallApk } from '@/lib/desktop/backend';
+import { MarketplaceDownloadApk, MarketplaceInstallApk } from '@/desktop/backend';
 
 export async function installMarketplacePackage(
   appName: string,

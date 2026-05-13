@@ -18,7 +18,7 @@ import {
   SideloadPackage,
   UninstallPackage,
   WipeData,
-} from '@/lib/desktop/backend';
+} from '@/desktop/backend';
 
 const invokeMock = vi.mocked(invoke);
 
@@ -110,7 +110,10 @@ describe('selected device routing', () => {
   });
 
   it('keeps the header device popover inside the content area instead of overlapping the sidebar', () => {
-    const source = readFileSync(join(process.cwd(), 'src/components/DeviceSwitcher.tsx'), 'utf8');
+    const source = readFileSync(
+      join(process.cwd(), 'src/shared/components/DeviceSwitcher.tsx'),
+      'utf8',
+    );
 
     expect(source).toContain('<PopoverContent align="start"');
     expect(source).toContain('collisionPadding={16}');

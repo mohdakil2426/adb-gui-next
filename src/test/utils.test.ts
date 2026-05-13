@@ -7,7 +7,7 @@ import {
   formatFileSize,
   formatRating,
   getFileName,
-} from '@/lib/utils';
+} from '@/shared/utils/formatting';
 
 describe('formatting helpers', () => {
   test('formats marketplace display values consistently', () => {

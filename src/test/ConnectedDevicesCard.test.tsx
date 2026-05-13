@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { ConnectedDevicesCard } from '../components/ConnectedDevicesCard';
+import { ConnectedDevicesCard } from '@/shared/components/ConnectedDevicesCard';
 
 // Mock nicknameStore — return undefined (no nicknames set)
 vi.mock('../lib/nicknameStore', () => ({

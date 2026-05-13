@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { listen } from '@tauri-apps/api/event';
-import { CheckCircle2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -9,23 +8,23 @@ import {
   ScanAvdRootReadiness,
   StopAvd,
   VerifyAvdRoot,
-} from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import { type RootWizardSource, useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
-import { invalidateAvds } from '@/lib/queries';
-import { cn } from '@/lib/utils';
+} from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import {
+  type RootWizardSource,
+  useEmulatorManagerStore,
+} from '@/features/emulator/model/emulatorManagerStore';
+import { invalidateAvds } from '@/shared/utils/queries';
 import { RootManualStep } from './RootManualStep';
 import { RootPreflightStep } from './RootPreflightStep';
 import { RootProgressStep } from './RootProgressStep';
 import { RootResultStep } from './RootResultStep';
 import { RootSourceStep } from './RootSourceStep';
+import { RootStepIndicator } from './RootStepIndicator';
 
 interface RootWizardProps {
   avd: backend.AvdSummary;
 }
-
-const STEPS = ['Preflight', 'Source', 'Manual', 'Rooting', 'Done'];
-
 export function RootWizard({ avd }: RootWizardProps) {
   const {
     rootWizard,
@@ -39,14 +38,11 @@ export function RootWizard({ avd }: RootWizardProps) {
     resetRootWizard,
     setActiveTab,
   } = useEmulatorManagerStore();
-
   const queryClient = useQueryClient();
-
   const cancelledRef = useRef(false);
   const autoScanKeyRef = useRef<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const scanKey = `${avd.name}:${avd.serial ?? 'stopped'}`;
-
   // Map wizard step to STEPS index
   const stepIndex =
     rootWizard.step === 'preflight'
@@ -58,7 +54,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           : rootWizard.step === 'progress'
             ? 3
             : 4;
-
   // Listen for root:progress events from Tauri backend.
   useEffect(() => {
     const unlistenPromise = listen<backend.RootProgress>('root:progress', (event) => {
@@ -73,7 +68,6 @@ export function RootWizard({ avd }: RootWizardProps) {
       });
     };
   }, [setRootWizardProgress]);
-
   // Run the preflight scan.
   const runScan = useCallback(async () => {
     setIsScanning(true);
@@ -90,24 +84,20 @@ export function RootWizard({ avd }: RootWizardProps) {
       setIsScanning(false);
     }
   }, [avd.name, avd.serial, setPreflightScan, setRootWizardStep]);
-
   // Trigger scan automatically when entering preflight step.
   useEffect(() => {
     if (rootWizard.step !== 'preflight') {
       autoScanKeyRef.current = null;
       return;
     }
-
     if (rootWizard.preflightScan === null && !isScanning && autoScanKeyRef.current !== scanKey) {
       autoScanKeyRef.current = scanKey;
       void runScan();
     }
   }, [rootWizard.step, rootWizard.preflightScan, isScanning, runScan, scanKey]);
-
   function handleSourceChange(src: RootWizardSource) {
     setRootWizardSource(src);
   }
-
   function handleContinue() {
     if (!rootWizard.source) {
       return;
@@ -116,14 +106,12 @@ export function RootWizard({ avd }: RootWizardProps) {
     cancelledRef.current = false;
     void startRoot();
   }
-
   async function startRoot() {
     const src = rootWizard.source;
     if (!(src && avd.serial)) {
       setRootWizardResult(null, 'Emulator is not running. Launch it first.');
       return;
     }
-
     const request: backend.RootAvdRequest = {
       avdName: avd.name,
       serial: avd.serial,
@@ -132,7 +120,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           ? { type: 'latestStable' as const }
           : { type: 'localFile' as const, value: src.path },
     };
-
     try {
       const result = await RootAvd(request);
       if (!cancelledRef.current) {
@@ -148,13 +135,11 @@ export function RootWizard({ avd }: RootWizardProps) {
       }
     }
   }
-
   function handleCancel() {
     cancelledRef.current = true;
     resetRootWizard();
     toast.info('Rooting cancelled');
   }
-
   function handleLaunch() {
     LaunchAvd(avd.name, {
       wipeData: false,
@@ -167,7 +152,6 @@ export function RootWizard({ avd }: RootWizardProps) {
       .then(() => toast.success(`Launching ${avd.name}…`))
       .catch((err: unknown) => toast.error(String(err)));
   }
-
   function handleColdBoot() {
     // The emulator may already be stopped (auto-shutdown after patching).
     // Attempt to stop gracefully, then cold boot with no-snapshot flags.
@@ -191,7 +175,6 @@ export function RootWizard({ avd }: RootWizardProps) {
         // ignore
       });
   }
-
   async function handleVerifyRoot() {
     if (!avd.serial) {
       toast.error(
@@ -199,7 +182,6 @@ export function RootWizard({ avd }: RootWizardProps) {
       );
       return;
     }
-
     setRootVerifying(true);
     try {
       const verification = await VerifyAvdRoot(avd.name, avd.serial);
@@ -215,54 +197,17 @@ export function RootWizard({ avd }: RootWizardProps) {
       setRootVerifying(false);
     }
   }
-
   function handleRestoreStock() {
     resetRootWizard();
     setActiveTab('restore');
   }
-
   const handleTryManual = useCallback(() => {
     resetRootWizard();
     setRootWizardStep('manual');
   }, [resetRootWizard, setRootWizardStep]);
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Step indicator */}
-      <div className="flex items-center gap-2">
-        {STEPS.map((label, idx) => {
-          const done = idx < stepIndex;
-          const active = idx === stepIndex;
-          return (
-            <div className="flex items-center gap-2" key={label}>
-              <div
-                className={cn(
-                  'flex size-6 items-center justify-center rounded-full border font-semibold text-xs transition-colors',
-                  done && 'border-success bg-success text-success-foreground',
-                  active && 'border-primary bg-primary text-primary-foreground',
-                  !(done || active) && 'border-border bg-background text-muted-foreground',
-                )}
-              >
-                {done ? <CheckCircle2 className="size-3.5" /> : idx + 1}
-              </div>
-              <span
-                className={cn(
-                  'text-sm',
-                  active ? 'font-medium text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {label}
-              </span>
-              {idx < STEPS.length - 1 && (
-                <div
-                  className={cn('h-px w-8 transition-colors', done ? 'bg-success' : 'bg-border')}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
+      <RootStepIndicator stepIndex={stepIndex} />
       {/* Step content */}
       {rootWizard.step === 'preflight' && (
         <RootPreflightStep
@@ -282,7 +227,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           scan={rootWizard.preflightScan}
         />
       )}
-
       {rootWizard.step === 'source' && (
         <RootSourceStep
           onContinue={handleContinue}
@@ -293,7 +237,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           source={rootWizard.source}
         />
       )}
-
       {rootWizard.step === 'manual' && (
         <RootManualStep
           avdName={avd.name}
@@ -304,7 +247,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           serial={avd.serial ?? null}
         />
       )}
-
       {rootWizard.step === 'progress' && (
         <RootProgressStep
           avdName={avd.name}
@@ -313,7 +255,6 @@ export function RootWizard({ avd }: RootWizardProps) {
           progress={rootWizard.progress}
         />
       )}
-
       {rootWizard.step === 'result' && (
         <RootResultStep
           avdName={avd.name}

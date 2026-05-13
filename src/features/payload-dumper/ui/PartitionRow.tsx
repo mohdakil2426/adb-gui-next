@@ -1,7 +1,8 @@
 import { CheckCircle2, HardDrive, Loader2 } from 'lucide-react';
 import React from 'react';
-import { CheckboxItem } from '@/components/CheckboxItem';
-import { cn, formatBytesNum } from '@/lib/utils';
+import { CheckboxItem } from '@/shared/components/CheckboxItem';
+import { cn } from '@/shared/utils/cn';
+import { formatBytesNum } from '@/shared/utils/formatting';
 import { ExtractionProgressBar } from './ExtractionProgressBar';
 
 interface PartitionRowProps {

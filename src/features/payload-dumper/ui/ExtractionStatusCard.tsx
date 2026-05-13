@@ -8,11 +8,11 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
+import { cn } from '@/shared/utils/cn';
 
 interface ExtractionStatusCardProps {
   errorMessage: string;

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { backend } from './desktop/models';
+import type { backend } from '@/desktop/models';
 
 type MarketplaceApp = backend.MarketplaceApp;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
@@ -7,22 +7,18 @@ type ProviderSource = backend.ProviderSource;
 type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
-
 const ALL_PROVIDERS: ProviderSource[] = ['F-Droid', 'GitHub', 'Aptoide'];
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
-
 interface GithubSessionState {
   accessToken: string | null;
   rateLimit: GithubRateLimitSummary | null;
   user: GithubUserSummary | null;
 }
-
 interface ActiveGithubDeviceChallenge {
   challenge: GithubDeviceFlowChallenge;
   clientId: string;
 }
-
 interface MarketplaceState {
   activeProviders: ProviderSource[];
   addToSearchHistory: (query: string) => void;
@@ -59,7 +55,6 @@ interface MarketplaceState {
   setIsRecentReleaseLoading: (isRecentReleaseLoading: boolean) => void;
   setIsSearching: (isSearching: boolean) => void;
   setIsTrendingLoading: (isTrendingLoading: boolean) => void;
-
   setQuery: (query: string) => void;
   setRecentReleaseApps: (apps: MarketplaceApp[]) => void;
   setResults: (results: MarketplaceApp[]) => void;
@@ -72,12 +67,10 @@ interface MarketplaceState {
   trendingApps: MarketplaceApp[];
   viewMode: 'grid' | 'list';
 }
-
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') {
     return fallback;
   }
-
   try {
     const raw = localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
@@ -85,35 +78,29 @@ function loadFromStorage<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
-
 function saveToStorage(key: string, value: unknown): void {
   if (typeof window === 'undefined') {
     return;
   }
-
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Ignore storage failures in desktop webview/tests.
   }
 }
-
 function uniqueRecentApps(apps: MarketplaceApp[], nextApp: MarketplaceApp): MarketplaceApp[] {
   return [nextApp, ...apps.filter((app) => app.packageName !== nextApp.packageName)].slice(
     0,
     RECENTLY_VIEWED_LIMIT,
   );
 }
-
 export function getMarketplaceEffectiveGithubToken(state: MarketplaceState): string | null {
   return state.githubSession.accessToken ?? (state.githubPat || null);
 }
-
 export function getMarketplaceActiveFilterSummary(
   state: Pick<MarketplaceState, 'activeProviders' | 'sortBy' | 'resultsPerProvider'>,
 ): string[] {
   const summaries = [`Sort: ${state.sortBy}`, `${state.resultsPerProvider}/provider`];
-
   if (state.activeProviders.length === ALL_PROVIDERS.length) {
     summaries.unshift('All sources');
   } else {
@@ -121,10 +108,8 @@ export function getMarketplaceActiveFilterSummary(
       `${state.activeProviders.length} source${state.activeProviders.length === 1 ? '' : 's'}`,
     );
   }
-
   return summaries;
 }
-
 export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   query: '',
   results: [],
@@ -151,7 +136,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   },
   githubDeviceChallenge: null,
   isGithubAuthenticating: false,
-
   setQuery: (query) => {
     set({ query });
   },
@@ -161,7 +145,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setIsSearching: (isSearching) => {
     set({ isSearching });
   },
-
   openDetail: (app) => {
     const recentlyViewedApps = uniqueRecentApps(get().recentlyViewedApps, app);
     saveToStorage('marketplace_recently_viewed', recentlyViewedApps);
@@ -170,7 +153,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   closeDetail: () => {
     set({ selectedApp: null, isDetailOpen: false });
   },
-
   toggleProvider: (provider) => {
     const current = get().activeProviders;
     const next = current.includes(provider)
@@ -178,27 +160,22 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
         ? current.filter((entry) => entry !== provider)
         : current
       : [...current, provider];
-
     const normalized = next.length === ALL_PROVIDERS.length ? [...ALL_PROVIDERS] : next;
     saveToStorage('marketplace_providers', normalized);
     set({ activeProviders: normalized });
   },
-
   setAllProviders: () => {
     saveToStorage('marketplace_providers', ALL_PROVIDERS);
     set({ activeProviders: [...ALL_PROVIDERS] });
   },
-
   setSortBy: (sortBy) => {
     saveToStorage('marketplace_sort', sortBy);
     set({ sortBy });
   },
-
   setViewMode: (viewMode) => {
     saveToStorage('marketplace_view', viewMode);
     set({ viewMode });
   },
-
   setTrendingApps: (trendingApps) => {
     set({ trendingApps });
   },
@@ -211,13 +188,11 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setIsRecentReleaseLoading: (isRecentReleaseLoading) => {
     set({ isRecentReleaseLoading });
   },
-
   addToSearchHistory: (query) => {
     const trimmed = query.trim();
     if (!trimmed) {
       return;
     }
-
     const next = [trimmed, ...get().searchHistory.filter((entry) => entry !== trimmed)].slice(
       0,
       SEARCH_HISTORY_LIMIT,
@@ -225,19 +200,16 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     saveToStorage('marketplace_history', next);
     set({ searchHistory: next });
   },
-
   clearSearchHistory: () => {
     saveToStorage('marketplace_history', []);
     set({ searchHistory: [] });
   },
-
   openSettings: () => {
     set({ isSettingsOpen: true });
   },
   closeSettings: () => {
     set({ isSettingsOpen: false });
   },
-
   setGithubPat: (githubPat) => {
     // SECURE STORAGE REQUIRED: GitHub PAT contains sensitive credentials
     // TODO: Migrate to @tauri-apps/plugin-store for secure storage
@@ -250,17 +222,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     // 5. On setGithubPat, call store.set('github_pat', githubPat)
     set({ githubPat });
   },
-
   setGithubOauthClientId: (githubOauthClientId) => {
     saveToStorage('marketplace_github_client_id', githubOauthClientId);
     set({ githubOauthClientId });
   },
-
   setResultsPerProvider: (resultsPerProvider) => {
     saveToStorage('marketplace_results_per_provider', resultsPerProvider);
     set({ resultsPerProvider });
   },
-
   setGithubSession: (session) =>
     // SECURE STORAGE REQUIRED: GitHub OAuth token contains sensitive credentials
     // TODO: Migrate to @tauri-apps/plugin-store for secure storage
@@ -278,7 +247,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
         },
       }));
     },
-
   clearGithubSession: () => {
     set({
       githubSession: { accessToken: null, user: null, rateLimit: null },
@@ -286,14 +254,12 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       isGithubAuthenticating: false,
     });
   },
-
   setGithubDeviceChallenge: (githubDeviceChallenge) => {
     set({ githubDeviceChallenge });
   },
   setIsGithubAuthenticating: (isGithubAuthenticating) => {
     set({ isGithubAuthenticating });
   },
-
   reset: () => {
     set({
       query: '',

@@ -1,7 +1,7 @@
 import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils/cn';
 
 const STEP_LABELS = [
   'Checking your emulator is ready…',

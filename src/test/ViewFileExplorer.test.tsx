@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewFileExplorer } from '@/components/views/ViewFileExplorer';
-import { useDeviceStore } from '@/lib/deviceStore';
+import { ViewFileExplorer } from '@/features/file-explorer/FileExplorerView';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 
 const longFileName =
   'flar2.devcheck_6.37-637_4arch_6dpi_95deb855a0cd5c3a0a02b45c11404c91_apkmirror.com.apkm';
@@ -24,7 +24,7 @@ vi.mock('@tanstack/react-virtual', () => ({
   }),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   CreateDirectory: vi.fn(),
   CreateFile: vi.fn(),
   DeleteFiles: vi.fn(),
@@ -77,8 +77,9 @@ describe('ViewFileExplorer', () => {
       .findByRole('alertdialog')
       .then((dialog) => dialog.querySelector('[data-slot="alert-dialog-title"]'));
 
-    expect(title).toHaveClass('break-words');
+    expect(title).toHaveClass('min-w-0');
     expect(title).toHaveClass('whitespace-normal');
+    expect(title).toHaveClass('[overflow-wrap:anywhere]');
     expect(title).toHaveTextContent(longFileName);
   });
 });

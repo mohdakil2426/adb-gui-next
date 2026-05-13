@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { MarketplaceGetTrending } from '@/lib/desktop/backend';
-import { handleError } from '@/lib/errorHandler';
-import { getMarketplaceEffectiveGithubToken, useMarketplaceStore } from '@/lib/marketplaceStore';
+import { MarketplaceGetTrending } from '@/desktop/backend';
+import {
+  getMarketplaceEffectiveGithubToken,
+  useMarketplaceStore,
+} from '@/features/marketplace/model/marketplaceStore';
+import { handleError } from '@/shared/utils/errorHandler';
 
 export function useMarketplaceHome(hasQuery: boolean) {
   const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);

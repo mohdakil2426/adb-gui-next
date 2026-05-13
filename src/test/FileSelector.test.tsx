@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { FileSelector } from '@/components/FileSelector';
+import { FileSelector } from '@/shared/components/FileSelector';
 
 describe('FileSelector', () => {
   it('shows the full selected path in visible assistive text instead of native title', () => {

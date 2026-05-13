@@ -1,12 +1,12 @@
 import { ChevronDown, Loader2, MonitorSmartphone, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import type { backend } from '@/lib/desktop/models';
-import { cn } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
+import { Separator } from '@/shared/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
+import { cn } from '@/shared/utils/cn';
 
 interface AvdSwitcherProps {
   avds: backend.AvdSummary[];

@@ -1,5 +1,5 @@
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
+import { Progress } from '@/shared/ui/progress';
+import { cn } from '@/shared/utils/cn';
 
 interface ExtractionProgressBarProps {
   isCompleted: boolean;

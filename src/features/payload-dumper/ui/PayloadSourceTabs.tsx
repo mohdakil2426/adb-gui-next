@@ -1,8 +1,8 @@
 import { FileArchive, Globe, XCircle } from 'lucide-react';
-import { DropZone } from '@/components/DropZone';
-import { type ConnectionStatus, RemoteUrlPanel } from '@/components/RemoteUrlPanel';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropZone } from '@/shared/components/DropZone';
+import { type ConnectionStatus, RemoteUrlPanel } from '@/shared/components/RemoteUrlPanel';
+import { Button } from '@/shared/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
 const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'];
 

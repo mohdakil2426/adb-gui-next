@@ -1,6 +1,11 @@
 import { ArrowDownWideNarrow, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import type { backend } from '@/desktop/models';
+import {
+  getMarketplaceActiveFilterSummary,
+  useMarketplaceStore,
+} from '@/features/marketplace/model/marketplaceStore';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,11 +14,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import type { backend } from '@/lib/desktop/models';
-import { getMarketplaceActiveFilterSummary, useMarketplaceStore } from '@/lib/marketplaceStore';
-import { cn } from '@/lib/utils';
+} from '@/shared/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
+import { cn } from '@/shared/utils/cn';
 
 type ProviderSource = backend.ProviderSource;
 type MarketplaceSortBy = backend.MarketplaceSortBy;

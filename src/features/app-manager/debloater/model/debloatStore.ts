@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
 
 export type AppManagerTab = 'debloater' | 'installation';
 export type DebloatListFilter = backend.DebloatList | 'All';

@@ -1,9 +1,13 @@
 import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
 import { memo, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import type { backend } from '@/lib/desktop/models';
-import { formatDownloadCount, installMarketplacePackage } from '@/lib/marketplace/install';
-import { cn, formatRating } from '@/lib/utils';
+import type { backend } from '@/desktop/models';
+import {
+  formatDownloadCount,
+  installMarketplacePackage,
+} from '@/features/marketplace/utils/install';
+import { Button } from '@/shared/ui/button';
+import { cn } from '@/shared/utils/cn';
+import { formatRating } from '@/shared/utils/formatting';
 import { ProviderBadge } from './ProviderBadge';
 
 type MarketplaceApp = backend.MarketplaceApp;

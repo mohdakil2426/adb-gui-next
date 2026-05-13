@@ -1,16 +1,16 @@
 import { FileArchive, Package } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { ActionFooter } from '@/components/payload-dumper/ActionFooter';
-import { ExtractionStatusCard } from '@/components/payload-dumper/ExtractionStatusCard';
-import { FileBanner } from '@/components/payload-dumper/FileBanner';
-import { LoadingState } from '@/components/payload-dumper/LoadingState';
-import { PartitionTable } from '@/components/payload-dumper/PartitionTable';
-import { PayloadSourceTabs } from '@/components/payload-dumper/PayloadSourceTabs';
-import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { usePayloadActions } from '@/lib/payload-dumper/usePayloadActions';
-import { usePayloadEvents } from '@/lib/payload-dumper/usePayloadEvents';
-import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
+import { usePayloadActions } from '@/features/payload-dumper/hooks/usePayloadActions';
+import { usePayloadEvents } from '@/features/payload-dumper/hooks/usePayloadEvents';
+import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import { ActionFooter } from '@/features/payload-dumper/ui/ActionFooter';
+import { ExtractionStatusCard } from '@/features/payload-dumper/ui/ExtractionStatusCard';
+import { FileBanner } from '@/features/payload-dumper/ui/FileBanner';
+import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
+import { PartitionTable } from '@/features/payload-dumper/ui/PartitionTable';
+import { PayloadSourceTabs } from '@/features/payload-dumper/ui/PayloadSourceTabs';
+import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 export function ViewPayloadDumper() {
   const payloadPath = usePayloadDumperStore((state) => state.payloadPath);

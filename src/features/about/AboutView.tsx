@@ -1,6 +1,6 @@
 import { Code2, Globe, Heart, Rocket, Smartphone } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BrowserOpenURL } from '../../lib/desktop/runtime';
+import { BrowserOpenURL } from '@/desktop/runtime';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 
 export function ViewAbout() {
   const openLink = (url: string) => {

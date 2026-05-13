@@ -1,4 +1,4 @@
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 
 export function AttributionFooter() {
   const activeProviders = useMarketplaceStore((state) => state.activeProviders);

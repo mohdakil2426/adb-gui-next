@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewAppManager } from '@/components/views/ViewAppManager';
-import { useDeviceStore } from '@/lib/deviceStore';
+import { ViewAppManager } from '@/features/app-manager/AppManagerView';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 
 const getInstalledPackagesMock = vi.fn();
 const getDebloatPackagesMock = vi.fn();
@@ -24,7 +24,7 @@ vi.mock('@tanstack/react-virtual', () => ({
   }),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   DebloatPackages: vi.fn(),
   GetDebloatDeviceSettings: () => getDebloatDeviceSettingsMock(),
   GetDebloatPackages: () => getDebloatPackagesMock(),
@@ -37,7 +37,7 @@ vi.mock('@/lib/desktop/backend', () => ({
   UninstallPackage: vi.fn(),
 }));
 
-vi.mock('@/lib/desktop/runtime', () => ({
+vi.mock('@/desktop/runtime', () => ({
   OnFileDrop: vi.fn(() => () => {}),
   OnFileDropOff: vi.fn(),
 }));

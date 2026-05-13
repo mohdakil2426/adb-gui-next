@@ -1,11 +1,11 @@
 import { AlertTriangle, Play } from 'lucide-react';
 import { useState } from 'react';
-import { LoadingButton } from '@/components/LoadingButton';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
+import { LoadingButton } from '@/shared/components/LoadingButton';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Checkbox } from '@/shared/ui/checkbox';
+import { Label } from '@/shared/ui/label';
+import { Switch } from '@/shared/ui/switch';
 
 interface EmulatorLaunchTabProps {
   avd: backend.AvdSummary | null;

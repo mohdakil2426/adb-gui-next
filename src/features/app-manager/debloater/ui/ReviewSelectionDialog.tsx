@@ -1,8 +1,12 @@
 import { AlertTriangle, HardDrive, Loader2, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { CreateDebloatBackup, ListDebloatBackups } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import { useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
+import { useLogStore } from '@/shared/stores/logStore';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Button } from '@/shared/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,21 +14,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { useDebloatStore } from '@/lib/debloatStore';
-import { CreateDebloatBackup, ListDebloatBackups } from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import { handleError } from '@/lib/errorHandler';
-import { useLogStore } from '@/lib/logStore';
-import { cn } from '@/lib/utils';
+} from '@/shared/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
+import { cn } from '@/shared/utils/cn';
+import { handleError } from '@/shared/utils/errorHandler';
 import {
   ALL_REMOVAL_TIERS,
   countByTier,

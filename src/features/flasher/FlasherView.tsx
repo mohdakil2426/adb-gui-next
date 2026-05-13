@@ -1,49 +1,15 @@
-import {
-  AlertTriangle,
-  Clock,
-  FileUp,
-  HardDrive,
-  Loader2,
-  Package,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react';
-import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { FileSelector } from '@/components/FileSelector';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { buttonVariants } from '@/components/ui/button-variants';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { debugLog } from '@/lib/debug';
-import {
-  FlashPartition,
-  SelectImageFile,
-  SelectZipFile,
-  SideloadPackage,
-  WipeData,
-} from '@/lib/desktop/backend';
-import { OnFileDrop, OnFileDropOff } from '@/lib/desktop/runtime';
-import { useDeviceStore } from '@/lib/deviceStore';
-import { handleError } from '@/lib/errorHandler';
-import { useLogStore } from '@/lib/logStore';
-import { partitionSchema } from '@/lib/schemas';
-import { cn, getFileName } from '@/lib/utils';
+import { Clock, FileUp, HardDrive, Loader2, Package, X } from 'lucide-react';
+import { useRef } from 'react';
+import { useFlasherActions } from '@/features/flasher/hooks/useFlasherActions';
+import { useFlasherDropTargets } from '@/features/flasher/hooks/useFlasherDropTargets';
+import { DangerZoneCard } from '@/features/flasher/ui/DangerZoneCard';
+import { DropArea } from '@/features/flasher/ui/DropArea';
+import { FileSelector } from '@/shared/components/FileSelector';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Field, FieldDescription, FieldLabel } from '@/shared/ui/field';
+import { Input } from '@/shared/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 const COMMON_PARTITIONS = [
   'boot',
@@ -67,402 +33,36 @@ const COMMON_PARTITIONS = [
   'userdata',
 ] as const;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function isImgFile(path: string): boolean {
-  return path.toLowerCase().endsWith('.img');
-}
-
-function isZipFile(path: string): boolean {
-  return path.toLowerCase().endsWith('.zip');
-}
-
-function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
-}
-
-type DragTarget = 'none' | 'flash' | 'sideload';
-
-// ─── Queued action for device connection ────────────────────────────────────
-
-interface QueuedAction {
-  filePath: string;
-  partition?: string;
-  type: 'flash' | 'sideload';
-}
-
-// ─── Visual-only drop area ───────────────────────────────────────────────────
-
-interface DropAreaProps {
-  browseLabel: string;
-  disabled?: boolean;
-  icon: React.ComponentType<{ className?: string }>;
-  isDragging: boolean;
-  label: string;
-  onBrowse: () => void;
-  sublabel: string;
-}
-
-function DropArea({
-  isDragging,
-  icon: Icon,
-  label,
-  sublabel,
-  browseLabel,
-  onBrowse,
-  disabled = false,
-}: DropAreaProps) {
-  return (
-    <div
-      className={cn(
-        'relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-all duration-200',
-        isDragging
-          ? 'scale-[1.01] border-primary bg-primary/5 shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]'
-          : 'border-muted-foreground/25 hover:border-muted-foreground/40',
-        disabled && 'pointer-events-none opacity-50',
-      )}
-    >
-      {isDragging ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
-          <div className="fade-in zoom-in-95 flex animate-in flex-col items-center gap-2 text-primary duration-150">
-            <div className="rounded-full bg-primary/10 p-4">
-              <Upload className="size-8 animate-bounce" />
-            </div>
-            <p className="font-semibold text-sm">Drop to add file</p>
-          </div>
-        </div>
-      ) : null}
-
-      <div
-        className={cn(
-          'flex flex-col items-center gap-3 transition-opacity duration-150',
-          isDragging && 'opacity-0',
-        )}
-      >
-        <div className="rounded-full bg-muted p-3">
-          <Icon className="size-6 text-muted-foreground/50" />
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <p className="font-medium text-muted-foreground text-sm">{label}</p>
-          <p className="text-muted-foreground/50 text-xs">or</p>
-        </div>
-        <Button disabled={disabled} onClick={onBrowse} size="sm" variant="outline">
-          {browseLabel}
-        </Button>
-        <p className="text-muted-foreground/40 text-xs">{sublabel}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main component ──────────────────────────────────────────────────────────
-
 export function ViewFlasher() {
-  const [partition, setPartition] = useState(() => localStorage.getItem('flasher.partition') ?? '');
-  const [filePath, setFilePath] = useState(() => localStorage.getItem('flasher.filePath') ?? '');
-  const [sideloadFilePath, setSideloadFilePath] = useState(
-    () => localStorage.getItem('flasher.sideloadFilePath') ?? '',
-  );
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [dragTarget, setDragTarget] = useState<DragTarget>('none');
-  const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    localStorage.setItem('flasher.partition', partition);
-  }, [partition]);
-
-  useEffect(() => {
-    localStorage.setItem('flasher.filePath', filePath);
-  }, [filePath]);
-
-  useEffect(() => {
-    localStorage.setItem('flasher.sideloadFilePath', sideloadFilePath);
-  }, [sideloadFilePath]);
+  const {
+    filePath,
+    handleFlash,
+    handleSelectImageFile,
+    handleSelectSideloadFile,
+    handleSideload,
+    handleWipe,
+    isGlobalLoading,
+    loadingAction,
+    partition,
+    queuedAction,
+    selectedFastbootSerial,
+    setFilePath,
+    setPartition,
+    setQueuedAction,
+    setSideloadFilePath,
+    sideloadFilePath,
+  } = useFlasherActions();
 
   // Refs for position-based hit-testing
   const flashSectionRef = useRef<HTMLDivElement>(null);
   const sideloadSectionRef = useRef<HTMLDivElement>(null);
 
-  const devices = useDeviceStore((state) => state.devices);
-  const selectedSerial = useDeviceStore((state) => state.selectedSerial);
-  const selectedDevice = useMemo(
-    () => devices.find((device) => device.serial === selectedSerial) ?? null,
-    [devices, selectedSerial],
-  );
-
-  const selectedFastbootSerial = useMemo(
-    () =>
-      selectedDevice &&
-      (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader')
-        ? selectedDevice.serial
-        : null,
-    [selectedDevice],
-  );
-
-  const selectedSideloadSerial = useMemo(
-    () =>
-      selectedDevice &&
-      (selectedDevice.status === 'sideload' || selectedDevice.status === 'recovery')
-        ? selectedDevice.serial
-        : null,
-    [selectedDevice],
-  );
-
-  const isGlobalLoading = !!loadingAction;
-
-  // ─── Page-level drag-drop with position + extension hit-testing ───
-
-  useEffect(() => {
-    OnFileDrop({
-      onHover: (x, y, paths) => {
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-        }
-
-        let target: DragTarget = 'none';
-
-        // 1. Position check: which section is the cursor over?
-        const flashRect = flashSectionRef.current?.getBoundingClientRect();
-        const sideloadRect = sideloadSectionRef.current?.getBoundingClientRect();
-        const overFlash = flashRect ? isPointInRect(x, y, flashRect) : false;
-        const overSideload = sideloadRect ? isPointInRect(x, y, sideloadRect) : false;
-
-        // 2. Extension check: does the file type match the hovered section?
-        //    If paths unavailable, allow position-only highlighting.
-        if (overFlash) {
-          const extensionOk = !paths || paths.length === 0 || paths.some(isImgFile);
-          if (extensionOk) {
-            target = 'flash';
-          }
-        } else if (overSideload) {
-          const extensionOk = !paths || paths.length === 0 || paths.some(isZipFile);
-          if (extensionOk) {
-            target = 'sideload';
-          }
-        }
-
-        setDragTarget(target);
-        hoverTimeoutRef.current = setTimeout(() => {
-          setDragTarget('none');
-        }, 150);
-      },
-
-      onDrop: (paths) => {
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-        }
-        setDragTarget('none');
-
-        if (paths.length === 0) {
-          return;
-        }
-
-        let lastImg = '';
-        let lastZip = '';
-        let rejectedCount = 0;
-
-        for (const p of paths) {
-          if (isImgFile(p)) {
-            lastImg = p;
-          } else if (isZipFile(p)) {
-            lastZip = p;
-          } else {
-            rejectedCount++;
-          }
-        }
-
-        if (lastImg) {
-          setFilePath(lastImg);
-          toast.info(`Image selected: ${getFileName(lastImg)}`);
-        }
-        if (lastZip) {
-          setSideloadFilePath(lastZip);
-          toast.info(`ZIP selected: ${getFileName(lastZip)}`);
-        }
-
-        if (rejectedCount > 0 && !lastImg && !lastZip) {
-          toast.error('Unsupported file type', {
-            description: 'Only .img (flash) and .zip (sideload) files are accepted.',
-          });
-        } else if (rejectedCount > 0) {
-          toast.warning(`${rejectedCount} unsupported file(s) skipped`, {
-            description: 'Only .img and .zip files are accepted.',
-          });
-        }
-      },
-
-      onCancel: () => {
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-        }
-        setDragTarget('none');
-      },
-    });
-
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      OnFileDropOff();
-    };
-  }, []);
-
-  // ─── File selection handlers ────────────────────────────────────────
-
-  const handleSelectImageFile = useCallback(async () => {
-    try {
-      debugLog('Selecting image file');
-      const selected = await SelectImageFile();
-      if (selected) {
-        setFilePath(selected);
-        toast.info(`File selected: ${getFileName(selected)}`);
-      }
-    } catch (error) {
-      handleError('Select Image File', error);
-    }
-  }, []);
-
-  const handleSelectSideloadFile = useCallback(async () => {
-    try {
-      debugLog('Selecting ZIP file for sideload');
-      const selected = await SelectZipFile();
-      if (selected) {
-        setSideloadFilePath(selected);
-        toast.info(`ZIP selected: ${getFileName(selected)}`);
-      }
-    } catch (error) {
-      handleError('Select ZIP File', error);
-    }
-  }, []);
-
-  // ─── Queued action execution when device connects ───────────────────────
-
-  useEffect(() => {
-    if (!queuedAction || isGlobalLoading) {
-      return;
-    }
-
-    const isReady =
-      queuedAction.type === 'flash'
-        ? Boolean(selectedFastbootSerial)
-        : Boolean(selectedSideloadSerial);
-
-    if (isReady) {
-      const action = queuedAction;
-      setQueuedAction(null);
-
-      if (action.type === 'flash') {
-        const partitionName = action.partition;
-        if (partitionName && selectedFastbootSerial) {
-          void executeFlash(partitionName, action.filePath, selectedFastbootSerial);
-        }
-      } else {
-        void executeSideload(action.filePath, selectedSideloadSerial);
-      }
-    }
-  }, [queuedAction, selectedFastbootSerial, selectedSideloadSerial, isGlobalLoading]);
-
-  // ─── Action handlers ───────────────────────────────────────────────
-
-  async function executeFlash(
-    partitionName: string,
-    imgPath: string,
-    serial: string | null,
-  ): Promise<void> {
-    setLoadingAction('flash');
-    const toastId = toast.loading(`Flashing ${partitionName} partition...`);
-
-    try {
-      await FlashPartition(partitionName, imgPath, serial);
-      toast.success('Flash Complete', {
-        description: `${partitionName} flashed successfully.`,
-        id: toastId,
-      });
-      useLogStore.getState().addLog(`Flashed partition ${partitionName}: Success`, 'success');
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Flash Partition', error);
-    } finally {
-      setLoadingAction(null);
-    }
-  }
-
-  async function executeSideload(zipPath: string, serial: string | null): Promise<void> {
-    const fileName = getFileName(zipPath);
-    setLoadingAction('sideload');
-    const toastId = toast.loading(`Sideloading ${fileName}...`);
-
-    try {
-      const output = await SideloadPackage(zipPath, serial);
-      const description = output || `${fileName} sideloaded successfully.`;
-      toast.success('Sideload Complete', { description, id: toastId });
-      useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Recovery Sideload', error);
-    } finally {
-      setLoadingAction(null);
-    }
-  }
-
-  const handleFlash = () => {
-    const parsed = partitionSchema.safeParse(partition);
-    if (!parsed.success) {
-      toast.error('Invalid partition name', {
-        description: parsed.error.issues[0]?.message ?? 'Unknown error',
-      });
-      return;
-    }
-    if (!filePath) {
-      toast.error('No file selected.');
-      return;
-    }
-
-    if (selectedFastbootSerial) {
-      void executeFlash(partition, filePath, selectedFastbootSerial);
-    } else {
-      setQueuedAction({ type: 'flash', partition, filePath });
-      toast.info('Waiting for fastboot device...', {
-        description: 'Action will execute automatically when a fastboot device connects.',
-      });
-    }
-  };
-
-  const handleSideload = () => {
-    if (!sideloadFilePath) {
-      toast.error('No update package selected.');
-      return;
-    }
-
-    if (selectedSideloadSerial) {
-      void executeSideload(sideloadFilePath, selectedSideloadSerial);
-    } else {
-      setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
-      toast.info('Waiting for sideload device...', {
-        description: 'Action will execute automatically when a sideload/recovery device connects.',
-      });
-    }
-  };
-
-  const handleWipe = async () => {
-    setLoadingAction('wipe');
-    const toastId = toast.loading('Wiping data... Device will factory reset.');
-
-    try {
-      await WipeData(selectedFastbootSerial);
-      toast.success('Wipe Complete', {
-        description: 'Device data has been erased.',
-        id: toastId,
-      });
-      useLogStore.getState().addLog('Device data wiped (Factory Reset): Success', 'success');
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Wipe Data', error);
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+  const { dragTarget } = useFlasherDropTargets({
+    flashSectionRef,
+    setFilePath,
+    setSideloadFilePath,
+    sideloadSectionRef,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -640,54 +240,13 @@ export function ViewFlasher() {
         </Card>
       </div>
 
-      {/* ── Danger Zone ─────────────────────────────────────────────── */}
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="size-5" />
-            Danger Zone
-          </CardTitle>
-          <CardDescription>
-            These actions are irreversible and will erase data on your device.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                className="w-full"
-                disabled={isGlobalLoading || !selectedFastbootSerial}
-                variant="destructive"
-              >
-                {loadingAction === 'wipe' ? (
-                  <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
-                ) : (
-                  <Trash2 className="mr-2 size-4 shrink-0" />
-                )}
-                Wipe Data (Factory Reset)
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently erase all user data (photos,
-                  files, settings) from your device, performing a full factory reset.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className={buttonVariants({ variant: 'destructive' })}
-                  onClick={handleWipe}
-                >
-                  Yes, Wipe Data
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
+      <DangerZoneCard
+        disabled={isGlobalLoading || !selectedFastbootSerial}
+        isLoading={loadingAction === 'wipe'}
+        onWipe={() => {
+          void handleWipe();
+        }}
+      />
     </div>
   );
 }

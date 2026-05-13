@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { EventsOn } from '@/lib/desktop/runtime';
-import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
+import { EventsOn } from '@/desktop/runtime';
+import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
 
 /**
  * Subscribes to 'payload:progress' Tauri events from the Rust backend.

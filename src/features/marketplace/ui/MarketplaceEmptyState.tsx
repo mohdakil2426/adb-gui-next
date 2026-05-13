@@ -1,8 +1,8 @@
 import { Clock3, Compass, Loader2, Search, Sparkles, TrendingUp, UserRound } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useMarketplaceHome } from '@/lib/marketplace/useMarketplaceHome';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useMarketplaceHome } from '@/features/marketplace/hooks/useMarketplaceHome';
+import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
+import { Button } from '@/shared/ui/button';
+import { Separator } from '@/shared/ui/separator';
 import { AppCard } from './AppCard';
 
 const COLLECTIONS = ['Privacy', 'Media', 'Developer Tools', 'File Tools', 'Messaging', 'Browsers'];

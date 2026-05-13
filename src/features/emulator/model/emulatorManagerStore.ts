@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
 
 export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
 export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;

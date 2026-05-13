@@ -1,12 +1,15 @@
 import { Package, ShieldCheck } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { type AppManagerTab, useDebloatStore } from '@/lib/debloatStore';
-import { cn } from '@/lib/utils';
-import { DebloaterTab } from './debloater/DebloaterTab';
-import { InstallationTab } from './debloater/InstallationTab';
+import {
+  type AppManagerTab,
+  useDebloatStore,
+} from '@/features/app-manager/debloater/model/debloatStore';
+import { DebloaterTab } from '@/features/app-manager/debloater/ui/DebloaterTab';
+import { InstallationTab } from '@/features/app-manager/debloater/ui/InstallationTab';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+import { cn } from '@/shared/utils/cn';
 
-export function ViewAppManager({ activeView }: { activeView: string }) {
+export function AppManagerView({ activeView }: { activeView: string }) {
   const activeTab = useDebloatStore((s) => s.activeTab);
   const setActiveTab = useDebloatStore((s) => s.setActiveTab);
   const isLoadingPackages = useDebloatStore((s) => s.isLoadingPackages);
@@ -69,3 +72,5 @@ export function ViewAppManager({ activeView }: { activeView: string }) {
     </div>
   );
 }
+
+export const ViewAppManager = AppManagerView;

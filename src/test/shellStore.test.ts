@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useShellStore } from '@/lib/shellStore';
+import { useShellStore } from '@/shared/stores/shellStore';
 
 describe('shellStore', () => {
   beforeEach(() => {

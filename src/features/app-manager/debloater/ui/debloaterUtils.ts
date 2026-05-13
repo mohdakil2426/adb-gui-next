@@ -1,4 +1,4 @@
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
 
 type RemovalTier = backend.RemovalTier;
 type PkgState = backend.PkgState;

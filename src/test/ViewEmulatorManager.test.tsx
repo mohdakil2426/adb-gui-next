@@ -1,18 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewEmulatorManager } from '@/components/views/ViewEmulatorManager';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
+import { ViewEmulatorManager } from '@/features/emulator/EmulatorView';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
 
 const fetchAvdsMock = vi.fn();
 const getAvdRestorePlanMock = vi.fn();
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@/shared/utils/queries', () => ({
   queryKeys: { avds: () => ['avds'] },
   fetchAvds: () => fetchAvdsMock(),
 }));
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   FinalizeAvdRoot: vi.fn(),
   GetAvdRestorePlan: (...args: unknown[]) => getAvdRestorePlanMock(...args),
   LaunchAvd: vi.fn(),

@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { ViewMarketplace } from '@/components/views/ViewMarketplace';
+import { ViewMarketplace } from '@/features/marketplace/MarketplaceView';
 
 const openDetailMock = vi.fn();
 const openSettingsMock = vi.fn();
 
-vi.mock('@/lib/marketplaceStore', () => ({
+vi.mock('@/features/marketplace/model/marketplaceStore', () => ({
   useMarketplaceStore: (selector: (state: object) => unknown) =>
     selector({
       openDetail: openDetailMock,
@@ -18,7 +18,7 @@ vi.mock('@/lib/marketplaceStore', () => ({
     }),
 }));
 
-vi.mock('@/lib/marketplace/useMarketplaceSearch', () => ({
+vi.mock('@/features/marketplace/hooks/useMarketplaceSearch', () => ({
   useMarketplaceSearch: () => ({
     localQuery: 'camera',
     results: [
@@ -47,27 +47,27 @@ vi.mock('@/lib/marketplace/useMarketplaceSearch', () => ({
   }),
 }));
 
-vi.mock('@/components/marketplace/SearchBar', () => ({
+vi.mock('@/features/marketplace/ui/SearchBar', () => ({
   SearchBar: () => <div>Search Bar</div>,
 }));
 
-vi.mock('@/components/marketplace/FilterBar', () => ({
+vi.mock('@/features/marketplace/ui/FilterBar', () => ({
   FilterBar: () => <div>Filter Bar</div>,
 }));
 
-vi.mock('@/components/marketplace/MarketplaceEmptyState', () => ({
+vi.mock('@/features/marketplace/ui/MarketplaceEmptyState', () => ({
   MarketplaceEmptyState: () => <div>Marketplace Empty State</div>,
 }));
 
-vi.mock('@/components/marketplace/AttributionFooter', () => ({
+vi.mock('@/features/marketplace/ui/AttributionFooter', () => ({
   AttributionFooter: () => <div>Attribution Footer</div>,
 }));
 
-vi.mock('@/components/marketplace/AppDetailView', () => ({
+vi.mock('@/features/marketplace/ui/AppDetailView', () => ({
   AppDetailView: () => <div>App Detail View</div>,
 }));
 
-vi.mock('@/components/marketplace/MarketplaceSettings', () => ({
+vi.mock('@/features/marketplace/ui/MarketplaceSettings', () => ({
   MarketplaceSettings: () => <div>Marketplace Settings</div>,
 }));
 

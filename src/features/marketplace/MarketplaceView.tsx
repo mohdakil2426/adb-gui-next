@@ -1,16 +1,16 @@
 import { Store, UserRound } from 'lucide-react';
-import { AppCard } from '@/components/marketplace/AppCard';
-import { AppDetailView } from '@/components/marketplace/AppDetailView';
-import { AppListItem } from '@/components/marketplace/AppListItem';
-import { AttributionFooter } from '@/components/marketplace/AttributionFooter';
-import { FilterBar } from '@/components/marketplace/FilterBar';
-import { MarketplaceEmptyState } from '@/components/marketplace/MarketplaceEmptyState';
-import { MarketplaceSettings } from '@/components/marketplace/MarketplaceSettings';
-import { SearchBar } from '@/components/marketplace/SearchBar';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useMarketplaceSearch } from '@/lib/marketplace/useMarketplaceSearch';
-import { useMarketplaceStore } from '@/lib/marketplaceStore';
+import { useMarketplaceSearch } from '@/features/marketplace/hooks/useMarketplaceSearch';
+import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
+import { AppCard } from '@/features/marketplace/ui/AppCard';
+import { AppDetailView } from '@/features/marketplace/ui/AppDetailView';
+import { AppListItem } from '@/features/marketplace/ui/AppListItem';
+import { AttributionFooter } from '@/features/marketplace/ui/AttributionFooter';
+import { FilterBar } from '@/features/marketplace/ui/FilterBar';
+import { MarketplaceEmptyState } from '@/features/marketplace/ui/MarketplaceEmptyState';
+import { MarketplaceSettings } from '@/features/marketplace/ui/MarketplaceSettings';
+import { SearchBar } from '@/features/marketplace/ui/SearchBar';
+import { Badge } from '@/shared/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 export function ViewMarketplace() {
   const openDetail = useMarketplaceStore((state) => state.openDetail);

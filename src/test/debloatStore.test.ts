@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyFilters, useDebloatStore } from '@/lib/debloatStore';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
+import { applyFilters, useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   core: {
     invoke: vi.fn(),
   },
