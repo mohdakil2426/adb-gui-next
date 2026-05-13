@@ -1064,12 +1064,12 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       {/* Left: Directory tree */}
       {!isTreeCollapsed && (
         <div className="flex shrink-0 flex-col overflow-hidden" style={{ width: `${leftWidth}px` }}>
-          <div className="flex h-10 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
+          <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
             <Layers className="size-4 shrink-0 text-muted-foreground" />
             <span className="flex-1 font-medium text-muted-foreground text-sm">Device</span>
             <ToolbarTooltip label="Collapse tree panel">
               <Button
-                className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
                 onClick={handleCollapseTree}
                 size="icon"
                 variant="ghost"
@@ -1104,13 +1104,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       {/* Right: File list pane */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex h-10 shrink-0 items-center gap-1 border-border border-b px-2">
+        <div className="flex h-11 shrink-0 items-center gap-1 border-border border-b px-2">
           {/* Tree restore toggle */}
           {isTreeCollapsed ? (
             <>
               <ToolbarTooltip label="Show tree panel">
                 <Button
-                  className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+                  className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
                   onClick={handleExpandTree}
                   size="icon"
                   variant="ghost"
@@ -1127,7 +1127,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Back */}
             <ToolbarTooltip label="Back (Alt+Left)">
               <Button
-                className="size-7 shrink-0"
+                className="size-11 shrink-0"
                 disabled={!canGoBack || isBusy}
                 onClick={handleGoBack}
                 size="icon"
@@ -1140,7 +1140,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Forward */}
             <ToolbarTooltip label="Forward (Alt+Right)">
               <Button
-                className="size-7 shrink-0"
+                className="size-11 shrink-0"
                 disabled={!canGoForward || isBusy}
                 onClick={handleGoForward}
                 size="icon"
@@ -1153,7 +1153,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Up */}
             <ToolbarTooltip label="Go up">
               <Button
-                className="size-7 shrink-0"
+                className="size-11 shrink-0"
                 disabled={currentPath === '/' || isBusy}
                 onClick={handleBackClick}
                 size="icon"
@@ -1213,7 +1213,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* Refresh */}
             <ToolbarTooltip label="Refresh (F5)">
               <Button
-                className="size-7"
+                className="size-11"
                 disabled={isBusy}
                 onClick={handleRefreshClick}
                 size="icon"
@@ -1259,7 +1259,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* New File */}
             <ToolbarTooltip label="New File (Ctrl+N)">
               <Button
-                className="size-7"
+                className="size-11"
                 disabled={isBusy}
                 onClick={() => {
                   startCreate('file');
@@ -1274,7 +1274,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
             {/* New Folder */}
             <ToolbarTooltip label="New Folder (Ctrl+Shift+N)">
               <Button
-                className="size-7"
+                className="size-11"
                 disabled={isBusy}
                 onClick={() => {
                   startCreate('folder');
