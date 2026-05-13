@@ -33,6 +33,23 @@ pub fn sanitize_filename(name: &str) -> String {
     sanitized
 }
 
+pub fn validate_path_components(path: &str) -> Result<(), String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("Path cannot be empty".into());
+    }
+    if trimmed.contains("..") {
+        return Err(format!(
+            "Path traversal not allowed: '{}' contains '..' sequence",
+            trimmed
+        ));
+    }
+    if trimmed.contains('\0') {
+        return Err("Path contains null byte".into());
+    }
+    Ok(())
+}
+
 pub fn split_args(command: &str) -> Vec<&str> {
     let mut args = Vec::new();
     let mut token_start = None;
@@ -255,5 +272,30 @@ mod tests {
         let candidate = repo_resource_binary_path(Path::new("repo"), "windows", "adb.exe");
         let normalized = candidate.to_string_lossy().replace('\\', "/");
         assert_eq!(normalized, "repo/src-tauri/resources/windows/adb.exe");
+    }
+
+    #[test]
+    fn validate_path_components_rejects_traversal() {
+        assert!(validate_path_components("/sdcard/../../../system/").is_err());
+        assert!(validate_path_components("../etc/passwd").is_err());
+        assert!(validate_path_components("foo/../../bar").is_err());
+    }
+
+    #[test]
+    fn validate_path_components_allows_normal_paths() {
+        assert!(validate_path_components("/sdcard/Download/").is_ok());
+        assert!(validate_path_components("Pictures/IMG_001.jpg").is_ok());
+        assert!(validate_path_components("/").is_ok());
+    }
+
+    #[test]
+    fn validate_path_components_rejects_empty() {
+        assert!(validate_path_components("").is_err());
+        assert!(validate_path_components("   ").is_err());
+    }
+
+    #[test]
+    fn validate_path_components_rejects_null_bytes() {
+        assert!(validate_path_components("file\0name").is_err());
     }
 }
