@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import path from 'path-browserify';
 import type { ReactElement } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { DirectoryTree } from '@/components/DirectoryTree';
 import { SelectionSummaryBar } from '@/components/SelectionSummaryBar';
@@ -260,20 +260,36 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   }, [currentPath]);
 
   // ── Derived ──────────────────────────────────────────────────────────────
-  const selectedList = fileList.filter((f) => selectedNames.has(f.name));
-  const singleSelected = selectedList.length === 1 ? selectedList[0] : null;
-  const allSelected = fileList.length > 0 && selectedNames.size === fileList.length;
-  const someSelected = selectedNames.size > 0 && !allSelected;
+  const selectedList = useMemo(
+    () => fileList.filter((f) => selectedNames.has(f.name)),
+    [fileList, selectedNames],
+  );
+  const singleSelected = useMemo(
+    () => (selectedList.length === 1 ? selectedList[0] : null),
+    [selectedList],
+  );
+  const allSelected = useMemo(
+    () => fileList.length > 0 && selectedNames.size === fileList.length,
+    [fileList, selectedNames],
+  );
+  const someSelected = useMemo(
+    () => selectedNames.size > 0 && !allSelected,
+    [selectedNames, allSelected],
+  );
   const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
   const isPullDisabled = isPulling || !singleSelected;
 
   // Filtered + sorted list shown in the table
-  const visibleList = sortEntries(
-    searchQuery
-      ? fileList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      : fileList,
-    sortField,
-    sortDir,
+  const visibleList = useMemo(
+    () =>
+      sortEntries(
+        searchQuery
+          ? fileList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+          : fileList,
+        sortField,
+        sortDir,
+      ),
+    [fileList, searchQuery, sortField, sortDir],
   );
 
   const rowVirtualizer = useVirtualizer({
