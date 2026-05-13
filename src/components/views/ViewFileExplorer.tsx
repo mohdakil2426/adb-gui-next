@@ -986,6 +986,13 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         return;
       }
 
+      // Refresh: F5
+      if (e.key === 'F5') {
+        e.preventDefault();
+        void loadFiles(currentPathRef.current, false);
+        return;
+      }
+
       // Escape: cancel create → cancel rename → clear search → clear selection
       if (e.key === 'Escape') {
         if (creatingType) {
