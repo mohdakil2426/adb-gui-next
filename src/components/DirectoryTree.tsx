@@ -216,8 +216,13 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
       </div>
 
       {/* Children — only dirs expand */}
-      {node.isDirectory && node.isExpanded && node.children ? (
-        <>
+      {node.isDirectory && node.children !== null ? (
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-200 ease-in-out',
+            node.isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
+          )}
+        >
           {node.children.length === 0 ? (
             <div
               className="py-1 text-muted-foreground text-xs italic"
@@ -237,7 +242,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
               />
             ))
           )}
-        </>
+        </div>
       ) : null}
     </>
   );
