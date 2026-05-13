@@ -1321,6 +1321,17 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           />
         ) : null}
 
+        {/* Visually hidden live region for screen reader selection announcements */}
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="pointer-events-none absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0"
+        >
+          {selectedNames.size > 0
+            ? `${selectedNames.size} item${selectedNames.size > 1 ? 's' : ''} selected`
+            : null}
+        </div>
+
         {/* File table / states */}
         <ContextMenu>
           <ContextMenuTrigger asChild>
