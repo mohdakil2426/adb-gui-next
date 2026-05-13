@@ -255,6 +255,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // Request sequencing — incremented on each loadFiles call; stale responses are dropped.
   const loadRequestIdRef = useRef(0);
   const fileListRef = useRef<FileEntry[]>([]);
+  const lastClickedIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
     currentPathRef.current = currentPath;
@@ -367,6 +368,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   // `pushToHistory` = true for user navigation, false for refresh-in-place.
   const loadFiles = useCallback(
     async (targetPath: string, pushToHistory = true) => {
+      lastClickedIndexRef.current = null;
       const requestId = ++loadRequestIdRef.current;
       setIsLoading(true);
       setSelectedNames(new Set());
@@ -499,6 +501,23 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
       if (renamingName) {
         return;
       }
+      // Shift+Click: range selection from lastClickedIndex to current
+      if (e.shiftKey && lastClickedIndexRef.current !== null) {
+        e.preventDefault();
+        const clickedIdx = visibleList.findIndex((f) => f.name === file.name);
+        if (clickedIdx !== -1) {
+          const start = Math.min(lastClickedIndexRef.current, clickedIdx);
+          const end = Math.max(lastClickedIndexRef.current, clickedIdx);
+          const rangeNames = visibleList.slice(start, end + 1).map((f) => f.name);
+          setIsMultiSelectMode(true);
+          setSelectedNames((prev) => {
+            const next = new Set(prev);
+            rangeNames.forEach((n) => next.add(n));
+            return next;
+          });
+        }
+        return;
+      }
       // Plain click does NOT select — only Ctrl+Click enters multi-select mode.
       if (e.ctrlKey || e.metaKey) {
         setIsMultiSelectMode(true);
@@ -515,10 +534,15 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
           }
           return next;
         });
+      } else {
+        // Store last clicked index for shift+click range
+        const clickedIdx = visibleList.findIndex((f) => f.name === file.name);
+        if (clickedIdx !== -1) {
+          lastClickedIndexRef.current = clickedIdx;
+        }
       }
-      // No else: plain click does nothing to selection state
     },
-    [renamingName],
+    [renamingName, visibleList],
   );
 
   const handleRowDoubleClick = useCallback(
@@ -561,6 +585,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const clearSelection = useCallback(() => {
     setSelectedNames(new Set());
     setIsMultiSelectMode(false);
+    lastClickedIndexRef.current = null;
   }, []);
 
   // Activated from right-click → Select: adds item to selection and enters multi-select mode.
