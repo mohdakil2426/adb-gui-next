@@ -59,6 +59,6 @@ ADB and fastboot are powerful but awkward for repetitive Android workflows. This
 
 ## Version
 
-- Current: 0.1.0
+- Current: 0.2.0
 - Tauri: 2.x
-- Last Updated: 2026-04-26 (Emulator Root UX Audit: 4-step guided wizard, pre-flight scan, smart entry gate, boot mode + root state toolbar badges)
+- Last Updated: 2026-05-14 (Frontend feature architecture migration complete)

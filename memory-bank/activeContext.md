@@ -21,7 +21,7 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 
 **File Explorer:** Split the large view into feature-local hooks, model/constants/types, utilities, and focused UI modules. `FileExplorerView.tsx` is now under the architecture size gate, and `frontendArchitecture.test.ts` enforces no legacy frontend folders/imports, raw Tauri invoke confinement, and no feature implementation file over 300 lines.
 
-**Verification:** Focused architecture/File Explorer tests and `bun run lint:web` pass in the current session. Full final gate is pending.
+**Verification:** Full gate is complete in-session: `bun run format:check`, `bun run lint:web`, `bun run lint:rust`, `bun run test` (26 files / 167 tests), `bun run build`, architecture boundary test, legacy import scan, and feature size scan all pass.
 
 ### 2026-05-14 - File Explorer Table Alignment + Delete Dialog Wrapping
 

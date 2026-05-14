@@ -1,6 +1,8 @@
 <div align="center">
 
-# ADB GUI Next
+<img src="docs/assets/adb-gui-next-app-icon.png" alt="Adb Gui Next app icon" width="140" />
+
+# Adb Gui Next
 
 **A modern desktop toolkit for Android Debug Bridge & Fastboot workflows**
 
@@ -50,13 +52,28 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
    - **Linux**: `.deb` (Debian/Ubuntu) or `.AppImage`
 3. Run the installer — ADB and Fastboot are **bundled**, no extra setup needed
 
+The installed app name is **Adb Gui Next**.
+
+Release asset names use this format:
+
+```text
+AdbGuiNext-v0.2.0-windows-x64-setup.exe
+AdbGuiNext-v0.2.0-windows-x64.msi
+AdbGuiNext-v0.2.0-windows-x64-portable.zip
+AdbGuiNext-v0.2.0-linux-x64.deb
+AdbGuiNext-v0.2.0-linux-x64.AppImage
+SHA256SUMS.txt
+```
+
+Use the Windows setup `.exe` for normal installs. Use the portable `.zip` only when you want a no-installer copy and already have the Microsoft Edge WebView2 Runtime available.
+
 ### Quick Start
 
 1. **Connect your Android device** via USB cable
 2. **Enable USB Debugging** on your device:
    - Go to `Settings > About Phone` → tap **Build Number** 7 times
    - Go to `Settings > Developer Options` → enable **USB Debugging**
-3. **Launch ADB GUI Next** — your device should appear in the Dashboard automatically
+3. **Launch Adb Gui Next** — your device should appear in the Dashboard automatically
 4. **Authorize** the USB debugging prompt on your device when prompted
 
 > **Tip**: The app auto-detects ADB and Fastboot devices every 3 seconds. No manual refresh needed.
@@ -213,7 +230,7 @@ The bottom panel has two tabs:
 
 ### Theme
 
-Click the theme toggle in the sidebar to switch between:
+Click the theme toggle in the header toolbar to switch between:
 
 - ☀️ **Light** mode
 - 🌙 **Dark** mode
@@ -276,14 +293,14 @@ bun run tauri build
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │              Frontend (React 19 + TypeScript + Vite 8)           │
-│  MainLayout → 9 Views + Bottom Panel (Logs + Shell tabs)         │
+│  app/App.tsx → app/shell/MainLayout → 9 views + Bottom Panel     │
 │  State: Zustand 5 + TanStack Query 5 (centralized device poll)   │
 │  UI: shadcn/ui (40 primitives) + Tailwind CSS v4 + Framer Motion │
 ├──────────────────────────────────────────────────────────────────┤
 │              Tauri 2 IPC Bridge                                  │
-│  backend.ts → invoke<T>() → Rust commands                        │
-│  runtime.ts → events, file drop, opener                          │
-│  models.ts → 380+ lines of TypeScript DTOs                       │
+│  desktop/backend.ts → invoke<T>() → Rust commands                │
+│  desktop/runtime.ts → events, file drop, opener                  │
+│  desktop/models.ts → TypeScript DTOs                             │
 ├──────────────────────────────────────────────────────────────────┤
 │              Backend (Rust — Edition 2024)                       │
 │  71 Tauri commands across 10 command modules                     │
@@ -298,15 +315,19 @@ bun run tauri build
 
 ```
 ├── src/                    # React 19 + TypeScript frontend
-│   ├── components/         # UI components (views, layout, shared)
-│   │   ├── ui/             # 40 shadcn/ui primitives
-│   │   ├── views/          # 9 view components + debloater sub-views
-│   │   ├── emulator-manager/  # Rooting wizard sub-components
-│   │   ├── marketplace/    # App discovery sub-components
-│   │   └── payload-dumper/ # Payload extraction sub-components
-│   ├── lib/                # Stores, utils, Tauri abstraction layer
-│   │   ├── desktop/        # backend.ts, runtime.ts, models.ts
-│   │   └── *Store.ts       # 7 Zustand stores
+│   ├── app/                # App root and no-router desktop shell
+│   ├── desktop/            # Tauri IPC/runtime/models boundary
+│   ├── shared/             # Cross-feature UI, components, stores, hooks, utils
+│   ├── features/           # Product feature modules
+│   │   ├── dashboard/
+│   │   ├── app-manager/
+│   │   ├── file-explorer/
+│   │   ├── flasher/
+│   │   ├── utilities/
+│   │   ├── payload-dumper/
+│   │   ├── marketplace/
+│   │   ├── emulator/
+│   │   └── about/
 │   └── styles/             # Tailwind v4 CSS + theme tokens
 ├── src-tauri/              # Rust backend
 │   ├── src/
@@ -320,7 +341,7 @@ bun run tauri build
 │   ├── resources/          # Bundled ADB/Fastboot binaries
 │   ├── capabilities/       # Tauri permission grants
 │   └── permissions/        # TOML-based command ACL
-└── .github/workflows/      # CI + Release pipelines
+└── .github/                # CI, release workflow, and release notes
 ```
 
 ---
@@ -334,7 +355,7 @@ bun run tauri build
 | `bun run test`                | Run frontend tests (Vitest)                     |
 | `bun run lint`                | ESLint (frontend) + cargo clippy (Rust)         |
 | `bun run format`              | Prettier (frontend) + cargo fmt (Rust)          |
-| `bun run check`               | Full quality gate: lint → format → test → build |
+| `bun run check`               | Full quality gate: lint → format → Rust tests → frontend tests → build |
 | `bun run tauri build --debug` | Debug build with installer                      |
 | `bun run tauri build`         | Release build                                   |
 
@@ -344,8 +365,8 @@ bun run tauri build
 
 | Platform | Status         | Installer       |
 | -------- | -------------- | --------------- |
-| Windows  | ✅ First-class | MSI + NSIS      |
-| Linux    | ✅ First-class | .deb + AppImage |
+| Windows x64 | ✅ First-class | NSIS setup `.exe` + MSI + portable zip |
+| Linux x64   | ✅ First-class | `.deb` + `.AppImage`                  |
 | macOS    | ❌ Not planned | —               |
 
 ---
