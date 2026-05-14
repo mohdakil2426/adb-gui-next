@@ -109,8 +109,12 @@ jobs:
       - name: Verify requested release version
         run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
 
+      - name: Clean stale bundle outputs
+        shell: bash
+        run: rm -rf src-tauri/target/release/bundle
+
       - name: Build Tauri x64 packages
-        run: bun run tauri build
+        run: bun run tauri build -- --verbose
 
       - name: Collect release assets
         shell: pwsh

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Adb Gui Next",
+  "productName": "AdbGuiNext",
   "version": "0.2.0",
   "identifier": "com.akila.adbguinext",
   "build": {
