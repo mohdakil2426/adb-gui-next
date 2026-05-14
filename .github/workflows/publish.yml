@@ -76,9 +76,11 @@ jobs:
           - name: linux-x64
             platform: ubuntu-22.04
             artifact-platform: linux
+            bundle-targets: deb,rpm
           - name: windows-x64
             platform: windows-latest
             artifact-platform: windows
+            bundle-targets: nsis,msi
 
     steps:
       - uses: actions/checkout@v5
@@ -114,7 +116,7 @@ jobs:
         run: rm -rf src-tauri/target/release/bundle
 
       - name: Build Tauri x64 packages
-        run: bun run tauri build -- --verbose
+        run: bun run tauri build -- --verbose --bundles ${{ matrix.bundle-targets }}
 
       - name: Collect release assets
         shell: pwsh

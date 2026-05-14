@@ -49,7 +49,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 1. Go to the [Releases](../../releases) page
 2. Download the installer for your platform:
    - **Windows**: `.msi` (recommended) or `.exe` (NSIS)
-   - **Linux**: `.deb` (Debian/Ubuntu) or `.AppImage`
+   - **Linux**: `.deb` (Debian/Ubuntu) or `.rpm`
 3. Run the installer — ADB and Fastboot are **bundled**, no extra setup needed
 
 The installed app name is **Adb Gui Next**.
@@ -61,7 +61,7 @@ AdbGuiNext-v0.2.0-windows-x64-setup.exe
 AdbGuiNext-v0.2.0-windows-x64.msi
 AdbGuiNext-v0.2.0-windows-x64-portable.zip
 AdbGuiNext-v0.2.0-linux-x64.deb
-AdbGuiNext-v0.2.0-linux-x64.AppImage
+AdbGuiNext-v0.2.0-linux-x64.rpm
 SHA256SUMS.txt
 ```
 
@@ -366,7 +366,7 @@ bun run tauri build
 | Platform | Status         | Installer       |
 | -------- | -------------- | --------------- |
 | Windows x64 | ✅ First-class | NSIS setup `.exe` + MSI + portable zip |
-| Linux x64   | ✅ First-class | `.deb` + `.AppImage`                  |
+| Linux x64   | ✅ First-class | `.deb` + `.rpm`                       |
 | macOS    | ❌ Not planned | —               |
 
 ---

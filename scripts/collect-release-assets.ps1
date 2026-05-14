@@ -66,8 +66,8 @@ The installer build is recommended for normal users.
     -DestinationName "AdbGuiNext-v${Version}-linux-x64.deb"
 
   Copy-SingleArtifact `
-    -Pattern (Join-Path $root 'src-tauri/target/release/bundle/appimage/*.AppImage') `
-    -DestinationName "AdbGuiNext-v${Version}-linux-x64.AppImage"
+    -Pattern (Join-Path $root 'src-tauri/target/release/bundle/rpm/*.rpm') `
+    -DestinationName "AdbGuiNext-v${Version}-linux-x64.rpm"
 }
 
 $buildInfo = [ordered]@{

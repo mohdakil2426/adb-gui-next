@@ -56,7 +56,7 @@ AdbGuiNext-v0.2.0-windows-x64-setup.exe
 AdbGuiNext-v0.2.0-windows-x64.msi
 AdbGuiNext-v0.2.0-windows-x64-portable.zip
 AdbGuiNext-v0.2.0-linux-x64.deb
-AdbGuiNext-v0.2.0-linux-x64.AppImage
+AdbGuiNext-v0.2.0-linux-x64.rpm
 SHA256SUMS.txt
 ```
 
@@ -252,7 +252,7 @@ Reasoning:
 | Unsigned Windows installer | Accepted for v0.2.0 draft | Add signing later through a dedicated release-hardening pass |
 | No artifact attestations | Accepted for v0.2.0 draft | Add after the draft release flow is proven |
 | No updater metadata | Accepted | Do not add updater until signing and updater keys are planned |
-| Linux build not locally verified on Windows | Expected | GitHub Linux matrix will verify `.deb` and `.AppImage` packaging |
+| Linux build not locally verified on Windows | Expected | GitHub Linux matrix will verify `.deb` and `.rpm` packaging |
 | Windows `cargo test` can fail in some local environments | Known | Keep CI strict unless GitHub runners prove the loader issue reproduces there |
 
 ## Best-Practice References Used
