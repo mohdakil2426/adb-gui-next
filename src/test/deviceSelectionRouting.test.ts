@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DeleteFiles,
   EnableWirelessAdb,
@@ -18,7 +18,7 @@ import {
   SideloadPackage,
   UninstallPackage,
   WipeData,
-} from '@/lib/desktop/backend';
+} from '@/desktop/backend';
 
 const invokeMock = vi.mocked(invoke);
 
@@ -46,7 +46,9 @@ describe('selected device routing', () => {
     await FlashPartition('boot', 'C:/boot.img', 'device-b');
     await WipeData('device-b');
 
-    expect(invokeMock).toHaveBeenCalledWith('get_device_info', { serial: 'device-b' });
+    expect(invokeMock).toHaveBeenCalledWith('get_device_info', {
+      serial: 'device-b',
+    });
     expect(invokeMock).toHaveBeenCalledWith('enable_wireless_adb', {
       port: '5555',
       serial: 'device-b',
@@ -55,7 +57,9 @@ describe('selected device routing', () => {
       command: 'id',
       serial: 'device-b',
     });
-    expect(invokeMock).toHaveBeenCalledWith('get_installed_packages', { serial: 'device-b' });
+    expect(invokeMock).toHaveBeenCalledWith('get_installed_packages', {
+      serial: 'device-b',
+    });
     expect(invokeMock).toHaveBeenCalledWith('install_package', {
       path: 'C:/app.apk',
       serial: 'device-b',
@@ -64,7 +68,10 @@ describe('selected device routing', () => {
       packageName: 'com.example.app',
       serial: 'device-b',
     });
-    expect(invokeMock).toHaveBeenCalledWith('list_files', { path: '/sdcard/', serial: 'device-b' });
+    expect(invokeMock).toHaveBeenCalledWith('list_files', {
+      path: '/sdcard/',
+      serial: 'device-b',
+    });
     expect(invokeMock).toHaveBeenCalledWith('pull_file', {
       remotePath: '/sdcard/a.txt',
       localPath: 'C:/out',
@@ -97,11 +104,16 @@ describe('selected device routing', () => {
       imagePath: 'C:/boot.img',
       serial: 'device-b',
     });
-    expect(invokeMock).toHaveBeenCalledWith('wipe_data', { serial: 'device-b' });
+    expect(invokeMock).toHaveBeenCalledWith('wipe_data', {
+      serial: 'device-b',
+    });
   });
 
   it('keeps the header device popover inside the content area instead of overlapping the sidebar', () => {
-    const source = readFileSync(join(process.cwd(), 'src/components/DeviceSwitcher.tsx'), 'utf8');
+    const source = readFileSync(
+      join(process.cwd(), 'src/shared/components/DeviceSwitcher.tsx'),
+      'utf8',
+    );
 
     expect(source).toContain('<PopoverContent align="start"');
     expect(source).toContain('collisionPadding={16}');

@@ -1,13 +1,13 @@
 import { describe, expect, it, test } from 'vitest';
 import {
+  formatBytes,
+  formatBytesNum,
   formatCompactNumber,
   formatDisplayDate,
   formatFileSize,
   formatRating,
-  formatBytes,
-  formatBytesNum,
   getFileName,
-} from '@/lib/utils';
+} from '@/shared/utils/formatting';
 
 describe('formatting helpers', () => {
   test('formats marketplace display values consistently', () => {

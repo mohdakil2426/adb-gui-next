@@ -1,0 +1,103 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/react",
+    "ultracite/biome/vitest"
+  ],
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "src/**/*",
+      "index.html",
+      "vite.config.ts",
+      "vitest.config.ts",
+      "tsconfig.json",
+      "tsconfig.node.json",
+      "package.json",
+      "components.json",
+      "AGENTS.md",
+      "!!src-tauri",
+      "!!docs",
+      "!!.agents",
+      "!!.agent",
+      "!!.claude",
+      "!!memory-bank",
+      "!!dist",
+      "!!coverage",
+      "!!node_modules",
+      "!!bun.lock"
+    ]
+  },
+  "formatter": {
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "all"
+    }
+  },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "noNoninteractiveElementInteractions": "off",
+        "noStaticElementInteractions": "off",
+        "useAriaPropsForRole": "off",
+        "useButtonType": "off",
+        "useFocusableInteractive": "off",
+        "useKeyWithClickEvents": "off",
+        "useSemanticElements": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off",
+        "noForEach": "off",
+        "noUselessFragments": "off",
+        "noVoid": "off",
+        "useOptionalChain": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "useParseIntRadix": "off"
+      },
+      "performance": {
+        "noBarrelFile": "off",
+        "noNamespaceImport": "off",
+        "useTopLevelRegex": "off"
+      },
+      "style": {
+        "noNamespace": "off",
+        "noNestedTernary": "off",
+        "noSubstr": "off",
+        "useAtIndex": "off",
+        "useCollapsedIf": "off",
+        "useConsistentTypeDefinitions": "off",
+        "useDefaultSwitchClause": "off",
+        "useFilenamingConvention": "off",
+        "useReadonlyClassProperties": "off",
+        "useTemplate": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noDocumentCookie": "off",
+        "noEmptyBlockStatements": "off",
+        "noGlobalIsNan": "off",
+        "useAwait": "off",
+        "useIterableCallbackReturn": "off"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/lib/desktop/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 use adb_gui_next_lib::payload::{copy_raw_slice, detect_copy_strategy};
-use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use std::hint::black_box;
 
 fn bench_copy_strategies(c: &mut Criterion) {
     let sizes = [1_024, 65_536, 1_048_576, 16_777_216];

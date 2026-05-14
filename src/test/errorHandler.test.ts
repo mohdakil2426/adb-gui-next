@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleError, handleSuccess, handleInfo, handleWarning } from '../lib/errorHandler';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handleError, handleInfo, handleSuccess, handleWarning } from '@/shared/utils/errorHandler';
 
 vi.mock('sonner', () => ({
   toast: {
@@ -10,7 +10,7 @@ vi.mock('sonner', () => ({
 }));
 
 const mockAddLog = vi.fn();
-vi.mock('../lib/logStore', () => ({
+vi.mock('@/shared/stores/logStore', () => ({
   useLogStore: {
     getState: () => ({ addLog: mockAddLog }),
   },

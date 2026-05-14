@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
+import { vi } from 'vitest';
 
 // Mock @tauri-apps/api/core — IPC is unavailable in jsdom
 vi.mock('@tauri-apps/api/core', () => ({

@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { FileSelector } from '@/components/FileSelector';
+import { describe, expect, it } from 'vitest';
+import { FileSelector } from '@/shared/components/FileSelector';
 
 describe('FileSelector', () => {
   it('shows the full selected path in visible assistive text instead of native title', () => {
     render(
-      <FileSelector label="Payload File" path="/sdcard/Download/payload.bin" onSelect={() => {}} />,
+      <FileSelector label="Payload File" onSelect={() => {}} path="/sdcard/Download/payload.bin" />,
     );
 
     const fullPath = screen.getByText('/sdcard/Download/payload.bin');

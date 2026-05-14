@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useDeviceStore } from '@/lib/deviceStore';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 
 describe('useDeviceStore', () => {
   beforeEach(() => {

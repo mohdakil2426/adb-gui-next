@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getStatusConfig } from '@/lib/deviceStatus';
+import { getStatusConfig } from '@/shared/utils/deviceStatus';
 
 describe('deviceStatus', () => {
   it('returns semantic token classes for known device states', () => {

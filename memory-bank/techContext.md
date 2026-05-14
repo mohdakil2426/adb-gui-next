@@ -105,41 +105,27 @@
 ├── tsconfig.json                 # TypeScript config (strict mode, `paths` alias without `baseUrl`)
 ├── eslint.config.mjs             # ESLint flat config
 ├── .prettierrc.json              # Prettier config
-├── components.json               # shadcn/ui config
+├── components.json               # shadcn/ui config (aliases primitives to src/shared/ui)
 ├── rustfmt.toml                  # Rust formatting (edition 2024)
 ├── src/
-│   ├── main.tsx                  # Entry point
-│   ├── App.tsx                   # Root component
-│   ├── lib/marketplace/          # Marketplace hooks + install helper
-│   │   ├── useMarketplaceSearch.ts
-│   │   ├── useMarketplaceHome.ts
-│   │   ├── useMarketplaceAuth.ts
-│   │   └── install.ts
-│   ├── components/               # UI components
-│   │   ├── MainLayout.tsx        # App shell (sidebar + views + bottom panel)
-│   │   ├── AppSidebar.tsx        # shadcn Sidebar (grouped nav, header, footer, rail)
-│   │   ├── BottomPanel.tsx       # VS Code-style bottom panel container
-│   │   ├── LogsPanel.tsx         # Filtered log viewer
-│   │   ├── ShellPanel.tsx        # Interactive ADB/fastboot terminal
-│   │   ├── ConnectedDevicesCard.tsx  # Shared device list card
-│   │   ├── CheckboxItem.tsx      # Shared checkbox indicator
-│   │   ├── EmptyState.tsx        # Shared empty state component
-│   │   ├── CopyButton.tsx        # Shared copy-to-clipboard button
-│   │   ├── FileSelector.tsx      # Shared file/dir picker
-│   │   ├── LoadingButton.tsx     # Shared button with loading spinner
-│   │   ├── SectionHeader.tsx     # Shared section sub-header
-│   │   ├── SelectionSummaryBar.tsx # Shared selection count + clear + actions slot
-│   │   ├── DirectoryTree.tsx     # File Explorer left pane (lazy-loaded tree)
-│   │   ├── ui/                   # 35+ shadcn primitives (Alert, Empty, Field, Select, Switch, ToggleGroup, etc.)
-│   │   └── views/                # 9 feature views
-│   ├── lib/
-│   │   ├── utils.ts              # cn() helper
-│   │   ├── logStore.ts           # Log panel state (ring buffer, filter, search)
-│   │   ├── shellStore.ts         # Shell history state
-│   │   ├── deviceStore.ts        # Device state
-│   │   ├── payloadDumperStore.ts # Payload dumper state
-│   │   ├── marketplaceStore.ts   # Marketplace search/detail state
-│   │   └── desktop/              # Tauri abstraction layer
+│   ├── main.tsx                  # Vite/Tauri bootstrap only
+│   ├── app/                      # App root and no-router shell
+│   ├── desktop/                  # Tauri backend/runtime/models boundary
+│   ├── shared/                   # Cross-feature UI, components, stores, hooks, utils
+│   │   ├── ui/                   # 35+ shadcn primitives
+│   │   ├── components/           # Reusable app components
+│   │   ├── stores/               # Cross-feature Zustand stores
+│   │   └── utils/                # cn, formatting, error/device helpers
+│   ├── features/                 # Product feature modules
+│   │   ├── dashboard/
+│   │   ├── app-manager/
+│   │   ├── file-explorer/
+│   │   ├── flasher/
+│   │   ├── utilities/
+│   │   ├── payload-dumper/
+│   │   ├── marketplace/
+│   │   ├── emulator/
+│   │   └── about/
 │   └── styles/
 │       └── global.css            # Tailwind v4 config + theme + terminal tokens
 └── src-tauri/

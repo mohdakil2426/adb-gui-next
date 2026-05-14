@@ -1,0 +1,10 @@
+export const MIN_LEFT_WIDTH = 180;
+export const MAX_LEFT_WIDTH = 420;
+export const DEFAULT_LEFT_WIDTH = 180;
+export const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
+export const RESERVED_NAMES = /^\.{1,2}$/;
+export const MAX_HISTORY = 50;
+export const RESPONSIVE_COLLAPSE_WIDTH = 1024;
+export const PHANTOM_ROW_HEIGHT = 40;
+export const FILE_TABLE_COLUMNS = '40px minmax(16rem, 1fr) 8rem 8rem 6rem';
+export const FILE_TABLE_COLUMNS_WITH_SELECTION = '40px 40px minmax(16rem, 1fr) 8rem 8rem 6rem';

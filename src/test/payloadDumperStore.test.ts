@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { act } from 'react';
-import { usePayloadDumperStore } from '../lib/payloadDumperStore';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
 
 // Reset store state before each test
 beforeEach(() => {
@@ -47,7 +47,7 @@ describe('payloadDumperStore', () => {
       usePayloadDumperStore.getState().toggleAll(true);
     });
     const { partitions } = usePayloadDumperStore.getState();
-    expect(partitions.every((p) => p.selected)).toBe(true);
+    expect(partitions.every((p: { selected: boolean }) => p.selected)).toBe(true);
   });
 
   it('toggleAll deselects all partitions', () => {
@@ -59,7 +59,7 @@ describe('payloadDumperStore', () => {
       usePayloadDumperStore.getState().toggleAll(false);
     });
     const { partitions } = usePayloadDumperStore.getState();
-    expect(partitions.every((p) => !p.selected)).toBe(true);
+    expect(partitions.every((p: { selected: boolean }) => !p.selected)).toBe(true);
   });
 
   it('markPartitionCompleted moves partition from extracting to completed', () => {

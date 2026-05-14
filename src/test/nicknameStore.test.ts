@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { setNickname, getNickname } from '@/lib/nicknameStore';
+import { getNickname, setNickname } from '@/shared/stores/nicknameStore';
 
 describe('nicknameStore', () => {
   beforeEach(() => {

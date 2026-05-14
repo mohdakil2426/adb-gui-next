@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewFlasher } from '@/components/views/ViewFlasher';
-import { useDeviceStore } from '@/lib/deviceStore';
+import { ViewFlasher } from '@/features/flasher/FlasherView';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   FlashPartition: vi.fn(),
   SelectImageFile: vi.fn(),
   SelectZipFile: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@/lib/desktop/backend', () => ({
   WipeData: vi.fn(),
 }));
 
-vi.mock('@/lib/desktop/runtime', () => ({
+vi.mock('@/desktop/runtime', () => ({
   OnFileDrop: vi.fn(),
   OnFileDropOff: vi.fn(),
 }));

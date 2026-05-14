@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "adb-gui-next"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -24,7 +24,7 @@ dependencies = [
  "prost",
  "prost-build",
  "protoc-bin-vendored",
- "quick-xml 0.39.4",
+ "quick-xml 0.40.0",
  "rayon",
  "reqwest",
  "serde",
@@ -3991,6 +3991,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.40.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b7315c86b26aaef0321fba33c9dcc160da659c6a9d278f0f6a5656d6561c03b"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "quinn"
 version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5714,9 +5723,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.52.2"
+version = "1.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "110a78583f19d5cdb2c5ccf321d1290344e71313c6c37d43520d386027d18386"
+checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
 dependencies = [
  "bytes",
  "libc",

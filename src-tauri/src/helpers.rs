@@ -5,6 +5,7 @@ use std::{
     process::Command,
 };
 use tauri::{AppHandle, Manager};
+use urlencoding::decode;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -31,6 +32,51 @@ pub fn sanitize_filename(name: &str) -> String {
     }
 
     sanitized
+}
+
+pub fn validate_path_components(path: &str) -> Result<(), String> {
+    let trimmed = path.trim();
+
+    if trimmed.contains('\0') {
+        return Err("Path contains null byte".into());
+    }
+
+    let decoded = decode(trimmed).map_err(|_| "Invalid URL encoding in path")?.into_owned();
+
+    if decoded.is_empty() {
+        return Err("Path cannot be empty".into());
+    }
+
+    if decoded.contains("..") {
+        return Err(format!("Path traversal not allowed: '{}' contains '..' sequence", decoded));
+    }
+
+    Ok(())
+}
+
+/// Allowed path prefixes for device file operations. Operations outside
+/// these prefixes are rejected to prevent access to system partitions.
+const ALLOWED_DEVICE_PREFIXES: &[&str] = &["/sdcard", "/data", "/mnt", "/storage/emulated"];
+
+/// Validates that a device path starts with an allowed prefix. Used for
+/// write operations (push, create, delete, rename) to prevent writing to
+/// system partitions like /system, /proc, /dev, /sys.
+pub fn validate_safe_device_path(path: &str) -> Result<(), String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("Path cannot be empty".into());
+    }
+    let is_allowed = ALLOWED_DEVICE_PREFIXES
+        .iter()
+        .any(|prefix| trimmed == *prefix || trimmed.starts_with(&format!("{prefix}/")));
+    if !is_allowed {
+        return Err(format!(
+            "Path '{}' is outside allowed device directories ({:?}). \
+             Only /sdcard, /data, /mnt, and /storage/emulated are permitted.",
+            trimmed, ALLOWED_DEVICE_PREFIXES
+        ));
+    }
+    Ok(())
 }
 
 pub fn split_args(command: &str) -> Vec<&str> {
@@ -255,5 +301,83 @@ mod tests {
         let candidate = repo_resource_binary_path(Path::new("repo"), "windows", "adb.exe");
         let normalized = candidate.to_string_lossy().replace('\\', "/");
         assert_eq!(normalized, "repo/src-tauri/resources/windows/adb.exe");
+    }
+
+    #[test]
+    fn validate_path_components_rejects_traversal() {
+        assert!(validate_path_components("/sdcard/../../../system/").is_err());
+        assert!(validate_path_components("../etc/passwd").is_err());
+        assert!(validate_path_components("foo/../../bar").is_err());
+    }
+
+    #[test]
+    fn validate_path_components_allows_normal_paths() {
+        assert!(validate_path_components("/sdcard/Download/").is_ok());
+        assert!(validate_path_components("Pictures/IMG_001.jpg").is_ok());
+        assert!(validate_path_components("/").is_ok());
+    }
+
+    #[test]
+    fn validate_path_components_rejects_empty() {
+        assert!(validate_path_components("").is_err());
+        assert!(validate_path_components("   ").is_err());
+    }
+
+    #[test]
+    fn validate_path_components_rejects_null_bytes() {
+        assert!(validate_path_components("file\0name").is_err());
+    }
+
+    #[test]
+    fn validate_path_components_rejects_url_encoded_traversal() {
+        assert!(validate_path_components("%2e%2e").is_err());
+        assert!(validate_path_components("%2e.%2F..").is_err());
+        assert!(validate_path_components("../%2e%2e").is_err());
+        assert!(validate_path_components("/sdcard/%2e%2e/system").is_err());
+    }
+
+    #[test]
+    fn validate_safe_device_path_allows_sdcard() {
+        assert!(validate_safe_device_path("/sdcard/Download/").is_ok());
+        assert!(validate_safe_device_path("/sdcard/").is_ok());
+    }
+
+    #[test]
+    fn validate_safe_device_path_allows_data() {
+        assert!(validate_safe_device_path("/data/app/").is_ok());
+    }
+
+    #[test]
+    fn validate_safe_device_path_allows_mnt() {
+        assert!(validate_safe_device_path("/mnt/sdcard/").is_ok());
+    }
+
+    #[test]
+    fn validate_safe_device_path_rejects_system() {
+        assert!(validate_safe_device_path("/system/").is_err());
+        assert!(validate_safe_device_path("/system/app/").is_err());
+    }
+
+    #[test]
+    fn validate_safe_device_path_rejects_proc() {
+        assert!(validate_safe_device_path("/proc/").is_err());
+    }
+
+    #[test]
+    fn validate_safe_device_path_rejects_dev() {
+        assert!(validate_safe_device_path("/dev/").is_err());
+    }
+
+    #[test]
+    fn validate_safe_device_path_rejects_prefix_boundary_bypass() {
+        assert!(validate_safe_device_path("/sdcardData/app").is_err());
+        assert!(validate_safe_device_path("/dataSystem/tmp").is_err());
+        assert!(validate_safe_device_path("/mntVendor/persist").is_err());
+    }
+
+    #[test]
+    fn validate_safe_device_path_allows_trailing_slash() {
+        assert!(validate_safe_device_path("/sdcard/").is_ok());
+        assert!(validate_safe_device_path("/data/").is_ok());
     }
 }

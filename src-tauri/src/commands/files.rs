@@ -1,5 +1,6 @@
 use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
+use crate::helpers::{validate_path_components, validate_safe_device_path};
 use log::{debug, info};
 use serde::Serialize;
 use tauri::AppHandle;
@@ -28,6 +29,7 @@ pub async fn list_files(
     serial: Option<String>,
 ) -> CmdResult<Vec<FileEntry>> {
     let path = path.trim().to_string();
+    validate_path_components(&path)?;
     info!("Listing files at {}", path);
     tokio::task::spawn_blocking(move || {
         // Wrap in single quotes so spaces in paths are handled correctly.
@@ -57,6 +59,7 @@ pub async fn pull_file(
 ) -> CmdResult<String> {
     let remote = remote_path.trim().to_string();
     let local = local_path.trim().to_string();
+    validate_path_components(&remote)?;
     info!("Pulling {} to {}", remote, local);
     tokio::task::spawn_blocking(move || {
         run_adb_for_serial(&app, serial.as_deref(), &["pull", "-a", &remote, &local])
@@ -74,6 +77,8 @@ pub async fn push_file(
 ) -> CmdResult<String> {
     let local = local_path.trim().to_string();
     let remote = remote_path.trim().to_string();
+    validate_path_components(&remote)?;
+    validate_safe_device_path(&remote)?;
     info!("Pushing {} to {}", local, remote);
     tokio::task::spawn_blocking(move || {
         run_adb_for_serial(&app, serial.as_deref(), &["push", &local, &remote])
@@ -90,6 +95,10 @@ pub async fn delete_files(
 ) -> CmdResult<String> {
     if paths.is_empty() {
         return Err("No paths provided".into());
+    }
+    for p in &paths {
+        validate_path_components(p)?;
+        validate_safe_device_path(p)?;
     }
     let count = paths.len();
     info!("Deleting {} item(s)", count);
@@ -114,6 +123,10 @@ pub async fn rename_file(
 ) -> CmdResult<String> {
     let old = old_path.trim().to_string();
     let new = new_path.trim().to_string();
+    validate_path_components(&old)?;
+    validate_safe_device_path(&old)?;
+    validate_path_components(&new)?;
+    validate_safe_device_path(&new)?;
     info!("Renaming '{}' to '{}'", old, new);
     tokio::task::spawn_blocking(move || {
         let old_q = format!("'{}'", old.replace('\'', r"'\''"));
@@ -133,6 +146,8 @@ pub async fn create_file(
     serial: Option<String>,
 ) -> CmdResult<String> {
     let p = path.trim().to_string();
+    validate_path_components(&p)?;
+    validate_safe_device_path(&p)?;
     info!("Creating file: {}", p);
     tokio::task::spawn_blocking(move || {
         let quoted = format!("'{}'", p.replace('\'', r"'\''"));
@@ -151,6 +166,8 @@ pub async fn create_directory(
     serial: Option<String>,
 ) -> CmdResult<String> {
     let p = path.trim().to_string();
+    validate_path_components(&p)?;
+    validate_safe_device_path(&p)?;
     info!("Creating directory: {}", p);
     tokio::task::spawn_blocking(move || {
         let quoted = format!("'{}'", p.replace('\'', r"'\''"));

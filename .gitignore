@@ -11,6 +11,8 @@ __tauri_template_tmp/
 .mcp.json
 docs/adb-gui-kit/
 skills-lock.json
+opencode.json
+.husky/_/
 
 # Local logs and temp files
 dev-tauri.log
@@ -43,5 +45,6 @@ Desktop.ini
 .kilocode
 .clinerules
 .omx/
-.codex/
+.codex/config.toml
 .superpowers/
+.claude/

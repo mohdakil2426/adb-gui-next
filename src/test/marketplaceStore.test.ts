@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { backend } from '@/lib/desktop/models';
+import type { backend } from '@/desktop/models';
 import {
   getMarketplaceActiveFilterSummary,
   getMarketplaceEffectiveGithubToken,
   useMarketplaceStore,
-} from '@/lib/marketplaceStore';
+} from '@/features/marketplace/model/marketplaceStore';
 
 describe('marketplaceStore', () => {
   beforeEach(() => {

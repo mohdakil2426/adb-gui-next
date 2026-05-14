@@ -1,7 +1,7 @@
 import path from 'node:path';
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -20,7 +20,7 @@ export default defineConfig(() => ({
   server: {
     port: 1420,
     strictPort: true,
-    host: host || false,
+    host,
     hmr: host
       ? {
           protocol: 'ws',
@@ -54,12 +54,21 @@ export default defineConfig(() => ({
         // Split large vendors into cacheable chunks (function form required by Rollup types)
         manualChunks(id: string) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('/react/') || id.includes('/react@'))
+            if (id.includes('react-dom') || id.includes('/react/') || id.includes('/react@')) {
               return 'react-vendor';
-            if (id.includes('framer-motion')) return 'motion';
-            if (id.includes('@tauri-apps')) return 'tauri';
-            if (id.includes('@tanstack')) return 'query';
-            if (id.includes('@radix-ui') || id.includes('radix-ui')) return 'radix';
+            }
+            if (id.includes('framer-motion')) {
+              return 'motion';
+            }
+            if (id.includes('@tauri-apps')) {
+              return 'tauri';
+            }
+            if (id.includes('@tanstack')) {
+              return 'query';
+            }
+            if (id.includes('@radix-ui') || id.includes('radix-ui')) {
+              return 'radix';
+            }
           }
         },
       },

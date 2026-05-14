@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -105,7 +105,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --font-sans: 'Onest', sans-serif;
+  --font-sans: "Onest", sans-serif;
   /* Semantic status tokens */
   --warning: oklch(0.84 0.16 84);
   --warning-foreground: oklch(0.28 0.07 46);
@@ -116,19 +116,55 @@
   --success-subtle: color-mix(in oklch, var(--success) 20%, transparent);
   --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
   --device-status-adb-fg: var(--success);
-  --device-status-adb-border: color-mix(in oklch, var(--success) 35%, transparent);
-  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 18%, transparent);
+  --device-status-adb-border: color-mix(
+    in oklch,
+    var(--success) 35%,
+    transparent
+  );
+  --device-status-fastboot-bg: color-mix(
+    in oklch,
+    var(--warning) 18%,
+    transparent
+  );
   --device-status-fastboot-fg: var(--warning-foreground);
-  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 38%, transparent);
-  --device-status-recovery-bg: color-mix(in oklch, var(--success) 18%, transparent);
+  --device-status-fastboot-border: color-mix(
+    in oklch,
+    var(--warning) 38%,
+    transparent
+  );
+  --device-status-recovery-bg: color-mix(
+    in oklch,
+    var(--success) 18%,
+    transparent
+  );
   --device-status-recovery-fg: var(--success);
-  --device-status-recovery-border: color-mix(in oklch, var(--success) 35%, transparent);
-  --device-status-neutral-bg: color-mix(in oklch, var(--muted-foreground) 16%, transparent);
+  --device-status-recovery-border: color-mix(
+    in oklch,
+    var(--success) 35%,
+    transparent
+  );
+  --device-status-neutral-bg: color-mix(
+    in oklch,
+    var(--muted-foreground) 16%,
+    transparent
+  );
   --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
-  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-neutral-border: color-mix(
+    in oklch,
+    var(--muted-foreground) 28%,
+    transparent
+  );
+  --device-status-unauthorized-bg: color-mix(
+    in oklch,
+    var(--destructive) 16%,
+    transparent
+  );
   --device-status-unauthorized-fg: var(--destructive);
-  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 32%, transparent);
+  --device-status-unauthorized-border: color-mix(
+    in oklch,
+    var(--destructive) 32%,
+    transparent
+  );
 
   /* Terminal panel tokens */
   --terminal-bg: oklch(0.97 0 0);
@@ -177,7 +213,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --font-sans: 'Onest', sans-serif;
+  --font-sans: "Onest", sans-serif;
   /* Semantic status tokens */
   --warning: oklch(0.82 0.17 80);
   --warning-foreground: oklch(0.985 0 0);
@@ -188,19 +224,55 @@
   --success-subtle: color-mix(in oklch, var(--success) 20%, transparent);
   --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
   --device-status-adb-fg: var(--success);
-  --device-status-adb-border: color-mix(in oklch, var(--success) 34%, transparent);
-  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 18%, transparent);
+  --device-status-adb-border: color-mix(
+    in oklch,
+    var(--success) 34%,
+    transparent
+  );
+  --device-status-fastboot-bg: color-mix(
+    in oklch,
+    var(--warning) 18%,
+    transparent
+  );
   --device-status-fastboot-fg: var(--warning);
-  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 34%, transparent);
-  --device-status-recovery-bg: color-mix(in oklch, var(--success) 18%, transparent);
+  --device-status-fastboot-border: color-mix(
+    in oklch,
+    var(--warning) 34%,
+    transparent
+  );
+  --device-status-recovery-bg: color-mix(
+    in oklch,
+    var(--success) 18%,
+    transparent
+  );
   --device-status-recovery-fg: var(--success);
-  --device-status-recovery-border: color-mix(in oklch, var(--success) 34%, transparent);
-  --device-status-neutral-bg: color-mix(in oklch, var(--muted-foreground) 16%, transparent);
+  --device-status-recovery-border: color-mix(
+    in oklch,
+    var(--success) 34%,
+    transparent
+  );
+  --device-status-neutral-bg: color-mix(
+    in oklch,
+    var(--muted-foreground) 16%,
+    transparent
+  );
   --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
-  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-neutral-border: color-mix(
+    in oklch,
+    var(--muted-foreground) 28%,
+    transparent
+  );
+  --device-status-unauthorized-bg: color-mix(
+    in oklch,
+    var(--destructive) 16%,
+    transparent
+  );
   --device-status-unauthorized-fg: var(--destructive);
-  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 30%, transparent);
+  --device-status-unauthorized-border: color-mix(
+    in oklch,
+    var(--destructive) 30%,
+    transparent
+  );
 
   /* Terminal panel tokens */
   --terminal-bg: oklch(0.12 0 0);
@@ -229,8 +301,8 @@
   }
 
   body {
-    @apply bg-background text-foreground;
     color-scheme: light;
+    @apply bg-background text-foreground;
   }
 
   html.dark body {
@@ -238,18 +310,18 @@
   }
 
   button,
-  [role='button'],
-  [type='button'],
-  [type='submit'],
-  [type='reset'] {
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"] {
     @apply cursor-pointer;
   }
 }
 
 html,
 body {
-  scrollbar-width: thin;
   scrollbar-color: oklch(0 0 0 / 20%) transparent;
+  scrollbar-width: thin;
 }
 
 /* Only the main content scroll area gets a stable gutter to prevent layout shift */
@@ -273,9 +345,9 @@ body::-webkit-scrollbar,
 body::-webkit-scrollbar-thumb,
 .custom-scroll::-webkit-scrollbar-thumb {
   background-color: oklch(0 0 0 / 20%);
-  border-radius: 9999px;
-  border: 2px solid transparent;
   background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 9999px;
   transition: background-color 0.2s ease;
 }
 

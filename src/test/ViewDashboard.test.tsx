@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewDashboard } from '@/components/views/ViewDashboard';
-import { useDeviceStore } from '@/lib/deviceStore';
+import { ViewDashboard } from '@/features/dashboard/DashboardView';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 
-vi.mock('@/lib/desktop/backend', () => ({
+vi.mock('@/desktop/backend', () => ({
   ConnectWirelessAdb: vi.fn(),
   DisconnectWirelessAdb: vi.fn(),
   EnableWirelessAdb: vi.fn(),

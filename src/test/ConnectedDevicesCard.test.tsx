@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ConnectedDevicesCard } from '../components/ConnectedDevicesCard';
+import { describe, expect, it, vi } from 'vitest';
+import { ConnectedDevicesCard } from '@/shared/components/ConnectedDevicesCard';
 
 // Mock nicknameStore — return undefined (no nicknames set)
 vi.mock('../lib/nicknameStore', () => ({
@@ -17,8 +17,8 @@ describe('ConnectedDevicesCard', () => {
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     expect(screen.getByText('Connected Devices')).toBeInTheDocument();
@@ -29,8 +29,8 @@ describe('ConnectedDevicesCard', () => {
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     expect(screen.getByText('No devices detected')).toBeInTheDocument();
@@ -43,10 +43,10 @@ describe('ConnectedDevicesCard', () => {
     render(
       <ConnectedDevicesCard
         devices={[]}
-        isLoading={false}
-        onRefresh={mockOnRefresh}
-        onEdit={mockOnEdit}
         emptyText="Custom empty state"
+        isLoading={false}
+        onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     expect(screen.getByText('Custom empty state')).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('ConnectedDevicesCard', () => {
 
   it('shows scanning message when loading with no devices', () => {
     render(
-      <ConnectedDevicesCard devices={[]} isLoading onRefresh={mockOnRefresh} onEdit={mockOnEdit} />,
+      <ConnectedDevicesCard devices={[]} isLoading onEdit={mockOnEdit} onRefresh={mockOnRefresh} />,
     );
     expect(screen.getByText('Scanning for devices...')).toBeInTheDocument();
   });
@@ -64,8 +64,8 @@ describe('ConnectedDevicesCard', () => {
       <ConnectedDevicesCard
         devices={[{ serial: 'abc123', status: 'device' }]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     expect(screen.getByText('abc123')).toBeInTheDocument();
@@ -76,8 +76,8 @@ describe('ConnectedDevicesCard', () => {
       <ConnectedDevicesCard
         devices={[{ serial: 'abc123', status: 'device' }]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     expect(screen.getByText('adb')).toBeInTheDocument();
@@ -89,8 +89,8 @@ describe('ConnectedDevicesCard', () => {
       <ConnectedDevicesCard
         devices={[]}
         isLoading={false}
-        onRefresh={mockOnRefresh}
         onEdit={mockOnEdit}
+        onRefresh={mockOnRefresh}
       />,
     );
     // The refresh button is the only button in empty state
