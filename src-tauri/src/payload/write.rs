@@ -75,7 +75,6 @@ impl NonTemporalWriter {
 
         #[cfg(unix)]
         {
-            use std::os::unix::fs::MetadataExt;
             if self.mmap.len() > 4096 {
                 let _ = unsafe {
                     libc::madvise(
