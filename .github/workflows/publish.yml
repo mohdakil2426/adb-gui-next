@@ -116,7 +116,7 @@ jobs:
         run: rm -rf src-tauri/target/release/bundle
 
       - name: Build Tauri x64 packages
-        run: bun run tauri build -- --verbose --bundles ${{ matrix.bundle-targets }}
+        run: bun run tauri build --verbose --bundles ${{ matrix.bundle-targets }}
 
       - name: Collect release assets
         shell: pwsh
