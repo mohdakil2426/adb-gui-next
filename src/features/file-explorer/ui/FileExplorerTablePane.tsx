@@ -26,7 +26,6 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/shared/ui/context-menu';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Table, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 
 interface Props {
@@ -62,7 +61,7 @@ interface Props {
   renameError: string;
   renameValue: string;
   renamingName: string | null;
-  rowVirtualizer: Virtualizer<HTMLElement, Element>;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   searchQuery: string;
   selectedNames: Set<string>;
   someSelected: boolean;
@@ -70,7 +69,7 @@ interface Props {
   sortField: SortField;
   startCreate: (type: 'file' | 'folder') => void;
   startRename: (entry: FileEntry) => void;
-  tableContainerRef: React.RefObject<HTMLDivElement | null>;
+  tableScrollRef: React.RefObject<HTMLDivElement | null>;
   toggleCheckbox: (name: string) => void;
   visibleList: FileEntry[];
 }
@@ -117,20 +116,20 @@ export function FileExplorerTablePane(props: Props) {
     sortField,
     startCreate,
     startRename,
-    tableContainerRef,
+    tableScrollRef,
     toggleCheckbox,
     visibleList,
   } = props;
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <ScrollArea className="flex-1">
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain" ref={tableScrollRef}>
           {isLoading ? (
-            <div className="flex h-40 items-center justify-center">
+            <div className="flex min-h-full items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : loadError === 'permission_denied' ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
               <Lock className="h-8 w-8 opacity-40" />
               <p className="font-medium text-sm">Access Denied</p>
               <p className="text-xs opacity-60">
@@ -138,7 +137,7 @@ export function FileExplorerTablePane(props: Props) {
               </p>
             </div>
           ) : loadError === 'no_device' ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
               <MonitorOff className="h-8 w-8 opacity-40" />
               <p className="font-medium text-sm">No Device Connected</p>
               <p className="text-xs opacity-60">
@@ -146,13 +145,13 @@ export function FileExplorerTablePane(props: Props) {
               </p>
             </div>
           ) : loadError === 'unknown' ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
               <AlertCircle className="h-8 w-8 opacity-40" />
               <p className="font-medium text-sm">Failed to Load</p>
               <p className="text-xs opacity-60">Check the logs panel for details.</p>
             </div>
           ) : fileList.length === 0 && creatingType === null ? (
-            <div className="flex h-40 flex-col items-center justify-center gap-3 text-muted-foreground">
+            <div className="flex min-h-full flex-col items-center justify-center gap-3 text-muted-foreground">
               <p className="text-sm">This directory is empty.</p>
               <div className="flex items-center gap-2">
                 <Button
@@ -182,9 +181,9 @@ export function FileExplorerTablePane(props: Props) {
               </div>
             </div>
           ) : (
-            <div className="relative w-full" ref={tableContainerRef}>
+            <div className="relative w-full">
               <Table className="min-w-[46rem]">
-                <TableHeader className="sticky top-0 z-10 block bg-muted/50 backdrop-blur-sm">
+                <TableHeader className="sticky top-0 z-10 block border-border border-b bg-muted/90 backdrop-blur-sm">
                   <TableRow
                     className="grid hover:bg-transparent"
                     style={{ gridTemplateColumns: fileTableColumns }}
@@ -271,7 +270,7 @@ export function FileExplorerTablePane(props: Props) {
               </Table>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem

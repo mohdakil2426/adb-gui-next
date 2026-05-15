@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, File, Folder, FolderOpen, Loader2 } from 'lu
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ListFiles } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { cn } from '@/shared/utils/cn';
 
@@ -32,8 +33,8 @@ const INITIAL_NODES: TreeNode[] = [
     isLoading: false,
   },
   {
-    path: '/data/',
-    name: 'data',
+    path: '/',
+    name: 'root',
     isDirectory: true,
     isExpanded: false,
     children: null,
@@ -94,8 +95,12 @@ function getAncestorPaths(path: string): string[] {
 }
 
 /** Load all entries (files + dirs) for a path and return as TreeNode[]. */
-function loadDirEntries(path: string, serial?: string | null): Promise<TreeNode[]> {
-  return ListFiles(path, serial).then((entries) =>
+function loadDirEntries(
+  path: string,
+  serial?: string | null,
+  getFileAccessMode: (path: string) => backend.FileAccessMode = () => 'normal',
+): Promise<TreeNode[]> {
+  return ListFiles(path, serial, getFileAccessMode(path)).then((entries) =>
     entries
       .sort((a, b) => {
         const aIsDir = a.type === 'Directory' || a.type === 'Symlink';
@@ -133,7 +138,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
         aria-expanded={node.isDirectory ? node.isExpanded : undefined}
         aria-selected={isActive}
         className={cn(
-          'flex cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors',
+          'flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors',
           'hover:bg-accent hover:text-accent-foreground',
           isActive && 'bg-accent font-medium text-accent-foreground',
           isAncestor && 'text-foreground',
@@ -212,17 +217,12 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
           <File className="size-4 shrink-0 text-muted-foreground opacity-70" />
         )}
 
-        <span className="truncate">{node.name}</span>
+        <span className="min-w-0 truncate">{node.name}</span>
       </div>
 
       {/* Children — only dirs expand */}
-      {node.isDirectory && node.children !== null ? (
-        <div
-          className={cn(
-            'overflow-hidden transition-all duration-200 ease-in-out',
-            node.isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0',
-          )}
-        >
+      {node.isDirectory && node.children !== null && node.isExpanded ? (
+        <div>
           {node.children.length === 0 ? (
             <div
               className="py-1 text-muted-foreground text-xs italic"
@@ -250,6 +250,7 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
 
 export interface DirectoryTreeProps {
   currentPath: string;
+  getFileAccessMode?: (path: string) => backend.FileAccessMode;
   onNavigate: (path: string) => void;
   /** Increment to force-refresh the tree node for currentPath. */
   refreshTrigger?: number;
@@ -258,11 +259,12 @@ export interface DirectoryTreeProps {
 
 export function DirectoryTree({
   currentPath,
+  getFileAccessMode = () => 'normal',
   onNavigate,
   refreshTrigger,
   serial,
 }: DirectoryTreeProps) {
-  const [nodes, setNodesRaw] = useState<TreeNode[]>(INITIAL_NODES);
+  const [nodes, setNodesRaw] = useState<TreeNode[]>(() => INITIAL_NODES);
 
   // Sync ref — always holds latest nodes for use in async callbacks
   const nodesRef = useRef<TreeNode[]>(INITIAL_NODES);
@@ -313,7 +315,7 @@ export function DirectoryTree({
 
       if (firstToLoad) {
         const loadPath = firstToLoad;
-        loadDirEntries(loadPath, serial)
+        loadDirEntries(loadPath, serial, getFileAccessMode)
           .then((entries) => {
             const next = applyToNode(nodesRef.current, loadPath, (n) => ({
               ...n,
@@ -335,7 +337,7 @@ export function DirectoryTree({
           });
       }
     },
-    [serial],
+    [getFileAccessMode, serial],
   );
 
   useEffect(() => {
@@ -346,6 +348,12 @@ export function DirectoryTree({
   useEffect(() => {
     expandToPath(currentPath);
   }, [currentPath, expandToPath]);
+
+  useEffect(() => {
+    const next = INITIAL_NODES;
+    nodesRef.current = next;
+    setNodesRaw(next);
+  }, [serial]);
 
   // Refresh stale children of currentPath when right pane reloads
   const prevRefreshTriggerRef = useRef(0);
@@ -362,7 +370,7 @@ export function DirectoryTree({
 
     if (node.isExpanded) {
       setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
-      loadDirEntries(currentPath, serial)
+      loadDirEntries(currentPath, serial, getFileAccessMode)
         .then((entries) => {
           setNodes((prev) =>
             applyToNode(prev, currentPath, (n) => ({
@@ -379,7 +387,7 @@ export function DirectoryTree({
       // Invalidate cache so it refetches on next expand
       setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
     }
-  }, [refreshTrigger, currentPath, serial, setNodes]);
+  }, [refreshTrigger, currentPath, serial, getFileAccessMode, setNodes]);
 
   // Toggle expand/collapse with lazy loading (dirs only)
   const handleToggle = useCallback(
@@ -407,7 +415,7 @@ export function DirectoryTree({
         return;
       }
 
-      loadDirEntries(path, serial)
+      loadDirEntries(path, serial, getFileAccessMode)
         .then((entries) => {
           setNodes((prev) =>
             applyToNode(prev, path, (n) => ({
@@ -422,12 +430,12 @@ export function DirectoryTree({
           setNodes((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
         });
     },
-    [serial, setNodes],
+    [getFileAccessMode, serial, setNodes],
   );
 
   return (
-    <ScrollArea className="h-full w-full">
-      <div aria-label="Device filesystem" className="py-1 pr-1" role="tree">
+    <ScrollArea className="h-full min-h-0 w-full">
+      <div aria-label="Device filesystem" className="min-w-0 py-1 pr-1" role="tree">
         {nodes.map((node) => (
           <TreeRow
             currentPath={currentPath}

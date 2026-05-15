@@ -58,13 +58,15 @@ interface Props {
   isTreeCollapsed: boolean;
   loadError: LoadError;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  onRootAccessToggle: () => Promise<void>;
   openDeleteDialog: (names: string[]) => void;
   PHANTOM_ROW_HEIGHT: number;
   phantomOffset: number;
   renameError: string;
   renameValue: string;
   renamingName: string | null;
-  rowVirtualizer: Virtualizer<HTMLElement, Element>;
+  rootAccessGranted: boolean;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   searchQuery: string;
   selectedNames: Set<string>;
   setEditPathValue: (v: string) => void;
@@ -75,7 +77,7 @@ interface Props {
   sortField: SortField;
   startCreate: (type: 'file' | 'folder') => void;
   startRename: (entry: FileEntry) => void;
-  tableContainerRef: React.RefObject<HTMLDivElement | null>;
+  tableScrollRef: React.RefObject<HTMLDivElement | null>;
   toggleCheckbox: (name: string) => void;
   visibleList: FileEntry[];
 }
@@ -120,10 +122,12 @@ export function FileExplorerMainPane(p: Props) {
           p.setIsEditingPath(false);
         }}
         onRefresh={p.handleRefreshClick}
+        onRootAccessToggle={p.onRootAccessToggle}
         onSearchClear={p.handleClearSearch}
         onSearchQueryChange={p.setSearchQuery}
         onUp={p.handleBackClick}
         pullTitle={p.selectedNames.size > 1 ? 'Select a single item to export' : undefined}
+        rootAccessGranted={p.rootAccessGranted}
         searchQuery={p.searchQuery}
       />
       {p.isMultiSelectMode && p.selectedNames.size > 0 && !p.renamingName ? (
@@ -196,7 +200,7 @@ export function FileExplorerMainPane(p: Props) {
         sortField={p.sortField}
         startCreate={p.startCreate}
         startRename={p.startRename}
-        tableContainerRef={p.tableContainerRef}
+        tableScrollRef={p.tableScrollRef}
         toggleCheckbox={p.toggleCheckbox}
         visibleList={p.visibleList}
       />

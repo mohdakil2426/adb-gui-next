@@ -2,6 +2,7 @@ import path from 'path-browserify';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { CreateDirectory, CreateFile, DeleteFiles, RenameFile } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import {
   FORBIDDEN_CHARS,
   RESERVED_NAMES,
@@ -16,6 +17,7 @@ interface Options {
   creatingType: CreatingType;
   currentPath: string;
   filesToDelete: string[];
+  getFileAccessMode: (path: string) => backend.FileAccessMode;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   renameValue: string;
   renamingName: string | null;
@@ -77,10 +79,11 @@ export function useFileExplorerMutations(o: Options) {
     const fullPath = path.posix.join(o.currentPath, trimmed);
     o.setIsCreating(true);
     try {
+      const accessMode = o.getFileAccessMode(fullPath);
       if (o.creatingType === 'file') {
-        await CreateFile(fullPath, o.selectedSerialRef.current);
+        await CreateFile(fullPath, o.selectedSerialRef.current, accessMode);
       } else {
-        await CreateDirectory(fullPath, o.selectedSerialRef.current);
+        await CreateDirectory(fullPath, o.selectedSerialRef.current, accessMode);
       }
       o.setCreatingType(null);
       void o.loadFiles(o.currentPath);
@@ -130,11 +133,9 @@ export function useFileExplorerMutations(o: Options) {
     }
     o.setIsRenaming(true);
     try {
-      await RenameFile(
-        path.posix.join(o.currentPath, o.renamingName),
-        path.posix.join(o.currentPath, trimmed),
-        o.selectedSerialRef.current,
-      );
+      const oldPath = path.posix.join(o.currentPath, o.renamingName);
+      const newPath = path.posix.join(o.currentPath, trimmed);
+      await RenameFile(oldPath, newPath, o.selectedSerialRef.current, o.getFileAccessMode(oldPath));
       toast.success(`Renamed to "${trimmed}"`);
       useLogStore.getState().addLog(`Renamed ${o.renamingName} → ${trimmed}`, 'success');
       o.setRenamingName(null);
@@ -158,7 +159,7 @@ export function useFileExplorerMutations(o: Options) {
     const paths = o.filesToDelete.map((name) => path.posix.join(o.currentPath, name));
     o.setIsDeleting(true);
     try {
-      await DeleteFiles(paths, o.selectedSerialRef.current);
+      await DeleteFiles(paths, o.selectedSerialRef.current, o.getFileAccessMode(o.currentPath));
       o.setSelectedNames(new Set());
       void o.loadFiles(o.currentPath);
     } catch (e) {

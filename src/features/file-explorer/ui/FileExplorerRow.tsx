@@ -48,7 +48,7 @@ interface Props {
   phantomOffset: number;
   renameError: string;
   renameValue: string;
-  rowVirtualizer: Virtualizer<HTMLElement, Element>;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   selectedNames: Set<string>;
   startRename: (entry: FileEntry) => void;
   toggleCheckbox: (name: string) => void;

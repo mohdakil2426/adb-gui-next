@@ -2,40 +2,23 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  ChevronDown,
   Download,
-  File,
   FilePlus2,
   Folder,
-  FolderOpen,
   FolderPlus,
   Loader2,
   PanelLeft,
   RefreshCw,
   Search,
-  Upload,
   X,
 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { FileExplorerImportButton } from '@/features/file-explorer/ui/FileExplorerImportButton';
+import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
+import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
+import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
 import { Button } from '@/shared/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/shared/ui/dropdown-menu';
 import { Input } from '@/shared/ui/input';
 import { Separator } from '@/shared/ui/separator';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
-
-function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 interface FileExplorerToolbarProps {
   canGoBack: boolean;
@@ -62,10 +45,12 @@ interface FileExplorerToolbarProps {
   onPathEditingCommit: () => void;
   onPathEditingStop: () => void;
   onRefresh: () => void;
+  onRootAccessToggle: () => Promise<void>;
   onSearchClear: () => void;
   onSearchQueryChange: (value: string) => void;
   onUp: () => void;
   pullTitle?: string | undefined;
+  rootAccessGranted: boolean;
   searchQuery: string;
 }
 
@@ -95,13 +80,15 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onPathEditingCommit,
     onPathEditingStop,
     onRefresh,
+    onRootAccessToggle,
     onSearchQueryChange,
     onUp,
     pullTitle,
+    rootAccessGranted,
     searchQuery,
   } = props;
   return (
-    <div className="flex h-11 shrink-0 items-center gap-1 border-border border-b px-2">
+    <div className="flex h-11 shrink-0 items-center gap-1 overflow-hidden border-border border-b px-2">
       {isTreeCollapsed ? (
         <>
           <ToolbarTooltip label="Show tree panel">
@@ -117,7 +104,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           <Separator className="mx-0.5 h-4" orientation="vertical" />
         </>
       ) : null}
-      <div className="flex min-w-0 flex-1 items-center gap-1">
+      <div className="flex min-w-24 flex-1 items-center gap-1">
         <ToolbarTooltip label="Back (Alt+Left)">
           <Button
             className="size-11 shrink-0"
@@ -182,7 +169,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         )}
       </div>
       <Separator className="mx-1 h-4 shrink-0" orientation="vertical" />
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex min-w-0 shrink-0 items-center gap-1">
         <ToolbarTooltip label="Refresh (F5)">
           <Button
             className="size-11"
@@ -198,12 +185,17 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             )}
           </Button>
         </ToolbarTooltip>
+        <FileExplorerRootAccessButton
+          disabled={isBusy}
+          onToggle={onRootAccessToggle}
+          rootAccessGranted={rootAccessGranted}
+        />
         <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
         <div className="relative flex items-center">
           <Search className="pointer-events-none absolute left-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           <Input
             aria-label="Filter files"
-            className="h-7 w-32 pr-6 pl-6 text-xs transition-[width] duration-200 focus-visible:w-48"
+            className="h-7 w-28 pr-6 pl-6 text-xs transition-[width] duration-200 focus-visible:w-40 md:w-32 md:focus-visible:w-48"
             id="fe-search-input"
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder="Filter…"
@@ -220,10 +212,10 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             </button>
           ) : null}
         </div>
-        <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
+        <Separator className="mx-0.5 hidden h-4 shrink-0 xl:block" orientation="vertical" />
         <ToolbarTooltip label="New File (Ctrl+N)">
           <Button
-            className="size-11"
+            className="hidden size-11 xl:inline-flex"
             disabled={isBusy}
             onClick={onCreateFile}
             size="icon"
@@ -234,7 +226,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         </ToolbarTooltip>
         <ToolbarTooltip label="New Folder (Ctrl+Shift+N)">
           <Button
-            className="size-11"
+            className="hidden size-11 xl:inline-flex"
             disabled={isBusy}
             onClick={onCreateFolder}
             size="icon"
@@ -244,46 +236,14 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           </Button>
         </ToolbarTooltip>
         <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
-        <div className="flex items-stretch">
-          <Button
-            className="rounded-r-none border-r-0 pr-2"
-            disabled={isBusy}
-            onClick={onImportFile}
-            size="sm"
-            variant="outline"
-          >
-            {isPushing ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 shrink-0" />
-            )}
-            <span className="hidden sm:inline">Import</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                aria-label="Import options"
-                className="rounded-l-none px-1.5"
-                disabled={isBusy}
-                size="sm"
-                variant="outline"
-              >
-                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onImportFile}>
-                <File className="h-4 w-4 shrink-0" />
-                Import File
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onImportFolder}>
-                <FolderOpen className="h-4 w-4 shrink-0" />
-                Import Folder
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <FileExplorerImportButton
+          disabled={isBusy}
+          isPushing={isPushing}
+          onImportFile={onImportFile}
+          onImportFolder={onImportFolder}
+        />
         <Button
+          className="hidden xl:inline-flex"
           disabled={isPullDisabled || isBusy}
           onClick={onExport}
           size="sm"
@@ -291,8 +251,15 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           variant="outline"
         >
           <Download className="h-4 w-4 shrink-0" />
-          <span className="hidden sm:inline">Export</span>
+          <span>Export</span>
         </Button>
+        <FileExplorerMoreActionsMenu
+          disabled={isBusy}
+          isPullDisabled={isPullDisabled}
+          onCreateFile={onCreateFile}
+          onCreateFolder={onCreateFolder}
+          onExport={onExport}
+        />
       </div>
     </div>
   );

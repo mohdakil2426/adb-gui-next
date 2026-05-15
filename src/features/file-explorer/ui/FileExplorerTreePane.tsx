@@ -1,5 +1,6 @@
 import { Layers, PanelLeftClose } from 'lucide-react';
 import type { ReactElement } from 'react';
+import type { backend } from '@/desktop/models';
 import { DirectoryTree } from '@/shared/components/DirectoryTree';
 import { Button } from '@/shared/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
@@ -15,6 +16,7 @@ function ToolbarTooltip({ label, children }: { label: string; children: ReactEle
 
 interface Props {
   currentPath: string;
+  getFileAccessMode: (path: string) => backend.FileAccessMode;
   handleCollapseTree: () => void;
   leftWidth: number;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
@@ -23,15 +25,26 @@ interface Props {
 }
 
 export function FileExplorerTreePane(props: Props) {
-  const { currentPath, handleCollapseTree, leftWidth, loadFiles, selectedSerial, treeRefreshKey } =
-    props;
+  const {
+    currentPath,
+    getFileAccessMode,
+    handleCollapseTree,
+    leftWidth,
+    loadFiles,
+    selectedSerial,
+    treeRefreshKey,
+  } = props;
   return (
-    <div className="flex shrink-0 flex-col overflow-hidden" style={{ width: `${leftWidth}px` }}>
+    <div
+      className="flex min-h-0 shrink-0 flex-col overflow-hidden"
+      style={{ width: `${leftWidth}px` }}
+    >
       <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
         <Layers className="size-4 shrink-0 text-muted-foreground" />
         <span className="flex-1 font-medium text-muted-foreground text-sm">Device</span>
         <ToolbarTooltip label="Collapse tree panel">
           <Button
+            aria-label="Collapse tree panel"
             className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
             onClick={handleCollapseTree}
             size="icon"
@@ -41,9 +54,10 @@ export function FileExplorerTreePane(props: Props) {
           </Button>
         </ToolbarTooltip>
       </div>
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <DirectoryTree
           currentPath={currentPath}
+          getFileAccessMode={getFileAccessMode}
           key={selectedSerial ?? 'no-device'}
           onNavigate={loadFiles}
           refreshTrigger={treeRefreshKey}

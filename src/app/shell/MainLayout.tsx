@@ -184,6 +184,7 @@ export function MainLayout() {
   }, []);
 
   const activeViewContent = VIEW_RENDERERS[activeView](activeView);
+  const isFileExplorerView = activeView === VIEWS.FILES;
   const mainPaddingBottom =
     isLogOpen && activeView !== VIEWS.ABOUT
       ? `${isPanelMaximized ? viewportHeight * PANEL_MAXIMIZED_HEIGHT_RATIO : panelHeight || DEFAULT_PANEL_HEIGHT}px`
@@ -330,18 +331,26 @@ export function MainLayout() {
 
               {/* Main content area — scroll area gets bottom padding so content under panel is reachable */}
               <div
-                className="custom-scroll main-scroll-area flex-1 overflow-y-auto overflow-x-hidden"
+                className={cn(
+                  'custom-scroll main-scroll-area flex-1 overflow-x-hidden',
+                  isFileExplorerView ? 'overflow-hidden' : 'overflow-y-auto',
+                )}
                 id="main-content"
                 role="main"
                 style={{ paddingBottom: mainPaddingBottom }}
                 tabIndex={-1}
               >
-                <div className="min-h-full w-full p-4 sm:p-6">
-                  <div className="mx-auto max-w-(--content-max-width)">
+                <div
+                  className={cn(
+                    'flex w-full flex-col p-4 sm:p-6',
+                    isFileExplorerView ? 'h-full min-h-0' : 'min-h-full',
+                  )}
+                >
+                  <div className="mx-auto flex min-h-0 w-full max-w-(--content-max-width) flex-1 flex-col overflow-hidden">
                     <AnimatePresence mode="wait">
                       <motion.div
                         animate={{ opacity: 1 }}
-                        className="w-full"
+                        className="flex min-h-0 w-full flex-1 flex-col"
                         exit={{ opacity: 0 }}
                         initial={{ opacity: 0 }}
                         key={activeView}

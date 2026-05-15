@@ -68,7 +68,7 @@ export function FileExplorerVirtualBody({
   renameError: string;
   renameValue: string;
   renamingName: string | null;
-  rowVirtualizer: Virtualizer<HTMLElement, Element>;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   searchQuery: string;
   selectedNames: Set<string>;
   startRename: (entry: FileEntry) => void;

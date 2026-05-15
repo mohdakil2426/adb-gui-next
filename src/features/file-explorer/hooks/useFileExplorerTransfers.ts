@@ -9,6 +9,7 @@ import {
   SelectFileToPush,
   SelectSaveDirectory,
 } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
 import { useLogStore } from '@/shared/stores/logStore';
 import { debugLog } from '@/shared/utils/debug';
@@ -16,6 +17,7 @@ import { handleError } from '@/shared/utils/errorHandler';
 
 interface Options {
   currentPath: string;
+  getFileAccessMode: (path: string) => backend.FileAccessMode;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   selectedSerialRef: React.RefObject<string | null>;
   setIsPulling: (v: boolean) => void;
@@ -24,8 +26,15 @@ interface Options {
 }
 
 export function useFileExplorerTransfers(options: Options) {
-  const { currentPath, loadFiles, selectedSerialRef, setIsPulling, setIsPushing, singleSelected } =
-    options;
+  const {
+    currentPath,
+    getFileAccessMode,
+    loadFiles,
+    selectedSerialRef,
+    setIsPulling,
+    setIsPushing,
+    singleSelected,
+  } = options;
 
   const executePull = useCallback(
     async (file: FileEntry) => {
@@ -41,7 +50,12 @@ export function useFileExplorerTransfers(options: Options) {
           return;
         }
         toastId = toast.loading(`Pulling ${file.name}…`, { description: `From: ${remotePath}` });
-        const output = await PullFile(remotePath, localPath, selectedSerialRef.current);
+        const output = await PullFile(
+          remotePath,
+          localPath,
+          selectedSerialRef.current,
+          getFileAccessMode(remotePath),
+        );
         toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
         useLogStore.getState().addLog(`Pulled ${file.name} to ${localPath}: ${output}`, 'success');
       } catch (error) {
@@ -53,7 +67,7 @@ export function useFileExplorerTransfers(options: Options) {
         setIsPulling(false);
       }
     },
-    [currentPath, selectedSerialRef, setIsPulling],
+    [currentPath, getFileAccessMode, selectedSerialRef, setIsPulling],
   );
 
   const executePush = useCallback(
@@ -64,7 +78,12 @@ export function useFileExplorerTransfers(options: Options) {
         const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? '';
         const remotePath = path.posix.join(targetDir, fileName);
         toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-        const output = await PushFile(localPath, remotePath, selectedSerialRef.current);
+        const output = await PushFile(
+          localPath,
+          remotePath,
+          selectedSerialRef.current,
+          getFileAccessMode(remotePath),
+        );
         toast.success('Import Complete', { description: output, id: toastId });
         useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
         void loadFiles(currentPath, false);
@@ -77,7 +96,7 @@ export function useFileExplorerTransfers(options: Options) {
         setIsPushing(false);
       }
     },
-    [currentPath, loadFiles, selectedSerialRef, setIsPushing],
+    [currentPath, getFileAccessMode, loadFiles, selectedSerialRef, setIsPushing],
   );
 
   const handlePushFile = useCallback(async () => {
@@ -104,7 +123,12 @@ export function useFileExplorerTransfers(options: Options) {
       toastId = toast.loading(`Pushing folder ${folderName}…`, {
         description: `To: ${currentPath}`,
       });
-      const output = await PushFile(localFolderPath, currentPath, selectedSerialRef.current);
+      const output = await PushFile(
+        localFolderPath,
+        currentPath,
+        selectedSerialRef.current,
+        getFileAccessMode(currentPath),
+      );
       toast.success('Import Complete', { description: output, id: toastId });
       useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
       void loadFiles(currentPath, false);
@@ -116,7 +140,7 @@ export function useFileExplorerTransfers(options: Options) {
     } finally {
       setIsPushing(false);
     }
-  }, [currentPath, loadFiles, selectedSerialRef, setIsPushing]);
+  }, [currentPath, getFileAccessMode, loadFiles, selectedSerialRef, setIsPushing]);
 
   const handlePull = useCallback(async () => {
     if (!singleSelected) {

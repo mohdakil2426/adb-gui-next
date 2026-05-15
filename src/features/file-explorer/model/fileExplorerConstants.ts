@@ -1,6 +1,6 @@
-export const MIN_LEFT_WIDTH = 180;
-export const MAX_LEFT_WIDTH = 420;
-export const DEFAULT_LEFT_WIDTH = 180;
+export const MIN_LEFT_WIDTH = 220;
+export const MAX_LEFT_WIDTH = 520;
+export const DEFAULT_LEFT_WIDTH = 280;
 export const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 export const RESERVED_NAMES = /^\.{1,2}$/;
 export const MAX_HISTORY = 50;

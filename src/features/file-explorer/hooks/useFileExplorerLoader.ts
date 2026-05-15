@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { ListFiles } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import { MAX_HISTORY } from '@/features/file-explorer/model/fileExplorerConstants';
 import type { FileEntry, LoadError } from '@/features/file-explorer/model/fileExplorerTypes';
 import { debugLog } from '@/shared/utils/debug';
@@ -8,6 +9,7 @@ import { handleError } from '@/shared/utils/errorHandler';
 interface Options {
   categorizeError: (err: unknown) => LoadError;
   currentPathRef: React.RefObject<string>;
+  getFileAccessMode: (path: string) => backend.FileAccessMode;
   historyIndexRef: React.RefObject<number>;
   loadRequestIdRef: React.RefObject<number>;
   selectedSerialRef: React.RefObject<string | null>;
@@ -31,6 +33,7 @@ export function useFileExplorerLoader(options: Options) {
   const {
     categorizeError,
     currentPathRef,
+    getFileAccessMode,
     historyIndexRef,
     loadRequestIdRef,
     selectedSerialRef,
@@ -65,7 +68,11 @@ export function useFileExplorerLoader(options: Options) {
       setCreateError('');
       try {
         debugLog(`Listing files at: ${targetPath}`);
-        const files = await ListFiles(targetPath, selectedSerialRef.current);
+        const files = await ListFiles(
+          targetPath,
+          selectedSerialRef.current,
+          getFileAccessMode(targetPath),
+        );
         if (requestId !== loadRequestIdRef.current) {
           return;
         }
@@ -118,6 +125,7 @@ export function useFileExplorerLoader(options: Options) {
     [
       categorizeError,
       currentPathRef,
+      getFileAccessMode,
       historyIndexRef,
       loadRequestIdRef,
       selectedSerialRef,
