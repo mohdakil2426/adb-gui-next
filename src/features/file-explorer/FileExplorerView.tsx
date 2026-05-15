@@ -17,6 +17,8 @@ import {
   DEFAULT_LEFT_WIDTH,
   FILE_TABLE_COLUMNS,
   FILE_TABLE_COLUMNS_WITH_SELECTION,
+  MAX_LEFT_WIDTH,
+  MIN_LEFT_WIDTH,
   PHANTOM_ROW_HEIGHT,
 } from '@/features/file-explorer/model/fileExplorerConstants';
 import type {
@@ -64,7 +66,16 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   const [isPushing, setIsPushing] = useState(false);
   const [isPulling, setIsPulling] = useState(false);
 
-  const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT_WIDTH);
+  const [leftWidth, setLeftWidth] = useState(() => {
+    const saved = localStorage.getItem('fe.treeWidth');
+    if (saved) {
+      const parsed = Number(saved);
+      if (!Number.isNaN(parsed) && parsed >= MIN_LEFT_WIDTH && parsed <= MAX_LEFT_WIDTH) {
+        return parsed;
+      }
+    }
+    return DEFAULT_LEFT_WIDTH;
+  });
   const [isResizing, setIsResizing] = useState(false);
   const [isTreeCollapsed, setIsTreeCollapsed] = useState(
     () => localStorage.getItem('fe.treeCollapsed') === 'true',
@@ -84,6 +95,10 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
   useEffect(() => {
     currentPathRef.current = currentPath;
   }, [currentPath]);
+
+  useEffect(() => {
+    localStorage.setItem('fe.treeWidth', String(leftWidth));
+  }, [leftWidth]);
 
   useEffect(() => {
     fileListRef.current = fileList;

@@ -15,6 +15,7 @@ import { WirelessAdbCard } from '@/features/dashboard/ui/WirelessAdbCard';
 import { ConnectedDevicesCard } from '@/shared/components/ConnectedDevicesCard';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
+import { useWirelessAdbStore } from '@/shared/stores/wirelessAdbStore';
 import { debugLog } from '@/shared/utils/debug';
 import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
 import { queryKeys } from '@/shared/utils/queries';
@@ -25,6 +26,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const deviceInfo = useDeviceStore((state) => state.deviceInfo);
   const setDeviceInfo = useDeviceStore((state) => state.setDeviceInfo);
+  const persistedIp = useWirelessAdbStore((state) => state.persistedIp);
+  const persistedPort = useWirelessAdbStore((state) => state.persistedPort);
+  const setPersistedIp = useWirelessAdbStore((state) => state.setPersistedIp);
+  const setPersistedPort = useWirelessAdbStore((state) => state.setPersistedPort);
+  const isCollapsibleOpen = useWirelessAdbStore((state) => state.isCollapsibleOpen);
+  const setIsCollapsibleOpen = useWirelessAdbStore((state) => state.setIsCollapsibleOpen);
   const queryClient = useQueryClient();
   const [isRefreshingInfo, setIsRefreshingInfo] = useState(false);
   const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
@@ -45,12 +52,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
 
   const wirelessForm = useForm<WirelessAdbValues>({
     resolver: zodResolver(wirelessAdbSchema),
-    defaultValues: { ip: '', port: '5555' },
-  });
-  const watchedIp = useWatch({
-    control: wirelessForm.control,
-    name: 'ip',
-    defaultValue: '',
+    defaultValues: { ip: persistedIp || '', port: persistedPort || '5555' },
   });
 
   const refreshDevices = useCallback(() => {
@@ -88,8 +90,32 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       wirelessForm.setValue('ip', deviceInfo.ipAddress, {
         shouldValidate: false,
       });
+      setPersistedIp(deviceInfo.ipAddress);
     }
-  }, [deviceInfo?.ipAddress, wirelessForm]);
+  }, [deviceInfo?.ipAddress, wirelessForm, setPersistedIp]);
+
+  const watchedIp = useWatch({
+    control: wirelessForm.control,
+    name: 'ip',
+    defaultValue: '',
+  });
+  const watchedPort = useWatch({
+    control: wirelessForm.control,
+    name: 'port',
+    defaultValue: persistedPort || '5555',
+  });
+
+  useEffect(() => {
+    if (watchedIp) {
+      setPersistedIp(watchedIp);
+    }
+  }, [watchedIp, setPersistedIp]);
+
+  useEffect(() => {
+    if (watchedPort) {
+      setPersistedPort(watchedPort);
+    }
+  }, [watchedPort, setPersistedPort]);
 
   const handleEnableTcpip = async () => {
     setIsEnablingTcpip(true);
@@ -190,10 +216,12 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
         handleConnect={handleConnect}
         handleDisconnect={handleDisconnect}
         handleEnableTcpip={handleEnableTcpip}
+        isCollapsibleOpen={isCollapsibleOpen}
         isConnecting={isConnecting}
         isDisconnecting={isDisconnecting}
         isEnablingTcpip={isEnablingTcpip}
         selectedSerial={selectedSerial}
+        setIsCollapsibleOpen={setIsCollapsibleOpen}
         watchedIp={watchedIp}
         wirelessForm={wirelessForm}
       />

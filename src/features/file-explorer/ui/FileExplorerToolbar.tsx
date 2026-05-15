@@ -2,19 +2,16 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Download,
-  FilePlus2,
   Folder,
-  FolderPlus,
   Loader2,
   PanelLeft,
   RefreshCw,
   Search,
   X,
 } from 'lucide-react';
-import { FileExplorerImportButton } from '@/features/file-explorer/ui/FileExplorerImportButton';
 import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
 import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
+import { FileExplorerTransferButton } from '@/features/file-explorer/ui/FileExplorerTransferButton';
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -49,7 +46,6 @@ interface FileExplorerToolbarProps {
   onSearchClear: () => void;
   onSearchQueryChange: (value: string) => void;
   onUp: () => void;
-  pullTitle?: string | undefined;
   rootAccessGranted: boolean;
   searchQuery: string;
 }
@@ -83,7 +79,6 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onRootAccessToggle,
     onSearchQueryChange,
     onUp,
-    pullTitle,
     rootAccessGranted,
     searchQuery,
   } = props;
@@ -212,47 +207,14 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             </button>
           ) : null}
         </div>
-        <Separator className="mx-0.5 hidden h-4 shrink-0 xl:block" orientation="vertical" />
-        <ToolbarTooltip label="New File (Ctrl+N)">
-          <Button
-            className="hidden size-11 xl:inline-flex"
-            disabled={isBusy}
-            onClick={onCreateFile}
-            size="icon"
-            variant="ghost"
-          >
-            <FilePlus2 className="h-4 w-4 shrink-0" />
-          </Button>
-        </ToolbarTooltip>
-        <ToolbarTooltip label="New Folder (Ctrl+Shift+N)">
-          <Button
-            className="hidden size-11 xl:inline-flex"
-            disabled={isBusy}
-            onClick={onCreateFolder}
-            size="icon"
-            variant="ghost"
-          >
-            <FolderPlus className="h-4 w-4 shrink-0" />
-          </Button>
-        </ToolbarTooltip>
-        <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
-        <FileExplorerImportButton
+        <FileExplorerTransferButton
           disabled={isBusy}
+          isPullDisabled={isPullDisabled}
           isPushing={isPushing}
+          onExport={onExport}
           onImportFile={onImportFile}
           onImportFolder={onImportFolder}
         />
-        <Button
-          className="hidden xl:inline-flex"
-          disabled={isPullDisabled || isBusy}
-          onClick={onExport}
-          size="sm"
-          title={pullTitle}
-          variant="outline"
-        >
-          <Download className="h-4 w-4 shrink-0" />
-          <span>Export</span>
-        </Button>
         <FileExplorerMoreActionsMenu
           disabled={isBusy}
           isPullDisabled={isPullDisabled}

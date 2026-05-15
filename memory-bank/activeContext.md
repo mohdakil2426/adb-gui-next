@@ -16,10 +16,31 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 **File Explorer tree scroll fix is complete (2026-05-15): expanded tree nodes no longer use a fixed 500px height cap, so large directories scroll through the side panel instead of clipping lower root entries.**
 **File Explorer tree resize handle is improved (2026-05-15): the side panel splitter now has a wider pointer hit target, keyboard arrow support, and more useful default/min/max widths.**
 **File Explorer root access is implemented (2026-05-15): manual verified shield grant, stable normal explorer state, root tree shortcut, root-aware IPC mode, and staged root import/export.**
+**Dashboard Wireless ADB UI persistence is complete (2026-05-16): collapsible open/closed state, IP address, and port field now persist across sessions via Zustand store with localStorage.**
+**File Explorer toolbar consolidation is complete (2026-05-16): New File, New Folder, and Export standalone buttons removed; all actions now live in the always-visible 3-dot More Actions menu. Import button replaced with unified Transfer dropdown containing Import File, Import Folder, and Export.**
+**File Explorer tree panel width persistence is complete (2026-05-16): user-resized tree width is saved to localStorage and restored on reload, defaulting to 280px on first use.**
 
 ---
 
 ## Recently Completed
+
+### 2026-05-16 - File Explorer Tree Panel Width Persistence
+
+**Change:** Tree panel width now persists across sessions. `leftWidth` state initializes from `localStorage` key `fe.treeWidth` if a valid value exists (within `MIN_LEFT_WIDTH`/`MAX_LEFT_WIDTH` bounds), falling back to `DEFAULT_LEFT_WIDTH` (280px). A `useEffect` syncs every width change (drag or keyboard resize) back to localStorage.
+
+**Verification:** `bun run build` ✅ · `bun run lint:web` ✅ · `bun run format:check` ✅.
+
+### 2026-05-16 - File Explorer Toolbar Consolidation + Transfer Button
+
+**Change:** Replaced the responsive import/export button split with a unified **Transfer** dropdown menu. Standalone New File, New Folder, and Export buttons removed from the toolbar. The 3-dot More Actions menu is now always visible (removed `xl:hidden`). The old `FileExplorerImportButton` was replaced with `FileExplorerTransferButton` — a single icon button (`ArrowUpToLine`) with a dropdown containing Import File, Import Folder, and Export options.
+
+**Verification:** `bun run build` ✅ · `bun run lint:web` ✅ · `bun run format:check` ✅.
+
+### 2026-05-16 - Dashboard Wireless ADB UI Persistence
+
+**Change:** Wireless ADB card UI state now persists across sessions. Created `useWirelessAdbStore` (Zustand + `persist` middleware) storing collapsible open/closed state, IP address, and port. `DashboardView` initializes the `useForm` defaults from persisted values and syncs form changes back via `useWatch` + `useEffect`. `WirelessAdbCard` receives collapsible state as props instead of managing local `useState`.
+
+**Verification:** `bun run build` ✅ · `bun run lint:web` ✅ · `bun run format:check` ✅.
 
 ### 2026-05-15 - File Explorer Tree Resize Handle
 

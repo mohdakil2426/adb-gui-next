@@ -27,7 +27,7 @@ export function FileExplorerMoreActionsMenu({
       <DropdownMenuTrigger asChild>
         <Button
           aria-label="More file actions"
-          className="size-11 xl:hidden"
+          className="size-11"
           disabled={disabled}
           size="icon"
           variant="ghost"

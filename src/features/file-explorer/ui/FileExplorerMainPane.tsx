@@ -126,7 +126,6 @@ export function FileExplorerMainPane(p: Props) {
         onSearchClear={p.handleClearSearch}
         onSearchQueryChange={p.setSearchQuery}
         onUp={p.handleBackClick}
-        pullTitle={p.selectedNames.size > 1 ? 'Select a single item to export' : undefined}
         rootAccessGranted={p.rootAccessGranted}
         searchQuery={p.searchQuery}
       />

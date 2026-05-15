@@ -1,5 +1,4 @@
 import { ChevronDown, Loader2, PlugZap, Usb, Wifi } from 'lucide-react';
-import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -13,10 +12,12 @@ export function WirelessAdbCard({
   handleConnect,
   handleDisconnect,
   handleEnableTcpip,
+  isCollapsibleOpen,
   isConnecting,
   isDisconnecting,
   isEnablingTcpip,
   selectedSerial,
+  setIsCollapsibleOpen,
   watchedIp,
   wirelessForm,
 }: {
@@ -24,17 +25,17 @@ export function WirelessAdbCard({
   handleConnect: (values: WirelessAdbValues) => void;
   handleDisconnect: () => void;
   handleEnableTcpip: () => void;
+  isCollapsibleOpen: boolean;
   isConnecting: boolean;
   isDisconnecting: boolean;
   isEnablingTcpip: boolean;
   selectedSerial: string | null;
+  setIsCollapsibleOpen: (open: boolean) => void;
   watchedIp: string;
   wirelessForm: UseFormReturn<WirelessAdbValues>;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <Collapsible onOpenChange={setIsOpen} open={isOpen}>
+    <Collapsible onOpenChange={setIsCollapsibleOpen} open={isCollapsibleOpen}>
       <Card>
         <CardHeader>
           <CollapsibleTrigger asChild>
@@ -45,7 +46,7 @@ export function WirelessAdbCard({
               </CardTitle>
               <ChevronDown
                 className={`size-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
-                  isOpen ? 'rotate-180' : ''
+                  isCollapsibleOpen ? 'rotate-180' : ''
                 }`}
               />
             </button>
