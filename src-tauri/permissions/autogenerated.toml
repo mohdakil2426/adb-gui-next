@@ -39,6 +39,7 @@ commands.allow = [
   "root_avd",
   "scan_avd_root_readiness",
   "verify_avd_root",
+  "verify_file_root_access",
   "run_adb_host_command",
   "run_fastboot_host_command",
   "run_shell_command",

@@ -37,10 +37,15 @@ describe('selected device routing', () => {
     await InstallPackage('C:/app.apk', 'device-b');
     await UninstallPackage('com.example.app', 'device-b');
     await ListFiles('/sdcard/', 'device-b');
+    await ListFiles('/system/', 'device-b', 'root');
     await PullFile('/sdcard/a.txt', 'C:/out', 'device-b');
+    await PullFile('/system/build.prop', 'C:/out', 'device-b', 'root');
     await PushFile('C:/in.txt', '/sdcard/in.txt', 'device-b');
+    await PushFile('C:/hosts', '/system/etc/hosts', 'device-b', 'root');
     await DeleteFiles(['/sdcard/old.txt'], 'device-b');
+    await DeleteFiles(['/system/old'], 'device-b', 'root');
     await RenameFile('/sdcard/a.txt', '/sdcard/b.txt', 'device-b');
+    await RenameFile('/system/a', '/system/b', 'device-b', 'root');
     await SideloadPackage('C:/ota.zip', 'device-b');
     await Reboot('bootloader', 'device-b');
     await FlashPartition('boot', 'C:/boot.img', 'device-b');
@@ -71,25 +76,58 @@ describe('selected device routing', () => {
     expect(invokeMock).toHaveBeenCalledWith('list_files', {
       path: '/sdcard/',
       serial: 'device-b',
+      accessMode: 'normal',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('list_files', {
+      path: '/system/',
+      serial: 'device-b',
+      accessMode: 'root',
     });
     expect(invokeMock).toHaveBeenCalledWith('pull_file', {
       remotePath: '/sdcard/a.txt',
       localPath: 'C:/out',
       serial: 'device-b',
+      accessMode: 'normal',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('pull_file', {
+      remotePath: '/system/build.prop',
+      localPath: 'C:/out',
+      serial: 'device-b',
+      accessMode: 'root',
     });
     expect(invokeMock).toHaveBeenCalledWith('push_file', {
       localPath: 'C:/in.txt',
       remotePath: '/sdcard/in.txt',
       serial: 'device-b',
+      accessMode: 'normal',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('push_file', {
+      localPath: 'C:/hosts',
+      remotePath: '/system/etc/hosts',
+      serial: 'device-b',
+      accessMode: 'root',
     });
     expect(invokeMock).toHaveBeenCalledWith('delete_files', {
       paths: ['/sdcard/old.txt'],
       serial: 'device-b',
+      accessMode: 'normal',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('delete_files', {
+      paths: ['/system/old'],
+      serial: 'device-b',
+      accessMode: 'root',
     });
     expect(invokeMock).toHaveBeenCalledWith('rename_file', {
       oldPath: '/sdcard/a.txt',
       newPath: '/sdcard/b.txt',
       serial: 'device-b',
+      accessMode: 'normal',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('rename_file', {
+      oldPath: '/system/a',
+      newPath: '/system/b',
+      serial: 'device-b',
+      accessMode: 'root',
     });
     expect(invokeMock).toHaveBeenCalledWith('sideload_package', {
       path: 'C:/ota.zip',

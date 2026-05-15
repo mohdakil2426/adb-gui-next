@@ -30,6 +30,8 @@ async function selectSavePath(options: Parameters<typeof save>[0]): Promise<stri
   return normalizeSingleSelection(await save(options));
 }
 
+const DEFAULT_FILE_ACCESS_MODE: backend.FileAccessMode = 'normal';
+
 export function CleanupPayloadCache(): Promise<void> {
   return call('cleanup_payload_cache');
 }
@@ -155,8 +157,16 @@ export function ListAvds(): Promise<backend.AvdSummary[]> {
   return call('list_avds');
 }
 
-export function ListFiles(path: string, serial?: string | null): Promise<backend.FileEntry[]> {
-  return call('list_files', { path, serial });
+export function VerifyFileRootAccess(serial?: string | null): Promise<string> {
+  return call('verify_file_root_access', { serial });
+}
+
+export function ListFiles(
+  path: string,
+  serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<backend.FileEntry[]> {
+  return call('list_files', { path, serial, accessMode });
 }
 
 export function ListPayloadPartitions(payloadPath: string): Promise<string[]> {
@@ -177,8 +187,9 @@ export function PullFile(
   remotePath: string,
   localPath: string,
   serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
 ): Promise<string> {
-  return call('pull_file', { remotePath, localPath, serial });
+  return call('pull_file', { remotePath, localPath, serial, accessMode });
 }
 
 export function PrepareAvdRoot(
@@ -191,28 +202,42 @@ export function PushFile(
   localPath: string,
   remotePath: string,
   serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
 ): Promise<string> {
-  return call('push_file', { localPath, remotePath, serial });
+  return call('push_file', { localPath, remotePath, serial, accessMode });
 }
 
-export function CreateDirectory(path: string, serial?: string | null): Promise<string> {
-  return call('create_directory', { path, serial });
+export function CreateDirectory(
+  path: string,
+  serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<string> {
+  return call('create_directory', { path, serial, accessMode });
 }
 
-export function CreateFile(path: string, serial?: string | null): Promise<string> {
-  return call('create_file', { path, serial });
+export function CreateFile(
+  path: string,
+  serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<string> {
+  return call('create_file', { path, serial, accessMode });
 }
 
-export function DeleteFiles(paths: string[], serial?: string | null): Promise<string> {
-  return call('delete_files', { paths, serial });
+export function DeleteFiles(
+  paths: string[],
+  serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<string> {
+  return call('delete_files', { paths, serial, accessMode });
 }
 
 export function RenameFile(
   oldPath: string,
   newPath: string,
   serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
 ): Promise<string> {
-  return call('rename_file', { oldPath, newPath, serial });
+  return call('rename_file', { oldPath, newPath, serial, accessMode });
 }
 
 export function Reboot(mode: string, serial?: string | null): Promise<void> {

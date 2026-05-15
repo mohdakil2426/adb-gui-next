@@ -199,6 +199,8 @@ export namespace backend {
     type: string;
   }
 
+  export type FileAccessMode = 'normal' | 'root';
+
   export interface InstalledPackage {
     name: string;
     packageType: string;
