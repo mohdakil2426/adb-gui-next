@@ -32,10 +32,6 @@ pub fn detail_cache_key(package_name: &str, source: &str, github_token: &Option<
     format!("detail:{package_name}|{source}|{}", token_scope(github_token))
 }
 
-pub fn trending_cache_key(sort: &str, github_token: &Option<String>, limit: u32) -> String {
-    format!("trending:{sort}|{}|{limit}", token_scope(github_token))
-}
-
 pub async fn fetch_search_apps(
     client: &Client,
     query: &str,
@@ -97,17 +93,6 @@ pub async fn fetch_app_detail(
     }
 }
 
-pub async fn fetch_trending(
-    client: &Client,
-    sort: &str,
-    github_token: &Option<String>,
-    limit: u32,
-) -> Vec<MarketplaceApp> {
-    let mut results = github::get_trending(client, github_token, sort).await;
-    results.truncate(limit as usize);
-    results
-}
-
 pub async fn list_versions(
     client: &Client,
     package_name: &str,
@@ -124,7 +109,7 @@ pub async fn list_versions(
 
 #[cfg(test)]
 mod tests {
-    use super::{detail_cache_key, search_cache_key, trending_cache_key};
+    use super::{detail_cache_key, search_cache_key};
     use crate::marketplace::types::SearchFilters;
 
     #[test]
@@ -150,13 +135,10 @@ mod tests {
     }
 
     #[test]
-    fn detail_and_trending_keys_do_not_embed_raw_tokens() {
+    fn detail_key_does_not_embed_raw_token() {
         let detail_key = detail_cache_key("pkg", "GitHub", &Some("secret-token".into()));
-        let trending_key = trending_cache_key("stars", &Some("secret-token".into()), 12);
 
         assert!(!detail_key.contains("secret-token"));
-        assert!(!trending_key.contains("secret-token"));
         assert!(detail_key.ends_with("auth"));
-        assert!(trending_key.contains("|auth|"));
     }
 }

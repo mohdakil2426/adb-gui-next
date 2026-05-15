@@ -6,13 +6,11 @@ use super::types::{MarketplaceApp, MarketplaceAppDetail};
 
 const SEARCH_TTL: Duration = Duration::from_secs(5 * 60);
 const DETAIL_TTL: Duration = Duration::from_secs(10 * 60);
-const TRENDING_TTL: Duration = Duration::from_secs(10 * 60);
 
 /// Maximum number of cached entries per category.
 /// Prevents unbounded memory growth from varied searches.
 const MAX_SEARCH_ENTRIES: usize = 200;
 const MAX_DETAIL_ENTRIES: usize = 500;
-const MAX_TRENDING_ENTRIES: usize = 50;
 
 #[derive(Clone)]
 struct TimedEntry<T> {
@@ -31,7 +29,6 @@ impl<T: Clone> TimedEntry<T> {
 pub struct MarketplaceCache {
     search: HashMap<String, TimedEntry<Vec<MarketplaceApp>>>,
     detail: HashMap<String, TimedEntry<MarketplaceAppDetail>>,
-    trending: HashMap<String, TimedEntry<Vec<MarketplaceApp>>>,
 }
 
 impl MarketplaceCache {
@@ -53,20 +50,9 @@ impl MarketplaceCache {
         self.detail.insert(key, TimedEntry { value, cached_at: Instant::now(), ttl: DETAIL_TTL });
     }
 
-    pub fn get_trending(&self, key: &str) -> Option<Vec<MarketplaceApp>> {
-        self.trending.get(key).and_then(TimedEntry::get)
-    }
-
-    pub fn insert_trending(&mut self, key: String, value: Vec<MarketplaceApp>) {
-        self.evict_if_full(CacheSlot::Trending);
-        self.trending
-            .insert(key, TimedEntry { value, cached_at: Instant::now(), ttl: TRENDING_TTL });
-    }
-
     pub fn clear(&mut self) {
         self.search.clear();
         self.detail.clear();
-        self.trending.clear();
     }
 
     /// Evict entries when a cache slot is at capacity.
@@ -78,7 +64,6 @@ impl MarketplaceCache {
         let (len, max) = match slot {
             CacheSlot::Search => (self.search.len(), MAX_SEARCH_ENTRIES),
             CacheSlot::Detail => (self.detail.len(), MAX_DETAIL_ENTRIES),
-            CacheSlot::Trending => (self.trending.len(), MAX_TRENDING_ENTRIES),
         };
 
         if len < max {
@@ -89,14 +74,12 @@ impl MarketplaceCache {
         match slot {
             CacheSlot::Search => self.search.retain(|_, e| e.cached_at.elapsed() <= e.ttl),
             CacheSlot::Detail => self.detail.retain(|_, e| e.cached_at.elapsed() <= e.ttl),
-            CacheSlot::Trending => self.trending.retain(|_, e| e.cached_at.elapsed() <= e.ttl),
         }
 
         // Pass 2: if still at capacity, evict oldest
         let still_full = match slot {
             CacheSlot::Search => self.search.len() >= max,
             CacheSlot::Detail => self.detail.len() >= max,
-            CacheSlot::Trending => self.trending.len() >= max,
         };
 
         if still_full {
@@ -107,9 +90,6 @@ impl MarketplaceCache {
                 CacheSlot::Detail => {
                     self.detail.iter().min_by_key(|(_, e)| e.cached_at).map(|(k, _)| k.clone())
                 }
-                CacheSlot::Trending => {
-                    self.trending.iter().min_by_key(|(_, e)| e.cached_at).map(|(k, _)| k.clone())
-                }
             };
             if let Some(key) = oldest_key {
                 match slot {
@@ -118,9 +98,6 @@ impl MarketplaceCache {
                     }
                     CacheSlot::Detail => {
                         self.detail.remove(&key);
-                    }
-                    CacheSlot::Trending => {
-                        self.trending.remove(&key);
                     }
                 }
             }
@@ -131,7 +108,6 @@ impl MarketplaceCache {
 enum CacheSlot {
     Search,
     Detail,
-    Trending,
 }
 
 #[derive(Default)]
@@ -161,23 +137,5 @@ mod tests {
         // Both should be accessible
         assert!(cache.get_search("q1").is_some());
         assert!(cache.get_search("q2").is_some());
-    }
-
-    #[test]
-    fn evict_oldest_when_at_capacity() {
-        let mut cache = MarketplaceCache::default();
-
-        // Fill trending to MAX_TRENDING_ENTRIES
-        for i in 0..MAX_TRENDING_ENTRIES {
-            cache.insert_trending(format!("key-{i}"), vec![]);
-        }
-
-        assert_eq!(cache.trending.len(), MAX_TRENDING_ENTRIES);
-
-        // Insert one more — should evict the oldest
-        cache.insert_trending("overflow".into(), vec![]);
-
-        assert_eq!(cache.trending.len(), MAX_TRENDING_ENTRIES);
-        assert!(cache.get_trending("overflow").is_some());
     }
 }

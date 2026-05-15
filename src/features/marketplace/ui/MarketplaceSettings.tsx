@@ -34,8 +34,6 @@ export function MarketplaceSettings() {
   const clearSearchHistory = useMarketplaceStore((state) => state.clearSearchHistory);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const githubSession = useMarketplaceStore((state) => state.githubSession);
-  const setTrendingApps = useMarketplaceStore((state) => state.setTrendingApps);
-  const setRecentReleaseApps = useMarketplaceStore((state) => state.setRecentReleaseApps);
   const {
     githubDeviceChallenge,
     isGithubAuthenticating,
@@ -79,8 +77,6 @@ export function MarketplaceSettings() {
   const handleClearCache = async () => {
     try {
       await MarketplaceClearCache();
-      setTrendingApps([]);
-      setRecentReleaseApps([]);
       toast.success('Marketplace cache cleared');
     } catch (error) {
       toast.error('Failed to clear marketplace cache', {

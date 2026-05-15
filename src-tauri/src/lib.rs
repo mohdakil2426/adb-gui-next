@@ -110,7 +110,6 @@ pub fn run() {
             commands::get_ops_metadata,
             commands::marketplace_search,
             commands::marketplace_get_app_detail,
-            commands::marketplace_get_trending,
             commands::marketplace_list_versions,
             commands::marketplace_clear_cache,
             commands::marketplace_github_device_start,

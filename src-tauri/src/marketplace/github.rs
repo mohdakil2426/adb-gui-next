@@ -36,50 +36,6 @@ fn is_apk_asset(name: &str) -> bool {
         && !lower.ends_with(".apks")
 }
 
-/// Compute a date string ~6 months ago for the trending filter.
-/// Avoids the `chrono` dependency — uses simple epoch arithmetic.
-fn trending_cutoff_date() -> String {
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs();
-    // ~182 days (6 months)
-    let cutoff = now.saturating_sub(182 * 24 * 60 * 60);
-    format_epoch_date(cutoff)
-}
-
-fn format_epoch_date(epoch_secs: u64) -> String {
-    let total_days = epoch_secs / 86400;
-    let mut year = 1970u32;
-    let mut remaining = total_days as u32;
-
-    loop {
-        let days_in_year = if is_leap_year(year) { 366 } else { 365 };
-        if remaining < days_in_year {
-            break;
-        }
-        remaining -= days_in_year;
-        year += 1;
-    }
-
-    let months =
-        [31, if is_leap_year(year) { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    let mut month = 1u32;
-    for &m in &months {
-        if remaining < m {
-            break;
-        }
-        remaining -= m;
-        month += 1;
-    }
-    let day = remaining + 1;
-    format!("{year}-{month:02}-{day:02}")
-}
-
-const fn is_leap_year(y: u32) -> bool {
-    y.is_multiple_of(4) && (!y.is_multiple_of(100) || y.is_multiple_of(400))
-}
-
 fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
     items
         .iter()
@@ -371,74 +327,9 @@ pub async fn list_releases(
     Ok(versions)
 }
 
-pub async fn get_trending(
-    client: &Client,
-    token: &Option<String>,
-    sort: &str,
-) -> Vec<MarketplaceApp> {
-    let cutoff = trending_cutoff_date();
-    let query = format!("topic:android fork:false archived:false stars:>50 pushed:>{cutoff}");
-    let url = format!(
-        "https://api.github.com/search/repositories?q={}&sort={sort}&per_page=12",
-        urlencoding::encode(&query)
-    );
-
-    let response = match auth_headers(client.get(&url), token).send().await {
-        Ok(resp) => resp,
-        Err(error) => {
-            warn!("GitHub trending failed: {error}");
-            return vec![];
-        }
-    };
-
-    if !response.status().is_success() {
-        warn!("GitHub trending returned {}", response.status());
-        return vec![];
-    }
-
-    let body: serde_json::Value = match response.json().await {
-        Ok(value) => value,
-        Err(error) => {
-            warn!("GitHub trending parse failed: {error}");
-            return vec![];
-        }
-    };
-
-    let empty = vec![];
-    let items = body["items"].as_array().unwrap_or(&empty);
-    let parsed = parse_repo_items(items);
-
-    // Verify trending repos for APK availability
-    verify_apk_availability(client, parsed, token).await
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn trending_cutoff_date_is_valid_format() {
-        let date = trending_cutoff_date();
-        // Should be YYYY-MM-DD
-        assert_eq!(date.len(), 10);
-        assert_eq!(date.as_bytes()[4], b'-');
-        assert_eq!(date.as_bytes()[7], b'-');
-    }
-
-    #[test]
-    fn format_epoch_known_date() {
-        // 2025-01-01 00:00:00 UTC = 1735689600
-        let date = format_epoch_date(1_735_689_600);
-        assert_eq!(date, "2025-01-01");
-    }
-
-    #[test]
-    fn leap_year_check() {
-        assert!(is_leap_year(2024));
-        assert!(!is_leap_year(2023));
-        assert!(is_leap_year(2000));
-        assert!(!is_leap_year(1900));
-    }
 
     #[test]
     fn apk_filter_excludes_debug_and_non_apk() {

@@ -130,33 +130,6 @@ pub async fn marketplace_get_app_detail(
 }
 
 #[tauri::command]
-pub async fn marketplace_get_trending(
-    sort: Option<String>,
-    github_token: Option<String>,
-    limit: Option<u32>,
-    http: State<'_, ManagedHttpClient>,
-    cache: State<'_, ManagedMarketplaceCache>,
-) -> CmdResult<Vec<MarketplaceApp>> {
-    let client = &http.0;
-    let sort = sort.unwrap_or_else(|| "stars".to_string());
-    let limit = limit.unwrap_or(12).max(4);
-    let trending_key = service::trending_cache_key(&sort, &github_token, limit);
-
-    {
-        let cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
-        if let Some(cached) = cache.get_trending(&trending_key) {
-            return Ok(cached);
-        }
-    }
-
-    let results = service::fetch_trending(client, &sort, &github_token, limit).await;
-
-    let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
-    cache.insert_trending(trending_key, results.clone());
-    Ok(results)
-}
-
-#[tauri::command]
 pub async fn marketplace_list_versions(
     package_name: String,
     source: String,

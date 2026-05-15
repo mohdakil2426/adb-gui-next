@@ -473,19 +473,6 @@ export function MarketplaceGetAppDetail(
   });
 }
 
-/** Fetch trending/popular Android apps from GitHub. */
-export function MarketplaceGetTrending(
-  sort?: string,
-  githubToken?: string | null,
-  limit?: number,
-): Promise<backend.MarketplaceApp[]> {
-  return call('marketplace_get_trending', {
-    sort: sort ?? null,
-    githubToken: githubToken ?? null,
-    limit: limit ?? null,
-  });
-}
-
 /** List version history for a specific app. */
 export function MarketplaceListVersions(
   packageName: string,

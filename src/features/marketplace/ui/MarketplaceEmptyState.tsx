@@ -1,5 +1,4 @@
-import { Clock3, Compass, Loader2, Search, Sparkles, TrendingUp, UserRound } from 'lucide-react';
-import { useMarketplaceHome } from '@/features/marketplace/hooks/useMarketplaceHome';
+import { Clock3, Compass, Loader2, Search, Sparkles, UserRound } from 'lucide-react';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 import { Button } from '@/shared/ui/button';
 import { Separator } from '@/shared/ui/separator';
@@ -40,18 +39,12 @@ export function MarketplaceEmptyState({
   hasQuery,
   onQuickSearch,
 }: MarketplaceEmptyStateProps) {
-  const trendingApps = useMarketplaceStore((state) => state.trendingApps);
-  const isTrendingLoading = useMarketplaceStore((state) => state.isTrendingLoading);
-  const recentReleaseApps = useMarketplaceStore((state) => state.recentReleaseApps);
-  const isRecentReleaseLoading = useMarketplaceStore((state) => state.isRecentReleaseLoading);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const recentlyViewedApps = useMarketplaceStore((state) => state.recentlyViewedApps);
   const githubSession = useMarketplaceStore((state) => state.githubSession);
   const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
   const openSettings = useMarketplaceStore((state) => state.openSettings);
-
-  useMarketplaceHome(hasQuery);
 
   if (isSearching) {
     return (
@@ -87,7 +80,7 @@ export function MarketplaceEmptyState({
       </div>
 
       {(searchHistory.length > 0 || recentlyViewedApps.length > 0) && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <SectionHeader
             description="Jump back into recent searches or reopen apps you inspected earlier."
             icon={Clock3}
@@ -147,101 +140,47 @@ export function MarketplaceEmptyState({
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-4">
-            <SectionHeader
-              description="Popular GitHub Android projects, cached for faster loading."
-              icon={TrendingUp}
-              title="Trending right now"
-            />
-            {isTrendingLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 aria-hidden="true" className="size-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {trendingApps.slice(0, 6).map((app) => (
-                  <AppCard
-                    app={app}
-                    key={`${app.source}-${app.packageName}`}
-                    onSelect={() => {
-                      openDetail(app);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <SectionHeader
-              description="Recently updated Android projects to help you discover what changed lately."
-              icon={Sparkles}
-              title="Fresh releases"
-            />
-            {isRecentReleaseLoading ? (
-              <div className="flex items-center justify-center py-10">
-                <Loader2 aria-hidden="true" className="size-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {recentReleaseApps.slice(0, 3).map((app) => (
-                  <AppCard
-                    app={app}
-                    key={`${app.source}-${app.packageName}`}
-                    onSelect={() => {
-                      openDetail(app);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-xl border bg-muted/20 p-4">
-          <div className="flex flex-col gap-3">
-            <SectionHeader
-              description={
-                githubSession.user
-                  ? 'Signed-in sessions can help with GitHub rate limits and richer discovery.'
-                  : 'Sign in with GitHub to improve rate limits and future GitHub-powered discovery features.'
-              }
-              icon={UserRound}
-              title={
-                githubSession.user
-                  ? `Signed in as ${githubSession.user.login}`
-                  : 'Optional GitHub sign-in'
-              }
-            />
-            {githubSession.rateLimit ? (
-              <div className="rounded-lg border bg-background/70 p-3 text-muted-foreground text-xs">
-                <p>
-                  API remaining:{' '}
-                  <span className="font-medium text-foreground">
-                    {githubSession.rateLimit.remaining}
-                  </span>{' '}
-                  / {githubSession.rateLimit.limit}
-                </p>
-              </div>
-            ) : null}
-            <Separator />
-            <Button
-              className="w-full"
-              onClick={openSettings}
-              variant={githubSession.user ? 'outline' : 'default'}
-            >
-              {githubSession.user
-                ? 'Manage GitHub session'
-                : githubOauthClientId
-                  ? 'Configure GitHub sign-in'
-                  : 'Add GitHub OAuth client ID'}
-            </Button>
-            <p className="text-muted-foreground text-xs">
-              Anonymous browsing remains available even if you do not sign in.
-            </p>
-          </div>
+      <div className="rounded-xl border bg-muted/20 p-4">
+        <div className="flex flex-col gap-3">
+          <SectionHeader
+            description={
+              githubSession.user
+                ? 'Signed-in sessions can help with GitHub rate limits and richer discovery.'
+                : 'Sign in with GitHub to improve rate limits and future GitHub-powered discovery features.'
+            }
+            icon={UserRound}
+            title={
+              githubSession.user
+                ? `Signed in as ${githubSession.user.login}`
+                : 'Optional GitHub sign-in'
+            }
+          />
+          {githubSession.rateLimit ? (
+            <div className="rounded-lg border bg-background/70 p-3 text-muted-foreground text-xs">
+              <p>
+                API remaining:{' '}
+                <span className="font-medium text-foreground">
+                  {githubSession.rateLimit.remaining}
+                </span>{' '}
+                / {githubSession.rateLimit.limit}
+              </p>
+            </div>
+          ) : null}
+          <Separator />
+          <Button
+            className="w-full"
+            onClick={openSettings}
+            variant={githubSession.user ? 'outline' : 'default'}
+          >
+            {githubSession.user
+              ? 'Manage GitHub session'
+              : githubOauthClientId
+                ? 'Configure GitHub sign-in'
+                : 'Add GitHub OAuth client ID'}
+          </Button>
+          <p className="text-muted-foreground text-xs">
+            Anonymous browsing remains available even if you do not sign in.
+          </p>
         </div>
       </div>
     </div>

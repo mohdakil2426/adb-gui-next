@@ -32,15 +32,12 @@ interface MarketplaceState {
   githubSession: GithubSessionState;
   isDetailOpen: boolean;
   isGithubAuthenticating: boolean;
-  isRecentReleaseLoading: boolean;
   isSearching: boolean;
   isSettingsOpen: boolean;
-  isTrendingLoading: boolean;
   openDetail: (app: MarketplaceApp) => void;
   openSettings: () => void;
   query: string;
   recentlyViewedApps: MarketplaceApp[];
-  recentReleaseApps: MarketplaceApp[];
   reset: () => void;
   results: MarketplaceApp[];
   resultsPerProvider: number;
@@ -52,19 +49,14 @@ interface MarketplaceState {
   setGithubPat: (githubPat: string) => void;
   setGithubSession: (session: Partial<GithubSessionState>) => void;
   setIsGithubAuthenticating: (isGithubAuthenticating: boolean) => void;
-  setIsRecentReleaseLoading: (isRecentReleaseLoading: boolean) => void;
   setIsSearching: (isSearching: boolean) => void;
-  setIsTrendingLoading: (isTrendingLoading: boolean) => void;
   setQuery: (query: string) => void;
-  setRecentReleaseApps: (apps: MarketplaceApp[]) => void;
   setResults: (results: MarketplaceApp[]) => void;
   setResultsPerProvider: (resultsPerProvider: number) => void;
   setSortBy: (sortBy: MarketplaceSortBy) => void;
-  setTrendingApps: (apps: MarketplaceApp[]) => void;
   setViewMode: (viewMode: 'grid' | 'list') => void;
   sortBy: MarketplaceSortBy;
   toggleProvider: (provider: ProviderSource) => void;
-  trendingApps: MarketplaceApp[];
   viewMode: 'grid' | 'list';
 }
 function loadFromStorage<T>(key: string, fallback: T): T {
@@ -119,10 +111,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   activeProviders: loadFromStorage<ProviderSource[]>('marketplace_providers', ALL_PROVIDERS),
   sortBy: loadFromStorage<MarketplaceSortBy>('marketplace_sort', 'relevance'),
   viewMode: loadFromStorage<'grid' | 'list'>('marketplace_view', 'grid'),
-  trendingApps: [],
-  isTrendingLoading: false,
-  recentReleaseApps: [],
-  isRecentReleaseLoading: false,
   searchHistory: loadFromStorage<string[]>('marketplace_history', []),
   recentlyViewedApps: loadFromStorage<MarketplaceApp[]>('marketplace_recently_viewed', []),
   isSettingsOpen: false,
@@ -175,18 +163,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setViewMode: (viewMode) => {
     saveToStorage('marketplace_view', viewMode);
     set({ viewMode });
-  },
-  setTrendingApps: (trendingApps) => {
-    set({ trendingApps });
-  },
-  setIsTrendingLoading: (isTrendingLoading) => {
-    set({ isTrendingLoading });
-  },
-  setRecentReleaseApps: (recentReleaseApps) => {
-    set({ recentReleaseApps });
-  },
-  setIsRecentReleaseLoading: (isRecentReleaseLoading) => {
-    set({ isRecentReleaseLoading });
   },
   addToSearchHistory: (query) => {
     const trimmed = query.trim();
