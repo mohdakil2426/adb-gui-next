@@ -41,4 +41,4 @@ ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastb
 - Version: 0.2.0
 - Rust Edition: 2024
 - Tauri Commands: 66+ registered commands (added `scan_avd_root_readiness`)
-- Last Updated: 2026-05-14 (Frontend feature architecture migration complete)
+- Last Updated: 2026-05-15 (File Explorer root access + scroll/resize layout hardening)

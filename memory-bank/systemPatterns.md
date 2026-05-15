@@ -174,6 +174,18 @@ fileList.length === 0 && creatingType === null ? <EmptyState> : <Table>
 - `loadFiles(path)` — user navigation (default `true`): writes to history stack
 - `loadFiles(path, false)` — refresh/back/forward: no history entry added
 
+**Root access model:**
+- Root access is a remembered grant, not a global explorer mode.
+- The shield button verifies `su -c id -u == 0` before granting.
+- `getFileAccessMode(path)` derives `normal` or `root` per target path, so `/sdcard/` and normal storage stay normal while protected paths use root after verification.
+- `DirectoryTree` exposes stable root nodes: `sdcard`, `storage`, and `root`.
+
+**File Explorer scroll model:**
+- The view is a full-height flex child under `MainLayout`; do not use viewport `calc()` heights.
+- The table pane owns its own `overflow-auto` scroll container and passes that exact element to TanStack Virtual.
+- The tree pane owns its own shadcn `ScrollArea`; expanded tree nodes must not have fixed max-height caps.
+- The tree splitter uses a wide pointer target around a one-pixel visual divider and supports keyboard resizing.
+
 
 ### 4. Binary Resolution
 
@@ -517,6 +529,7 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
 - **Layout boundary (CRITICAL)**: `h-svh overflow-hidden` on MainLayout outer div is the root of the entire flex height chain. `SidebarProvider` uses `h-full`. Without these, `flex-1` inside `SidebarInset` resolves to ∞ — header scrolls.
 - **`overflow-x-hidden` not `overflow-hidden` on layout containers**: `overflow-hidden` terminates the scroll-ancestor chain (breaks sticky) and clips both axes. `overflow-x-hidden` clips only horizontal escapes, leaving vertical flex flow intact.
 - **No `position: sticky` in this app**: Header is pinned structurally as a `shrink-0` sibling to the `flex-1 overflow-y-auto` scroll area inside the bounded `SidebarInset`.
+- **Flex height propagation for full-height views**: Views that fill the entire visible area (minus header + padding) must use flex layout, not viewport-based calc. MainLayout wrapper chain uses `flex flex-col` + `flex-1 min-h-0` to propagate height from the scroll area. Views use `flex min-h-0 flex-1` to fill the parent. `min-h-0` overrides the default `min-height: auto` that prevents flex items from shrinking. Never use `h-[calc(100svh-N)]` — header height and padding are not fixed constants.
 
 ### 13. ESLint Strict Mode & TypeScript Configuration
 

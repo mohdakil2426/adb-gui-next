@@ -10,10 +10,66 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 **Payload Dumper interaction polish is complete (2026-05-11).**
 **File Explorer layout hardening is complete (2026-05-14): table columns are grid-aligned and delete confirmation filenames wrap safely.**
 **Frontend feature architecture migration is complete (2026-05-14): app shell is under `src/app`, Tauri IPC under `src/desktop`, shared code under `src/shared`, and product code under `src/features/<feature>`. Legacy `src/components` and `src/lib` folders are removed.**
+**Dashboard Wireless ADB card is now collapsible (2026-05-15): collapsed by default with chevron toggle, saving vertical space for users who don't use wireless ADB.**
+**File Explorer toolbar overlap fix is complete (2026-05-15): replaced viewport-based height calc with flex layout propagation through MainLayout wrapper chain.**
+**File Explorer scroll containment fix is complete (2026-05-15): file list owns its scroll region, table header remains sticky, and toolbar actions are horizontally contained on narrow widths.**
+**File Explorer tree scroll fix is complete (2026-05-15): expanded tree nodes no longer use a fixed 500px height cap, so large directories scroll through the side panel instead of clipping lower root entries.**
+**File Explorer tree resize handle is improved (2026-05-15): the side panel splitter now has a wider pointer hit target, keyboard arrow support, and more useful default/min/max widths.**
+**File Explorer root access is implemented (2026-05-15): manual verified shield grant, stable normal explorer state, root tree shortcut, root-aware IPC mode, and staged root import/export.**
 
 ---
 
 ## Recently Completed
+
+### 2026-05-15 - File Explorer Tree Resize Handle
+
+**Change:** Replaced the one-pixel tree splitter hit target with a dedicated `FileExplorerTreeResizeHandle` component. The visual divider remains one pixel, but the interactive target is 12px wide and uses pointer events for mouse/touch/stylus resizing.
+
+**UX:** Tree panel width defaults to 280px with a 220px minimum and 520px maximum. The splitter exposes `role="separator"` with ARIA width values and supports `ArrowLeft`/`ArrowRight` keyboard resizing in 16px steps.
+
+**Architecture:** Extracted `FileExplorerTreeSection` so `FileExplorerView.tsx` stays under the 300-line architecture guard.
+
+**Verification:** `bun vitest run src/test/ViewFileExplorer.test.tsx src/test/frontendArchitecture.test.ts` ✅ · `bun run lint:web` ✅ · `bun run format:check` ✅ · `bun run test` ✅ · `bun run build` ✅.
+
+### 2026-05-15 - File Explorer Tree Scroll Fix
+
+**Change:** Removed the artificial `max-h-[500px] overflow-hidden` wrapper from expanded `DirectoryTree` children. Large directories such as `/sdcard/Android/data` now render their full child list and let the side panel's shadcn `ScrollArea` own vertical scrolling.
+
+**Layout:** Added `min-h-0` through `FileExplorerTreePane` and `DirectoryTree` so the tree scroll viewport receives a bounded height. Tree rows now keep a `min-w-0` truncation chain for deeply nested package names, and the collapse icon button has an explicit accessible label.
+
+**Verification:** Added a regression test that expands a 60-entry directory and asserts the last entry renders without the old 500px cap. `bun vitest run src/test/DirectoryTree.test.tsx src/test/ViewFileExplorer.test.tsx` ✅ · `bun run lint:web` ✅ · `bun run format:check` ✅ · `bun run test` ✅ · `bun run build` ✅.
+
+### 2026-05-15 - File Explorer Scroll Containment
+
+**Change:** Fixed File Explorer long-directory scrolling and toolbar responsiveness. The file list now uses a direct bounded `overflow-auto` scroll container with `min-h-0`, and TanStack Virtual receives that exact `HTMLDivElement` instead of inferring a parent through shadcn `ScrollArea`.
+
+**UI:** The toolbar remains a fixed `shrink-0` row above the list. The action group is horizontally contained with its own overflow behavior on narrow widths, so it no longer pushes the path area or page layout wider than the viewport.
+
+**Verification:** Added a DOM regression test proving the file list owns the scroll region and the toolbar action group is overflow-contained. `bun run lint:web` ✅ · `bun run format:check` ✅ · `bun run test` ✅ · `bun run build` ✅.
+
+### 2026-05-15 - File Explorer Root Access
+
+**Change:** Added manual root access for File Explorer. The toolbar uses a shield toggle, verifies `su -c id -u == 0` before granting access, remembers the grant globally, and falls back to normal access if persisted verification fails.
+
+**Backend:** File commands now accept `FileAccessMode` (`normal`/`root`). Normal mode keeps safe write path validation. Root mode keeps traversal/null/empty path validation but bypasses safe-prefix restrictions, runs shell mutations through `su -c`, and stages root import/export under `/data/local/tmp/adb-gui-next-root-transfer/`.
+
+**Frontend:** File Explorer no longer has a global root mode. It stores `rootAccessGranted` and derives `FileAccessMode` per target path, so normal storage paths stay normal while `/`, `/data`, `/system`, and other root-owned paths use root after verification. `DirectoryTree` keeps `sdcard` and `storage`, replaces the old `data` shortcut with `root`, and loads `/` through the same path-aware resolver. The active shield uses destructive red styling.
+
+**Verification:** `bun run format:check` ✅ · `bun run lint:web` ✅ · `bun run lint:rust` ✅ · `bun run test` ✅ · `bun run build` ✅ · Rust file tests compile with `cargo test --no-run`; execution is blocked by the known Windows Tauri loader error `STATUS_ENTRYPOINT_NOT_FOUND`.
+
+### 2026-05-15 - File Explorer Toolbar Overlap Fix
+
+**Change:** Fixed the File Explorer toolbar overlapping with the main header. The root cause was `h-[calc(100svh-4rem)]` — a viewport-based height that assumed a 4rem header. The actual header is `h-12` (3rem), and the parent wrapper adds `p-4 sm:p-6` padding that wasn't accounted for.
+
+**Fix:** Replaced the viewport calc with flex layout propagation. Added `flex flex-col` + `flex-1 min-h-0` to the wrapper chain in MainLayout (padding div, content div, motion.div) so height propagates from the scroll area down to views. FileExplorerView now uses `flex min-h-0 flex-1` instead of the viewport calc. Other views are unaffected — they don't use `flex-1` on their roots.
+
+**Verification:** `bun run build` ✅ · biome check ✅
+
+### 2026-05-15 - Dashboard Wireless ADB Card Collapsible
+
+**Change:** Wrapped the Wireless ADB Connection card in a shadcn `Collapsible` primitive (Radix) so it's collapsed by default. Users click the header to expand Step 1 (USB enable) and Step 2 (WiFi connect). A `ChevronDown` icon rotates 180deg on open via CSS transition. The card header remains visible at all times so the feature is discoverable.
+
+**Verification:** biome check ✅ · `bun run build` ✅ · committed as `289d5c7`
 
 ### 2026-05-14 - Frontend Feature Architecture Migration
 
