@@ -43,7 +43,7 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
   const downloadsLabel = formatDownloadCount(app.downloadsCount);
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-accent/50">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50">
       <button
         aria-label={`View details for ${app.name}`}
         className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"

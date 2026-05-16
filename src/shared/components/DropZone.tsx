@@ -34,9 +34,11 @@ function isPointInRect(x: number, y: number, rect: DOMRect): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
+const EMPTY_EXTENSIONS: string[] = [];
+
 export function DropZone({
   onFilesDropped,
-  acceptExtensions = [],
+  acceptExtensions = EMPTY_EXTENSIONS,
   rejectMessage,
   onBrowse,
   disabled = false,
@@ -139,7 +141,7 @@ export function DropZone({
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
           <div className="fade-in zoom-in-95 flex animate-in flex-col items-center gap-2 text-primary duration-150">
             <div className="rounded-full bg-primary/10 p-4">
-              <Upload className="size-8 animate-bounce" />
+              <Upload className="size-8" />
             </div>
             <p className="font-semibold text-sm">Drop to add files</p>
           </div>

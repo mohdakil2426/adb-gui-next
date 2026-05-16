@@ -7,7 +7,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { toast } from 'sonner';
 import {
   FinalizeAvdRoot,
@@ -21,6 +21,56 @@ import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 
+type State = {
+  packagePath: string | null;
+  patchedImagePath: string | null;
+  prepareResult: backend.RootPreparationResult | null;
+  finalizeResult: backend.RootFinalizeResult | null;
+  error: string | null;
+  isPreparing: boolean;
+  isFinalizing: boolean;
+};
+
+type Action =
+  | { type: 'CHOOSE_PACKAGE'; payload: string }
+  | { type: 'CHOOSE_PATCHED_IMAGE'; payload: string }
+  | { type: 'SET_IS_PREPARING'; payload: boolean }
+  | { type: 'SET_IS_FINALIZING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'PREPARE_SUCCESS'; payload: backend.RootPreparationResult }
+  | { type: 'FINALIZE_SUCCESS'; payload: backend.RootFinalizeResult }
+  | { type: 'CLEAR_FINALIZE_RESULT' };
+
+const cleared = { patchedImagePath: null, prepareResult: null, finalizeResult: null, error: null };
+const clearedFinalize = { finalizeResult: null, error: null };
+function reducer(state: State, action: Action): State {
+  switch (action.type) {
+    case 'CHOOSE_PACKAGE':
+      return { ...state, packagePath: action.payload, ...cleared };
+    case 'CHOOSE_PATCHED_IMAGE':
+      return { ...state, patchedImagePath: action.payload, ...clearedFinalize };
+    case 'SET_IS_PREPARING':
+      return { ...state, isPreparing: action.payload };
+    case 'SET_IS_FINALIZING':
+      return { ...state, isFinalizing: action.payload };
+    case 'SET_ERROR':
+      return { ...state, error: action.payload };
+    case 'PREPARE_SUCCESS':
+      return {
+        ...state,
+        prepareResult: action.payload,
+        patchedImagePath: null,
+        finalizeResult: null,
+      };
+    case 'FINALIZE_SUCCESS':
+      return { ...state, finalizeResult: action.payload };
+    case 'CLEAR_FINALIZE_RESULT':
+      return { ...state, finalizeResult: null };
+    default:
+      return state;
+  }
+}
+
 interface RootManualStepProps {
   avdName: string;
   onBack: () => void;
@@ -29,24 +79,22 @@ interface RootManualStepProps {
 }
 
 export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManualStepProps) {
-  const [packagePath, setPackagePath] = useState<string | null>(null);
-  const [patchedImagePath, setPatchedImagePath] = useState<string | null>(null);
-  const [prepareResult, setPrepareResult] = useState<backend.RootPreparationResult | null>(null);
-  const [finalizeResult, setFinalizeResult] = useState<backend.RootFinalizeResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isPreparing, setIsPreparing] = useState(false);
-  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [state, dispatch] = useReducer(reducer, {
+    packagePath: null,
+    patchedImagePath: null,
+    prepareResult: null,
+    finalizeResult: null,
+    error: null,
+    isPreparing: false,
+    isFinalizing: false,
+  });
 
   async function handleChoosePackage() {
     const path = await SelectRootPackageFile();
     if (!path) {
       return;
     }
-    setPackagePath(path);
-    setPatchedImagePath(null);
-    setPrepareResult(null);
-    setFinalizeResult(null);
-    setError(null);
+    dispatch({ type: 'CHOOSE_PACKAGE', payload: path });
   }
 
   async function handleChoosePatchedImage() {
@@ -54,63 +102,56 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
     if (!path) {
       return;
     }
-    setPatchedImagePath(path);
-    setFinalizeResult(null);
-    setError(null);
+    dispatch({ type: 'CHOOSE_PATCHED_IMAGE', payload: path });
   }
-
   async function handlePrepare() {
-    if (!(serial && packagePath)) {
+    if (!(serial && state.packagePath)) {
       return;
     }
-
-    setIsPreparing(true);
-    setError(null);
+    dispatch({ type: 'SET_IS_PREPARING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
     try {
       const result = await PrepareAvdRoot({
         avdName,
         serial,
-        rootPackagePath: packagePath,
+        rootPackagePath: state.packagePath,
       });
-      setPrepareResult(result);
-      setPatchedImagePath(null);
-      setFinalizeResult(null);
+      dispatch({ type: 'PREPARE_SUCCESS', payload: result });
       toast.success('fakeboot.img created and Magisk launched');
     } catch (err) {
       const message = String(err);
-      setError(message);
+      dispatch({ type: 'SET_ERROR', payload: message });
       toast.error(message);
     } finally {
-      setIsPreparing(false);
+      dispatch({ type: 'SET_IS_PREPARING', payload: false });
     }
   }
 
   async function handleFinalize() {
-    if (!(serial || patchedImagePath)) {
+    if (!(serial || state.patchedImagePath)) {
       return;
     }
-
-    setIsFinalizing(true);
-    setError(null);
+    dispatch({ type: 'SET_IS_FINALIZING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: null });
     try {
       const result = await FinalizeAvdRoot({
         avdName,
         serial,
-        ...(patchedImagePath ? { patchedImagePath } : {}),
+        ...(state.patchedImagePath && { patchedImagePath: state.patchedImagePath }),
       });
-      setFinalizeResult(result);
+      dispatch({ type: 'FINALIZE_SUCCESS', payload: result });
       toast.success('Manual patch installed');
     } catch (err) {
       const message = String(err);
-      setError(message);
+      dispatch({ type: 'SET_ERROR', payload: message });
       toast.error(message);
     } finally {
-      setIsFinalizing(false);
+      dispatch({ type: 'SET_IS_FINALIZING', payload: false });
     }
   }
 
-  const packageName = packagePath?.split(/[/\\]/).pop() ?? null;
-  const patchedImageName = patchedImagePath?.split(/[/\\]/).pop() ?? null;
+  const packageName = state.packagePath?.split(/[/\\]/).pop() ?? null;
+  const patchedImageName = state.patchedImagePath?.split(/[/\\]/).pop() ?? null;
 
   return (
     <div className="flex flex-col gap-5">
@@ -135,11 +176,11 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
         </Alert>
       )}
 
-      {error ? (
+      {state.error ? (
         <Alert variant="destructive">
           <ShieldCheck />
           <AlertTitle>Manual root failed</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       ) : null}
 
@@ -157,19 +198,19 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
               {packageName ?? 'Choose Magisk Package'}
             </span>
             <span className="block truncate text-muted-foreground text-xs">
-              {packagePath ?? 'Supports .apk and .zip packages'}
+              {state.packagePath ?? 'Supports .apk and .zip packages'}
             </span>
           </span>
         </Button>
 
         <Button
           className="gap-2"
-          disabled={!(serial && packagePath) || isPreparing}
+          disabled={!(serial && state.packagePath) || state.isPreparing}
           id="root-manual-create-fakeboot"
           onClick={handlePrepare}
           type="button"
         >
-          {isPreparing ? (
+          {state.isPreparing ? (
             <Loader2 className="animate-spin" data-icon="inline-start" />
           ) : (
             <FileCheck2 data-icon="inline-start" />
@@ -178,20 +219,20 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
         </Button>
       </div>
 
-      {prepareResult ? (
+      {state.prepareResult ? (
         <div className="flex flex-col gap-4 rounded-lg border bg-muted/30 p-4">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
             <div className="min-w-0">
               <p className="font-semibold text-foreground text-sm">fakeboot.img is ready</p>
               <p className="mt-1 font-mono text-muted-foreground text-xs">
-                {prepareResult.fakeBootRemotePath}
+                {state.prepareResult.fakeBootRemotePath}
               </p>
             </div>
           </div>
 
           <ol className="grid gap-2 text-muted-foreground text-sm">
-            {prepareResult.instructions.map((instruction) => (
+            {state.prepareResult.instructions.map((instruction) => (
               <li className="rounded-md border bg-background px-3 py-2" key={instruction}>
                 {instruction}
               </li>
@@ -206,22 +247,23 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
             label={patchedImageName ?? 'Drop patched Magisk image here'}
             onBrowse={handleChoosePatchedImage}
             onFilesDropped={(paths) => {
-              setPatchedImagePath(paths[0] ?? null);
-              setFinalizeResult(null);
-              setError(null);
+              dispatch({ type: 'CHOOSE_PATCHED_IMAGE', payload: paths[0] ?? '' });
+              dispatch({ type: 'CLEAR_FINALIZE_RESULT' });
             }}
             rejectMessage="Drop the Magisk patched .img file."
-            sublabel={patchedImagePath ?? 'Optional: use this if ADB auto-detect cannot find it'}
+            sublabel={
+              state.patchedImagePath ?? 'Optional: use this if ADB auto-detect cannot find it'
+            }
           />
 
           <Button
             className="w-full gap-2"
-            disabled={isFinalizing || !(serial || patchedImagePath)}
+            disabled={state.isFinalizing || !(serial || state.patchedImagePath)}
             id="root-manual-finalize"
             onClick={handleFinalize}
             type="button"
           >
-            {isFinalizing ? (
+            {state.isFinalizing ? (
               <Loader2 className="animate-spin" data-icon="inline-start" />
             ) : (
               <ShieldCheck data-icon="inline-start" />
@@ -231,14 +273,14 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
         </div>
       ) : null}
 
-      {finalizeResult ? (
+      {state.finalizeResult ? (
         <Alert className="border-success/40 bg-success/10 text-success">
           <CheckCircle2 />
           <AlertTitle>Manual Patch Installed</AlertTitle>
           <AlertDescription>
-            {finalizeResult.nextBootRecommendation} Restored {finalizeResult.restoredFiles.length}{' '}
-            file
-            {finalizeResult.restoredFiles.length === 1 ? '' : 's'}.
+            {state.finalizeResult.nextBootRecommendation} Restored{' '}
+            {state.finalizeResult.restoredFiles.length} file
+            {state.finalizeResult.restoredFiles.length === 1 ? '' : 's'}.
           </AlertDescription>
         </Alert>
       ) : null}

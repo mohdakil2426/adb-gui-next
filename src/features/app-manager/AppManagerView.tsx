@@ -72,5 +72,3 @@ export function AppManagerView({ activeView }: { activeView: string }) {
     </div>
   );
 }
-
-export const ViewAppManager = AppManagerView;

@@ -140,11 +140,11 @@ export function FileExplorerRow(props: Props) {
           ) : null}
           <TableCell className="min-w-0">
             {file.type === 'Directory' ? (
-              <Folder className="h-4 w-4 shrink-0 text-primary" />
+              <Folder className="size-4 shrink-0 text-primary" />
             ) : file.type === 'Symlink' ? (
-              <Link className="h-4 w-4 shrink-0 text-primary/70" />
+              <Link className="size-4 shrink-0 text-primary/70" />
             ) : (
-              <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <File className="size-4 shrink-0 text-muted-foreground" />
             )}
           </TableCell>
           <TableCell className="min-w-0 whitespace-normal break-words font-medium">
@@ -196,7 +196,7 @@ export function FileExplorerRow(props: Props) {
       </ContextMenuTrigger>
       <ContextMenuContent>
         <ContextMenuItem onClick={() => handleSelectFromMenu(file.name)}>
-          <SquareCheck className="h-4 w-4 shrink-0" />
+          <SquareCheck className="size-4 shrink-0" />
           Select
         </ContextMenuItem>
         <ContextMenuItem
@@ -204,7 +204,7 @@ export function FileExplorerRow(props: Props) {
             void navigator.clipboard.writeText(path.posix.join(currentPath, file.name))
           }
         >
-          <Copy className="h-4 w-4 shrink-0" />
+          <Copy className="size-4 shrink-0" />
           Copy Path
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -213,7 +213,7 @@ export function FileExplorerRow(props: Props) {
             <ContextMenuItem
               onClick={() => void loadFiles(path.posix.join(currentPath, file.name) + '/')}
             >
-              <FolderOpen className="h-4 w-4 shrink-0" />
+              <FolderOpen className="size-4 shrink-0" />
               Open
             </ContextMenuItem>
             <ContextMenuSeparator />
@@ -225,7 +225,7 @@ export function FileExplorerRow(props: Props) {
           }
           onClick={() => startRename(file)}
         >
-          <Pencil className="h-4 w-4 shrink-0" />
+          <Pencil className="size-4 shrink-0" />
           Rename
         </ContextMenuItem>
         <ContextMenuItem
@@ -236,7 +236,7 @@ export function FileExplorerRow(props: Props) {
             openDeleteDialog(namesToDelete);
           }}
         >
-          <Trash2 className="h-4 w-4 shrink-0" />
+          <Trash2 className="size-4 shrink-0" />
           {isSelected && selectedNames.size > 1 ? `Delete ${selectedNames.size} items` : 'Delete'}
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -248,11 +248,11 @@ export function FileExplorerRow(props: Props) {
             )
           }
         >
-          <Upload className="h-4 w-4 shrink-0" />
+          <Upload className="size-4 shrink-0" />
           {isNavigable ? `Import into "${file.name}"` : 'Import File'}
         </ContextMenuItem>
         <ContextMenuItem disabled={isBusy} onClick={() => void handlePullItem(file)}>
-          <Download className="h-4 w-4 shrink-0" />
+          <Download className="size-4 shrink-0" />
           Export
         </ContextMenuItem>
       </ContextMenuContent>

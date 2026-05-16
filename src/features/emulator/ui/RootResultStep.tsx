@@ -62,7 +62,7 @@ export function RootResultStep({
                   ramdisk. Cold boot it, then verify root before using root-only tools.
                   {!result.managerInstalled && (
                     <span className="ml-1 text-warning-foreground">
-                      Magisk Manager install failed — install manually from your package file.
+                      Magisk Manager install failed: install manually from your package file.
                     </span>
                   )}
                 </p>
@@ -163,7 +163,7 @@ export function RootResultStep({
           onClick={onReset}
           variant="ghost"
         >
-          Done
+          Close Wizard
         </Button>
       </div>
     );

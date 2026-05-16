@@ -119,7 +119,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /continue/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /select root source/i }));
 
     expect(await screen.findByText('Patch Installed')).toBeInTheDocument();
     expect(screen.queryByText('Root Successful!')).not.toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /continue/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /select root source/i }));
     await userEvent.click(await screen.findByRole('button', { name: /verify root/i }));
 
     expect(await screen.findByText('Root Verified')).toBeInTheDocument();

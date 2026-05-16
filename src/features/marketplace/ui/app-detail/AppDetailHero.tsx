@@ -49,7 +49,9 @@ export function AppDetailHero({
           )}
         </div>
         <div className="flex min-w-0 flex-col gap-2 pt-1">
-          <h1 className="truncate font-bold text-2xl tracking-tight sm:text-3xl">{displayName}</h1>
+          <h1 className="truncate font-semibold text-2xl tracking-tight sm:text-3xl">
+            {displayName}
+          </h1>
           <p className="truncate text-muted-foreground text-sm">{packageName}</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <ProviderBadge source={source} />

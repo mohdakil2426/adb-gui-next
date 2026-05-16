@@ -60,6 +60,12 @@ function InputGroupAddon({
         }
         event.currentTarget.parentElement?.querySelector('input')?.focus();
       }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.currentTarget.parentElement?.querySelector('input')?.focus();
+        }
+      }}
       role="group"
       {...props}
     />

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ViewAppManager } from '@/features/app-manager/AppManagerView';
+import { AppManagerView } from '@/features/app-manager/AppManagerView';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 
 const getInstalledPackagesMock = vi.fn();
@@ -75,7 +75,7 @@ describe('ViewAppManager', () => {
       },
     ]);
 
-    render(<ViewAppManager activeView="apps" />);
+    render(<AppManagerView activeView="apps" />);
 
     await user.click(screen.getByRole('tab', { name: /installation/i }));
 

@@ -98,9 +98,9 @@ export function FileExplorerVirtualBody({
           {isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-3" /> : null}
           <TableCell className="min-w-0 pr-0">
             {creatingType === 'folder' ? (
-              <Folder className="h-4 w-4 shrink-0 text-primary" />
+              <Folder className="size-4 shrink-0 text-primary" />
             ) : (
-              <File className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <File className="size-4 shrink-0 text-muted-foreground" />
             )}
           </TableCell>
           <TableCell className="col-span-4 min-w-0" colSpan={4}>
@@ -135,7 +135,7 @@ export function FileExplorerVirtualBody({
                 </span>
               ) : null}
               {isCreating ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+                <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
               ) : null}
             </div>
           </TableCell>

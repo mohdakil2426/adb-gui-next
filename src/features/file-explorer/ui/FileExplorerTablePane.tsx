@@ -126,11 +126,11 @@ export function FileExplorerTablePane(props: Props) {
         <div className="min-h-0 flex-1 overflow-auto overscroll-contain" ref={tableScrollRef}>
           {isLoading ? (
             <div className="flex min-h-full items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           ) : loadError === 'permission_denied' ? (
             <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-              <Lock className="h-8 w-8 opacity-40" />
+              <Lock className="size-8 opacity-40" />
               <p className="font-medium text-sm">Access Denied</p>
               <p className="text-xs opacity-60">
                 This location requires elevated permissions or root access.
@@ -138,7 +138,7 @@ export function FileExplorerTablePane(props: Props) {
             </div>
           ) : loadError === 'no_device' ? (
             <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-              <MonitorOff className="h-8 w-8 opacity-40" />
+              <MonitorOff className="size-8 opacity-40" />
               <p className="font-medium text-sm">No Device Connected</p>
               <p className="text-xs opacity-60">
                 Connect a device via USB or wireless ADB and try again.
@@ -146,7 +146,7 @@ export function FileExplorerTablePane(props: Props) {
             </div>
           ) : loadError === 'unknown' ? (
             <div className="flex min-h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-              <AlertCircle className="h-8 w-8 opacity-40" />
+              <AlertCircle className="size-8 opacity-40" />
               <p className="font-medium text-sm">Failed to Load</p>
               <p className="text-xs opacity-60">Check the logs panel for details.</p>
             </div>
@@ -163,7 +163,7 @@ export function FileExplorerTablePane(props: Props) {
                   size="sm"
                   variant="outline"
                 >
-                  <FilePlus2 className="h-3.5 w-3.5" />
+                  <FilePlus2 className="size-3.5" />
                   New File
                 </Button>
                 <Button
@@ -175,7 +175,7 @@ export function FileExplorerTablePane(props: Props) {
                   size="sm"
                   variant="outline"
                 >
-                  <FolderPlus className="h-3.5 w-3.5" />
+                  <FolderPlus className="size-3.5" />
                   New Folder
                 </Button>
               </div>
@@ -219,12 +219,12 @@ export function FileExplorerTablePane(props: Props) {
                           {field}
                           {sortField === field ? (
                             sortDir === 'asc' ? (
-                              <ChevronUp className="h-3 w-3" />
+                              <ChevronUp className="size-3" />
                             ) : (
-                              <ChevronDown className="h-3 w-3" />
+                              <ChevronDown className="size-3" />
                             )
                           ) : (
-                            <ChevronsUpDown className="h-3 w-3 opacity-30" />
+                            <ChevronsUpDown className="size-3 opacity-30" />
                           )}
                         </span>
                       </TableHead>
@@ -279,7 +279,7 @@ export function FileExplorerTablePane(props: Props) {
             startCreate('file');
           }}
         >
-          <FilePlus2 className="h-4 w-4 shrink-0" />
+          <FilePlus2 className="size-4 shrink-0" />
           New File<span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+N</span>
         </ContextMenuItem>
         <ContextMenuItem
@@ -288,7 +288,7 @@ export function FileExplorerTablePane(props: Props) {
             startCreate('folder');
           }}
         >
-          <FolderPlus className="h-4 w-4 shrink-0" />
+          <FolderPlus className="size-4 shrink-0" />
           New Folder<span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+Shift+N</span>
         </ContextMenuItem>
       </ContextMenuContent>

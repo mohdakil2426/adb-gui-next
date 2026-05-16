@@ -131,8 +131,8 @@ export function LogsPanel() {
       });
     };
 
-    viewport.addEventListener('scroll', handleScroll);
-    viewport.addEventListener('wheel', handleWheel);
+    viewport.addEventListener('scroll', handleScroll, { passive: true });
+    viewport.addEventListener('wheel', handleWheel, { passive: true });
     return () => {
       viewport.removeEventListener('scroll', handleScroll);
       viewport.removeEventListener('wheel', handleWheel);

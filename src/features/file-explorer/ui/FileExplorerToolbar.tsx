@@ -108,7 +108,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             size="icon"
             variant="ghost"
           >
-            <ArrowLeft className="h-4 w-4 shrink-0" />
+            <ArrowLeft className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
         <ToolbarTooltip label="Forward (Alt+Right)">
@@ -119,7 +119,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             size="icon"
             variant="ghost"
           >
-            <ArrowRight className="h-4 w-4 shrink-0" />
+            <ArrowRight className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
         <ToolbarTooltip label="Go up">
@@ -130,12 +130,12 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             size="icon"
             variant="ghost"
           >
-            <ArrowUp className="h-4 w-4 shrink-0" />
+            <ArrowUp className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
         {isEditingPath ? (
           <div className="relative flex min-w-0 flex-1 items-center">
-            <Folder className="pointer-events-none absolute left-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Folder className="pointer-events-none absolute left-1.5 size-3.5 shrink-0 text-muted-foreground" />
             <Input
               autoFocus
               className="h-7 min-w-0 flex-1 border-input pr-2 pl-6 font-mono text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -174,9 +174,9 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             variant="ghost"
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+              <Loader2 className="size-4 shrink-0 animate-spin" />
             ) : (
-              <RefreshCw className="h-4 w-4 shrink-0" />
+              <RefreshCw className="size-4 shrink-0" />
             )}
           </Button>
         </ToolbarTooltip>
@@ -187,7 +187,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         />
         <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
         <div className="relative flex items-center">
-          <Search className="pointer-events-none absolute left-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-1.5 size-3.5 shrink-0 text-muted-foreground" />
           <Input
             aria-label="Filter files"
             className="h-7 w-28 pr-6 pl-6 text-xs transition-[width] duration-200 focus-visible:w-40 md:w-32 md:focus-visible:w-48"
@@ -203,7 +203,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               onClick={onClearSearch}
               tabIndex={-1}
             >
-              <X className="h-3 w-3" />
+              <X className="size-3" />
             </button>
           ) : null}
         </div>

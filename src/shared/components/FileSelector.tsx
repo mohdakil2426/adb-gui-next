@@ -51,7 +51,7 @@ export function FileSelector({
           {isLoading ? (
             <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
           ) : icon ? (
-            <span className="mr-2 flex h-4 w-4 shrink-0 items-center">{icon}</span>
+            <span className="mr-2 flex size-4 shrink-0 items-center">{icon}</span>
           ) : null}
           <span className="truncate">{path ? path.split(/[/\\]/).pop() : placeholder}</span>
         </Button>

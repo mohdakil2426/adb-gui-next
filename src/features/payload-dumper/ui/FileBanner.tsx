@@ -67,9 +67,9 @@ export const FileBanner = memo(function FileBanner({
       <div className="flex min-w-0 items-center justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
           {isRemote ? (
-            <Globe className="h-4 w-4 shrink-0 text-primary" />
+            <Globe className="size-4 shrink-0 text-primary" />
           ) : (
-            <FileArchive className="h-4 w-4 shrink-0 text-primary" />
+            <FileArchive className="size-4 shrink-0 text-primary" />
           )}
           <div className="min-w-0 flex-1">
             <p className="min-w-0 max-w-full truncate font-medium text-sm" title={displayName}>
@@ -85,13 +85,13 @@ export const FileBanner = memo(function FileBanner({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                className="h-7 w-7"
+                className="size-7"
                 disabled={isDisabled}
                 onClick={onSelectPayload}
                 size="icon"
                 variant="ghost"
               >
-                <FileArchive className="h-3.5 w-3.5" />
+                <FileArchive className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">Change Payload</TooltipContent>
@@ -100,14 +100,14 @@ export const FileBanner = memo(function FileBanner({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  className="h-7 w-7"
+                  className="size-7"
                   disabled={status === 'loading-partitions' || status === 'extracting'}
                   onClick={onRefreshPartitions}
                   size="icon"
                   variant="ghost"
                 >
                   <RefreshCw
-                    className={cn('h-3.5 w-3.5', status === 'loading-partitions' && 'animate-spin')}
+                    className={cn('size-3.5', status === 'loading-partitions' && 'animate-spin')}
                   />
                 </Button>
               </TooltipTrigger>
@@ -117,13 +117,13 @@ export const FileBanner = memo(function FileBanner({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                className="h-7 w-7"
+                className="size-7"
                 disabled={status === 'extracting'}
                 onClick={onSelectOutput}
                 size="icon"
                 variant="ghost"
               >
-                <FolderOutput className="h-3.5 w-3.5" />
+                <FolderOutput className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -133,13 +133,8 @@ export const FileBanner = memo(function FileBanner({
           {effectiveOutputPath ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  className="h-7 w-7"
-                  onClick={onOpenOutputFolder}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                <Button className="size-7" onClick={onOpenOutputFolder} size="icon" variant="ghost">
+                  <ExternalLink className="size-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Open Output Folder</TooltipContent>

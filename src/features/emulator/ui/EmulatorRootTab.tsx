@@ -64,7 +64,7 @@ export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
             </Button>
           </div>
           <p className="mt-3 text-muted-foreground text-xs">
-            ℹ️ <strong>Cold Boot</strong> is recommended for rooting — it starts the emulator fresh
+            ℹ️ <strong>Cold Boot</strong> is recommended for rooting: it starts the emulator fresh
             without loading a saved state, so your root patch won't be overwritten by a snapshot.
           </p>
         </div>

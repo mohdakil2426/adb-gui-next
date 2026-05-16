@@ -36,7 +36,7 @@ export function DropArea({
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-primary/5 backdrop-blur-[2px]">
           <div className="fade-in zoom-in-95 flex animate-in flex-col items-center gap-2 text-primary duration-150">
             <div className="rounded-full bg-primary/10 p-4">
-              <Upload className="size-8 animate-bounce" />
+              <Upload className="size-8" />
             </div>
             <p className="font-semibold text-sm">Drop to add file</p>
           </div>

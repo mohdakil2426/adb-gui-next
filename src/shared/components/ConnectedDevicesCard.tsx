@@ -34,7 +34,7 @@ export function ConnectedDevicesCard({
     <Card className={className}>
       <CardHeader className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <CardTitle className="flex items-center gap-2">
-          <Smartphone className="h-5 w-5" />
+          <Smartphone className="size-5" />
           Connected Devices
         </CardTitle>
         <Button
@@ -45,9 +45,9 @@ export function ConnectedDevicesCard({
           variant="ghost"
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="size-4" />
           )}
         </Button>
       </CardHeader>

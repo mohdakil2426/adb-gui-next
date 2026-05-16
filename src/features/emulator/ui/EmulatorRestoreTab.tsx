@@ -92,12 +92,12 @@ export function EmulatorRestoreTab({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="h-6 w-6 shrink-0"
+                      className="size-6 shrink-0"
                       onClick={() => handleOpenBackupFolder(entry.backupPath)}
                       size="icon"
                       variant="ghost"
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLink className="size-3" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">Open backup location</TooltipContent>

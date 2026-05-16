@@ -10,6 +10,19 @@ export function getFileName(path: string): string {
   return parts[parts.length - 1] ?? '';
 }
 
+/** Hoisted formatters — created once at module load, reused across calls. */
+const compactNumberFormatter = new Intl.NumberFormat(undefined, {
+  notation: 'compact',
+  maximumFractionDigits: 1,
+});
+
+const ratingFormatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+const displayDateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+
 /** Format raw byte count string into human-readable size. */
 export function formatBytes(raw: string): string {
   const n = Number.parseInt(raw, 10);
@@ -68,20 +81,14 @@ export function formatCompactNumber(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
     return '';
   }
-  return new Intl.NumberFormat(undefined, {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
+  return compactNumberFormatter.format(value);
 }
 
 export function formatRating(value: number | null | undefined): string {
   if (value == null || !Number.isFinite(value)) {
     return '';
   }
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  }).format(value);
+  return ratingFormatter.format(value);
 }
 
 export function formatDisplayDate(value: string | number | Date | null | undefined): string {
@@ -93,5 +100,5 @@ export function formatDisplayDate(value: string | number | Date | null | undefin
     return String(value);
   }
 
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  return displayDateFormatter.format(date);
 }

@@ -118,20 +118,20 @@ UI event -> feature view/component -> Zustand or local state -> src/desktop/back
 
 ## Commands
 
-| Command                                           | Purpose                                                                          |
-| ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `bun run dev`                                     | Vite dev server on port `1420`                                                   |
-| `bun run tauri dev`                               | Tauri desktop window + Vite dev server                                           |
-| `bun run build`                                   | TypeScript check + Vite build to `dist/`                                         |
-| `bun run test`                                    | Vitest frontend tests                                                            |
-| `bun run lint:web`                                | Ultracite/Biome check for frontend files                                         |
-| `bun run lint:rust`                               | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` |
-| `bun run lint`                                    | Web lint + Rust clippy                                                           |
-| `bun run format`                                  | Ultracite/Biome fix + `cargo fmt`                                                |
-| `bun run format:check`                            | Ultracite/Biome check + rustfmt check                                            |
-| `cargo test --manifest-path src-tauri/Cargo.toml` | Rust tests                                                                       |
-| `bun run tauri build --debug`                     | Full debug desktop package                                                       |
-| `bun run check`                                   | lint + format check + Rust tests + frontend tests + build                        |
+| Command | Purpose |
+| --- | --- |
+| `bun run dev` | Vite dev server on port `1420` |
+| `bun run tauri dev` | Tauri desktop window + Vite dev server |
+| `bun run build` | TypeScript check + Vite build to `dist/` |
+| `bun run test` | Vitest frontend tests |
+| `bun run lint:web` | Ultracite/Biome check for frontend files |
+| `bun run lint:rust` | `cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings` |
+| `bun run lint` | Web lint + Rust clippy |
+| `bun run format` | Ultracite/Biome fix + `cargo fmt` |
+| `bun run format:check` | Ultracite/Biome check + rustfmt check |
+| `cargo test --manifest-path src-tauri/Cargo.toml` | Rust tests |
+| `bun run tauri build --debug` | Full debug desktop package |
+| `bun run check` | lint + format check + Rust tests + frontend tests + build |
 
 Known Windows issue: bare `cargo test` can fail with Tauri-linked loader error `0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`. Do not call the code broken without confirming whether this known loader issue is the cause.
 
@@ -197,7 +197,7 @@ Known Windows issue: bare `cargo test` can fail with Tauri-linked loader error `
 - Emulator AVD discovery scans `~/.android/avd/*.ini`; do not depend on `emulator -list-avds`.
 - Emulator root must run readiness checks before automated root. Root is only proven by `verify_avd_root` returning `su -c id -u == 0`.
 - Payload extraction is designed around streaming/mmap and cancellation. Do not introduce large in-memory buffers for firmware images.
-- OPS/OFP parsing has format-specific crypto and sparse-image rules. Do not “simplify” offsets, key schedules, or sparse expansion without test data.
+- OPS/OFP parsing has format-specific crypto and sparse-image rules. Do not "simplify" offsets, key schedules, or sparse expansion without test data.
 
 ## Dependency Policy
 
@@ -208,151 +208,38 @@ Known Windows issue: bare `cargo test` can fail with Tauri-linked loader error `
 
 ## Review Standard
 
-Call out these patch failures directly:
+Blunt technical language is allowed. Personal attacks are not. Call out these patch failures directly:
 
-- Bogus shit: abstraction with no concrete payoff.
-- Random churn: formatting, comments, or refactors unrelated to the request.
-- Enterprise sludge: factories/managers/builders/config knobs for a simple flow.
-- Special-case insanity: conditionals hiding a bad data shape.
-- Voodoo programming: retries, sleeps, barriers, or loops added without understanding.
-- Hack upon hack: layering new ugliness over old ugliness instead of fixing the data/contract.
-- Rats nest code: entangled logic that cannot be tested or reasoned about.
+- **Bogus shit**: abstraction with no concrete payoff.
+- **Random churn**: formatting, comments, or refactors unrelated to the request.
+- **Enterprise sludge**: factories/managers/builders/config knobs for a simple flow.
+- **Special-case insanity**: conditionals hiding a bad data shape.
+- **Voodoo programming**: retries, sleeps, barriers, or loops added without understanding.
+- **Hack upon hack**: layering new ugliness over old ugliness instead of fixing the data/contract.
+- **Rats nest code**: entangled logic that cannot be tested or reasoned about.
 
-Blunt technical language is allowed. Personal attacks are not.
-
-## Done Means
+A change is done when:
 
 - The change is scoped to the request.
 - The data/IPC shape is clear and documented by types.
 - Existing user behavior is preserved unless the user explicitly requested a break.
 - Tests or reproducible verification cover the change.
 - Lint/format/build status is reported honestly.
-- Known unrelated issues are mentioned, not silently “fixed.”
+- Known unrelated issues are mentioned, not silently "fixed."
 
+## Code Standards
 
-# Ultracite Code Standards
+This project uses **Ultracite** (Biome under the hood) for automated formatting and linting. Run `bun x ultracite fix` before committing.
 
-This project uses **Ultracite**, a zero-config preset that enforces strict code quality standards through automated formatting and linting.
+Additional project-specific rules beyond what Biome enforces:
 
-## Quick Reference
+- Use React 19 patterns: `ref` as a prop instead of `React.forwardRef`.
+- Prefer specific imports over namespace imports.
+- Avoid barrel files (index files that re-export everything).
+- Remove `console.log`, `debugger`, and `alert` statements from production code.
+- Throw `Error` objects with descriptive messages, not strings or other values.
 
-- **Format code**: `bun x ultracite fix`
-- **Check for issues**: `bun x ultracite check`
-- **Diagnose setup**: `bun x ultracite doctor`
-
-Biome (the underlying engine) provides robust linting and formatting. Most issues are automatically fixable.
-
----
-
-## Core Principles
-
-Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
-
-### Type Safety & Explicitness
-
-- Use explicit types for function parameters and return values when they enhance clarity
-- Prefer `unknown` over `any` when the type is genuinely unknown
-- Use const assertions (`as const`) for immutable values and literal types
-- Leverage TypeScript's type narrowing instead of type assertions
-- Use meaningful variable names instead of magic numbers - extract constants with descriptive names
-
-### Modern JavaScript/TypeScript
-
-- Use arrow functions for callbacks and short functions
-- Prefer `for...of` loops over `.forEach()` and indexed `for` loops
-- Use optional chaining (`?.`) and nullish coalescing (`??`) for safer property access
-- Prefer template literals over string concatenation
-- Use destructuring for object and array assignments
-- Use `const` by default, `let` only when reassignment is needed, never `var`
-
-### Async & Promises
-
-- Always `await` promises in async functions - don't forget to use the return value
-- Use `async/await` syntax instead of promise chains for better readability
-- Handle errors appropriately in async code with try-catch blocks
-- Don't use async functions as Promise executors
-
-### React & JSX
-
-- Use function components over class components
-- Call hooks at the top level only, never conditionally
-- Specify all dependencies in hook dependency arrays correctly
-- Use the `key` prop for elements in iterables (prefer unique IDs over array indices)
-- Nest children between opening and closing tags instead of passing as props
-- Don't define components inside other components
-- Use semantic HTML and ARIA attributes for accessibility:
-  - Provide meaningful alt text for images
-  - Use proper heading hierarchy
-  - Add labels for form inputs
-  - Include keyboard event handlers alongside mouse events
-  - Use semantic elements (`<button>`, `<nav>`, etc.) instead of divs with roles
-
-### Error Handling & Debugging
-
-- Remove `console.log`, `debugger`, and `alert` statements from production code
-- Throw `Error` objects with descriptive messages, not strings or other values
-- Use `try-catch` blocks meaningfully - don't catch errors just to rethrow them
-- Prefer early returns over nested conditionals for error cases
-
-### Code Organization
-
-- Keep functions focused and under reasonable cognitive complexity limits
-- Extract complex conditions into well-named boolean variables
-- Use early returns to reduce nesting
-- Prefer simple conditionals over nested ternary operators
-- Group related code together and separate concerns
-
-### Security
-
-- Add `rel="noopener"` when using `target="_blank"` on links
-- Avoid `dangerouslySetInnerHTML` unless absolutely necessary
-- Don't use `eval()` or assign directly to `document.cookie`
-- Validate and sanitize user input
-
-### Performance
-
-- Avoid spread syntax in accumulators within loops
-- Use top-level regex literals instead of creating them in loops
-- Prefer specific imports over namespace imports
-- Avoid barrel files (index files that re-export everything)
-- Use proper image components (e.g., Next.js `<Image>`) over `<img>` tags
-
-### Framework-Specific Guidance
-
-**Next.js:**
-- Use Next.js `<Image>` component for images
-- Use `next/head` or App Router metadata API for head elements
-- Use Server Components for async data fetching instead of async Client Components
-
-**React 19+:**
-- Use ref as a prop instead of `React.forwardRef`
-
-**Solid/Svelte/Vue/Qwik:**
-- Use `class` and `for` attributes (not `className` or `htmlFor`)
-
----
-
-## Testing
-
-- Write assertions inside `it()` or `test()` blocks
-- Avoid done callbacks in async tests - use async/await instead
-- Don't use `.only` or `.skip` in committed code
-- Keep test suites reasonably flat - avoid excessive `describe` nesting
-
-## When Biome Can't Help
-
-Biome's linter will catch most issues automatically. Focus your attention on:
-
-1. **Business logic correctness** - Biome can't validate your algorithms
-2. **Meaningful naming** - Use descriptive names for functions, variables, and types
-3. **Architecture decisions** - Component structure, data flow, and API design
-4. **Edge cases** - Handle boundary conditions and error states
-5. **User experience** - Accessibility, performance, and usability considerations
-6. **Documentation** - Add comments for complex logic, but prefer self-documenting code
-
----
-
-Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+Full standards: [`docs/ultracite-standards.md`](docs/ultracite-standards.md)
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

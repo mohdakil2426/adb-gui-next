@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getNickname, setNickname } from '@/shared/stores/nicknameStore';
+import { getNickname, NICKNAME_STORAGE_KEY, setNickname } from '@/shared/stores/nicknameStore';
 
 describe('nicknameStore', () => {
   beforeEach(() => {
@@ -11,7 +11,7 @@ describe('nicknameStore', () => {
     it('should set nickname for a device serial', () => {
       setNickname('device-1', 'My Phone');
 
-      expect(localStorage.getItem('adb-kit-nicknames')).toBe(
+      expect(localStorage.getItem(NICKNAME_STORAGE_KEY)).toBe(
         JSON.stringify({ 'device-1': 'My Phone' }),
       );
     });
@@ -20,7 +20,7 @@ describe('nicknameStore', () => {
       setNickname('device-1', 'My Phone');
       setNickname('device-1', 'Pixel 8');
 
-      const stored = JSON.parse(localStorage.getItem('adb-kit-nicknames') ?? '{}') as Record<
+      const stored = JSON.parse(localStorage.getItem(NICKNAME_STORAGE_KEY) ?? '{}') as Record<
         string,
         string
       >;
@@ -31,7 +31,7 @@ describe('nicknameStore', () => {
       setNickname('device-1', 'My Phone');
       setNickname('device-1', '');
 
-      const stored = JSON.parse(localStorage.getItem('adb-kit-nicknames') ?? '{}') as Record<
+      const stored = JSON.parse(localStorage.getItem(NICKNAME_STORAGE_KEY) ?? '{}') as Record<
         string,
         string
       >;
@@ -42,7 +42,7 @@ describe('nicknameStore', () => {
       setNickname('device-1', 'Phone One');
       setNickname('device-2', 'Phone Two');
 
-      const stored = JSON.parse(localStorage.getItem('adb-kit-nicknames') ?? '{}') as Record<
+      const stored = JSON.parse(localStorage.getItem(NICKNAME_STORAGE_KEY) ?? '{}') as Record<
         string,
         string
       >;
@@ -63,7 +63,7 @@ describe('nicknameStore', () => {
     });
 
     it('should return empty string for empty nickname', () => {
-      localStorage.setItem('adb-kit-nicknames', JSON.stringify({ 'device-1': '' }));
+      localStorage.setItem(NICKNAME_STORAGE_KEY, JSON.stringify({ 'device-1': '' }));
 
       expect(getNickname('device-1')).toBe('');
     });

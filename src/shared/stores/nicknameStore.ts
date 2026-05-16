@@ -1,6 +1,6 @@
 import { useLogStore } from '@/shared/stores/logStore';
 
-const NICKNAME_STORAGE_KEY = 'adb-kit-nicknames';
+export const NICKNAME_STORAGE_KEY = 'adb-kit-nicknames:v1';
 
 function getNicknames(): Record<string, string> {
   try {

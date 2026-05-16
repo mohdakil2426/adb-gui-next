@@ -118,8 +118,7 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
     setShowCursorOverlay(true);
     // Hint to GPU: this element's height will animate
     if (panelRef.current) {
-      panelRef.current.style.willChange = 'height';
-      panelRef.current.style.userSelect = 'none';
+      Object.assign(panelRef.current.style, { willChange: 'height', userSelect: 'none' });
     }
   }, []);
 
@@ -132,8 +131,7 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
     setShowCursorOverlay(false);
     // Commit the final height to the store — single re-render after drag ends
     if (panelRef.current) {
-      panelRef.current.style.willChange = '';
-      panelRef.current.style.userSelect = '';
+      Object.assign(panelRef.current.style, { willChange: '', userSelect: '' });
       const finalHeight = Number.parseFloat(panelRef.current.style.height);
       if (!isNaN(finalHeight)) {
         setPanelHeight(finalHeight);

@@ -43,7 +43,7 @@ export function RemoteUrlPanel({
       <FieldGroup>
         <Field>
           <FieldLabel className="flex items-center gap-2" htmlFor="remote-url">
-            <Globe className="h-4 w-4" />
+            <Globe className="size-4" />
             Payload URL
           </FieldLabel>
           <InputGroup>
@@ -70,7 +70,7 @@ export function RemoteUrlPanel({
                   }}
                   size="icon-xs"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="size-4" />
                 </InputGroupButton>
               </InputGroupAddon>
             ) : null}
@@ -88,7 +88,7 @@ export function RemoteUrlPanel({
         {isChecking ? (
           <>
             <Loader2 className="animate-spin" data-icon="inline-start" />
-            Checking connection...
+            Checking connection…
           </>
         ) : (
           <>
@@ -124,13 +124,13 @@ export function RemoteUrlPanel({
         >
           {isChecking ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
               <AlertTitle>Checking connection...</AlertTitle>
             </>
           ) : null}
           {isReady ? (
             <>
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="size-4" />
               <AlertTitle>Range requests supported</AlertTitle>
               {estimatedSize ? (
                 <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
@@ -139,7 +139,7 @@ export function RemoteUrlPanel({
           ) : null}
           {isError ? (
             <>
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="size-4" />
               <AlertTitle>Connection check failed</AlertTitle>
               <AlertDescription>
                 Server does not support range requests or URL is invalid

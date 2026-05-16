@@ -59,7 +59,7 @@ export const PartitionRow = React.memo(function PartitionRow({
     >
       {/* Checkbox / completed */}
       {isCompleted ? (
-        <CheckCircle2 className="h-5 w-5 text-success" />
+        <CheckCircle2 className="size-5 text-success" />
       ) : (
         <CheckboxItem checked={partition.selected} disabled={disabled} />
       )}
@@ -67,11 +67,11 @@ export const PartitionRow = React.memo(function PartitionRow({
       {/* Name */}
       <div className="flex min-w-0 items-center gap-2">
         {isExtracting && !isCompleted ? (
-          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+          <Loader2 className="size-4 shrink-0 animate-spin text-primary" />
         ) : (
           <HardDrive
             className={cn(
-              'h-4 w-4 shrink-0',
+              'size-4 shrink-0',
               isCompleted
                 ? 'text-success'
                 : partition.selected

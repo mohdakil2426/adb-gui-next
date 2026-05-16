@@ -62,11 +62,13 @@ export function useMarketplaceAuth() {
   }, [clearPendingPoll, setGithubDeviceChallenge, setIsGithubAuthenticating]);
 
   useEffect(() => {
-    if (!(githubDeviceChallenge && isGithubAuthenticating)) {
-      return;
-    }
-
     let cancelled = false;
+
+    if (!(githubDeviceChallenge && isGithubAuthenticating)) {
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const poll = async () => {
       try {

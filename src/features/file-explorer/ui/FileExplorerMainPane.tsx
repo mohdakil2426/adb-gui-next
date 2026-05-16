@@ -12,16 +12,38 @@ import { FileExplorerToolbar } from '@/features/file-explorer/ui/FileExplorerToo
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
 import { Button } from '@/shared/ui/button';
 
-interface Props {
-  allSelected: boolean;
-  cancelCreate: () => void;
+interface NavigationConfig {
   canGoBack: boolean;
   canGoForward: boolean;
+}
+
+interface StateConfig {
+  isBusy: boolean;
+  isCreating: boolean;
+  isEditingPath: boolean;
+  isLoading: boolean;
+  isPullDisabled: boolean;
+  isPushing: boolean;
+}
+
+interface DisplayConfig {
+  allSelected: boolean;
+  isMultiSelectMode: boolean;
+  someSelected: boolean;
+}
+
+interface PermissionsConfig {
+  rootAccessGranted: boolean;
+}
+
+interface Props {
+  cancelCreate: () => void;
   clearSelection: () => void;
   createError: string;
   createName: string;
   creatingType: CreatingType;
   currentPath: string;
+  display: DisplayConfig;
   editPathValue: string;
   fileList: FileEntry[];
   fileTableColumns: string;
@@ -48,54 +70,55 @@ interface Props {
   handleSelectAll: (checked: boolean | 'indeterminate') => void;
   handleSelectFromMenu: (name: string) => void;
   handleSortColumn: (field: SortField) => void;
-  isBusy: boolean;
-  isCreating: boolean;
-  isEditingPath: boolean;
-  isLoading: boolean;
-  isMultiSelectMode: boolean;
-  isPullDisabled: boolean;
-  isPushing: boolean;
   isTreeCollapsed: boolean;
   loadError: LoadError;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  navigation: NavigationConfig;
   onRootAccessToggle: () => Promise<void>;
   openDeleteDialog: (names: string[]) => void;
   PHANTOM_ROW_HEIGHT: number;
+  permissions: PermissionsConfig;
   phantomOffset: number;
   renameError: string;
   renameValue: string;
   renamingName: string | null;
-  rootAccessGranted: boolean;
   rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
   searchQuery: string;
   selectedNames: Set<string>;
   setEditPathValue: (v: string) => void;
   setIsEditingPath: (v: boolean) => void;
   setSearchQuery: (v: string) => void;
-  someSelected: boolean;
   sortDir: SortDir;
   sortField: SortField;
   startCreate: (type: 'file' | 'folder') => void;
   startRename: (entry: FileEntry) => void;
+  state: StateConfig;
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
   toggleCheckbox: (name: string) => void;
   visibleList: FileEntry[];
 }
 
-export function FileExplorerMainPane(p: Props) {
+export function FileExplorerMainPane({
+  display,
+  isTreeCollapsed,
+  navigation,
+  permissions,
+  state,
+  ...p
+}: Props) {
   return (
     <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
       <FileExplorerToolbar
-        canGoBack={p.canGoBack}
-        canGoForward={p.canGoForward}
+        canGoBack={navigation.canGoBack}
+        canGoForward={navigation.canGoForward}
         currentPath={p.currentPath}
         editPathValue={p.editPathValue}
-        isBusy={p.isBusy}
-        isEditingPath={p.isEditingPath}
-        isLoading={p.isLoading}
-        isPullDisabled={p.isPullDisabled}
-        isPushing={p.isPushing}
-        isTreeCollapsed={p.isTreeCollapsed}
+        isBusy={state.isBusy}
+        isEditingPath={state.isEditingPath}
+        isLoading={state.isLoading}
+        isPullDisabled={state.isPullDisabled}
+        isPushing={state.isPushing}
+        isTreeCollapsed={isTreeCollapsed}
         onBack={p.handleGoBack}
         onClearSearch={p.handleClearSearch}
         onCreateFile={() => {
@@ -126,25 +149,25 @@ export function FileExplorerMainPane(p: Props) {
         onSearchClear={p.handleClearSearch}
         onSearchQueryChange={p.setSearchQuery}
         onUp={p.handleBackClick}
-        rootAccessGranted={p.rootAccessGranted}
+        rootAccessGranted={permissions.rootAccessGranted}
         searchQuery={p.searchQuery}
       />
-      {p.isMultiSelectMode && p.selectedNames.size > 0 && !p.renamingName ? (
+      {display.isMultiSelectMode && p.selectedNames.size > 0 && !p.renamingName ? (
         <SelectionSummaryBar
           actions={
             <Button
               className="h-6 px-2 text-xs"
-              disabled={p.isBusy}
+              disabled={state.isBusy}
               onClick={p.handleDeleteFromSelection}
               size="sm"
               variant="destructive"
             >
-              <Trash2 className="h-3 w-3 shrink-0" />
+              <Trash2 className="size-3 shrink-0" />
               <span className="ml-1 hidden sm:inline">Delete</span>
             </Button>
           }
           count={p.selectedNames.size}
-          disabled={p.isBusy}
+          disabled={state.isBusy}
           label={p.selectedNames.size === 1 ? 'item selected' : 'items selected'}
           onClear={p.clearSelection}
         />
@@ -159,7 +182,7 @@ export function FileExplorerMainPane(p: Props) {
           : null}
       </div>
       <FileExplorerTablePane
-        allSelected={p.allSelected}
+        allSelected={display.allSelected}
         cancelCreate={p.cancelCreate}
         createError={p.createError}
         createName={p.createName}
@@ -179,10 +202,10 @@ export function FileExplorerMainPane(p: Props) {
         handleSelectAll={p.handleSelectAll}
         handleSelectFromMenu={p.handleSelectFromMenu}
         handleSortColumn={p.handleSortColumn}
-        isBusy={p.isBusy}
-        isCreating={p.isCreating}
-        isLoading={p.isLoading}
-        isMultiSelectMode={p.isMultiSelectMode}
+        isBusy={state.isBusy}
+        isCreating={state.isCreating}
+        isLoading={state.isLoading}
+        isMultiSelectMode={display.isMultiSelectMode}
         loadError={p.loadError}
         loadFiles={p.loadFiles}
         openDeleteDialog={p.openDeleteDialog}
@@ -194,7 +217,7 @@ export function FileExplorerMainPane(p: Props) {
         rowVirtualizer={p.rowVirtualizer}
         searchQuery={p.searchQuery}
         selectedNames={p.selectedNames}
-        someSelected={p.someSelected}
+        someSelected={display.someSelected}
         sortDir={p.sortDir}
         sortField={p.sortField}
         startCreate={p.startCreate}

@@ -78,8 +78,8 @@ export function ViewPayloadDumper() {
       <div className="flex items-center gap-4">
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl" />
-          <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-            <Package aria-hidden="true" className="h-6 w-6 text-primary" />
+          <div className="relative flex size-12 items-center justify-center rounded-xl bg-primary/10">
+            <Package aria-hidden="true" className="size-6 text-primary" />
           </div>
         </div>
         <div>
@@ -94,7 +94,7 @@ export function ViewPayloadDumper() {
       <Card className="w-full min-w-0 overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileArchive aria-hidden="true" className="h-5 w-5" />
+            <FileArchive aria-hidden="true" className="size-5" />
             Extraction Setup
           </CardTitle>
           <CardDescription>Select payload file and output directory for extraction</CardDescription>

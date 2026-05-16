@@ -42,7 +42,7 @@ export function CopyButton({ value, label = 'Value', className }: CopyButtonProp
   return (
     <Button
       aria-label={`Copy ${label}`}
-      className={cn('h-7 w-7 shrink-0', className)}
+      className={cn('size-7 shrink-0', className)}
       disabled={!value}
       onClick={handleCopy}
       size="icon"

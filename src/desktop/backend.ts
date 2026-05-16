@@ -44,10 +44,6 @@ export function CancelExtraction(tokenId: string): Promise<void> {
   return call('cancel_extraction', { tokenId });
 }
 
-export function DiagnosePayload(path: string): Promise<backend.PayloadDiagnostics> {
-  return call('diagnose_payload', { path });
-}
-
 export function FinalizeAvdRoot(
   request: backend.RootFinalizeRequest,
 ): Promise<backend.RootFinalizeResult> {
@@ -82,22 +78,6 @@ export function ExtractPayload(
   });
 }
 
-export function ExtractDeltaPayload(
-  payloadPath: string,
-  sourceDir: string,
-  outputDir: string,
-  selectedPartitions: string[],
-  cancelTokenId?: string,
-): Promise<backend.ExtractPayloadResult> {
-  return call('extract_delta_payload', {
-    payloadPath,
-    sourceDir,
-    outputDir,
-    selectedPartitions,
-    cancelTokenId: cancelTokenId ?? null,
-  });
-}
-
 export function FlashPartition(
   partition: string,
   imagePath: string,
@@ -106,20 +86,12 @@ export function FlashPartition(
   return call('flash_partition', { partition, imagePath, serial });
 }
 
-export function GetBootloaderVariables(): Promise<string> {
-  return call('get_bootloader_variables');
-}
-
 export function GetAvdRestorePlan(avdName: string): Promise<backend.RestorePlan> {
   return call('get_avd_restore_plan', { avdName });
 }
 
 export function GetDeviceInfo(serial?: string | null): Promise<backend.DeviceInfo> {
   return call('get_device_info', { serial });
-}
-
-export function GetDeviceMode(): Promise<string> {
-  return call('get_device_mode');
 }
 
 export function GetDevices(): Promise<backend.Device[]> {
@@ -167,10 +139,6 @@ export function ListFiles(
   accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
 ): Promise<backend.FileEntry[]> {
   return call('list_files', { path, serial, accessMode });
-}
-
-export function ListPayloadPartitions(payloadPath: string): Promise<string[]> {
-  return call('list_payload_partitions', { payloadPath });
 }
 
 export function ListPayloadPartitionsWithDetails(
@@ -264,17 +232,6 @@ export function SaveLog(content: string, prefix: string): Promise<string> {
   return call('save_log', { content, prefix });
 }
 
-export function SelectApkFile(): Promise<string> {
-  return selectFile({
-    filters: [
-      {
-        name: 'APK files',
-        extensions: ['apk', 'apks'],
-      },
-    ],
-  });
-}
-
 export function SelectDirectoryForPull(): Promise<string> {
   return selectFile({
     directory: true,
@@ -329,10 +286,6 @@ export function SelectPayloadFile(): Promise<string> {
       },
     ],
   });
-}
-
-export function GetOpsMetadata(path: string): Promise<backend.OpsMetadata> {
-  return call('get_ops_metadata', { path });
 }
 
 export function SelectSaveDirectory(defaultPath: string): Promise<string> {
@@ -473,19 +426,6 @@ export function MarketplaceGetAppDetail(
   });
 }
 
-/** List version history for a specific app. */
-export function MarketplaceListVersions(
-  packageName: string,
-  source: string,
-  githubToken?: string | null,
-): Promise<backend.VersionInfo[]> {
-  return call('marketplace_list_versions', {
-    packageName,
-    source,
-    githubToken: githubToken ?? null,
-  });
-}
-
 /** Clear backend marketplace caches. */
 export function MarketplaceClearCache(): Promise<string> {
   return call('marketplace_clear_cache');
@@ -556,11 +496,6 @@ export function ListDebloatBackups(): Promise<backend.BackupSummary[]> {
   return call('list_debloat_backups');
 }
 
-/** Restore a previously created backup. */
-export function RestoreDebloatBackup(fileName: string): Promise<backend.DebloatActionResult[]> {
-  return call('restore_debloat_backup', { fileName });
-}
-
 /** Get per-device settings (expert mode, disable mode, multi-user mode). */
 export function GetDebloatDeviceSettings(): Promise<backend.PerDeviceSettings> {
   return call('get_debloat_device_settings');
@@ -569,11 +504,6 @@ export function GetDebloatDeviceSettings(): Promise<backend.PerDeviceSettings> {
 /** Save per-device settings. */
 export function SaveDebloatDeviceSettings(settings: backend.PerDeviceSettings): Promise<void> {
   return call('save_debloat_device_settings', { settings });
-}
-
-/** Get the Android SDK version of the connected device. */
-export function GetDeviceSdk(): Promise<number> {
-  return call('get_device_sdk');
 }
 
 /** Combined response for all initial debloater data. */
@@ -587,9 +517,4 @@ export interface DebloatData {
 /** Get all debloater data in one call. Uses in-memory cache when available. */
 export function GetDebloatData(): Promise<DebloatData> {
   return call('get_debloat_data');
-}
-
-/** Force refresh all debloater data (invalidates cache). */
-export function RefreshDebloatData(): Promise<DebloatData> {
-  return call('refresh_debloat_data');
 }

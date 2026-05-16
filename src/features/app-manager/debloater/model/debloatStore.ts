@@ -142,9 +142,12 @@ export const useDebloatStore = create<DebloatState>()(
           stateFilter,
           searchQuery,
         });
-        const next = new Set(
-          filtered.filter((p) => expertMode || p.removal !== 'Unsafe').map((p) => p.name),
-        );
+        const next = new Set<string>();
+        for (const p of filtered) {
+          if (expertMode || p.removal !== 'Unsafe') {
+            next.add(p.name);
+          }
+        }
         set({ selectedPackages: next });
       },
 
@@ -166,9 +169,12 @@ export const useDebloatStore = create<DebloatState>()(
           set({ expertMode });
         } else {
           const { selectedPackages, packages } = get();
-          const unsafeNames = new Set(
-            packages.filter((p) => p.removal === 'Unsafe').map((p) => p.name),
-          );
+          const unsafeNames = new Set<string>();
+          for (const p of packages) {
+            if (p.removal === 'Unsafe') {
+              unsafeNames.add(p.name);
+            }
+          }
           const next = new Set([...selectedPackages].filter((n) => !unsafeNames.has(n)));
           set({ expertMode, selectedPackages: next });
         }
@@ -199,7 +205,12 @@ export const useDebloatStore = create<DebloatState>()(
           return p;
         });
         // Deselect successfully acted packages
-        const successNames = new Set(results.filter((r) => r.success).map((r) => r.packageName));
+        const successNames = new Set<string>();
+        for (const r of results) {
+          if (r.success) {
+            successNames.add(r.packageName);
+          }
+        }
         const { selectedPackages } = get();
         const next = new Set([...selectedPackages].filter((n) => !successNames.has(n)));
         set({ packages: updated, selectedPackages: next });

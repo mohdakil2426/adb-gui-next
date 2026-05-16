@@ -12,6 +12,7 @@ interface Options {
   getFileAccessMode: (path: string) => backend.FileAccessMode;
   historyIndexRef: React.RefObject<number>;
   loadRequestIdRef: React.RefObject<number>;
+  navHistoryRef: React.RefObject<string[]>;
   selectedSerialRef: React.RefObject<string | null>;
   setCreateError: (v: string) => void;
   setCreateName: (v: string) => void;
@@ -22,11 +23,12 @@ interface Options {
   setIsLoading: (v: boolean) => void;
   setIsMultiSelectMode: (v: boolean) => void;
   setLoadError: (v: LoadError) => void;
-  setNavHistory: (updater: (prev: string[]) => string[]) => void;
+  setNavHistory: (v: string[]) => void;
   setRenamingName: (v: string | null) => void;
   setSearchQuery: (v: string) => void;
   setSelectedNames: (v: Set<string>) => void;
-  setTreeRefreshKey: (updater: (k: number) => number) => void;
+  setTreeRefreshKey: (v: number) => void;
+  treeRefreshKeyRef: React.RefObject<number>;
 }
 
 export function useFileExplorerLoader(options: Options) {
@@ -36,6 +38,7 @@ export function useFileExplorerLoader(options: Options) {
     getFileAccessMode,
     historyIndexRef,
     loadRequestIdRef,
+    navHistoryRef,
     selectedSerialRef,
     setCreateError,
     setCreateName,
@@ -51,6 +54,7 @@ export function useFileExplorerLoader(options: Options) {
     setSearchQuery,
     setSelectedNames,
     setTreeRefreshKey,
+    treeRefreshKeyRef,
   } = options;
 
   const loadFiles = useCallback(
@@ -92,17 +96,14 @@ export function useFileExplorerLoader(options: Options) {
         setCurrentPath(targetPath);
         currentPathRef.current = targetPath;
         localStorage.setItem('fe.currentPath', targetPath);
-        setTreeRefreshKey((k) => k + 1);
+        setTreeRefreshKey(treeRefreshKeyRef.current + 1);
         if (pushToHistory) {
           const currentIdx = historyIndexRef.current ?? 0;
-          setNavHistory((prev) => {
-            const truncated = prev.slice(0, currentIdx + 1);
-            if (truncated[truncated.length - 1] === targetPath) {
-              return truncated;
-            }
-            const next = [...truncated, targetPath];
-            return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
-          });
+          const prev = navHistoryRef.current;
+          const truncated = prev.slice(0, currentIdx + 1);
+          const next =
+            truncated[truncated.length - 1] === targetPath ? truncated : [...truncated, targetPath];
+          setNavHistory(next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next);
           const newIdx = Math.min(currentIdx + 1, MAX_HISTORY - 1);
           historyIndexRef.current = newIdx;
           setHistoryIndex(newIdx);
@@ -128,6 +129,7 @@ export function useFileExplorerLoader(options: Options) {
       getFileAccessMode,
       historyIndexRef,
       loadRequestIdRef,
+      navHistoryRef,
       selectedSerialRef,
       setCreateError,
       setCreateName,
@@ -143,6 +145,7 @@ export function useFileExplorerLoader(options: Options) {
       setSearchQuery,
       setSelectedNames,
       setTreeRefreshKey,
+      treeRefreshKeyRef,
     ],
   );
 
@@ -154,31 +157,26 @@ export function useFileExplorerLoader(options: Options) {
     const newIndex = currentIdx - 1;
     historyIndexRef.current = newIndex;
     setHistoryIndex(newIndex);
-    setNavHistory((prev) => {
-      const targetPath = prev[newIndex];
-      if (targetPath) {
-        void loadFiles(targetPath, false);
-      }
-      return prev;
-    });
-  }, [historyIndexRef, loadFiles, setHistoryIndex, setNavHistory]);
+    const targetPath = navHistoryRef.current[newIndex];
+    if (targetPath) {
+      void loadFiles(targetPath, false);
+    }
+  }, [historyIndexRef, loadFiles, navHistoryRef, setHistoryIndex]);
 
   const handleGoForward = useCallback(() => {
     const currentIdx = historyIndexRef.current ?? 0;
-    setNavHistory((prev) => {
-      if (currentIdx >= prev.length - 1) {
-        return prev;
-      }
-      const newIndex = currentIdx + 1;
-      historyIndexRef.current = newIndex;
-      setHistoryIndex(newIndex);
-      const targetPath = prev[newIndex];
-      if (targetPath) {
-        void loadFiles(targetPath, false);
-      }
-      return prev;
-    });
-  }, [historyIndexRef, loadFiles, setHistoryIndex, setNavHistory]);
+    const history = navHistoryRef.current;
+    if (currentIdx >= history.length - 1) {
+      return;
+    }
+    const newIndex = currentIdx + 1;
+    historyIndexRef.current = newIndex;
+    setHistoryIndex(newIndex);
+    const targetPath = history[newIndex];
+    if (targetPath) {
+      void loadFiles(targetPath, false);
+    }
+  }, [historyIndexRef, loadFiles, navHistoryRef, setHistoryIndex]);
 
   return { handleGoBack, handleGoForward, loadFiles };
 }

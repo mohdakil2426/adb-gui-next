@@ -20,7 +20,7 @@ export const CheckboxItem = memo(function CheckboxItem({
   return (
     <div
       className={cn(
-        'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+        'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
         checked
           ? 'border-primary bg-primary'
           : disabled
@@ -29,7 +29,7 @@ export const CheckboxItem = memo(function CheckboxItem({
         className,
       )}
     >
-      {checked ? <Check className="h-3 w-3 text-primary-foreground" /> : null}
+      {checked ? <Check className="size-3 text-primary-foreground" /> : null}
     </div>
   );
 });

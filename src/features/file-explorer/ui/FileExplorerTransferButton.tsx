@@ -34,20 +34,20 @@ export function FileExplorerTransferButton({
           size="icon"
           variant="ghost"
         >
-          <ArrowUpToLine className="h-4 w-4 shrink-0" />
+          <ArrowUpToLine className="size-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onImportFile}>
-          <File className="h-4 w-4 shrink-0" />
+          <File className="size-4 shrink-0" />
           Import File
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onImportFolder}>
-          <FolderOpen className="h-4 w-4 shrink-0" />
+          <FolderOpen className="size-4 shrink-0" />
           Import Folder
         </DropdownMenuItem>
         <DropdownMenuItem disabled={isPullDisabled || isPushing} onClick={onExport}>
-          <ArrowDownToLine className="h-4 w-4 shrink-0" />
+          <ArrowDownToLine className="size-4 shrink-0" />
           Export
         </DropdownMenuItem>
       </DropdownMenuContent>

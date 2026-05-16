@@ -52,11 +52,11 @@ export function DeleteDialog({
                     return (
                       <li className="flex min-w-0 items-start gap-1.5" key={name}>
                         {file?.type === 'Directory' ? (
-                          <Folder className="h-3 w-3 shrink-0" />
+                          <Folder className="size-3 shrink-0" />
                         ) : file?.type === 'Symlink' ? (
-                          <Link className="h-3 w-3 shrink-0" />
+                          <Link className="size-3 shrink-0" />
                         ) : (
-                          <File className="h-3 w-3 shrink-0" />
+                          <File className="size-3 shrink-0" />
                         )}
                         <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span>
                       </li>
@@ -78,9 +78,9 @@ export function DeleteDialog({
             onClick={onConfirm}
           >
             {isDeleting ? (
-              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+              <Loader2 className="size-4 shrink-0 animate-spin" />
             ) : (
-              <Trash2 className="h-4 w-4 shrink-0" />
+              <Trash2 className="size-4 shrink-0" />
             )}
             Delete permanently
           </AlertDialogAction>

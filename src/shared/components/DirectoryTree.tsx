@@ -177,29 +177,28 @@ function TreeRow({ node, depth, currentPath, onSelect, onToggle }: TreeRowProps)
         tabIndex={0}
       >
         {/* Expand chevron — only for directories */}
-        <span
-          className="flex size-4 shrink-0 items-center justify-center"
-          onClick={
-            node.isDirectory
-              ? (e: React.MouseEvent) => {
-                  e.stopPropagation();
-                  onToggle(node.path);
-                }
-              : undefined
-          }
-        >
-          {node.isLoading ? (
-            <Loader2 className="size-3.5 animate-spin" />
-          ) : node.isDirectory ? (
-            node.isExpanded ? (
+        {node.isDirectory ? (
+          <button
+            aria-label={node.isExpanded ? 'Collapse' : 'Expand'}
+            className="flex size-4 shrink-0 items-center justify-center"
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+              onToggle(node.path);
+            }}
+            tabIndex={-1}
+            type="button"
+          >
+            {node.isLoading ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : node.isExpanded ? (
               <ChevronDown className="size-4" />
             ) : (
               <ChevronRight className="size-4 opacity-50" />
-            )
-          ) : (
-            <span className="size-4" /> // spacer for file alignment
-          )}
-        </span>
+            )}
+          </button>
+        ) : (
+          <span className="size-4" /> // spacer for file alignment
+        )}
 
         {/* Icon */}
         {node.isDirectory ? (

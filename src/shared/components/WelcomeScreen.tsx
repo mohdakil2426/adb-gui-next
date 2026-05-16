@@ -19,7 +19,7 @@ export function WelcomeScreen({ progress }: WelcomeScreenProps) {
         />
 
         <div className="flex w-56 flex-col gap-2">
-          <h1 className="text-center font-bold text-foreground text-xl">ADB GUI Next</h1>
+          <h1 className="text-center font-semibold text-foreground text-xl">ADB GUI Next</h1>
           <Progress aria-label="Loading ADB GUI Next" className="h-2" value={clampedProgress} />
         </div>
       </div>

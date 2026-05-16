@@ -35,7 +35,7 @@ export function SourceSelectionSection({
       <FieldGroup>
         {PROVIDERS.map((provider) => (
           <Field
-            className="justify-between rounded-lg border px-3 py-3"
+            className="justify-between rounded-lg border p-3"
             data-disabled={activeProviders.includes(provider.id) && activeProviders.length <= 1}
             key={provider.id}
             orientation="horizontal"

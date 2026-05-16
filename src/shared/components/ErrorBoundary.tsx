@@ -46,8 +46,8 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-destructive/20 blur-xl" />
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-destructive/10">
-              <AlertTriangle aria-hidden="true" className="h-6 w-6 text-destructive" />
+            <div className="relative flex size-12 items-center justify-center rounded-xl bg-destructive/10">
+              <AlertTriangle aria-hidden="true" className="size-6 text-destructive" />
             </div>
           </div>
           <div className="flex flex-col gap-1">

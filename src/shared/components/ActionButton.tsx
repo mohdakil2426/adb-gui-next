@@ -61,8 +61,8 @@ export function ActionButton({
           <motion.div
             animate={{ scale: 1 }}
             className={tall ? '' : 'shrink-0'}
-            exit={{ scale: 0 }}
-            initial={{ scale: 0 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             key="check"
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           >

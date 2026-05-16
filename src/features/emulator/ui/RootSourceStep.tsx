@@ -261,7 +261,7 @@ export function RootSourceStep({
         id="root-source-continue"
         onClick={onContinue}
       >
-        Continue
+        Select Root Source
       </Button>
 
       <div className="flex flex-col gap-2 border-t pt-4">

@@ -51,9 +51,12 @@ export async function runExtractPayload({
     return;
   }
 
-  const partitionsToExtract = partitions
-    .filter((p) => p.selected && !completedPartitions.has(p.name))
-    .map((p) => p.name);
+  const partitionsToExtract: string[] = [];
+  for (const p of partitions) {
+    if (p.selected && !completedPartitions.has(p.name)) {
+      partitionsToExtract.push(p.name);
+    }
+  }
   if (partitionsToExtract.length === 0) {
     const selectedCount = partitions.filter((p) => p.selected).length;
     if (selectedCount > 0 && completedPartitions.size > 0) {

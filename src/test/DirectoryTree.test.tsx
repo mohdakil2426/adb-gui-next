@@ -48,7 +48,7 @@ describe('DirectoryTree', () => {
     );
 
     await user.click(screen.getByText('root'));
-    const rootToggle = screen.getByRole('treeitem', { name: /root/i }).querySelector('span');
+    const rootToggle = screen.getByRole('treeitem', { name: /root/i }).querySelector('button');
     expect(rootToggle).toBeTruthy();
     await user.click(rootToggle as HTMLElement);
 
@@ -71,7 +71,7 @@ describe('DirectoryTree', () => {
       <DirectoryTree currentPath="/sdcard/" onNavigate={vi.fn()} serial="device-a" />,
     );
 
-    const sdcardToggle = screen.getByRole('treeitem', { name: /sdcard/i }).querySelector('span');
+    const sdcardToggle = screen.getByRole('treeitem', { name: /sdcard/i }).querySelector('button');
     expect(sdcardToggle).toBeTruthy();
     await user.click(sdcardToggle as HTMLElement);
 

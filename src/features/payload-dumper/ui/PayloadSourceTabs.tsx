@@ -55,11 +55,11 @@ export function PayloadSourceTabs({
     >
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger className="flex items-center gap-2" value="local">
-          <FileArchive className="h-4 w-4" />
+          <FileArchive className="size-4" />
           Local File
         </TabsTrigger>
         <TabsTrigger className="flex items-center gap-2" value="remote">
-          <Globe className="h-4 w-4" />
+          <Globe className="size-4" />
           Remote URL
         </TabsTrigger>
       </TabsList>
@@ -93,12 +93,12 @@ export function PayloadSourceTabs({
           <div className="mt-4 flex min-w-0 gap-2">
             {isLoadingPartitions ? (
               <Button className="flex-1" onClick={onCancelLoadPartitions} variant="destructive">
-                <XCircle className="mr-2 h-4 w-4" />
-                Cancel Loading...
+                <XCircle className="mr-2 size-4" />
+                Cancel Loading…
               </Button>
             ) : (
               <Button className="w-full" onClick={onLoadRemotePartitions}>
-                <Globe className="mr-2 h-4 w-4" />
+                <Globe className="mr-2 size-4" />
                 Load Partitions from URL
               </Button>
             )}

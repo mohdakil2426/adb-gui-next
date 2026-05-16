@@ -19,10 +19,33 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 **Dashboard Wireless ADB UI persistence is complete (2026-05-16): collapsible open/closed state, IP address, and port field now persist across sessions via Zustand store with localStorage.**
 **File Explorer toolbar consolidation is complete (2026-05-16): New File, New Folder, and Export standalone buttons removed; all actions now live in the always-visible 3-dot More Actions menu. Import button replaced with unified Transfer dropdown containing Import File, Import Folder, and Export.**
 **File Explorer tree panel width persistence is complete (2026-05-16): user-resized tree width is saved to localStorage and restored on reload, defaulting to 280px on first use.**
+**react-doctor audit + fixes complete (2026-05-16):** Score 69→81/100. 137 issues fixed across 67+ files. 140 remain (mostly false positives). See REACT_DOCTOR_AUDIT_REPORT.md.
 
 ---
 
 ## Recently Completed
+
+### 2026-05-16 - react-doctor Audit & Fixes
+
+**Change:** Ran `react-doctor v0.1.6` (score 69/100, 277 issues). Used parallel subagents. Score: 81/100. Session interruption caused first-round fixes to be lost; all re-applied.
+
+**Fixed:**
+- 75 Tailwind `h-N w-N` → `size-N` (20 files)
+- Dead code: 11 backend.ts exports, 4 debug.ts, 2 queries.ts, 1 duplicate export, knip.json
+- Performance: Intl hoisting, bounce removal, passive listeners, DOM CSS batching, iteration combining, default prop, scale:0
+- A11y: DirectoryTree span→button, input-group keyboard, button labels
+- Design: ellipsis, em dash, bold→semibold, padding
+- React 19: `useContext` → `use()` (2 files)
+- State: useReducer in FileExplorerView (27→0 useState), InstallationTab, EmulatorLaunchTab, RootManualStep
+- Architecture: BottomPanel split (578→193 lines), MainLayout split (322→199 lines), FileExplorerMainPane booleans grouped
+- ES2023: tsconfig + toSorted()
+- useSyncExternalStore for viewport height
+
+**Reverted (caused regression):** LazyMotion migration, isVisible→useRef, event handler ref stabilization
+
+**Remaining 140 issues:** 68 shadcn exports, 12 Zustand batching, 8 test iterations, 6 autoFocus, 6 index-as-key, 5 false types, 4 lazy-motion (DO NOT FIX), 3 event-handler-refs (DO NOT FIX), 3 giant components, 2 async-in-loop, 2 hydration, 2 toSorted, 2 effect-handler
+
+**Verification:** format ✅ · lint ✅ · build ✅ · test 172/174 pass (2 pre-existing)
 
 ### 2026-05-16 - File Explorer Tree Panel Width Persistence
 

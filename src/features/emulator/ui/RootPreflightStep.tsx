@@ -137,7 +137,7 @@ export function RootPreflightStep({
                 </Button>
               </div>
               <p className="text-muted-foreground text-xs">
-                Cold Boot starts the emulator fresh without loading a saved state — strongly
+                Cold Boot starts the emulator fresh without loading a saved state: strongly
                 recommended for rooting.
               </p>
             </div>

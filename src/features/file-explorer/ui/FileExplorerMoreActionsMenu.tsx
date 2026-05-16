@@ -32,22 +32,22 @@ export function FileExplorerMoreActionsMenu({
           size="icon"
           variant="ghost"
         >
-          <MoreHorizontal className="h-4 w-4 shrink-0" />
+          <MoreHorizontal className="size-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onCreateFile}>
-          <FilePlus2 className="h-4 w-4 shrink-0" />
+          <FilePlus2 className="size-4 shrink-0" />
           New File
           <span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+N</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onCreateFolder}>
-          <FolderPlus className="h-4 w-4 shrink-0" />
+          <FolderPlus className="size-4 shrink-0" />
           New Folder
           <span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+Shift+N</span>
         </DropdownMenuItem>
         <DropdownMenuItem disabled={isPullDisabled} onClick={onExport}>
-          <Download className="h-4 w-4 shrink-0" />
+          <Download className="size-4 shrink-0" />
           Export
         </DropdownMenuItem>
       </DropdownMenuContent>
