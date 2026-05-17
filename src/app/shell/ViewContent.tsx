@@ -12,12 +12,13 @@ interface ViewContentProps {
 
 export function ViewContent({ activeView, mainPaddingBottom, renderContent }: ViewContentProps) {
   const isFileExplorerView = activeView === VIEWS.FILES;
+  const isMarketplaceView = activeView === VIEWS.MARKETPLACE;
 
   return (
     <div
       className={cn(
         'custom-scroll main-scroll-area flex-1 overflow-x-hidden',
-        isFileExplorerView ? 'overflow-hidden' : 'overflow-y-auto',
+        isFileExplorerView || isMarketplaceView ? 'overflow-hidden' : 'overflow-y-auto',
       )}
       id="main-content"
       role="main"
@@ -27,7 +28,7 @@ export function ViewContent({ activeView, mainPaddingBottom, renderContent }: Vi
       <div
         className={cn(
           'flex w-full flex-col p-4 sm:p-6',
-          isFileExplorerView ? 'h-full min-h-0' : 'min-h-full',
+          isFileExplorerView || isMarketplaceView ? 'h-full min-h-0' : 'min-h-full',
         )}
       >
         <div className="mx-auto flex min-h-0 w-full max-w-(--content-max-width) flex-1 flex-col overflow-hidden">

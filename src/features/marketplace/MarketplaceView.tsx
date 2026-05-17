@@ -33,10 +33,10 @@ export function ViewMarketplace() {
   const hasResults = results.length > 0;
 
   return (
-    <div className="relative flex flex-col gap-6 lg:flex-row">
+    <div className="relative flex h-full w-full flex-col gap-6 lg:flex-row">
       <h1 className="sr-only">Marketplace</h1>
       {/* Left Sidebar */}
-      <div className="z-10 flex h-fit w-full shrink-0 flex-col gap-4 lg:sticky lg:top-2 lg:w-56 xl:w-64">
+      <div className="flex w-full shrink-0 flex-col gap-4 lg:w-56 xl:w-64">
         <Card>
           <CardHeader className="gap-2 pb-4">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -70,7 +70,7 @@ export function ViewMarketplace() {
           </CardHeader>
         </Card>
 
-        <Card className="flex-1 shadow-sm">
+        <Card className="shadow-sm">
           <CardContent className="p-4">
             <FilterBar resultCount={results.length} />
           </CardContent>
@@ -78,8 +78,8 @@ export function ViewMarketplace() {
       </div>
 
       {/* Right Content */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-20 -mx-2 bg-background/95 px-2 pt-1 pb-4 backdrop-blur-md">
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden">
+        <div className="shrink-0">
           <SearchBar
             isSearching={isSearching}
             onChange={handleInputChange}
@@ -91,59 +91,61 @@ export function ViewMarketplace() {
           />
         </div>
 
-        {selectedApp && isDetailOpen ? (
-          <AppDetailView />
-        ) : hasResults ? (
-          <div className="mt-2 flex flex-col gap-4 pb-12">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-sm">Search Results</h3>
-              <span className="text-muted-foreground text-xs">Showing {results.length} apps</span>
-            </div>
-
-            {viewMode === 'grid' ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                {results.map((app) => (
-                  <AppCard
-                    app={app}
-                    key={`${app.source}-${app.packageName}`}
-                    onSelect={() => {
-                      openDetail(app);
-                    }}
-                  />
-                ))}
+        <div className="min-h-0 flex-1 overflow-y-auto pb-12">
+          {selectedApp && isDetailOpen ? (
+            <AppDetailView />
+          ) : hasResults ? (
+            <div className="mt-4 flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-sm">Search Results</h3>
+                <span className="text-muted-foreground text-xs">Showing {results.length} apps</span>
               </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {results.map((app) => (
-                  <AppListItem
-                    app={app}
-                    key={`${app.source}-${app.packageName}`}
-                    onSelect={() => {
-                      openDetail(app);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
 
-            <div className="mt-8">
-              <AttributionFooter />
-            </div>
-          </div>
-        ) : (
-          <div className="mt-2 flex-1 pb-12">
-            <MarketplaceEmptyState
-              hasQuery={hasQuery}
-              isSearching={isSearching}
-              onQuickSearch={handleQuickSearch}
-            />
-            {!(hasQuery || isSearching) && (
-              <div className="mt-12">
+              {viewMode === 'grid' ? (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                  {results.map((app) => (
+                    <AppCard
+                      app={app}
+                      key={`${app.source}-${app.packageName}`}
+                      onSelect={() => {
+                        openDetail(app);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {results.map((app) => (
+                    <AppListItem
+                      app={app}
+                      key={`${app.source}-${app.packageName}`}
+                      onSelect={() => {
+                        openDetail(app);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-8">
                 <AttributionFooter />
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="mt-4">
+              <MarketplaceEmptyState
+                hasQuery={hasQuery}
+                isSearching={isSearching}
+                onQuickSearch={handleQuickSearch}
+              />
+              {!(hasQuery || isSearching) && (
+                <div className="mt-12">
+                  <AttributionFooter />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <MarketplaceSettings />
