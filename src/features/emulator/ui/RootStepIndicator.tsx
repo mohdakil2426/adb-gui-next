@@ -1,7 +1,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { cn } from '@/shared/utils/cn';
 
-const STEPS = ['Preflight', 'Source', 'Manual', 'Rooting', 'Done'];
+const STEPS = ['Preflight', 'Setup', 'Patching', 'Verify'];
 
 interface RootStepIndicatorProps {
   stepIndex: number;

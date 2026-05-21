@@ -1,12 +1,4 @@
-import {
-  CheckCircle2,
-  Download,
-  FolderOpen,
-  Loader2,
-  RefreshCw,
-  ShieldCheck,
-  WifiOff,
-} from 'lucide-react';
+import { CheckCircle2, Download, FolderOpen, Loader2, RefreshCw, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
@@ -20,7 +12,6 @@ import { formatDisplayDate, formatFileSize } from '@/shared/utils/formatting';
 
 interface RootSourceStepProps {
   onContinue: () => void;
-  onManualMode: () => void;
   onSourceChange: (source: RootWizardSource) => void;
   source: RootWizardSource;
 }
@@ -30,12 +21,7 @@ type FetchState =
   | { status: 'ok'; release: backend.MagiskStableRelease }
   | { status: 'error'; message: string };
 
-export function RootSourceStep({
-  source,
-  onSourceChange,
-  onContinue,
-  onManualMode,
-}: RootSourceStepProps) {
+export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourceStepProps) {
   const [mode, setMode] = useState<'download' | 'local'>(
     source?.type === 'local' ? 'local' : 'download',
   );
@@ -261,25 +247,8 @@ export function RootSourceStep({
         id="root-source-continue"
         onClick={onContinue}
       >
-        Select Root Source
+        Start Automated Root →
       </Button>
-
-      <div className="flex flex-col gap-2 border-t pt-4">
-        <Button
-          className="w-full gap-2"
-          id="root-source-manual-mode"
-          onClick={onManualMode}
-          type="button"
-          variant="outline"
-        >
-          <ShieldCheck data-icon="inline-start" />
-          Manual Mode (FAKEBOOTIMG)
-        </Button>
-        <p className="text-center text-muted-foreground text-xs">
-          Use this when automated ramdisk patching fails or when you want Magisk inside the emulator
-          to patch the fake boot image itself.
-        </p>
-      </div>
     </div>
   );
 }

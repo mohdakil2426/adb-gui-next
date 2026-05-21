@@ -5,7 +5,7 @@ export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
 export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
 
 /** Wizard step for the root flow. */
-export type RootWizardStep = 'preflight' | 'source' | 'manual' | 'progress' | 'result';
+export type RootWizardStep = 'preflight' | 'setup' | 'progress' | 'result';
 
 /** Describes where the Magisk package will come from. */
 export type RootWizardSource = { type: 'stable' } | { type: 'local'; path: string } | null;
