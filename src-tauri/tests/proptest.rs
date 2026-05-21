@@ -21,11 +21,11 @@ fn test_coalescing_maintains_total_size() {
     proptest!(ProptestConfig::with_cases(256), |(extents: Vec<(u64, u64)>, block_size: u64)| {
         let total_size: u64 = extents.iter()
             .map(|(_, num)| num.saturating_mul(block_size.max(1)))
-            .sum();
+            .fold(0u64, u64::saturating_add);
         let coalesced_size: u64 = extents.iter()
             .filter(|(_, num)| *num > 0)
             .map(|(_, num)| num.saturating_mul(block_size.max(1)))
-            .sum();
+            .fold(0u64, u64::saturating_add);
         prop_assert_eq!(total_size, coalesced_size);
     });
 }
