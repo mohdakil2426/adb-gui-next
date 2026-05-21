@@ -109,21 +109,42 @@ jobs:
           targets: ${{ matrix.artifact-platform == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: Setup Apple Certificate
-        if: runner.os == 'macOS' && env.APPLE_CERTIFICATE != ''
+        if: runner.os == 'macOS'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID KEYCHAIN_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: $name"
+              exit 1
+            fi
+          done
+
+          if [ "${#APPLE_TEAM_ID}" -lt 3 ]; then
+            echo "::error::APPLE_TEAM_ID must be at least 3 characters"
+            exit 1
+          fi
+
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings -t 3600 -u build.keychain
           security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          
-          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Apple Development" | head -n 1)
+
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -E "Developer ID Application|Apple Distribution|Apple Development" | head -n 1)
+          if [ -z "$CERT_INFO" ]; then
+            echo "::error::No Apple code signing identity found in imported certificate"
+            security find-identity -v -p codesigning build.keychain
+            exit 1
+          fi
+
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
           echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> $GITHUB_ENV
 
