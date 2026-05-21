@@ -53,6 +53,27 @@ jobs:
       - name: Verify requested release version
         run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
 
+      - name: Verify macOS signing secrets
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID KEYCHAIN_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: $name"
+              exit 1
+            fi
+          done
+
+          if [ "${#APPLE_TEAM_ID}" -lt 3 ]; then
+            echo "::error::APPLE_TEAM_ID must be at least 3 characters"
+            exit 1
+          fi
+
       - name: Check formatting
         run: bun run format:check
 
