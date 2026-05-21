@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { listen } from '@tauri-apps/api/event';
+import { ShieldCheck, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -14,6 +15,7 @@ import {
   type RootWizardSource,
   useEmulatorManagerStore,
 } from '@/features/emulator/model/emulatorManagerStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { invalidateAvds } from '@/shared/utils/queries';
 import { RootManualStep } from './RootManualStep';
 import { RootPreflightStep } from './RootPreflightStep';
@@ -42,18 +44,18 @@ export function RootWizard({ avd }: RootWizardProps) {
   const cancelledRef = useRef(false);
   const autoScanKeyRef = useRef<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [setupTab, setSetupTab] = useState<'autopilot' | 'manual'>('autopilot');
   const scanKey = `${avd.name}:${avd.serial ?? 'stopped'}`;
-  // Map wizard step to STEPS index
+
+  // Map wizard step to STEPS index: Preflight (0), Setup (1), Patching (2), Verify (3)
   const stepIndex =
     rootWizard.step === 'preflight'
       ? 0
-      : rootWizard.step === 'source'
+      : rootWizard.step === 'setup'
         ? 1
-        : rootWizard.step === 'manual'
+        : rootWizard.step === 'progress'
           ? 2
-          : rootWizard.step === 'progress'
-            ? 3
-            : 4;
+          : 3;
   // Listen for root:progress events from Tauri backend.
   useEffect(() => {
     const unlistenPromise = listen<backend.RootProgress>('root:progress', (event) => {
@@ -74,9 +76,9 @@ export function RootWizard({ avd }: RootWizardProps) {
     try {
       const scan = await ScanAvdRootReadiness(avd.name, avd.serial);
       setPreflightScan(scan);
-      // Auto-proceed to Source if everything is green.
+      // Auto-proceed to Setup if everything is green.
       if (scan.canProceed && !scan.hasWarnings) {
-        setRootWizardStep('source');
+        setRootWizardStep('setup');
       }
     } catch (err) {
       toast.error(`Preflight scan failed: ${String(err)}`);
@@ -203,7 +205,8 @@ export function RootWizard({ avd }: RootWizardProps) {
   }
   const handleTryManual = useCallback(() => {
     resetRootWizard();
-    setRootWizardStep('manual');
+    setRootWizardStep('setup');
+    setSetupTab('manual');
   }, [resetRootWizard, setRootWizardStep]);
   return (
     <div className="flex flex-col gap-6">
@@ -215,7 +218,7 @@ export function RootWizard({ avd }: RootWizardProps) {
           isScanning={isScanning}
           onColdBoot={handleColdBoot}
           onContinue={() => {
-            setRootWizardStep('source');
+            setRootWizardStep('setup');
           }}
           onLaunch={handleLaunch}
           onRescan={() => {
@@ -227,25 +230,37 @@ export function RootWizard({ avd }: RootWizardProps) {
           scan={rootWizard.preflightScan}
         />
       )}
-      {rootWizard.step === 'source' && (
-        <RootSourceStep
-          onContinue={handleContinue}
-          onManualMode={() => {
-            setRootWizardStep('manual');
-          }}
-          onSourceChange={handleSourceChange}
-          source={rootWizard.source}
-        />
-      )}
-      {rootWizard.step === 'manual' && (
-        <RootManualStep
-          avdName={avd.name}
-          onBack={() => {
-            setRootWizardStep('source');
-          }}
-          onColdBoot={handleColdBoot}
-          serial={avd.serial ?? null}
-        />
+      {rootWizard.step === 'setup' && (
+        <div className="flex flex-col gap-6">
+          <Tabs
+            className="w-full"
+            onValueChange={(v) => setSetupTab(v as 'autopilot' | 'manual')}
+            value={setupTab}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger className="gap-2" value="autopilot">
+                <Zap className="size-4 text-primary" />
+                Autopilot (Automated Magisk Patch)
+              </TabsTrigger>
+              <TabsTrigger className="gap-2" value="manual">
+                <ShieldCheck className="size-4 text-warning" />
+                Manual Fallback (FAKEBOOTIMG)
+              </TabsTrigger>
+            </TabsList>
+            <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+              <TabsContent value="autopilot">
+                <RootSourceStep
+                  onContinue={handleContinue}
+                  onSourceChange={handleSourceChange}
+                  source={rootWizard.source}
+                />
+              </TabsContent>
+              <TabsContent value="manual">
+                <RootManualStep avdName={avd.name} serial={avd.serial ?? null} />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
       )}
       {rootWizard.step === 'progress' && (
         <RootProgressStep

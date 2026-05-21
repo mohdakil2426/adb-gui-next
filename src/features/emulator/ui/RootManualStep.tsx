@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  CheckCircle2,
-  FileCheck2,
-  FolderOpen,
-  Loader2,
-  RefreshCw,
-  ShieldCheck,
-} from 'lucide-react';
+import { CheckCircle2, FileCheck2, FolderOpen, Loader2, ShieldCheck } from 'lucide-react';
 import { useReducer } from 'react';
 import { toast } from 'sonner';
 import {
@@ -16,6 +8,7 @@ import {
   SelectRootPackageFile,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
 import { DropZone } from '@/shared/components/DropZone';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
@@ -73,12 +66,11 @@ function reducer(state: State, action: Action): State {
 
 interface RootManualStepProps {
   avdName: string;
-  onBack: () => void;
-  onColdBoot: () => void;
   serial: string | null;
 }
 
-export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManualStepProps) {
+export function RootManualStep({ avdName, serial }: RootManualStepProps) {
+  const { setRootWizardResult } = useEmulatorManagerStore();
   const [state, dispatch] = useReducer(reducer, {
     packagePath: null,
     patchedImagePath: null,
@@ -141,6 +133,16 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
       });
       dispatch({ type: 'FINALIZE_SUCCESS', payload: result });
       toast.success('Manual patch installed');
+
+      // Map FinalizeResult to RootAvdResult for unified Result Screen
+      const avdResult: backend.RootAvdResult = {
+        activationStatus: 'patchInstalled',
+        magiskVersion: 'Manual',
+        managerInstalled: true,
+        message: result.nextBootRecommendation || 'Manual patch installed successfully.',
+        patchedRamdiskPath: '',
+      };
+      setRootWizardResult(avdResult);
     } catch (err) {
       const message = String(err);
       dispatch({ type: 'SET_ERROR', payload: message });
@@ -284,17 +286,6 @@ export function RootManualStep({ avdName, serial, onBack, onColdBoot }: RootManu
           </AlertDescription>
         </Alert>
       ) : null}
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Button className="gap-2" onClick={onBack} type="button" variant="outline">
-          <ArrowLeft data-icon="inline-start" />
-          Back
-        </Button>
-        <Button className="gap-2" onClick={onColdBoot} type="button" variant="outline">
-          <RefreshCw data-icon="inline-start" />
-          Cold Boot
-        </Button>
-      </div>
     </div>
   );
 }

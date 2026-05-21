@@ -119,7 +119,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /select root source/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /start automated root/i }));
 
     expect(await screen.findByText('Patch Installed')).toBeInTheDocument();
     expect(screen.queryByText('Root Successful!')).not.toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /select root source/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /start automated root/i }));
     await userEvent.click(await screen.findByRole('button', { name: /verify root/i }));
 
     expect(await screen.findByText('Root Verified')).toBeInTheDocument();
@@ -177,7 +177,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /manual mode/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
     expect(await screen.findByText('Manual Mode (FAKEBOOTIMG)')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
@@ -196,7 +196,7 @@ describe('RootWizard', () => {
       avdName: runningAvd.name,
       serial: runningAvd.serial,
     });
-    expect(await screen.findByText('Manual Patch Installed')).toBeInTheDocument();
+    expect(await screen.findByText('Patch Installed')).toBeInTheDocument();
   });
 
   it('finalizes manual root with a user-selected local patched image', async () => {
@@ -223,7 +223,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /manual mode/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
     await userEvent.click(screen.getByRole('button', { name: /create fakeboot/i }));
     await screen.findByText('/sdcard/Download/fakeboot.img');
@@ -263,7 +263,7 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: /manual mode/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
     await userEvent.click(screen.getByRole('button', { name: /create fakeboot/i }));
     await screen.findByText('/sdcard/Download/fakeboot.img');
