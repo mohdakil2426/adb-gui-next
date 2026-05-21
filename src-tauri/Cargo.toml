@@ -1,6 +1,6 @@
 [package]
 name = "adb-gui-next"
-version = "0.2.0"
+version = "0.2.5"
 description = "ADB GUI Next for Android device workflows"
 authors = ["akila"]
 edition = "2024"

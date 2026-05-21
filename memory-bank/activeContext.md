@@ -2,7 +2,7 @@
 
 ## Current State
 
-ADB GUI Next is a fully functional Tauri 2 desktop application on `release/v0.2.0` branch (version bumped from 0.1.0 → 0.2.0).
+ADB GUI Next is a fully functional Tauri 2 desktop application on `main` with release prep in progress for v0.2.5, including macOS support.
 All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 shadcn frontend audit implementation are complete.
 **Flasher Spacing Layout and Drop Zone Centering is complete (2026-05-21):** Both Flasher view cards use symmetrical vertical flex boxes (`flex flex-1 flex-col`). Sideload drop zone area sits in the exact vertical center of the card via top and bottom `flex-grow` spacers, and has protective min-height gaps to prevent visual squishing relative to the recovery helper text.
 **Emulator Root Tabbed Setup & Simplified Wizard is complete (2026-05-22):** The root wizard step timeline is reorganized into a clean 4-stage flow (Preflight ➔ Setup ➔ Patching ➔ Verify). The Preflight stage has been made manual, requiring the user to explicitly click "Start Preflight Scan" (which displays checks without auto-proceeding once green) and then click "Continue to Setup →" to progress. Within the Setup stage, a horizontal secondary tab layout embeds Autopilot (Automated Magisk Patch) and Manual Fallback (FAKEBOOTIMG) side-by-side. Transition between modes is handled seamlessly (e.g. failing Autopilot guides the user directly to the active Manual tab). Both modes route through a unified, premium Verification & Result screen. In the Manual mode layout, the "Create fakeboot.img" action button is stacked vertically, full-width, directly below the "Choose Magisk Package" card to ensure high visual consistency and match the premium design guidelines.
@@ -26,6 +26,12 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-05-22 - v0.2.5 Release Prep
+
+**Change:** Bumped the app version from 0.2.0 to 0.2.5 across `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, and `src-tauri/tauri.conf.json`. Added v0.2.5 release notes with Windows, Linux, and macOS universal download names, and updated the manual release workflow default to 0.2.5.
+
+**Verification:** `bun run release:verify` ✅ · `bun scripts/verify-release-version.mjs 0.2.5` ✅ · `bun run format:check` ✅ · `bun run lint:web` ✅ · `bun run lint:rust` ✅ · `bun run test` ✅ · `bun run build` ✅ · `cargo test --no-run` ✅. Local `cargo test` execution still hits the known Windows Tauri loader error `STATUS_ENTRYPOINT_NOT_FOUND`.
 
 ### 2026-05-22 - Emulator Root Tabbed Setup & Simplified Wizard
 
