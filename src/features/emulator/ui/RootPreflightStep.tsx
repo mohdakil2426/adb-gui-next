@@ -204,28 +204,44 @@ export function RootPreflightStep({
       {/* Actions */}
       <div className="flex flex-col gap-2">
         {scan ? (
+          <>
+            <Button
+              className="w-full"
+              disabled={!canProceed || isScanning}
+              id="preflight-continue-btn"
+              onClick={onContinue}
+            >
+              Continue to Setup →
+            </Button>
+            <Button
+              className="w-full"
+              disabled={isScanning}
+              id="preflight-rescan-btn"
+              onClick={onRescan}
+              variant="outline"
+            >
+              <RefreshCw
+                className={cn('size-4', isScanning && 'animate-spin')}
+                data-icon="inline-start"
+              />
+              Rescan Checklist
+            </Button>
+          </>
+        ) : (
           <Button
             className="w-full"
-            disabled={!canProceed || isScanning}
-            id="preflight-continue-btn"
-            onClick={onContinue}
+            disabled={isScanning}
+            id="preflight-rescan-btn"
+            onClick={onRescan}
           >
-            Continue to Source Selection →
+            {isScanning ? (
+              <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
+            ) : (
+              <RefreshCw className="size-4 animate-spin" data-icon="inline-start" />
+            )}
+            Start Preflight Scan
           </Button>
-        ) : null}
-        <Button
-          className="w-full"
-          disabled={isScanning}
-          id="preflight-rescan-btn"
-          onClick={onRescan}
-          variant="outline"
-        >
-          <RefreshCw
-            className={cn('size-4', isScanning && 'animate-spin')}
-            data-icon="inline-start"
-          />
-          {scan ? 'Rescan' : 'Scan'}
-        </Button>
+        )}
       </div>
 
       {/* Why info */}

@@ -39,12 +39,12 @@ export function RootWizard({ avd }: RootWizardProps) {
     setPreflightScan,
     resetRootWizard,
     setActiveTab,
+    setSetupTab,
   } = useEmulatorManagerStore();
   const queryClient = useQueryClient();
   const cancelledRef = useRef(false);
   const autoScanKeyRef = useRef<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [setupTab, setSetupTab] = useState<'autopilot' | 'manual'>('autopilot');
   const scanKey = `${avd.name}:${avd.serial ?? 'stopped'}`;
 
   // Map wizard step to STEPS index: Preflight (0), Setup (1), Patching (2), Verify (3)
@@ -76,27 +76,12 @@ export function RootWizard({ avd }: RootWizardProps) {
     try {
       const scan = await ScanAvdRootReadiness(avd.name, avd.serial);
       setPreflightScan(scan);
-      // Auto-proceed to Setup if everything is green.
-      if (scan.canProceed && !scan.hasWarnings) {
-        setRootWizardStep('setup');
-      }
     } catch (err) {
       toast.error(`Preflight scan failed: ${String(err)}`);
     } finally {
       setIsScanning(false);
     }
-  }, [avd.name, avd.serial, setPreflightScan, setRootWizardStep]);
-  // Trigger scan automatically when entering preflight step.
-  useEffect(() => {
-    if (rootWizard.step !== 'preflight') {
-      autoScanKeyRef.current = null;
-      return;
-    }
-    if (rootWizard.preflightScan === null && !isScanning && autoScanKeyRef.current !== scanKey) {
-      autoScanKeyRef.current = scanKey;
-      void runScan();
-    }
-  }, [rootWizard.step, rootWizard.preflightScan, isScanning, runScan, scanKey]);
+  }, [avd.name, avd.serial, setPreflightScan]);
   function handleSourceChange(src: RootWizardSource) {
     setRootWizardSource(src);
   }
@@ -207,7 +192,7 @@ export function RootWizard({ avd }: RootWizardProps) {
     resetRootWizard();
     setRootWizardStep('setup');
     setSetupTab('manual');
-  }, [resetRootWizard, setRootWizardStep]);
+  }, [resetRootWizard, setRootWizardStep, setSetupTab]);
   return (
     <div className="flex flex-col gap-6">
       <RootStepIndicator stepIndex={stepIndex} />
@@ -235,16 +220,16 @@ export function RootWizard({ avd }: RootWizardProps) {
           <Tabs
             className="w-full"
             onValueChange={(v) => setSetupTab(v as 'autopilot' | 'manual')}
-            value={setupTab}
+            value={rootWizard.setupTab}
           >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger className="gap-2" value="autopilot">
                 <Zap className="size-4 text-primary" />
-                Autopilot (Automated Magisk Patch)
+                Autopilot (Legacy Magisk ≤ v25.2)
               </TabsTrigger>
               <TabsTrigger className="gap-2" value="manual">
-                <ShieldCheck className="size-4 text-warning" />
-                Manual Fallback (FAKEBOOTIMG)
+                <ShieldCheck className="size-4 text-success" />
+                Manual FAKEBOOTIMG (Modern Magisk v26 - v30+)
               </TabsTrigger>
             </TabsList>
             <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">

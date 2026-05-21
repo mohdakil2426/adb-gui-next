@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { backend } from '@/desktop/models';
@@ -84,21 +84,29 @@ describe('RootWizard', () => {
     useEmulatorManagerStore.getState().reset();
   });
 
-  it('does not rapidly retry the automatic preflight scan after a scan error', async () => {
-    scanAvdRootReadinessMock.mockRejectedValue(new Error('adb offline'));
+  it('triggers preflight scan when clicking Start Preflight Scan button and allows rescan', async () => {
+    scanAvdRootReadinessMock.mockRejectedValueOnce(new Error('adb offline'));
 
     render(<RootWizard avd={runningAvd} />);
 
-    await waitFor(() => {
-      expect(scanAvdRootReadinessMock).toHaveBeenCalledTimes(1);
-    });
+    // Scan has not run yet
+    expect(scanAvdRootReadinessMock).not.toHaveBeenCalled();
 
-    await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
-    });
-
+    // Click Start Preflight Scan
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
     expect(scanAvdRootReadinessMock).toHaveBeenCalledTimes(1);
+
+    // Mock successful rescan
+    scanAvdRootReadinessMock.mockResolvedValueOnce({
+      checks: [],
+      canProceed: true,
+      hasWarnings: false,
+      recommendedAction: null,
+    });
+
+    // We should be able to trigger rescan if it failed (it stays on preflight page)
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    expect(scanAvdRootReadinessMock).toHaveBeenCalledTimes(2);
   });
 
   it('shows patch-installed state instead of root success after patching', async () => {
@@ -119,6 +127,8 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /continue to setup/i }));
     await userEvent.click(await screen.findByRole('button', { name: /start automated root/i }));
 
     expect(await screen.findByText('Patch Installed')).toBeInTheDocument();
@@ -150,6 +160,8 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /continue to setup/i }));
     await userEvent.click(await screen.findByRole('button', { name: /start automated root/i }));
     await userEvent.click(await screen.findByRole('button', { name: /verify root/i }));
 
@@ -177,8 +189,10 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
-    expect(await screen.findByText('Manual Mode (FAKEBOOTIMG)')).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /continue to setup/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fakebootimg/i }));
+    expect(await screen.findByText('Manual FAKEBOOTIMG Mode')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
     await userEvent.click(screen.getByRole('button', { name: /create fakeboot/i }));
@@ -223,7 +237,9 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /continue to setup/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fakebootimg/i }));
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
     await userEvent.click(screen.getByRole('button', { name: /create fakeboot/i }));
     await screen.findByText('/sdcard/Download/fakeboot.img');
@@ -263,7 +279,9 @@ describe('RootWizard', () => {
 
     render(<RootWizard avd={runningAvd} />);
 
-    await userEvent.click(await screen.findByRole('tab', { name: /manual fallback/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /start preflight scan/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /continue to setup/i }));
+    await userEvent.click(await screen.findByRole('tab', { name: /manual fakebootimg/i }));
     await userEvent.click(screen.getByRole('button', { name: /choose magisk package/i }));
     await userEvent.click(screen.getByRole('button', { name: /create fakeboot/i }));
     await screen.findByText('/sdcard/Download/fakeboot.img');

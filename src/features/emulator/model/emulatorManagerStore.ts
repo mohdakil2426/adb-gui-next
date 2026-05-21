@@ -10,19 +10,42 @@ export type RootWizardStep = 'preflight' | 'setup' | 'progress' | 'result';
 /** Describes where the Magisk package will come from. */
 export type RootWizardSource = { type: 'stable' } | { type: 'local'; path: string } | null;
 
+export interface RootManualState {
+  error: string | null;
+  finalizeResult: backend.RootFinalizeResult | null;
+  isFinalizing: boolean;
+  isPreparing: boolean;
+  packagePath: string | null;
+  patchedImagePath: string | null;
+  prepareResult: backend.RootPreparationResult | null;
+}
+
 export interface RootWizardState {
   error: string | null;
   isVerifying: boolean;
+  manualState: RootManualState;
   preflightScan: backend.RootReadinessScan | null;
   progress: backend.RootProgress | null;
   result: backend.RootAvdResult | null;
+  setupTab: 'autopilot' | 'manual';
   source: RootWizardSource;
   step: RootWizardStep;
   verification: backend.RootVerificationResult | null;
 }
 
+const INITIAL_MANUAL_STATE: RootManualState = {
+  packagePath: null,
+  patchedImagePath: null,
+  prepareResult: null,
+  finalizeResult: null,
+  error: null,
+  isPreparing: false,
+  isFinalizing: false,
+};
+
 const INITIAL_ROOT_WIZARD: RootWizardState = {
   step: 'preflight',
+  setupTab: 'autopilot',
   source: null,
   progress: null,
   result: null,
@@ -30,12 +53,14 @@ const INITIAL_ROOT_WIZARD: RootWizardState = {
   isVerifying: false,
   error: null,
   preflightScan: null,
+  manualState: INITIAL_MANUAL_STATE,
 };
 
 interface EmulatorManagerState {
   activeTab: EmulatorManagerTab;
   pendingAction: EmulatorPendingAction;
   reset: () => void;
+  resetManualState: () => void;
   resetRootWizard: () => void;
   restorePlan: backend.RestorePlan | null;
   rootWizard: RootWizardState;
@@ -51,6 +76,8 @@ interface EmulatorManagerState {
   setRootWizardSource: (source: RootWizardSource) => void;
   setRootWizardStep: (step: RootWizardStep) => void;
   setSelectedAvdName: (name: string | null) => void;
+  setSetupTab: (tab: 'autopilot' | 'manual') => void;
+  updateManualState: (state: Partial<RootManualState>) => void;
 }
 
 const INITIAL_STATE = {
@@ -110,6 +137,28 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
 
   resetRootWizard: () => {
     set({ rootWizard: INITIAL_ROOT_WIZARD });
+  },
+
+  setSetupTab: (setupTab) => {
+    set((state) => ({ rootWizard: { ...state.rootWizard, setupTab } }));
+  },
+
+  updateManualState: (manualState) => {
+    set((state) => ({
+      rootWizard: {
+        ...state.rootWizard,
+        manualState: { ...state.rootWizard.manualState, ...manualState },
+      },
+    }));
+  },
+
+  resetManualState: () => {
+    set((state) => ({
+      rootWizard: {
+        ...state.rootWizard,
+        manualState: INITIAL_MANUAL_STATE,
+      },
+    }));
   },
 
   setRestorePlan: (restorePlan) => {

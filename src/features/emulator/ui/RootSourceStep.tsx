@@ -1,4 +1,12 @@
-import { CheckCircle2, Download, FolderOpen, Loader2, RefreshCw, WifiOff } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Download,
+  FolderOpen,
+  Loader2,
+  RefreshCw,
+  WifiOff,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FetchMagiskStableRelease, SelectRootPackageFile } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
@@ -75,13 +83,27 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h3 className="font-semibold text-base text-foreground">Select Magisk Source</h3>
+        <h3 className="font-semibold text-base text-foreground">
+          Select Magisk Source (Autopilot Mode)
+        </h3>
         <p className="mt-1 text-muted-foreground text-sm">
-          Magisk is the tool that gives your emulator root access. Choose the recommended
-          rootAVD-compatible package for automated patching, or pick a local file if you need a
-          specific fork for manual mode.
+          Magisk is the tool that gives your emulator root access. Choose the recommended legacy
+          rootAVD-compatible package for automated patching.
         </p>
       </div>
+
+      <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
+        <AlertTriangle className="size-4 animate-pulse text-warning" />
+        <AlertTitle className="font-semibold text-warning-foreground">
+          Magisk Version Constraint
+        </AlertTitle>
+        <AlertDescription className="mt-1 text-muted-foreground text-xs leading-relaxed">
+          Autopilot automated patching **only works with legacy Magisk versions (v25.2 and below)**.
+          If you are rooting using modern Magisk (v26.0 - v30.0+), please switch to the **Manual
+          FAKEBOOTIMG** tab above, as automated patching is incompatible with newer Magisk
+          structures.
+        </AlertDescription>
+      </Alert>
 
       {/* Mode toggle */}
       <ToggleGroup

@@ -5,6 +5,7 @@
 ADB GUI Next is a fully functional Tauri 2 desktop application on `release/v0.2.0` branch (version bumped from 0.1.0 → 0.2.0).
 All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 shadcn frontend audit implementation are complete.
 **Flasher Spacing Layout and Drop Zone Centering is complete (2026-05-21):** Both Flasher view cards use symmetrical vertical flex boxes (`flex flex-1 flex-col`). Sideload drop zone area sits in the exact vertical center of the card via top and bottom `flex-grow` spacers, and has protective min-height gaps to prevent visual squishing relative to the recovery helper text.
+**Emulator Root Tabbed Setup & Simplified Wizard is complete (2026-05-22):** The root wizard step timeline is reorganized into a clean 4-stage flow (Preflight ➔ Setup ➔ Patching ➔ Verify). The Preflight stage has been made manual, requiring the user to explicitly click "Start Preflight Scan" (which displays checks without auto-proceeding once green) and then click "Continue to Setup →" to progress. Within the Setup stage, a horizontal secondary tab layout embeds Autopilot (Automated Magisk Patch) and Manual Fallback (FAKEBOOTIMG) side-by-side. Transition between modes is handled seamlessly (e.g. failing Autopilot guides the user directly to the active Manual tab). Both modes route through a unified, premium Verification & Result screen. In the Manual mode layout, the "Create fakeboot.img" action button is stacked vertically, full-width, directly below the "Choose Magisk Package" card to ensure high visual consistency and match the premium design guidelines.
 ThemeToggle now cycles themes (Light → Dark → System) on single click with correct icon display and tooltip. Debloater has been optimized with Rust-side in-memory caching to prevent redundant data reloads on every navigation. `GetDebloatData()` returns packages, settings, backups, and list status in a single call, eliminating 3 redundant network round-trips.
 Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date.
 Emulator Manager is implemented and **fully working** on Windows. Root pipeline has been **fully modernized** (3-phase overhaul). **Universal Android Debloater (UAD) Integration is now complete** with Rust-side caching.
@@ -25,6 +26,25 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-05-22 - Emulator Root Tabbed Setup & Simplified Wizard
+
+**Change:** Restructured the Emulator Root tab to simplify the step-by-step wizard into a 4-stage pipeline (Preflight, Setup, Patching, Verify). Made preflight scan manual (replacing automated trigger and auto-proceed with explicit clicks and start button) and improved the Manual Fallback layout by vertically stacking the "Create fakeboot.img" button beneath the package picker card.
+
+**Fixed:**
+- Reorganized the step timeline to map to a simplified, abstract 4-stage flow.
+- Replaced the Source and Manual separate wizard steps with a unified Setup step using a horizontal tabs component.
+- Removed `useEffect`-based automatic scan on wizard load, introducing a manual "Start Preflight Scan" action button.
+- Prevented automatic wizard redirection to Setup step after a green preflight check, requiring an explicit user click on "Continue to Setup →".
+- Vertically stacked the "Choose Magisk Package" card and "Create fakeboot.img" action button full-width in the Manual fallback tab to match project UI consistency guidelines.
+- Implemented state redirection (`setSetupTab`) so that a failure in Autopilot's rooting step allows a smooth redirect directly to the active Manual Fallback tab.
+- Integrated manual finalization success (`FINALIZE_SUCCESS`) with the global store's `setRootWizardResult()` to feed into the unified premium Result and Verification screen.
+- Cleaned up manual mode props and redundant controls (`onBack`/`onColdBoot`).
+- Updated all associated React unit tests to use tab trigger role searches, manual preflight click sequences, and updated text labels.
+- Resolved Biome class sorting (`useSortedClasses`) and unused imports (`waitFor`) across refactored files.
+
+**Verification:** format ✅ · lint ✅ · build ✅ · test 174/174 pass
+
 
 ### 2026-05-21 - Flasher Spacing Layout and Drop Zone Centering
 

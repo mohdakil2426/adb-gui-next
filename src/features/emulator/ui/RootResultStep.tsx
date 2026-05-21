@@ -198,11 +198,12 @@ export function RootResultStep({
           variant="outline"
         >
           <ShieldCheck data-icon="inline-start" />
-          Try Manual Mode (FAKEBOOTIMG)
+          Switch to Manual FAKEBOOTIMG Mode
         </Button>
         <p className="text-muted-foreground text-xs">
-          Manual mode opens the Magisk app inside the emulator so it can patch the boot image
-          itself. Use this as a fallback if the automated pipeline fails.
+          Manual FAKEBOOTIMG mode is the **recommended primary method for modern Magisk (v26.0 -
+          v30.0+)**. It opens the Magisk app inside the emulator so you can patch the boot image
+          directly.
         </p>
         <Button className="w-full" id="root-result-retry" onClick={onReset} variant="ghost">
           Try Again
