@@ -41,6 +41,8 @@ zstd = "0.13"
 zip = "8.6.0"
 tauri-plugin-clipboard-manager = "2"
 urlencoding = "2"
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
+
 
 # OPS/OFP firmware format support
 aes = "0.9.0"

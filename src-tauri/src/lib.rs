@@ -30,6 +30,7 @@ fn build_log_targets() -> Vec<tauri_plugin_log::Target> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _ = fix_path_env::fix();
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()

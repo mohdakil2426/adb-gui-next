@@ -7,6 +7,7 @@ import { Separator } from '@/shared/ui/separator';
 import { SidebarTrigger } from '@/shared/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
+import { isLinux, isMac } from '@/shared/utils/platform';
 
 interface HeaderProps {
   activeTab: string;
@@ -43,20 +44,24 @@ export function Header({
 
       {/* Toolbar — pushed to the right */}
       <div className="ml-auto flex items-center gap-1.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-label="Device Manager"
-              className="size-8"
-              onClick={onLaunchDeviceManager}
-              size="icon"
-              variant="ghost"
-            >
-              <Cpu aria-hidden="true" className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Device Manager</TooltipContent>
-        </Tooltip>
+        {!isLinux && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label={isMac ? 'System Information' : 'Device Manager'}
+                className="size-8"
+                onClick={onLaunchDeviceManager}
+                size="icon"
+                variant="ghost"
+              >
+                <Cpu aria-hidden="true" className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {isMac ? 'System Information' : 'Device Manager'}
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         <Tooltip>
           <TooltipTrigger asChild>

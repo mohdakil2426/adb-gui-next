@@ -17,6 +17,7 @@ import { useLogStore } from '@/shared/stores/logStore';
 import { SidebarInset, SidebarProvider } from '@/shared/ui/sidebar';
 import { Toaster } from '@/shared/ui/sonner';
 import { cn } from '@/shared/utils/cn';
+import { isMac } from '@/shared/utils/platform';
 import { fetchAllDevices, queryKeys, STALE_TIME } from '@/shared/utils/queries';
 
 const LOADING_DURATION = 750;
@@ -63,11 +64,12 @@ export function MainLayout() {
   }, [refetchDevices]);
 
   const handleLaunchDeviceManager = useCallback(async () => {
+    const label = isMac ? 'System Information' : 'Device Manager';
     try {
       await LaunchDeviceManager();
-      toast.success('Device Manager launched successfully');
+      toast.success(`${label} launched successfully`);
     } catch (error) {
-      toast.error(`Failed to launch Device Manager: ${error}`);
+      toast.error(`Failed to launch ${label}: ${error}`);
     }
   }, []);
 

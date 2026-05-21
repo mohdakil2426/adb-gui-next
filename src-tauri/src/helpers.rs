@@ -155,7 +155,13 @@ pub fn ensure_executable_if_needed(_path: &Path) -> CmdResult<()> {
 pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     debug!("Resolving binary path for: {}", name);
     let file_name = binary_name(name);
-    let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
+    let os_dir = if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "darwin"
+    } else {
+        "linux"
+    };
 
     if let Ok(resource_dir) = app.path().resource_dir() {
         let candidates = [
@@ -191,7 +197,13 @@ pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
 }
 
 pub fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
-    let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
+    let os_dir = if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "darwin"
+    } else {
+        "linux"
+    };
 
     if let Some(app) = app
         && let Ok(resource_dir) = app.path().resource_dir()

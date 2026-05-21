@@ -22,6 +22,13 @@ pub fn launch_device_manager() -> CmdResult<()> {
             .spawn()
             .map_err(|error| error.to_string())?;
     }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("open")
+            .args(["-a", "System Information"])
+            .spawn()
+            .map_err(|error| error.to_string())?;
+    }
     Ok(())
 }
 
@@ -36,6 +43,15 @@ pub fn launch_terminal() -> CmdResult<()> {
         let _ = Command::new("cmd")
             .args(["/C", "start", "cmd", "/K", "cd", "/d"])
             .arg(directory)
+            .spawn()
+            .map_err(|error| error.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let _ = Command::new("open")
+            .arg("-a")
+            .arg("Terminal")
+            .arg(&directory)
             .spawn()
             .map_err(|error| error.to_string())?;
     }

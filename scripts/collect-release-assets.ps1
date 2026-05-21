@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory = $true)] [string] $Version,
-  [Parameter(Mandatory = $true)] [ValidateSet('windows','linux')] [string] $Platform,
+  [Parameter(Mandatory = $true)] [ValidateSet('windows','linux','macos')] [string] $Platform,
   [Parameter(Mandatory = $true)] [string] $OutputDir,
   [string] $Commit = $env:GITHUB_SHA,
   [string] $Branch = $env:GITHUB_REF_NAME,
@@ -60,6 +60,10 @@ The installer build is recommended for normal users.
 
   Compress-Archive -Path (Join-Path $portableRoot '*') -DestinationPath (Join-Path $out "AdbGuiNext-v${Version}-windows-x64-portable.zip") -Force
   Remove-Item -LiteralPath $portableRoot -Recurse -Force
+} elseif ($Platform -eq 'macos') {
+  Copy-SingleArtifact `
+    -Pattern (Join-Path $root 'src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg') `
+    -DestinationName "AdbGuiNext-v${Version}-macos-universal.dmg"
 } else {
   Copy-SingleArtifact `
     -Pattern (Join-Path $root 'src-tauri/target/release/bundle/deb/*.deb') `
@@ -70,11 +74,13 @@ The installer build is recommended for normal users.
     -DestinationName "AdbGuiNext-v${Version}-linux-x64.rpm"
 }
 
+$arch = if ($Platform -eq 'macos') { 'universal' } else { 'x64' }
+
 $buildInfo = [ordered]@{
   name = 'adb-gui-next'
   version = $Version
   platform = $Platform
-  arch = 'x64'
+  arch = $arch
   commit = $Commit
   branch = $Branch
   runId = $RunId
