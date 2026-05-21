@@ -30,6 +30,7 @@ impl CopyStrategy {
     }
 }
 
+#[cfg(target_arch = "x86_64")]
 pub fn detect_copy_strategy() -> CopyStrategy {
     if std::arch::is_x86_feature_detected!("avx512f") {
         CopyStrategy::Avx512
@@ -40,6 +41,11 @@ pub fn detect_copy_strategy() -> CopyStrategy {
     } else {
         CopyStrategy::Scalar
     }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn detect_copy_strategy() -> CopyStrategy {
+    CopyStrategy::Scalar
 }
 
 static COPY_STRATEGY: OnceLock<CopyStrategy> = OnceLock::new();
@@ -144,6 +150,11 @@ fn copy_sse2(dst: &mut [u8], src: &[u8]) {
 
 #[cfg(not(target_arch = "x86_64"))]
 fn copy_avx2(dst: &mut [u8], src: &[u8]) {
+    copy_scalar(dst, src);
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+fn copy_avx512(dst: &mut [u8], src: &[u8]) {
     copy_scalar(dst, src);
 }
 
