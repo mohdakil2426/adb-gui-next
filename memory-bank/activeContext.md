@@ -27,6 +27,14 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 
 ## Recently Completed
 
+### 2026-05-22 - v0.2.5 CI and Release Gate Hardening
+
+**Change:** Pushed the v0.2.5 release-prep branch state to `main` and fixed release/CI blockers found by GitHub Actions. Rust payload copy strategy detection is now x86_64-gated so macOS universal builds compile on arm64. Rust test expectations were corrected for current Magisk release naming and payload hash errors, and the proptest extent-size assertion now uses saturating addition. CI still compiles Rust tests on Windows, while Linux executes the full Rust test suite, avoiding the known Windows Tauri-linked test-loader crash without reducing Linux test coverage.
+
+**Release workflow:** macOS signing/notarization now wires `APPLE_TEAM_ID`, validates required Apple signing secrets, imports real Developer ID/Apple signing identities, and fails in release preflight before artifact builds if signing prerequisites are missing.
+
+**Verification:** Latest `main` CI run `26259366418` passed on Windows and Linux artifact jobs. Latest release run `26259858692` failed in `Release preflight` at `Verify macOS signing secrets` with `Missing required GitHub secret: APPLE_CERTIFICATE`; no `v0.2.5` GitHub release exists yet.
+
 ### 2026-05-22 - v0.2.5 Release Prep
 
 **Change:** Bumped the app version from 0.2.0 to 0.2.5 across `package.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`, and `src-tauri/tauri.conf.json`. Added v0.2.5 release notes with Windows, Linux, and macOS universal download names, and updated the manual release workflow default to 0.2.5.

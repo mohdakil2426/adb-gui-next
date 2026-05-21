@@ -4,6 +4,8 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+**v0.2.5 release gate status (2026-05-22):** Release prep and CI fixes are pushed to `main`. Latest CI run `26259366418` passes Windows and Linux artifact jobs. The release workflow is hardened to validate macOS Apple signing/notarization secrets in preflight and import a real signing identity for macOS. Release run `26259858692` fails fast at `Verify macOS signing secrets` with `Missing required GitHub secret: APPLE_CERTIFICATE`; `v0.2.5` has not been created yet. Required GitHub secrets are `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, and `KEYCHAIN_PASSWORD`.
+
 **Emulator Root Tabbed Setup & Simplified Wizard complete (2026-05-22):** Redesigned the Emulator Root Tab's step-by-step wizard to consolidate the timeline into a streamlined 4-stage pipeline (Preflight, Setup, Patching, Verify). Made preflight scan manual (replacing automated trigger and auto-proceed with explicit clicks and a "Start Preflight Scan" button) and improved the Manual Fallback layout by vertically stacking the "Create fakeboot.img" button beneath the package picker card. Embedded the Autopilot automated flow and FAKEBOOTIMG manual fallback flow to live side-by-side inside horizontal sub-tabs within the unified Setup stage. Integrated manual mode finalization with the store-level wizard results to route to the premium, unified result and verification layout, and implemented a smooth redirection to the Manual tab upon an automated patch failure. Verified and resolved all formatting, Biome checks, and React unit tests (174/174 pass).
 
 
