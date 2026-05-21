@@ -66,7 +66,7 @@ fn parse_stable_release(body: &serde_json::Value) -> CmdResult<MagiskStableRelea
         return Err("GitHub API response missing 'tag_name'".into());
     }
 
-    let version = body["name"].as_str().unwrap_or(&tag).trim_start_matches("Magisk ").to_string();
+    let version = body["name"].as_str().unwrap_or(&tag).to_string();
 
     let published_at = body["published_at"].as_str().unwrap_or("").to_string();
 

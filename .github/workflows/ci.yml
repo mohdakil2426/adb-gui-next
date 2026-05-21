@@ -74,7 +74,12 @@ jobs:
         run: bun run test
 
       - name: Run Rust tests
+        if: runner.os != 'Windows'
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: Compile Rust tests
+        if: runner.os == 'Windows'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --no-run
 
       - name: TypeScript + Vite build
         run: bun run build

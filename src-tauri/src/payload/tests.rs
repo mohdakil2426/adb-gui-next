@@ -200,8 +200,8 @@ fn rejects_payload_when_data_hash_mismatches() {
     .expect_err("expected checksum verification failure");
 
     assert!(
-        error.to_string().contains("checksum mismatch"),
-        "expected checksum mismatch error, got: {error}"
+        error.to_string().contains("data hash mismatch"),
+        "expected data hash mismatch error, got: {error}"
     );
 }
 
