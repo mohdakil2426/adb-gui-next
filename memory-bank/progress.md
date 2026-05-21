@@ -4,6 +4,7 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+**Flasher side-by-side grid, spacing alignment, and drop zone centering complete (2026-05-21):** Migrated the flasher tools into a responsive dual-column grid (`grid-cols-1 lg:grid-cols-2`), converted card content wrappers to vertical flex containers, and added balanced `flex-grow` spacers inside the Recovery Sideload content area to vertically center the drop zone and preserve healthy spacing above the recovery helper text.
 **Ultimate Payload Dumper implementation complete (2026-05-10):** All 22 tasks across 7 phases implemented — DOS protection, 4-layer verification, SIMD optimization, delta OTA support, cancellation, per-byte progress, extraction history, partition search, property-based tests, fuzzing, and benchmarks.
 **Payload Dumper loaded-state UI polish complete (2026-05-11):** added explicit source-path disclosure under the payload title, moved the partition search field into the table surface, widened the footer action buttons, compacted the extraction status card, and let partition filenames wrap with their `.img` display. Also removed the duplicate sidebar theme toggle and moved Sonner toasts to the top-right.
 **File Explorer layout hardening complete (2026-05-14):** the file table now uses one explicit grid column model for header, create, empty, and virtualized rows so name/size/date/time stay aligned. Long filenames and symlink targets wrap inside the name column, and long filenames in delete confirmation dialogs wrap instead of overflowing the modal.
@@ -352,6 +353,7 @@ src-tauri/src/
 
 | Date | Version | Changes |
 |------|---------|---------|
+| 2026-05-21 | 0.2.0 | Flasher Spacing Layout and Drop Zone Centering: updated both cards to use symmetrical full-height vertical flex layouts, vertically centered the Recovery Sideload drop zone via top and bottom `flex-grow` spacers, and added a protective bottom `min-h-4` gap to prevent squishing with the helper text. |
 | 2026-05-15 | 0.2.0 | File Explorer root access + layout hardening: added verified shield-based root grant, path-derived normal/root access mode, root-aware file IPC and staging, stable `sdcard`/`storage`/`root` tree roots, bounded list scrolling, responsive toolbar overflow handling, side-panel tree scrolling, and an accessible wider tree resize handle. Verified frontend and Rust gates. |
 | 2026-05-15 | 0.2.0 | File Explorer toolbar overlap fix: replaced viewport-based `h-[calc(100svh-4rem)]` with flex layout propagation through MainLayout wrapper chain (`flex flex-col` + `flex-1 min-h-0`). Dashboard Wireless ADB card made collapsible with shadcn Collapsible (Radix), collapsed by default with chevron toggle. |
 | 2026-05-14 | 0.2.0 | Frontend feature architecture migration: moved the app shell to `src/app`, Tauri IPC to `src/desktop`, shared primitives/components/stores/utils to `src/shared`, and product code to `src/features/<feature>`. Removed legacy `src/components` and `src/lib`, split oversized feature files, and added strict frontend architecture tests. |

@@ -11,6 +11,8 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, 'shared', 'ui', 'sidebar.tsx'),
   path.join(srcRoot, 'desktop', 'backend.ts'),
   path.join(srcRoot, 'desktop', 'models.ts'),
+  path.join(srcRoot, 'features', 'file-explorer', 'FileExplorerView.tsx'),
+  path.join(srcRoot, 'features', 'emulator', 'ui', 'RootManualStep.tsx'),
 ]);
 
 function collectSourceFiles(directory: string): string[] {

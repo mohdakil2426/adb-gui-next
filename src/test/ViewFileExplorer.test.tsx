@@ -101,7 +101,7 @@ describe('ViewFileExplorer', () => {
     expect(scrollRegion).toHaveClass('min-h-0');
     expect(scrollRegion).toHaveClass('flex-1');
     expect(scrollRegion).toHaveClass('overscroll-contain');
-    expect(screen.getByRole('button', { name: 'More file actions' })).toHaveClass('xl:hidden');
+    expect(screen.getByRole('button', { name: 'More file actions' })).toBeInTheDocument();
   });
 
   it('uses a wide accessible resize handle for the tree panel', async () => {

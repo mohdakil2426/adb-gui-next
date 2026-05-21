@@ -4,6 +4,7 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `release/v0.2.0` branch (version bumped from 0.1.0 → 0.2.0).
 All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 shadcn frontend audit implementation are complete.
+**Flasher Spacing Layout and Drop Zone Centering is complete (2026-05-21):** Both Flasher view cards use symmetrical vertical flex boxes (`flex flex-1 flex-col`). Sideload drop zone area sits in the exact vertical center of the card via top and bottom `flex-grow` spacers, and has protective min-height gaps to prevent visual squishing relative to the recovery helper text.
 ThemeToggle now cycles themes (Light → Dark → System) on single click with correct icon display and tooltip. Debloater has been optimized with Rust-side in-memory caching to prevent redundant data reloads on every navigation. `GetDebloatData()` returns packages, settings, backups, and list status in a single call, eliminating 3 redundant network round-trips.
 Marketplace Phase 1 architecture refactor is complete: singleton HTTP client (connection pooling), APK verification engine (JoinSet + Semaphore), heuristic scoring engine (8 weighted signals), bounded cache (capacity limits), language extraction from GitHub API, F-Droid installable fix, and dynamic trending date.
 Emulator Manager is implemented and **fully working** on Windows. Root pipeline has been **fully modernized** (3-phase overhaul). **Universal Android Debloater (UAD) Integration is now complete** with Rust-side caching.
@@ -24,6 +25,17 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-05-21 - Flasher Spacing Layout and Drop Zone Centering
+
+**Change:** Hardened the Flasher View layout for both cards (Flash Partition and Recovery Sideload) to use symmetrical, full-height vertical flex layouts (`flex flex-1 flex-col`). Balanced the vertical space inside the Recovery Sideload card by placing matching `flex-grow` spacers above and below the DropArea/FileSelector block.
+
+**Fixed:**
+- Center-aligned the Recovery Sideload DropArea vertically within the card's available body space (resolving the massive bottom-heavy gap).
+- Added a protective `min-h-4` bottom spacer above the recovery helper text to prevent visual squishing and establish consistent spacing.
+- Unified the visual hierarchy of both Flasher cards under a robust responsive grid layout.
+
+**Verification:** format ✅ · lint ✅ · build ✅ · test 174/174 pass
 
 ### 2026-05-16 - react-doctor Audit & Fixes
 
