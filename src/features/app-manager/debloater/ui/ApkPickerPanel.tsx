@@ -27,7 +27,7 @@ export function ApkPickerPanel({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <p className="font-medium text-sm">Install APK</p>
+        <p className="font-medium text-sm">Install Apps</p>
         <p className="text-muted-foreground text-xs">
           Select .apk or .apks files to install on your device.
         </p>

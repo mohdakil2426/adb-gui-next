@@ -146,7 +146,7 @@ describe('logStore', () => {
       const parts = timestamp?.split(':');
       const hours = Number(parts?.[0]);
       const minutes = Number(parts?.[1]);
-      const seconds = Number(parts?.[2]);
+      const seconds = Number(parts?.[2]?.split('.')?.[0]);
 
       expect(hours).toBeGreaterThanOrEqual(0);
       expect(hours).toBeLessThanOrEqual(23);
