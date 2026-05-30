@@ -3,6 +3,9 @@
 ## Current State
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` with release prep in progress for v0.2.5, including macOS support.
+**Uninstall Apps Application Title Display is complete (2026-05-31):** The Applications page's Uninstall list now queries and displays both human-readable app titles (labels) and package names side-by-side (stacked) in under 100ms. To achieve this high performance without slow PC-side APK parsing or heavy dumpsys calls, we implemented a custom Java bytecode helper `label_reader.jar` that reflectively calls AOSP's standard `ActivityThread.systemMain()` and runs within the device's native `app_process` runtime. The Rust backend handles automatic pushing and execution of the helper JAR, and the React frontend supports search/filtering against both the label and package name fields.
+
+**Installed App Icons with disk cache and batch extraction is complete (2026-05-23):** The Applications page now shows real app icons using selective ZIP streaming (`adb exec-out unzip -p`) instead of pulling full APKs. Icons are persisted to a per-device host-side disk cache (`%LOCALAPPDATA%/.cache/adb-gui-next/icons/{serial}/`) so re-opening the App Manager or scrolling back shows icons instantly. A new batch `GetPackageIcons` command fetches all visible icons in a single IPC call, and `rayon` parallelizes extraction across the blocking thread pool. The frontend `usePackageIcons` hook deduplicates requests and merges batch results in one state update.
 All responsive layout fixes, sticky header, adaptive hardening, and the April 2026 shadcn frontend audit implementation are complete.
 **Flasher Spacing Layout and Drop Zone Centering is complete (2026-05-21):** Both Flasher view cards use symmetrical vertical flex boxes (`flex flex-1 flex-col`). Sideload drop zone area sits in the exact vertical center of the card via top and bottom `flex-grow` spacers, and has protective min-height gaps to prevent visual squishing relative to the recovery helper text.
 **Emulator Root Tabbed Setup & Simplified Wizard is complete (2026-05-22):** The root wizard step timeline is reorganized into a clean 4-stage flow (Preflight ➔ Setup ➔ Patching ➔ Verify). The Preflight stage has been made manual, requiring the user to explicitly click "Start Preflight Scan" (which displays checks without auto-proceeding once green) and then click "Continue to Setup →" to progress. Within the Setup stage, a horizontal secondary tab layout embeds Autopilot (Automated Magisk Patch) and Manual Fallback (FAKEBOOTIMG) side-by-side. Transition between modes is handled seamlessly (e.g. failing Autopilot guides the user directly to the active Manual tab). Both modes route through a unified, premium Verification & Result screen. In the Manual mode layout, the "Create fakeboot.img" action button is stacked vertically, full-width, directly below the "Choose Magisk Package" card to ensure high visual consistency and match the premium design guidelines.
@@ -26,6 +29,17 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-05-31 - Uninstall Apps Application Title Display
+
+**Change:** Updated the Applications page's Uninstall list to display the human-readable Application Label/Title and technical Package Name side-by-side (stacked) with unified search and filtering.
+
+**Fixed:**
+- Created `src-tauri/java/com/helper/Main.java` — custom on-device Java helper compiled and dexed into `label_reader.jar`. It prepares Looper context via `Looper.prepareMainLooper()` and reflectively invokes `ActivityThread.systemMain()` to acquire context and resolve localized package labels instantly (< 100ms) on-device.
+- Placed `label_reader.jar` into Tauri resource folders for automatic bundling during builds.
+- Updated `apps.rs` Tauri command `get_installed_packages` to resolve, push, and execute the helper JAR via `app_process` on the device, parsing standard key-value outputs with a robust fallback to package names.
+- Updated the frontend `InstalledPackage` interface inside `models.ts` and React component `InstalledPackageList.tsx` to search both package name and label fields, display the results in a 48px virtualized row structure, and render readable descriptions inside the package deletion dialogue.
+- Updated all associated Vitest mock tests to conform to layout height and type alignments.
 
 ### 2026-05-22 - v0.2.5 CI and Release Gate Hardening
 

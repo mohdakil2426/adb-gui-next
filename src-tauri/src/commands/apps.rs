@@ -2,14 +2,18 @@ use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
 use log::{debug, info};
 use serde::Serialize;
-use std::{fs, io, path::Path};
-use tauri::AppHandle;
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
+use tauri::{AppHandle, Manager};
 
 #[derive(Debug, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct InstalledPackage {
     pub name: String,
     pub package_type: String,
+    pub label: String,
 }
 
 fn parse_package_names(output: &str) -> Vec<String> {
@@ -20,6 +24,38 @@ fn parse_package_names(output: &str) -> Vec<String> {
         .collect()
 }
 
+fn resolve_resource_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
+    let os_dir = if cfg!(target_os = "windows") {
+        "windows"
+    } else if cfg!(target_os = "macos") {
+        "darwin"
+    } else {
+        "linux"
+    };
+
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        let candidates = [
+            resource_dir.join(os_dir).join(name),
+            resource_dir.join("resources").join(os_dir).join(name),
+        ];
+
+        for candidate in candidates {
+            if candidate.exists() {
+                return Ok(candidate);
+            }
+        }
+    }
+
+    if let Ok(repo_root) = std::env::current_dir() {
+        let candidate = repo_root.join("src-tauri").join("resources").join(os_dir).join(name);
+        if candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+
+    Err(format!("Unable to locate resource file: {name}"))
+}
+
 #[tauri::command]
 pub async fn get_installed_packages(
     app: AppHandle,
@@ -28,6 +64,52 @@ pub async fn get_installed_packages(
     info!("Getting installed packages");
     tokio::task::spawn_blocking(move || {
         let serial = serial.as_deref();
+
+        // 1. Resolve and push the helper jar to the device
+        let mut labels_map = std::collections::HashMap::new();
+        if let Ok(jar_path) = resolve_resource_path(&app, "label_reader.jar") {
+            let jar_path_str = jar_path.to_string_lossy();
+            if run_adb_for_serial(
+                &app,
+                serial,
+                &["push", &jar_path_str, "/data/local/tmp/label_reader.jar"],
+            )
+            .is_ok()
+            {
+                // 2. Execute the helper jar on the device
+                if let Ok(output) = run_adb_for_serial(
+                    &app,
+                    serial,
+                    &[
+                        "shell",
+                        "CLASSPATH=/data/local/tmp/label_reader.jar",
+                        "app_process",
+                        "/data/local/tmp",
+                        "com.helper.Main",
+                    ],
+                ) {
+                    for line in output.lines() {
+                        if let Some(idx) = line.find('=') {
+                            let (pkg_name, label) = line.split_at(idx);
+                            let label = &label[1..];
+                            let pkg_name = pkg_name.trim().to_string();
+                            let label = label.trim().to_string();
+                            if !pkg_name.is_empty() && !label.is_empty() {
+                                labels_map.insert(pkg_name, label);
+                            }
+                        }
+                    }
+                } else {
+                    log::warn!("Failed to execute label_reader.jar on-device");
+                }
+            } else {
+                log::warn!("Failed to push label_reader.jar to device");
+            }
+        } else {
+            log::warn!("Failed to resolve label_reader.jar local path");
+        }
+
+        // 3. Fetch package lists as before
         let user_output =
             run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])?;
         let user_names: std::collections::HashSet<String> =
@@ -42,7 +124,8 @@ pub async fn get_installed_packages(
                 } else {
                     "system".to_string()
                 };
-                InstalledPackage { name, package_type }
+                let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
+                InstalledPackage { name, package_type, label }
             })
             .collect();
 

@@ -119,6 +119,9 @@
 │   ├── features/                 # Product feature modules
 │   │   ├── dashboard/
 │   │   ├── app-manager/
+│   │   │   └── debloater/
+│   │   │       └── hooks/
+│   │   │           └── usePackageIcons.ts  # Lazy visible-row icon loader with batch requesting + dedup
 │   │   ├── file-explorer/
 │   │   ├── flasher/
 │   │   ├── utilities/
@@ -132,7 +135,7 @@
     ├── Cargo.toml                # Rust deps (edition 2024)
     ├── src/
     │   ├── lib.rs                # Thin orchestrator (~95 lines)
-    │   ├── app_icons.rs          # Installed APK icon extraction helpers (AXML/ARSC + raster fallback)
+    │   ├── app_icons.rs          # Installed APK icon extraction: selective ZIP streaming, heuristic scoring, disk cache, batch extraction with rayon
     │   ├── helpers.rs            # Shared utilities
     │   ├── commands/             # 9 command modules
     │   │   ├── mod.rs
@@ -195,4 +198,4 @@
 
 - **Rust Edition**: 2024 (updated from 2021 on 2026-03-22)
 - **TypeScript**: 6.0.2 (strict mode)
-- **Last Updated**: 2026-04-24 (shadcn frontend audit implementation complete; Bun toolchain current; ESLint ignores generated Cargo `src-tauri/target-*/**`; lint verification uses `CARGO_TARGET_DIR=src-tauri/target-codex-lint` and debug packaging can use `CARGO_TARGET_DIR=src-tauri/target-codex-tauri` when the default target is locked)
+- **Last Updated**: 2026-05-23 (installed app icon extraction with disk cache + batch extraction complete; `app_icons.rs` uses selective ZIP streaming + `rayon` parallelism; `usePackageIcons.ts` hook batch-requests visible icons; Bun toolchain current; ESLint ignores generated Cargo `src-tauri/target-*/**`; lint verification uses `CARGO_TARGET_DIR=src-tauri/target-codex-lint` and debug packaging can use `CARGO_TARGET_DIR=src-tauri/target-codex-tauri` when the default target is locked)

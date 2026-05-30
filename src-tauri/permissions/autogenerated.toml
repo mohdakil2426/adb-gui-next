@@ -19,7 +19,6 @@ commands.allow = [
   "get_devices",
   "get_fastboot_devices",
   "get_installed_packages",
-  "get_package_icon",
   "get_avd_restore_plan",
   "install_package",
   "launch_device_manager",

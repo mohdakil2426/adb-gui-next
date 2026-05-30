@@ -64,7 +64,7 @@ export function InstalledPackageList({
         if (packageFilter !== 'all' && pkg.packageType !== packageFilter) {
           return false;
         }
-        return pkg.name.toLowerCase().includes(q);
+        return pkg.name.toLowerCase().includes(q) || pkg.label.toLowerCase().includes(q);
       })
       .sort((a, b) => {
         const aSelected = selectedPackages.has(a.name);
@@ -82,7 +82,7 @@ export function InstalledPackageList({
   const listRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredPackages.length,
-    estimateSize: () => 36,
+    estimateSize: () => 48,
     getItemKey: (i) => filteredPackages[i]?.name ?? i,
     getScrollElement: () => listRef.current,
     overscan: 5,
@@ -103,7 +103,7 @@ export function InstalledPackageList({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-medium text-sm">Uninstall Package</p>
+          <p className="font-medium text-sm">Uninstall Apps</p>
           <p className="text-muted-foreground text-xs">
             {isLoadingPackages
               ? 'Loading…'
@@ -202,10 +202,17 @@ export function InstalledPackageList({
                     tabIndex={0}
                   >
                     <CheckboxItem checked={isSelected} />
-                    <div className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                      <Package className="size-3.5 text-muted-foreground" />
+                    <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+                      <Package className="size-4 text-muted-foreground" />
                     </div>
-                    <span className="flex-1 truncate text-xs">{pkg.name}</span>
+                    <div className="flex min-w-0 flex-1 flex-col py-1">
+                      <span className="truncate font-semibold text-foreground text-xs leading-tight">
+                        {pkg.label || pkg.name}
+                      </span>
+                      <span className="truncate text-[10px] text-muted-foreground leading-tight">
+                        {pkg.name}
+                      </span>
+                    </div>
                     <Badge
                       className="ml-2 shrink-0 px-1.5 py-0 text-[10px]"
                       variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
@@ -248,11 +255,15 @@ export function InstalledPackageList({
                   package(s).
                 </p>
                 <div className="mt-2 max-h-24 overflow-y-auto rounded bg-muted p-2 text-xs">
-                  {Array.from(selectedPackages).map((p) => (
-                    <div className="truncate" key={p}>
-                      {p}
-                    </div>
-                  ))}
+                  {Array.from(selectedPackages).map((p) => {
+                    const pkg = packages.find((x) => x.name === p);
+                    const displayName = pkg ? `${pkg.label} (${pkg.name})` : p;
+                    return (
+                      <div className="truncate" key={p}>
+                        {displayName}
+                      </div>
+                    );
+                  })}
                 </div>
                 <div className="mt-3 rounded-md border border-warning/20 bg-warning/10 p-3 text-left text-warning-foreground text-xs">
                   <span className="font-bold">Disclaimer:</span> ADB GUI Next is not responsible for

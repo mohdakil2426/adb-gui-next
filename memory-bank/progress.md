@@ -4,6 +4,8 @@
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+**Uninstall Apps Application Title Display is complete (2026-05-31):** The Applications page's Uninstall list now queries and displays both human-readable app titles (labels) and package names side-by-side (stacked) in under 100ms. To achieve this high performance without slow PC-side APK parsing or heavy dumpsys calls, we implemented a custom Java bytecode helper `label_reader.jar` that reflectively calls AOSP's standard `ActivityThread.systemMain()` and runs within the device's native `app_process` runtime. The Rust backend handles automatic pushing and execution of the helper JAR, and the React frontend supports search/filtering against both the label and package name fields.
+
 **v0.2.5 release gate status (2026-05-22):** Release prep and CI fixes are pushed to `main`. Latest CI run `26259366418` passes Windows and Linux artifact jobs. The release workflow is hardened to validate macOS Apple signing/notarization secrets in preflight and import a real signing identity for macOS. Release run `26259858692` fails fast at `Verify macOS signing secrets` with `Missing required GitHub secret: APPLE_CERTIFICATE`; `v0.2.5` has not been created yet. Required GitHub secrets are `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`, and `KEYCHAIN_PASSWORD`.
 
 **Emulator Root Tabbed Setup & Simplified Wizard complete (2026-05-22):** Redesigned the Emulator Root Tab's step-by-step wizard to consolidate the timeline into a streamlined 4-stage pipeline (Preflight, Setup, Patching, Verify). Made preflight scan manual (replacing automated trigger and auto-proceed with explicit clicks and a "Start Preflight Scan" button) and improved the Manual Fallback layout by vertically stacking the "Create fakeboot.img" button beneath the package picker card. Embedded the Autopilot automated flow and FAKEBOOTIMG manual fallback flow to live side-by-side inside horizontal sub-tabs within the unified Setup stage. Integrated manual mode finalization with the store-level wizard results to route to the premium, unified result and verification layout, and implemented a smooth redirection to the Manual tab upon an automated patch failure. Verified and resolved all formatting, Biome checks, and React unit tests (174/174 pass).
@@ -103,9 +105,12 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
   - SDK-aware debloat: `pm hide/unhide` (SDK 19-22) vs `pm disable-user --user 0` (SDK ≥23)
   - Timestamped JSON backups + per-device settings persistence
 - App Manager installed-app icons:
-  - Lazy visible-row icon loading via `GetPackageIcon(packageName)` — package list still appears immediately
-  - Fixed icon slot per row — no layout shift in the virtualized list
-  - Backend APK icon extraction from installed packages via `pm path` + manifest/resource resolution + same-stem raster fallback for adaptive-icon XML entries
+  - **Batch extraction** via `GetPackageIcons(packages[])` — single IPC call fetches all visible icons; `rayon` parallelizes on backend thread pool
+  - **Host-side disk cache** — extracted icons persisted to platform cache dir (`%LOCALAPPDATA%/.cache/adb-gui-next/icons/{serial}/`) for instant display across sessions
+  - **Selective ZIP streaming** — `pm path` → `unzip -l` → heuristic scoring → `exec-out unzip -p` streams only the icon asset (~10-50KB), never pulls full APK
+  - **Lazy visible-row loading** via `usePackageIcons` hook — only requests icons for TanStack Virtual viewport rows; deduplicates in-flight requests; merges batch results in one state update
+  - Fixed `size-6` icon slot with `<img width={24} height={24}>` — prevents CLS; falls back to `Package` glyph when no raster icon found
+  - Backend: `src-tauri/src/app_icons.rs` with `extract_package_icon_data_url` (single) and `extract_package_icons` (batch); unit tests for PM path parsing, heuristic scoring, and density ranking
 - **File Explorer (full-featured dual-pane, split feature modules)**:
   - Lazy-loaded `DirectoryTree` sidebar + resizable right-pane file list
   - Editable address bar; tree collapse/expand; localStorage persistence (`fe.currentPath`, `fe.treeCollapsed`)
@@ -152,7 +157,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 | ADB | `run_adb_host_command`, `run_shell_command`, `connect_wireless_adb`, `disconnect_wireless_adb`, `enable_wireless_adb` |
 | Fastboot | `flash_partition` *(async)*, `reboot`, `wipe_data` *(async)*, `set_active_slot`, `get_bootloader_variables`, `run_fastboot_host_command` |
 | Files | `list_files`, `push_file`, `pull_file`, `delete_files`, `rename_file`, `create_file`, `create_directory` |
-| Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages`, `get_package_icon` *(async)* |
+| Apps | `install_package` *(async)*, `uninstall_package` *(async)*, `sideload_package` *(async)*, `get_installed_packages`, `get_package_icon` *(async)*, `get_package_icons` *(async)* |
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata`, `diagnose_payload`, `extract_delta_payload` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
@@ -321,6 +326,8 @@ src-tauri/src/
 - ✅ `flash_partition`, `wipe_data`: async + `tokio::task::spawn_blocking` (fixes 1-2 min UI freeze during flashing)
 - ✅ Drag-drop position hit-testing: `getBoundingClientRect()` + cursor (x,y) — drop zones only highlight when cursor is physically over them
 - ✅ Parallel partition extraction: `rayon::par_iter` (4-8x faster)
+- ✅ Batch app icon extraction: `rayon::par_iter` across visible packages; single IPC call instead of N round-trips
+- ✅ Host-side icon disk cache: platform-standard cache dir with per-device per-package `.b64` files; instant display on re-open
 
 ## Remaining Work
 

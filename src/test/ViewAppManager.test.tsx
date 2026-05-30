@@ -12,12 +12,12 @@ const listDebloatBackupsMock = vi.fn();
 
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: () => ({
-    getTotalSize: () => 36,
+    getTotalSize: () => 48,
     getVirtualItems: () => [
       {
         index: 0,
         key: 'com.example.camera',
-        size: 36,
+        size: 48,
         start: 0,
       },
     ],
@@ -66,12 +66,13 @@ describe('ViewAppManager', () => {
     listDebloatBackupsMock.mockResolvedValue([]);
   });
 
-  it('renders a package icon for each visible row', async () => {
+  it('renders installed packages in the virtual list', async () => {
     const user = userEvent.setup();
     getInstalledPackagesMock.mockResolvedValue([
       {
         name: 'com.example.camera',
         packageType: 'user',
+        label: 'Camera',
       },
     ]);
 
@@ -80,6 +81,7 @@ describe('ViewAppManager', () => {
     await user.click(screen.getByRole('tab', { name: /installation/i }));
 
     expect(await screen.findByText('com.example.camera')).toBeInTheDocument();
+    expect(await screen.findByText('Camera')).toBeInTheDocument();
     expect(screen.getByText('com.example.camera').closest('[role="option"]')).toBeInTheDocument();
     expect(getInstalledPackagesMock).toHaveBeenCalledWith('device-a');
   });
