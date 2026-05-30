@@ -52,21 +52,6 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
    - **Linux**: `.deb` (Debian/Ubuntu) or `.rpm`
 3. Run the installer — ADB and Fastboot are **bundled**, no extra setup needed
 
-The installed app name is **Adb Gui Next**.
-
-Release asset names use this format:
-
-```text
-AdbGuiNext-v0.2.0-windows-x64-setup.exe
-AdbGuiNext-v0.2.0-windows-x64.msi
-AdbGuiNext-v0.2.0-windows-x64-portable.zip
-AdbGuiNext-v0.2.0-linux-x64.deb
-AdbGuiNext-v0.2.0-linux-x64.rpm
-SHA256SUMS.txt
-```
-
-Use the Windows setup `.exe` for normal installs. Use the portable `.zip` only when you want a no-installer copy and already have the Microsoft Edge WebView2 Runtime available.
-
 ### Quick Start
 
 1. **Connect your Android device** via USB cable
