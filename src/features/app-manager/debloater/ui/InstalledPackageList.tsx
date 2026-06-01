@@ -1,33 +1,17 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Filter, Loader2, Package, RefreshCw, Trash2 } from 'lucide-react';
+import { Filter, Loader2, Package, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import type { backend } from '@/desktop/models';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/shared/ui/alert-dialog';
+// biome-ignore format: keep single line to preserve architectural line count limits
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/ui/alert-dialog';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { buttonVariants } from '@/shared/ui/button-variants';
-import { Command, CommandEmpty, CommandInput } from '@/shared/ui/command';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/shared/ui/dropdown-menu';
+// biome-ignore format: keep single line to preserve architectural line count limits
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
+import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/utils/cn';
 
 export function InstalledPackageList({
@@ -101,19 +85,24 @@ export function InstalledPackageList({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="font-medium text-sm">Uninstall Apps</p>
-          <p className="text-muted-foreground text-xs">
-            {isLoadingPackages
-              ? 'Loading…'
-              : `${filteredPackages.length} of ${packages.length} packages`}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div>
+        <p className="font-medium text-sm">Uninstall Apps</p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative min-w-48 flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="h-9 pl-8"
+              onChange={(e) => onSearchQueryChange(e.target.value)}
+              placeholder="Search packages…"
+              value={searchQuery}
+            />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="h-8 gap-1.5 text-xs" size="sm" variant="outline">
+              <Button className="h-9 gap-1.5 text-xs" size="sm" variant="outline">
                 <Filter className="size-3.5" />
                 {packageFilter === 'all' ? 'All' : packageFilter}
               </Button>
@@ -136,7 +125,8 @@ export function InstalledPackageList({
             </DropdownMenuContent>
           </DropdownMenu>
           <Button
-            className="size-8"
+            aria-label="Refresh packages"
+            className="size-9 shrink-0"
             disabled={isLoadingPackages || !selectedSerial}
             onClick={onRefresh}
             size="icon"
@@ -149,83 +139,84 @@ export function InstalledPackageList({
             )}
           </Button>
         </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
+          <span>
+            {isLoadingPackages
+              ? 'Loading packages…'
+              : `${filteredPackages.length} of ${packages.length} packages`}
+          </span>
+        </div>
       </div>
 
-      <Command className="overflow-hidden rounded-lg border shadow-sm" shouldFilter={false}>
-        <CommandInput
-          onValueChange={onSearchQueryChange}
-          placeholder="Search packages…"
-          value={searchQuery}
-        />
-        <div
-          aria-label="Installed packages"
-          aria-multiselectable="true"
-          className="h-[40vh] min-h-60 overflow-y-auto overflow-x-hidden"
-          ref={listRef}
-          role="listbox"
-        >
-          {filteredPackages.length === 0 ? (
-            <CommandEmpty>
-              {searchQuery ? 'No packages match your search.' : 'No packages found.'}
-            </CommandEmpty>
-          ) : (
-            <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                position: 'relative',
-                width: '100%',
-              }}
-            >
-              {virtualRows.map((vRow) => {
-                const pkg = filteredPackages[vRow.index];
-                if (!pkg) {
-                  return null;
-                }
-                const isSelected = selectedPackages.has(pkg.name);
-                return (
-                  <div
-                    aria-selected={isSelected}
-                    className={cn(
-                      'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                      isSelected && 'bg-accent text-accent-foreground',
-                    )}
-                    key={pkg.name}
-                    onClick={() => togglePackage(pkg.name)}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Enter') {
-                        e.preventDefault();
-                        togglePackage(pkg.name);
-                      }
-                    }}
-                    role="option"
-                    style={{ height: `${vRow.size}px`, transform: `translateY(${vRow.start}px)` }}
-                    tabIndex={0}
-                  >
-                    <CheckboxItem checked={isSelected} />
-                    <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                      <Package className="size-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-col py-1">
-                      <span className="truncate font-semibold text-foreground text-xs leading-tight">
-                        {pkg.label || pkg.name}
-                      </span>
-                      <span className="truncate text-[10px] text-muted-foreground leading-tight">
-                        {pkg.name}
-                      </span>
-                    </div>
-                    <Badge
-                      className="ml-2 shrink-0 px-1.5 py-0 text-[10px]"
-                      variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
-                    >
-                      {pkg.packageType}
-                    </Badge>
+      <div
+        aria-label="Installed packages"
+        aria-multiselectable="true"
+        className="h-[40vh] min-h-60 overflow-y-auto overflow-x-hidden rounded-lg border shadow-sm"
+        ref={listRef}
+        role="listbox"
+      >
+        {filteredPackages.length === 0 ? (
+          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+            {searchQuery ? 'No packages match your search.' : 'No packages found.'}
+          </div>
+        ) : (
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+              width: '100%',
+            }}
+          >
+            {virtualRows.map((vRow) => {
+              const pkg = filteredPackages[vRow.index];
+              if (!pkg) {
+                return null;
+              }
+              const isSelected = selectedPackages.has(pkg.name);
+              return (
+                <div
+                  aria-selected={isSelected}
+                  className={cn(
+                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground',
+                    isSelected && 'bg-accent/60 text-accent-foreground',
+                  )}
+                  key={pkg.name}
+                  onClick={() => togglePackage(pkg.name)}
+                  onKeyDown={(e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                      e.preventDefault();
+                      togglePackage(pkg.name);
+                    }
+                  }}
+                  role="option"
+                  style={{ height: `${vRow.size}px`, transform: `translateY(${vRow.start}px)` }}
+                  tabIndex={0}
+                >
+                  <CheckboxItem checked={isSelected} />
+                  <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+                    <Package className="size-4 text-muted-foreground" />
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </Command>
+                  <div className="flex min-w-0 flex-1 flex-col py-1">
+                    <span className="truncate font-semibold text-foreground text-xs leading-tight">
+                      {pkg.label || pkg.name}
+                    </span>
+                    <span className="truncate text-[10px] text-muted-foreground leading-tight">
+                      {pkg.name}
+                    </span>
+                  </div>
+                  <Badge
+                    className="ml-2 shrink-0 px-1.5 py-0 text-[10px]"
+                    variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
+                  >
+                    {pkg.packageType}
+                  </Badge>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       <SelectionSummaryBar
         count={selectedPackages.size}
