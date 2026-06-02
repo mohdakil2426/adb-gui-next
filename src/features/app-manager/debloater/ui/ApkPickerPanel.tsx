@@ -76,7 +76,8 @@ export function ApkPickerPanel({
                     <span className="truncate">{path.split(/[/\\]/).pop()}</span>
                   </div>
                   <Button
-                    className="size-6 opacity-0 hover:bg-transparent hover:text-destructive group-hover:opacity-100"
+                    aria-label="Remove APK file"
+                    className="size-6 opacity-0 hover:bg-transparent hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
                     disabled={isInstalling}
                     onClick={() => {
                       onPathsChange(apkPaths.filter((p) => p !== path));
