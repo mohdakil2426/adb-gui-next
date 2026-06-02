@@ -57,6 +57,7 @@ export function SearchBar({
       <div className="relative min-w-0 flex-1">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
+          aria-label="Search marketplace apps, packages, or GitHub repositories"
           className="h-11 pr-28 pl-9"
           onChange={(event) => {
             onChange(event.target.value);
@@ -86,7 +87,7 @@ export function SearchBar({
                 <TooltipContent side="bottom">Recent searches</TooltipContent>
               </Tooltip>
               <PopoverContent align="end" className="w-72 p-2">
-                <div className="space-y-1">
+                <div className="flex flex-col gap-1">
                   <p className="px-2 pt-1 font-medium text-muted-foreground text-xs uppercase tracking-wide">
                     Recent searches
                   </p>
@@ -112,6 +113,7 @@ export function SearchBar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label="Clear search"
                   className="size-7 text-muted-foreground"
                   onClick={onClear}
                   size="icon"
@@ -133,6 +135,7 @@ export function SearchBar({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            aria-label="Marketplace settings"
             className="h-11 shrink-0 gap-2 px-3"
             onClick={onSettings}
             size="sm"

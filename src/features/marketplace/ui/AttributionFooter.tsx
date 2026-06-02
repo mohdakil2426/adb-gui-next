@@ -1,3 +1,4 @@
+import { BrowserOpenURL } from '@/desktop/runtime';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 
 export function AttributionFooter() {
@@ -17,14 +18,18 @@ export function AttributionFooter() {
       {active.map((p, i) => (
         <span key={p}>
           {i > 0 && (i === active.length - 1 ? ' & ' : ', ')}
-          <a
-            className="transition-colors hover:text-muted-foreground"
-            href={providerLinks[p]}
-            rel="noopener noreferrer"
-            target="_blank"
+          <button
+            className="cursor-pointer border-none bg-transparent p-0 transition-colors hover:text-muted-foreground hover:underline"
+            onClick={() => {
+              const link = providerLinks[p];
+              if (link) {
+                BrowserOpenURL(link);
+              }
+            }}
+            type="button"
           >
             {p}
-          </a>
+          </button>
         </span>
       ))}
     </div>
