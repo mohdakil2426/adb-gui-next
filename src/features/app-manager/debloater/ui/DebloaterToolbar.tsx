@@ -1,9 +1,10 @@
-import { Filter, RefreshCcw, Search, Shield } from 'lucide-react';
+import { Filter, Search, Shield } from 'lucide-react';
 import type {
   DebloatListFilter,
   RemovalFilter,
   StateFilter,
 } from '@/features/app-manager/debloater/model/debloatStore';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
@@ -17,7 +18,6 @@ import {
 import { Field, FieldContent, FieldDescription, FieldLabel } from '@/shared/ui/field';
 import { Input } from '@/shared/ui/input';
 import { Switch } from '@/shared/ui/switch';
-import { cn } from '@/shared/utils/cn';
 
 const LIST_OPTIONS: { value: DebloatListFilter; label: string }[] = [
   { value: 'All', label: 'All Lists' },
@@ -148,16 +148,13 @@ export function DebloaterToolbar({
           options={STATE_OPTIONS}
           value={stateFilter}
         />
-        <Button
+        <RefreshButton
           aria-label="Refresh packages"
-          className="size-9 shrink-0"
-          disabled={isLoadingPackages}
+          className="size-9"
+          isLoading={isLoadingPackages}
+          mode="icon"
           onClick={onRefresh}
-          size="icon"
-          variant="ghost"
-        >
-          <RefreshCcw className={cn('size-4', isLoadingPackages && 'animate-spin')} />
-        </Button>
+        />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">

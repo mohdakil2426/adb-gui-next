@@ -1,18 +1,9 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
-  Folder,
-  Loader2,
-  PanelLeft,
-  RefreshCw,
-  Search,
-  X,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, Folder, PanelLeft, Search, X } from 'lucide-react';
 import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
 import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
 import { FileExplorerTransferButton } from '@/features/file-explorer/ui/FileExplorerTransferButton';
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Separator } from '@/shared/ui/separator';
@@ -169,22 +160,14 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
       </div>
       <Separator className="mx-1 h-4 shrink-0" orientation="vertical" />
       <div className="flex min-w-0 shrink-0 items-center gap-1">
-        <ToolbarTooltip label="Refresh (F5)">
-          <Button
-            aria-label="Refresh directory"
-            className="size-11"
-            disabled={isBusy}
-            onClick={onRefresh}
-            size="icon"
-            variant="ghost"
-          >
-            {isLoading ? (
-              <Loader2 className="size-4 shrink-0 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4 shrink-0" />
-            )}
-          </Button>
-        </ToolbarTooltip>
+        <RefreshButton
+          aria-label="Refresh directory"
+          buttonSize="icon"
+          isLoading={isLoading}
+          mode="icon"
+          onClick={onRefresh}
+          tooltip="Refresh (F5)"
+        />
         <FileExplorerRootAccessButton
           disabled={isBusy}
           onToggle={onRootAccessToggle}

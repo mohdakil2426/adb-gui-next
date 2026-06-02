@@ -1,5 +1,6 @@
-import { Loader2, Pencil, RefreshCw, Smartphone } from 'lucide-react';
+import { Pencil, Smartphone } from 'lucide-react';
 import { EmptyState } from '@/shared/components/EmptyState';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { getNickname } from '@/shared/stores/nicknameStore';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -37,19 +38,13 @@ export function ConnectedDevicesCard({
           <Smartphone className="size-5" />
           Connected Devices
         </CardTitle>
-        <Button
+        <RefreshButton
           aria-label="Refresh device list"
-          disabled={isLoading || isRefreshDisabled}
+          disabled={isRefreshDisabled}
+          isLoading={isLoading}
+          mode="icon"
           onClick={onRefresh}
-          size="icon"
-          variant="ghost"
-        >
-          {isLoading ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <RefreshCw className="size-4" />
-          )}
-        </Button>
+        />
       </CardHeader>
       <CardContent>
         {devices.length === 0 ? (

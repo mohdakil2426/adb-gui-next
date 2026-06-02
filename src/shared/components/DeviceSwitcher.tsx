@@ -1,14 +1,8 @@
-import {
-  ChevronDown,
-  Loader2,
-  MonitorSmartphone,
-  Pencil,
-  RefreshCw,
-  Smartphone,
-} from 'lucide-react';
+import { ChevronDown, MonitorSmartphone, Pencil, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { getNickname } from '@/shared/stores/nicknameStore';
 import { Badge } from '@/shared/ui/badge';
@@ -101,20 +95,13 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
               <Smartphone aria-hidden="true" className="size-4 text-muted-foreground" />
               <span className="font-medium text-sm">Connected Devices</span>
             </div>
-            <Button
+            <RefreshButton
               aria-label="Refresh Devices"
               className="size-7"
-              disabled={isRefreshing}
+              isLoading={isRefreshing}
+              mode="icon"
               onClick={onRefresh}
-              size="icon"
-              variant="ghost"
-            >
-              {isRefreshing ? (
-                <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
-              ) : (
-                <RefreshCw aria-hidden="true" className="size-3.5" />
-              )}
-            </Button>
+            />
           </div>
 
           <Separator />

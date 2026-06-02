@@ -1,6 +1,7 @@
-import { ChevronDown, Loader2, MonitorSmartphone, RefreshCw } from 'lucide-react';
+import { ChevronDown, MonitorSmartphone } from 'lucide-react';
 import { useState } from 'react';
 import type { backend } from '@/desktop/models';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
@@ -96,20 +97,13 @@ export function AvdSwitcher({
               <span className="text-muted-foreground text-xs">({avds.length})</span>
             )}
           </div>
-          <Button
+          <RefreshButton
             aria-label="Refresh emulators"
             className="size-7"
-            disabled={isRefreshing}
+            isLoading={isRefreshing}
+            mode="icon"
             onClick={onRefresh}
-            size="icon"
-            variant="ghost"
-          >
-            {isRefreshing ? (
-              <Loader2 className="size-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="size-3.5" />
-            )}
-          </Button>
+          />
         </div>
 
         <Separator />

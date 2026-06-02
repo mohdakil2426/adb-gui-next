@@ -1,13 +1,6 @@
-import {
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle2,
-  Grip,
-  Info,
-  Loader2,
-  RefreshCw,
-} from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, Grip, Info, Loader2 } from 'lucide-react';
 import type { backend } from '@/desktop/models';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 
@@ -213,34 +206,24 @@ export function RootPreflightStep({
             >
               Continue to Setup →
             </Button>
-            <Button
+            <RefreshButton
               className="w-full"
-              disabled={isScanning}
-              id="preflight-rescan-btn"
+              isLoading={isScanning}
+              label="Rescan Checklist"
+              mode="action"
               onClick={onRescan}
-              variant="outline"
-            >
-              <RefreshCw
-                className={cn('size-4', isScanning && 'animate-spin')}
-                data-icon="inline-start"
-              />
-              Rescan Checklist
-            </Button>
+            />
           </>
         ) : (
-          <Button
+          <RefreshButton
+            buttonVariant="default"
             className="w-full"
-            disabled={isScanning}
-            id="preflight-rescan-btn"
+            isLoading={isScanning}
+            label="Start Preflight Scan"
+            loadingLabel="Scanning…"
+            mode="action"
             onClick={onRescan}
-          >
-            {isScanning ? (
-              <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
-            ) : (
-              <RefreshCw className="size-4 animate-spin" data-icon="inline-start" />
-            )}
-            Start Preflight Scan
-          </Button>
+          />
         )}
       </div>
 

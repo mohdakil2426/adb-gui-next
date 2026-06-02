@@ -1,8 +1,9 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Filter, Loader2, Package, RefreshCw, Search, Trash2 } from 'lucide-react';
+import { Filter, Loader2, Package, Search, Trash2 } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import type { backend } from '@/desktop/models';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
 // biome-ignore format: keep single line to preserve architectural line count limits
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/ui/alert-dialog';
@@ -125,20 +126,15 @@ export function InstalledPackageList({
               </DropdownMenuRadioGroup>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button
+          <RefreshButton
             aria-label="Refresh packages"
-            className="size-9 shrink-0"
-            disabled={isLoadingPackages || !selectedSerial}
+            buttonSize="icon"
+            buttonVariant="outline"
+            className="size-9"
+            isLoading={isLoadingPackages}
+            mode="icon"
             onClick={onRefresh}
-            size="icon"
-            variant="outline"
-          >
-            {isLoadingPackages ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <RefreshCw className="size-4" />
-            )}
-          </Button>
+          />
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">

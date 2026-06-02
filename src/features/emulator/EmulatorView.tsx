@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, MonitorSmartphone, RefreshCcw } from 'lucide-react';
+import { Bot, MonitorSmartphone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
   GetAvdRestorePlan,
@@ -18,10 +18,9 @@ import { EmulatorRestoreTab } from '@/features/emulator/ui/EmulatorRestoreTab';
 import { EmulatorRootTab } from '@/features/emulator/ui/EmulatorRootTab';
 import { EmulatorToolbar } from '@/features/emulator/ui/EmulatorToolbar';
 import { EmptyState } from '@/shared/components/EmptyState';
-import { Button } from '@/shared/ui/button';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { cn } from '@/shared/utils/cn';
 import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
 import { fetchAvds, invalidateAvds, queryKeys } from '@/shared/utils/queries';
 
@@ -200,16 +199,13 @@ export function ViewEmulatorManager() {
           </div>
         </div>
         {/* Refresh — top-right of header */}
-        <Button
-          className="shrink-0"
-          disabled={isBusy || isRefreshing}
+        <RefreshButton
+          isLoading={isRefreshing}
+          label="Refresh"
+          loadingLabel="Refreshing…"
+          mode="action"
           onClick={() => void handleRefresh()}
-          size="sm"
-          variant="ghost"
-        >
-          <RefreshCcw className={cn('size-4', isRefreshing && 'animate-spin')} />
-          {isRefreshing ? 'Refreshing…' : 'Refresh'}
-        </Button>
+        />
       </div>
       <EmulatorToolbar
         avds={avds}

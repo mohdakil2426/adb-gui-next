@@ -1,15 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ChevronDown,
-  ExternalLink,
-  FileArchive,
-  FolderOutput,
-  Globe,
-  RefreshCw,
-} from 'lucide-react';
+import { ChevronDown, ExternalLink, FileArchive, FolderOutput, Globe } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import { FileBannerDetails } from '@/features/payload-dumper/ui/FileBannerDetails';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
@@ -98,23 +92,14 @@ export const FileBanner = memo(function FileBanner({
             <TooltipContent side="bottom">Change Payload</TooltipContent>
           </Tooltip>
           {partitions.length > 0 && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  aria-label="Refresh partitions"
-                  className="size-7"
-                  disabled={status === 'loading-partitions' || status === 'extracting'}
-                  onClick={onRefreshPartitions}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <RefreshCw
-                    className={cn('size-3.5', status === 'loading-partitions' && 'animate-spin')}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Refresh Partitions</TooltipContent>
-            </Tooltip>
+            <RefreshButton
+              aria-label="Refresh partitions"
+              className="size-7"
+              isLoading={status === 'loading-partitions'}
+              mode="icon"
+              onClick={onRefreshPartitions}
+              tooltip="Refresh Partitions"
+            />
           )}
           <Tooltip>
             <TooltipTrigger asChild>

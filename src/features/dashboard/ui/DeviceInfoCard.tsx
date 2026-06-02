@@ -6,8 +6,6 @@ import {
   Database,
   Hash,
   Info,
-  Loader2,
-  RefreshCw,
   Server,
   ShieldCheck,
   Smartphone,
@@ -16,7 +14,7 @@ import {
 } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { InfoItem } from '@/features/dashboard/ui/InfoItem';
-import { Button } from '@/shared/ui/button';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 
 export function DeviceInfoCard({
@@ -37,18 +35,14 @@ export function DeviceInfoCard({
           <Info className="size-5" />
           Device Info
         </CardTitle>
-        <Button
-          disabled={isRefreshingInfo || !selectedSerial}
+        <RefreshButton
+          buttonVariant="default"
+          disabled={!selectedSerial}
+          isLoading={isRefreshingInfo}
+          label="Refresh Info"
+          mode="action"
           onClick={onRefresh}
-          variant="default"
-        >
-          {isRefreshingInfo ? (
-            <Loader2 className="mr-2 size-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 size-4" />
-          )}
-          Refresh Info
-        </Button>
+        />
       </CardHeader>
       <CardContent>
         {selectedSerial ? (
