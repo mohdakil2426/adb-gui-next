@@ -30,6 +30,24 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 
 ## Recently Completed
 
+### 2026-06-02 - Refresh Button UI Standardization
+
+**Change:** Audited all 19 refresh buttons across the app and standardized 12 data-refresh buttons into a shared `RefreshButton` component with two modes (`icon` for toolbars, `action` for standalone text+icon buttons).
+
+**Fixed:**
+- Created `src/shared/components/RefreshButton.tsx` — discriminated union props, `icon` mode (ghost, `icon-sm` 32px, tooltip, aria-label) and `action` mode (outline, loading label support). Always uses `RefreshCw` + `Loader2` spinner.
+- Migrated 10 files: DeviceSwitcher, ConnectedDevicesCard, AvdSwitcher, FileExplorerToolbar, PayloadDumper FileBanner, DebloaterToolbar, InstalledPackageList, DeviceInfoCard, EmulatorView, RootPreflightStep.
+- Fixed `RefreshCcw` misuse in DebloaterToolbar and EmulatorView (now standardized to `RefreshCw`).
+- Fixed inconsistent button sizes (size-7/9/11) → standardized to `icon-sm` (32px).
+- Fixed inconsistent variants (ghost/outline/default mixed randomly) → `ghost` for icon mode, `outline` for action mode.
+- Fixed `animate-spin` bug on default-state icon in RootPreflightStep "Start Preflight Scan" button.
+- Fixed double tooltip wrapper in PayloadDumper FileBanner.
+- Not migrated (contextual actions, not data refreshes): RootSourceStep "Retry", CacheHistorySection "Clear cache", RootResultStep "Cold Boot"/"Restore Stock".
+
+**Verification:** format:check ✅ · lint:web ✅ · test 174/174 ✅ · build (tsc + vite) ✅
+
+---
+
 ### 2026-05-31 - Uninstall Apps Application Title Display
 
 **Change:** Updated the Applications page's Uninstall list to display the human-readable Application Label/Title and technical Package Name side-by-side (stacked) with unified search and filtering.

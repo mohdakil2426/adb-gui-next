@@ -131,7 +131,6 @@ Applications page icons follow a 2-phase pattern so package list load stays fast
 - `get_package_icon` resolves the installed APK with `adb shell pm path`, pulls it to a temp path, parses `AndroidManifest.xml` + `resources.arsc`, and returns a raster icon as a data URL.
 - If the declared icon resource is adaptive/XML-only, `app_icons.rs` searches same-stem raster candidates under `mipmap-*` / `drawable-*` and prefers the highest-density match.
 - Placeholder glyphs remain valid fallback UI and row height must never change after the icon arrives.
-
 ### 3e. File Explorer — State Model & Critical Patterns
 
 `src/features/file-explorer/FileExplorerView.tsx` is now a thin coordinator over feature-local hooks and UI modules. The File Explorer feature owns its model, hooks, UI, and utilities under `src/features/file-explorer/`.
@@ -186,6 +185,18 @@ fileList.length === 0 && creatingType === null ? <EmptyState> : <Table>
 - The tree pane owns its own shadcn `ScrollArea`; expanded tree nodes must not have fixed max-height caps.
 - The tree splitter uses a wide pointer target around a one-pixel visual divider and supports keyboard resizing.
 
+
+### 3f. Shared RefreshButton Pattern
+
+All data-refresh actions across the app use `src/shared/components/RefreshButton.tsx` instead of inline Button + RefreshCw/Loader2 JSX. The component has two discriminated modes:
+
+- **`mode="icon"`** — compact toolbar button: `variant="ghost"`, `size="icon-sm"` (32px), tooltip wrapping, `aria-label` required. Used in DeviceSwitcher, ConnectedDevicesCard, AvdSwitcher, FileExplorerToolbar, PayloadDumper FileBanner, DebloaterToolbar, InstalledPackageList.
+- **`mode="action"`** — standalone text+icon button: `variant="outline"`, optional `loadingLabel` for in-flight text. Used in DeviceInfoCard ("Refresh Info"), EmulatorView ("Refresh"), RootPreflightStep ("Rescan"/"Start Scan").
+
+**Rules:**
+- Always `RefreshCw` for the icon — never `RefreshCcw` for data refresh (reserve for undo/restore semantics).
+- Always `Loader2` spinner when `isLoading` — never skip the loading indicator.
+- Contextual action buttons (Retry, Clear cache, Cold Boot, Restore Stock) stay as standard `Button` — they are not data refreshes.
 
 ### 4. Binary Resolution
 

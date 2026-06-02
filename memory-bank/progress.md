@@ -1,8 +1,10 @@
 # Progress
 
 ## Overall Status
-
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
+
+**Refresh Button UI Standardization complete (2026-06-02):** Audited all 19 refresh buttons across the app. Created shared `RefreshButton` component (`src/shared/components/RefreshButton.tsx`) with two modes: `icon` (toolbar, ghost, 32px, tooltip, aria-label) and `action` (text+icon, outline, loading label). Migrated 12 data-refresh buttons across 10 files. Fixed `RefreshCcw` misuse, inconsistent sizes (7/9/11px → 32px), inconsistent variants, missing loading spinners, and an `animate-spin` bug on a default-state icon. Contextual action buttons (Retry, Clear cache, Cold Boot, Restore Stock) left as standard Button with correct semantics. Verification: format ✅ · lint ✅ · test 174/174 ✅ · build ✅.
+
 
 **Uninstall Apps Application Title Display is complete (2026-05-31):** The Applications page's Uninstall list now queries and displays both human-readable app titles (labels) and package names side-by-side (stacked) in under 100ms. To achieve this high performance without slow PC-side APK parsing or heavy dumpsys calls, we implemented a custom Java bytecode helper `label_reader.jar` that reflectively calls AOSP's standard `ActivityThread.systemMain()` and runs within the device's native `app_process` runtime. The Rust backend handles automatic pushing and execution of the helper JAR, and the React frontend supports search/filtering against both the label and package name fields.
 
@@ -131,7 +133,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
   - **Long-name wrapping**: file names, symlink targets, and delete-dialog filenames break within their containers instead of overflowing
   - **No in-place array mutation** — all sorts use spread copy
   - Feature code lives under `src/features/file-explorer/` with model, hooks, utils, and UI modules; `FileExplorerView.tsx` stays a coordinator.
-- Shared components: `ActionButton`, `LoadingButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing), `RemoteUrlPanel`
+- Shared components: `ActionButton`, `LoadingButton`, `RefreshButton`, `SectionHeader`, `FileSelector`, `SelectionSummaryBar`, `ConnectedDevicesCard` (Dashboard only), `DeviceSwitcher` (global header), `EditNicknameDialog`, `CheckboxItem`, `EmptyState`, `DirectoryTree`, `DropZone` (with position-based hit-testing), `RemoteUrlPanel`
 - `getFileName()`, `formatBytes()`, `formatBytesNum()` utilities in `lib/utils.ts`
 - `models.ts` DTOs as plain TypeScript interfaces
 - No unused React imports (all cleaned up)
