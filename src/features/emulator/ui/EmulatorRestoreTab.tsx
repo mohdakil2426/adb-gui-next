@@ -42,7 +42,7 @@ export function EmulatorRestoreTab({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       {/* Backup status */}
       <Alert className={avd.hasBackups ? 'border-success/30 bg-success/10 text-success' : ''}>
         <CheckCircle2 />
@@ -80,7 +80,7 @@ export function EmulatorRestoreTab({
 
       {/* Plan entries */}
       {hasEntries ? (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           {restorePlan?.entries.map((entry) => (
             <div
               className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm"
@@ -92,6 +92,7 @@ export function EmulatorRestoreTab({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      aria-label="Open backup location"
                       className="size-6 shrink-0"
                       onClick={() => handleOpenBackupFolder(entry.backupPath)}
                       size="icon"

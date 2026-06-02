@@ -84,7 +84,7 @@ export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunch
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <div className="grid gap-3 sm:grid-cols-2">
         {(
           [
