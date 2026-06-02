@@ -85,6 +85,7 @@ export const FileBanner = memo(function FileBanner({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Change payload file"
                 className="size-7"
                 disabled={isDisabled}
                 onClick={onSelectPayload}
@@ -100,6 +101,7 @@ export const FileBanner = memo(function FileBanner({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
+                  aria-label="Refresh partitions"
                   className="size-7"
                   disabled={status === 'loading-partitions' || status === 'extracting'}
                   onClick={onRefreshPartitions}
@@ -117,6 +119,7 @@ export const FileBanner = memo(function FileBanner({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Select output directory"
                 className="size-7"
                 disabled={status === 'extracting'}
                 onClick={onSelectOutput}
@@ -133,7 +136,13 @@ export const FileBanner = memo(function FileBanner({
           {effectiveOutputPath ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button className="size-7" onClick={onOpenOutputFolder} size="icon" variant="ghost">
+                <Button
+                  aria-label="Open output folder"
+                  className="size-7"
+                  onClick={onOpenOutputFolder}
+                  size="icon"
+                  variant="ghost"
+                >
                   <ExternalLink className="size-3.5" />
                 </Button>
               </TooltipTrigger>
@@ -168,6 +177,7 @@ export const FileBanner = memo(function FileBanner({
       {isRemote && remoteMetadata ? (
         <>
           <button
+            aria-expanded={isDetailsOpen}
             className={cn(
               'flex w-full items-center justify-center gap-1.5 py-1',
               'text-muted-foreground text-xs transition-colors hover:text-foreground',

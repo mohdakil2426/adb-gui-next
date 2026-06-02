@@ -117,6 +117,7 @@ export function ViewFlasher() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
+                            aria-label="Clear selected image file"
                             disabled={isGlobalLoading}
                             onClick={() => {
                               setFilePath('');
@@ -196,6 +197,7 @@ export function ViewFlasher() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
+                            aria-label="Clear selected flashable ZIP"
                             disabled={isGlobalLoading}
                             onClick={() => {
                               setSideloadFilePath('');

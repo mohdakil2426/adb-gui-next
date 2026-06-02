@@ -88,6 +88,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         <>
           <ToolbarTooltip label="Show tree panel">
             <Button
+              aria-label="Show tree panel"
               className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={onExpandTree}
               size="icon"
@@ -102,6 +103,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
       <div className="flex min-w-24 flex-1 items-center gap-1">
         <ToolbarTooltip label="Back (Alt+Left)">
           <Button
+            aria-label="Navigate back"
             className="size-11 shrink-0"
             disabled={!canGoBack || isBusy}
             onClick={onBack}
@@ -113,6 +115,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         </ToolbarTooltip>
         <ToolbarTooltip label="Forward (Alt+Right)">
           <Button
+            aria-label="Navigate forward"
             className="size-11 shrink-0"
             disabled={!canGoForward || isBusy}
             onClick={onGoUp}
@@ -124,6 +127,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         </ToolbarTooltip>
         <ToolbarTooltip label="Go up">
           <Button
+            aria-label="Go up"
             className="size-11 shrink-0"
             disabled={currentPath === '/' || isBusy}
             onClick={onUp}
@@ -167,6 +171,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
       <div className="flex min-w-0 shrink-0 items-center gap-1">
         <ToolbarTooltip label="Refresh (F5)">
           <Button
+            aria-label="Refresh directory"
             className="size-11"
             disabled={isBusy}
             onClick={onRefresh}
