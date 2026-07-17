@@ -13,8 +13,8 @@
 |---|------|------|--------|
 | D1 | `reports&audits/frontend-comprehensive-audit-2026-03-30.md` | 2026-03-30 | ✅ Targets current `main` codebase |
 | D2 | `reports&audits/frontend-audit-report.md` | 2026-03-28 | ❌ **STALE** — targets a different branch |
-| D3 | `plans/async-commands-progressive-loading.md` | 2026-03-30 | ✅ Accurate plan, partially implemented |
-| D4 | `plans/frontend-audit-fixes-plan.md` | 2026-03-30 | ✅ Correct scope and fixes |
+| D3 | `plans/2026-03-31-async-commands-progressive-loading.md` | 2026-03-30 | ✅ Accurate plan, partially implemented |
+| D4 | `plans/2026-03-31-frontend-audit-fixes.md` | 2026-03-30 | ✅ Correct scope and fixes |
 
 ---
 
@@ -33,7 +33,7 @@ Every file it references does not exist on `main`:
 | `src/components/fragments/combobox-demo.tsx` | ❌ Does not exist |
 | `src/components/layout/shadcn-io/sidebar/index.tsx` | ❌ Does not exist |
 
-**Verdict:** Discard entirely. `frontend-audit-fixes-plan.md` (D4) already correctly identifies this.  
+**Verdict:** Discard entirely. `2026-03-31-frontend-audit-fixes.md` (D4) already correctly identifies this.  
 **Action:** Archive or delete this file to avoid future confusion.
 
 ---
@@ -174,7 +174,7 @@ return unlisten;
 
 ---
 
-## Document D3 — `async-commands-progressive-loading.md`: VERIFIED
+## Document D3 — `2026-03-31-async-commands-progressive-loading.md`: VERIFIED
 
 ### Plan Accuracy: ✅ CORRECT
 
@@ -220,7 +220,7 @@ The plan correctly identifies commands using `std::process::Command::output()` o
 
 ---
 
-## Document D4 — `frontend-audit-fixes-plan.md`: VERIFIED
+## Document D4 — `2026-03-31-frontend-audit-fixes.md`: VERIFIED
 
 **Status: ✅ ACCURATE AND CORRECT**
 
