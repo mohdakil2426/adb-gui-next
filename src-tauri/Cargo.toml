@@ -36,9 +36,13 @@ tauri-plugin-opener = "2.5.4"
 tempfile = "3.27.0"
 url = "2.5.8"
 which = "8.0.5"
-xz2 = "0.1.7"
+# liblzma is the maintained fork of xz2 (API-compatible XzDecoder path).
+# Do not also depend on xz2 — dual native lzma links break the link step.
+liblzma = "0.4"
 zstd = "0.13.3"
 zip = "8.6.0"
+# HTTP range bodies / zero-copy reclaim into Vec when refcount == 1.
+bytes = "1"
 tauri-plugin-clipboard-manager = "2.3.2"
 urlencoding = "2.1.3"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
@@ -55,7 +59,8 @@ brotli = { version = "8.0.4", optional = true }
 reqwest = { version = "0.13.4", features = ["rustls", "stream", "http2", "blocking", "json"] }
 
 futures-util = "0.3.32"
-flate2 = "1.1.9"
+# zlib-rs: pure-Rust zlib backend (~1.5–2× inflate vs miniz_oxide on factory/ZIP deflate).
+flate2 = { version = "1.1.9", default-features = false, features = ["zlib-rs"] }
 
 [dev-dependencies]
 proptest = { version = "1.11.0", features = ["attr-macro"] }
@@ -80,3 +85,10 @@ lto = true
 opt-level = "s"
 panic = "abort"
 strip = true
+
+# Speed-optimized release for CPU-bound extract (sha2, decomp). Larger binary than [profile.release].
+# Build: cargo build --profile release-fast --manifest-path src-tauri/Cargo.toml
+# Tauri: cargo tauri build -- --profile release-fast
+[profile.release-fast]
+inherits = "release"
+opt-level = 3
