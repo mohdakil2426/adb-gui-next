@@ -2,43 +2,34 @@
 
 ## Product Summary
 
-ADB GUI Next is a Tauri 2 desktop application for Android Debug Bridge and fastboot workflows. Built with React 19 + TypeScript + Vite + Rust, it provides a modern, native-feeling desktop experience for Android device management.
+ADB GUI Next is a Tauri 2 desktop app for ADB, fastboot, firmware extract, debloat, marketplace, and emulator workflows. Stack: React 19 · TypeScript · Vite · Rust 2024 · Bun.
 
 ## Core Goals
 
-- Provide comprehensive ADB and fastboot workflow coverage
-- Maintain a clean Tauri 2 native desktop architecture
-- Bundle required Android tools for standalone Windows and Linux usage
-- Preserve the legacy Go/Wails reference archive for documentation only
+- Cover ADB/fastboot power-user workflows in a native desktop GUI
+- Keep a clean Tauri 2 architecture (thin IPC, domain logic in Rust)
+- Bundle platform-tools for standalone Windows/Linux installs
 
 ## Primary Users
 
 - Android enthusiasts and custom ROM users
-- Repair and service technicians
-- QA engineers and Android developers
-- Power users who want GUI-driven ADB/fastboot workflows
+- Repair/service technicians, QA, developers
+- Power users who prefer GUI over raw CLI for repetitive tasks
 
-## Supported Platforms
+## Platforms
 
-- **Windows**: First-class target
-- **Linux**: First-class target
-- **macOS**: Out of current scope
+| Platform | Status |
+| --- | --- |
+| Windows | First-class |
+| Linux | First-class |
+| macOS | Out of product scope |
 
-## Major Feature Areas
+## Major feature areas
 
-1. **Dashboard** — Device info, battery, storage, IP address
-2. **Wireless ADB** — Connect/disconnect, TCP/IP enable
-3. **App Manager** — Install, uninstall, sideload, list packages
-4. **File Explorer** — Dual-pane (tree + list), push/pull, multi-select, inline rename, delete, context menu
-5. **Flasher** — Fastboot flash, reboot, wipe, slot management
-6. **Utilities** — Reboot modes, bootloader variables, device manager
-7. **Payload Dumper** — Extract OTA payload.bin, OnePlus OPS, and Oppo OFP firmware partitions
-8. **Bottom Panel** — VS Code-style panel with Logs tab (filtered, searchable) and Shell tab (adb/fastboot commands)
-9. **Marketplace** — Discovery-first Android app marketplace: zero-query home, grouped search, install flows, optional GitHub sign-in, and installs from F-Droid, IzzyOnDroid, GitHub, and Aptoide via ADB
+Dashboard · Wireless ADB · App Manager (+ UAD debloat) · File Explorer · Flasher · Utilities · Payload Dumper · Marketplace · Emulator Manager · Bottom panel (Logs + Shell)
 
-## Current Version
+## Version
 
-- Version: 0.2.0
-- Rust Edition: 2024
-- Tauri Commands: 66+ registered commands (added `scan_avd_root_readiness`)
-- Last Updated: 2026-05-15 (File Explorer root access + scroll/resize layout hardening)
+- **App:** 0.2.5 (`package.json` / Tauri config)
+- **Rust edition:** 2024
+- **Last memory-bank refresh:** 2026-07-18

@@ -1,64 +1,29 @@
 # Product Context
 
-## Why This Project Exists
+## Why it exists
 
-ADB and fastboot are powerful but awkward for repetitive Android workflows. This project exists to provide a local desktop toolbox that makes those workflows faster, more visual, and easier to manage without sacrificing power-user capability.
+ADB/fastboot are powerful but awkward for repetitive work. This app is a local desktop toolbox: visual, faster, still power-user capable.
 
-## Problems It Solves
+## Problems it solves
 
-- Reduces repetitive command-line work
-- Makes destructive workflows more visible and deliberate
-- Centralizes Android maintenance tasks in one desktop app
-- Provides OTA payload extraction inside the app
-- Provides OnePlus OPS and Oppo OFP firmware decryption and extraction
-- Enables app discovery and installation from open-source and curated repositories (F-Droid, IzzyOnDroid, GitHub, Aptoide)
-- Preserves advanced operations without requiring a terminal-first workflow
+- Less repetitive CLI for device ops
+- Clearer feedback for long/destructive workflows
+- One place for package, file, flash, firmware, debloat, marketplace, emulator tasks
+- OTA / OPS / OFP extract without a separate terminal toolchain
 
-## User Experience Goals
+## UX goals
 
-- Native-feeling desktop application
-- Lightweight runtime (Tauri 2 vs Electron)
-- Multi-view shell with sidebar navigation
-- Progress feedback and logging for long-running operations
-- Practical, task-oriented feature flows
-- Light/dark/system theme support
-- ~95% UI consistency: semantic tokens, standardized icons, accessible clickable lists, shared components
-- File management: dual-pane explorer, multi-select, inline rename, delete with confirmation
-- **Pinned header bar**: always visible regardless of content height (viewport-locked layout via `h-svh` boundary)
-- **Responsive layout**: all views adapt to window resize with no horizontal overflow, no phantom scrollbars
+- Native-feeling Tauri desktop shell (sidebar views, no web router)
+- Light / dark / system theme; semantic tokens; shared shadcn components
+- Logs + shell in a VS Code–style bottom panel
+- Viewport-locked layout (`h-svh`); pinned header; responsive, no horizontal overflow
 
-## Product Boundaries
+## Boundaries
 
-### In Scope
+**In scope:** local ADB/fastboot, file transfer, packages, wireless ADB, payload/OPS/OFP (local + remote where implemented), marketplace installs, emulator AVD tools, Win/Linux packaging.
 
-- Local device management through ADB and fastboot
-- Local file transfer and package management
-- Local OTA payload extraction
-- **OnePlus OPS and Oppo OFP firmware extraction** (encrypted containers, AES-CFB, custom ciphers)
-- **Remote OTA payload extraction** (HTTP range requests — optional feature)
-- Native dialogs and OS integration
-- Windows and Linux desktop packaging
-- Wireless ADB connectivity
-- **App marketplace** — Discovery-first marketplace: zero-query browsing, grouped search results, provider-aware install flows, optional GitHub sign-in, and installs from F-Droid, IzzyOnDroid, GitHub, and Aptoide
-
-### Out of Scope
-
-- Cloud features
-- Browser deployment
-- Multi-user collaboration
-- Device farm orchestration
-- macOS parity (current implementation)
-
-## Target Platforms
-
-| Platform | Support Level |
-|----------|---------------|
-| Windows  | First-class   |
-| Linux    | First-class   |
-| macOS    | Not planned   |
+**Out of scope:** cloud multi-user, browser/Next.js deployment, device farms, macOS as a first-class product target.
 
 ## Version
 
-- Current: 0.2.0
-- Tauri: 2.x
-- Last Updated: 2026-05-14 (Frontend feature architecture migration complete)
+0.2.5 — see `projectbrief.md`.

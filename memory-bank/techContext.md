@@ -1,146 +1,59 @@
 # Tech Context
 
-## Core Stack
+## Stack (from package / Cargo)
 
 ### Frontend
 
-| Package | Version (package.json) | Notes |
-|---------|------------------------|-------|
-| React | ^19.2.7 | React 19 |
-| TypeScript | ^6.0.3 | Strict mode + exactOptionalPropertyTypes |
-| Vite | ^8.1.5 | Desktop webview build |
-| Tailwind CSS | ^4.3.3 | CSS-first (`@theme` in `global.css`) |
-| Zustand | ^5.0.14 | Client state |
-| TanStack Query | ^5.101.2 | Device poll + AVD poll |
-| React Hook Form | ^7.81.0 | Forms |
-| Zod | ^4.4.3 | Schema validation |
-| Framer Motion | ^12.42.2 | Motion |
-| Radix / shadcn | `radix-ui` + some `@radix-ui/*` | Primitives under `src/shared/ui` |
-| lucide-react | ^1.25.0 | Icons |
-| next-themes | ^0.4.6 | Theme (Vite app; ignore Next naming) |
-| sonner | ^2.0.7 | Toasts |
-| @tauri-apps/api | 2.11.0 | Tauri frontend IPC |
-| @tanstack/react-virtual | ^3.14.6 | Virtualized lists |
-| @tauri-apps/plugin-dialog | ^2.7.1 | Native dialogs |
-| @tauri-apps/plugin-opener | ^2.5.4 | URL opener |
-| @tauri-apps/plugin-clipboard-manager | ^2.3.2 | Clipboard |
+React 19 · TypeScript 6 · Vite 8 · Tailwind v4 · shadcn/Radix · Zustand 5 · TanStack Query 5 · React Hook Form · Zod · Framer Motion · lucide · next-themes · sonner · TanStack Virtual · Tauri API 2.11 + dialog/opener/clipboard plugins · Bun 1.3.13
 
 ### Backend
 
-| Package | Notes |
-|---------|-------|
-| Tauri | 2.11.x crate; edition 2024 |
-| tauri-plugin-log / dialog / opener / clipboard-manager | Matched FE plugins |
-| tokio | Async runtime; `spawn_blocking` / `block_in_place` for long work |
-| memmap2, rayon, prost | Payload extract / protobuf |
-| zip, zstd, **liblzma** (not xz2), bzip2, brotli (feature) | Decompress paths |
-| sha2, hex | Integrity |
-| reqwest (rustls) | Marketplace + remote payload + Magisk GitHub |
-| url | SSRF validation (`validate_outbound_url`) |
-| aes / cfb-mode / md-5 / quick-xml | OPS/OFP formats (public format constants) |
+Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · optional brotli · sha2 · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP)
 
 ## Tooling
 
-| Tool | Purpose |
-|------|---------|
-| **Ultracite** (Biome) | Frontend lint + format (`lint:web` = check, `format:web` = fix) |
-| cargo clippy / rustfmt | Rust lint + format |
-| Vitest + Testing Library | Frontend tests in `src/test/` |
-| Bun 1.3.13 | Package manager (`packageManager` field) |
-| Tauri CLI 2.11.0 | Desktop packaging |
-| Husky + lint-staged | Pre-commit: staged Ultracite fix + staged rustfmt only |
+| Tool | Role |
+| --- | --- |
+| Ultracite (Biome) | FE lint + format |
+| rustfmt / clippy | Rust format / lint (`-D warnings` in CI) |
+| Vitest | FE tests in `src/test/` |
+| Husky + lint-staged | Pre-commit staged fix only |
+| GitHub Actions | quality always; package on main; publish workflow |
 
-Do **not** document ESLint/Prettier as the active web toolchain — they were replaced by Ultracite.
+Commands: see `docs/project_rules.md` (source of truth for gates). Do not re-add removed script aliases (`fix`, `lint:web:fix`, `check:fast`, …).
 
-### Default quality / format commands
-
-| Command | Runs |
-|---------|------|
-| `bun run lint:web` | Ultracite check (format + lint) |
-| `bun run format:web` | Ultracite fix |
-| `bun run lint:rust` | `cargo clippy --all-targets -- -D warnings` |
-| `bun run format:rust` / `format:rust:check` | rustfmt / rustfmt --check |
-| `bun run lint` | Ultracite check + Clippy |
-| `bun run format` | Ultracite fix + rustfmt |
-| `bun run format:check` | Ultracite check + rustfmt check (CI) |
-| `bun run check` | format:check → clippy → vitest → cargo test → build |
-
-**Agent rule:** run full gate (`bun run check`) only after all tasks for the request are finished — never mid-task.
-
-Removed aliases (do not re-add): `fix`, `lint:fix`, `lint:web:fix`, `format:web:check`, `check:fast`.
-
-### Rust lint bar (`src-tauri/`)
-
-| Config | Role |
-|--------|------|
-| `Cargo.toml` `[lints.rust]` | `unsafe_code = warn` (local `#![allow(unsafe_code)]` only on mmap/SIMD modules) |
-| `Cargo.toml` `[lints.clippy]` | `cargo`, `unwrap_used`, `expect_used`, pedantic cherry-picks |
-| `clippy.toml` | `allow-unwrap-in-tests`, `allow-expect-in-tests` |
-| Package metadata | license, repository, readme, keywords, categories (clippy cargo group) |
-
-Official basis: [Clippy lint categories](https://doc.rust-lang.org/clippy/lints.html), [Cargo lints](https://doc.rust-lang.org/cargo/reference/lints.html). Not enabled: full `restriction` / `nursery` / deny-all pedantic.
-
-### GitHub Actions (Win/Linux first)
-
-| Workflow | Behavior |
-|----------|----------|
-| `ci.yml` **quality** | All branches + PRs: format, lint, FE tests, cargo test, vite build (Ubuntu) |
-| `ci.yml` **package** | **Only `main` push**: Windows nsis/msi + Linux deb/rpm + upload-artifact |
-| `publish.yml` | Full preflight quality; Win/Linux always; macOS if Apple secrets present |
-
-## Important paths
+## Layout (high level)
 
 ```text
-├── package.json / biome.jsonc / components.json
-├── src/
-│   ├── app/          # App shell (MainLayout, no router)
-│   ├── desktop/      # backend.ts, runtime.ts, models.ts only IPC surface
-│   ├── features/     # Product modules
-│   ├── shared/       # ui, components, stores, utils
-│   ├── styles/global.css  # Tailwind v4 + semantic tokens (incl. success-light)
-│   └── test/         # Vitest suite
-└── src-tauri/
-    ├── src/
-    │   ├── lib.rs, helpers.rs   # helpers: resolve_binary, sanitize, adb_shell_checked, safe_image_file_name
-    │   ├── commands/            # thin IPC (incl. files, debloat, payload, marketplace, emulator)
-    │   ├── payload/             # crau, remote, ops, zip, io, verify, transaction
-    │   ├── marketplace/, emulator/, debloat/
-    │   └── (no app_icons.rs module currently)
-    ├── permissions/autogenerated.toml  # must match generate_handler!
-    ├── capabilities/default.json
-    └── resources/{windows,linux,darwin}/
+src/
+  app/          shell, MainLayout, view map
+  desktop/      only invoke / events / models
+  features/     product views
+  shared/       ui, stores, utils
+  styles/       global.css tokens
+  test/         Vitest
+src-tauri/
+  commands/     thin IPC
+  helpers.rs    binary, shell, path safety
+  payload/ marketplace/ emulator/ debloat/
+  resources/{windows,linux}/
+  permissions/ + capabilities/
 ```
 
-## Quality commands
+Full design: `docs/architecture.md`.
 
-| Command | What it does |
-|---------|----------------|
-| `bun run dev` / `bun run tauri dev` | Vite :1420 / full desktop |
-| `bun run build` | tsc + Vite |
-| `bun run lint:web` / `format:web` | Ultracite check / fix |
-| `bun run lint:rust` | clippy `-D warnings` |
-| `bun run format` / `format:check` | Ultracite + rustfmt (fix / check) |
-| `bun run test` | Vitest |
-| `bun run check` | format:check + clippy + vitest + cargo test + build |
-| `cargo test --manifest-path src-tauri/Cargo.toml` | Rust tests (Linux CI executes; Windows often `--no-run` only) |
-| Pre-commit | `bun x lint-staged` via Husky (staged FE + Rust only; no clippy/tests) |
+## Runtime facts agents forget
 
-## Device polling
+- Device poll: **30s** in `MainLayout` only (`STALE_TIME.ALL_DEVICES`)
+- AVD poll: **5s** in Emulator view only
+- App version: **0.2.5**
+- Windows cargo test loader issue may block execution
 
-- **All devices:** TanStack Query in `MainLayout`, `STALE_TIME.ALL_DEVICES` = **30 seconds** (not 3s).
-- Manual refresh still available in DeviceSwitcher / cards.
-- Poll failures should surface via `handleError` / toast (not silent empty list).
+## Security (current)
 
-## Security notes (current)
+- Outbound URL validation + no auto-redirect on sensitive HTTP (payload/market/Magisk pattern)
+- Extract: `safe_image_file_name`; transaction deletes registered files only
+- Debloat: serial-keyed cache; fail closed on unknown SDK for Disable
+- Marketplace install: owned temp path + selected serial
 
-- Remote payload + marketplace downloads: HTTPS preferred; private IP blocklist + DNS resolve; **payload HTTP does not auto-follow redirects**.
-- Extract outputs: `safe_image_file_name`; transaction cleanup **does not** `remove_dir_all` user dirs.
-- Debloat: device-keyed cache; refuse destructive ops when SDK unknown; sanitize backup basenames.
-- Marketplace install: selected serial + owned temp download path only.
-- Magisk: local rootAVD zip → GitHub latest → v25.2 fallback.
-
-## Edition / last updated
-
-- **Rust edition:** 2024
-- **App version:** 0.2.5
-- **Last Updated:** 2026-07-18 (CI main-only packages; Rust `[lints]` + clippy.toml max bar; Ultracite; 30s poll; Magisk live fetch; SSRF redirects)
+**Last updated:** 2026-07-18
