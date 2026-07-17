@@ -2,7 +2,7 @@
 
 ## Current State
 
-**Architecture doc (2026-07-18):** `docs/architecture.md` is the long-form architecture reference (system context, FE/BE layers, IPC, feature matrix, security, CI, mermaid + ASCII). Explored via parallel code agents against live `src/` + `src-tauri/`. Linked from README.
+**Architecture doc (2026-07-18):** `docs/architecture.md` is the long-form architecture reference (system context, FE/BE layers, IPC, feature matrix, security, CI, mermaid + ASCII). Explored via parallel code agents against live `src/` + `src-tauri/`. Linked from README. No cross-links to memory-bank/AGENTS/other project docs inside the architecture file.
 
 **Scripts + Husky simplification (2026-07-18):** Slimmed `package.json` scripts — one name per intent (`lint:web` / `format:web` / `lint:rust` / `format:rust` / `format:check` / `lint` / `check`). Removed aliases `fix`, `lint:fix`, `lint:web:fix`, `format:web:check`, `check:fast`. `check` is the full gate (format:check → clippy → vitest → cargo test → build). Husky pre-commit is `bun x lint-staged` only (staged Ultracite fix + staged rustfmt); no full-repo ultracite, no clippy, no tests on commit. `lint-staged` config in `package.json`. AGENTS/README/memory-bank updated.
 
