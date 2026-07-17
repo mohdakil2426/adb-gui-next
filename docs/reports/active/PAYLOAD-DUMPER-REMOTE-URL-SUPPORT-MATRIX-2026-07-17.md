@@ -1,7 +1,7 @@
 # Payload Dumper — Remote URL Support Matrix & Expansion Discussion
 
 **Date:** 2026-07-17  
-**Status:** Active discussion document (implementation plan deferred)  
+**Status:** Active product report — Waves 0–4 plan items for remote UX/arch **implemented**; optional Phase 4 skeleton rows still open  
 **Scope:** What remote URL supports today, format matrix (local vs remote), realistic expansion candidates  
 **Related:** Recent factory-image remote fix (async ranges, cancel UX, smart partition auto-select); earlier payload research under `docs/reports/closed/` and `docs/superpowers/plans/`
 
@@ -32,19 +32,21 @@ When discussion settles, turn chosen items into a plan under `docs/superpowers/p
 
 ```text
 UI Remote tab
-  → check_remote_payload (HEAD: size + Accept-Ranges)
+  → check_remote_payload (HEAD via session cache: size + Accept-Ranges)
   → list_remote_payload_partitions
-       ├─ .zip heuristic → find payload.bin (EOCD/CD ranges)
+       ├─ .zip heuristic → find payload.bin (EOCD/CD ranges; CD cached)
        │     └─ miss → factory_image discover (.img + nested image-*.zip)
        └─ else → direct payload.bin header (~1 MB)
-  → get_remote_payload_metadata (best-effort; remote_kind payload | factoryImage)
+  → get_remote_payload_metadata (session reuse; remote_kind payload | factoryImage)
   → extract_payload(https://…)
-       ├─ prefetch → full payload region (or factory selective)
+       ├─ prefetch → span of payload.bin for selected ops (or factory selective)
        └─ direct   → HTTP ranges per op / per image
 ```
 
 **Hard constraint (industry standard, e.g. rhythmcache payload-dumper):**  
-Efficient remote extract needs **HTTP Range** (`Accept-Ranges: bytes` / 206). Without ranges, selective multi‑GB extract is not practical unless we fall back to full download.
+Efficient remote extract needs **HTTP Range** (`Accept-Ranges: bytes` / 206). Without ranges, open fails with structured `REMOTE_NO_RANGE:` (Task 3.6); full GET fallback is not enabled by default.
+
+**Implemented (Wave 3 remote arch, 2026-07-17):** shared session (R1), span prefetch (S2), `REMOTE_NO_RANGE` + hard async cancel (R3 partial / R4).
 
 **Code anchors**
 
@@ -372,27 +374,36 @@ Prefer **§9.3 full step list** when height allows; fall back to compact under ~
 
 ### 9.9 Implementation notes (for future plan only)
 
-| Phase | Scope | Effort (rough) |
-|:-----:|-------|----------------|
-| **1** | FE-only: while `loading-partitions` on remote form, show spinner + elapsed + “not full {size}” + Cancel (fix branch so remote load is not a blank Cancel bar) | Small |
-| **2** | FE step list with optimistic/timer stage advances + microcopy | Small–Med |
-| **3** | Rust `payload:load-progress` events (`eocd` / `centralDirectory` / `detectFormat` / `manifest` / `factoryDiscover` / `done`) for truthful steps | Medium |
-| **4** | Optional skeleton rows / OTA vs factory badge | Polish |
+| Phase | Scope | Effort (rough) | Status |
+|:-----:|-------|----------------|--------|
+| **1** | FE-only: while `loading-partitions` on remote form, show spinner + elapsed + “not full {size}” + Cancel (fix branch so remote load is not a blank Cancel bar) | Small | **Done (FE Wave 2)** |
+| **2** | FE step list with optimistic/timer stage advances + microcopy | Small–Med | **Done (FE Wave 2)** |
+| **3** | Rust `payload:load-progress` events (contract: `verifyConnection` / `locateIndex` / `detectFormat` / `readPartitions` / `done` / `error`) for truthful steps | Medium | **Done (Rust Wave 2.1)** |
+| **4** | Optional skeleton rows / OTA vs factory badge | Polish | Not started |
 
-**FE anchors today**
+**Rust load-progress (Phase 3 — Wave 2.1)**
 
-- `PayloadDumperView.tsx` — empty `payloadPath` → `PayloadSourceTabs` during load  
-- `PayloadSourceTabs.tsx` — Cancel Loading button only  
-- `LoadingState.tsx` — unused for first remote load  
-- `payloadPartitionLoaders.ts` — single await, no phases  
+- Helper: `src-tauri/src/payload/remote/load_progress.rs` → `emit_load_progress`
+- Wired: `list_remote_payload_partitions` + `list_remote_factory_image_partitions`; command passes `AppHandle`
+- Phases: `verifyConnection` → `locateIndex` → `detectFormat` → `readPartitions` → `done` | `error`
+- DTO: `PartitionDetail.downloadSize` (CrAU: sum op `data_length`; factory: compressed size)
 
-**Event shape (when Phase 3 ships)**
+**FE anchors (Wave 2)**
+
+- `RemoteLoadProgressCard.tsx` — in-panel steps 1–4, indeterminate bar, elapsed, “not full {size}”, Cancel  
+- `PayloadSourceTabs.tsx` — shows load card during remote `loading-partitions` even when `payloadPath` empty  
+- `usePayloadLoadEvents.ts` — listens for `payload:load-progress`; optimistic stages after 500ms if no event  
+- Store: `loadPhase` / `loadStep` / `loadStartedAt` / `beginLoadProgress` / `clearLoadProgress`  
+
+**Event shape (frozen contract — shipped Rust + FE)**
 
 ```json
 {
-  "phase": "eocd | centralDirectory | detectFormat | manifest | factoryDiscover | done",
-  "message": "human label",
-  "detail": "optional"
+  "phase": "verifyConnection | locateIndex | detectFormat | readPartitions | done | error",
+  "message": "string",
+  "detail": "string | null",
+  "step": 1,
+  "totalSteps": 4
 }
 ```
 
@@ -403,7 +414,7 @@ Prefer **§9.3 full step list** when height allows; fall back to compact under ~
 | Layout | **A — in-panel progress card** (keep Remote tab) |
 | Full-page takeover spinner | Rejected as primary |
 | Leave Cancel-only bar | Rejected |
-| Plan / tasks | Deferred — capture in plan when remote polish is scheduled |
+| Plan / tasks | Wave 2 load-progress + downloadSize done; Wave 3 session/span/cancel done; Wave 4.2 extract `stats` filled on remote success paths |
 
 ---
 
