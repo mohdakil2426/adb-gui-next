@@ -28,7 +28,8 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 | Cross-module design / data flow / IPC map | `docs/architecture.md` |
 | Entire frontend (`src/**`) | `src/AGENTS.md` |
 | Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` |
-| FE lint standards (Ultracite) | `.agents/rules/ultracite.md` |
+| FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
+| Living session context (not architecture) | `memory-bank/` — read before non-trivial work; verify against code |
 
 ## Project map
 

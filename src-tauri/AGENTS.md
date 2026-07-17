@@ -6,6 +6,20 @@
 
 - Root `AGENTS.md`, `docs/architecture.md`, `docs/project_rules.md`.
 - `src/AGENTS.md` when changing the IPC contract (keep FE desktop layer + models in sync).
+- **Project skills** (below) before implementing matching Rust work
+
+## Skills
+
+Project skills live under `.agents/skills/`. Load the matching skill **before** coding when the task touches that area.
+
+| Skill |
+| --- |
+| `.agents/skills/backend/rust-patterns/SKILL.md` |
+| `.agents/skills/backend/rust-skills/SKILL.md` |
+| `.agents/skills/backend/rust-testing/SKILL.md` |
+
+- Load all skills that apply to the task (e.g. new domain logic + tests → patterns/skills + testing).
+- **References are mandatory:** after opening a skill, also read that skill’s `references/` / `rules/` (or linked docs) for files **relevant to the current work only** — not every reference blindly.
 
 ## Ownership
 

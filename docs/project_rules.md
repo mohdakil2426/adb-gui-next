@@ -18,7 +18,7 @@ Owns **workflow**, report layout, quality gates, and **hard stops**. Module impl
 | Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
 | Module rules | Closest module `AGENTS.md` |
 | Investigations / audits | `docs/internal/reports/` |
-| FE Ultracite standards | `.agents/rules/ultracite.md` |
+| FE Ultracite standards | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
 
 One owner per topic; duplicates become pointers.
 

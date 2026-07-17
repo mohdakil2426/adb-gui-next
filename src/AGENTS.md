@@ -8,6 +8,18 @@
 - `docs/architecture.md` for cross-module design
 - `docs/project_rules.md` for workflow and gates
 - `src-tauri/AGENTS.md` when changing IPC contracts
+- **Project skills** (below) before implementing matching UI work
+
+## Skills
+
+Project skills live under `.agents/skills/`. Load the matching skill **before** coding when the task touches that area.
+
+| Skill |
+| --- |
+| `.agents/skills/frontend/shadcn/SKILL.md` |
+
+- **References are mandatory:** after opening a skill, also read that skill’s `references/` (or linked docs) for files **relevant to the current work only** — not every reference blindly.
+- Expand this table when more frontend skills are wired in.
 
 ## Ownership map
 
