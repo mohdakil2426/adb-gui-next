@@ -56,9 +56,15 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 
 ### File Explorer
 
+- View is thin: `FileExplorerView` + `useFileExplorerViewModel` + `model/fileExplorerReducers`.
 - Stable `loadFiles` (refs; avoid historyIndex dep loops).
 - Mutations re-list with `loadFiles(path, false)`.
 - Snapshot serial before host dialogs; clear root grant on serial change.
+
+### Bottom panel
+
+- Shell: `BottomPanel` + `PanelHeader` + `PanelHeaderActions` + `useBottomPanelResize`.
+- Resize handle is focusable (`tabIndex={0}`) with keyboard height adjust.
 
 ## Anti-patterns
 

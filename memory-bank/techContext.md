@@ -48,6 +48,7 @@ Full design: `docs/architecture.md`.
 - AVD poll: **5s** in Emulator view only
 - App version: **0.2.5**
 - Windows cargo test loader issue may block execution
+- React Doctor residual cleanup is **deferred** (report: `docs/internal/reports/active/2026-07-18/`); do not re-open unless user asks
 
 ## Security (current)
 
