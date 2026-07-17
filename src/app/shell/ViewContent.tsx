@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { VIEWS, type ViewType } from '@/app/shell/viewConfig';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -15,13 +15,12 @@ export function ViewContent({ activeView, mainPaddingBottom, renderContent }: Vi
   const isMarketplaceView = activeView === VIEWS.MARKETPLACE;
 
   return (
-    <div
+    <main
       className={cn(
         'custom-scroll main-scroll-area flex-1 overflow-x-hidden',
         isFileExplorerView || isMarketplaceView ? 'overflow-hidden' : 'overflow-y-auto',
       )}
       id="main-content"
-      role="main"
       style={{ paddingBottom: mainPaddingBottom }}
       tabIndex={-1}
     >
@@ -33,7 +32,7 @@ export function ViewContent({ activeView, mainPaddingBottom, renderContent }: Vi
       >
         <div className="mx-auto flex min-h-0 w-full max-w-(--content-max-width) flex-1 flex-col overflow-hidden">
           <AnimatePresence mode="wait">
-            <motion.div
+            <m.div
               animate={{ opacity: 1 }}
               className="flex min-h-0 w-full flex-1 flex-col"
               exit={{ opacity: 0 }}
@@ -44,10 +43,10 @@ export function ViewContent({ activeView, mainPaddingBottom, renderContent }: Vi
               <ErrorBoundary key={activeView} viewName={activeView}>
                 {renderContent(activeView)}
               </ErrorBoundary>
-            </motion.div>
+            </m.div>
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -153,6 +153,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={onPathClick}
             title="Click to edit path"
+            type="button"
           >
             {currentPath}
           </button>
@@ -190,6 +191,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               className="absolute right-1.5 text-muted-foreground hover:text-foreground"
               onClick={onClearSearch}
               tabIndex={-1}
+              type="button"
             >
               <X className="size-3" />
             </button>
