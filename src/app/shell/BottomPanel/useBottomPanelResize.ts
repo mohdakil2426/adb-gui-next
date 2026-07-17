@@ -75,10 +75,28 @@ export function useBottomPanelResize({ viewportHeight, setPanelHeight }: ResizeO
     };
   }, [resize, stopResizing]);
 
+  const adjustHeightBy = useCallback(
+    (deltaPx: number) => {
+      const maxHeight = viewportHeight * MAX_HEIGHT_RATIO;
+      const current =
+        panelRef.current == null
+          ? MIN_HEIGHT
+          : Number.parseFloat(panelRef.current.style.height) ||
+            panelRef.current.getBoundingClientRect().height;
+      const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, current + deltaPx));
+      if (panelRef.current) {
+        panelRef.current.style.height = `${next}px`;
+      }
+      setPanelHeight(next);
+    },
+    [setPanelHeight, viewportHeight],
+  );
+
   return {
     panelRef,
     startResizing,
     showCursorOverlay,
     MAX_HEIGHT_RATIO,
+    adjustHeightBy,
   };
 }
