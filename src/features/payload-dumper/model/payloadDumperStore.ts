@@ -1,9 +1,10 @@
 import { toast } from 'sonner';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import { CancelExtraction, CreateCancellationToken } from '@/desktop/backend';
+import { CreateCancellationToken } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { useLogStore } from '@/shared/stores/logStore';
+import { cancelPayloadExtraction } from './cancelPayloadExtraction';
 import {
   payloadDumperInitialState,
   rehydratePayloadDumperState,
@@ -231,15 +232,8 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         }
       },
       cancelExtraction: () => {
-        const tokenId = usePayloadDumperStore.getState().cancelTokenId;
-        if (tokenId) {
-          CancelExtraction(tokenId).catch((error: unknown) => {
-            const message = error instanceof Error ? error.message : String(error);
-            toast.error(`Failed to cancel extraction: ${message}`);
-            useLogStore.getState().addLog(`Error cancelling extraction: ${message}`, 'error');
-          });
-          set({ status: 'cancelling' });
-        }
+        const { cancelTokenId, status } = usePayloadDumperStore.getState();
+        cancelPayloadExtraction(cancelTokenId, status, set);
       },
       setExtractionStats: (stats) => {
         set({ extractionStats: stats });

@@ -108,11 +108,28 @@ export async function loadRemotePartitions(
     }
     if (partitionList && partitionList.length > 0) {
       actions.setPayloadPath(remoteUrl.trim());
-      actions.setPartitions(
-        partitionList.map((p) => ({ name: p.name, selected: true, size: p.size })),
-      );
+      // Factory image ZIPs often contain multi‑GB system/product images. Auto-selecting
+      // every partition makes "extract" look stuck while large images stream in the background
+      // (user sees a small .img appear and thinks the job finished). Match selective dumpers:
+      // only auto-select modest partitions; require explicit selection for large images.
+      const AUTO_SELECT_MAX_BYTES = 64 * 1024 * 1024;
+      const totalSize = partitionList.reduce((sum, p) => sum + p.size, 0);
+      const autoSelectAll = partitionList.length <= 32 && totalSize <= 512 * 1024 * 1024;
+      const partitions = partitionList.map((p) => ({
+        name: p.name,
+        selected: autoSelectAll || p.size <= AUTO_SELECT_MAX_BYTES,
+        size: p.size,
+      }));
+      const selectedCount = partitions.filter((p) => p.selected).length;
+      actions.setPartitions(partitions);
       actions.setStatus('ready');
-      toast.success(`Found ${partitionList.length} partitions`);
+      if (autoSelectAll) {
+        toast.success(`Found ${partitionList.length} partitions`);
+      } else {
+        toast.success(
+          `Found ${partitionList.length} partitions — auto-selected ${selectedCount} small image(s). Review selection before extract.`,
+        );
+      }
       handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
       void GetRemotePayloadMetadata(remoteUrl.trim())
         .then((metadata) => {

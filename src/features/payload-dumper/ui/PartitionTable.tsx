@@ -35,17 +35,20 @@ export function PartitionTable({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredPartitions = useMemo(() => {
+    const indexedPartitions = partitions.map((partition, index) => ({ index, partition }));
     if (!searchQuery.trim()) {
-      return partitions;
+      return indexedPartitions;
     }
     const query = searchQuery.toLowerCase();
-    return partitions.filter((p) => p.name.toLowerCase().includes(query));
+    return indexedPartitions.filter(({ partition }) =>
+      partition.name.toLowerCase().includes(query),
+    );
   }, [partitions, searchQuery]);
 
   const { toExtractCount, toExtractSize } = useMemo(() => {
     let count = 0;
     let size = 0;
-    for (const p of filteredPartitions) {
+    for (const { partition: p } of filteredPartitions) {
       if (p.selected && !completedPartitions.has(p.name)) {
         count++;
         size += p.size;
@@ -58,9 +61,11 @@ export function PartitionTable({
     return null;
   }
 
-  const selectedCount = filteredPartitions.filter((p) => p.selected).length;
+  const selectedCount = filteredPartitions.filter(({ partition }) => partition.selected).length;
   const hasCompletedPartitions = completedPartitions.size > 0;
-  const allSelected = filteredPartitions.length > 0 && filteredPartitions.every((p) => p.selected);
+  const allSelected =
+    filteredPartitions.length > 0 &&
+    filteredPartitions.every(({ partition }) => partition.selected);
   const isFiltered = searchQuery.trim().length > 0;
 
   return (
@@ -114,7 +119,7 @@ export function PartitionTable({
 
         {/* Rows — scrollable */}
         <div className="max-h-[40vh] min-h-[120px] divide-y divide-border/50 overflow-y-auto overflow-x-hidden">
-          {filteredPartitions.map((partition, index) => {
+          {filteredPartitions.map(({ partition, index }) => {
             const isRowExtracting = extractingPartitions.has(partition.name);
             const isRowCompleted = completedPartitions.has(partition.name);
             const progress = partitionProgress.get(partition.name);

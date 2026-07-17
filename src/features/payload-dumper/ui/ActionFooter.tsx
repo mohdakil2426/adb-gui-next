@@ -43,12 +43,15 @@ export function ActionFooter({
     return 'Select Partitions';
   };
 
+  const isBusy = status === 'extracting' || status === 'cancelling';
+
   return (
     <div className="border-t pt-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Button
           className="h-11 w-full"
-          disabled={status === 'extracting' || status === 'cancelling'}
+          // Allow Reset during cancel so a hung backend cannot trap the UI forever.
+          disabled={status === 'extracting'}
           onClick={onReset}
           size="lg"
           variant="outline"
@@ -61,20 +64,21 @@ export function ActionFooter({
             <StopCircle className="mr-2 size-4" />
             Cancel
           </Button>
+        ) : status === 'cancelling' && onCancel ? (
+          <Button className="h-11 w-full" disabled size="lg" variant="destructive">
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            Cancelling...
+          </Button>
         ) : (
           <Button
             className="h-11 w-full"
             disabled={
-              !payloadPath ||
-              status === 'extracting' ||
-              status === 'cancelling' ||
-              status === 'loading-partitions' ||
-              toExtractCount === 0
+              !payloadPath || isBusy || status === 'loading-partitions' || toExtractCount === 0
             }
             onClick={onExtract}
             size="lg"
           >
-            {status === 'extracting' || status === 'cancelling' ? (
+            {isBusy ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}

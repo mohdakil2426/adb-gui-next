@@ -25,7 +25,19 @@ interface ExtractDependencies {
   setExtractingPartitions: (partitions: Set<string>) => void;
   setExtractionStats: (stats: backend.ExtractionStats | null) => void;
   setOutputDir: (dir: string) => void;
-  setStatus: (status: 'error' | 'extracting' | 'success') => void;
+  setStatus: (status: 'error' | 'extracting' | 'ready' | 'success') => void;
+}
+
+function isCancelledMessage(message: string | null | undefined): boolean {
+  if (!message) {
+    return false;
+  }
+  return message.toLowerCase().includes('cancelled');
+}
+
+function partitionNameFromExtractedFile(fileName: string): string {
+  const base = fileName.split(/[/\\]/).pop() ?? fileName;
+  return base.replace(/\.img$/i, '');
 }
 
 export async function runExtractPayload({
@@ -67,6 +79,20 @@ export async function runExtractPayload({
     return;
   }
 
+  // Create cancel token BEFORE status=extracting so Cancel is never a silent no-op.
+  let cancelTokenId: string;
+  try {
+    cancelTokenId = await CreateCancellationToken();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setErrorMessage(message);
+    setStatus('error');
+    toast.error(`Failed to start extraction: ${message}`);
+    useLogStore.getState().addLog(`Failed to create cancellation token: ${message}`, 'error');
+    return;
+  }
+
+  setCancelTokenId(cancelTokenId);
   setStatus('extracting');
   setErrorMessage('');
   setExtractingPartitions(new Set(partitionsToExtract));
@@ -76,8 +102,6 @@ export async function runExtractPayload({
     .addLog(`Starting extraction of ${partitionsToExtract.length} partitions...`, 'info');
 
   try {
-    const cancelTokenId = await CreateCancellationToken();
-    setCancelTokenId(cancelTokenId);
     const targetOutputPath = outputDir || outputPath;
     const result = await ExtractPayload(
       payloadPath,
@@ -86,15 +110,21 @@ export async function runExtractPayload({
       mode === 'remote' ? prefetch : undefined,
       cancelTokenId,
     );
-    if (result.success) {
-      const newFiles = result.extractedFiles || [];
+
+    const newFiles = result.extractedFiles || [];
+    if (newFiles.length > 0) {
       setExtractedFiles([...usePayloadDumperStore.getState().extractedFiles, ...newFiles]);
-      setOutputDir(result.outputDir || '');
+      addCompletedPartitions(newFiles.map(partitionNameFromExtractedFile));
+    }
+    if (result.outputDir) {
+      setOutputDir(result.outputDir);
+    }
+    if (result.stats) {
+      setExtractionStats(result.stats);
+    }
+
+    if (result.success) {
       setStatus('success');
-      if (result.stats) {
-        setExtractionStats(result.stats);
-      }
-      addCompletedPartitions(newFiles.map((f) => f.replace('.img', '')));
       setExtractingPartitions(new Set());
       clearPartitionProgress();
       toast.success(`Extraction complete! ${newFiles.length} files extracted`, { id: toastId });
@@ -103,6 +133,22 @@ export async function runExtractPayload({
         .addLog(`Extraction complete: ${newFiles.length} files to ${result.outputDir}`, 'success');
       return;
     }
+
+    // Cancel is a first-class terminal state (rhythmcache GUI / otaripper pattern), not a hard error.
+    if (isCancelledMessage(result.error)) {
+      setErrorMessage('');
+      setStatus(newFiles.length > 0 ? 'success' : 'ready');
+      setExtractingPartitions(new Set());
+      clearPartitionProgress();
+      const message =
+        newFiles.length > 0
+          ? `Extraction cancelled — ${newFiles.length} file(s) kept`
+          : 'Extraction cancelled';
+      toast.info(message, { id: toastId });
+      useLogStore.getState().addLog(message, 'info');
+      return;
+    }
+
     setErrorMessage(result.error ?? 'Unknown error');
     setStatus('error');
     setExtractingPartitions(new Set());
@@ -110,10 +156,18 @@ export async function runExtractPayload({
     toast.error(`Extraction failed: ${result.error}`, { id: toastId });
     useLogStore.getState().addLog(`Extraction failed: ${result.error}`, 'error');
   } catch (error) {
-    setErrorMessage(String(error));
-    setStatus('error');
+    const message = String(error);
     setExtractingPartitions(new Set());
     clearPartitionProgress();
+    if (isCancelledMessage(message)) {
+      setErrorMessage('');
+      setStatus('ready');
+      toast.info('Extraction cancelled', { id: toastId });
+      useLogStore.getState().addLog('Extraction cancelled', 'info');
+      return;
+    }
+    setErrorMessage(message);
+    setStatus('error');
     toast.error(`Extraction failed: ${error}`, { id: toastId });
     useLogStore.getState().addLog(`Extraction failed: ${error}`, 'error');
   } finally {

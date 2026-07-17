@@ -44,7 +44,7 @@ export function RemoteUrlPanel({
         <Field>
           <FieldLabel className="flex items-center gap-2" htmlFor="remote-url">
             <Globe className="size-4" />
-            Payload URL
+            Payload or factory image URL
           </FieldLabel>
           <InputGroup>
             <InputGroupInput
@@ -57,7 +57,7 @@ export function RemoteUrlPanel({
               onChange={(e) => {
                 onUrlChange(e.target.value);
               }}
-              placeholder="https://example.com/ota.zip"
+              placeholder="https://dl.google.com/.../device-factory.zip"
               type="url"
               value={url}
             />

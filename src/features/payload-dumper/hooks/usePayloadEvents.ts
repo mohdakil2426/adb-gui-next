@@ -6,6 +6,11 @@ import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDu
  * Subscribes to 'payload:progress' Tauri events from the Rust backend.
  * Updates partition progress and marks partitions as completed in the store.
  *
+ * Overall extraction status still flips to success/error when `ExtractPayload`
+ * returns — progress events alone never leave `extracting`/`cancelling`.
+ * This matches otaripper / payload-dumper CLI: process exit is the session signal;
+ * per-partition bars are progress only.
+ *
  * This hook has no return value — it's a side-effect-only hook.
  * Call it once in the component that owns the extraction lifecycle.
  */
@@ -16,8 +21,41 @@ export function usePayloadEvents(): void {
   useEffect(() => {
     const unlisten = EventsOn(
       'payload:progress',
-      (data: { partitionName: string; current: number; total: number; completed: boolean }) => {
-        updatePartitionProgress(data.partitionName, data.current, data.total);
+      (data: {
+        bytesWritten?: number;
+        completed: boolean;
+        current: number;
+        etaSeconds?: number;
+        partitionName: string;
+        throughputMbps?: number;
+        total: number;
+        totalBytes?: number;
+      }) => {
+        // Ignore prefetch download pseudo-partition in the table.
+        if (data.partitionName === '__download__') {
+          updatePartitionProgress(
+            data.partitionName,
+            data.current,
+            data.total,
+            data.completed,
+            data.bytesWritten,
+            data.totalBytes,
+            data.throughputMbps,
+            data.etaSeconds,
+          );
+          return;
+        }
+
+        updatePartitionProgress(
+          data.partitionName,
+          data.current,
+          data.total,
+          data.completed,
+          data.bytesWritten,
+          data.totalBytes,
+          data.throughputMbps,
+          data.etaSeconds,
+        );
 
         if (data.completed) {
           markPartitionCompleted(data.partitionName);

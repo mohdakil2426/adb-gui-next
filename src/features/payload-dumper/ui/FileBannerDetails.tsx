@@ -26,7 +26,6 @@ interface FileBannerDetailsProps {
   prefetch: boolean;
   remoteUrl: string;
 }
-/** Key-value row with muted label and default value */
 function MetadataRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="grid min-w-0 grid-cols-[140px_1fr] gap-2 text-sm">
@@ -35,7 +34,6 @@ function MetadataRow({ label, value }: { label: string; value: React.ReactNode }
     </div>
   );
 }
-/** Section header with icon */
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <div className="flex items-center gap-2 border-border/50 border-b pb-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
@@ -44,7 +42,6 @@ function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: 
     </div>
   );
 }
-/** Copyable text with feedback */
 function CopyableText({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {
@@ -77,9 +74,7 @@ function CopyableText({ text }: { text: string }) {
     </div>
   );
 }
-/** Parse build fingerprint into human-readable device + build info */
 function parseBuildFingerprint(fp: string): { device: string; build: string } | null {
-  // Format: OnePlus/OnePlus8Pro/OnePlus8Pro:10/QKQ1.191222.002/2004210418:user/release-keys
   const parts = fp.split('/');
   if (parts.length < 3) {
     return null;
@@ -101,6 +96,7 @@ export function FileBannerDetails({
   const hasOtaPackageInfo =
     metadata.preDevice ?? metadata.postBuild ?? metadata.otaType ?? metadata.otaVersion;
   const hasPayloadProperties = metadata.fileHash ?? metadata.fileSize ?? metadata.metadataHash;
+  const isFactoryImage = metadata.remoteKind === 'factoryImage';
   const buildInfo = metadata.postBuild ? parseBuildFingerprint(metadata.postBuild) : null;
   return (
     <div className="gap-4 border-border/50 border-t pt-3">
@@ -212,7 +208,14 @@ export function FileBannerDetails({
         <div className="gap-2">
           <SectionHeader icon={Archive} title="ZIP Archive" />
           <div className="gap-1.5 pl-1">
-            <MetadataRow label="Format" value="ZIP (payload.bin inside)" />
+            <MetadataRow
+              label="Format"
+              value={
+                isFactoryImage
+                  ? 'Pixel factory image ZIP (.img entries)'
+                  : 'ZIP (payload.bin inside)'
+              }
+            />
             {metadata.zipCompressionMethod ? (
               <MetadataRow label="Compression" value={metadata.zipCompressionMethod} />
             ) : null}
@@ -236,19 +239,21 @@ export function FileBannerDetails({
         </div>
       ) : null}
       {/* OTA Manifest Section */}
-      <div className="gap-2">
-        <SectionHeader icon={Cpu} title="OTA Manifest" />
-        <div className="gap-1.5 pl-1">
-          <MetadataRow label="CrAU Version" value={metadata.payloadVersion} />
-          <MetadataRow label="Block Size" value={`${metadata.blockSize} bytes`} />
-          <MetadataRow label="Update Type" value={formatUpdateType(metadata.minorVersion)} />
-          {metadata.securityPatchLevel ? (
-            <MetadataRow label="Security Patch" value={metadata.securityPatchLevel} />
-          ) : null}
-          <MetadataRow label="Timestamp" value={formatTimestamp(metadata.maxTimestamp)} />
-          <MetadataRow label="Partial Update" value={metadata.partialUpdate ? 'Yes' : 'No'} />
+      {isFactoryImage ? null : (
+        <div className="gap-2">
+          <SectionHeader icon={Cpu} title="OTA Manifest" />
+          <div className="gap-1.5 pl-1">
+            <MetadataRow label="CrAU Version" value={metadata.payloadVersion} />
+            <MetadataRow label="Block Size" value={`${metadata.blockSize} bytes`} />
+            <MetadataRow label="Update Type" value={formatUpdateType(metadata.minorVersion)} />
+            {metadata.securityPatchLevel ? (
+              <MetadataRow label="Security Patch" value={metadata.securityPatchLevel} />
+            ) : null}
+            <MetadataRow label="Timestamp" value={formatTimestamp(metadata.maxTimestamp)} />
+            <MetadataRow label="Partial Update" value={metadata.partialUpdate ? 'Yes' : 'No'} />
+          </div>
         </div>
-      </div>
+      )}
       {/* Dynamic Groups Section — only shown if groups exist */}
       {metadata.dynamicGroups.length > 0 && (
         <div className="gap-2">

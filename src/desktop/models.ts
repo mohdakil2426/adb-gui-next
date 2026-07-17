@@ -248,6 +248,7 @@ export namespace backend {
     postSecurityPatchLevel: string | null;
     postTimestamp: string | null;
     preDevice: string | null;
+    remoteKind: 'factoryImage' | 'payload' | null;
     securityPatchLevel: string | null;
     server: string | null;
     totalSize: number;
