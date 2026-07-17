@@ -99,4 +99,25 @@ describe('payloadDumperStore', () => {
     expect(payloadPath).toBe('');
     expect(status).toBe('idle');
   });
+
+  it('cancelExtraction without token recovers to ready instead of silent no-op', () => {
+    act(() => {
+      usePayloadDumperStore.getState().setStatus('extracting');
+      usePayloadDumperStore.getState().setCancelTokenId(null);
+      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot']));
+      usePayloadDumperStore.getState().cancelExtraction();
+    });
+    const { status, extractingPartitions } = usePayloadDumperStore.getState();
+    expect(status).toBe('ready');
+    expect(extractingPartitions.size).toBe(0);
+  });
+
+  it('cancelExtraction with token enters cancelling state', () => {
+    act(() => {
+      usePayloadDumperStore.getState().setStatus('extracting');
+      usePayloadDumperStore.getState().setCancelTokenId('7');
+      usePayloadDumperStore.getState().cancelExtraction();
+    });
+    expect(usePayloadDumperStore.getState().status).toBe('cancelling');
+  });
 });
