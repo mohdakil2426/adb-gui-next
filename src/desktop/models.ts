@@ -167,12 +167,22 @@ export namespace backend {
     totalBytes: number;
   }
 
+  /**
+   * Per-partition extract lifecycle (FE status machine).
+   * Derived from `payload:progress` (`completed` + optional `status`) when Rust
+   * does not emit a full enum yet: pending → running → completed | failed.
+   * `verifying` reserved for optional future progress status.
+   */
+  export type PartitionExtractStatus = 'pending' | 'running' | 'verifying' | 'completed' | 'failed';
+
   export interface ProgressEvent {
     bytesWritten: number;
     completed: boolean;
     etaSeconds: number;
     operationIndex: number;
     partitionName: string;
+    /** Optional explicit status from backend; FE derives when omitted. */
+    status?: PartitionExtractStatus;
     throughputMbps: number;
     totalBytes: number;
     totalOperations: number;
@@ -208,8 +218,28 @@ export namespace backend {
   }
 
   export interface PartitionDetail {
+    /** Estimated network bytes for remote extract (op data_length sum / compressed size). */
+    downloadSize?: number;
     name: string;
     size: number;
+  }
+
+  /** Phases for remote list (`payload:load-progress`). camelCase matches Rust serde. */
+  export type PayloadLoadPhase =
+    | 'verifyConnection'
+    | 'locateIndex'
+    | 'detectFormat'
+    | 'readPartitions'
+    | 'done'
+    | 'error';
+
+  /** Event payload for `payload:load-progress` during remote partition list. */
+  export interface PayloadLoadProgress {
+    detail: string | null;
+    message: string;
+    phase: PayloadLoadPhase;
+    step: number;
+    totalSteps: number;
   }
 
   /** Information about a remote payload file obtained via HEAD request. */
