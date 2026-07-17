@@ -16,11 +16,11 @@ export function useMarketplaceAuth() {
   const clearGithubSession = useMarketplaceStore((state) => state.clearGithubSession);
   const setIsGithubAuthenticating = useMarketplaceStore((state) => state.setIsGithubAuthenticating);
 
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
   const clearPendingPoll = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
   }, []);
@@ -62,13 +62,19 @@ export function useMarketplaceAuth() {
   }, [clearPendingPoll, setGithubDeviceChallenge, setIsGithubAuthenticating]);
 
   useEffect(() => {
+    if (!(githubDeviceChallenge && isGithubAuthenticating)) {
+      return;
+    }
+
     let cancelled = false;
 
-    if (!(githubDeviceChallenge && isGithubAuthenticating)) {
-      return () => {
-        cancelled = true;
-      };
-    }
+    const schedulePoll = (delayMs: number) => {
+      clearPendingPoll();
+      timeoutRef.current = window.setTimeout(() => {
+        timeoutRef.current = null;
+        void poll();
+      }, delayMs);
+    };
 
     const poll = async () => {
       try {
@@ -96,18 +102,14 @@ export function useMarketplaceAuth() {
         if (result.status === 'authorization_pending') {
           const nextIntervalMs =
             (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000;
-          timeoutRef.current = setTimeout(() => {
-            void poll();
-          }, nextIntervalMs);
+          schedulePoll(nextIntervalMs);
           return;
         }
 
         if (result.status === 'slow_down') {
           const nextIntervalMs =
             (result.interval ?? githubDeviceChallenge.challenge.interval) * 1000 + SLOW_DOWN_MS;
-          timeoutRef.current = setTimeout(() => {
-            void poll();
-          }, nextIntervalMs);
+          schedulePoll(nextIntervalMs);
           return;
         }
 
@@ -141,9 +143,7 @@ export function useMarketplaceAuth() {
       }
     };
 
-    timeoutRef.current = setTimeout(() => {
-      void poll();
-    }, githubDeviceChallenge.challenge.interval * 1000);
+    schedulePoll(githubDeviceChallenge.challenge.interval * 1000);
 
     return () => {
       cancelled = true;
