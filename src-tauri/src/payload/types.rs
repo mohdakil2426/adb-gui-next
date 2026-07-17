@@ -34,12 +34,7 @@ impl ExtractionStats {
         } else {
             0.0
         };
-        Self {
-            duration_ms,
-            partitions_extracted,
-            throughput_mbps,
-            total_bytes,
-        }
+        Self { duration_ms, partitions_extracted, throughput_mbps, total_bytes }
     }
 }
 

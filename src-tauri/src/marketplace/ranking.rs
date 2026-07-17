@@ -36,64 +36,61 @@ pub fn dedupe_results(results: Vec<MarketplaceApp>) -> Vec<MarketplaceApp> {
 
     for app in results {
         let key = normalized_key(&app);
-        match deduped.get_mut(&key) {
-            Some(existing) => {
-                if !existing.available_sources.iter().any(|source| source == &app.source) {
-                    existing.available_sources.push(app.source.clone());
-                    existing.available_sources.sort();
-                }
-
-                if existing.download_url.is_none() {
-                    existing.download_url = app.download_url.clone();
-                }
-                if existing.repo_url.is_none() {
-                    existing.repo_url = app.repo_url.clone();
-                }
-                if existing.icon_url.is_none() {
-                    existing.icon_url = app.icon_url.clone();
-                }
-                if existing.summary.is_empty() && !app.summary.is_empty() {
-                    existing.summary = app.summary.clone();
-                }
-                if existing.updated_at.is_none() {
-                    existing.updated_at = app.updated_at.clone();
-                }
-                if existing.language.is_none() {
-                    existing.language = app.language.clone();
-                }
-                existing.installable = existing.installable || app.installable;
-
-                if merge_preferred(existing, &app) {
-                    existing.name = app.name.clone();
-                    existing.package_name = app.package_name.clone();
-                    existing.version = app.version.clone();
-                    existing.source = app.source.clone();
-                    existing.download_url =
-                        app.download_url.clone().or_else(|| existing.download_url.clone());
-                    existing.repo_url = app.repo_url.clone().or_else(|| existing.repo_url.clone());
-                    existing.icon_url = app.icon_url.clone().or_else(|| existing.icon_url.clone());
-                    existing.size = app.size.or(existing.size);
-                    existing.rating = app.rating.or(existing.rating);
-                    existing.downloads_count = app.downloads_count.or(existing.downloads_count);
-                    existing.malware_status =
-                        app.malware_status.clone().or_else(|| existing.malware_status.clone());
-                    existing.categories = if app.categories.is_empty() {
-                        existing.categories.clone()
-                    } else {
-                        app.categories.clone()
-                    };
-                    existing.updated_at =
-                        app.updated_at.clone().or_else(|| existing.updated_at.clone());
-                    existing.language = app.language.clone().or_else(|| existing.language.clone());
-                }
+        if let Some(existing) = deduped.get_mut(&key) {
+            if !existing.available_sources.iter().any(|source| source == &app.source) {
+                existing.available_sources.push(app.source.clone());
+                existing.available_sources.sort();
             }
-            None => {
-                let mut app = app;
-                if app.available_sources.is_empty() {
-                    app.available_sources.push(app.source.clone());
-                }
-                deduped.insert(key, app);
+
+            if existing.download_url.is_none() {
+                existing.download_url = app.download_url.clone();
             }
+            if existing.repo_url.is_none() {
+                existing.repo_url = app.repo_url.clone();
+            }
+            if existing.icon_url.is_none() {
+                existing.icon_url = app.icon_url.clone();
+            }
+            if existing.summary.is_empty() && !app.summary.is_empty() {
+                existing.summary = app.summary.clone();
+            }
+            if existing.updated_at.is_none() {
+                existing.updated_at = app.updated_at.clone();
+            }
+            if existing.language.is_none() {
+                existing.language = app.language.clone();
+            }
+            existing.installable = existing.installable || app.installable;
+
+            if merge_preferred(existing, &app) {
+                existing.name = app.name.clone();
+                existing.package_name = app.package_name.clone();
+                existing.version = app.version.clone();
+                existing.source = app.source.clone();
+                existing.download_url =
+                    app.download_url.clone().or_else(|| existing.download_url.clone());
+                existing.repo_url = app.repo_url.clone().or_else(|| existing.repo_url.clone());
+                existing.icon_url = app.icon_url.clone().or_else(|| existing.icon_url.clone());
+                existing.size = app.size.or(existing.size);
+                existing.rating = app.rating.or(existing.rating);
+                existing.downloads_count = app.downloads_count.or(existing.downloads_count);
+                existing.malware_status =
+                    app.malware_status.clone().or_else(|| existing.malware_status.clone());
+                existing.categories = if app.categories.is_empty() {
+                    existing.categories.clone()
+                } else {
+                    app.categories.clone()
+                };
+                existing.updated_at =
+                    app.updated_at.clone().or_else(|| existing.updated_at.clone());
+                existing.language = app.language.clone().or_else(|| existing.language.clone());
+            }
+        } else {
+            let mut app = app;
+            if app.available_sources.is_empty() {
+                app.available_sources.push(app.source.clone());
+            }
+            deduped.insert(key, app);
         }
     }
 

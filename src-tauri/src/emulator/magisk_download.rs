@@ -21,7 +21,7 @@ const MAGISK_GITHUB_LATEST_URL: &str =
 /// Uses a blocking `reqwest` client — call from a `spawn_blocking` context.
 pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
     if let Some(local) = local_rootavd_magisk_zip() {
-        let size = local.metadata().map(|metadata| metadata.len()).unwrap_or(0);
+        let size = local.metadata().map_or(0, |metadata| metadata.len());
         return Ok(MagiskStableRelease {
             version: MAGISK_AVD_RECOMMENDED_VERSION.into(),
             tag: MAGISK_AVD_RECOMMENDED_TAG.into(),
@@ -183,7 +183,7 @@ pub fn download_magisk_stable(
     let dest = target_dir.join(&file_name);
 
     if dest.exists() {
-        let cached_size = dest.metadata().map(|m| m.len()).unwrap_or(0);
+        let cached_size = dest.metadata().map_or(0, |m| m.len());
         if cached_size > 0 {
             log::info!("Magisk {} already cached at {:?}", release.tag, dest);
             return Ok(dest);
@@ -220,7 +220,7 @@ pub fn download_magisk_stable(
     std::io::copy(&mut response, &mut out).map_err(|e| e.to_string())?;
     drop(out);
 
-    let final_size = dest.metadata().map(|m| m.len()).unwrap_or(0);
+    let final_size = dest.metadata().map_or(0, |m| m.len());
     if final_size == 0 {
         let _ = std::fs::remove_file(&dest);
         return Err(format!("Downloaded Magisk {} is empty", release.tag));

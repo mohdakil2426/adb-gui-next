@@ -173,9 +173,7 @@ pub fn apply_package_actions(
     user: u32,
 ) -> CmdResult<Vec<DebloatActionResult>> {
     if sdk == 0 {
-        return Err(
-            "Could not determine Android SDK; refusing destructive action".to_string(),
-        );
+        return Err("Could not determine Android SDK; refusing destructive action".to_string());
     }
 
     let action = DebloatAction::from_action_str(action_str)

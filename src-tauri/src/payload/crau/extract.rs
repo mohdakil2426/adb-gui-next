@@ -10,7 +10,7 @@
 //! (`io::with_io_buf`). The full decompressed block is never buffered; bytes are written
 //! to the output file as they stream out of the decoder.
 
-use super::parser::{load_payload, LoadedPayload, open_mmap, parse_header};
+use super::parser::{LoadedPayload, load_payload, open_mmap, parse_header};
 use crate::payload::cancel::CancellationToken;
 use crate::payload::chromeos_update_engine;
 use crate::payload::io::NonTemporalWriter;
@@ -61,8 +61,7 @@ pub fn extract_payload(
     let block_size = payload.manifest.block_size.unwrap_or(DEFAULT_BLOCK_SIZE);
     let output_dir = output_dir
         .filter(|path| !path.as_os_str().is_empty())
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| default_output_dir(payload_path));
+        .map_or_else(|| default_output_dir(payload_path), Path::to_path_buf);
     fs::create_dir_all(&output_dir)?;
     let guard = Arc::new(TransactionGuard::new(output_dir.clone()));
 
@@ -142,11 +141,10 @@ pub fn extract_payload(
                 && let Some(ref expected) = info.hash
                 && !expected.is_empty()
             {
-                let ok = crate::payload::verify::verify_sha256(&image_path, expected).map_err(
-                    |e| {
+                let ok =
+                    crate::payload::verify::verify_sha256(&image_path, expected).map_err(|e| {
                         anyhow::anyhow!("failed to hash output for {}: {e}", partition_name)
-                    },
-                )?;
+                    })?;
                 if !ok {
                     anyhow::bail!("partition {} output file SHA-256 mismatch", partition_name);
                 }
@@ -175,11 +173,8 @@ pub fn extract_payload(
         progress(&partition.partition_name, 1, 1, true);
     }
 
-    let stats = ExtractionStats::computed(
-        extract_started.elapsed(),
-        extracted_files.len(),
-        total_bytes,
-    );
+    let stats =
+        ExtractionStats::computed(extract_started.elapsed(), extracted_files.len(), total_bytes);
 
     Ok(ExtractPayloadResult {
         success: true,

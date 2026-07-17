@@ -2,9 +2,14 @@
 //!
 //! Run with: cargo run --manifest-path src-tauri/Cargo.toml --example test_ops_decrypt
 
+// Same transitive graph as the lib crate; see lib.rs.
+#![allow(clippy::multiple_crate_versions)]
+// memmap2::Mmap::map requires an unsafe block (same pattern as payload domain).
+#![allow(unsafe_code)]
+
 use std::io::{Read, Seek, SeekFrom};
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ops_path = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../docs/refrences/oppo_decrypt-master/instantnoodlep_15_I.13_200411.ops"
@@ -13,26 +18,26 @@ fn main() {
     let path = std::path::Path::new(ops_path);
     if !path.exists() {
         eprintln!("OPS file not found: {ops_path}");
-        return;
+        return Ok(());
     }
 
     println!("=== OPS Decryption Test ===");
     println!("File: {}", path.display());
 
-    let file_size = std::fs::metadata(path).unwrap().len() as usize;
+    let file_size = std::fs::metadata(path)?.len() as usize;
     println!("File size: {file_size} bytes ({:.2} GB)", file_size as f64 / 1_073_741_824.0);
 
-    let mut file = std::fs::File::open(path).unwrap();
+    let mut file = std::fs::File::open(path)?;
 
     // ─── Step 1: Read and validate footer ───
     println!("\n--- Footer ---");
-    file.seek(SeekFrom::End(-0x200)).unwrap();
+    file.seek(SeekFrom::End(-0x200))?;
     let mut footer_buf = vec![0u8; 0x200];
-    file.read_exact(&mut footer_buf).unwrap();
+    file.read_exact(&mut footer_buf)?;
 
-    let magic = u32::from_le_bytes(footer_buf[0x10..0x14].try_into().unwrap());
-    let config_offset = u32::from_le_bytes(footer_buf[0x14..0x18].try_into().unwrap());
-    let xml_length = u32::from_le_bytes(footer_buf[0x18..0x1C].try_into().unwrap()) as usize;
+    let magic = u32::from_le_bytes(footer_buf[0x10..0x14].try_into()?);
+    let config_offset = u32::from_le_bytes(footer_buf[0x14..0x18].try_into()?);
+    let xml_length = u32::from_le_bytes(footer_buf[0x18..0x1C].try_into()?) as usize;
 
     println!("Magic: 0x{magic:04X} (expected 0x7CEF)");
     println!("Config offset: {config_offset} sectors ({} bytes)", config_offset as u64 * 512);
@@ -49,9 +54,9 @@ fn main() {
         start + aligned_len
     );
 
-    file.seek(SeekFrom::Start(start as u64)).unwrap();
+    file.seek(SeekFrom::Start(start as u64))?;
     let mut encrypted_xml = vec![0u8; aligned_len];
-    file.read_exact(&mut encrypted_xml).unwrap();
+    file.read_exact(&mut encrypted_xml)?;
 
     println!("First 32 encrypted bytes: {:02X?}", &encrypted_xml[..32]);
 
@@ -83,8 +88,9 @@ fn main() {
     println!("\n--- Full Parse (mmap) ---");
     drop(file); // close file handle before mmap
 
-    let file = std::fs::File::open(path).unwrap();
-    let mmap = unsafe { memmap2::Mmap::map(&file).unwrap() };
+    let file = std::fs::File::open(path)?;
+    // SAFETY: file is opened read-only and not mutated while mapped.
+    let mmap = unsafe { memmap2::Mmap::map(&file)? };
 
     use adb_gui_next_lib::payload::ops::ops_parser::parse_ops;
     match parse_ops(&mmap) {
@@ -115,4 +121,5 @@ fn main() {
     }
 
     println!("\n=== Done ===");
+    Ok(())
 }

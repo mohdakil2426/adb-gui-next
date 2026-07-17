@@ -191,10 +191,7 @@ async fn load_central_directory(reader: &HttpPayloadReader) -> Result<(u64, Vec<
     }
 
     let cd_data = reader.read_range(cd_offset, cd_size).await?;
-    session::set_zip_index(
-        reader,
-        CachedZipIndex { cd_offset, cd_data: cd_data.clone() },
-    );
+    session::set_zip_index(reader, CachedZipIndex { cd_offset, cd_data: cd_data.clone() });
     Ok((cd_offset, cd_data))
 }
 
@@ -210,9 +207,8 @@ pub async fn read_text_file_from_zip(
     target_name: &str,
 ) -> Result<Option<String>> {
     // Reuse session-cached CD when available (list/meta/extract path).
-    let (_cd_offset, cd_data) = match load_central_directory(reader).await {
-        Ok(cd) => cd,
-        Err(_) => return Ok(None),
+    let Ok((_cd_offset, cd_data)) = load_central_directory(reader).await else {
+        return Ok(None);
     };
 
     let mut parse_pos = 0;

@@ -55,9 +55,8 @@ pub async fn extract_payload(
 
     // Resolve cancellation token if provided. A non-None ID must parse and exist.
     let (parsed_token_id, cancel_token) = if let Some(id) = cancel_token_id.as_ref() {
-        let parsed = id
-            .parse::<usize>()
-            .map_err(|_| "Invalid or unknown cancellation token".to_string())?;
+        let parsed =
+            id.parse::<usize>().map_err(|_| "Invalid or unknown cancellation token".to_string())?;
         let registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
             log::error!("Lock poisoned, recovering: {}", e);
             e.into_inner()
@@ -298,8 +297,7 @@ pub async fn get_ops_metadata(path: String) -> CmdResult<ops::OpsMetadata> {
 #[tauri::command]
 pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
     info!("Checking remote payload URL: {}", url.trim());
-    let reader =
-        payload::open_http_reader(url.trim()).await.map_err(|e| e.to_string())?;
+    let reader = payload::open_http_reader(url.trim()).await.map_err(|e| e.to_string())?;
 
     Ok(RemotePayloadInfo {
         content_length: reader.content_length(),
@@ -373,9 +371,8 @@ pub async fn extract_delta_payload(
 
     // Resolve cancellation token if provided. A non-None ID must parse and exist.
     let (parsed_token_id, cancel_token) = if let Some(id) = cancel_token_id.as_ref() {
-        let parsed = id
-            .parse::<usize>()
-            .map_err(|_| "Invalid or unknown cancellation token".to_string())?;
+        let parsed =
+            id.parse::<usize>().map_err(|_| "Invalid or unknown cancellation token".to_string())?;
         let registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
             log::error!("Lock poisoned, recovering: {}", e);
             e.into_inner()

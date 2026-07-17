@@ -2,6 +2,7 @@
 //!
 //! Avoids loading the entire ZIP into RAM or creating temp files when
 //! `payload.bin` is stored uncompressed (compression method 0).
+#![allow(unsafe_code)] // memmap2::Mmap::map
 
 use memmap2::Mmap;
 use std::path::Path;
@@ -87,10 +88,10 @@ impl AsRef<[u8]> for ZipPayloadMmap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
-    use tempfile::tempdir;
     use ::zip::write::SimpleFileOptions;
     use ::zip::{CompressionMethod, ZipArchive, ZipWriter};
+    use std::io::Write;
+    use tempfile::tempdir;
 
     #[test]
     fn mmap_file_exposes_full_contents() {
@@ -152,9 +153,8 @@ mod tests {
             zip.finish().expect("finish");
         }
 
-        let err = match ZipPayloadMmap::mmap_zip_payload(&zip_path, 0, 10_000_000) {
-            Ok(_) => panic!("expected out-of-range error"),
-            Err(e) => e,
+        let Err(err) = ZipPayloadMmap::mmap_zip_payload(&zip_path, 0, 10_000_000) else {
+            panic!("expected out-of-range error")
         };
         assert_eq!(err.kind(), std::io::ErrorKind::UnexpectedEof);
     }

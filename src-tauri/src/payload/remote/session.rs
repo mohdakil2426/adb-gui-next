@@ -32,10 +32,13 @@ struct SessionEntry {
 
 static SESSION: LazyLock<Mutex<Option<SessionEntry>>> = LazyLock::new(|| Mutex::new(None));
 
-fn cache_key_matches(entry: &SessionEntry, url: &str, content_length: u64, etag: Option<&str>) -> bool {
-    entry.url == url
-        && entry.content_length == content_length
-        && entry.etag.as_deref() == etag
+fn cache_key_matches(
+    entry: &SessionEntry,
+    url: &str,
+    content_length: u64,
+    etag: Option<&str>,
+) -> bool {
+    entry.url == url && entry.content_length == content_length && entry.etag.as_deref() == etag
 }
 
 /// Open an HTTP reader, reusing a cached session when URL + length + etag match.
@@ -67,12 +70,7 @@ fn store_reader(url: &str, reader: &HttpPayloadReader) {
     };
     // Drop previous session if URL/identity changed.
     if let Some(prev) = guard.as_ref()
-        && !cache_key_matches(
-            prev,
-            url,
-            reader.content_length(),
-            reader.etag(),
-        )
+        && !cache_key_matches(prev, url, reader.content_length(), reader.etag())
     {
         *guard = None;
     }
@@ -176,40 +174,17 @@ mod tests {
             zip_payload: None,
             zip_index: None,
         };
-        assert!(cache_key_matches(
-            &entry,
-            "https://example.com/ota.zip",
-            1000,
-            Some("\"abc\"")
-        ));
-        assert!(!cache_key_matches(
-            &entry,
-            "https://example.com/ota.zip",
-            999,
-            Some("\"abc\"")
-        ));
-        assert!(!cache_key_matches(
-            &entry,
-            "https://example.com/other.zip",
-            1000,
-            Some("\"abc\"")
-        ));
-        assert!(!cache_key_matches(
-            &entry,
-            "https://example.com/ota.zip",
-            1000,
-            Some("\"xyz\"")
-        ));
+        assert!(cache_key_matches(&entry, "https://example.com/ota.zip", 1000, Some("\"abc\"")));
+        assert!(!cache_key_matches(&entry, "https://example.com/ota.zip", 999, Some("\"abc\"")));
+        assert!(!cache_key_matches(&entry, "https://example.com/other.zip", 1000, Some("\"abc\"")));
+        assert!(!cache_key_matches(&entry, "https://example.com/ota.zip", 1000, Some("\"xyz\"")));
     }
 
     #[test]
     fn zip_lookup_roundtrip_in_session() {
         clear_session_cache();
-        let reader = HttpPayloadReader::from_parts_for_test(
-            "https://cdn.example/p.zip".into(),
-            42,
-            None,
-        );
+        let reader =
+            HttpPayloadReader::from_parts_for_test("https://cdn.example/p.zip".into(), 42, None);
         store_reader(reader.url(), &reader);
 
         let info = ZipPayloadInfo {

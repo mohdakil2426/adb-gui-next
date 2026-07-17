@@ -310,7 +310,10 @@ pub fn scan_avd_root_readiness(
         return Ok(RootReadinessScan { checks, can_proceed, has_warnings, recommended_action });
     }
 
-    let active_serial = serial.unwrap();
+    let Some(active_serial) = serial else {
+        // is_running requires Some(serial); defensive fallback if that invariant breaks.
+        return Ok(RootReadinessScan { checks, can_proceed, has_warnings, recommended_action });
+    };
 
     // ── 2: Boot completed ───────────────────────────────────────────────────
     let boot_completed = getprop(app, active_serial, "sys.boot_completed").unwrap_or_default();
@@ -508,7 +511,7 @@ pub fn scan_avd_root_readiness(
                     Some("The system image may not be fully installed. Reinstall via SDK Manager.")
                 );
             } else {
-                let size = rd_path.metadata().map(|m| m.len()).unwrap_or(0);
+                let size = rd_path.metadata().map_or(0, |m| m.len());
                 if size == 0 {
                     add_check!(
                         &mut checks,
@@ -534,7 +537,7 @@ pub fn scan_avd_root_readiness(
                 }
 
                 // Write permission check.
-                let parent_writable = rd_path.parent().map(is_dir_writable).unwrap_or(false);
+                let parent_writable = rd_path.parent().is_some_and(is_dir_writable);
                 if parent_writable {
                     add_check!(
                         &mut checks,
@@ -737,7 +740,7 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
         ));
     }
 
-    let ramdisk_size = ramdisk_path.metadata().map(|m| m.len()).unwrap_or(0);
+    let ramdisk_size = ramdisk_path.metadata().map_or(0, |m| m.len());
     log::info!("[root] Step 1 — ramdisk exists, size = {ramdisk_size} bytes");
 
     // Create a backup before touching anything.
@@ -755,7 +758,7 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
     fs::create_dir_all(&local_work_dir).map_err(|e| e.to_string())?;
 
     let package_path = resolve_package_path(&request.source, &local_work_dir)?;
-    let pkg_size = package_path.metadata().map(|m| m.len()).unwrap_or(0);
+    let pkg_size = package_path.metadata().map_or(0, |m| m.len());
     log::info!("[root] Step 2 — package ready: {} ({pkg_size} bytes)", package_path.display());
     emit_progress(
         app,
@@ -790,7 +793,7 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
         pkg.magiskinit.display(),
         pkg.magisk_binary.display(),
         pkg.busybox.display(),
-        pkg.magisk32.as_ref().map(|p| p.display().to_string()).unwrap_or_else(|| "n/a".into()),
+        pkg.magisk32.as_ref().map_or_else(|| "n/a".into(), |p| p.display().to_string()),
     );
     emit_progress(
         app,
@@ -854,11 +857,11 @@ pub fn root_avd_automated(app: &AppHandle, request: &RootAvdRequest) -> CmdResul
     let local_patched = local_work_dir.join("ramdiskpatched.img");
     adb_pull(app, &request.serial, &format!("{ROOT_WORKDIR}/ramdiskpatched.img"), &local_patched)?;
 
-    if !local_patched.exists() || fs::metadata(&local_patched).map(|m| m.len()).unwrap_or(0) == 0 {
+    if !local_patched.exists() || fs::metadata(&local_patched).map_or(0, |m| m.len()) == 0 {
         adb_cleanup_workdir(app, &request.serial);
         return Err("Pulled ramdisk is empty or missing — patching may have failed.".into());
     }
-    let patched_size = local_patched.metadata().map(|m| m.len()).unwrap_or(0);
+    let patched_size = local_patched.metadata().map_or(0, |m| m.len());
     log::info!("[root] Step 6 — pulled patched ramdisk: {patched_size} bytes");
     emit_progress(app, 6, "Ramdisk pulled", Some(&format!("{patched_size} bytes")));
 

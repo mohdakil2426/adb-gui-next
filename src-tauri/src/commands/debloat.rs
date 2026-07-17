@@ -8,7 +8,9 @@ use crate::debloat::{
     },
     cache::DebloatCache,
     lists::load_uad_lists,
-    sync::{build_uad_map, get_android_sdk, get_device_id, sync_device_packages, try_get_android_sdk},
+    sync::{
+        build_uad_map, get_android_sdk, get_device_id, sync_device_packages, try_get_android_sdk,
+    },
 };
 use log::info;
 use tauri::AppHandle;

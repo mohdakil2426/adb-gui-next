@@ -1,4 +1,5 @@
 //! CrAU payload header parsing and protobuf manifest decoding.
+#![allow(unsafe_code)] // memmap2::Mmap::map
 
 use crate::payload::chromeos_update_engine;
 use crate::payload::types::PartitionDetail;

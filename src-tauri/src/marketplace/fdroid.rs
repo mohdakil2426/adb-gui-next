@@ -107,16 +107,13 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
     let search_meta = match client.get(&search_url).send().await {
         Ok(resp) => resp.json::<FdroidSearchResponse>().await.ok().and_then(|search_results| {
             search_results.apps.into_iter().find(|app| {
-                extract_package_from_url(&app.url)
-                    .map(|candidate| candidate == package)
-                    .unwrap_or(false)
+                extract_package_from_url(&app.url).is_some_and(|candidate| candidate == package)
             })
         }),
         Err(_) => None,
     };
 
-    let name =
-        search_meta.as_ref().map(|meta| meta.name.clone()).unwrap_or_else(|| package.to_string());
+    let name = search_meta.as_ref().map_or_else(|| package.to_string(), |meta| meta.name.clone());
     let description = search_meta.as_ref().map(|meta| meta.summary.clone()).unwrap_or_default();
     let icon_url = search_meta.as_ref().and_then(|meta| {
         if meta.icon.is_empty() {

@@ -105,9 +105,9 @@ async fn verify_apk_availability(
         let sem = Arc::clone(&semaphore);
 
         set.spawn(async move {
-            let _permit = match sem.acquire().await {
-                Ok(p) => p,
-                Err(_) => return app, // semaphore closed — return unmodified
+            // semaphore closed — return unmodified
+            let Ok(_permit) = sem.acquire().await else {
+                return app;
             };
 
             let url = format!(
@@ -115,9 +115,8 @@ async fn verify_apk_availability(
                 app.package_name
             );
 
-            let response = match auth_headers(client.get(&url), &token).send().await {
-                Ok(r) => r,
-                Err(_) => return app,
+            let Ok(response) = auth_headers(client.get(&url), &token).send().await else {
+                return app;
             };
 
             // On rate-limit, skip verification gracefully

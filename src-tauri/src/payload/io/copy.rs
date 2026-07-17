@@ -1,4 +1,5 @@
 //! Shared I/O utilities for payload extraction.
+#![allow(unsafe_code)] // SIMD copy paths (x86_64)
 
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::{__m512i, _mm512_loadu_si512, _mm512_storeu_si512};

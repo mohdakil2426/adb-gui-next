@@ -9,6 +9,7 @@
 //!   Best for slow/high-latency connections — extraction is fast after download.
 //! - **Direct** (`false`): Reads HTTP ranges on-demand during extraction.
 //!   Best for fast connections — starts extraction immediately without waiting for full download.
+#![allow(unsafe_code)] // memmap2 for prefetched payload files
 
 pub mod factory;
 pub mod http;
@@ -46,8 +47,6 @@ use tempfile::NamedTempFile;
 
 #[cfg(feature = "remote_zip")]
 use tauri::Emitter;
-
-
 
 /// Progress callback for downloads.
 pub type DownloadProgress = Box<dyn Fn(u64, u64) + Send + Sync>;
@@ -162,22 +161,21 @@ pub async fn list_remote_payload_partitions(
         );
 
         // Read the first 1MB of payload.bin from within the ZIP
-        let header_data = match read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024)
-            .await
-        {
-            Ok(data) => data,
-            Err(err) => {
-                load_progress::emit_load_progress(
-                    app_ref,
-                    "error",
-                    "Failed to read payload header",
-                    Some(&err.to_string()),
-                    3,
-                    TOTAL_STEPS,
-                );
-                return Err(err);
-            }
-        };
+        let header_data =
+            match read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024).await {
+                Ok(data) => data,
+                Err(err) => {
+                    load_progress::emit_load_progress(
+                        app_ref,
+                        "error",
+                        "Failed to read payload header",
+                        Some(&err.to_string()),
+                        3,
+                        TOTAL_STEPS,
+                    );
+                    return Err(err);
+                }
+            };
         match parse_header(&header_data) {
             Ok(parsed) => parsed,
             Err(err) => {
@@ -533,8 +531,7 @@ pub async fn extract_remote_prefetch(
     if cancel_token.is_some_and(CancellationToken::is_cancelled) {
         anyhow::bail!("extraction cancelled");
     }
-    let header_data =
-        read_from_zip_or_direct(&reader, &zip_info, 0, 1024 * 1024).await?;
+    let header_data = read_from_zip_or_direct(&reader, &zip_info, 0, 1024 * 1024).await?;
     let (manifest_bytes, data_offset) = parse_header(&header_data)?;
     let probe_manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
     let span =
@@ -574,9 +571,8 @@ pub async fn extract_remote_prefetch(
         }
         let chunk_end = (downloaded + chunk_size).min(download_len);
         let chunk_len = chunk_end - downloaded;
-        let data = reader
-            .read_range_cancellable(abs_start + downloaded, chunk_len, cancel_token)
-            .await?;
+        let data =
+            reader.read_range_cancellable(abs_start + downloaded, chunk_len, cancel_token).await?;
         temp.as_file_mut().write_all(&data)?;
         downloaded = chunk_end;
 
@@ -633,13 +629,13 @@ pub async fn extract_remote_prefetch(
     let (manifest_bytes, data_offset) = parse_header(&mmap)?;
     let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
 
-    let output_dir = output_dir
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
+    let output_dir = output_dir.filter(|p| !p.as_os_str().is_empty()).map_or_else(
+        || {
             let stamp = crate::payload::format_datetime();
             std::path::PathBuf::from(format!("extracted_{stamp}"))
-        });
+        },
+        std::path::PathBuf::from,
+    );
 
     std::fs::create_dir_all(&output_dir)?;
 
@@ -794,13 +790,13 @@ pub async fn extract_remote_direct(
         content_length
     );
 
-    let output_dir = output_dir
-        .filter(|p| !p.as_os_str().is_empty())
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| {
+    let output_dir = output_dir.filter(|p| !p.as_os_str().is_empty()).map_or_else(
+        || {
             let stamp = crate::payload::format_datetime();
             std::path::PathBuf::from(format!("extracted_{stamp}"))
-        });
+        },
+        std::path::PathBuf::from,
+    );
 
     std::fs::create_dir_all(&output_dir)?;
 
@@ -1075,11 +1071,7 @@ fn extract_partition_from_remote(
         let raw_data = if let Some(zi) = read_context.zip_info {
             let abs_offset =
                 zi.offset + (read_context.data_offset as u64).saturating_add(data_offset_op);
-            read_context.http.read_range_sync_cancellable(
-                abs_offset,
-                data_length,
-                cancel_token,
-            )?
+            read_context.http.read_range_sync_cancellable(abs_offset, data_length, cancel_token)?
         } else {
             read_context.http.read_range_sync_cancellable(
                 (read_context.data_offset as u64).saturating_add(data_offset_op),
@@ -1104,9 +1096,7 @@ fn extract_partition_from_remote(
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
             Type::ReplaceXz => {
-                Some(Box::new(liblzma::read::XzDecoder::new_multi_decoder(Cursor::new(
-                    &raw_data,
-                ))))
+                Some(Box::new(liblzma::read::XzDecoder::new_multi_decoder(Cursor::new(&raw_data))))
             }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(&raw_data)))),
             Type::Zstd => Some(Box::new(

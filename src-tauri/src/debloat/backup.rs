@@ -39,11 +39,7 @@ pub struct BackupSummary {
 /// Sanitize a device serial used as a path component (alphanumeric / `.` / `_` / `-` only).
 fn sanitize_device_id(device_id: &str) -> String {
     let cleaned = sanitize_filename(device_id);
-    if cleaned.is_empty() {
-        "unknown".to_string()
-    } else {
-        cleaned
-    }
+    if cleaned.is_empty() { "unknown".to_string() } else { cleaned }
 }
 
 fn backup_dir(app: &AppHandle, device_id: &str) -> PathBuf {

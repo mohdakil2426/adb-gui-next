@@ -75,9 +75,8 @@ const MAX_HTTP_REDIRECTS: usize = 5;
 /// Check if a URL points to a private/internal IP address.
 /// Returns true if the URL should be blocked to prevent SSRF attacks.
 pub(crate) fn is_private_url(url: &url::Url) -> bool {
-    let host = match url.host() {
-        Some(host) => host,
-        None => return true,
+    let Some(host) = url.host() else {
+        return true;
     };
 
     match host {
@@ -224,8 +223,7 @@ impl HttpPayloadReader {
             .headers()
             .get("accept-ranges")
             .and_then(|v| v.to_str().ok())
-            .map(|v| v == "bytes")
-            .unwrap_or(false);
+            .is_some_and(|v| v == "bytes");
 
         if !supports_ranges {
             return Err(no_range_error());
@@ -267,10 +265,8 @@ impl HttpPayloadReader {
         content_length: u64,
         etag: Option<String>,
     ) -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(5))
-            .build()
-            .expect("test client");
+        let client =
+            Client::builder().timeout(Duration::from_secs(5)).build().expect("test client");
         Self {
             client,
             url,

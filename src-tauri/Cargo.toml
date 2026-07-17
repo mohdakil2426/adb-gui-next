@@ -4,6 +4,11 @@ version = "0.2.5"
 description = "ADB GUI Next for Android device workflows"
 authors = ["akila"]
 edition = "2024"
+license = "MIT"
+repository = "https://github.com/mohdakil2426/adb-gui-next"
+readme = "../README.md"
+keywords = ["adb", "android", "tauri", "fastboot"]
+categories = ["development-tools"]
 
 [lib]
 name = "adb_gui_next_lib"
@@ -42,7 +47,7 @@ liblzma = "0.4"
 zstd = "0.13.3"
 zip = "8.6.0"
 # HTTP range bodies / zero-copy reclaim into Vec when refcount == 1.
-bytes = "1"
+bytes = "1.12.1"
 tauri-plugin-clipboard-manager = "2.3.2"
 urlencoding = "2.1.3"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
@@ -75,6 +80,33 @@ default = ["local_zip", "remote_zip", "brotli"]
 local_zip = []
 remote_zip = []
 brotli = ["dep:brotli"]
+
+# Maximum (non-extreme) quality bar — Cargo + Clippy official groups.
+# CI: `cargo clippy --all-targets -- -D warnings` (package.json lint:rust).
+# Pedantic: cherry-picked only (Clippy docs: do not enable whole group as deny).
+# Restriction: unwrap/expect only; never whole restriction group.
+# See: https://doc.rust-lang.org/clippy/lints.html
+# See: https://doc.rust-lang.org/cargo/reference/lints.html
+[lints.rust]
+# Surface unsafe; modules that need memmap2/FFI use local #![allow(unsafe_code)].
+unsafe_code = "warn"
+
+[lints.clippy]
+# Cargo.toml hygiene (Clippy cargo group)
+cargo = "warn"
+# Restriction cherry-picks — tests exempt via clippy.toml
+unwrap_used = "warn"
+expect_used = "warn"
+# Pedantic cherry-picks (high signal; avoided bulk style noise like uninlined_format_args)
+manual_let_else = "warn"
+manual_ok_or = "warn"
+manual_map = "warn"
+map_unwrap_or = "warn"
+needless_continue = "warn"
+single_match_else = "warn"
+semicolon_if_nothing_returned = "warn"
+manual_string_new = "warn"
+# Intentionally NOT enabled: full pedantic/restriction/nursery; uninlined_format_args (noise)
 
 [profile.dev]
 incremental = true

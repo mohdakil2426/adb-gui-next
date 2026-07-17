@@ -18,8 +18,7 @@ pub fn build_backup_entry(path: PathBuf) -> BackupEntry {
 pub fn build_restore_plan(source: &str, paths: &[PathBuf]) -> RestorePlan {
     let created_at = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs().to_string())
-        .unwrap_or_else(|_| "0".into());
+        .map_or_else(|_| "0".into(), |duration| duration.as_secs().to_string());
 
     RestorePlan {
         entries: paths.iter().cloned().map(build_backup_entry).collect(),

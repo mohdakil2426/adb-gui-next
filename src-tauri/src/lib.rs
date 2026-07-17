@@ -1,3 +1,8 @@
+// Unavoidable: Tauri/plugin/transitive graph pulls multiple major versions of
+// common crates (windows-sys, thiserror, hashbrown, …). Cannot unify without
+// forking the dependency tree.
+#![allow(clippy::multiple_crate_versions)]
+
 mod commands;
 pub mod debloat;
 pub mod emulator;
@@ -29,6 +34,8 @@ fn build_log_targets() -> Vec<tauri_plugin_log::Target> {
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+// Bootstrap: process cannot continue if Tauri fails to build the application.
+#[allow(clippy::expect_used)]
 pub fn run() {
     let _ = fix_path_env::fix();
     tauri::Builder::default()

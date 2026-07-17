@@ -1,3 +1,6 @@
+// Same transitive graph as the lib crate; see lib.rs.
+#![allow(clippy::multiple_crate_versions)]
+
 use adb_gui_next_lib::payload::{copy_raw_slice, detect_copy_strategy};
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use std::hint::black_box;
@@ -12,7 +15,7 @@ fn bench_copy_strategies(c: &mut Criterion) {
         let mut dst = vec![0u8; size];
 
         group.bench_with_input(BenchmarkId::new(format!("{:?}", strategy), size), &size, |b, _| {
-            b.iter(|| copy_raw_slice(black_box(&mut dst), black_box(&src)))
+            b.iter(|| copy_raw_slice(black_box(&mut dst), black_box(&src)));
         });
     }
     group.finish();

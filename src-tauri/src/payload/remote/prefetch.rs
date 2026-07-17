@@ -153,7 +153,8 @@ mod tests {
     #[test]
     fn absolute_range_stored_zip() {
         let span = PayloadByteSpan { start: 0, end: 5000 };
-        let (abs, len) = absolute_download_range(span, Some(100_000), Some(50_000), Some(0), 200_000);
+        let (abs, len) =
+            absolute_download_range(span, Some(100_000), Some(50_000), Some(0), 200_000);
         assert_eq!(abs, 100_000);
         assert_eq!(len, 5000);
     }
@@ -161,8 +162,7 @@ mod tests {
     #[test]
     fn absolute_range_deflated_takes_full_member() {
         let span = PayloadByteSpan { start: 0, end: 100 };
-        let (abs, len) =
-            absolute_download_range(span, Some(1000), Some(8000), Some(8), 100_000);
+        let (abs, len) = absolute_download_range(span, Some(1000), Some(8000), Some(8), 100_000);
         assert_eq!(abs, 1000);
         assert_eq!(len, 8000);
     }

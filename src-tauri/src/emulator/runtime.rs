@@ -111,14 +111,13 @@ pub fn runtime_avd_names(app: &AppHandle) -> CmdResult<HashMap<String, String>> 
 }
 
 pub fn is_serial_online(app: &AppHandle, serial: &str) -> bool {
-    run_binary_command_allow_output_on_failure(app, "adb", &["devices"])
-        .ok()
-        .map(|output| {
+    run_binary_command_allow_output_on_failure(app, "adb", &["devices"]).ok().is_some_and(
+        |output| {
             parse_adb_devices(&output)
                 .into_iter()
                 .any(|(candidate, status)| candidate == serial && status == "device")
-        })
-        .unwrap_or(false)
+        },
+    )
 }
 
 pub fn is_serial_rooted(app: &AppHandle, serial: &str) -> bool {

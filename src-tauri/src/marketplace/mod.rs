@@ -37,6 +37,10 @@ impl ManagedHttpClient {
 
 impl Default for ManagedHttpClient {
     fn default() -> Self {
-        Self::new().expect("failed to create HTTP client at startup")
+        // Bootstrap: fail fast if the shared HTTP client cannot be built at app start.
+        #[allow(clippy::expect_used)]
+        {
+            Self::new().expect("failed to create HTTP client at startup")
+        }
     }
 }

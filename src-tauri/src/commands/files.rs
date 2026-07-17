@@ -41,10 +41,8 @@ fn validate_write_path_for_mode(path: &str, access_mode: FileAccessMode) -> CmdR
 }
 
 fn root_transfer_dir() -> String {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or(0);
+    let nanos =
+        SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |duration| duration.as_nanos());
     format!("/data/local/tmp/adb-gui-next-root-transfer/{}-{nanos}", std::process::id())
 }
 

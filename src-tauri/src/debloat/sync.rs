@@ -21,17 +21,13 @@ pub fn try_get_android_sdk(app: &AppHandle) -> Result<u32, String> {
     let raw = run_binary_command(app, "adb", &["shell", "getprop", "ro.build.version.sdk"])?;
     let trimmed = raw.trim();
     if trimmed.is_empty() {
-        return Err(
-            "Could not determine Android SDK; refusing destructive action".to_string(),
-        );
+        return Err("Could not determine Android SDK; refusing destructive action".to_string());
     }
-    let sdk = trimmed.parse::<u32>().map_err(|_| {
-        "Could not determine Android SDK; refusing destructive action".to_string()
-    })?;
+    let sdk = trimmed
+        .parse::<u32>()
+        .map_err(|_| "Could not determine Android SDK; refusing destructive action".to_string())?;
     if sdk == 0 {
-        return Err(
-            "Could not determine Android SDK; refusing destructive action".to_string(),
-        );
+        return Err("Could not determine Android SDK; refusing destructive action".to_string());
     }
     Ok(sdk)
 }

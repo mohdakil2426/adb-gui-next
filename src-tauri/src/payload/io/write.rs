@@ -10,6 +10,7 @@
 //! writer.write_at(offset, data)?;
 //! writer.flush()?;
 //! ```
+#![allow(unsafe_code)] // memmap2::MmapMut::map_mut
 
 use std::fs::{File, OpenOptions};
 use std::io::{Result, Seek, SeekFrom, Write};

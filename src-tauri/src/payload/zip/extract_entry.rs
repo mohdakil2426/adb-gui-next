@@ -6,6 +6,7 @@
 //! file (never fully buffered in RAM) and then mapped.
 
 use super::stored_window::ZipPayloadMmap;
+use ::zip::{CompressionMethod, ZipArchive};
 use anyhow::Result;
 use std::{
     fs,
@@ -14,7 +15,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tempfile::NamedTempFile;
-use ::zip::{CompressionMethod, ZipArchive};
 
 #[derive(Debug, Default)]
 pub struct PayloadCache {
@@ -135,10 +135,7 @@ impl PayloadCache {
 }
 
 fn is_zip_path(path: &Path) -> bool {
-    path.extension()
-        .and_then(|ext| ext.to_str())
-        .map(|ext| ext.eq_ignore_ascii_case("zip"))
-        .unwrap_or(false)
+    path.extension().and_then(|ext| ext.to_str()).is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
 }
 
 struct OpenedZipPayload {
@@ -172,10 +169,7 @@ fn open_zip_payload(zip_path: &Path) -> Result<OpenedZipPayload> {
             drop(archive);
 
             let mmap = ZipPayloadMmap::mmap_zip_payload(zip_path, offset, size).map_err(|e| {
-                anyhow::anyhow!(
-                    "cannot mmap STORED payload.bin in '{}': {e}",
-                    zip_path.display()
-                )
+                anyhow::anyhow!("cannot mmap STORED payload.bin in '{}': {e}", zip_path.display())
             })?;
             return Ok(OpenedZipPayload { mmap, temp_path: None });
         }
@@ -191,8 +185,9 @@ fn open_zip_payload(zip_path: &Path) -> Result<OpenedZipPayload> {
         let (_, path) =
             temp.keep().map_err(|e| anyhow::anyhow!("failed to persist temp file: {e}"))?;
 
-        let mmap = ZipPayloadMmap::mmap_file(&path)
-            .map_err(|e| anyhow::anyhow!("cannot mmap extracted payload '{}': {e}", path.display()))?;
+        let mmap = ZipPayloadMmap::mmap_file(&path).map_err(|e| {
+            anyhow::anyhow!("cannot mmap extracted payload '{}': {e}", path.display())
+        })?;
         return Ok(OpenedZipPayload { mmap, temp_path: Some(path) });
     }
 
@@ -234,10 +229,10 @@ fn extract_payload_to_tempfile(zip_path: &Path) -> Result<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ::zip::ZipWriter;
+    use ::zip::write::SimpleFileOptions;
     use std::io::Write;
     use tempfile::tempdir;
-    use ::zip::write::SimpleFileOptions;
-    use ::zip::ZipWriter;
 
     fn write_stored_zip(zip_path: &Path, payload: &[u8]) {
         let file = fs::File::create(zip_path).expect("create zip");

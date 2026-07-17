@@ -1,5 +1,6 @@
 //! Integration test for OPS decryption against a real .ops file.
 //! This test is only compiled in cfg(test) and skipped if the test file doesn't exist.
+#![allow(unsafe_code)] // test mmap of fixture OPS files
 
 #[cfg(test)]
 mod tests {

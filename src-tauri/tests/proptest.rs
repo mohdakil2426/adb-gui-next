@@ -1,6 +1,9 @@
 //! Property-based tests for payload parsing and extraction.
 //! Tests edge cases that are impractical to cover with hand-written unit tests.
 
+// Same transitive graph as the lib crate; see lib.rs.
+#![allow(clippy::multiple_crate_versions)]
+
 use adb_gui_next_lib::payload::parse_header;
 use proptest::prelude::*;
 

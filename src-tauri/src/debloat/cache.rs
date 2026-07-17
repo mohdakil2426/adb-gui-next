@@ -35,7 +35,10 @@ impl DebloatCache {
         }
     }
 
-    pub fn get_packages(&self, device_id: &str) -> Option<(Vec<DebloatPackageRow>, DebloatListStatus)> {
+    pub fn get_packages(
+        &self,
+        device_id: &str,
+    ) -> Option<(Vec<DebloatPackageRow>, DebloatListStatus)> {
         let inner = self.inner.lock().ok()?;
         if !Self::device_matches(&inner, device_id) {
             return None;

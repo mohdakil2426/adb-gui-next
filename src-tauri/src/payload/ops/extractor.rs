@@ -2,6 +2,7 @@
 //!
 //! Shares the same `ExtractPayloadResult` and `payload:progress` events as the
 //! existing CrAU extractor, making it transparent to the frontend.
+#![allow(unsafe_code)] // memmap2 for OPS/OFP source files
 
 use super::crypto::{MboxVariant, OfpCipher, ops_decrypt};
 use super::detect::{FirmwareFormat, is_ops_or_ofp_path};
@@ -108,8 +109,7 @@ pub fn extract_ops_partitions(
 
     let output_dir = output_dir
         .filter(|p| !p.as_os_str().is_empty())
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| default_output_dir(path));
+        .map_or_else(|| default_output_dir(path), Path::to_path_buf);
     std::fs::create_dir_all(&output_dir)?;
     let guard = Arc::new(TransactionGuard::new(output_dir.clone()));
 

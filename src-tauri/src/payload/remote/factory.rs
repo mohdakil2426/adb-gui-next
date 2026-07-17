@@ -213,10 +213,10 @@ pub async fn extract_remote_factory_images(
 
     let total_bytes: u64 = entries_to_extract.iter().map(|e| e.uncompressed_size).sum();
 
-    let output_dir =
-        output_dir.filter(|path| !path.as_os_str().is_empty()).map(PathBuf::from).unwrap_or_else(
-            || PathBuf::from(format!("factory_images_{}", crate::payload::format_datetime())),
-        );
+    let output_dir = output_dir.filter(|path| !path.as_os_str().is_empty()).map_or_else(
+        || PathBuf::from(format!("factory_images_{}", crate::payload::format_datetime())),
+        PathBuf::from,
+    );
     std::fs::create_dir_all(&output_dir)?;
 
     let mut extracted_files = Vec::with_capacity(entries_to_extract.len());

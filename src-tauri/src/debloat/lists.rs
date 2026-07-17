@@ -30,8 +30,7 @@ fn file_age_secs(path: &PathBuf) -> u64 {
         .and_then(|m| m.modified())
         .ok()
         .and_then(|t| SystemTime::now().duration_since(t).ok())
-        .map(|d| d.as_secs())
-        .unwrap_or(u64::MAX)
+        .map_or(u64::MAX, |d| d.as_secs())
 }
 
 fn format_age(secs: u64) -> String {
@@ -142,8 +141,7 @@ pub fn cache_status(app: &AppHandle) -> DebloatListStatus {
         let count = fs::read_to_string(&cache)
             .ok()
             .and_then(|j| parse_json(&j).ok())
-            .map(|v| v.len())
-            .unwrap_or(0);
+            .map_or(0, |v| v.len());
         DebloatListStatus {
             source: "cached".to_string(),
             last_updated: format_age(age),
@@ -162,6 +160,5 @@ pub fn cache_status(app: &AppHandle) -> DebloatListStatus {
 pub fn now_timestamp() -> String {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs().to_string())
-        .unwrap_or_else(|_| "0".to_string())
+        .map_or_else(|_| "0".to_string(), |d| d.as_secs().to_string())
 }

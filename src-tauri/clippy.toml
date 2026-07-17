@@ -1,0 +1,8 @@
+# Clippy configuration for adb-gui-next (Tauri app).
+# Docs: https://doc.rust-lang.org/clippy/configuration.html
+#
+# unwrap_used / expect_used stay on for production paths; tests may use
+# unwrap/expect freely without failing CI.
+
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
