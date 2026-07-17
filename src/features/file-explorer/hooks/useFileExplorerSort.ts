@@ -51,16 +51,17 @@ export function useFileExplorerSort(
     [fileList, searchQuery, sortField, sortDir],
   );
 
-  const handleSortColumn = useCallback((field: SortField) => {
-    setSortField((prev) => {
-      if (prev === field) {
-        setSortDir((dir) => (dir === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortDir('asc');
+  const handleSortColumn = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        return;
       }
-      return field;
-    });
-  }, []);
+      setSortField(field);
+      setSortDir('asc');
+    },
+    [sortField],
+  );
 
   return { handleSortColumn, sortDir, sortField, visibleList };
 }
