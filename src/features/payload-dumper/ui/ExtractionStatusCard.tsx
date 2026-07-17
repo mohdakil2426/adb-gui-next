@@ -103,14 +103,26 @@ export function ExtractionStatusCard({
               <HardDrive aria-hidden="true" className="size-3.5 shrink-0" />
               <span className="truncate">
                 {extractionStats.partitionsExtracted} partitions
-                <span className="mx-1 text-muted-foreground/50">·</span>
-                {formatBytes(extractionStats.totalBytes)}
-                <span className="mx-1 text-muted-foreground/50">·</span>
-                <Clock aria-hidden="true" className="inline size-3 align-text-bottom" />
-                {formatDuration(extractionStats.durationMs)}
-                <span className="mx-1 text-muted-foreground/50">·</span>
-                <Zap aria-hidden="true" className="inline size-3 align-text-bottom" />
-                {extractionStats.throughputMbps.toFixed(0)} MB/s
+                {extractionStats.totalBytes > 0 ? (
+                  <>
+                    <span className="mx-1 text-muted-foreground/50">·</span>
+                    {formatBytes(extractionStats.totalBytes)}
+                  </>
+                ) : null}
+                {extractionStats.durationMs > 0 ? (
+                  <>
+                    <span className="mx-1 text-muted-foreground/50">·</span>
+                    <Clock aria-hidden="true" className="inline size-3 align-text-bottom" />
+                    {formatDuration(extractionStats.durationMs)}
+                  </>
+                ) : null}
+                {extractionStats.throughputMbps > 0 ? (
+                  <>
+                    <span className="mx-1 text-muted-foreground/50">·</span>
+                    <Zap aria-hidden="true" className="inline size-3 align-text-bottom" />
+                    {extractionStats.throughputMbps.toFixed(0)} MB/s
+                  </>
+                ) : null}
               </span>
             </div>
           ) : null}

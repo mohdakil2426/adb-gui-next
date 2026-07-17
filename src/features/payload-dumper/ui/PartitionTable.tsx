@@ -1,17 +1,25 @@
 import { useMemo, useState } from 'react';
+import type { backend } from '@/desktop/models';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/utils/cn';
 import { formatBytesNum } from '@/shared/utils/formatting';
 import { PartitionRow } from './PartitionRow';
 
+interface PartitionProgressView {
+  current: number;
+  percentage: number;
+  throughputMbps?: number;
+  total: number;
+}
+
 interface PartitionTableProps {
   completedPartitions: Set<string>;
-  extractingPartitions: Set<string>;
   isExtractionActive: boolean;
   onToggle: (index: number) => void;
   onToggleAll: () => void;
-  partitionProgress: Map<string, { current: number; total: number; percentage: number }>;
+  partitionProgress: Map<string, PartitionProgressView>;
+  partitionStatuses: Map<string, backend.PartitionExtractStatus>;
   partitions: { name: string; size: number; selected: boolean }[];
   status: string;
 }
@@ -24,9 +32,9 @@ interface PartitionTableProps {
  */
 export function PartitionTable({
   partitions,
-  extractingPartitions,
   completedPartitions,
   partitionProgress,
+  partitionStatuses,
   isExtractionActive,
   status,
   onToggle,
@@ -63,10 +71,12 @@ export function PartitionTable({
 
   const selectedCount = filteredPartitions.filter(({ partition }) => partition.selected).length;
   const hasCompletedPartitions = completedPartitions.size > 0;
+  const failedCount = [...partitionStatuses.values()].filter((s) => s === 'failed').length;
   const allSelected =
     filteredPartitions.length > 0 &&
     filteredPartitions.every(({ partition }) => partition.selected);
   const isFiltered = searchQuery.trim().length > 0;
+  const selectionLocked = status === 'extracting' || status === 'cancelling';
 
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -76,11 +86,12 @@ export function PartitionTable({
           {isFiltered ? `${filteredPartitions.length} of ${partitions.length} shown \u2022 ` : ''}
           {selectedCount}/{filteredPartitions.length} selected
           {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
+          {failedCount > 0 ? ` \u2022 ${failedCount} failed` : null}
           {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
         </span>
         <Button
           className="h-7 text-xs"
-          disabled={status === 'extracting'}
+          disabled={selectionLocked}
           onClick={onToggleAll}
           size="sm"
           variant="ghost"
@@ -120,22 +131,25 @@ export function PartitionTable({
         {/* Rows — scrollable */}
         <div className="max-h-[40vh] min-h-[120px] divide-y divide-border/50 overflow-y-auto overflow-x-hidden">
           {filteredPartitions.map(({ partition, index }) => {
-            const isRowExtracting = extractingPartitions.has(partition.name);
-            const isRowCompleted = completedPartitions.has(partition.name);
+            const extractStatus = resolveRowStatus(
+              partition.name,
+              partitionStatuses,
+              completedPartitions,
+            );
             const progress = partitionProgress.get(partition.name);
             const realProgressPercent = progress?.percentage ?? 0;
 
             return (
               <PartitionRow
-                disabled={status === 'extracting'}
+                disabled={selectionLocked}
+                extractStatus={extractStatus}
                 index={index}
-                isCompleted={isRowCompleted}
-                isExtracting={isRowExtracting}
                 key={partition.name}
                 onToggle={onToggle}
                 partition={partition}
                 progressPercent={realProgressPercent}
                 showProgress={isExtractionActive}
+                throughputMbps={progress?.throughputMbps}
               />
             );
           })}
@@ -143,4 +157,19 @@ export function PartitionTable({
       </div>
     </div>
   );
+}
+
+function resolveRowStatus(
+  name: string,
+  partitionStatuses: Map<string, backend.PartitionExtractStatus>,
+  completedPartitions: Set<string>,
+): backend.PartitionExtractStatus | undefined {
+  const fromMap = partitionStatuses.get(name);
+  if (fromMap) {
+    return fromMap;
+  }
+  if (completedPartitions.has(name)) {
+    return 'completed';
+  }
+  return;
 }

@@ -12,7 +12,9 @@ interface PartitionInfo {
 interface ExtractDependencies {
   addCompletedPartitions: (partitions: string[]) => void;
   clearPartitionProgress: () => void;
+  clearTransientPartitionStatuses: () => void;
   completedPartitions: Set<string>;
+  failActivePartitions: () => void;
   mode: 'local' | 'remote';
   outputDir: string;
   outputPath: string;
@@ -43,7 +45,9 @@ function partitionNameFromExtractedFile(fileName: string): string {
 export async function runExtractPayload({
   addCompletedPartitions,
   clearPartitionProgress,
+  clearTransientPartitionStatuses,
   completedPartitions,
+  failActivePartitions,
   mode,
   outputDir,
   outputPath,
@@ -95,6 +99,7 @@ export async function runExtractPayload({
   setCancelTokenId(cancelTokenId);
   setStatus('extracting');
   setErrorMessage('');
+  // Seeds partitionStatuses → pending for each name in the set.
   setExtractingPartitions(new Set(partitionsToExtract));
   const toastId = toast.loading(`Extracting ${partitionsToExtract.length} partition(s)...`);
   useLogStore
@@ -121,11 +126,18 @@ export async function runExtractPayload({
     }
     if (result.stats) {
       setExtractionStats(result.stats);
+    } else if (result.success) {
+      // Light 4.2: fall back to live progress samples when Rust stats are absent.
+      const fallback = aggregateProgressStats(newFiles.length);
+      if (fallback) {
+        setExtractionStats(fallback);
+      }
     }
 
     if (result.success) {
       setStatus('success');
       setExtractingPartitions(new Set());
+      clearTransientPartitionStatuses();
       clearPartitionProgress();
       toast.success(`Extraction complete! ${newFiles.length} files extracted`, { id: toastId });
       useLogStore
@@ -139,6 +151,7 @@ export async function runExtractPayload({
       setErrorMessage('');
       setStatus(newFiles.length > 0 ? 'success' : 'ready');
       setExtractingPartitions(new Set());
+      clearTransientPartitionStatuses();
       clearPartitionProgress();
       const message =
         newFiles.length > 0
@@ -151,21 +164,24 @@ export async function runExtractPayload({
 
     setErrorMessage(result.error ?? 'Unknown error');
     setStatus('error');
-    setExtractingPartitions(new Set());
+    failActivePartitions();
     clearPartitionProgress();
     toast.error(`Extraction failed: ${result.error}`, { id: toastId });
     useLogStore.getState().addLog(`Extraction failed: ${result.error}`, 'error');
   } catch (error) {
     const message = String(error);
-    setExtractingPartitions(new Set());
-    clearPartitionProgress();
     if (isCancelledMessage(message)) {
+      setExtractingPartitions(new Set());
+      clearTransientPartitionStatuses();
+      clearPartitionProgress();
       setErrorMessage('');
       setStatus('ready');
       toast.info('Extraction cancelled', { id: toastId });
       useLogStore.getState().addLog('Extraction cancelled', 'info');
       return;
     }
+    failActivePartitions();
+    clearPartitionProgress();
     setErrorMessage(message);
     setStatus('error');
     toast.error(`Extraction failed: ${error}`, { id: toastId });
@@ -173,6 +189,33 @@ export async function runExtractPayload({
   } finally {
     setCancelTokenId(null);
   }
+}
+
+/** Best-effort stats from last progress samples when ExtractPayloadResult.stats is missing. */
+function aggregateProgressStats(partitionsExtracted: number): backend.ExtractionStats | null {
+  const progress = usePayloadDumperStore.getState().partitionProgress;
+  let totalBytes = 0;
+  let throughputSum = 0;
+  let throughputCount = 0;
+  for (const [name, p] of progress) {
+    if (name === '__download__') {
+      continue;
+    }
+    totalBytes += p.bytesWritten || p.totalBytes || 0;
+    if (p.throughputMbps > 0) {
+      throughputSum += p.throughputMbps;
+      throughputCount++;
+    }
+  }
+  if (partitionsExtracted === 0 && totalBytes === 0) {
+    return null;
+  }
+  return {
+    durationMs: 0,
+    partitionsExtracted,
+    throughputMbps: throughputCount > 0 ? throughputSum / throughputCount : 0,
+    totalBytes,
+  };
 }
 
 export function runResetPayloadDumper(

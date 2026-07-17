@@ -1,15 +1,21 @@
 import { useEffect } from 'react';
+import type { backend } from '@/desktop/models';
 import { EventsOn } from '@/desktop/runtime';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
 
 /**
  * Subscribes to 'payload:progress' Tauri events from the Rust backend.
- * Updates partition progress and marks partitions as completed in the store.
+ * Updates partition progress + extract status and marks partitions completed.
+ *
+ * Status mapping (when event omits explicit `status`):
+ * - first non-complete progress → running
+ * - completed: true → completed
+ * - pending is set at extract start via setExtractingPartitions
+ * - failed is set on overall extract error via failActivePartitions
+ * - verifying only if backend sends status: 'verifying'
  *
  * Overall extraction status still flips to success/error when `ExtractPayload`
  * returns — progress events alone never leave `extracting`/`cancelling`.
- * This matches otaripper / payload-dumper CLI: process exit is the session signal;
- * per-partition bars are progress only.
  *
  * This hook has no return value — it's a side-effect-only hook.
  * Call it once in the component that owns the extraction lifecycle.
@@ -27,11 +33,15 @@ export function usePayloadEvents(): void {
         current: number;
         etaSeconds?: number;
         partitionName: string;
+        status?: backend.PartitionExtractStatus;
         throughputMbps?: number;
         total: number;
         totalBytes?: number;
       }) => {
-        // Ignore prefetch download pseudo-partition in the table.
+        const extractStatus = resolveExtractStatus(data);
+
+        // Ignore prefetch download pseudo-partition in the table status map
+        // (updatePartitionProgress skips status for __download__).
         if (data.partitionName === '__download__') {
           updatePartitionProgress(
             data.partitionName,
@@ -55,9 +65,10 @@ export function usePayloadEvents(): void {
           data.totalBytes,
           data.throughputMbps,
           data.etaSeconds,
+          extractStatus,
         );
 
-        if (data.completed) {
+        if (data.completed || extractStatus === 'completed') {
           markPartitionCompleted(data.partitionName);
         }
       },
@@ -65,4 +76,17 @@ export function usePayloadEvents(): void {
 
     return unlisten;
   }, [updatePartitionProgress, markPartitionCompleted]);
+}
+
+function resolveExtractStatus(data: {
+  completed: boolean;
+  status?: backend.PartitionExtractStatus;
+}): backend.PartitionExtractStatus | undefined {
+  if (data.status) {
+    return data.status;
+  }
+  if (data.completed) {
+    return 'completed';
+  }
+  return 'running';
 }
