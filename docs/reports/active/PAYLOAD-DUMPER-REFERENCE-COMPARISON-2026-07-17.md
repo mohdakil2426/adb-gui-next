@@ -1,7 +1,7 @@
 # Payload Dumper — Reference Projects Deep Comparison
 
 **Date:** 2026-07-17  
-**Status:** Analysis only — **no code changes**  
+**Status:** Analysis + plan execution checkoffs (Waves 0–4 complete) — C1–C5 / core remote+perf proposals landed; delta real work **skipped**; OS notification plugins **deferred**  
 **Goal:** Steal the **best core** ideas from vendored references + web research to make **adb-gui-next** super-fast (Rust), robust, and architecturally clean.  
 **UI policy:** Core / engine only. Kotlin UI ignored. Third-party CLI/TUI patterns translated to architecture (progress traits, status machines), not Compose/React cloning.
 
@@ -254,22 +254,22 @@ Legend: **Y** = yes · **P** = partial · **N** = no · **—** = N/A
 
 | ID | Proposal | Backing | Expected impact |
 |----|----------|---------|-----------------|
-| **C1** | **Unify verification policy:** always SHA-256 **compressed** `data_sha256_hash` before decompress (AOSP); optional second pass on decompressed stream; **always** optional/post **file hash** vs `new_partition_info.hash` | AOSP update_engine; Go TeeReader; rhythmcache post-verify; otaripper multi-layer | No silent corrupt `.img` |
-| **C2** | Wire `VerifyMode.layer4` + `verify_sha256` into extract success path (parallel like rhythmcache) | `verify.rs` already exists | Production integrity |
-| **C3** | Fix remote path hasher to match local compressed-blob semantics | PAYLOAD_RESEARCH_REPORT history | Remote ≠ local bug class |
-| **C4** | Fail hard on decompress error; delete partial file (transaction) | Anti-pattern in rhythmcache soft-fail | Robustness |
-| **C5** | Multi-extent write for all REPLACE* ops (not only first extent) | Go/Android-rs bugs we must not share | Correct images |
+| **C1** ✅ | **Unify verification policy:** always SHA-256 **compressed** `data_sha256_hash` before decompress (AOSP); optional second pass on decompressed stream; **always** optional/post **file hash** vs `new_partition_info.hash` | AOSP update_engine; Go TeeReader; rhythmcache post-verify; otaripper multi-layer | **Landed 2026-07-17:** `verify/op_blob.rs` + local/remote L3 before decompress |
+| **C2** ✅ | Wire `VerifyMode.layer4` + `verify_sha256` into extract success path (parallel like rhythmcache) | `verify.rs` already exists | **Landed 2026-07-17:** `crau/extract.rs` + remote prefetch/direct post-flush |
+| **C3** ✅ | Fix remote path hasher to match local compressed-blob semantics | PAYLOAD_RESEARCH_REPORT history | **Landed 2026-07-17:** remote no longer hashes stream_copy decompressed bytes |
+| **C4** ✅ | Fail hard on decompress error; delete partial file (transaction) | Anti-pattern in rhythmcache soft-fail | **Landed:** `stream_copy` UnexpectedEof; local `TransactionGuard` abort |
+| **C5** ✅ | Multi-extent write for all REPLACE* ops (not only first extent) | Go/Android-rs bugs we must not share | **Landed:** local+remote loop all `dst_extents`; multi-extent test green |
 
 ### P1 — Performance (Rust advantage)
 
 | ID | Proposal | Backing | Expected impact |
 |----|----------|---------|-----------------|
-| **S1** | **Zero-copy local ZIP:** integrate orphan `zip_mmap` or otaripper-style STORED window — skip temp extract when method=0 | otaripper; our unused `zip_mmap.rs` | Less disk I/O, faster open |
-| **S2** | **Prefetch by partition span** (min–max op offsets), not whole factory ZIP | rhythmcache `calculate_partition_range` | Huge remote bandwidth win |
-| **S3** | Thread-local / pooled decomp buffers (256–512 KiB) reused per worker | otaripper buffer pools; rhythmcache COPY_BUFFER 512 KiB | Less alloc, higher GB/s |
+| **S1** | **Zero-copy local ZIP:** integrate orphan `zip_mmap` or otaripper-style STORED window — skip temp extract when method=0 | otaripper; our unused `zip_mmap.rs` | Less disk I/O, faster open | ✅ **landed** (Task 3.3): `PayloadCache::open_payload` → `ZipPayloadMmap` STORED window; deflate still temp-extracts |
+| **S2** | **Prefetch by partition span** (min–max op offsets), not whole factory ZIP | rhythmcache `calculate_partition_range` | Huge remote bandwidth win | ✅ **landed** (Task 3.2): `compute_payload_span` + `absolute_download_range`; OTA prefetch downloads payload.bin span only; factory path remains selective |
+| **S3** ✅ | Thread-local / pooled decomp buffers (256–512 KiB) reused per worker | otaripper buffer pools; rhythmcache COPY_BUFFER 512 KiB | Less alloc, higher GB/s | ✅ **landed** (Task 3.4): `io/buffers.rs` TLS 256–512 KiB + `with_io_buf` in crau/remote extract; flate2 `zlib-rs`; `bytes` range body reclaim |
 | **S4** | True non-temporal stores for large Replace copies (feature-gated x86_64) | otaripper NT narrative; our name oversells | Cache less polluted |
 | **S5** | Keep native xz/zstd; never pure-Rust xz | Go README 6× gap | Sustained throughput |
-| **S6** | OPS extract: cancel + NonTemporalWriter + transaction | Parity with CrAU path | Faster vendor dumps + UX |
+| **S6** ✅ | OPS extract: cancel + NonTemporalWriter + transaction | Parity with CrAU path | Faster vendor dumps + UX | ✅ **landed** (Task 3.5): `extract_ops_partitions` takes `CancellationToken` (check pre-work + per worker); `NonTemporalWriter` when `size > 0`; `TransactionGuard` abort/commit |
 | **S7** | Optional op-level rayon for **local** huge single partitions (careful seeks) | Python op parallel; Go limitation | Faster `system` alone |
 | **S8** | Cap concurrent remote partitions (semaphore 2–4) + optional coalesced ranges | Android-rs + rhythmcache + CDN reality | Stable multi-select remote |
 
@@ -277,11 +277,11 @@ Legend: **Y** = yes · **P** = partial · **N** = no · **—** = N/A
 
 | ID | Proposal | Backing | Expected impact |
 |----|----------|---------|-----------------|
-| **R1** | Single shared `HttpPayloadReader` + cached ZIP offsets across list/meta/extract | rhythmcache waste noted | Faster list + extract |
-| **R2** | `payload:load-progress` phases for Load Partitions | Our remote matrix §9; rhythmcache ProgressReporter | UX not stuck |
-| **R3** | No-Range fallback: confirm → full download → local pipeline | Python/rhythmcache docs | More mirrors work |
-| **R4** | Hard cancel: abort in-flight request / drop client | otaripper AbortHandle | Cancel SLA |
-| **R5** | `download_size` + network ETA on remote partitions | Android-rs part_manifest | Honest remote UX |
+| **R1** | Single shared `HttpPayloadReader` + cached ZIP offsets across list/meta/extract | rhythmcache waste noted | Faster list + extract | ✅ **landed** (Task 3.1): `remote/session.rs` keyed by URL+content-length+etag; caches HEAD reader, ZIP CD, payload.bin lookup |
+| **R2** ✅ | `payload:load-progress` phases for Load Partitions | Our remote matrix §9; rhythmcache ProgressReporter | **Landed Wave 2:** Rust emits + FE `RemoteLoadProgressCard` |
+| **R3** | No-Range fallback: confirm → full download → local pipeline | Python/rhythmcache docs | More mirrors work | ✅ **partial** (Task 3.6): structured `REMOTE_NO_RANGE:` error (no silent hang); full GET fallback not enabled by default |
+| **R4** | Hard cancel: abort in-flight request / drop client | otaripper AbortHandle | Cancel SLA | ✅ **landed** (Task 3.6): async `tokio::select!` aborts in-flight send/body; interruptible retry backoff; sync path cancel between attempts |
+| **R5** ✅ | `download_size` on remote partitions | Android-rs part_manifest | **Landed Wave 2:** `PartitionDetail.downloadSize` (network ETA still live progress only) |
 | **R6** | Custom UA / optional headers / cookies | rhythmcache CLI | Gated CDNs |
 | **R7** | Reader trait unification (`ReadAt` for local mmap slice + HTTP + ZIP window) | Python MTIO; rhythmcache traits | Less dual-path bugs |
 
@@ -289,7 +289,7 @@ Legend: **Y** = yes · **P** = partial · **N** = no · **—** = N/A
 
 | ID | Proposal | Backing | Notes |
 |----|----------|---------|-------|
-| **F1** | Real delta: SOURCE_COPY / BSDIFF / puffdiff with `source_dir` | rhythmcache `diff_ota`; Python | Experimental flag first |
+| **F1** | Real delta: SOURCE_COPY / BSDIFF / puffdiff with `source_dir` | rhythmcache `diff_ota`; Python | **SKIPPED** Task 4.3 (no product green-light); `delta/` remains structural |
 | **F2** | Fix or rename BrotliBsdiff (current Brotli-only is wrong if true BSDIFF) | rhythmcache | Correctness |
 | **F3** | ZipOfp password path | oppo_decrypt ofp_qc | Local only |
 | **F4** | Local factory list/extract parity with remote factory | our remote factory | Consistency |
@@ -302,9 +302,9 @@ Legend: **Y** = yes · **P** = partial · **N** = no · **—** = N/A
 | **Q1** | Keep Tauri commands thin; dump core UI-free (ProgressReporter adapter) | rhythmcache; Agents.md |
 | **Q2** | Property tests + fixtures for CrAU header, ZIP EOCD, OPS mbox trial | proptest already; oppo_decrypt vectors |
 | **Q3** | Fuzz EOCD/CD and CrAU header | security |
-| **Q4** | Extraction stats event (duration, MB/s, bytes) | otaripper `--stats` |
-| **Q5** | Partition status enum for multi-extract UI | Android-rs (core idea) |
-| **Q6** | Honest docs: deprecate “ultimate complete” claims until C1–C5/S1–S2 land | code audit |
+| **Q4** ✅ | Extraction stats event (duration, MB/s, bytes) | otaripper `--stats` | **Landed Task 4.2:** `ExtractPayloadResult.stats` (durationMs/totalBytes/throughputMbps/partitionsExtracted) on success paths |
+| **Q5** ✅ | Partition status enum for multi-extract UI | Android-rs (core idea) | **Landed Task 4.1:** FE `PartitionExtractStatus` pending→running→completed\|failed |
+| **Q6** ✅ | Honest docs: deprecate “ultimate complete” claims until C1–C5/S1–S2 land | code audit | **Landed Task 4.5:** plan + memory-bank + active reports checkoffs |
 
 ---
 
