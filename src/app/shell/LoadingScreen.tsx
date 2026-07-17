@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { WelcomeScreen } from '@/shared/components/WelcomeScreen';
 
 interface LoadingScreenProps {
@@ -8,7 +8,7 @@ interface LoadingScreenProps {
 
 export function LoadingScreen({ progress, shouldReduceMotion }: LoadingScreenProps) {
   return (
-    <motion.div
+    <m.div
       className="absolute inset-0 z-50"
       exit={{ opacity: 0 }}
       initial={{ opacity: 1 }}
@@ -16,6 +16,6 @@ export function LoadingScreen({ progress, shouldReduceMotion }: LoadingScreenPro
       transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
     >
       <WelcomeScreen progress={progress} />
-    </motion.div>
+    </m.div>
   );
 }

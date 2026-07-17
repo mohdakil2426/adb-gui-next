@@ -1,7 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import '@/styles/global.css';
-import { AnimatePresence, MotionConfig, useReducedMotion } from 'framer-motion';
+import {
+  AnimatePresence,
+  domAnimation,
+  LazyMotion,
+  MotionConfig,
+  useReducedMotion,
+} from 'framer-motion';
 import { toast } from 'sonner';
 import { AppSidebar } from '@/app/shell/AppSidebar';
 import { BottomPanel } from '@/app/shell/BottomPanel/BottomPanel';
@@ -148,60 +154,62 @@ export function MainLayout() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
-      <MotionConfig reducedMotion="user">
-        <AnimatePresence>
-          {isLoading ? (
-            <LoadingScreen progress={progress} shouldReduceMotion={shouldReduceMotion ?? false} />
-          ) : null}
-        </AnimatePresence>
-        <div
-          className={cn(
-            'h-svh overflow-hidden',
-            isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 ease-in-out',
-          )}
-        >
-          <a
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:ring-2 focus:ring-ring"
-            href="#main-content"
+      <LazyMotion features={domAnimation} strict>
+        <MotionConfig reducedMotion="user">
+          <AnimatePresence>
+            {isLoading ? (
+              <LoadingScreen progress={progress} shouldReduceMotion={shouldReduceMotion ?? false} />
+            ) : null}
+          </AnimatePresence>
+          <div
+            className={cn(
+              'h-svh overflow-hidden',
+              isLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-500 ease-in-out',
+            )}
           >
-            Skip to main content
-          </a>
-          <SidebarProvider>
-            <ErrorBoundary viewName="Sidebar">
-              <AppSidebar activeView={activeView} onViewChange={setActiveView} />
-            </ErrorBoundary>
-            <SidebarInset>
-              <Header
-                activeTab={activeTab}
-                isDeviceRefreshing={isDeviceRefreshing}
-                isLogOpen={isLogOpen}
-                onLaunchDeviceManager={handleLaunchDeviceManager}
-                onLaunchTerminal={handleLaunchTerminal}
-                onOpenLogsPanel={handleOpenLogsPanel}
-                onOpenShellPanel={handleOpenShellPanel}
-                onRefreshDevices={refreshDevices}
-                unreadCount={unreadCount}
-              />
-              <ViewContent
-                activeView={activeView}
-                mainPaddingBottom={mainPaddingBottom}
-                renderContent={(view) => VIEW_RENDERERS[view](view)}
-              />
-              {activeView !== VIEWS.ABOUT && (
-                <ErrorBoundary viewName="Bottom Panel">
-                  <BottomPanel viewportHeight={viewportHeight} />
-                </ErrorBoundary>
-              )}
-            </SidebarInset>
-          </SidebarProvider>
-        </div>
-        <span aria-live="polite" className="sr-only">
-          {!isLogOpen && unreadCount > 0
-            ? `${unreadCount} new log${unreadCount === 1 ? '' : 's'}`
-            : ''}
-        </span>
-        <Toaster closeButton position="top-right" richColors />
-      </MotionConfig>
+            <a
+              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:ring-2 focus:ring-ring"
+              href="#main-content"
+            >
+              Skip to main content
+            </a>
+            <SidebarProvider>
+              <ErrorBoundary viewName="Sidebar">
+                <AppSidebar activeView={activeView} onViewChange={setActiveView} />
+              </ErrorBoundary>
+              <SidebarInset>
+                <Header
+                  activeTab={activeTab}
+                  isDeviceRefreshing={isDeviceRefreshing}
+                  isLogOpen={isLogOpen}
+                  onLaunchDeviceManager={handleLaunchDeviceManager}
+                  onLaunchTerminal={handleLaunchTerminal}
+                  onOpenLogsPanel={handleOpenLogsPanel}
+                  onOpenShellPanel={handleOpenShellPanel}
+                  onRefreshDevices={refreshDevices}
+                  unreadCount={unreadCount}
+                />
+                <ViewContent
+                  activeView={activeView}
+                  mainPaddingBottom={mainPaddingBottom}
+                  renderContent={(view) => VIEW_RENDERERS[view](view)}
+                />
+                {activeView !== VIEWS.ABOUT && (
+                  <ErrorBoundary viewName="Bottom Panel">
+                    <BottomPanel viewportHeight={viewportHeight} />
+                  </ErrorBoundary>
+                )}
+              </SidebarInset>
+            </SidebarProvider>
+          </div>
+          <span aria-live="polite" className="sr-only">
+            {!isLogOpen && unreadCount > 0
+              ? `${unreadCount} new log${unreadCount === 1 ? '' : 's'}`
+              : ''}
+          </span>
+          <Toaster closeButton position="top-right" richColors />
+        </MotionConfig>
+      </LazyMotion>
     </ThemeProvider>
   );
 }

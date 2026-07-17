@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import { Check, Loader2, type LucideIcon } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
@@ -58,7 +58,7 @@ export function ActionButton({
     >
       <AnimatePresence mode="wait">
         {isSent ? (
-          <motion.div
+          <m.div
             animate={{ scale: 1 }}
             className={tall ? '' : 'shrink-0'}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -67,9 +67,9 @@ export function ActionButton({
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           >
             <Check className={cn('text-success', tall ? 'size-5' : 'mr-2 size-4')} />
-          </motion.div>
+          </m.div>
         ) : isLoading ? (
-          <motion.div
+          <m.div
             animate={{ opacity: 1 }}
             className={tall ? '' : 'shrink-0'}
             exit={{ opacity: 0 }}
@@ -77,9 +77,9 @@ export function ActionButton({
             key="spin"
           >
             <Loader2 className={cn('animate-spin', tall ? 'size-5' : 'mr-2 size-4')} />
-          </motion.div>
+          </m.div>
         ) : (
-          <motion.div
+          <m.div
             animate={{ opacity: 1 }}
             className={tall ? '' : 'shrink-0'}
             exit={{ opacity: 0 }}
@@ -87,7 +87,7 @@ export function ActionButton({
             key="icon"
           >
             <Icon className={cn(tall ? 'size-5' : 'mr-2 size-4')} />
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
       {isSent ? sentLabel : label}

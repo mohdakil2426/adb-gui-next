@@ -24,6 +24,8 @@ function ToggleGroup({
   ToggleVariants & {
     spacing?: number;
   }) {
+  const contextValue = React.useMemo(() => ({ variant, size, spacing }), [variant, size, spacing]);
+
   return (
     <ToggleGroupPrimitive.Root
       className={cn(
@@ -37,9 +39,7 @@ function ToggleGroup({
       style={{ '--gap': spacing } as React.CSSProperties}
       {...props}
     >
-      <ToggleGroupContext.Provider value={{ variant, size, spacing }}>
-        {children}
-      </ToggleGroupContext.Provider>
+      <ToggleGroupContext.Provider value={contextValue}>{children}</ToggleGroupContext.Provider>
     </ToggleGroupPrimitive.Root>
   );
 }
