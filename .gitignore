@@ -21,7 +21,7 @@ dev-tauri.log
 *.temp
 github-repos/
 coverage/
-docs/refrences/files
+docs/references/
 
 # Environment overrides
 .env

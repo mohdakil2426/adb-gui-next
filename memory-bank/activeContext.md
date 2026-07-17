@@ -30,6 +30,19 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 
 ## Recently Completed
 
+### 2026-06-04 - Payload Dumper Pixel Factory Image Remote Support
+
+**Change:** Remote Payload Dumper URLs now support Pixel-style factory image ZIPs in addition to OTA ZIPs with `payload.bin`. When a remote ZIP has no `payload.bin`, the backend falls back to factory-image parsing: it reads the outer ZIP central directory by HTTP range, includes outer `.img` entries, locates the stored nested `image-*.zip`, parses that nested ZIP by offset-adjusted range reads, handles ZIP64 size fields, and streams only selected `.img` files to disk.
+
+**Fixed:**
+- Added `src-tauri/src/payload/factory_image.rs` for selective remote factory image listing/extraction with cancellation checks and sanitized output basenames.
+- Kept OTA `payload.bin` behavior unchanged; prefetch mode now detects missing `payload.bin` before downloading a whole factory ZIP and switches to selective image extraction.
+- Remote extraction cancellation tokens now reach both direct and prefetch remote payload paths.
+- Remote metadata includes `remoteKind` so the frontend can label factory image ZIPs without showing fake OTA manifest fields.
+- Fixed `PartitionTable` filtered search toggling the wrong partition by preserving original partition indexes.
+
+**Verification:** `bun run format:check` ✅ · `bun run lint:web` ✅ · `bun run test` ✅ (175/175) · `bun run build` ✅ · isolated `bun run lint:rust` ✅ · isolated Rust test compilation ✅. Direct `cargo test` execution on Windows remains subject to the known Tauri-linked loader issue.
+
 ### 2026-06-02 - Refresh Button UI Standardization
 
 **Change:** Audited all 19 refresh buttons across the app and standardized 12 data-refresh buttons into a shared `RefreshButton` component with two modes (`icon` for toolbars, `action` for standalone text+icon buttons).
