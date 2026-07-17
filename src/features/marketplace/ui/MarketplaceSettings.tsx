@@ -1,5 +1,5 @@
 import { CheckCircle2, GitBranch, Loader2, LogOut, Settings } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { MarketplaceClearCache } from '@/desktop/backend';
 import { BrowserOpenURL } from '@/desktop/runtime';
@@ -19,6 +19,33 @@ import {
 import { Field, FieldGroup, FieldLabel } from '@/shared/ui/field';
 import { Input } from '@/shared/ui/input';
 import { Separator } from '@/shared/ui/separator';
+
+function openExternal(url: string) {
+  BrowserOpenURL(url);
+}
+
+function githubAuthStatus(login: string | undefined, oauthClientId: string): string {
+  if (login) {
+    return `Signed in as ${login}`;
+  }
+
+  if (oauthClientId.trim()) {
+    return 'Ready for GitHub device-flow sign-in';
+  }
+
+  return 'GitHub sign-in is unavailable until an OAuth client ID is configured';
+}
+
+async function handleClearCache() {
+  try {
+    await MarketplaceClearCache();
+    toast.success('Marketplace cache cleared');
+  } catch (error) {
+    toast.error('Failed to clear marketplace cache', {
+      description: String(error),
+    });
+  }
+}
 
 export function MarketplaceSettings() {
   const isSettingsOpen = useMarketplaceStore((state) => state.isSettingsOpen);
@@ -45,17 +72,7 @@ export function MarketplaceSettings() {
   const [localPat, setLocalPat] = useState(githubPat);
   const [localClientId, setLocalClientId] = useState(githubOauthClientId);
 
-  const authStatus = useMemo(() => {
-    if (githubSession.user) {
-      return `Signed in as ${githubSession.user.login}`;
-    }
-
-    if (localClientId.trim()) {
-      return 'Ready for GitHub device-flow sign-in';
-    }
-
-    return 'GitHub sign-in is unavailable until an OAuth client ID is configured';
-  }, [githubSession.user, localClientId]);
+  const authStatus = githubAuthStatus(githubSession.user?.login, localClientId);
 
   const handleSaveLocalSettings = () => {
     setGithubPat(localPat.trim());
@@ -71,17 +88,6 @@ export function MarketplaceSettings() {
     if (!open) {
       handleSaveLocalSettings();
       closeSettings();
-    }
-  };
-
-  const handleClearCache = async () => {
-    try {
-      await MarketplaceClearCache();
-      toast.success('Marketplace cache cleared');
-    } catch (error) {
-      toast.error('Failed to clear marketplace cache', {
-        description: String(error),
-      });
     }
   };
 
@@ -164,7 +170,7 @@ export function MarketplaceSettings() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
                         onClick={() => {
-                          BrowserOpenURL(
+                          openExternal(
                             githubDeviceChallenge.challenge.verificationUriComplete ??
                               githubDeviceChallenge.challenge.verificationUri,
                           );

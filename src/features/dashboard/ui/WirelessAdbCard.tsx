@@ -7,15 +7,19 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/shared/ui/fie
 import { Input } from '@/shared/ui/input';
 import type { WirelessAdbValues } from '@/shared/utils/schemas';
 
+type ConnectionBusy = {
+  connecting: boolean;
+  disconnecting: boolean;
+  enablingTcpip: boolean;
+};
+
 export function WirelessAdbCard({
   deviceMode,
   handleConnect,
   handleDisconnect,
   handleEnableTcpip,
   isCollapsibleOpen,
-  isConnecting,
-  isDisconnecting,
-  isEnablingTcpip,
+  connectionBusy,
   selectedSerial,
   setIsCollapsibleOpen,
   watchedIp,
@@ -26,14 +30,14 @@ export function WirelessAdbCard({
   handleDisconnect: () => void;
   handleEnableTcpip: () => void;
   isCollapsibleOpen: boolean;
-  isConnecting: boolean;
-  isDisconnecting: boolean;
-  isEnablingTcpip: boolean;
+  connectionBusy: ConnectionBusy;
   selectedSerial: string | null;
   setIsCollapsibleOpen: (open: boolean) => void;
   watchedIp: string;
   wirelessForm: UseFormReturn<WirelessAdbValues>;
 }) {
+  const { connecting, disconnecting, enablingTcpip } = connectionBusy;
+
   return (
     <Collapsible onOpenChange={setIsCollapsibleOpen} open={isCollapsibleOpen}>
       <Card>
@@ -61,12 +65,10 @@ export function WirelessAdbCard({
               </p>
               <Button
                 className="h-auto w-full whitespace-normal"
-                disabled={
-                  isEnablingTcpip || !selectedSerial || isConnecting || deviceMode !== 'adb'
-                }
+                disabled={enablingTcpip || !selectedSerial || connecting || deviceMode !== 'adb'}
                 onClick={handleEnableTcpip}
               >
-                {isEnablingTcpip ? (
+                {enablingTcpip ? (
                   <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
                 ) : (
                   <Usb className="mr-2 size-4 shrink-0" />
@@ -92,7 +94,7 @@ export function WirelessAdbCard({
                         aria-describedby={wirelessForm.formState.errors.ip ? 'ip-error' : undefined}
                         aria-invalid={Boolean(wirelessForm.formState.errors.ip)}
                         autoComplete="off"
-                        disabled={isConnecting || isDisconnecting}
+                        disabled={connecting || disconnecting}
                         id="dashboard-wireless-ip"
                         placeholder="Device IP Address"
                         {...wirelessForm.register('ip')}
@@ -111,7 +113,7 @@ export function WirelessAdbCard({
                         }
                         aria-invalid={Boolean(wirelessForm.formState.errors.port)}
                         autoComplete="off"
-                        disabled={isConnecting || isDisconnecting}
+                        disabled={connecting || disconnecting}
                         id="dashboard-wireless-port"
                         inputMode="numeric"
                         placeholder="Port"
@@ -128,10 +130,10 @@ export function WirelessAdbCard({
                 <div className="flex flex-col gap-2">
                   <Button
                     className="w-full"
-                    disabled={isConnecting || !watchedIp || isDisconnecting}
+                    disabled={connecting || !watchedIp || disconnecting}
                     type="submit"
                   >
-                    {isConnecting ? (
+                    {connecting ? (
                       <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
                     ) : (
                       <Wifi className="mr-2 size-4 shrink-0" />
@@ -140,12 +142,12 @@ export function WirelessAdbCard({
                   </Button>
                   <Button
                     className="w-full"
-                    disabled={isDisconnecting || !watchedIp || isConnecting}
+                    disabled={disconnecting || !watchedIp || connecting}
                     onClick={handleDisconnect}
                     type="button"
                     variant="outline"
                   >
-                    {isDisconnecting ? (
+                    {disconnecting ? (
                       <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
                     ) : (
                       <PlugZap className="mr-2 size-4 shrink-0" />

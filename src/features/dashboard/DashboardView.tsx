@@ -212,14 +212,16 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       />
 
       <WirelessAdbCard
+        connectionBusy={{
+          connecting: isConnecting,
+          disconnecting: isDisconnecting,
+          enablingTcpip: isEnablingTcpip,
+        }}
         deviceMode={dashboardMode}
         handleConnect={handleConnect}
         handleDisconnect={handleDisconnect}
         handleEnableTcpip={handleEnableTcpip}
         isCollapsibleOpen={isCollapsibleOpen}
-        isConnecting={isConnecting}
-        isDisconnecting={isDisconnecting}
-        isEnablingTcpip={isEnablingTcpip}
         selectedSerial={selectedSerial}
         setIsCollapsibleOpen={setIsCollapsibleOpen}
         watchedIp={watchedIp}

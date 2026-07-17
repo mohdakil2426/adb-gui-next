@@ -2,11 +2,11 @@ import { Code2, Globe, Heart, Rocket, Smartphone } from 'lucide-react';
 import { BrowserOpenURL } from '@/desktop/runtime';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 
-export function ViewAbout() {
-  const openLink = (url: string) => {
-    BrowserOpenURL(url);
-  };
+function openExternal(url: string) {
+  BrowserOpenURL(url);
+}
 
+export function ViewAbout() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       {/* Hero Section */}
@@ -105,8 +105,9 @@ export function ViewAbout() {
           <button
             className="cursor-pointer border-none bg-transparent p-0 font-semibold text-foreground hover:underline"
             onClick={() => {
-              openLink('https://github.com/mohdakil2426');
+              openExternal('https://github.com/mohdakil2426');
             }}
+            type="button"
           >
             AKIL
           </button>{' '}

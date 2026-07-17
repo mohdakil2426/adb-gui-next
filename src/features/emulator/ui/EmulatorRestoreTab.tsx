@@ -15,6 +15,15 @@ interface EmulatorRestoreTabProps {
   restorePlan: backend.RestorePlan | null;
 }
 
+async function openBackupFolder(backupPath: string) {
+  try {
+    const folderPath = backupPath.substring(0, backupPath.lastIndexOf('\\'));
+    await OpenFolder(folderPath);
+  } catch (error) {
+    handleError('Open Backup Folder', error);
+  }
+}
+
 export function EmulatorRestoreTab({
   avd,
   isLoadingPlan,
@@ -31,15 +40,6 @@ export function EmulatorRestoreTab({
   }
 
   const hasEntries = Boolean(restorePlan && restorePlan.entries.length > 0);
-
-  const handleOpenBackupFolder = async (backupPath: string) => {
-    try {
-      const folderPath = backupPath.substring(0, backupPath.lastIndexOf('\\'));
-      await OpenFolder(folderPath);
-    } catch (error) {
-      handleError('Open Backup Folder', error);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -94,7 +94,9 @@ export function EmulatorRestoreTab({
                     <Button
                       aria-label="Open backup location"
                       className="size-6 shrink-0"
-                      onClick={() => handleOpenBackupFolder(entry.backupPath)}
+                      onClick={() => {
+                        void openBackupFolder(entry.backupPath);
+                      }}
                       size="icon"
                       variant="ghost"
                     >
