@@ -7,7 +7,10 @@ use super::crypto::{MboxVariant, OfpCipher, ops_decrypt};
 use super::detect::{FirmwareFormat, is_ops_or_ofp_path};
 use super::sparse;
 use super::{OpsMetadata, OpsPartitionEntry};
-use crate::payload::extractor::{ExtractPayloadResult, PartitionDetail};
+use crate::payload::cancel::CancellationToken;
+use crate::payload::io::NonTemporalWriter;
+use crate::payload::transaction::TransactionGuard;
+use crate::payload::types::{ExtractPayloadResult, ExtractionStats, PartitionDetail};
 use anyhow::Result;
 use memmap2::Mmap;
 use sha2::{Digest, Sha256};
@@ -39,7 +42,10 @@ pub fn list_ops_partitions(path: &Path) -> Result<Vec<PartitionDetail>> {
         _ => anyhow::bail!("Not an OPS/OFP file"),
     };
 
-    Ok(partitions.into_iter().map(|p| PartitionDetail { name: p.name, size: p.size }).collect())
+    Ok(partitions
+        .into_iter()
+        .map(|p| PartitionDetail { name: p.name, size: p.size, download_size: None })
+        .collect())
 }
 
 /// Get metadata from an OPS/OFP file.
@@ -73,7 +79,13 @@ pub fn extract_ops_partitions(
     selected_partitions: &[String],
     app_handle: Option<tauri::AppHandle>,
     mut progress: impl FnMut(&str, usize, usize, bool),
+    cancel_token: Option<&CancellationToken>,
 ) -> Result<ExtractPayloadResult> {
+    let extract_started = std::time::Instant::now();
+    if let Some(token) = cancel_token {
+        token.check()?;
+    }
+
     let mmap = Arc::new(open_mmap_raw(path)?);
     let format = super::detect::detect_format(&mmap)?;
 
@@ -99,6 +111,7 @@ pub fn extract_ops_partitions(
         .map(Path::to_path_buf)
         .unwrap_or_else(|| default_output_dir(path));
     std::fs::create_dir_all(&output_dir)?;
+    let guard = Arc::new(TransactionGuard::new(output_dir.clone()));
 
     // Filter to selected partitions
     let selected_set: Option<HashSet<&str>> = if selected_partitions.is_empty() {
@@ -121,6 +134,7 @@ pub fn extract_ops_partitions(
             .map(|partition| {
                 let mmap = Arc::clone(&mmap);
                 let output_dir = &output_dir;
+                let guard = Arc::clone(&guard);
                 let partition_name = partition.name.clone();
                 let app = app_handle.clone();
                 let mbox = mbox_variant;
@@ -128,24 +142,45 @@ pub fn extract_ops_partitions(
                 let part = (*partition).clone();
 
                 s.spawn(move || -> Result<String> {
+                    // Cancel between partitions/files (each worker checks before starting).
+                    if let Some(token) = cancel_token {
+                        token.check()?;
+                    }
+
                     let file_name = sanitize_output_name(&partition_name);
                     let image_path = output_dir.join(&file_name);
-                    let image_file = std::fs::File::create(&image_path)?;
-                    let mut writer = BufWriter::with_capacity(1024 * 1024, image_file);
+                    guard.add_file(image_path.clone());
 
-                    extract_single_partition(
-                        &mmap,
-                        &part,
-                        &mut writer,
-                        format,
-                        mbox,
-                        cipher.as_ref(),
-                    )?;
-
-                    writer.flush()?;
+                    // Prefer NonTemporalWriter for large images when size is known.
+                    if part.size > 0 {
+                        let mut writer = NonTemporalWriter::new(&image_path, part.size)
+                            .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
+                        extract_single_partition(
+                            &mmap,
+                            &part,
+                            &mut writer,
+                            format,
+                            mbox,
+                            cipher.as_ref(),
+                        )?;
+                        writer.flush()?;
+                        drop(writer);
+                    } else {
+                        let image_file = std::fs::File::create(&image_path)?;
+                        let mut writer = BufWriter::with_capacity(1024 * 1024, image_file);
+                        extract_single_partition(
+                            &mmap,
+                            &part,
+                            &mut writer,
+                            format,
+                            mbox,
+                            cipher.as_ref(),
+                        )?;
+                        writer.flush()?;
+                        drop(writer);
+                    }
 
                     // Post-extraction: check if output is sparse image, un-sparse if needed
-                    drop(writer);
                     if part.sparse {
                         try_unsparse(&image_path)?;
                     }
@@ -185,22 +220,35 @@ pub fn extract_ops_partitions(
         match result {
             Ok(inner) => match inner {
                 Ok(name) => extracted_files.push(name),
-                Err(e) => return Err(e),
+                Err(e) => {
+                    guard.abort();
+                    return Err(e);
+                }
             },
-            Err(e) => return Err(e),
+            Err(e) => {
+                guard.abort();
+                return Err(e);
+            }
         }
     }
+
+    guard.commit();
 
     // Fire progress callback for each completed partition
     for (i, part) in partitions_to_extract.iter().enumerate() {
         progress(&part.name, i + 1, total, i + 1 == total);
     }
 
+    let total_bytes: u64 = partitions_to_extract.iter().map(|p| p.size).sum();
+    let stats =
+        ExtractionStats::computed(extract_started.elapsed(), extracted_files.len(), total_bytes);
+
     Ok(ExtractPayloadResult {
         success: true,
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: None,
+        stats: Some(stats),
     })
 }
 
@@ -208,7 +256,7 @@ pub fn extract_ops_partitions(
 fn extract_single_partition(
     mmap: &[u8],
     partition: &OpsPartitionEntry,
-    writer: &mut BufWriter<std::fs::File>,
+    writer: &mut impl Write,
     format: FirmwareFormat,
     mbox: Option<MboxVariant>,
     ofp_cipher: Option<&OfpCipher>,

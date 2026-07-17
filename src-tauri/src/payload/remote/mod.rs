@@ -10,21 +10,35 @@
 //! - **Direct** (`false`): Reads HTTP ranges on-demand during extraction.
 //!   Best for fast connections — starts extraction immediately without waiting for full download.
 
-use super::cancel::CancellationToken;
-use super::chromeos_update_engine::DeltaArchiveManifest;
-use super::factory_image::{
+pub mod factory;
+pub mod http;
+pub mod http_zip;
+pub mod load_progress;
+pub mod prefetch;
+pub mod session;
+
+pub use factory::{
     extract_remote_factory_images, get_remote_factory_image_metadata,
     list_remote_factory_image_partitions,
 };
-use super::http::HttpPayloadReader;
-use super::http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_from_zip_or_direct};
-use super::parser::parse_header;
-use super::write::NonTemporalWriter;
+pub use http::HttpPayloadReader;
+// Crate-visible for marketplace SSRF helpers.
+#[allow(unused_imports)]
+pub use http::{ERR_NO_RANGE, no_range_error, resolve_redirect_url, validate_outbound_url};
+pub use http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_text_file_from_zip};
+pub use prefetch::{PayloadByteSpan, absolute_download_range, compute_payload_span};
+pub use session::open_http_reader;
+
+use crate::payload::cancel::CancellationToken;
+use crate::payload::chromeos_update_engine::DeltaArchiveManifest;
+use crate::payload::crau::parse_header;
+use crate::payload::io::NonTemporalWriter;
+use crate::payload::verify::{op_blob_matches, verify_sha256};
 use anyhow::{Result, anyhow};
+use http_zip::read_from_zip_or_direct;
 use memmap2::Mmap;
 use prost::Message;
 use rayon::prelude::*;
-use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{Cursor, Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
@@ -33,7 +47,7 @@ use tempfile::NamedTempFile;
 #[cfg(feature = "remote_zip")]
 use tauri::Emitter;
 
-const DECOMP_BUF_SIZE: usize = 256 * 1024;
+
 
 /// Progress callback for downloads.
 pub type DownloadProgress = Box<dyn Fn(u64, u64) + Send + Sync>;
@@ -62,15 +76,51 @@ pub struct RemotePayload {
 ///
 /// Downloads just enough to parse the manifest header (~1 MB or less).
 /// Handles both direct payload.bin URLs and ZIP archives.
+/// Emits `payload:load-progress` phases when `app` is provided.
 #[cfg(feature = "remote_zip")]
 pub async fn list_remote_payload_partitions(
     url: String,
-) -> Result<Vec<super::extractor::PartitionDetail>> {
-    let reader = HttpPayloadReader::new(&url).await?;
+    app: Option<tauri::AppHandle>,
+) -> Result<Vec<crate::payload::types::PartitionDetail>> {
+    const TOTAL_STEPS: u32 = 4;
+    let app_ref = app.as_ref();
+
+    load_progress::emit_load_progress(
+        app_ref,
+        "verifyConnection",
+        "Verifying connection…",
+        None,
+        1,
+        TOTAL_STEPS,
+    );
+
+    let reader = match session::open_http_reader(&url).await {
+        Ok(reader) => reader,
+        Err(err) => {
+            load_progress::emit_load_progress(
+                app_ref,
+                "error",
+                "Connection failed",
+                Some(&err.to_string()),
+                1,
+                TOTAL_STEPS,
+            );
+            return Err(err);
+        }
+    };
 
     let (manifest_bytes, _data_offset) = if is_zip_url(&url) {
         // ZIP file: find payload.bin entry, then read its header
         log::info!("ZIP URL detected, finding payload.bin in {}", url);
+        load_progress::emit_load_progress(
+            app_ref,
+            "locateIndex",
+            "Locating ZIP index…",
+            None,
+            2,
+            TOTAL_STEPS,
+        );
+
         let zip_info = match find_payload_in_zip(&reader).await {
             Ok(zip_info) => zip_info,
             Err(payload_error) => {
@@ -78,9 +128,21 @@ pub async fn list_remote_payload_partitions(
                     "payload.bin not found in remote ZIP, trying factory image parser: {}",
                     payload_error
                 );
-                return list_remote_factory_image_partitions(url).await.map_err(|factory_error| {
-                    anyhow!("{}; factory image detection failed: {}", payload_error, factory_error)
-                });
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "detectFormat",
+                    "Detecting format…",
+                    Some("factory image candidate"),
+                    3,
+                    TOTAL_STEPS,
+                );
+                // Factory path emits its own progress/error/done; only wrap the message here.
+                return match list_remote_factory_image_partitions(url, app).await {
+                    Ok(details) => Ok(details),
+                    Err(factory_error) => Err(anyhow!(
+                        "{payload_error}; factory image detection failed: {factory_error}"
+                    )),
+                };
             }
         };
         log::info!(
@@ -90,26 +152,144 @@ pub async fn list_remote_payload_partitions(
             zip_info.uncompressed_size
         );
 
+        load_progress::emit_load_progress(
+            app_ref,
+            "detectFormat",
+            "OTA payload detected",
+            Some("payload.bin"),
+            3,
+            TOTAL_STEPS,
+        );
+
         // Read the first 1MB of payload.bin from within the ZIP
-        let header_data = read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024).await?;
-        parse_header(&header_data)?
+        let header_data = match read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024)
+            .await
+        {
+            Ok(data) => data,
+            Err(err) => {
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "error",
+                    "Failed to read payload header",
+                    Some(&err.to_string()),
+                    3,
+                    TOTAL_STEPS,
+                );
+                return Err(err);
+            }
+        };
+        match parse_header(&header_data) {
+            Ok(parsed) => parsed,
+            Err(err) => {
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "error",
+                    "Failed to parse payload header",
+                    Some(&err.to_string()),
+                    3,
+                    TOTAL_STEPS,
+                );
+                return Err(err);
+            }
+        }
     } else {
+        load_progress::emit_load_progress(
+            app_ref,
+            "locateIndex",
+            "Direct payload (no ZIP index)",
+            None,
+            2,
+            TOTAL_STEPS,
+        );
+        load_progress::emit_load_progress(
+            app_ref,
+            "detectFormat",
+            "Direct payload.bin",
+            None,
+            3,
+            TOTAL_STEPS,
+        );
+
         // Direct payload.bin: read first 1MB
-        let header_data = reader.read_range(0, 1024 * 1024).await?;
-        parse_header(&header_data)?
+        let header_data = match reader.read_range(0, 1024 * 1024).await {
+            Ok(data) => data,
+            Err(err) => {
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "error",
+                    "Failed to read payload header",
+                    Some(&err.to_string()),
+                    3,
+                    TOTAL_STEPS,
+                );
+                return Err(err);
+            }
+        };
+        match parse_header(&header_data) {
+            Ok(parsed) => parsed,
+            Err(err) => {
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "error",
+                    "Failed to parse payload header",
+                    Some(&err.to_string()),
+                    3,
+                    TOTAL_STEPS,
+                );
+                return Err(err);
+            }
+        }
     };
 
-    // Decode manifest
-    let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
+    load_progress::emit_load_progress(
+        app_ref,
+        "readPartitions",
+        "Reading partition list…",
+        None,
+        4,
+        TOTAL_STEPS,
+    );
 
-    Ok(manifest
+    // Decode manifest
+    let manifest = match DeltaArchiveManifest::decode(&manifest_bytes[..]) {
+        Ok(m) => m,
+        Err(err) => {
+            load_progress::emit_load_progress(
+                app_ref,
+                "error",
+                "Failed to decode manifest",
+                Some(&err.to_string()),
+                4,
+                TOTAL_STEPS,
+            );
+            return Err(err.into());
+        }
+    };
+
+    let details: Vec<crate::payload::types::PartitionDetail> = manifest
         .partitions
         .iter()
-        .map(|p| super::extractor::PartitionDetail {
-            name: p.partition_name.clone(),
-            size: p.new_partition_info.as_ref().and_then(|info| info.size).unwrap_or_default(),
+        .map(|p| {
+            let download_size: u64 =
+                p.operations.iter().map(|op| op.data_length.unwrap_or(0)).sum();
+            crate::payload::types::PartitionDetail {
+                name: p.partition_name.clone(),
+                size: p.new_partition_info.as_ref().and_then(|info| info.size).unwrap_or_default(),
+                download_size: Some(download_size),
+            }
         })
-        .collect())
+        .collect();
+
+    load_progress::emit_load_progress(
+        app_ref,
+        "done",
+        "Partitions loaded",
+        Some(&format!("{} partitions", details.len())),
+        4,
+        TOTAL_STEPS,
+    );
+
+    Ok(details)
 }
 
 /// Gather full metadata (HTTP + ZIP + OTA manifest + OTA package info) from a remote URL.
@@ -120,11 +300,10 @@ pub async fn list_remote_payload_partitions(
 #[cfg(feature = "remote_zip")]
 pub async fn get_remote_payload_metadata(
     url: String,
-) -> Result<super::extractor::RemotePayloadMetadata> {
-    use super::extractor::{DynamicGroupInfo, RemotePayloadMetadata};
-    use super::http_zip::read_text_file_from_zip;
+) -> Result<crate::payload::types::RemotePayloadMetadata> {
+    use crate::payload::types::{DynamicGroupInfo, RemotePayloadMetadata};
 
-    let reader = HttpPayloadReader::new(&url).await?;
+    let reader = session::open_http_reader(&url).await?;
 
     // HTTP layer — captured from the HEAD response
     let content_length = reader.content_length();
@@ -308,7 +487,11 @@ fn parse_kv_text(text: &str) -> std::collections::HashMap<String, String> {
         .collect()
 }
 
-/// Prefetch mode: Download entire payload to temp file, then extract via mmap.
+/// Prefetch mode: Download the byte span needed for selected partitions, then extract via mmap.
+///
+/// Downloads only the payload.bin region covering header + selected op blobs — not the full
+/// remote ZIP `Content-Length` when the archive is huge. Factory images stay on the selective
+/// factory path (no whole-ZIP re-download).
 ///
 /// Best for slow/high-latency connections — extraction is fast after download.
 #[cfg(feature = "remote_zip")]
@@ -318,8 +501,9 @@ pub async fn extract_remote_prefetch(
     selected_partitions: &[String],
     app_handle: Option<tauri::AppHandle>,
     cancel_token: Option<&CancellationToken>,
-) -> Result<super::extractor::ExtractPayloadResult> {
-    let reader = HttpPayloadReader::new(url.clone()).await?;
+) -> Result<crate::payload::types::ExtractPayloadResult> {
+    let extract_started = std::time::Instant::now();
+    let reader = session::open_http_reader(&url).await?;
     let content_length = reader.content_length();
     let is_zip = is_zip_url(&url);
     let zip_info = if is_zip {
@@ -330,6 +514,7 @@ pub async fn extract_remote_prefetch(
                     "payload.bin not found before prefetch, using factory image extraction: {}",
                     payload_error
                 );
+                // Factory path already streams only selected images — do not full-download ZIP.
                 return extract_remote_factory_images(
                     url,
                     output_dir,
@@ -344,7 +529,37 @@ pub async fn extract_remote_prefetch(
         None
     };
 
-    log::info!("Prefetch: downloading {} bytes from {} (is_zip={})", content_length, url, is_zip);
+    // Probe header/manifest so we can compute the selected-op span (Task 3.2 / S2).
+    if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+        anyhow::bail!("extraction cancelled");
+    }
+    let header_data =
+        read_from_zip_or_direct(&reader, &zip_info, 0, 1024 * 1024).await?;
+    let (manifest_bytes, data_offset) = parse_header(&header_data)?;
+    let probe_manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
+    let span =
+        prefetch::compute_payload_span(&probe_manifest, data_offset as u64, selected_partitions);
+
+    let (abs_start, download_len) = prefetch::absolute_download_range(
+        span,
+        zip_info.as_ref().map(|z| z.offset),
+        zip_info.as_ref().map(|z| z.compressed_size),
+        zip_info.as_ref().map(|z| z.compression_method),
+        content_length,
+    );
+
+    // Deflated ZIP member: download compressed blob, inflate to a pure payload.bin temp.
+    let deflated_zip = zip_info.as_ref().is_some_and(|z| z.compression_method != 0);
+
+    log::info!(
+        "Prefetch: downloading span abs_start={} len={} of remote {} (is_zip={}, span_end={}, content_length={})",
+        abs_start,
+        download_len,
+        url,
+        is_zip,
+        span.end,
+        content_length
+    );
 
     // Stream to temp file in 1 MB chunks. NamedTempFile::keep() persists it
     // on disk after we're done so the mmap can use it without the file
@@ -353,13 +568,15 @@ pub async fn extract_remote_prefetch(
     let chunk_size = 1024 * 1024; // 1 MB
     let mut downloaded = 0u64;
 
-    while downloaded < content_length {
+    while downloaded < download_len {
         if cancel_token.is_some_and(CancellationToken::is_cancelled) {
             anyhow::bail!("extraction cancelled");
         }
-        let chunk_end = (downloaded + chunk_size).min(content_length);
+        let chunk_end = (downloaded + chunk_size).min(download_len);
         let chunk_len = chunk_end - downloaded;
-        let data = reader.read_range(downloaded, chunk_len).await?;
+        let data = reader
+            .read_range_cancellable(abs_start + downloaded, chunk_len, cancel_token)
+            .await?;
         temp.as_file_mut().write_all(&data)?;
         downloaded = chunk_end;
 
@@ -370,13 +587,29 @@ pub async fn extract_remote_prefetch(
                 serde_json::json!({
                     "partitionName": "__download__",
                     "current": downloaded,
-                    "total": content_length,
+                    "total": download_len,
                     "completed": false,
                 }),
             );
         }
     }
     temp.flush()?;
+
+    // For deflated ZIP payload.bin, rewrite temp as decompressed payload prefix/full member.
+    if deflated_zip {
+        let zi = zip_info.as_ref().ok_or_else(|| anyhow!("ZIP payload info missing"))?;
+        temp.as_file_mut().seek(SeekFrom::Start(0))?;
+        let mut compressed = Vec::with_capacity(zi.compressed_size as usize);
+        temp.as_file_mut().read_to_end(&mut compressed)?;
+        let mut decoder = flate2::read::DeflateDecoder::new(&compressed[..]);
+        let mut decompressed = Vec::with_capacity(zi.uncompressed_size as usize);
+        decoder.read_to_end(&mut decompressed)?;
+        temp.as_file_mut().seek(SeekFrom::Start(0))?;
+        temp.as_file_mut().set_len(0)?;
+        temp.as_file_mut().write_all(&decompressed)?;
+        temp.flush()?;
+    }
+
     // Persist the temp file on disk — NamedTempFile::drop() would delete it.
     // keep() returns (File, PathBuf). We immediately drop the File and
     // re-open for mmap (cleaner ownership).
@@ -391,20 +624,13 @@ pub async fn extract_remote_prefetch(
     }
     let _guard = TempGuard(temp_path.clone());
 
-    // Now use the existing mmap-based extraction on the downloaded file.
+    // Temp holds a payload.bin prefix (or full deflated member) starting at offset 0 —
+    // not the whole remote ZIP. parse_header + op offsets are payload-relative.
     let file = File::open(&temp_path)?;
     let mmap = unsafe { Mmap::map(&file)? };
     let mmap = Arc::new(mmap);
 
-    // For ZIP files, we need to find payload.bin within the mmap
-    let (manifest_bytes, data_offset) = if is_zip {
-        let zip_info = zip_info.as_ref().ok_or_else(|| anyhow!("ZIP payload info missing"))?;
-        let payload_start = zip_info.offset as usize;
-        let payload_slice = &mmap[payload_start..];
-        parse_header(payload_slice)?
-    } else {
-        parse_header(&mmap)?
-    };
+    let (manifest_bytes, data_offset) = parse_header(&mmap)?;
     let manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
 
     let output_dir = output_dir
@@ -451,53 +677,30 @@ pub async fn extract_remote_prefetch(
             let mut writer = NonTemporalWriter::new(&image_path, partition_size)
                 .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-            if is_zip {
-                extract_partition_from_mmap(
-                    &mmap,
-                    data_offset,
-                    block_size,
-                    partition,
-                    &mut writer,
-                    |name, current, total, completed| {
-                        if let Some(ref handle) = app {
-                            let _ = handle.emit(
-                                "payload:progress",
-                                serde_json::json!({
-                                    "partitionName": name,
-                                    "current": current,
-                                    "total": total,
-                                    "completed": completed,
-                                }),
-                            );
-                        }
-                    },
-                    cancel_token,
-                )?;
-            } else {
-                extract_partition_from_mmap(
-                    &mmap,
-                    data_offset,
-                    block_size,
-                    partition,
-                    &mut writer,
-                    |name, current, total, completed| {
-                        if let Some(ref handle) = app {
-                            let _ = handle.emit(
-                                "payload:progress",
-                                serde_json::json!({
-                                    "partitionName": name,
-                                    "current": current,
-                                    "total": total,
-                                    "completed": completed,
-                                }),
-                            );
-                        }
-                    },
-                    cancel_token,
-                )?;
-            }
+            extract_partition_from_mmap(
+                &mmap,
+                data_offset,
+                block_size,
+                partition,
+                &mut writer,
+                |name, current, total, completed| {
+                    if let Some(ref handle) = app {
+                        let _ = handle.emit(
+                            "payload:progress",
+                            serde_json::json!({
+                                "partitionName": name,
+                                "current": current,
+                                "total": total,
+                                "completed": completed,
+                            }),
+                        );
+                    }
+                },
+                cancel_token,
+            )?;
 
             writer.flush()?;
+            verify_partition_output_hash(partition, &image_path, &partition_name)?;
             Ok(file_name)
         })
         .collect();
@@ -510,12 +713,23 @@ pub async fn extract_remote_prefetch(
         }
     }
 
+    let total_bytes: u64 = partitions_to_extract
+        .iter()
+        .map(|p| p.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0))
+        .sum();
+    let stats = crate::payload::types::ExtractionStats::computed(
+        extract_started.elapsed(),
+        extracted_files.len(),
+        total_bytes,
+    );
+
     // Temp file guard goes out of scope here — cleanup via Drop.
-    Ok(super::extractor::ExtractPayloadResult {
+    Ok(crate::payload::types::ExtractPayloadResult {
         success: true,
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: None,
+        stats: Some(stats),
     })
 }
 
@@ -529,9 +743,10 @@ pub async fn extract_remote_direct(
     selected_partitions: &[String],
     app_handle: Option<tauri::AppHandle>,
     cancel_token: Option<&CancellationToken>,
-) -> Result<super::extractor::ExtractPayloadResult> {
-    // Step 1: Get reader and manifest via HTTP
-    let reader = HttpPayloadReader::new(url.clone()).await?;
+) -> Result<crate::payload::types::ExtractPayloadResult> {
+    let extract_started = std::time::Instant::now();
+    // Step 1: Get reader and manifest via HTTP (session-cached HEAD/ZIP)
+    let reader = session::open_http_reader(&url).await?;
     let content_length = reader.content_length();
     let is_zip = is_zip_url(&url);
 
@@ -651,6 +866,7 @@ pub async fn extract_remote_direct(
             )?;
 
             writer.flush()?;
+            verify_partition_output_hash(partition, &image_path, &partition_name)?;
             Ok(file_name)
         })
         .collect();
@@ -663,17 +879,48 @@ pub async fn extract_remote_direct(
         }
     }
 
-    Ok(super::extractor::ExtractPayloadResult {
+    let total_bytes: u64 = partitions_to_extract
+        .iter()
+        .map(|p| p.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0))
+        .sum();
+    let stats = crate::payload::types::ExtractionStats::computed(
+        extract_started.elapsed(),
+        extracted_files.len(),
+        total_bytes,
+    );
+
+    Ok(crate::payload::types::ExtractPayloadResult {
         success: true,
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: None,
+        stats: Some(stats),
     })
 }
 
 // =============================================================================
 // Internal extraction functions
 // =============================================================================
+
+/// L4: when `new_partition_info.hash` is present, verify the written image SHA-256.
+fn verify_partition_output_hash(
+    partition: &super::chromeos_update_engine::PartitionUpdate,
+    image_path: &std::path::Path,
+    partition_name: &str,
+) -> Result<()> {
+    let Some(info) = partition.new_partition_info.as_ref() else {
+        return Ok(());
+    };
+    let Some(expected) = info.hash.as_ref().filter(|h| !h.is_empty()) else {
+        return Ok(());
+    };
+    let ok = verify_sha256(image_path, expected)
+        .map_err(|e| anyhow!("failed to hash output for {partition_name}: {e}"))?;
+    if !ok {
+        anyhow::bail!("partition {partition_name} output file SHA-256 mismatch");
+    }
+    Ok(())
+}
 
 /// Extract from mmap (prefetch mode — full file already downloaded).
 fn extract_partition_from_mmap(
@@ -699,9 +946,6 @@ fn extract_partition_from_mmap(
         if cancel_token.is_some_and(CancellationToken::is_cancelled) {
             anyhow::bail!("extraction cancelled");
         }
-        // SHA-256 hasher for output verification (Layer 3).
-        let mut hasher: Option<Sha256> =
-            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
@@ -716,10 +960,16 @@ fn extract_partition_from_mmap(
         }
         let raw_data = &mmap[data_offset + data_offset_op..data_end];
 
+        // L3: hash full payload-stored blob (compressed for REPLACE_*) before decompress.
+        if let Some(expected) = operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty())
+            && !op_blob_matches(raw_data, expected)
+        {
+            anyhow::bail!("payload operation {index} compressed data hash mismatch");
+        }
+
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow!("unsupported operation type {}", operation.r#type))?;
 
-        let mut buf = [0u8; DECOMP_BUF_SIZE];
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
 
@@ -732,7 +982,7 @@ fn extract_partition_from_mmap(
                     data_length,
                     raw_data.first().copied(),
                 );
-                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
+                Some(Box::new(liblzma::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
             }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(raw_data)))),
             Type::Zstd => Some(Box::new(
@@ -761,26 +1011,18 @@ fn extract_partition_from_mmap(
             if is_zero {
                 writer.seek(SeekFrom::Current(extent_size as i64))?;
             } else if let Some(ref mut dec) = compressed_reader {
-                super::copy::stream_copy(dec, writer, &mut buf, extent_size, hasher.as_mut())?;
+                // Fail-hard: stream_copy returns UnexpectedEof on short decompress.
+                super::io::with_io_buf(|buf| {
+                    super::io::stream_copy(dec, writer, buf, extent_size, None)
+                })?;
             } else {
                 let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
                 let slice = &raw_data[decoded_offset..slice_end];
-                if let Some(ref mut h) = hasher {
-                    h.update(slice);
-                }
                 writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
 
             current_pos += extent_size as u64;
-        }
-
-        // Layer 3 SHA-256 verification.
-        if let (Some(h), Some(expected)) = (hasher.as_mut(), operation.data_sha256_hash.as_ref()) {
-            let actual = h.clone().finalize();
-            if actual.as_slice() != expected.as_slice() {
-                anyhow::bail!("payload operation {} checksum mismatch", index);
-            }
         }
 
         let completed = index + 1 == total_operations;
@@ -821,8 +1063,6 @@ fn extract_partition_from_remote(
         if cancel_token.is_some_and(CancellationToken::is_cancelled) {
             anyhow::bail!("extraction cancelled");
         }
-        let mut hasher: Option<Sha256> =
-            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
@@ -848,17 +1088,25 @@ fn extract_partition_from_remote(
             )?
         };
 
+        // L3: hash full payload-stored blob (compressed for REPLACE_*) before decompress.
+        if let Some(expected) = operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty())
+            && !op_blob_matches(&raw_data, expected)
+        {
+            anyhow::bail!("payload operation {index} compressed data hash mismatch");
+        }
+
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow!("unsupported operation type {}", operation.r#type))?;
 
-        let mut buf = [0u8; DECOMP_BUF_SIZE];
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
 
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
             Type::ReplaceXz => {
-                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(&raw_data))))
+                Some(Box::new(liblzma::read::XzDecoder::new_multi_decoder(Cursor::new(
+                    &raw_data,
+                ))))
             }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(&raw_data)))),
             Type::Zstd => Some(Box::new(
@@ -887,25 +1135,18 @@ fn extract_partition_from_remote(
             if is_zero {
                 writer.seek(SeekFrom::Current(extent_size as i64))?;
             } else if let Some(ref mut dec) = compressed_reader {
-                super::copy::stream_copy(dec, writer, &mut buf, extent_size, hasher.as_mut())?;
+                // Fail-hard: stream_copy returns UnexpectedEof on short decompress.
+                super::io::with_io_buf(|buf| {
+                    super::io::stream_copy(dec, writer, buf, extent_size, None)
+                })?;
             } else {
                 let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
                 let slice = &raw_data[decoded_offset..slice_end];
-                if let Some(ref mut h) = hasher {
-                    h.update(slice);
-                }
                 writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
 
             current_pos += extent_size as u64;
-        }
-
-        if let (Some(h), Some(expected)) = (hasher.as_mut(), operation.data_sha256_hash.as_ref()) {
-            let actual = h.clone().finalize();
-            if actual.as_slice() != expected.as_slice() {
-                anyhow::bail!("payload operation {} checksum mismatch", index);
-            }
         }
 
         let completed = index + 1 == total_operations;

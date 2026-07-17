@@ -6,22 +6,21 @@
 //! serves all reads. Peak RAM from payload data is effectively zero.
 //!
 //! # Decompression model
-//! Each operation is decoded using a streaming loop with a fixed 256 KiB stack buffer.
-//! The full decompressed block is never buffered; bytes are written to the output file
-//! as they stream out of the decoder.
+//! Each operation is decoded using a streaming loop with a per-worker 256 KiB buffer
+//! (`io::with_io_buf`). The full decompressed block is never buffered; bytes are written
+//! to the output file as they stream out of the decoder.
 
-use super::cancel::CancellationToken;
-use super::parser::load_payload;
-use super::transaction::TransactionGuard;
-use super::verify::VerifyMode;
-use super::write::NonTemporalWriter;
-use super::zip::PayloadCache;
+use super::parser::{load_payload, LoadedPayload, open_mmap, parse_header};
+use crate::payload::cancel::CancellationToken;
 use crate::payload::chromeos_update_engine;
+use crate::payload::io::NonTemporalWriter;
+use crate::payload::transaction::TransactionGuard;
+use crate::payload::types::{ExtractPayloadResult, ExtractionStats, PayloadDiagnostics};
+use crate::payload::verify::VerifyMode;
+use crate::payload::zip::PayloadCache;
 use anyhow::Result;
 use prost::Message;
 use rayon::prelude::*;
-use serde::Serialize;
-use sha2::{Digest, Sha256};
 use std::{
     fs,
     io::{Cursor, Read, Seek, SeekFrom, Write},
@@ -32,78 +31,6 @@ use std::{
 use tauri::Emitter;
 
 const DEFAULT_BLOCK_SIZE: u32 = 4096;
-/// Size of the streaming decompression buffer. 256 KiB is a sweet-spot: large enough
-/// for throughput, small enough to stay L2-cache-resident on most CPUs.
-const DECOMP_BUF_SIZE: usize = 256 * 1024;
-
-#[derive(Debug, Default, Serialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct PartitionDetail {
-    pub name: String,
-    pub size: u64,
-}
-
-#[derive(Debug, Default, Serialize, Clone, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct ExtractPayloadResult {
-    pub success: bool,
-    pub output_dir: String,
-    pub extracted_files: Vec<String>,
-    pub error: Option<String>,
-}
-
-/// Full metadata about a remote OTA payload — HTTP, ZIP, and OTA manifest layers.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemotePayloadMetadata {
-    // HTTP layer
-    pub content_length: u64,
-    pub content_type: Option<String>,
-    pub last_modified: Option<String>,
-    pub server: Option<String>,
-    pub etag: Option<String>,
-    // ZIP layer
-    pub is_zip: bool,
-    pub zip_payload_offset: Option<u64>,
-    pub zip_compressed_size: Option<u64>,
-    pub zip_uncompressed_size: Option<u64>,
-    pub zip_compression_method: Option<String>,
-    // OTA Manifest layer (from protobuf)
-    pub block_size: u32,
-    pub payload_version: u32,
-    pub minor_version: Option<u32>,
-    pub security_patch_level: Option<String>,
-    pub max_timestamp: Option<i64>,
-    pub partial_update: Option<bool>,
-    pub dynamic_groups: Vec<DynamicGroupInfo>,
-    pub partition_count: usize,
-    pub total_size: u64,
-    pub remote_kind: Option<String>,
-    // OTA Package metadata (from META-INF/com/android/metadata)
-    pub ota_type: Option<String>,
-    pub pre_device: Option<String>,
-    pub post_build: Option<String>,
-    pub post_build_incremental: Option<String>,
-    pub post_sdk_level: Option<String>,
-    pub post_security_patch_level: Option<String>,
-    pub post_timestamp: Option<String>,
-    pub ota_version: Option<String>,
-    pub wipe: Option<bool>,
-    // payload_properties.txt
-    pub file_hash: Option<String>,
-    pub file_size: Option<u64>,
-    pub metadata_hash: Option<String>,
-    pub metadata_size: Option<u64>,
-}
-
-/// Dynamic partition group info from the OTA manifest.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DynamicGroupInfo {
-    pub name: String,
-    pub size: Option<u64>,
-    pub partitions: Vec<String>,
-}
 
 /// Extract selected partitions from a payload file.
 ///
@@ -129,6 +56,7 @@ pub fn extract_payload(
     cancel_token: Option<&CancellationToken>,
     source_dir: Option<&Path>,
 ) -> Result<ExtractPayloadResult> {
+    let extract_started = Instant::now();
     let payload = load_payload(payload_path, cache)?;
     let block_size = payload.manifest.block_size.unwrap_or(DEFAULT_BLOCK_SIZE);
     let output_dir = output_dir
@@ -160,6 +88,11 @@ pub fn extract_payload(
         })
         .collect();
 
+    let total_bytes: u64 = partitions_to_extract
+        .iter()
+        .map(|p| p.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0))
+        .sum();
+
     // Parallel extraction using rayon.
     // Each thread receives:
     //   - Arc::clone(&payload.mmap)  — 8-byte pointer, not a 4 GB copy
@@ -188,7 +121,7 @@ pub fn extract_payload(
             let mut writer = NonTemporalWriter::new(&image_path, partition_size)
                 .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-            let payload_ref = super::parser::LoadedPayload { mmap, manifest, data_offset };
+            let payload_ref = LoadedPayload { mmap, manifest, data_offset };
 
             extract_partition(
                 &payload_ref,
@@ -202,6 +135,30 @@ pub fn extract_payload(
             )?;
 
             writer.flush()?;
+
+            // Layer 4: full output file SHA-256 vs new_partition_info.hash when enabled.
+            if verify_mode.layer4_enabled() {
+                if let Some(info) = partition.new_partition_info.as_ref() {
+                    if let Some(ref expected) = info.hash {
+                        if !expected.is_empty() {
+                            let ok = crate::payload::verify::verify_sha256(&image_path, expected)
+                                .map_err(|e| {
+                                    anyhow::anyhow!(
+                                        "failed to hash output for {}: {e}",
+                                        partition_name
+                                    )
+                                })?;
+                            if !ok {
+                                anyhow::bail!(
+                                    "partition {} output file SHA-256 mismatch",
+                                    partition_name
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+
             Ok(file_name)
         })
         .collect();
@@ -225,11 +182,18 @@ pub fn extract_payload(
         progress(&partition.partition_name, 1, 1, true);
     }
 
+    let stats = ExtractionStats::computed(
+        extract_started.elapsed(),
+        extracted_files.len(),
+        total_bytes,
+    );
+
     Ok(ExtractPayloadResult {
         success: true,
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: None,
+        stats: Some(stats),
     })
 }
 
@@ -264,7 +228,7 @@ fn emit_progress(
 
 #[allow(clippy::too_many_arguments)]
 fn extract_partition(
-    payload: &super::parser::LoadedPayload,
+    payload: &LoadedPayload,
     partition: &chromeos_update_engine::PartitionUpdate,
     writer: &mut (impl Write + Seek),
     block_size: u32,
@@ -304,8 +268,6 @@ fn extract_partition(
         if let Some(token) = cancel_token {
             token.check()?;
         }
-        let mut hasher: Option<Sha256> =
-            operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 
         let destination_extents = operation.dst_extents.as_slice();
         if destination_extents.is_empty() {
@@ -320,11 +282,24 @@ fn extract_partition(
         }
         let raw_data = &payload.mmap[data_offset..data_end];
 
+        // L3: AOSP data_sha256_hash is over the payload-stored (compressed) blob.
+        if verify_mode.layer3_enabled()
+            && let Some(expected) = operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty())
+            && !crate::payload::verify::op_blob_matches(raw_data, expected)
+        {
+            log::error!(
+                target: "payload",
+                "partition {} operation {}: SHA-256 mismatch (compressed blob hash)",
+                partition.partition_name,
+                index
+            );
+            anyhow::bail!("payload operation {} compressed data hash mismatch", index);
+        }
+
         use chromeos_update_engine::install_operation::Type;
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow::anyhow!("unsupported operation type {}", operation.r#type))?;
 
-        let mut buf = [0u8; DECOMP_BUF_SIZE];
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
 
@@ -339,7 +314,7 @@ fn extract_partition(
                     data_length,
                     raw_data.first().copied(),
                 );
-                Some(Box::new(xz2::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
+                Some(Box::new(liblzma::read::XzDecoder::new_multi_decoder(Cursor::new(raw_data))))
             }
             Type::ReplaceBz => Some(Box::new(bzip2::read::BzDecoder::new(Cursor::new(raw_data)))),
             Type::Zstd => Some(Box::new(
@@ -352,11 +327,6 @@ fn extract_partition(
             }
             _ => anyhow::bail!("unsupported payload operation type: {:?}", operation_type),
         };
-
-        let compressed_hash = hasher.as_mut().map(|h| {
-            h.update(raw_data);
-            h.clone().finalize()
-        });
 
         let extents = destination_extents;
         let mut ei = 0usize;
@@ -390,7 +360,9 @@ fn extract_partition(
                     writer.seek(SeekFrom::Start(start_offset))?;
                     current_pos = start_offset;
                 }
-                super::copy::stream_copy(dec, writer, &mut buf, extent_size, None)?;
+                crate::payload::io::with_io_buf(|buf| {
+                    crate::payload::io::stream_copy(dec, writer, buf, extent_size, None)
+                })?;
                 current_pos += extent_size as u64;
                 total_bytes_written += extent_size as u64;
                 ei += 1;
@@ -444,20 +416,6 @@ fn extract_partition(
             ei = ej;
         }
 
-        if verify_mode.layer3_enabled
-            && let (Some(actual), Some(expected)) =
-                (compressed_hash, operation.data_sha256_hash.as_ref())
-            && actual.as_slice() != expected.as_slice()
-        {
-            log::error!(
-                target: "payload",
-                "partition {} operation {}: SHA-256 mismatch (compressed blob hash)",
-                partition.partition_name,
-                index
-            );
-            anyhow::bail!("payload operation {} compressed data hash mismatch", index);
-        }
-
         let completed = index + 1 == total_operations;
         let now = Instant::now();
         let elapsed = now.duration_since(last_progress_time);
@@ -500,26 +458,12 @@ fn default_output_dir(payload_path: &Path) -> PathBuf {
     parent.join(format!("extracted_{stamp}"))
 }
 
-/// Diagnostics result for a payload file.
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PayloadDiagnostics {
-    pub format: String,
-    pub partition_count: usize,
-    pub total_operations: usize,
-    pub compression_types: Vec<String>,
-    pub has_sha256_hashes: bool,
-    pub is_sparse: bool,
-    pub warnings: Vec<String>,
-    pub manifest_info: String,
-}
-
 /// Diagnose a CrAU payload file without full extraction.
 pub fn diagnose_payload_file(payload_path: &Path) -> Result<PayloadDiagnostics> {
     use chromeos_update_engine::install_operation::Type;
 
-    let mmap = super::parser::open_mmap(payload_path)?;
-    let (manifest_bytes, _) = super::parser::parse_header(&mmap)?;
+    let mmap = open_mmap(payload_path)?;
+    let (manifest_bytes, _) = parse_header(&mmap)?;
     let manifest = chromeos_update_engine::DeltaArchiveManifest::decode(&manifest_bytes[..])?;
 
     let mut compression_types: Vec<String> = Vec::new();

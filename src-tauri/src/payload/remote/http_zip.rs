@@ -10,6 +10,7 @@
 //! 4. Return the offset and size of `payload.bin` within the ZIP
 
 use super::http::HttpPayloadReader;
+use super::session::{self, CachedZipIndex};
 use anyhow::{Result, anyhow};
 
 /// Check if a URL likely points to a ZIP file.
@@ -49,42 +50,32 @@ pub struct ZipPayloadInfo {
 /// 2. Parses the EOCD to get Central Directory offset
 /// 3. Downloads the Central Directory
 /// 4. Finds the payload.bin entry and returns its offset/size info
+///
+/// Results are cached on the shared remote session (URL + length + etag) so
+/// list → metadata → extract does not re-parse the ZIP CD.
 pub async fn find_payload_in_zip(reader: &HttpPayloadReader) -> Result<ZipPayloadInfo> {
-    let content_length = reader.content_length();
-
-    // Step 1: Fetch the tail of the file to find EOCD
-    let tail_size = std::cmp::min(EOCD_MAX_SIZE as u64, content_length);
-    let tail_offset = content_length - tail_size;
-    let tail_data = reader.read_range(tail_offset, tail_size).await?;
-
-    // Step 2: Find EOCD signature (search backwards)
-    let eocd_pos = find_eocd(&tail_data).ok_or_else(|| anyhow!("EOCD record not found in ZIP"))?;
-    let eocd_abs_pos = tail_offset + eocd_pos as u64;
-
-    // Step 3: Parse EOCD to get Central Directory offset
-    let eocd_data = &tail_data[eocd_pos..];
-    if eocd_data.len() < 22 {
-        return Err(anyhow!("EOCD record too small"));
+    if let Some(cached) = session::get_zip_payload_lookup(reader) {
+        log::debug!("remote session cache hit for ZIP payload.bin lookup");
+        return cached.map_err(|msg| anyhow!(msg));
     }
 
-    // EOCD structure:
-    // 0-3: signature (0x06054b50)
-    // 4-5: disk number
-    // 6-7: disk with CD
-    // 8-9: entries on this disk
-    // 10-11: total entries
-    // 12-15: CD size
-    // 16-19: CD offset
-    let cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
-
-    // Step 4: Fetch the entire Central Directory (we know its size and offset from EOCD).
-    // This avoids chunk boundary issues where CD entries span fetch boundaries.
-    let cd_size = eocd_abs_pos.saturating_sub(cd_offset);
-    if cd_size == 0 {
-        return Err(anyhow!("Central Directory is empty"));
+    let result = find_payload_in_zip_uncached(reader).await;
+    match &result {
+        Ok(info) => session::set_zip_payload_found(reader, info),
+        // Only cache definitive absence (not network/parse blips) so factory fallback
+        // and retries stay correct for the same session URL.
+        Err(err) => {
+            let msg = err.to_string();
+            if msg.contains("payload.bin not found") {
+                session::set_zip_payload_missing(reader, msg);
+            }
+        }
     }
+    result
+}
 
-    let cd_data = reader.read_range(cd_offset, cd_size).await?;
+async fn find_payload_in_zip_uncached(reader: &HttpPayloadReader) -> Result<ZipPayloadInfo> {
+    let (_cd_offset, cd_data) = load_central_directory(reader).await?;
 
     // Parse CD entries to find payload.bin
     let mut parse_pos = 0;
@@ -158,6 +149,55 @@ pub async fn find_payload_in_zip(reader: &HttpPayloadReader) -> Result<ZipPayloa
     })
 }
 
+/// Fetch (or reuse cached) ZIP central directory for this remote reader.
+async fn load_central_directory(reader: &HttpPayloadReader) -> Result<(u64, Vec<u8>)> {
+    if let Some(index) = session::get_zip_index(reader) {
+        log::debug!("remote session cache hit for ZIP central directory");
+        return Ok((index.cd_offset, index.cd_data));
+    }
+
+    let content_length = reader.content_length();
+
+    // Step 1: Fetch the tail of the file to find EOCD
+    let tail_size = std::cmp::min(EOCD_MAX_SIZE as u64, content_length);
+    let tail_offset = content_length - tail_size;
+    let tail_data = reader.read_range(tail_offset, tail_size).await?;
+
+    // Step 2: Find EOCD signature (search backwards)
+    let eocd_pos = find_eocd(&tail_data).ok_or_else(|| anyhow!("EOCD record not found in ZIP"))?;
+    let eocd_abs_pos = tail_offset + eocd_pos as u64;
+
+    // Step 3: Parse EOCD to get Central Directory offset
+    let eocd_data = &tail_data[eocd_pos..];
+    if eocd_data.len() < 22 {
+        return Err(anyhow!("EOCD record too small"));
+    }
+
+    // EOCD structure:
+    // 0-3: signature (0x06054b50)
+    // 4-5: disk number
+    // 6-7: disk with CD
+    // 8-9: entries on this disk
+    // 10-11: total entries
+    // 12-15: CD size
+    // 16-19: CD offset
+    let cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
+
+    // Step 4: Fetch the entire Central Directory (we know its size and offset from EOCD).
+    // This avoids chunk boundary issues where CD entries span fetch boundaries.
+    let cd_size = eocd_abs_pos.saturating_sub(cd_offset);
+    if cd_size == 0 {
+        return Err(anyhow!("Central Directory is empty"));
+    }
+
+    let cd_data = reader.read_range(cd_offset, cd_size).await?;
+    session::set_zip_index(
+        reader,
+        CachedZipIndex { cd_offset, cd_data: cd_data.clone() },
+    );
+    Ok((cd_offset, cd_data))
+}
+
 /// Read a named text file from a remote ZIP (e.g. `META-INF/com/android/metadata`).
 ///
 /// Scans the Central Directory for the given filename and returns its contents as a string.
@@ -169,30 +209,11 @@ pub async fn read_text_file_from_zip(
     reader: &HttpPayloadReader,
     target_name: &str,
 ) -> Result<Option<String>> {
-    let content_length = reader.content_length();
-
-    // Reuse the same EOCD/CD parsing strategy as find_payload_in_zip
-    let tail_size = std::cmp::min(EOCD_MAX_SIZE as u64, content_length);
-    let tail_offset = content_length - tail_size;
-    let tail_data = reader.read_range(tail_offset, tail_size).await?;
-
-    let eocd_pos = match find_eocd(&tail_data) {
-        Some(pos) => pos,
-        None => return Ok(None),
+    // Reuse session-cached CD when available (list/meta/extract path).
+    let (_cd_offset, cd_data) = match load_central_directory(reader).await {
+        Ok(cd) => cd,
+        Err(_) => return Ok(None),
     };
-    let eocd_abs_pos = tail_offset + eocd_pos as u64;
-    let eocd_data = &tail_data[eocd_pos..];
-    if eocd_data.len() < 22 {
-        return Ok(None);
-    }
-
-    let cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
-    let cd_size = eocd_abs_pos.saturating_sub(cd_offset);
-    if cd_size == 0 {
-        return Ok(None);
-    }
-
-    let cd_data = reader.read_range(cd_offset, cd_size).await?;
 
     let mut parse_pos = 0;
     while parse_pos + 46 <= cd_data.len() {
@@ -266,7 +287,7 @@ pub async fn read_text_file_from_zip(
 }
 
 /// Find EOCD signature in data buffer (search backwards from end)
-pub(super) fn find_eocd(data: &[u8]) -> Option<usize> {
+pub fn find_eocd(data: &[u8]) -> Option<usize> {
     if data.len() < 4 {
         return None;
     }

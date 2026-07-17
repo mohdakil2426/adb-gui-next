@@ -1,40 +1,8 @@
-use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::path::Path;
 
-#[derive(Debug, Clone, Copy)]
-pub struct VerifyMode {
-    pub layer3_enabled: bool,
-    pub layer4_enabled: bool,
-}
-
-impl Default for VerifyMode {
-    fn default() -> Self {
-        Self { layer3_enabled: true, layer4_enabled: true }
-    }
-}
-
-impl VerifyMode {
-    #[allow(dead_code)]
-    pub fn layer3_enabled(&self) -> bool {
-        self.layer3_enabled
-    }
-
-    #[allow(dead_code)]
-    pub fn layer4_enabled(&self) -> bool {
-        self.layer4_enabled
-    }
-}
-
-#[derive(Debug, Serialize, Clone)]
-pub struct VerificationResult {
-    pub success: bool,
-    pub errors: Vec<String>,
-}
-
-#[allow(dead_code)]
 pub fn verify_sha256(path: &Path, expected: &[u8]) -> Result<bool, std::io::Error> {
     let file = File::open(path)?;
     let mut reader = BufReader::with_capacity(1024 * 1024, file);

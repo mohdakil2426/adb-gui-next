@@ -4,10 +4,11 @@
 //! images, and a stored nested `image-*.zip` with most partition `.img` files. This module
 //! parses those ZIP central directories with HTTP ranges and streams only the selected images.
 
-use super::cancel::CancellationToken;
-use super::extractor::{ExtractPayloadResult, PartitionDetail};
 use super::http::HttpPayloadReader;
-use super::write::NonTemporalWriter;
+use super::session;
+use crate::payload::cancel::CancellationToken;
+use crate::payload::io::NonTemporalWriter;
+use crate::payload::types::{ExtractPayloadResult, ExtractionStats, PartitionDetail};
 use anyhow::{Result, anyhow};
 use flate2::read::DeflateDecoder;
 use std::collections::{HashMap, HashSet};
@@ -54,25 +55,104 @@ struct ZipWindow {
 }
 
 #[cfg(feature = "remote_zip")]
-pub async fn list_remote_factory_image_partitions(url: String) -> Result<Vec<PartitionDetail>> {
-    let reader = HttpPayloadReader::new(url).await?;
-    let entries = discover_factory_image_entries(&reader).await?;
+pub async fn list_remote_factory_image_partitions(
+    url: String,
+    app: Option<AppHandle>,
+) -> Result<Vec<PartitionDetail>> {
+    use super::load_progress;
 
-    Ok(entries
+    const TOTAL_STEPS: u32 = 4;
+    let app_ref = app.as_ref();
+
+    // When called as fallback from list_remote_payload_partitions, verify/locate may
+    // already have been emitted. Re-emit locate/detect for factory path clarity.
+    load_progress::emit_load_progress(
+        app_ref,
+        "locateIndex",
+        "Locating factory ZIP index…",
+        None,
+        2,
+        TOTAL_STEPS,
+    );
+
+    let reader = match session::open_http_reader(&url).await {
+        Ok(reader) => reader,
+        Err(err) => {
+            load_progress::emit_load_progress(
+                app_ref,
+                "error",
+                "Connection failed",
+                Some(&err.to_string()),
+                2,
+                TOTAL_STEPS,
+            );
+            return Err(err);
+        }
+    };
+
+    load_progress::emit_load_progress(
+        app_ref,
+        "detectFormat",
+        "Factory image detected",
+        Some("image-*.zip"),
+        3,
+        TOTAL_STEPS,
+    );
+
+    load_progress::emit_load_progress(
+        app_ref,
+        "readPartitions",
+        "Discovering partition images…",
+        None,
+        4,
+        TOTAL_STEPS,
+    );
+
+    let entries = match discover_factory_image_entries(&reader).await {
+        Ok(entries) => entries,
+        Err(err) => {
+            load_progress::emit_load_progress(
+                app_ref,
+                "error",
+                "Failed to discover factory images",
+                Some(&err.to_string()),
+                4,
+                TOTAL_STEPS,
+            );
+            return Err(err);
+        }
+    };
+
+    let details: Vec<PartitionDetail> = entries
         .into_iter()
-        .map(|entry| PartitionDetail { name: entry.partition_name, size: entry.uncompressed_size })
-        .collect())
+        .map(|entry| PartitionDetail {
+            name: entry.partition_name,
+            size: entry.uncompressed_size,
+            download_size: Some(entry.compressed_size),
+        })
+        .collect();
+
+    load_progress::emit_load_progress(
+        app_ref,
+        "done",
+        "Partitions loaded",
+        Some(&format!("{} partitions", details.len())),
+        4,
+        TOTAL_STEPS,
+    );
+
+    Ok(details)
 }
 
 #[cfg(feature = "remote_zip")]
 pub async fn get_remote_factory_image_metadata(
     url: String,
-) -> Result<super::extractor::RemotePayloadMetadata> {
-    let reader = HttpPayloadReader::new(url).await?;
+) -> Result<crate::payload::types::RemotePayloadMetadata> {
+    let reader = session::open_http_reader(&url).await?;
     let entries = discover_factory_image_entries(&reader).await?;
     let total_size = entries.iter().map(|entry| entry.uncompressed_size).sum();
 
-    Ok(super::extractor::RemotePayloadMetadata {
+    Ok(crate::payload::types::RemotePayloadMetadata {
         content_length: reader.content_length(),
         content_type: reader.content_type().map(String::from),
         last_modified: reader.last_modified().map(String::from),
@@ -117,7 +197,8 @@ pub async fn extract_remote_factory_images(
     app_handle: Option<AppHandle>,
     cancel_token: Option<&CancellationToken>,
 ) -> Result<ExtractPayloadResult> {
-    let reader = HttpPayloadReader::new(url).await?;
+    let extract_started = std::time::Instant::now();
+    let reader = session::open_http_reader(&url).await?;
     let entries = discover_factory_image_entries(&reader).await?;
     let selected = selected_partitions.iter().map(String::as_str).collect::<HashSet<_>>();
 
@@ -129,6 +210,8 @@ pub async fn extract_remote_factory_images(
     if entries_to_extract.is_empty() {
         anyhow::bail!("no selected factory image entries were found");
     }
+
+    let total_bytes: u64 = entries_to_extract.iter().map(|e| e.uncompressed_size).sum();
 
     let output_dir =
         output_dir.filter(|path| !path.as_os_str().is_empty()).map(PathBuf::from).unwrap_or_else(
@@ -165,11 +248,15 @@ pub async fn extract_remote_factory_images(
         }
     }
 
+    let stats =
+        ExtractionStats::computed(extract_started.elapsed(), extracted_files.len(), total_bytes);
+
     Ok(ExtractPayloadResult {
         success: true,
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: None,
+        stats: Some(stats),
     })
 }
 
@@ -189,6 +276,7 @@ fn cancelled_factory_result(
         output_dir: output_dir.to_string_lossy().to_string(),
         extracted_files,
         error: Some("extraction cancelled".to_string()),
+        stats: None,
     })
 }
 

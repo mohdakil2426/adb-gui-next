@@ -8,25 +8,16 @@ pub mod chromeos_update_engine {
 }
 
 pub mod cancel;
-mod copy;
-mod delta;
+pub mod crau;
+pub mod delta;
 mod error;
-mod extractor;
+pub mod io;
 pub mod ops;
-mod parser;
+pub mod source;
 pub mod transaction;
+mod types;
 pub mod verify;
-mod write;
-mod zip;
-
-#[cfg(feature = "remote_zip")]
-pub mod http;
-
-#[cfg(feature = "remote_zip")]
-pub mod http_zip;
-
-#[cfg(feature = "remote_zip")]
-pub mod factory_image;
+pub mod zip;
 
 #[cfg(feature = "remote_zip")]
 pub mod remote;
@@ -65,32 +56,23 @@ fn civil_from_days(days: i64) -> (i64, u8, u8) {
 }
 
 pub use cancel::CancellationToken;
-pub use copy::{copy_raw_slice, detect_copy_strategy};
-pub use extractor::{
-    DynamicGroupInfo, ExtractPayloadResult, PartitionDetail, PayloadDiagnostics,
-    RemotePayloadMetadata, diagnose_payload_file, extract_payload,
+pub use crau::{
+    LoadedPayload, diagnose_payload_file, extract_payload, list_payload_partitions,
+    list_payload_partitions_with_details, open_mmap, parse_header,
 };
-pub use parser::{
-    LoadedPayload, list_payload_partitions, list_payload_partitions_with_details, open_mmap,
-    parse_header,
+pub use io::{NonTemporalWriter, copy_raw_slice, detect_copy_strategy};
+pub use types::{
+    DynamicGroupInfo, ExtractPayloadResult, ExtractionStats, PartitionDetail, PayloadDiagnostics,
+    RemotePayloadMetadata,
 };
 pub use verify::{VerificationResult, VerifyMode};
 pub use zip::PayloadCache;
 
 #[cfg(feature = "remote_zip")]
-pub use http::HttpPayloadReader;
-
-#[cfg(feature = "remote_zip")]
-pub use http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_text_file_from_zip};
-
-#[cfg(feature = "remote_zip")]
-pub use factory_image::{
-    extract_remote_factory_images, get_remote_factory_image_metadata,
-    list_remote_factory_image_partitions,
-};
-
-#[cfg(feature = "remote_zip")]
 pub use remote::{
-    RemotePayload, extract_remote_direct, extract_remote_prefetch, get_remote_payload_metadata,
-    list_remote_payload_partitions,
+    ERR_NO_RANGE, HttpPayloadReader, RemotePayload, ZipPayloadInfo, extract_remote_direct,
+    extract_remote_factory_images, extract_remote_prefetch, find_payload_in_zip,
+    get_remote_factory_image_metadata, get_remote_payload_metadata, is_zip_url,
+    list_remote_factory_image_partitions, list_remote_payload_partitions, open_http_reader,
+    read_text_file_from_zip,
 };

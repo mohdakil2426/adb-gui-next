@@ -133,6 +133,7 @@ pub async fn extract_payload(
                         } else {
                             message
                         }),
+                        stats: None,
                     })
                 }
             };
@@ -154,6 +155,7 @@ pub async fn extract_payload(
             output_dir: String::new(),
             extracted_files: Vec::new(),
             error: Some(format!("File not found: {payload_path}")),
+            stats: None,
         });
     }
 
@@ -167,6 +169,7 @@ pub async fn extract_payload(
                 &selected_partitions,
                 Some(app),
                 |_, _, _, _| {},
+                cancel_token.as_ref(),
             )
         });
 
@@ -177,11 +180,18 @@ pub async fn extract_payload(
             }
             Err(e) => {
                 error!("OPS extraction failed: {}", e);
+                let message = e.to_string();
+                let cancelled = message.to_ascii_lowercase().contains("cancelled");
                 Ok(ExtractPayloadResult {
                     success: false,
                     output_dir: String::new(),
                     extracted_files: Vec::new(),
-                    error: Some(e.to_string()),
+                    error: Some(if cancelled {
+                        "extraction cancelled".to_string()
+                    } else {
+                        message
+                    }),
+                    stats: None,
                 })
             }
         };
@@ -217,6 +227,7 @@ pub async fn extract_payload(
                 output_dir: String::new(),
                 extracted_files: Vec::new(),
                 error: Some(e.to_string()),
+                stats: None,
             })
         }
     }
@@ -276,7 +287,7 @@ pub async fn get_ops_metadata(path: String) -> CmdResult<ops::OpsMetadata> {
 pub async fn check_remote_payload(url: String) -> CmdResult<RemotePayloadInfo> {
     info!("Checking remote payload URL: {}", url.trim());
     let reader =
-        payload::HttpPayloadReader::new(url.trim().to_string()).await.map_err(|e| e.to_string())?;
+        payload::open_http_reader(url.trim()).await.map_err(|e| e.to_string())?;
 
     Ok(RemotePayloadInfo {
         content_length: reader.content_length(),
@@ -302,9 +313,14 @@ pub async fn get_remote_payload_metadata(url: String) -> CmdResult<RemotePayload
 
 /// List partitions from a remote payload URL.
 #[tauri::command]
-pub async fn list_remote_payload_partitions(url: String) -> CmdResult<Vec<PartitionDetail>> {
+pub async fn list_remote_payload_partitions(
+    app: AppHandle,
+    url: String,
+) -> CmdResult<Vec<PartitionDetail>> {
     info!("Listing remote payload partitions from {}", url.trim());
-    payload::list_remote_payload_partitions(url.trim().to_string()).await.map_err(|e| e.to_string())
+    payload::list_remote_payload_partitions(url.trim().to_string(), Some(app))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -329,6 +345,7 @@ pub async fn extract_delta_payload(
             output_dir: String::new(),
             extracted_files: Vec::new(),
             error: Some(format!("Source directory not found: {}", source_dir)),
+            stats: None,
         });
     }
 
@@ -377,6 +394,7 @@ pub async fn extract_delta_payload(
                 output_dir: String::new(),
                 extracted_files: Vec::new(),
                 error: Some(e.to_string()),
+                stats: None,
             })
         }
     }

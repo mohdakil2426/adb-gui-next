@@ -22,7 +22,10 @@ fn lists_partitions_and_details_from_payload_bin() {
         list_payload_partitions_with_details(&payload_path, &cache).expect("partition details");
 
     assert_eq!(partitions, vec!["system".to_string()]);
-    assert_eq!(details, vec![PartitionDetail { name: "system".into(), size: 4096 }]);
+    assert_eq!(
+        details,
+        vec![PartitionDetail { name: "system".into(), size: 4096, download_size: None }]
+    );
 }
 
 #[test]
@@ -76,6 +79,53 @@ fn lists_partitions_from_zip_and_cleans_cached_payload() {
     assert_eq!(partitions, vec!["vendor".to_string()]);
 
     cache.cleanup().expect("cleanup cache");
+}
+
+#[test]
+fn lists_and_extracts_from_stored_zip_without_temp_extract() {
+    use ::zip::CompressionMethod;
+    use ::zip::write::SimpleFileOptions;
+
+    let temp = tempdir().expect("tempdir");
+    let payload_path = temp.path().join("payload.bin");
+    let zip_path = temp.path().join("stored-ota.zip");
+    let output_dir = temp.path().join("out");
+    let image_bytes = vec![9u8; 4096];
+    write_test_payload(&payload_path, "system", 4096, &image_bytes);
+
+    // STORED (method 0) — PayloadCache must mmap a window, not always temp-extract.
+    {
+        let zip_file = fs::File::create(&zip_path).expect("create zip");
+        let mut zip = ::zip::ZipWriter::new(zip_file);
+        zip.start_file(
+            "payload.bin",
+            SimpleFileOptions::default().compression_method(CompressionMethod::Stored),
+        )
+        .expect("start payload entry");
+        zip.write_all(&fs::read(&payload_path).expect("read payload"))
+            .expect("write payload entry");
+        zip.finish().expect("finish zip");
+    }
+
+    let cache = PayloadCache::default();
+    let partitions = list_payload_partitions(&zip_path, &cache).expect("stored zip partitions");
+    assert_eq!(partitions, vec!["system".to_string()]);
+
+    let result = extract_payload(
+        &zip_path,
+        Some(&output_dir),
+        &[String::from("system")],
+        &cache,
+        None,
+        VerifyMode::default(),
+        |_, _, _, _| {},
+        None,
+        None,
+    )
+    .expect("extract from STORED zip");
+
+    assert!(result.success);
+    assert_eq!(fs::read(output_dir.join("system.img")).expect("image"), image_bytes);
 }
 
 #[test]
@@ -205,6 +255,119 @@ fn rejects_payload_when_data_hash_mismatches() {
     );
 }
 
+#[test]
+fn rejects_payload_when_output_file_hash_mismatches() {
+    use sha2::{Digest, Sha256};
+
+    let temp = tempdir().expect("tempdir");
+    let payload_path = temp.path().join("payload.bin");
+    let output_dir = temp.path().join("out");
+
+    let image_bytes = vec![0xCD; 4096];
+    // L3 disabled via empty op hash; L4 wrong partition hash must fail.
+    write_custom_payload(
+        &payload_path,
+        DeltaArchiveManifest {
+            partitions: vec![PartitionUpdate {
+                partition_name: "system".to_string(),
+                new_partition_info: Some(PartitionInfo {
+                    size: Some(4096),
+                    hash: Some(vec![0u8; 32]),
+                }),
+                operations: vec![InstallOperation {
+                    r#type: Type::Replace as i32,
+                    data_offset: Some(0),
+                    data_length: Some(4096),
+                    dst_extents: vec![chromeos_update_engine::Extent {
+                        start_block: Some(0),
+                        num_blocks: Some(1),
+                    }],
+                    data_sha256_hash: Some(Vec::new()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
+        &image_bytes,
+    );
+
+    let cache = PayloadCache::default();
+    let error = extract_payload(
+        &payload_path,
+        Some(&output_dir),
+        &[String::from("system")],
+        &cache,
+        None,
+        VerifyMode { layer3_enabled: true, layer4_enabled: true },
+        |_, _, _, _| {},
+        None,
+        None,
+    )
+    .expect_err("expected L4 output file hash failure");
+
+    assert!(
+        error.to_string().contains("output file SHA-256 mismatch"),
+        "expected L4 mismatch error, got: {error}"
+    );
+
+    // Sanity: correct partition hash would succeed (prove image bytes hash differs).
+    let real_hash = Sha256::digest(&image_bytes);
+    assert_ne!(real_hash.as_slice(), &[0u8; 32]);
+}
+
+#[test]
+fn layer4_disabled_skips_output_file_hash() {
+    let temp = tempdir().expect("tempdir");
+    let payload_path = temp.path().join("payload.bin");
+    let output_dir = temp.path().join("out");
+    let image_bytes = vec![0xEE; 4096];
+
+    write_custom_payload(
+        &payload_path,
+        DeltaArchiveManifest {
+            partitions: vec![PartitionUpdate {
+                partition_name: "system".to_string(),
+                new_partition_info: Some(PartitionInfo {
+                    size: Some(4096),
+                    hash: Some(vec![0u8; 32]), // wrong, but L4 off
+                }),
+                operations: vec![InstallOperation {
+                    r#type: Type::Replace as i32,
+                    data_offset: Some(0),
+                    data_length: Some(4096),
+                    dst_extents: vec![chromeos_update_engine::Extent {
+                        start_block: Some(0),
+                        num_blocks: Some(1),
+                    }],
+                    data_sha256_hash: Some(Vec::new()),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }],
+            ..Default::default()
+        },
+        &image_bytes,
+    );
+
+    let cache = PayloadCache::default();
+    let result = extract_payload(
+        &payload_path,
+        Some(&output_dir),
+        &[String::from("system")],
+        &cache,
+        None,
+        VerifyMode { layer3_enabled: true, layer4_enabled: false },
+        |_, _, _, _| {},
+        None,
+        None,
+    )
+    .expect("L4 disabled should not verify partition hash");
+
+    assert!(result.success);
+    assert_eq!(fs::read(output_dir.join("system.img")).expect("read"), image_bytes);
+}
+
 fn write_test_payload(path: &std::path::Path, partition_name: &str, size: u64, image_bytes: &[u8]) {
     write_custom_payload(
         path,
@@ -262,8 +425,8 @@ fn write_zip_with_payload(zip_path: &std::path::Path, payload_path: &std::path::
 #[cfg(feature = "remote_zip")]
 mod http_zip_tests {
     use super::*;
-    use crate::payload::factory_image::parse_central_directory_entries;
-    use crate::payload::http_zip::{find_eocd, is_zip_url};
+    use crate::payload::remote::factory::parse_central_directory_entries;
+    use crate::payload::remote::http_zip::{find_eocd, is_zip_url};
 
     #[test]
     fn test_is_zip_url_detects_zip_extensions() {
@@ -414,7 +577,7 @@ mod http_zip_tests {
 // =============================================================================
 
 mod stream_copy_tests {
-    use super::super::copy::stream_copy;
+    use super::super::io::stream_copy;
     use sha2::{Digest, Sha256};
     use std::io::Cursor;
 
@@ -553,7 +716,7 @@ mod transaction_guard_tests {
 // =============================================================================
 
 mod non_temporal_writer_tests {
-    use super::super::write::NonTemporalWriter;
+    use super::super::io::NonTemporalWriter;
     use std::fs;
     use std::io::{Seek, SeekFrom, Write};
     use tempfile::tempdir;
@@ -597,6 +760,48 @@ mod non_temporal_writer_tests {
 
         let metadata = fs::metadata(&path).expect("metadata");
         assert_eq!(metadata.len(), 8192);
+    }
+}
+
+// =============================================================================
+// Tests for L3 op-blob hash helpers (shared local + remote semantics)
+// =============================================================================
+
+mod op_blob_verify_tests {
+    use super::super::verify::{hash_op_blob, op_blob_matches};
+    use sha2::{Digest, Sha256};
+
+    #[test]
+    fn hash_op_blob_matches_sha256_of_raw_bytes() {
+        let raw = [0xABu8; 128];
+        let expected = Sha256::digest(raw);
+        assert_eq!(hash_op_blob(&raw).as_slice(), expected.as_slice());
+    }
+
+    #[test]
+    fn op_blob_matches_empty_expected_is_true() {
+        assert!(op_blob_matches(b"anything", &[]));
+    }
+
+    #[test]
+    fn op_blob_matches_rejects_wrong_digest() {
+        let raw = b"compressed-blob-bytes";
+        let wrong = [0u8; 32];
+        assert!(!op_blob_matches(raw, &wrong));
+        assert!(op_blob_matches(raw, hash_op_blob(raw).as_slice()));
+    }
+
+    /// Documents remote/local parity: compressed REPLACE_* ops must hash the
+    /// payload-stored blob (raw_data), never the decompressed stream.
+    #[test]
+    fn remote_compressed_hash_semantics_use_raw_blob() {
+        // Simulated xz/bz/zstd payload bytes (not actually compressed here).
+        let compressed_blob = b"\xfd7zXZ\x00fake-payload-op-blob";
+        let digest = hash_op_blob(compressed_blob);
+        // Decompressed content would differ; L3 must still use compressed_blob.
+        let decompressed_would_be = b"decompressed-partition-extent-data";
+        assert!(!op_blob_matches(decompressed_would_be, digest.as_slice()));
+        assert!(op_blob_matches(compressed_blob, digest.as_slice()));
     }
 }
 
@@ -783,7 +988,7 @@ mod sha256_verification_tests {
 // =============================================================================
 
 mod diagnostics_tests {
-    use super::super::extractor::diagnose_payload_file;
+    use super::super::crau::diagnose_payload_file;
     use super::*;
 
     #[test]
@@ -864,7 +1069,7 @@ mod diagnostics_tests {
 // =============================================================================
 
 mod manifest_size_cap_tests {
-    use super::super::parser::parse_header;
+    use super::super::crau::parse_header;
 
     #[test]
     fn test_manifest_size_cap_rejects_huge_manifest() {

@@ -11,7 +11,7 @@ use crate::marketplace::{
     GithubDeviceFlowChallenge, GithubDeviceFlowPollResult, ManagedHttpClient,
 };
 use crate::marketplace::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
-use crate::payload::http::{resolve_redirect_url, validate_outbound_url};
+use crate::payload::remote::{resolve_redirect_url, validate_outbound_url};
 
 const MARKETPLACE_DOWNLOAD_DIR: &str = "adb-gui-next-marketplace";
 const MAX_DOWNLOAD_REDIRECTS: usize = 5;

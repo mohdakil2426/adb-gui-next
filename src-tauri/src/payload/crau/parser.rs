@@ -1,8 +1,8 @@
 //! CrAU payload header parsing and protobuf manifest decoding.
 
-use super::extractor::PartitionDetail;
-use super::zip::PayloadCache;
 use crate::payload::chromeos_update_engine;
+use crate::payload::types::PartitionDetail;
+use crate::payload::zip::{PayloadCache, ZipPayloadMmap};
 use anyhow::Result;
 use memmap2::Mmap;
 use prost::Message;
@@ -88,8 +88,7 @@ pub fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
 
 /// List partition names from a payload file.
 pub fn list_payload_partitions(payload_path: &Path, cache: &PayloadCache) -> Result<Vec<String>> {
-    let path = cache.get_payload_path(payload_path)?;
-    let mmap = open_mmap(&path)?;
+    let mmap = cache.open_payload(payload_path)?;
     let (manifest_bytes, _) = parse_header(&mmap)?;
     let manifest = chromeos_update_engine::DeltaArchiveManifest::decode(&manifest_bytes[..])?;
     Ok(manifest.partitions.into_iter().map(|p| p.partition_name).collect())
@@ -100,8 +99,7 @@ pub fn list_payload_partitions_with_details(
     payload_path: &Path,
     cache: &PayloadCache,
 ) -> Result<Vec<PartitionDetail>> {
-    let path = cache.get_payload_path(payload_path)?;
-    let mmap = open_mmap(&path)?;
+    let mmap = cache.open_payload(payload_path)?;
     let (manifest_bytes, _) = parse_header(&mmap)?;
     let manifest = chromeos_update_engine::DeltaArchiveManifest::decode(&manifest_bytes[..])?;
     Ok(manifest
@@ -110,26 +108,28 @@ pub fn list_payload_partitions_with_details(
         .map(|p| PartitionDetail {
             name: p.partition_name,
             size: p.new_partition_info.and_then(|info| info.size).unwrap_or_default(),
+            download_size: None,
         })
         .collect())
 }
 
 /// A parsed payload ready for extraction.
 ///
-/// `mmap` is an `Arc`-wrapped memory map of the raw `payload.bin` file.
+/// `mmap` is an `Arc`-wrapped [`ZipPayloadMmap`]: either a full-file map of
+/// `payload.bin` / a temp extract, or a zero-copy STORED window into a local ZIP.
 /// Cloning is O(1) — all threads share the same OS page cache backing.
 pub struct LoadedPayload {
     /// Memory-mapped view of `payload.bin`. Shared across extraction threads via `Arc::clone`.
-    /// Derefs to `&[u8]`, so slice indexing works identically to the old `Vec<u8>` field.
-    pub mmap: Arc<Mmap>,
+    /// Derefs to `&[u8]`, so slice indexing works identically to a raw `Mmap`.
+    pub mmap: Arc<ZipPayloadMmap>,
     pub manifest: chromeos_update_engine::DeltaArchiveManifest,
     pub data_offset: usize,
 }
 
-/// Load a payload file — resolves ZIP paths, opens as mmap, parses the CrAU header.
+/// Load a payload file — resolves ZIP paths (STORED window or temp extract),
+/// opens as mmap, parses the CrAU header.
 pub(super) fn load_payload(payload_path: &Path, cache: &PayloadCache) -> Result<LoadedPayload> {
-    let path = cache.get_payload_path(payload_path)?;
-    let mmap = open_mmap(&path)?;
+    let mmap = cache.open_payload(payload_path)?;
     let (manifest_bytes, data_offset) = parse_header(&mmap)?;
     let manifest = chromeos_update_engine::DeltaArchiveManifest::decode(&manifest_bytes[..])?;
     Ok(LoadedPayload { mmap, manifest, data_offset })

@@ -6,19 +6,36 @@
 //! - Range reads verify returned length matches the request.
 //! - Cooperative cancel is checked before each attempt and between retries so
 //!   UI cancel does not wait for the full socket timeout.
+//! - In-flight async requests are aborted via `tokio::select!` when cancelled.
 
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::time::Duration;
 
-use super::cancel::CancellationToken;
+use crate::payload::cancel::CancellationToken;
 
 const MAX_RETRIES: u32 = 3;
 const RETRY_BASE_DELAY_MS: u64 = 1000;
 /// Per-range request timeout. Chunks are capped (e.g. 8 MiB) so 90s is enough
 /// on slow links without making cancel appear "stuck" for 10 minutes.
 const RANGE_REQUEST_TIMEOUT: Duration = Duration::from_secs(90);
+/// Poll interval while racing cancel against an in-flight async request.
+const CANCEL_POLL_MS: u64 = 50;
+
+/// Structured error code for servers that lack `Accept-Ranges: bytes`.
+/// Commands/FE can match on this prefix (Task 3.6 / R3).
+pub const ERR_NO_RANGE: &str = "REMOTE_NO_RANGE";
+
+/// Build a clear, structured error when the server rejects range-based extract.
+pub fn no_range_error() -> anyhow::Error {
+    anyhow!(
+        "{ERR_NO_RANGE}: Server does not support HTTP Range requests \
+         (Accept-Ranges: bytes is required). Selective remote extraction cannot \
+         proceed without range support. Full download without ranges is not \
+         enabled by default."
+    )
+}
 
 pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
     match ip {
@@ -66,7 +83,7 @@ pub(crate) fn is_private_url(url: &url::Url) -> bool {
     }
 }
 
-pub(crate) fn validate_outbound_url(url: &url::Url, require_https: bool) -> Result<()> {
+pub fn validate_outbound_url(url: &url::Url, require_https: bool) -> Result<()> {
     let scheme = url.scheme();
     if require_https {
         if scheme != "https" {
@@ -100,8 +117,18 @@ pub(crate) fn validate_outbound_url(url: &url::Url, require_https: bool) -> Resu
     Ok(())
 }
 
-pub(crate) fn resolve_redirect_url(base: &url::Url, location: &str) -> Result<url::Url> {
+pub fn resolve_redirect_url(base: &url::Url, location: &str) -> Result<url::Url> {
     base.join(location).map_err(|e| anyhow!("Invalid redirect URL: {}", e))
+}
+
+/// Wait until cancel is set (async poll). Used to abort in-flight reqwest futures.
+async fn wait_until_cancelled(token: &CancellationToken) {
+    loop {
+        if token.is_cancelled() {
+            return;
+        }
+        tokio::time::sleep(Duration::from_millis(CANCEL_POLL_MS)).await;
+    }
 }
 
 /// HTTP reader with range request support.
@@ -170,7 +197,7 @@ impl HttpPayloadReader {
             .unwrap_or(false);
 
         if !supports_ranges {
-            return Err(anyhow!("Server does not support HTTP range requests"));
+            return Err(no_range_error());
         }
 
         let content_length = response
@@ -202,6 +229,30 @@ impl HttpPayloadReader {
         })
     }
 
+    /// Test-only constructor that skips network I/O (session cache unit tests).
+    #[cfg(test)]
+    pub(crate) fn from_parts_for_test(
+        url: String,
+        content_length: u64,
+        etag: Option<String>,
+    ) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .expect("test client");
+        Self {
+            client,
+            url,
+            content_length,
+            supports_ranges: true,
+            content_type: None,
+            last_modified: None,
+            server: None,
+            etag,
+            blocking_client: std::sync::Mutex::new(None),
+        }
+    }
+
     /// Get or create a blocking HTTP client for synchronous range reads.
     fn get_blocking_client(&self) -> Result<reqwest::blocking::Client> {
         let mut guard =
@@ -224,6 +275,10 @@ impl HttpPayloadReader {
     }
 
     /// Sync range read with cooperative cancel checks between retries.
+    ///
+    /// On cancel mid-request, the blocking client cannot abort the socket immediately;
+    /// we still check before/after send and skip remaining retries so cancel latency is
+    /// bounded by one range timeout at worst.
     pub fn read_range_sync_cancellable(
         &self,
         offset: u64,
@@ -251,11 +306,17 @@ impl HttpPayloadReader {
                 .send()
             {
                 Ok(response) => {
+                    if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                        anyhow::bail!("extraction cancelled");
+                    }
                     if !response.status().is_success() && response.status().as_u16() != 206 {
                         return Err(anyhow!("Range request failed: {}", response.status()));
                     }
                     let bytes =
                         response.bytes().map_err(|e| anyhow!("Failed to read response: {}", e))?;
+                    if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                        anyhow::bail!("extraction cancelled");
+                    }
                     // Verify content-length matches requested range
                     if bytes.len() as u64 != length {
                         return Err(anyhow!(
@@ -277,9 +338,15 @@ impl HttpPayloadReader {
                             e
                         ));
                     }
-                    std::thread::sleep(Duration::from_millis(
-                        RETRY_BASE_DELAY_MS * 2u64.pow(attempt),
-                    ));
+                    // Interruptible backoff: wake early if cancelled.
+                    let delay_ms = RETRY_BASE_DELAY_MS * 2u64.pow(attempt);
+                    let steps = (delay_ms / CANCEL_POLL_MS).max(1);
+                    for _ in 0..steps {
+                        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                            anyhow::bail!("extraction cancelled");
+                        }
+                        std::thread::sleep(Duration::from_millis(CANCEL_POLL_MS));
+                    }
                 }
             }
         }
@@ -293,8 +360,9 @@ impl HttpPayloadReader {
 
     /// Async range read with cooperative cancel checks between retries.
     ///
-    /// Used by factory-image extraction so cancel stays responsive without
-    /// blocking the Tokio worker on `reqwest::blocking`.
+    /// When a cancel token is provided, in-flight `send()` / `bytes()` futures are
+    /// raced against cancel polling so dropping the request aborts the connection
+    /// promptly (R4 hard cancel).
     pub async fn read_range_cancellable(
         &self,
         offset: u64,
@@ -314,22 +382,66 @@ impl HttpPayloadReader {
             if cancel_token.is_some_and(CancellationToken::is_cancelled) {
                 anyhow::bail!("extraction cancelled");
             }
-            match self
+
+            let send_fut = self
                 .client
                 .get(&self.url)
                 .header("Range", &range_header)
                 .timeout(RANGE_REQUEST_TIMEOUT)
-                .send()
-                .await
-            {
+                .send();
+
+            let send_result = if let Some(token) = cancel_token {
+                tokio::select! {
+                    biased;
+                    _ = wait_until_cancelled(token) => {
+                        anyhow::bail!("extraction cancelled");
+                    }
+                    result = send_fut => result
+                }
+            } else {
+                send_fut.await
+            };
+
+            match send_result {
                 Ok(response) => {
                     if !response.status().is_success() && response.status().as_u16() != 206 {
                         return Err(anyhow!("Range request failed: {}", response.status()));
                     }
-                    let bytes = response
-                        .bytes()
-                        .await
-                        .map_err(|e| anyhow!("Failed to read response: {}", e))?;
+
+                    let bytes_fut = response.bytes();
+                    let bytes_result = if let Some(token) = cancel_token {
+                        tokio::select! {
+                            biased;
+                            _ = wait_until_cancelled(token) => {
+                                anyhow::bail!("extraction cancelled");
+                            }
+                            result = bytes_fut => result
+                        }
+                    } else {
+                        bytes_fut.await
+                    };
+
+                    let bytes = match bytes_result {
+                        Ok(b) => b,
+                        Err(e) => {
+                            if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                                anyhow::bail!("extraction cancelled");
+                            }
+                            if attempt + 1 >= MAX_RETRIES {
+                                return Err(anyhow!(
+                                    "HTTP request failed after {} retries: {}",
+                                    MAX_RETRIES,
+                                    e
+                                ));
+                            }
+                            tokio::time::sleep(Duration::from_millis(
+                                RETRY_BASE_DELAY_MS * 2u64.pow(attempt),
+                            ))
+                            .await;
+                            continue;
+                        }
+                    };
+
                     // Verify content-length matches requested range
                     if bytes.len() as u64 != length {
                         return Err(anyhow!(
@@ -351,14 +463,28 @@ impl HttpPayloadReader {
                             e
                         ));
                     }
-                    tokio::time::sleep(Duration::from_millis(
-                        RETRY_BASE_DELAY_MS * 2u64.pow(attempt),
-                    ))
-                    .await;
+                    // Interruptible backoff when a cancel token is present.
+                    let delay_ms = RETRY_BASE_DELAY_MS * 2u64.pow(attempt);
+                    if let Some(token) = cancel_token {
+                        let steps = (delay_ms / CANCEL_POLL_MS).max(1);
+                        for _ in 0..steps {
+                            if token.is_cancelled() {
+                                anyhow::bail!("extraction cancelled");
+                            }
+                            tokio::time::sleep(Duration::from_millis(CANCEL_POLL_MS)).await;
+                        }
+                    } else {
+                        tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+                    }
                 }
             }
         }
         unreachable!("retry loop should have returned by now")
+    }
+
+    /// Request URL (for session cache keying).
+    pub fn url(&self) -> &str {
+        &self.url
     }
 
     /// Get the total content length of the remote file.
@@ -389,5 +515,18 @@ impl HttpPayloadReader {
     /// Get the ETag header from the HEAD response.
     pub fn etag(&self) -> Option<&str> {
         self.etag.as_deref()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_range_error_has_structured_code() {
+        let err = no_range_error();
+        let msg = err.to_string();
+        assert!(msg.starts_with(ERR_NO_RANGE), "msg={msg}");
+        assert!(msg.contains("Accept-Ranges"));
     }
 }
