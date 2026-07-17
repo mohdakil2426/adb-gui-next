@@ -1,15 +1,14 @@
 # Payload Dumper — Domain Folder Architecture Design
 
 **Date:** 2026-07-17  
-**Status:** Active design freeze candidate (pre-implementation)  
+**Status:** Architecture landed (Waves 0–4 plan execution complete)  
+**Implementation status:** Wave 0 **structure complete** — tree live under `crau/ remote/ io/ verify/ zip/ source/ delta/ types/ tests/`. Root legacy files removed. Waves 1–3 correctness/remote UX/perf landed. Wave 4 polish: FE partition status + Rust `ExtractPayloadResult.stats`; delta **skipped**; notification/single-instance plugins **deferred**. Agent/isolated cargo dirs gitignored (`target/`, `target-*/`, `src-tauri/target/`, `src-tauri/target-*/`).  
 **Scope:** How to restructure `src-tauri/src/payload/` (and FE hooks/UI slots) so both active product reports can be applied without God-files  
 **Related reports:**
 
 - `docs/reports/active/PAYLOAD-DUMPER-REMOTE-URL-SUPPORT-MATRIX-2026-07-17.md`
 - `docs/reports/active/PAYLOAD-DUMPER-REFERENCE-COMPARISON-2026-07-17.md`
 - Implementation plan: `docs/superpowers/plans/2026-07-17-payload-dumper-architecture-and-upgrades.md`
-
-**No code changes in this document** — design only.
 
 ---
 
@@ -193,7 +192,7 @@ commands/payload.rs
 | Feature | Home |
 |---------|------|
 | L2+L4 verify wired | `verify/` |
-| ZIP mmap / zero-copy STORED | `zip/stored_window.rs` |
+| ZIP mmap / zero-copy STORED | `zip/stored_window.rs` + `PayloadCache::open_payload` ✅ Task 3.3 |
 | Buffer pools | `io/buffers.rs` |
 | Reader trait | `source/` |
 | Multi-extent REPLACE* | `crau/ops.rs` |
