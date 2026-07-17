@@ -105,6 +105,11 @@ export function PanelHeaderActions({
     }
   };
 
+  // Component references (not JSX ternaries) keep follow/maximize icons simple
+  // without multiplying PanelHeaderActions into explicit boolean-variant components.
+  const FollowIcon = isFollowing ? Pin : PinOff;
+  const MaximizeIcon = isPanelMaximized ? Minimize2 : Maximize2;
+
   return (
     <div className="flex items-center gap-0.5">
       {activeTab === 'logs' && (
@@ -191,11 +196,7 @@ export function PanelHeaderActions({
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              {isFollowing ? (
-                <Pin aria-hidden="true" className="size-3.5" />
-              ) : (
-                <PinOff aria-hidden="true" className="size-3.5" />
-              )}
+              <FollowIcon aria-hidden="true" className="size-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -268,11 +269,7 @@ export function PanelHeaderActions({
             style={{ color: 'var(--terminal-fg)' }}
             variant="ghost"
           >
-            {isPanelMaximized ? (
-              <Minimize2 aria-hidden="true" className="size-3.5" />
-            ) : (
-              <Maximize2 aria-hidden="true" className="size-3.5" />
-            )}
+            <MaximizeIcon aria-hidden="true" className="size-3.5" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">

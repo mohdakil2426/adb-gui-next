@@ -18,6 +18,28 @@ import { handleError } from '@/shared/utils/errorHandler';
 import { getFileName } from '@/shared/utils/formatting';
 import { invalidatePackages } from '@/shared/utils/queries';
 
+/**
+ * Run async work one item at a time.
+ * ADB package install/uninstall on a single device must stay serial to avoid pm races.
+ * Uses a then-chain (not for-await) so order is preserved without concurrent adb pm calls.
+ */
+function mapSerial<T, R>(
+  items: readonly T[],
+  worker: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  const chain = items.reduce<Promise<void>>(
+    (previous, item, index) =>
+      previous.then(() =>
+        worker(item, index).then((value) => {
+          results[index] = value;
+        }),
+      ),
+    Promise.resolve(),
+  );
+  return chain.then(() => results);
+}
+
 export function InstallationTab() {
   const {
     apkPaths,
@@ -95,28 +117,31 @@ export function InstallationTab() {
     setIsInstalling(true);
     setInstallProgress({ current: 0, total: apkPaths.length });
     const toastId = toast.loading('Starting installation...');
-    let ok = 0;
-    let fail = 0;
-    for (let i = 0; i < apkPaths.length; i++) {
-      const path = apkPaths[i];
+    const serial = selectedSerial;
+    const total = apkPaths.length;
+
+    const outcomes = await mapSerial(apkPaths, async (path, i) => {
       if (!path) {
-        continue;
+        return false;
       }
       const name = getFileName(path);
-      toast.loading(`Installing (${i + 1}/${apkPaths.length}): ${name}`, {
+      toast.loading(`Installing (${i + 1}/${total}): ${name}`, {
         id: toastId,
       });
-      setInstallProgress({ current: i + 1, total: apkPaths.length });
+      setInstallProgress({ current: i + 1, total });
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       try {
-        await InstallPackage(path, selectedSerial ?? '');
-        ok++;
+        await InstallPackage(path, serial);
         useLogStore.getState().addLog(`Installed APK: ${name}`, 'success');
+        return true;
       } catch (error) {
         useLogStore.getState().addLog(`Failed to install ${name}: ${error}`, 'error');
-        fail++;
+        return false;
       }
-    }
+    });
+
+    const ok = outcomes.filter(Boolean).length;
+    const fail = outcomes.length - ok;
     if (fail === 0) {
       toast.success(`Successfully installed ${ok} APK(s)`, { id: toastId });
     } else {
@@ -142,19 +167,23 @@ export function InstallationTab() {
     setIsUninstalling(true);
     const list = Array.from(selectedPackages);
     const toastId = toast.loading(`Uninstalling ${list.length} package(s)...`);
-    let ok = 0;
-    let fail = 0;
-    for (const pkg of list) {
+    const serial = selectedSerial;
+
+    // Serial uninstalls: concurrent `pm uninstall` on one device races package manager.
+    const outcomes = await mapSerial(list, async (pkg) => {
       toast.loading(`Uninstalling: ${pkg}...`, { id: toastId });
       try {
-        const output = await UninstallPackage(pkg, selectedSerial);
+        const output = await UninstallPackage(pkg, serial);
         useLogStore.getState().addLog(`Uninstalled: ${pkg}: ${output}`, 'success');
-        ok++;
+        return true;
       } catch (error) {
         useLogStore.getState().addLog(`Failed to uninstall ${pkg}: ${error}`, 'error');
-        fail++;
+        return false;
       }
-    }
+    });
+
+    const ok = outcomes.filter(Boolean).length;
+    const fail = outcomes.length - ok;
     if (fail === 0) {
       toast.success(`Successfully uninstalled ${ok} package(s)`, {
         id: toastId,
