@@ -2,6 +2,8 @@
 
 ## Current State
 
+**Payload dumper plan Waves 0–4 complete (2026-07-17):** Architecture restructure (`crau/ remote/ io/ verify/ zip/ source/ delta/ types/ tests/`) + correctness (L3/L4, multi-extent) + remote load UX (`payload:load-progress`, `downloadSize`) + remote perf (session cache, span prefetch, STORED mmap, buffer pools, liblzma, release-fast, OPS cancel) + polish (FE partition status enum, Rust `ExtractPayloadResult.stats` with durationMs/totalBytes/throughputMbps). **Task 4.3 delta real work SKIPPED.** **Task 4.4 notification + single-instance plugins DEFERRED** (UX only; Sonner covers in-app). Agent cargo targets gitignored via root `target/` / `target-*/` and `src-tauri/target*/`. Plan: `docs/superpowers/plans/2026-07-17-payload-dumper-architecture-and-upgrades.md`.
+
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` with release prep in progress for v0.2.5, including macOS support.
 **Uninstall Apps Application Title Display is complete (2026-05-31):** The Applications page's Uninstall list now queries and displays both human-readable app titles (labels) and package names side-by-side (stacked) in under 100ms. To achieve this high performance without slow PC-side APK parsing or heavy dumpsys calls, we implemented a custom Java bytecode helper `label_reader.jar` that reflectively calls AOSP's standard `ActivityThread.systemMain()` and runs within the device's native `app_process` runtime. The Rust backend handles automatic pushing and execution of the helper JAR, and the React frontend supports search/filtering against both the label and package name fields.
 
