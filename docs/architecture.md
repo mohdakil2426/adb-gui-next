@@ -1,5 +1,6 @@
 # ADB GUI Next — Architecture
 
+> **Owns:** cross-module design, data flow, and IPC contracts (not agent workflow).  
 > **Product:** Desktop toolkit for ADB, fastboot, firmware extraction, debloat, marketplace, and emulator workflows  
 > **Version:** 0.2.5  
 > **Stack:** Tauri 2 · React 19 · TypeScript · Vite 8 · Rust 2024 · Bun  

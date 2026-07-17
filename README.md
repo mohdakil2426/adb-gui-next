@@ -336,6 +336,7 @@ bun run tauri build
 High-level system design, layer boundaries, feature map, IPC conventions, and diagrams:
 
 - **[docs/architecture.md](docs/architecture.md)** — full architecture reference (Mermaid + ASCII)
+- **[AGENTS.md](AGENTS.md)** — agent router (module guides + `docs/project_rules.md`)
 
 ## 🛠️ Development
 
