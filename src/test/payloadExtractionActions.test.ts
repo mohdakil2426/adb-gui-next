@@ -32,7 +32,9 @@ describe('runExtractPayload', () => {
     return {
       addCompletedPartitions: store.addCompletedPartitions,
       clearPartitionProgress: store.clearPartitionProgress,
+      clearTransientPartitionStatuses: store.clearTransientPartitionStatuses,
       completedPartitions: new Set<string>(),
+      failActivePartitions: store.failActivePartitions,
       mode: 'remote' as const,
       outputDir: '',
       outputPath: 'C:\\out',

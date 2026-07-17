@@ -72,11 +72,41 @@ describe('payloadDumperStore', () => {
     act(() => {
       usePayloadDumperStore.getState().markPartitionCompleted('boot');
     });
-    const { completedPartitions, extractingPartitions, partitions } =
+    const { completedPartitions, extractingPartitions, partitions, partitionStatuses } =
       usePayloadDumperStore.getState();
     expect(completedPartitions.has('boot')).toBe(true);
     expect(extractingPartitions.has('boot')).toBe(false);
     expect(partitions[0]?.selected).toBe(false);
+    expect(partitionStatuses.get('boot')).toBe('completed');
+  });
+
+  it('setExtractingPartitions seeds pending partition statuses', () => {
+    act(() => {
+      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot', 'system']));
+    });
+    const { partitionStatuses } = usePayloadDumperStore.getState();
+    expect(partitionStatuses.get('boot')).toBe('pending');
+    expect(partitionStatuses.get('system')).toBe('pending');
+  });
+
+  it('updatePartitionProgress maps running then completed status', () => {
+    act(() => {
+      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot']));
+      usePayloadDumperStore.getState().updatePartitionProgress('boot', 50, 200, false);
+    });
+    expect(usePayloadDumperStore.getState().partitionStatuses.get('boot')).toBe('running');
+
+    act(() => {
+      usePayloadDumperStore
+        .getState()
+        .updatePartitionProgress('boot', 200, 200, true, 4096, 4096, 12, 0, 'completed');
+    });
+    expect(usePayloadDumperStore.getState().partitionStatuses.get('boot')).toBe('completed');
+    const progress = usePayloadDumperStore.getState().partitionProgress.get('boot');
+    expect(progress?.current).toBe(200);
+    expect(progress?.total).toBe(200);
+    expect(progress?.percentage).toBe(100);
+    expect(progress?.throughputMbps).toBe(12);
   });
 
   it('updatePartitionProgress computes percentage correctly', () => {
@@ -87,6 +117,20 @@ describe('payloadDumperStore', () => {
     expect(progress?.current).toBe(50);
     expect(progress?.total).toBe(200);
     expect(progress?.percentage).toBe(25);
+  });
+
+  it('failActivePartitions marks pending/running as failed', () => {
+    act(() => {
+      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot', 'vendor', 'dtbo']));
+      usePayloadDumperStore.getState().updatePartitionProgress('boot', 1, 10, false);
+      usePayloadDumperStore.getState().markPartitionCompleted('vendor');
+      usePayloadDumperStore.getState().failActivePartitions();
+    });
+    const statuses = usePayloadDumperStore.getState().partitionStatuses;
+    expect(statuses.get('boot')).toBe('failed');
+    expect(statuses.get('dtbo')).toBe('failed');
+    expect(statuses.get('vendor')).toBe('completed');
+    expect(usePayloadDumperStore.getState().extractingPartitions.size).toBe(0);
   });
 
   it('reset restores initial state', () => {
@@ -119,5 +163,51 @@ describe('payloadDumperStore', () => {
       usePayloadDumperStore.getState().cancelExtraction();
     });
     expect(usePayloadDumperStore.getState().status).toBe('cancelling');
+  });
+
+  it('beginLoadProgress seeds verifyConnection stage', () => {
+    act(() => {
+      usePayloadDumperStore.getState().beginLoadProgress();
+    });
+    const state = usePayloadDumperStore.getState();
+    expect(state.loadPhase).toBe('verifyConnection');
+    expect(state.loadStep).toBe(1);
+    expect(state.loadTotalSteps).toBe(4);
+    expect(state.loadStartedAt).toBeTypeOf('number');
+    expect(state.loadProgressFromEvent).toBe(false);
+  });
+
+  it('setLoadProgress from event locks out optimistic overwrites', () => {
+    act(() => {
+      usePayloadDumperStore.getState().beginLoadProgress();
+      usePayloadDumperStore.getState().setLoadProgress(
+        {
+          phase: 'locateIndex',
+          message: 'Locating ZIP index',
+          detail: 'EOCD',
+          step: 2,
+          totalSteps: 4,
+        },
+        true,
+      );
+      usePayloadDumperStore.getState().setOptimisticLoadStep(4);
+    });
+    const state = usePayloadDumperStore.getState();
+    expect(state.loadProgressFromEvent).toBe(true);
+    expect(state.loadPhase).toBe('locateIndex');
+    expect(state.loadStep).toBe(2);
+    expect(state.loadDetail).toBe('EOCD');
+  });
+
+  it('clearLoadProgress resets remote load fields', () => {
+    act(() => {
+      usePayloadDumperStore.getState().beginLoadProgress();
+      usePayloadDumperStore.getState().clearLoadProgress();
+    });
+    const state = usePayloadDumperStore.getState();
+    expect(state.loadPhase).toBeNull();
+    expect(state.loadStep).toBe(0);
+    expect(state.loadStartedAt).toBeNull();
+    expect(state.loadMessage).toBe('');
   });
 });
