@@ -20,6 +20,7 @@ describe('shellStore', () => {
       expect(state.history).toHaveLength(1);
       expect(state.history[0]?.type).toBe('command');
       expect(state.history[0]?.text).toBe('adb devices');
+      expect(state.history[0]?.id).toEqual(expect.any(String));
     });
 
     it('should add a result entry to history', () => {
@@ -31,6 +32,7 @@ describe('shellStore', () => {
       const state = useShellStore.getState();
       expect(state.history).toHaveLength(1);
       expect(state.history[0]?.type).toBe('result');
+      expect(state.history[0]?.id).toEqual(expect.any(String));
     });
 
     it('should add multiple entries to history', () => {
@@ -40,6 +42,8 @@ describe('shellStore', () => {
 
       const state = useShellStore.getState();
       expect(state.history).toHaveLength(3);
+      const ids = state.history.map((entry) => entry.id);
+      expect(new Set(ids).size).toBe(3);
     });
 
     it('should add an error entry to history', () => {
@@ -51,6 +55,17 @@ describe('shellStore', () => {
       const state = useShellStore.getState();
       expect(state.history).toHaveLength(1);
       expect(state.history[0]?.type).toBe('error');
+      expect(state.history[0]?.id).toEqual(expect.any(String));
+    });
+
+    it('should preserve a provided id', () => {
+      useShellStore.getState().addHistoryEntry({
+        id: 'fixed-id',
+        type: 'command',
+        text: 'adb devices',
+      });
+
+      expect(useShellStore.getState().history[0]?.id).toBe('fixed-id');
     });
   });
 
@@ -66,6 +81,9 @@ describe('shellStore', () => {
       expect(state.history).toHaveLength(2);
       expect(state.history[0]?.text).toBe('new1');
       expect(state.history[1]?.text).toBe('new2');
+      expect(state.history[0]?.id).toEqual(expect.any(String));
+      expect(state.history[1]?.id).toEqual(expect.any(String));
+      expect(state.history[0]?.id).not.toBe(state.history[1]?.id);
     });
 
     it('should clear history when set to empty array', () => {

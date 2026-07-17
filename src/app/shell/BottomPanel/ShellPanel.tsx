@@ -17,18 +17,19 @@ import { handleError } from '@/shared/utils/errorHandler';
 import { shellCommandSchema } from '@/shared/utils/schemas';
 
 export function ShellPanel() {
-  const { history, commandHistory, setHistory, addCommand } = useShellStore(
+  const { history, commandHistory, addHistoryEntry, addCommand } = useShellStore(
     useShallow((state) => ({
       history: state.history,
       commandHistory: state.commandHistory,
-      setHistory: state.setHistory,
+      addHistoryEntry: state.addHistoryEntry,
       addCommand: state.addCommand,
     })),
   );
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   const [command, setCommand] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [historyIndex, setHistoryIndex] = useState(commandHistory.length);
+  // Index into commandHistory for ArrowUp/Down recall — handler-only, not rendered.
+  const historyIndexRef = useRef(commandHistory.length);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -38,8 +39,8 @@ export function ShellPanel() {
         return;
       }
 
-      const newIndex = Math.max(0, historyIndex - 1);
-      setHistoryIndex(newIndex);
+      const newIndex = Math.max(0, historyIndexRef.current - 1);
+      historyIndexRef.current = newIndex;
       setCommand(commandHistory[newIndex] ?? '');
       return;
     }
@@ -50,8 +51,8 @@ export function ShellPanel() {
         return;
       }
 
-      const newIndex = Math.min(commandHistory.length, historyIndex + 1);
-      setHistoryIndex(newIndex);
+      const newIndex = Math.min(commandHistory.length, historyIndexRef.current + 1);
+      historyIndexRef.current = newIndex;
 
       if (newIndex === commandHistory.length) {
         setCommand('');
@@ -72,11 +73,8 @@ export function ShellPanel() {
     const parsed = shellCommandSchema.safeParse(trimmedCommand);
     if (!parsed.success) {
       const errorText = parsed.error.issues[0]?.message ?? 'Unknown error';
-      setHistory([
-        ...history,
-        { type: 'command', text: trimmedCommand },
-        { type: 'error', text: errorText },
-      ]);
+      addHistoryEntry({ type: 'command', text: trimmedCommand });
+      addHistoryEntry({ type: 'error', text: errorText });
       setCommand('');
       return;
     }
@@ -84,13 +82,12 @@ export function ShellPanel() {
     if (commandHistory[commandHistory.length - 1] !== trimmedCommand) {
       addCommand(trimmedCommand);
     }
-    setHistoryIndex(commandHistory.length + 1);
+    historyIndexRef.current = commandHistory.length + 1;
 
     setIsLoading(true);
     setCommand('');
 
-    const newHistory = [...history, { type: 'command' as const, text: trimmedCommand }];
-    setHistory(newHistory);
+    addHistoryEntry({ type: 'command', text: trimmedCommand });
 
     try {
       debugLog(`Executing shell command: ${trimmedCommand}`);
@@ -119,11 +116,11 @@ export function ShellPanel() {
       } else {
         throw new Error(`Unknown command: "${trimmedCommand}".`);
       }
-      setHistory([...newHistory, { type: 'result', text: result.trim() || '(No output)' }]);
+      addHistoryEntry({ type: 'result', text: result.trim() || '(No output)' });
     } catch (err) {
       const error = err as Error;
       handleError('Shell Command', error);
-      setHistory([...newHistory, { type: 'error', text: error.message }]);
+      addHistoryEntry({ type: 'error', text: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +145,7 @@ export function ShellPanel() {
 
   // Sync history index with command history
   useEffect(() => {
-    setHistoryIndex(commandHistory.length);
+    historyIndexRef.current = commandHistory.length;
   }, [commandHistory.length]);
 
   return (
@@ -169,8 +166,8 @@ export function ShellPanel() {
                 }
               </span>
             ) : (
-              history.map((entry, index) => (
-                <div className="flex gap-2" key={index}>
+              history.map((entry) => (
+                <div className="flex gap-2" key={entry.id}>
                   <span
                     className={cn(
                       'shrink-0 select-none',
@@ -223,7 +220,7 @@ export function ShellPanel() {
             name="shell-command"
             onChange={(e) => {
               setCommand(e.target.value);
-              setHistoryIndex(commandHistory.length);
+              historyIndexRef.current = commandHistory.length;
             }}
             onKeyDown={handleKeyDown}
             placeholder="adb devices, adb shell ls, fastboot devices…"
