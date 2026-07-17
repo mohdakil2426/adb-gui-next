@@ -1,13 +1,24 @@
 //! HTTP range request support for remote OTA extraction.
 //! Downloads only required data ranges instead of full files.
+//!
+//! Design notes (aligned with rhythmcache/payload-dumper remote mode):
+//! - Servers must support HTTP Range (`Accept-Ranges: bytes` / 206).
+//! - Range reads verify returned length matches the request.
+//! - Cooperative cancel is checked before each attempt and between retries so
+//!   UI cancel does not wait for the full socket timeout.
 
 use anyhow::{Result, anyhow};
 use reqwest::Client;
 use std::net::{IpAddr, ToSocketAddrs};
 use std::time::Duration;
 
+use super::cancel::CancellationToken;
+
 const MAX_RETRIES: u32 = 3;
 const RETRY_BASE_DELAY_MS: u64 = 1000;
+/// Per-range request timeout. Chunks are capped (e.g. 8 MiB) so 90s is enough
+/// on slow links without making cancel appear "stuck" for 10 minutes.
+const RANGE_REQUEST_TIMEOUT: Duration = Duration::from_secs(90);
 
 pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
     match ip {
@@ -199,7 +210,7 @@ impl HttpPayloadReader {
             return Ok(client.clone());
         }
         let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(600))
+            .timeout(RANGE_REQUEST_TIMEOUT)
             .connect_timeout(Duration::from_secs(30))
             .build()
             .map_err(|e| anyhow!("Failed to create blocking HTTP client: {}", e))?;
@@ -209,12 +220,36 @@ impl HttpPayloadReader {
 
     /// Read bytes at specific offset via HTTP range request (synchronous, for use in extraction threads).
     pub fn read_range_sync(&self, offset: u64, length: u64) -> Result<Vec<u8>> {
+        self.read_range_sync_cancellable(offset, length, None)
+    }
+
+    /// Sync range read with cooperative cancel checks between retries.
+    pub fn read_range_sync_cancellable(
+        &self,
+        offset: u64,
+        length: u64,
+        cancel_token: Option<&CancellationToken>,
+    ) -> Result<Vec<u8>> {
+        if length == 0 {
+            return Ok(Vec::new());
+        }
+        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+            anyhow::bail!("extraction cancelled");
+        }
         let end = offset.checked_add(length - 1).ok_or_else(|| anyhow!("Range overflow"))?;
         let range_header = format!("bytes={}-{}", offset, end);
 
         let client = self.get_blocking_client()?;
         for attempt in 0..MAX_RETRIES {
-            match client.get(&self.url).header("Range", &range_header).send() {
+            if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                anyhow::bail!("extraction cancelled");
+            }
+            match client
+                .get(&self.url)
+                .header("Range", &range_header)
+                .timeout(RANGE_REQUEST_TIMEOUT)
+                .send()
+            {
                 Ok(response) => {
                     if !response.status().is_success() && response.status().as_u16() != 206 {
                         return Err(anyhow!("Range request failed: {}", response.status()));
@@ -232,6 +267,9 @@ impl HttpPayloadReader {
                     return Ok(bytes.to_vec());
                 }
                 Err(e) => {
+                    if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                        anyhow::bail!("extraction cancelled");
+                    }
                     if attempt + 1 >= MAX_RETRIES {
                         return Err(anyhow!(
                             "HTTP request failed after {} retries: {}",
@@ -250,11 +288,40 @@ impl HttpPayloadReader {
 
     /// Read bytes at specific offset (HTTP range request).
     pub async fn read_range(&self, offset: u64, length: u64) -> Result<Vec<u8>> {
+        self.read_range_cancellable(offset, length, None).await
+    }
+
+    /// Async range read with cooperative cancel checks between retries.
+    ///
+    /// Used by factory-image extraction so cancel stays responsive without
+    /// blocking the Tokio worker on `reqwest::blocking`.
+    pub async fn read_range_cancellable(
+        &self,
+        offset: u64,
+        length: u64,
+        cancel_token: Option<&CancellationToken>,
+    ) -> Result<Vec<u8>> {
+        if length == 0 {
+            return Ok(Vec::new());
+        }
+        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+            anyhow::bail!("extraction cancelled");
+        }
         let end = offset.checked_add(length - 1).ok_or_else(|| anyhow!("Range overflow"))?;
         let range_header = format!("bytes={}-{}", offset, end);
 
         for attempt in 0..MAX_RETRIES {
-            match self.client.get(&self.url).header("Range", &range_header).send().await {
+            if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                anyhow::bail!("extraction cancelled");
+            }
+            match self
+                .client
+                .get(&self.url)
+                .header("Range", &range_header)
+                .timeout(RANGE_REQUEST_TIMEOUT)
+                .send()
+                .await
+            {
                 Ok(response) => {
                     if !response.status().is_success() && response.status().as_u16() != 206 {
                         return Err(anyhow!("Range request failed: {}", response.status()));
@@ -274,6 +341,9 @@ impl HttpPayloadReader {
                     return Ok(bytes.to_vec());
                 }
                 Err(e) => {
+                    if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                        anyhow::bail!("extraction cancelled");
+                    }
                     if attempt + 1 >= MAX_RETRIES {
                         return Err(anyhow!(
                             "HTTP request failed after {} retries: {}",

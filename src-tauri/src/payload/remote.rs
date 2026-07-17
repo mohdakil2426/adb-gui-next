@@ -10,7 +10,12 @@
 //! - **Direct** (`false`): Reads HTTP ranges on-demand during extraction.
 //!   Best for fast connections — starts extraction immediately without waiting for full download.
 
+use super::cancel::CancellationToken;
 use super::chromeos_update_engine::DeltaArchiveManifest;
+use super::factory_image::{
+    extract_remote_factory_images, get_remote_factory_image_metadata,
+    list_remote_factory_image_partitions,
+};
 use super::http::HttpPayloadReader;
 use super::http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_from_zip_or_direct};
 use super::parser::parse_header;
@@ -66,7 +71,18 @@ pub async fn list_remote_payload_partitions(
     let (manifest_bytes, _data_offset) = if is_zip_url(&url) {
         // ZIP file: find payload.bin entry, then read its header
         log::info!("ZIP URL detected, finding payload.bin in {}", url);
-        let zip_info = find_payload_in_zip(&reader).await?;
+        let zip_info = match find_payload_in_zip(&reader).await {
+            Ok(zip_info) => zip_info,
+            Err(payload_error) => {
+                log::info!(
+                    "payload.bin not found in remote ZIP, trying factory image parser: {}",
+                    payload_error
+                );
+                return list_remote_factory_image_partitions(url).await.map_err(|factory_error| {
+                    anyhow!("{}; factory image detection failed: {}", payload_error, factory_error)
+                });
+            }
+        };
         log::info!(
             "Found payload.bin at offset {}, size {} (uncompressed: {})",
             zip_info.offset,
@@ -121,7 +137,18 @@ pub async fn get_remote_payload_metadata(
 
     // ZIP layer + manifest parse
     let (manifest_bytes, zip_info) = if is_zip {
-        let zi = find_payload_in_zip(&reader).await?;
+        let zi = match find_payload_in_zip(&reader).await {
+            Ok(zip_info) => zip_info,
+            Err(payload_error) => {
+                log::info!(
+                    "payload.bin not found in remote ZIP metadata, trying factory image metadata: {}",
+                    payload_error
+                );
+                return get_remote_factory_image_metadata(url).await.map_err(|factory_error| {
+                    anyhow!("{}; factory image metadata failed: {}", payload_error, factory_error)
+                });
+            }
+        };
         let header_data =
             read_from_zip_or_direct(&reader, &Some(zi.clone()), 0, 1024 * 1024).await?;
         let (manifest, _) = parse_header(&header_data)?;
@@ -249,6 +276,7 @@ pub async fn get_remote_payload_metadata(
         dynamic_groups,
         partition_count,
         total_size,
+        remote_kind: Some("payload".to_string()),
         // OTA Package metadata
         ota_type,
         pre_device,
@@ -289,10 +317,32 @@ pub async fn extract_remote_prefetch(
     output_dir: Option<&std::path::Path>,
     selected_partitions: &[String],
     app_handle: Option<tauri::AppHandle>,
+    cancel_token: Option<&CancellationToken>,
 ) -> Result<super::extractor::ExtractPayloadResult> {
     let reader = HttpPayloadReader::new(url.clone()).await?;
     let content_length = reader.content_length();
     let is_zip = is_zip_url(&url);
+    let zip_info = if is_zip {
+        match find_payload_in_zip(&reader).await {
+            Ok(zip_info) => Some(zip_info),
+            Err(payload_error) => {
+                log::info!(
+                    "payload.bin not found before prefetch, using factory image extraction: {}",
+                    payload_error
+                );
+                return extract_remote_factory_images(
+                    url,
+                    output_dir,
+                    selected_partitions,
+                    app_handle,
+                    cancel_token,
+                )
+                .await;
+            }
+        }
+    } else {
+        None
+    };
 
     log::info!("Prefetch: downloading {} bytes from {} (is_zip={})", content_length, url, is_zip);
 
@@ -304,6 +354,9 @@ pub async fn extract_remote_prefetch(
     let mut downloaded = 0u64;
 
     while downloaded < content_length {
+        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+            anyhow::bail!("extraction cancelled");
+        }
         let chunk_end = (downloaded + chunk_size).min(content_length);
         let chunk_len = chunk_end - downloaded;
         let data = reader.read_range(downloaded, chunk_len).await?;
@@ -345,7 +398,7 @@ pub async fn extract_remote_prefetch(
 
     // For ZIP files, we need to find payload.bin within the mmap
     let (manifest_bytes, data_offset) = if is_zip {
-        let zip_info = find_payload_in_zip(&reader).await?;
+        let zip_info = zip_info.as_ref().ok_or_else(|| anyhow!("ZIP payload info missing"))?;
         let payload_start = zip_info.offset as usize;
         let payload_slice = &mmap[payload_start..];
         parse_header(payload_slice)?
@@ -418,6 +471,7 @@ pub async fn extract_remote_prefetch(
                             );
                         }
                     },
+                    cancel_token,
                 )?;
             } else {
                 extract_partition_from_mmap(
@@ -439,6 +493,7 @@ pub async fn extract_remote_prefetch(
                             );
                         }
                     },
+                    cancel_token,
                 )?;
             }
 
@@ -473,6 +528,7 @@ pub async fn extract_remote_direct(
     output_dir: Option<&std::path::Path>,
     selected_partitions: &[String],
     app_handle: Option<tauri::AppHandle>,
+    cancel_token: Option<&CancellationToken>,
 ) -> Result<super::extractor::ExtractPayloadResult> {
     // Step 1: Get reader and manifest via HTTP
     let reader = HttpPayloadReader::new(url.clone()).await?;
@@ -483,7 +539,23 @@ pub async fn extract_remote_direct(
 
     // Step 2: Read header to get manifest
     let (manifest_bytes, data_offset, zip_info) = if is_zip {
-        let zip_info = find_payload_in_zip(&reader).await?;
+        let zip_info = match find_payload_in_zip(&reader).await {
+            Ok(zip_info) => zip_info,
+            Err(payload_error) => {
+                log::info!(
+                    "payload.bin not found in direct mode, using factory image extraction: {}",
+                    payload_error
+                );
+                return extract_remote_factory_images(
+                    url,
+                    output_dir,
+                    selected_partitions,
+                    app_handle,
+                    cancel_token,
+                )
+                .await;
+            }
+        };
         log::info!(
             "Found payload.bin at offset {}, size {} (uncompressed: {})",
             zip_info.offset,
@@ -554,10 +626,11 @@ pub async fn extract_remote_direct(
             let mut writer = NonTemporalWriter::new(&image_path, partition_size)
                 .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
+            let read_context =
+                RemoteReadContext { http: &http, zip_info: zip_info.as_deref(), data_offset };
+
             extract_partition_from_remote(
-                &http,
-                zip_info.as_deref(),
-                data_offset,
+                read_context,
                 block_size,
                 partition,
                 &mut writer,
@@ -574,6 +647,7 @@ pub async fn extract_remote_direct(
                         );
                     }
                 },
+                cancel_token,
             )?;
 
             writer.flush()?;
@@ -609,6 +683,7 @@ fn extract_partition_from_mmap(
     partition: &super::chromeos_update_engine::PartitionUpdate,
     writer: &mut (impl Write + Seek),
     mut progress: impl FnMut(&str, usize, usize, bool),
+    cancel_token: Option<&CancellationToken>,
 ) -> Result<()> {
     use super::chromeos_update_engine::install_operation::Type;
 
@@ -621,6 +696,9 @@ fn extract_partition_from_mmap(
     let mut current_pos = 0u64;
 
     for (index, operation) in partition.operations.iter().enumerate() {
+        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+            anyhow::bail!("extraction cancelled");
+        }
         // SHA-256 hasher for output verification (Layer 3).
         let mut hasher: Option<Sha256> =
             operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
@@ -715,14 +793,19 @@ fn extract_partition_from_mmap(
 /// Extract from HTTP ranges on-demand (direct mode).
 ///
 /// If zip_info is provided, reads are offset by the ZIP entry position.
-fn extract_partition_from_remote(
-    http: &HttpPayloadReader,
-    zip_info: Option<&ZipPayloadInfo>,
+struct RemoteReadContext<'a> {
+    http: &'a HttpPayloadReader,
+    zip_info: Option<&'a ZipPayloadInfo>,
     data_offset: usize,
+}
+
+fn extract_partition_from_remote(
+    read_context: RemoteReadContext<'_>,
     block_size: u32,
     partition: &super::chromeos_update_engine::PartitionUpdate,
     writer: &mut (impl Write + Seek),
     mut progress: impl FnMut(&str, usize, usize, bool),
+    cancel_token: Option<&CancellationToken>,
 ) -> Result<()> {
     use super::chromeos_update_engine::install_operation::Type;
 
@@ -735,6 +818,9 @@ fn extract_partition_from_remote(
     let mut current_pos = 0u64;
 
     for (index, operation) in partition.operations.iter().enumerate() {
+        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+            anyhow::bail!("extraction cancelled");
+        }
         let mut hasher: Option<Sha256> =
             operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 
@@ -746,11 +832,20 @@ fn extract_partition_from_remote(
         let data_offset_op = operation.data_offset.unwrap_or_default();
         let data_length = operation.data_length.unwrap_or_default();
 
-        let raw_data = if let Some(zi) = zip_info {
-            let abs_offset = zi.offset + (data_offset as u64).saturating_add(data_offset_op);
-            http.read_range_sync(abs_offset, data_length)?
+        let raw_data = if let Some(zi) = read_context.zip_info {
+            let abs_offset =
+                zi.offset + (read_context.data_offset as u64).saturating_add(data_offset_op);
+            read_context.http.read_range_sync_cancellable(
+                abs_offset,
+                data_length,
+                cancel_token,
+            )?
         } else {
-            http.read_range_sync((data_offset as u64).saturating_add(data_offset_op), data_length)?
+            read_context.http.read_range_sync_cancellable(
+                (read_context.data_offset as u64).saturating_add(data_offset_op),
+                data_length,
+                cancel_token,
+            )?
         };
 
         let operation_type = Type::try_from(operation.r#type)

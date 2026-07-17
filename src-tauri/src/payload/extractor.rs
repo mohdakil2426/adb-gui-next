@@ -78,6 +78,7 @@ pub struct RemotePayloadMetadata {
     pub dynamic_groups: Vec<DynamicGroupInfo>,
     pub partition_count: usize,
     pub total_size: u64,
+    pub remote_kind: Option<String>,
     // OTA Package metadata (from META-INF/com/android/metadata)
     pub ota_type: Option<String>,
     pub pre_device: Option<String>,

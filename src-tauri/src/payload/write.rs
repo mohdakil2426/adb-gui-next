@@ -132,7 +132,7 @@ impl Write for NonTemporalWriter {
     }
 
     fn flush(&mut self) -> Result<()> {
-        self.flush()
+        NonTemporalWriter::flush(self)
     }
 }
 

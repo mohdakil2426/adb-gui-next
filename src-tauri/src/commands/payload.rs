@@ -54,11 +54,24 @@ pub async fn extract_payload(
     };
 
     // Resolve cancellation token if provided
-    let cancel_token = cancel_token_id.and_then(|id| {
-        let id: usize = id.parse().ok()?;
+    let parsed_token_id = cancel_token_id.as_ref().and_then(|id| id.parse::<usize>().ok());
+    let cancel_token = parsed_token_id.and_then(|id| {
         let registry = TOKEN_REGISTRY.lock().ok()?;
         registry.get(&id).cloned()
     });
+
+    // Always drop registry entry when the command finishes (success, error, or cancel).
+    struct TokenGuard(Option<usize>);
+    impl Drop for TokenGuard {
+        fn drop(&mut self) {
+            if let Some(id) = self.0.take() {
+                if let Ok(mut registry) = TOKEN_REGISTRY.lock() {
+                    registry.remove(&id);
+                }
+            }
+        }
+    }
+    let _token_guard = TokenGuard(parsed_token_id);
 
     {
         // Remote URL — route to dedicated remote extraction
@@ -77,6 +90,7 @@ pub async fn extract_payload(
                     output_dir.as_deref(),
                     &selected_partitions,
                     Some(app),
+                    cancel_token.as_ref(),
                 )
                 .await
             } else {
@@ -85,22 +99,40 @@ pub async fn extract_payload(
                     output_dir.as_deref(),
                     &selected_partitions,
                     Some(app),
+                    cancel_token.as_ref(),
                 )
                 .await
             };
 
             return match result {
                 Ok(result) => {
-                    info!("Remote extraction completed: {} files", result.extracted_files.len());
+                    if result.success {
+                        info!(
+                            "Remote extraction completed: {} files",
+                            result.extracted_files.len()
+                        );
+                    } else {
+                        info!(
+                            "Remote extraction ended: {} files, error={:?}",
+                            result.extracted_files.len(),
+                            result.error
+                        );
+                    }
                     Ok(result)
                 }
                 Err(e) => {
                     error!("Remote extraction failed: {}", e);
+                    let message = e.to_string();
+                    let cancelled = message.to_ascii_lowercase().contains("cancelled");
                     Ok(ExtractPayloadResult {
                         success: false,
                         output_dir: String::new(),
                         extracted_files: Vec::new(),
-                        error: Some(e.to_string()),
+                        error: Some(if cancelled {
+                            "extraction cancelled".to_string()
+                        } else {
+                            message
+                        }),
                     })
                 }
             };

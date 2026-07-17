@@ -262,6 +262,7 @@ fn write_zip_with_payload(zip_path: &std::path::Path, payload_path: &std::path::
 #[cfg(feature = "remote_zip")]
 mod http_zip_tests {
     use super::*;
+    use crate::payload::factory_image::parse_central_directory_entries;
     use crate::payload::http_zip::{find_eocd, is_zip_url};
 
     #[test]
@@ -328,6 +329,39 @@ mod http_zip_tests {
     }
 
     #[test]
+    fn test_parse_central_directory_entries_reads_img_names() {
+        // Minimal CD entry for "boot.img" (stored), sizes 20 / 20, local header offset 0.
+        // Layout matches APPNOTE.TXT central directory file header.
+        let name = b"boot.img";
+        let mut cd = Vec::new();
+        cd.extend_from_slice(&0x0201_4b50u32.to_le_bytes()); // CD signature
+        cd.extend_from_slice(&0u16.to_le_bytes()); // version made by
+        cd.extend_from_slice(&0u16.to_le_bytes()); // version needed
+        cd.extend_from_slice(&0u16.to_le_bytes()); // flags
+        cd.extend_from_slice(&0u16.to_le_bytes()); // method stored
+        cd.extend_from_slice(&0u16.to_le_bytes()); // mod time
+        cd.extend_from_slice(&0u16.to_le_bytes()); // mod date
+        cd.extend_from_slice(&0u32.to_le_bytes()); // crc
+        cd.extend_from_slice(&20u32.to_le_bytes()); // compressed
+        cd.extend_from_slice(&20u32.to_le_bytes()); // uncompressed
+        cd.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        cd.extend_from_slice(&0u16.to_le_bytes()); // extra
+        cd.extend_from_slice(&0u16.to_le_bytes()); // comment
+        cd.extend_from_slice(&0u16.to_le_bytes()); // disk start
+        cd.extend_from_slice(&0u16.to_le_bytes()); // int attrs
+        cd.extend_from_slice(&0u32.to_le_bytes()); // ext attrs
+        cd.extend_from_slice(&0u32.to_le_bytes()); // local header offset
+        cd.extend_from_slice(name);
+
+        let entries = parse_central_directory_entries(&cd).expect("parse cd");
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "boot.img");
+        assert_eq!(entries[0].compressed_size, 20);
+        assert_eq!(entries[0].uncompressed_size, 20);
+        assert_eq!(entries[0].compression_method, 0);
+    }
+
+    #[test]
     fn test_zip_roundtrip_with_payload() {
         // Create a test payload.bin
         let temp = tempdir().expect("tempdir");
@@ -342,6 +376,36 @@ mod http_zip_tests {
         assert_eq!(archive.len(), 1);
         let entry = archive.by_index(0).expect("get entry");
         assert_eq!(entry.name(), "payload.bin");
+    }
+
+    #[test]
+    fn parses_zip64_sizes_from_central_directory_extra_field() {
+        let mut cd = Vec::new();
+        cd.extend_from_slice(&0x02014b50u32.to_le_bytes());
+        cd.extend_from_slice(&[0; 6]);
+        cd.extend_from_slice(&0u16.to_le_bytes());
+        cd.extend_from_slice(&8u16.to_le_bytes());
+        cd.extend_from_slice(&[0; 8]);
+        cd.extend_from_slice(&u32::MAX.to_le_bytes());
+        cd.extend_from_slice(&u32::MAX.to_le_bytes());
+        cd.extend_from_slice(&"product.img".len().to_le_bytes()[..2]);
+        cd.extend_from_slice(&20u16.to_le_bytes());
+        cd.extend_from_slice(&0u16.to_le_bytes());
+        cd.extend_from_slice(&[0; 8]);
+        cd.extend_from_slice(&123u32.to_le_bytes());
+        cd.extend_from_slice(b"product.img");
+        cd.extend_from_slice(&0x0001u16.to_le_bytes());
+        cd.extend_from_slice(&16u16.to_le_bytes());
+        cd.extend_from_slice(&5_368_709_120u64.to_le_bytes());
+        cd.extend_from_slice(&1_737_857_320u64.to_le_bytes());
+
+        let entries = parse_central_directory_entries(&cd).expect("parse central directory");
+
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].name, "product.img");
+        assert_eq!(entries[0].uncompressed_size, 5_368_709_120);
+        assert_eq!(entries[0].compressed_size, 1_737_857_320);
+        assert_eq!(entries[0].local_header_offset, 123);
     }
 }
 

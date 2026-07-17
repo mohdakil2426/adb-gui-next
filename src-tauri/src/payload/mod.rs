@@ -26,6 +26,9 @@ pub mod http;
 pub mod http_zip;
 
 #[cfg(feature = "remote_zip")]
+pub mod factory_image;
+
+#[cfg(feature = "remote_zip")]
 pub mod remote;
 
 #[cfg(test)]
@@ -79,6 +82,12 @@ pub use http::HttpPayloadReader;
 
 #[cfg(feature = "remote_zip")]
 pub use http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_text_file_from_zip};
+
+#[cfg(feature = "remote_zip")]
+pub use factory_image::{
+    extract_remote_factory_images, get_remote_factory_image_metadata,
+    list_remote_factory_image_partitions,
+};
 
 #[cfg(feature = "remote_zip")]
 pub use remote::{
