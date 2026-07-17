@@ -3,8 +3,13 @@
 # Dependencies and build output
 node_modules/
 dist/
+# Cargo: default crate target + agent/isolated CARGO_TARGET_DIR dirs
 src-tauri/target/
 src-tauri/target-*/
+/target/
+/target-*/
+target/
+target-*/
 __tauri_template_tmp/
 
 # Local machine / MCP
