@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/adb-gui-next-app-icon.png" alt="Adb Gui Next app icon" width="140" />
+<img src="docs/assets/icon.png" alt="Adb Gui Next app icon" width="140" />
 
 # Adb Gui Next
 
