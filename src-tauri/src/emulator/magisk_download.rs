@@ -8,11 +8,15 @@ const MAGISK_AVD_RECOMMENDED_VERSION: &str = "25.2";
 const MAGISK_AVD_RECOMMENDED_ASSET: &str = "Magisk-v25.2.apk";
 const MAGISK_AVD_RECOMMENDED_URL: &str =
     "https://github.com/topjohnwu/Magisk/releases/download/v25.2/Magisk-v25.2.apk";
+const MAGISK_GITHUB_LATEST_URL: &str =
+    "https://api.github.com/repos/topjohnwu/Magisk/releases/latest";
 
 /// Fetch the latest official stable Magisk release from the GitHub releases API.
 ///
-/// The `/releases/latest` endpoint always returns a non-prerelease, non-draft
-/// release — guaranteed stable by GitHub's API contract.
+/// Preference order:
+/// 1. Local rootAVD `Magisk.zip` when present (repo docs reference tree)
+/// 2. Live GitHub `/releases/latest` (non-prerelease, non-draft by API contract)
+/// 3. Hardcoded v25.2 URL on network/parse failure so offline root still works
 ///
 /// Uses a blocking `reqwest` client — call from a `spawn_blocking` context.
 pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
@@ -29,7 +33,19 @@ pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
         });
     }
 
-    Ok(MagiskStableRelease {
+    match fetch_from_github() {
+        Ok(release) => Ok(release),
+        Err(err) => {
+            log::warn!(
+                "Failed to fetch Magisk stable from GitHub ({err}); falling back to {MAGISK_AVD_RECOMMENDED_TAG}"
+            );
+            Ok(hardcoded_fallback_release())
+        }
+    }
+}
+
+fn hardcoded_fallback_release() -> MagiskStableRelease {
+    MagiskStableRelease {
         version: MAGISK_AVD_RECOMMENDED_VERSION.into(),
         tag: MAGISK_AVD_RECOMMENDED_TAG.into(),
         asset_name: MAGISK_AVD_RECOMMENDED_ASSET.into(),
@@ -37,7 +53,35 @@ pub fn fetch_magisk_stable_release() -> CmdResult<MagiskStableRelease> {
         size: 0,
         sha256: None,
         published_at: "2022-10-03T00:00:00Z".into(),
-    })
+    }
+}
+
+fn fetch_from_github() -> CmdResult<MagiskStableRelease> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .user_agent("adb-gui-next")
+        .build()
+        .map_err(|e| format!("HTTP client error: {e}"))?;
+
+    let response = client
+        .get(MAGISK_GITHUB_LATEST_URL)
+        .send()
+        .map_err(|e| format!("GitHub API request failed: {e}"))?;
+
+    if !response.status().is_success() {
+        return Err(format!("GitHub API returned HTTP {}", response.status()));
+    }
+
+    let body: serde_json::Value =
+        response.json().map_err(|e| format!("Failed to parse GitHub response: {e}"))?;
+    let release = parse_stable_release(&body)?;
+
+    let parsed = url::Url::parse(&release.download_url)
+        .map_err(|e| format!("Invalid Magisk download URL: {e}"))?;
+    crate::payload::remote::validate_outbound_url(&parsed, true)
+        .map_err(|e| format!("Magisk download URL rejected: {e}"))?;
+
+    Ok(release)
 }
 
 fn local_rootavd_magisk_zip() -> Option<PathBuf> {
@@ -59,7 +103,6 @@ fn local_rootavd_magisk_zip() -> Option<PathBuf> {
 /// 2. Any other `.apk` with the highest `download_count` — future-proof fallback.
 ///
 /// Explicitly excluded: `app-debug.apk` (debug build, not for end users).
-#[cfg(test)]
 fn parse_stable_release(body: &serde_json::Value) -> CmdResult<MagiskStableRelease> {
     let tag = body["tag_name"].as_str().unwrap_or("").to_string();
     if tag.is_empty() {
@@ -92,7 +135,6 @@ fn parse_stable_release(body: &serde_json::Value) -> CmdResult<MagiskStableRelea
 }
 
 /// Select the best APK from a release's asset list.
-#[cfg(test)]
 fn pick_best_apk(assets: &[serde_json::Value]) -> Option<&serde_json::Value> {
     // Priority 1: official "Magisk-*.apk"
     let official = assets.iter().find(|a| {
@@ -117,8 +159,8 @@ fn pick_best_apk(assets: &[serde_json::Value]) -> Option<&serde_json::Value> {
 
 /// Download the Magisk APK for the given stable release into `target_dir`.
 ///
-/// Skips re-download if a file with the same release tag already exists
-/// (cached by `"Magisk-{tag}.apk"`).
+/// Skips re-download if a non-empty cache file for the same release tag exists
+/// (`Magisk-{tag}.apk`). Empty cache files are deleted and re-downloaded.
 ///
 /// Uses a blocking `reqwest` client — call from a `spawn_blocking` context.
 pub fn download_magisk_stable(
@@ -141,8 +183,13 @@ pub fn download_magisk_stable(
     let dest = target_dir.join(&file_name);
 
     if dest.exists() {
-        log::info!("Magisk {} already cached at {:?}", release.tag, dest);
-        return Ok(dest);
+        let cached_size = dest.metadata().map(|m| m.len()).unwrap_or(0);
+        if cached_size > 0 {
+            log::info!("Magisk {} already cached at {:?}", release.tag, dest);
+            return Ok(dest);
+        }
+        log::warn!("Cached Magisk {} is empty (0 bytes); re-downloading", release.tag);
+        let _ = std::fs::remove_file(&dest);
     }
 
     log::info!(
@@ -154,7 +201,7 @@ pub fn download_magisk_stable(
 
     let client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(120))
-        .user_agent("adb-gui-next/1.0")
+        .user_agent("adb-gui-next")
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
@@ -171,8 +218,15 @@ pub fn download_magisk_stable(
 
     let mut out = std::fs::File::create(&dest).map_err(|e| e.to_string())?;
     std::io::copy(&mut response, &mut out).map_err(|e| e.to_string())?;
+    drop(out);
 
-    log::info!("Downloaded Magisk {} to {:?}", release.tag, dest);
+    let final_size = dest.metadata().map(|m| m.len()).unwrap_or(0);
+    if final_size == 0 {
+        let _ = std::fs::remove_file(&dest);
+        return Err(format!("Downloaded Magisk {} is empty", release.tag));
+    }
+
+    log::info!("Downloaded Magisk {} to {:?} ({final_size} bytes)", release.tag, dest);
     Ok(dest)
 }
 
@@ -275,8 +329,20 @@ mod tests {
     }
 
     #[test]
-    fn automatic_release_is_rootavd_compatible_magisk() {
+    fn fetch_returns_usable_release() {
         let release = fetch_magisk_stable_release().unwrap();
+        assert!(!release.tag.is_empty());
+        assert!(!release.download_url.is_empty());
+        assert!(!release.asset_name.is_empty());
+        if local_rootavd_magisk_zip().is_some() {
+            assert_eq!(release.tag, MAGISK_AVD_RECOMMENDED_TAG);
+        }
+    }
+
+    #[test]
+    fn hardcoded_fallback_is_v25_2() {
+        let release = hardcoded_fallback_release();
         assert_eq!(release.tag, "v25.2");
+        assert!(release.download_url.contains("Magisk-v25.2.apk"));
     }
 }

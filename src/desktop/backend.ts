@@ -458,9 +458,9 @@ export function MarketplaceDownloadApk(url: string): Promise<string> {
   return call('marketplace_download_apk', { url });
 }
 
-/** Install a downloaded APK via ADB. */
-export function MarketplaceInstallApk(apkPath: string): Promise<string> {
-  return call('marketplace_install_apk', { apkPath });
+/** Install a downloaded APK via ADB on the selected device when serial is set. */
+export function MarketplaceInstallApk(apkPath: string, serial?: string | null): Promise<string> {
+  return call('marketplace_install_apk', { apkPath, serial });
 }
 
 // ── Debloater ────────────────────────────────────────────────────────────────
@@ -507,14 +507,9 @@ export function SaveDebloatDeviceSettings(settings: backend.PerDeviceSettings): 
 }
 
 /** Combined response for all initial debloater data. */
-export interface DebloatData {
-  backups: backend.BackupSummary[];
-  list_status: backend.DebloatListStatus;
-  packages: backend.DebloatPackageRow[];
-  settings: backend.PerDeviceSettings;
-}
+export type DebloatData = backend.DebloatData;
 
 /** Get all debloater data in one call. Uses in-memory cache when available. */
-export function GetDebloatData(): Promise<DebloatData> {
+export function GetDebloatData(): Promise<backend.DebloatData> {
   return call('get_debloat_data');
 }

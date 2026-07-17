@@ -4,7 +4,7 @@ use tauri::{AppHandle, State};
 use tempfile::NamedTempFile;
 
 use crate::CmdResult;
-use crate::helpers::run_binary_command;
+use crate::commands::device::run_adb_for_serial;
 use crate::marketplace::cache::ManagedMarketplaceCache;
 use crate::marketplace::service;
 use crate::marketplace::{
@@ -219,18 +219,27 @@ pub async fn marketplace_download_apk(url: String) -> CmdResult<String> {
 }
 
 #[tauri::command]
-pub async fn marketplace_install_apk(app: AppHandle, apk_path: String) -> CmdResult<String> {
+pub async fn marketplace_install_apk(
+    app: AppHandle,
+    apk_path: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
     info!("Installing marketplace APK: {apk_path}");
+    let apk_path_ref = std::path::Path::new(&apk_path);
+    if !is_owned_marketplace_download(apk_path_ref) {
+        return Err(
+            "APK path is not a marketplace download — only owned temp downloads can be installed"
+                .into(),
+        );
+    }
+
     let install_path = apk_path.clone();
     let result = tokio::task::spawn_blocking(move || {
-        run_binary_command(&app, "adb", &["install", "-r", &install_path])
+        run_adb_for_serial(&app, serial.as_deref(), &["install", "-r", &install_path])
     })
     .await
     .map_err(|e| e.to_string())?;
 
-    let apk_path_ref = std::path::Path::new(&apk_path);
-    if is_owned_marketplace_download(apk_path_ref) {
-        let _ = tokio::fs::remove_file(apk_path_ref).await;
-    }
+    let _ = tokio::fs::remove_file(apk_path_ref).await;
     result
 }
