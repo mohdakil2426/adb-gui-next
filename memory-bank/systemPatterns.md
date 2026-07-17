@@ -545,11 +545,13 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
 
 ### 13. Ultracite / TypeScript Configuration
 
-Frontend lint/format uses **Ultracite (Biome)** via `bun run lint:web` / `format:web`. See `biome.jsonc` and `docs/ultracite-standards.md`.
+Frontend lint/format uses **Ultracite (Biome)** via `bun run lint:web` (check) / `format:web` (fix). See `biome.jsonc` and `.agents/rules/ultracite.md`.
+
+**Pre-commit:** Husky → `lint-staged` formats staged `*.{js,jsx,ts,tsx,json,jsonc,css}` with Ultracite and staged `src-tauri/**/*.rs` with rustfmt. Clippy, full-repo format check, and tests stay in CI / `bun run check` — not on every commit.
 
 **TypeScript** remains strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, etc. in `tsconfig.json`).
 
-**Rust** lint is `cargo clippy -- -D warnings` (`bun run lint:rust`).
+**Rust** lint is `cargo clippy -- -D warnings` (`bun run lint:rust`); format is rustfmt (`format:rust` / `format:rust:check`).
 
 **Common style (AGENTS):**
 - `gap-*` not `space-x/y`; `size-*` for equal dimensions

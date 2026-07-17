@@ -331,18 +331,27 @@ bun run tauri build
 
 ---
 
+## 🏗️ Architecture
+
+High-level system design, layer boundaries, feature map, IPC conventions, and diagrams:
+
+- **[docs/architecture.md](docs/architecture.md)** — full architecture reference (Mermaid + ASCII)
+
 ## 🛠️ Development
 
-| Command                       | Description                                     |
-| ----------------------------- | ----------------------------------------------- |
-| `bun run tauri dev`           | Dev server + Tauri window                       |
-| `bun run build`               | TypeScript + Vite bundle                        |
-| `bun run test`                | Run frontend tests (Vitest)                     |
-| `bun run lint`                | Ultracite/Biome (frontend) + cargo clippy (Rust) |
-| `bun run format`              | Ultracite fix (frontend) + cargo fmt (Rust)      |
-| `bun run check`               | Full quality gate: lint → format → Rust tests → frontend tests → build |
-| `bun run tauri build --debug` | Debug build with installer                      |
-| `bun run tauri build`         | Release build                                   |
+| Command                       | Description                                              |
+| ----------------------------- | -------------------------------------------------------- |
+| `bun run tauri dev`           | Dev server + Tauri window                                |
+| `bun run build`               | TypeScript + Vite bundle                                 |
+| `bun run test`                | Run frontend tests (Vitest)                              |
+| `bun run lint:web`            | Ultracite/Biome check (frontend)                         |
+| `bun run lint:rust`           | cargo clippy (`-D warnings`)                             |
+| `bun run lint`                | Frontend check + Rust clippy                             |
+| `bun run format`              | Ultracite fix (frontend) + cargo fmt (Rust)              |
+| `bun run format:check`        | Ultracite check + rustfmt check                          |
+| `bun run check`               | Full gate: format:check → clippy → vitest → cargo test → build |
+| `bun run tauri build --debug` | Debug build with installer                               |
+| `bun run tauri build`         | Release build                                            |
 
 ---
 
@@ -368,11 +377,16 @@ bun run tauri build
 ### Quality Gates (must pass before PR)
 
 ```bash
-bun run format:check       # Ultracite/Biome + cargo fmt
-bun run lint               # Ultracite + cargo clippy -D warnings
-bun run test               # Vitest (frontend); cargo test separately (Linux CI / Windows --no-run)
+bun run format:check       # Ultracite/Biome check + rustfmt --check
+bun run lint               # Ultracite check + cargo clippy -D warnings
+bun run test               # Vitest (frontend)
+cargo test --manifest-path src-tauri/Cargo.toml   # Linux CI executes; Windows may need --no-run
 bun run build              # TypeScript type-check + Vite bundle
+# or one shot:
+bun run check
 ```
+
+Pre-commit (Husky + lint-staged): auto-formats staged frontend files with Ultracite and staged Rust files with rustfmt. Clippy and tests run in CI, not on every commit.
 
 ---
 

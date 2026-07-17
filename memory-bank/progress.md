@@ -3,7 +3,9 @@
 ## Overall Status
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
-**CI + Rust quality (2026-07-18):** CI quality on all branches; Tauri package artifacts **only on main push**. Publish macOS optional. Rust lint bar: Cargo `[lints]` (unsafe_code warn, clippy cargo, unwrap/expect, pedantic cherry-picks) + `clippy.toml` test allows. Default cmds: `bun run lint` / `format:check` / `lint:rust`.
+**Scripts + Husky simplification (2026-07-18):** Removed duplicate script aliases; `check` is full quality gate; pre-commit uses lint-staged (staged Ultracite + rustfmt only). Docs: AGENTS, README, memory-bank.
+
+**CI + Rust quality (2026-07-18):** CI quality on all branches; Tauri package artifacts **only on main push**. Publish macOS optional. Rust lint bar: Cargo `[lints]` (unsafe_code warn, clippy cargo, unwrap/expect, pedantic cherry-picks) + `clippy.toml` test allows. Default cmds: `bun run lint` / `format:check` / `lint:rust` / `check`.
 
 **Full-project audit remediation complete (2026-07-17):** Closed Critical/High findings from `docs/reports/active/FULL-PROJECT-AUDIT-REPORT-2026-07-17.md` via plan `docs/superpowers/plans/2026-07-17-audit-remediation.md`. Security: extract basenames, transaction cleanup, remote SSRF redirects, debloat path jail, owned marketplace installs. Correctness: device-keyed debloat cache, fail-closed SDK, file shell exit checks, Magisk live fetch, marketplace serial, cancel token hygiene. FE: multi-device races, drop hit-test, a11y, poll errors. Docs refreshed (AGENTS, README, memory-bank). Deferred: OPS stream decrypt, ZIP64 http_zip, ACL split, single-instance. Verify: lint web+rust ✅ · test 191/191 ✅ · build ✅ · cargo check ✅.
 

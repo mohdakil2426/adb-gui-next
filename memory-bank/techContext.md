@@ -43,12 +43,12 @@
 
 | Tool | Purpose |
 |------|---------|
-| **Ultracite** (Biome) | Frontend lint + format (`bun run lint:web`, `format:web`) |
+| **Ultracite** (Biome) | Frontend lint + format (`lint:web` = check, `format:web` = fix) |
 | cargo clippy / rustfmt | Rust lint + format |
 | Vitest + Testing Library | Frontend tests in `src/test/` |
 | Bun 1.3.13 | Package manager (`packageManager` field) |
 | Tauri CLI 2.11.0 | Desktop packaging |
-| Husky pre-commit | `bun run lint:web` + `bun run format:check` |
+| Husky + lint-staged | Pre-commit: staged Ultracite fix + staged rustfmt only |
 
 Do **not** document ESLint/Prettier as the active web toolchain — they were replaced by Ultracite.
 
@@ -56,13 +56,18 @@ Do **not** document ESLint/Prettier as the active web toolchain — they were re
 
 | Command | Runs |
 |---------|------|
-| `bun run lint` | Ultracite (web) + Clippy (Rust, `-D warnings`) |
-| `bun run lint:web` | Ultracite check only |
+| `bun run lint:web` | Ultracite check (format + lint) |
+| `bun run format:web` | Ultracite fix |
 | `bun run lint:rust` | `cargo clippy --all-targets -- -D warnings` |
-| `bun run format` | Ultracite fix + `cargo fmt` |
-| `bun run format:check` | Ultracite check + rustfmt check (CI + husky) |
-| `bun run check` | lint + format:check + cargo test + vitest + build |
-| `bun run check:fast` | lint + format:check |
+| `bun run format:rust` / `format:rust:check` | rustfmt / rustfmt --check |
+| `bun run lint` | Ultracite check + Clippy |
+| `bun run format` | Ultracite fix + rustfmt |
+| `bun run format:check` | Ultracite check + rustfmt check (CI) |
+| `bun run check` | format:check → clippy → vitest → cargo test → build |
+
+**Agent rule:** run full gate (`bun run check`) only after all tasks for the request are finished — never mid-task.
+
+Removed aliases (do not re-add): `fix`, `lint:fix`, `lint:web:fix`, `format:web:check`, `check:fast`.
 
 ### Rust lint bar (`src-tauri/`)
 
@@ -112,12 +117,13 @@ Official basis: [Clippy lint categories](https://doc.rust-lang.org/clippy/lints.
 |---------|----------------|
 | `bun run dev` / `bun run tauri dev` | Vite :1420 / full desktop |
 | `bun run build` | tsc + Vite |
-| `bun run lint:web` | Ultracite check |
+| `bun run lint:web` / `format:web` | Ultracite check / fix |
 | `bun run lint:rust` | clippy `-D warnings` |
-| `bun run format` / `format:check` | Ultracite + rustfmt |
+| `bun run format` / `format:check` | Ultracite + rustfmt (fix / check) |
 | `bun run test` | Vitest |
-| `bun run check` | lint + format check + cargo test + vitest + build |
+| `bun run check` | format:check + clippy + vitest + cargo test + build |
 | `cargo test --manifest-path src-tauri/Cargo.toml` | Rust tests (Linux CI executes; Windows often `--no-run` only) |
+| Pre-commit | `bun x lint-staged` via Husky (staged FE + Rust only; no clippy/tests) |
 
 ## Device polling
 

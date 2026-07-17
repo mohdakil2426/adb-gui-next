@@ -2,7 +2,11 @@
 
 ## Current State
 
-**CI + Rust quality bar (2026-07-18):** GitHub Actions split into Ubuntu **quality** (all branches/PRs) vs **package** matrix (Windows+Linux, **main push only** — no artifacts on feature branches). Publish: full quality preflight; macOS optional when Apple secrets present. Rust: `src-tauri/Cargo.toml` `[lints]` + `clippy.toml` (cargo group, unwrap/expect restrictions with test allows, pedantic cherry-picks, `unsafe_code=warn` with local allows on mmap modules). Husky runs `lint:web` + `format:check`. Reports: `GITHUB-ACTIONS-PACKAGING-AUDIT-2026-07-17.md`, plan `2026-07-17-ci-packaging-remediation.md`.
+**Architecture doc (2026-07-18):** `docs/architecture.md` is the long-form architecture reference (system context, FE/BE layers, IPC, feature matrix, security, CI, mermaid + ASCII). Explored via parallel code agents against live `src/` + `src-tauri/`. Linked from README.
+
+**Scripts + Husky simplification (2026-07-18):** Slimmed `package.json` scripts — one name per intent (`lint:web` / `format:web` / `lint:rust` / `format:rust` / `format:check` / `lint` / `check`). Removed aliases `fix`, `lint:fix`, `lint:web:fix`, `format:web:check`, `check:fast`. `check` is the full gate (format:check → clippy → vitest → cargo test → build). Husky pre-commit is `bun x lint-staged` only (staged Ultracite fix + staged rustfmt); no full-repo ultracite, no clippy, no tests on commit. `lint-staged` config in `package.json`. AGENTS/README/memory-bank updated.
+
+**CI + Rust quality bar (2026-07-18):** GitHub Actions split into Ubuntu **quality** (all branches/PRs) vs **package** matrix (Windows+Linux, **main push only** — no artifacts on feature branches). Publish: full quality preflight; macOS optional when Apple secrets present. Rust: `src-tauri/Cargo.toml` `[lints]` + `clippy.toml` (cargo group, unwrap/expect restrictions with test allows, pedantic cherry-picks, `unsafe_code=warn` with local allows on mmap modules). Reports: `GITHUB-ACTIONS-PACKAGING-AUDIT-2026-07-17.md`, plan `2026-07-17-ci-packaging-remediation.md`.
 
 **Full-project audit remediation (2026-07-17):** Critical/High + high-value Medium fixes from `FULL-PROJECT-AUDIT-REPORT-2026-07-17.md`. Extract sanitize, transaction no wipe, remote SSRF redirects, debloat device-keyed cache + fail-closed SDK, `adb_shell_checked`, Magisk live fetch, marketplace serial install, FE multi-device/history/drop/a11y. Deferred: OPS stream decrypt, ZIP64 http_zip, ACL split, single-instance.
 
@@ -35,6 +39,14 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-07-18 - Scripts slim-down + lint-staged pre-commit
+
+**Change:**
+- `package.json`: dropped `fix` / `lint:fix` / `lint:web:fix` / `format:web:check` / `check:fast`; `check` = full gate; added `lint-staged` config.
+- `.husky/pre-commit`: only `bun x lint-staged` (removed broken `npm test` header and full-repo ultracite fix).
+- DevDep: `lint-staged`.
+- Project rules: AGENTS Commands + Verification Policy + Ultracite quick ref; README Development/Quality Gates; memory-bank techContext/systemPatterns/progress.
 
 ### 2026-07-18 - CI packaging redesign + Rust max lint bar
 
