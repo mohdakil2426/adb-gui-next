@@ -25,7 +25,7 @@ The app uses a Tauri 2 desktop architecture with React 19 frontend and Rust back
 │  commands/ — 10 focused modules (device, adb, fastboot, files, apps,   │
 │              system, payload, marketplace, emulator, debloat) — 65+     │
 │              registered commands                                         │
-│  app_icons.rs — installed APK icon extraction + manifest/resource walk   │
+│  helpers.rs — binary resolve · sanitize · adb_shell_checked · shell helpers │
 │  payload/ — CrAU (7 modules) + OPS/OFP (9 modules in ops/)              │
 │  marketplace/ — provider modules + auth/cache/ranking/service layers    │
 │  emulator/ — sdk/avd/runtime/backup/root domain modules                 │
@@ -121,16 +121,15 @@ Emulator Manager follows the same thin-command + focused-domain pattern as Marke
 - `src/desktop/models.ts` and `backend.ts` define the typed DTO/IPC contract for the new view.
 - `src/features/emulator/model/emulatorManagerStore.ts` owns selected AVD, active tab, root session, restore plan, pending action state, and page-scoped activity history.
 - `src/features/emulator/EmulatorView.tsx` is the orchestration shell. Feature components under `src/features/emulator/ui/` stay presentational and callback-driven.
-- Automated root mirrors rootAVD's API 30+ ramdisk behavior: decompress, repack multi-CPIO ramdisks into one `newc` CPIO with busybox when multiple `TRAILER!!!` markers are detected, then run Magisk patching. The automatic package source is pinned to the rootAVD-compatible Magisk v25.2 path; newer Magisk/forks belong in manual FAKEBOOTIMG/local workflows.
+- Automated root mirrors rootAVD's API 30+ ramdisk behavior: decompress, repack multi-CPIO ramdisks into one `newc` CPIO with busybox when multiple `TRAILER!!!` markers are detected, then run Magisk patching.
+- Magisk package resolution (2026-07-17): (1) local rootAVD `Magisk.zip` if present, (2) GitHub `/releases/latest` with HTTPS SSRF validation, (3) hardcoded v25.2 offline fallback. Manual FAKEBOOTIMG still accepts a local package pick.
+- Root UI events use `EventsOn('root:progress')` from `src/desktop/runtime.ts` (not raw `listen` in feature files).
 
-### 3d. App Manager Installed Icon Pipeline
+### 3d. App Manager packages UI
 
-Applications page icons follow a 2-phase pattern so package list load stays fast:
-- `get_installed_packages` stays metadata-only and returns immediately.
-- `ViewAppManager.tsx` renders a fixed icon slot for every virtualized row and lazy-loads icons only for currently visible rows.
-- `get_package_icon` resolves the installed APK with `adb shell pm path`, pulls it to a temp path, parses `AndroidManifest.xml` + `resources.arsc`, and returns a raster icon as a data URL.
-- If the declared icon resource is adaptive/XML-only, `app_icons.rs` searches same-stem raster candidates under `mipmap-*` / `drawable-*` and prefers the highest-density match.
-- Placeholder glyphs remain valid fallback UI and row height must never change after the icon arrives.
+- Package list is metadata-only from `get_installed_packages` (labels via on-device `label_reader.jar` where applicable).
+- Virtualized install/uninstall lists currently use **Lucide placeholder icons** (no live `app_icons.rs` module in tree). If APK icon extraction is reintroduced: lazy visible-row only, fixed slots, never during initial list fetch.
+
 ### 3e. File Explorer — State Model & Critical Patterns
 
 `src/features/file-explorer/FileExplorerView.tsx` is now a thin coordinator over feature-local hooks and UI modules. The File Explorer feature owns its model, hooks, UI, and utilities under `src/features/file-explorer/`.
@@ -329,12 +328,12 @@ shadcn `Sidebar` component with `collapsible="icon"` mode:
 
 ### 8. Device Polling & Switcher
 
-**Centralized polling** — Single `useQuery(['allDevices'], 3s)` in `MainLayout` replaces per-view polling.
-- `MainLayout` fetches all devices (ADB + fastboot) and syncs to `deviceStore.setDevices()`
-- All views read from `deviceStore` — no per-view `useQuery` for devices
-- `DeviceSwitcher` component in sticky header: pill button + Popover with device list
-- `selectedSerial` in store for multi-device switching (auto-select logic built-in)
-- Semantic status colors: emerald (adb), amber (fastboot), orange (bootloader), blue (recovery), violet (sideload), red (unauthorized), zinc (offline)
+**Centralized polling** — Single `useQuery` for all devices in `MainLayout` with **`STALE_TIME.ALL_DEVICES` = 30s** (not 3s). Manual refresh remains available.
+- `MainLayout` fetches ADB + fastboot devices and syncs to `deviceStore.setDevices()` only when serials/statuses change (avoids thrash).
+- Poll failures surface via `handleError` (toast + log), not a silent empty list.
+- All views read from `deviceStore` — no per-view device `useQuery`.
+- `DeviceSwitcher` in header: pill + Popover; rows are non-nested buttons (`role="option"`) with separate nickname edit control.
+- Semantic status badges use theme tokens (including `bg-success-light` registered in `@theme`).
 
 ### 9. Bottom Panel (VS Code-style, Fixed Position)
 
@@ -505,7 +504,7 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
 
 ## Known Architectural Notes
 
-- `src-tauri/src/lib.rs` is a thin orchestrator over helpers + 9 command modules (57 registered commands). Installed-app icon extraction lives in `src-tauri/src/app_icons.rs`, not in command wrappers.
+- `src-tauri/src/lib.rs` is a thin orchestrator over helpers + command modules (~73 registered commands). Shared process helpers (`adb_shell_checked`, `safe_image_file_name`, `sanitize_filename`) live in `helpers.rs`.
 - `src-tauri/src/marketplace/` — modular provider architecture (fdroid, github, aptoide, types) with managed state:
   - **`ManagedHttpClient`** — singleton `reqwest::Client` registered as Tauri state; all marketplace commands share one connection-pooled client via `State<ManagedHttpClient>`. Download command uses a separate client (300s timeout, no auto-redirect).
   - **APK verification** — `verify_apk_availability()` in `github.rs` scans last 5 releases per repo using `JoinSet` + `Semaphore(5)` for bounded concurrent verification. Gracefully skips on 403/429 rate-limit. Called by both `search()` and `get_trending()`.
@@ -530,7 +529,7 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
     - `verify_avd_root()` is the only backend success proof for usable root. It checks the emulator is online, `sys.boot_completed == 1`, Magisk-family package presence, and `su -c id -u == 0`.
   - **`magisk_package.rs`** handles APK binary extraction. Magisk v25+ renamed daemon libraries: pre-v25 uses `libmagisk64.so`/`libmagisk32.so`; v25+ uses `libmagisk.so` per ABI dir. `extract_lib_binary_as(src_name, dest_name)` handles the rename — always saves as `magisk64`/`magisk32` regardless of ZIP name. Cascading fallback: old name → new name → error.
   - **Serde tag discriminator camelCase**: `RootSource` uses `#[serde(tag = "type", rename_all = "camelCase")]`. Tag values in JSON are renamed too: `LatestStable` → `latestStable`, `LocalFile` → `localFile`. Frontend TypeScript types and mapping code must use camelCase strings.
-- Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, 3s) — syncs to `deviceStore`
+- Device polling centralized in MainLayout via single TanStack Query (`['allDevices']`, **30s**) — syncs to `deviceStore`
 - `ConnectedDevicesCard` only used in Dashboard; header `DeviceSwitcher` provides global device awareness
 - Shell is no longer a sidebar view — lives in bottom panel as a tab
 - **Bottom panel resize MUST be DOM-first**: Never `setState` on mousemove. Use `ref.current.style.height` + RAF for drag, `setState` only on mouseup.
@@ -542,42 +541,16 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
 - **No `position: sticky` in this app**: Header is pinned structurally as a `shrink-0` sibling to the `flex-1 overflow-y-auto` scroll area inside the bounded `SidebarInset`.
 - **Flex height propagation for full-height views**: Views that fill the entire visible area (minus header + padding) must use flex layout, not viewport-based calc. MainLayout wrapper chain uses `flex flex-col` + `flex-1 min-h-0` to propagate height from the scroll area. Views use `flex min-h-0 flex-1` to fill the parent. `min-h-0` overrides the default `min-height: auto` that prevents flex items from shrinking. Never use `h-[calc(100svh-N)]` — header height and padding are not fixed constants.
 
-### 13. ESLint Strict Mode & TypeScript Configuration
+### 13. Ultracite / TypeScript Configuration
 
-The project uses ESLint with strict TypeScript-aware rules for production-grade code quality.
+Frontend lint/format uses **Ultracite (Biome)** via `bun run lint:web` / `format:web`. See `biome.jsonc` and `docs/ultracite-standards.md`.
 
-**ESLint Configuration (`eslint.config.mjs`):**
-- `typescript-eslint` with `strictTypeChecked` + `stylisticTypeChecked` configs
-- Type-aware rules enabled (require `parserOptions.project: './tsconfig.json'`)
-- Test files have relaxed rules (disabled: no-unsafe-assignment, no-unsafe-return, no-empty-function, require-await)
+**TypeScript** remains strict (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, etc. in `tsconfig.json`).
 
-**TypeScript Configuration (`tsconfig.json`):**
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true
-  }
-}
-```
+**Rust** lint is `cargo clippy -- -D warnings` (`bun run lint:rust`).
 
-**Key ESLint Rules (all errors):**
-- `@typescript-eslint/prefer-nullish-coalescing` — use `??` instead of `||`
-- `@typescript-eslint/no-floating-promises` — use `void` keyword for fire-and-forget promises
-- `@typescript-eslint/no-unsafe-*` — no implicit any types
-- `react-hooks/exhaustive-deps` — complete dependency arrays
-- `import/order` — organized import groups with newlines between
-
-**Common Fix Patterns:**
-- `||` → `??` for nullish coalescing
-- `.then(promise)` → `void promise` for ignored promises
-- `catch (e)` → `catch (e: unknown)` for safe catch variables
-- `h-4 w-4` → `size-4` for consistent icon sizing
-- `space-y-2` → `gap-2` for spacing
+**Common style (AGENTS):**
+- `gap-*` not `space-x/y`; `size-*` for equal dimensions
+- Semantic tokens (`bg-background`, `text-success`, `bg-success-light`, …)
+- Icon buttons need `aria-label`
+- Drop handlers hit-test on drop, not only hover

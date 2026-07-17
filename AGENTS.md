@@ -32,7 +32,7 @@ flowchart TB
         views["9 views<br/>Dashboard · AppManager · FileExplorer · Flasher · Utilities<br/>PayloadDumper · Marketplace · Emulator · About"]
         featureUI["Feature modules<br/>src/features/<feature>/{ui,hooks,model,utils}"]
         stores["Zustand stores<br/>device · log · shell · payloadDumper · marketplace<br/>emulatorManager · debloat · nickname"]
-        query["TanStack Query<br/>single 3s all-devices poll in MainLayout"]
+        query["TanStack Query<br/>single 30s all-devices poll in MainLayout"]
         desktop["Desktop abstraction<br/>src/desktop/backend.ts · runtime.ts · models.ts"]
 
         entry --> shell
@@ -72,8 +72,7 @@ flowchart TB
             d_payload["payload/<br/>CrAU · remote ZIP · OPS/OFP · sparse · cancellation"]
             d_market["marketplace/<br/>providers · ranking · cache · auth · service"]
             d_emulator["emulator/<br/>SDK/AVD discovery · runtime · backup · root pipeline"]
-            d_debloat["debloat/<br/>UAD lists · sync · actions · backups"]
-            d_icons["app_icons.rs<br/>installed APK icon extraction"]
+            d_debloat["debloat/<br/>UAD lists · sync · actions · backups · device-keyed cache"]
         end
 
         resources["resources/<br/>bundled adb/fastboot platform tools"]
@@ -182,22 +181,27 @@ Known Windows issue: bare `cargo test` can fail with Tauri-linked loader error `
 - Tagged serde enums with `rename_all = "camelCase"` also rename tag values; TypeScript unions must match camelCase strings.
 - Use `resolve_binary_path()` for bundled ADB/fastboot. Do not hardcode platform tool paths.
 - The Android emulator binary is not bundled; resolve it through the emulator SDK resolver.
-- Use `adb_shell_checked()` for critical shell operations. Raw shell success is not proof the inner command succeeded.
-- Use `sanitize_filename()` before joining user-provided filename components.
-- Tauri v2 app permissions in `src-tauri/permissions/` must be TOML with `[[permission]]`; app permission references in capabilities are unprefixed.
+- Use `helpers::adb_shell_checked()` for critical shell operations (file mutations and root pipeline). Raw ADB host success is not proof the inner shell command succeeded.
+- Use `sanitize_filename()` / `safe_image_file_name()` before joining user-provided or firmware-manifest filename components. Never write extract outputs from raw partition names.
+- Payload remote HTTP clients must not auto-follow redirects; re-run `validate_outbound_url` on every hop (same pattern as marketplace downloads).
+- Debloat cache entries must be keyed by device serial; never return another device's packages/settings after a switch.
+- Refuse destructive debloat actions when Android SDK cannot be determined (`try_get_android_sdk`). Do not map Disable → Uninstall on unknown or API &lt; 23.
+- Tauri v2 app permissions in `src-tauri/permissions/` must be TOML with `[[permission]]`; app permission references in capabilities are unprefixed. Keep `commands.allow` in sync with `generate_handler!` (no orphan allowlist entries).
 
 ## Feature-Specific Gotchas
 
-- File Explorer: `loadFiles` must keep a stable reference and use refs for history index tracking; adding `historyIndex` to deps causes request loops.
+- File Explorer: `loadFiles` must keep a stable reference and use refs for history index tracking; adding `historyIndex` to deps causes request loops. Mutations that re-list the same path must call `loadFiles(path, false)`.
 - File Explorer empty state must check `fileList.length === 0 && creatingType === null`; inline create rows need the table to render.
-- Tauri drag/drop is window-level. Use one `OnFileDrop()` per page and hit-test refs with cursor coordinates.
-- App Manager installed icons are lazy visible-row loads with fixed icon slots; never fetch icons during the initial package list.
-- Debloater uses SDK-aware commands. Do not call `pm disable` on SDK < 23; use the existing action builder.
-- Marketplace provider logic belongs in provider/service/ranking/cache modules, not command wrappers.
+- File Explorer transfers/delete must snapshot `serial` (and path) at action start before host dialogs; clear root grant immediately on serial change before re-verify.
+- Tauri drag/drop is window-level. Use one `OnFileDrop()` per page and hit-test refs with cursor coordinates on **both hover and drop**.
+- App Manager installed icons: product currently uses Lucide placeholders in the virtualized list; if reintroducing APK icon extraction, keep lazy visible-row loads with fixed icon slots and never fetch during the initial package list.
+- Debloater uses SDK-aware commands. Do not call bare `pm disable` on any SDK; use the existing action builder. Reload debloat data when `selectedSerial` changes. DTO field is camelCase `listStatus`.
+- Marketplace provider logic belongs in provider/service/ranking/cache modules, not command wrappers. `marketplace_install_apk` must pass selected device serial and only install owned marketplace temp downloads. PAT/OAuth access token stay session-only (not localStorage).
 - Emulator AVD discovery scans `~/.android/avd/*.ini`; do not depend on `emulator -list-avds`.
-- Emulator root must run readiness checks before automated root. Root is only proven by `verify_avd_root` returning `su -c id -u == 0`.
-- Payload extraction is designed around streaming/mmap and cancellation. Do not introduce large in-memory buffers for firmware images.
+- Emulator root must run readiness checks before automated root. Root is only proven by `verify_avd_root` returning `su -c id -u == 0`. Magisk "latest" fetches GitHub `/releases/latest` with v25.2 offline fallback; prefer local rootAVD zip when present.
+- Payload extraction is designed around streaming/mmap and cancellation. Do not introduce large in-memory buffers for firmware images. Invalid cancel token IDs must error (never run uncancellable). `TransactionGuard` deletes registered files only — never `remove_dir_all` on user-chosen output directories.
 - OPS/OFP parsing has format-specific crypto and sparse-image rules. Do not "simplify" offsets, key schedules, or sparse expansion without test data.
+- Root progress events: subscribe via `EventsOn` in `src/desktop/runtime.ts`, not raw `@tauri-apps/api/event` in feature UI.
 
 ## Dependency Policy
 

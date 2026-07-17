@@ -2,6 +2,8 @@
 
 ## Current State
 
+**Full-project audit remediation landed in working tree / commits (2026-07-17):** Critical/High + high-value Medium fixes from `docs/reports/active/FULL-PROJECT-AUDIT-REPORT-2026-07-17.md` and plan `docs/superpowers/plans/2026-07-17-audit-remediation.md`. Highlights: extract basename sanitize + transaction no longer wipes user dirs; remote payload SSRF redirect revalidation; debloat device-keyed cache + fail-closed SDK; shared `adb_shell_checked` for file mutations; Magisk GitHub latest with v25.2 fallback; marketplace install uses selected serial; FE multi-device/history/drop/a11y/poll fixes. Deferred (documented): OPS full stream decrypt, ZIP64 OTA `http_zip` parity, ACL split, single-instance plugin. Verification: lint web+rust ✅ · test 191/191 ✅ · build ✅ · cargo check ✅.
+
 **Payload dumper plan Waves 0–4 complete (2026-07-17):** Architecture restructure (`crau/ remote/ io/ verify/ zip/ source/ delta/ types/ tests/`) + correctness (L3/L4, multi-extent) + remote load UX (`payload:load-progress`, `downloadSize`) + remote perf (session cache, span prefetch, STORED mmap, buffer pools, liblzma, release-fast, OPS cancel) + polish (FE partition status enum, Rust `ExtractPayloadResult.stats` with durationMs/totalBytes/throughputMbps). **Task 4.3 delta real work SKIPPED.** **Task 4.4 notification + single-instance plugins DEFERRED** (UX only; Sonner covers in-app). Agent cargo targets gitignored via root `target/` / `target-*/` and `src-tauri/target*/`. Plan: `docs/superpowers/plans/2026-07-17-payload-dumper-architecture-and-upgrades.md`.
 
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` with release prep in progress for v0.2.5, including macOS support.
@@ -31,6 +33,23 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-07-17 - Full project audit + remediation
+
+**Change:** Brutally audited the full stack (15 explore subagents + Context7 Tauri/React docs + project skills). Implemented Critical/High remediation without drive-by refactors.
+
+**Fixed (selected):**
+- Payload: `safe_image_file_name` on CrAU/remote/OPS; `TransactionGuard` deletes registered files only; remote HTTP no auto-redirect + hop validation; IPv4-mapped IPv6 blocked; cancel token invalid = error; delta TokenGuard.
+- Debloat: `try_get_android_sdk`; refuse Disable when SDK unknown or &lt; 23; device-keyed cache; backup path jail; settings save errors surface; FE `listStatus` + reload on serial.
+- Files: `helpers::adb_shell_checked` for mutations; honest `list_files` errors.
+- Magisk: production GitHub `/releases/latest` with local rootAVD zip preference and v25.2 offline fallback.
+- Marketplace: install with selected serial; owned temp path only.
+- FE: history mutations, drop hit-test, root grant clear, transfer serial snapshot, RootWizard `EventsOn`, cold-boot errors, InstallationTab loop, poll error toast, device thrash skip, DeviceSwitcher a11y, success-light theme tokens.
+- Docs: AGENTS/README/memory-bank aligned (30s poll, Ultracite, no stale `app_icons`/trending command claims).
+
+**Reports:** `docs/reports/active/FULL-PROJECT-AUDIT-REPORT-2026-07-17.md`, plan `docs/superpowers/plans/2026-07-17-audit-remediation.md`.
+
+**Verification:** `bun run lint:web` ✅ · `bun run lint:rust` ✅ · `bun run test` ✅ 191/191 · `bun run build` ✅ · `cargo check` ✅.
 
 ### 2026-06-04 - Payload Dumper Pixel Factory Image Remote Support
 

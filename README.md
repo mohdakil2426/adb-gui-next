@@ -61,7 +61,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 3. **Launch Adb Gui Next** — your device should appear in the Dashboard automatically
 4. **Authorize** the USB debugging prompt on your device when prompted
 
-> **Tip**: The app auto-detects ADB and Fastboot devices every 3 seconds. No manual refresh needed.
+> **Tip**: The app auto-detects ADB and Fastboot devices every **30 seconds** (plus manual refresh). No per-view polling.
 
 ---
 
@@ -338,8 +338,8 @@ bun run tauri build
 | `bun run tauri dev`           | Dev server + Tauri window                       |
 | `bun run build`               | TypeScript + Vite bundle                        |
 | `bun run test`                | Run frontend tests (Vitest)                     |
-| `bun run lint`                | ESLint (frontend) + cargo clippy (Rust)         |
-| `bun run format`              | Prettier (frontend) + cargo fmt (Rust)          |
+| `bun run lint`                | Ultracite/Biome (frontend) + cargo clippy (Rust) |
+| `bun run format`              | Ultracite fix (frontend) + cargo fmt (Rust)      |
 | `bun run check`               | Full quality gate: lint → format → Rust tests → frontend tests → build |
 | `bun run tauri build --debug` | Debug build with installer                      |
 | `bun run tauri build`         | Release build                                   |
@@ -368,9 +368,9 @@ bun run tauri build
 ### Quality Gates (must pass before PR)
 
 ```bash
-bun run format:check       # Prettier + cargo fmt
-bun run lint               # ESLint + cargo clippy -D warnings
-bun run test               # Vitest (frontend) + cargo test (Rust)
+bun run format:check       # Ultracite/Biome + cargo fmt
+bun run lint               # Ultracite + cargo clippy -D warnings
+bun run test               # Vitest (frontend); cargo test separately (Linux CI / Windows --no-run)
 bun run build              # TypeScript type-check + Vite bundle
 ```
 

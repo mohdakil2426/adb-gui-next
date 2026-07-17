@@ -3,6 +3,8 @@
 ## Overall Status
 ADB GUI Next is a fully functional Tauri 2 desktop application on `main` branch.
 
+**Full-project audit remediation complete (2026-07-17):** Closed Critical/High findings from `docs/reports/active/FULL-PROJECT-AUDIT-REPORT-2026-07-17.md` via plan `docs/superpowers/plans/2026-07-17-audit-remediation.md`. Security: extract basenames, transaction cleanup, remote SSRF redirects, debloat path jail, owned marketplace installs. Correctness: device-keyed debloat cache, fail-closed SDK, file shell exit checks, Magisk live fetch, marketplace serial, cancel token hygiene. FE: multi-device races, drop hit-test, a11y, poll errors. Docs refreshed (AGENTS, README, memory-bank). Deferred: OPS stream decrypt, ZIP64 http_zip, ACL split, single-instance. Verify: lint web+rust ✅ · test 191/191 ✅ · build ✅ · cargo check ✅.
+
 **Payload Dumper Waves 0–4 plan complete (2026-07-17):** Structure (`payload/{crau,remote,io,verify,zip,source,delta,types,tests}`) + Wave 1 C1–C5 verify/multi-extent + Wave 2 load-progress/downloadSize + Wave 3 session/span/STORED mmap/buffers/liblzma/release-fast/OPS cancel + Wave 4.1 FE partition status + Wave 4.2 `ExtractPayloadResult.stats` (durationMs, partitionsExtracted, throughputMbps, totalBytes) on local CrAU, remote prefetch/direct, factory, OPS success. **4.3 delta SKIPPED.** **4.4 notification/single-instance DEFERRED.** Reports + memory-bank updated (Task 4.5). Verify: cargo check ✅ · cargo test --lib --no-run ✅ · focused FE tests ✅. Landed as multi-commit series on `main`.
 
 **Payload Dumper Pixel factory image remote support complete (2026-06-04):** Remote URLs now handle Pixel-style factory image ZIPs from Google's factory image page. The backend keeps the existing OTA `payload.bin` remote path, then falls back to factory image parsing when a ZIP has no `payload.bin`: outer central directory range read → stored nested `image-*.zip` discovery → nested central directory range read → ZIP64-aware `.img` listing/extraction. Extraction downloads only selected image entries, streams stored/deflated entries to disk, checks cancellation tokens, sanitizes output basenames, and avoids full factory ZIP prefetch. Frontend metadata now distinguishes `remoteKind: "factoryImage"` and hides OTA-only manifest fields for factory ZIPs. Fixed a Payload Dumper bug where toggling a searched partition row used the filtered index and selected the wrong original partition. Verification: format ✅ · web lint ✅ · tests 175/175 ✅ · build ✅ · Rust clippy ✅ · Rust test compile ✅.
@@ -58,7 +60,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 **Emulator Root verification fix (2026-04-28):** The automated root flow now reports `patchInstalled` instead of immediate success. A new `verify_avd_root` command verifies post-cold-boot root by checking ADB online state, `sys.boot_completed`, Magisk-family package presence, and `su -c id -u == 0`. The result screen shows "Patch Installed" until verification passes, then "Root Verified". The backend also fails checked shell commands when the exit marker is missing, installs Magisk Manager before shutdown, and logs multi-CPIO ramdisk detection without falsely blocking API 30+ AVDs before `magiskboot` validation. Manual verification template added at `docs/reports/emulator-root-verification-manual-test.md`.
 
-**Emulator Root multi-CPIO + rootAVD-compatible Magisk fix (2026-04-28):** The API 33 Google Play x86_64 AVD root failure was reproduced and resolved against the local rootAVD reference. Automated ramdisk patching now repacks API 30+ multi-CPIO layouts before Magisk patching, and the automatic source uses rootAVD-compatible Magisk v25.2 instead of current latest stable Magisk for the direct ramdisk workflow. Added PowerShell diagnostics/E2E scripts and verified the live `Medium_Phone` emulator reaches `su -c id -u == 0` after stock restore, patch, and cold boot.
+**Emulator Root multi-CPIO + Magisk source (2026-04-28; Magisk fetch updated 2026-07-17):** The API 33 Google Play x86_64 AVD root failure was reproduced and resolved against the local rootAVD reference. Automated ramdisk patching repacks API 30+ multi-CPIO layouts before Magisk patching. Magisk source order (2026-07-17): local rootAVD `Magisk.zip` if present → GitHub `/releases/latest` → hardcoded v25.2 offline fallback. PowerShell diagnostics/E2E scripts exist; live `Medium_Phone` previously verified `su -c id -u == 0` after stock restore, patch, and cold boot.
 
 **FAKEBOOTIMG manual UI + offline boot polling fix (2026-04-28):** The Root wizard now has a dedicated **Manual Mode (FAKEBOOTIMG)** step wired to the existing `prepare_avd_root` / `finalize_avd_root` IPC commands. Manual mode is accessible before failure from the Source step and from the failure fallback button. It lets users choose a local Magisk `.apk`/`.zip`, create `/sdcard/Download/fakeboot.img`, follow Magisk patch instructions inside the emulator, and finalize the patched ramdisk from the UI. The automated boot wait now checks ADB serial online state before running `getprop sys.boot_completed`, reducing repeated `device offline` log spam during emulator startup.
 
@@ -167,7 +169,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 | System | `open_folder`, `launch_terminal`, `save_log`, `launch_device_manager` |
 | Payload | `extract_payload`, `list_payload_partitions`, `list_payload_partitions_with_details`, `cleanup_payload_cache`, `get_ops_metadata`, `diagnose_payload`, `extract_delta_payload` |
 | Payload (remote_zip) | `check_remote_payload` *(async)*, `list_remote_payload_partitions` *(async)*, `get_remote_payload_metadata` *(async)* — now in default features |
-| Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async)*, `marketplace_get_trending` *(async)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* |
+| Marketplace | `marketplace_search` *(async)*, `marketplace_get_app_detail` *(async)*, `marketplace_download_apk` *(async)*, `marketplace_install_apk` *(async, serial + owned path)*, `marketplace_list_versions` *(async)*, `marketplace_clear_cache`, `marketplace_github_device_start` *(async)*, `marketplace_github_device_poll` *(async)* — **no** `marketplace_get_trending` command |
 | Emulator | `list_avds` *(async)*, `launch_avd` *(async)*, `stop_avd` *(async)*, `get_avd_restore_plan` *(async)*, `restore_avd_backups` *(async)*, `prepare_avd_root` *(async)*, `finalize_avd_root` *(async)*, `scan_avd_root_readiness` *(async)*, `verify_avd_root` *(async)*, `fetch_magisk_stable_release` *(async)*, `root_avd` *(async)* |
 | Debloat | `get_debloat_packages` *(async)*, `debloat_packages` *(async)*, `load_debloat_lists` *(async)*, `create_debloat_backup` *(async)*, `list_debloat_backups` *(async)*, `restore_debloat_backup` *(async)*, `get_debloat_device_settings` *(async)*, `save_debloat_device_settings` *(async)* |
 | Cancel | `create_cancellation_token`, `cancel_extraction` |
@@ -232,8 +234,8 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 
 - React Strict Mode enabled
 - TypeScript strict mode enabled
-- ESLint 10 flat config active for web app
-- Prettier active for web app
+- Ultracite (Biome) active for web lint/format (not ESLint/Prettier)
+- Vitest for frontend tests under `src/test/`
 - cargo fmt (Rust edition 2024) active
 - cargo clippy with `-D warnings` (strict) active
 - `pnpm check` runs full verification workflow
@@ -244,7 +246,7 @@ Emulator Manager is **fully working** on Windows (commit `a52ca2e`). AVD discove
 src-tauri/src/
 ├── lib.rs (~136 lines) — orchestrator + 71 registered commands
 ├── helpers.rs — shared utilities (binary resolution, command execution, device info)
-├── app_icons.rs — installed APK icon extraction + manifest/resource walk
+├── (no app_icons.rs — package list uses labels; icons are FE Lucide placeholders unless reintroduced)
 ├── commands/ — 10 focused modules (device, adb, fastboot, files, apps, system, payload, marketplace, emulator, debloat) — 71+ registered commands
 │   ├── mod.rs — re-exports
 │   ├── device.rs — get_devices, get_device_info, get_device_mode, get_fastboot_devices
