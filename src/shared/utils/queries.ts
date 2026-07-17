@@ -57,22 +57,27 @@ export const fetchAllDevices = async (): Promise<Device[]> => {
   const [adbDevices, fastbootDevices] = await Promise.all([GetDevices(), GetFastbootDevices()]);
 
   const merged: Device[] = [];
+  const seen = new Set<string>();
 
+  // Fastboot first, then ADB (skip serials already present).
   if (Array.isArray(fastbootDevices)) {
-    merged.push(
-      ...fastbootDevices
-        .filter((d) => !!d && typeof d.serial === 'string')
-        .map((d) => ({ serial: d.serial, status: d.status ?? 'fastboot' })),
-    );
+    for (const d of fastbootDevices) {
+      if (!d || typeof d.serial !== 'string' || seen.has(d.serial)) {
+        continue;
+      }
+      seen.add(d.serial);
+      merged.push({ serial: d.serial, status: d.status ?? 'fastboot' });
+    }
   }
 
   if (Array.isArray(adbDevices)) {
-    merged.push(
-      ...adbDevices
-        .filter((d) => !!d && typeof d.serial === 'string')
-        .filter((d) => !merged.some((m) => m.serial === d.serial))
-        .map((d) => ({ serial: d.serial, status: d.status })),
-    );
+    for (const d of adbDevices) {
+      if (!d || typeof d.serial !== 'string' || seen.has(d.serial)) {
+        continue;
+      }
+      seen.add(d.serial);
+      merged.push({ serial: d.serial, status: d.status });
+    }
   }
 
   return merged;

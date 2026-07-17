@@ -240,12 +240,13 @@ export const usePayloadDumperStore = create<PayloadDumperState>()(
         set((state) => {
           const updatedCompleted = new Set(state.completedPartitions);
           const statuses = new Map(state.partitionStatuses);
-          partitions.forEach((p) => {
+          const completedNames = new Set(partitions);
+          for (const p of partitions) {
             updatedCompleted.add(p);
             statuses.set(p, 'completed');
-          });
+          }
           const updatedPartitions = state.partitions.map((p) =>
-            partitions.includes(p.name) ? { ...p, selected: false } : p,
+            completedNames.has(p.name) ? { ...p, selected: false } : p,
           );
           return {
             completedPartitions: updatedCompleted,
