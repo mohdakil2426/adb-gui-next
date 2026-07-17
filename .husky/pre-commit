@@ -2,3 +2,4 @@
 set -e
 
 bun run lint:web
+bun run format:check

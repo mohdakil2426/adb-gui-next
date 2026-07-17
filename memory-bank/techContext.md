@@ -48,8 +48,40 @@
 | Vitest + Testing Library | Frontend tests in `src/test/` |
 | Bun 1.3.13 | Package manager (`packageManager` field) |
 | Tauri CLI 2.11.0 | Desktop packaging |
+| Husky pre-commit | `bun run lint:web` + `bun run format:check` |
 
 Do **not** document ESLint/Prettier as the active web toolchain — they were replaced by Ultracite.
+
+### Default quality / format commands
+
+| Command | Runs |
+|---------|------|
+| `bun run lint` | Ultracite (web) + Clippy (Rust, `-D warnings`) |
+| `bun run lint:web` | Ultracite check only |
+| `bun run lint:rust` | `cargo clippy --all-targets -- -D warnings` |
+| `bun run format` | Ultracite fix + `cargo fmt` |
+| `bun run format:check` | Ultracite check + rustfmt check (CI + husky) |
+| `bun run check` | lint + format:check + cargo test + vitest + build |
+| `bun run check:fast` | lint + format:check |
+
+### Rust lint bar (`src-tauri/`)
+
+| Config | Role |
+|--------|------|
+| `Cargo.toml` `[lints.rust]` | `unsafe_code = warn` (local `#![allow(unsafe_code)]` only on mmap/SIMD modules) |
+| `Cargo.toml` `[lints.clippy]` | `cargo`, `unwrap_used`, `expect_used`, pedantic cherry-picks |
+| `clippy.toml` | `allow-unwrap-in-tests`, `allow-expect-in-tests` |
+| Package metadata | license, repository, readme, keywords, categories (clippy cargo group) |
+
+Official basis: [Clippy lint categories](https://doc.rust-lang.org/clippy/lints.html), [Cargo lints](https://doc.rust-lang.org/cargo/reference/lints.html). Not enabled: full `restriction` / `nursery` / deny-all pedantic.
+
+### GitHub Actions (Win/Linux first)
+
+| Workflow | Behavior |
+|----------|----------|
+| `ci.yml` **quality** | All branches + PRs: format, lint, FE tests, cargo test, vite build (Ubuntu) |
+| `ci.yml` **package** | **Only `main` push**: Windows nsis/msi + Linux deb/rpm + upload-artifact |
+| `publish.yml` | Full preflight quality; Win/Linux always; macOS if Apple secrets present |
 
 ## Important paths
 
@@ -105,4 +137,4 @@ Do **not** document ESLint/Prettier as the active web toolchain — they were re
 
 - **Rust edition:** 2024
 - **App version:** 0.2.5
-- **Last Updated:** 2026-07-17 (audit remediation + docs refresh: Ultracite, 30s poll, liblzma, no app_icons module, Magisk live fetch, SSRF redirect policy)
+- **Last Updated:** 2026-07-18 (CI main-only packages; Rust `[lints]` + clippy.toml max bar; Ultracite; 30s poll; Magisk live fetch; SSRF redirects)

@@ -504,6 +504,8 @@ Feature-owned code lives in `src/features/<feature>/`. Cross-feature code must m
 
 ## Known Architectural Notes
 
+- **CI:** quality job on every branch/PR; Tauri installer artifacts only on `main` push (Windows + Linux). See `.github/workflows/ci.yml`.
+- **Rust quality:** `Cargo.toml` `[lints]` + `clippy.toml`; CI uses `bun run lint:rust` (`-D warnings`). Mmap modules use local `#![allow(unsafe_code)]` only.
 - `src-tauri/src/lib.rs` is a thin orchestrator over helpers + command modules (~73 registered commands). Shared process helpers (`adb_shell_checked`, `safe_image_file_name`, `sanitize_filename`) live in `helpers.rs`.
 - `src-tauri/src/marketplace/` — modular provider architecture (fdroid, github, aptoide, types) with managed state:
   - **`ManagedHttpClient`** — singleton `reqwest::Client` registered as Tauri state; all marketplace commands share one connection-pooled client via `State<ManagedHttpClient>`. Download command uses a separate client (300s timeout, no auto-redirect).

@@ -2,7 +2,9 @@
 
 ## Current State
 
-**Full-project audit remediation landed in working tree / commits (2026-07-17):** Critical/High + high-value Medium fixes from `docs/reports/active/FULL-PROJECT-AUDIT-REPORT-2026-07-17.md` and plan `docs/superpowers/plans/2026-07-17-audit-remediation.md`. Highlights: extract basename sanitize + transaction no longer wipes user dirs; remote payload SSRF redirect revalidation; debloat device-keyed cache + fail-closed SDK; shared `adb_shell_checked` for file mutations; Magisk GitHub latest with v25.2 fallback; marketplace install uses selected serial; FE multi-device/history/drop/a11y/poll fixes. Deferred (documented): OPS full stream decrypt, ZIP64 OTA `http_zip` parity, ACL split, single-instance plugin. Verification: lint web+rust ✅ · test 191/191 ✅ · build ✅ · cargo check ✅.
+**CI + Rust quality bar (2026-07-18):** GitHub Actions split into Ubuntu **quality** (all branches/PRs) vs **package** matrix (Windows+Linux, **main push only** — no artifacts on feature branches). Publish: full quality preflight; macOS optional when Apple secrets present. Rust: `src-tauri/Cargo.toml` `[lints]` + `clippy.toml` (cargo group, unwrap/expect restrictions with test allows, pedantic cherry-picks, `unsafe_code=warn` with local allows on mmap modules). Husky runs `lint:web` + `format:check`. Reports: `GITHUB-ACTIONS-PACKAGING-AUDIT-2026-07-17.md`, plan `2026-07-17-ci-packaging-remediation.md`.
+
+**Full-project audit remediation (2026-07-17):** Critical/High + high-value Medium fixes from `FULL-PROJECT-AUDIT-REPORT-2026-07-17.md`. Extract sanitize, transaction no wipe, remote SSRF redirects, debloat device-keyed cache + fail-closed SDK, `adb_shell_checked`, Magisk live fetch, marketplace serial install, FE multi-device/history/drop/a11y. Deferred: OPS stream decrypt, ZIP64 http_zip, ACL split, single-instance.
 
 **Payload dumper plan Waves 0–4 complete (2026-07-17):** Architecture restructure (`crau/ remote/ io/ verify/ zip/ source/ delta/ types/ tests/`) + correctness (L3/L4, multi-extent) + remote load UX (`payload:load-progress`, `downloadSize`) + remote perf (session cache, span prefetch, STORED mmap, buffer pools, liblzma, release-fast, OPS cancel) + polish (FE partition status enum, Rust `ExtractPayloadResult.stats` with durationMs/totalBytes/throughputMbps). **Task 4.3 delta real work SKIPPED.** **Task 4.4 notification + single-instance plugins DEFERRED** (UX only; Sonner covers in-app). Agent cargo targets gitignored via root `target/` / `target-*/` and `src-tauri/target*/`. Plan: `docs/superpowers/plans/2026-07-17-payload-dumper-architecture-and-upgrades.md`.
 
@@ -33,6 +35,14 @@ Emulator Manager is implemented and **fully working** on Windows. Root pipeline 
 ---
 
 ## Recently Completed
+
+### 2026-07-18 - CI packaging redesign + Rust max lint bar
+
+**Change:**
+- `ci.yml`: quality job (Ubuntu) always; package+upload only `main` push.
+- `publish.yml`: Win/Linux always; macOS if secrets; preflight = full lint/test.
+- Rust `[lints]` + `clippy.toml`; clippy clean under `-D warnings`.
+- Docs: GHA packaging audit report + remediation plan.
 
 ### 2026-07-17 - Full project audit + remediation
 
