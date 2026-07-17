@@ -595,7 +595,7 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 - [x] Confirm **no plan-execution commits** made by agents.  
 - [x] Verify (this wave): isolated `cargo check` ✅ · `cargo test --lib --no-run` (see session notes). Full FE gate not re-run (FE models already had `stats?`; Rust-only IPC fill).  
 
-**Wave 4 close-out (2026-07-17, uncommitted):** 4.1 FE partition status ✅ · 4.2 Rust `ExtractPayloadResult.stats` ✅ · 4.3 SKIP · 4.4 deferred · 4.5 docs ✅. Agent build dirs use `CARGO_TARGET_DIR=target/agent-*` (covered by root `target/` / `target-*/` gitignore). **No plan-execution commits.**
+**Wave 4 close-out (2026-07-17):** 4.1 FE partition status ✅ · 4.2 Rust `ExtractPayloadResult.stats` ✅ · 4.3 SKIP · 4.4 deferred · 4.5 docs ✅. Agent build dirs use `CARGO_TARGET_DIR=target/agent-*` (covered by root `target/` / `target-*/` gitignore). Landed as multi-commit series on `main`.
 
 ---
 
