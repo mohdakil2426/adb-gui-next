@@ -109,7 +109,7 @@ pub fn extract_payload(
             let partition_name = partition.partition_name.clone();
             let app = app_handle.clone();
 
-            let file_name = format!("{}.img", partition_name);
+            let file_name = crate::helpers::safe_image_file_name(&partition_name);
             let image_path = output_dir.join(&file_name);
             guard.add_file(image_path.clone());
 
@@ -137,25 +137,18 @@ pub fn extract_payload(
             writer.flush()?;
 
             // Layer 4: full output file SHA-256 vs new_partition_info.hash when enabled.
-            if verify_mode.layer4_enabled() {
-                if let Some(info) = partition.new_partition_info.as_ref() {
-                    if let Some(ref expected) = info.hash {
-                        if !expected.is_empty() {
-                            let ok = crate::payload::verify::verify_sha256(&image_path, expected)
-                                .map_err(|e| {
-                                    anyhow::anyhow!(
-                                        "failed to hash output for {}: {e}",
-                                        partition_name
-                                    )
-                                })?;
-                            if !ok {
-                                anyhow::bail!(
-                                    "partition {} output file SHA-256 mismatch",
-                                    partition_name
-                                );
-                            }
-                        }
-                    }
+            if verify_mode.layer4_enabled()
+                && let Some(info) = partition.new_partition_info.as_ref()
+                && let Some(ref expected) = info.hash
+                && !expected.is_empty()
+            {
+                let ok = crate::payload::verify::verify_sha256(&image_path, expected).map_err(
+                    |e| {
+                        anyhow::anyhow!("failed to hash output for {}: {e}", partition_name)
+                    },
+                )?;
+                if !ok {
+                    anyhow::bail!("partition {} output file SHA-256 mismatch", partition_name);
                 }
             }
 

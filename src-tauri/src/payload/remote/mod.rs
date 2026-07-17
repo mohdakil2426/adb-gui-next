@@ -668,7 +668,7 @@ pub async fn extract_remote_prefetch(
             let partition_name = partition.partition_name.clone();
             let app = app_handle.clone();
 
-            let file_name = format!("{}.img", partition_name);
+            let file_name = crate::helpers::safe_image_file_name(&partition_name);
             let image_path = output_dir.join(&file_name);
 
             let partition_size =
@@ -832,7 +832,7 @@ pub async fn extract_remote_direct(
             let partition_name = partition.partition_name.clone();
             let app = app_handle.clone();
 
-            let file_name = format!("{}.img", partition_name);
+            let file_name = crate::helpers::safe_image_file_name(&partition_name);
             let image_path = output_dir.join(&file_name);
 
             let partition_size =

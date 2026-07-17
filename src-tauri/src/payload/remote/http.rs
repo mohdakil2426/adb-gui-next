@@ -9,7 +9,7 @@
 //! - In-flight async requests are aborted via `tokio::select!` when cancelled.
 
 use anyhow::{Result, anyhow};
-use reqwest::Client;
+use reqwest::{Client, redirect::Policy};
 use std::net::{IpAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -50,6 +50,10 @@ pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
                 || octets[0] == 0 && octets[1] == 0 && octets[2] == 0 && octets[3] == 0
         }
         IpAddr::V6(ipv6) => {
+            // IPv4-mapped IPv6 (::ffff:x.x.x.x) must use the same v4 private rules.
+            if let Some(v4) = ipv6.to_ipv4_mapped() {
+                return is_blocked_ip(IpAddr::V4(v4));
+            }
             let segs = ipv6.segments();
             (segs[0] == 0
                 && segs[1] == 0
@@ -65,6 +69,8 @@ pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
         }
     }
 }
+
+const MAX_HTTP_REDIRECTS: usize = 5;
 
 /// Check if a URL points to a private/internal IP address.
 /// Returns true if the URL should be blocked to prevent SSRF attacks.
@@ -121,6 +127,38 @@ pub fn resolve_redirect_url(base: &url::Url, location: &str) -> Result<url::Url>
     base.join(location).map_err(|e| anyhow!("Invalid redirect URL: {}", e))
 }
 
+async fn head_with_validated_redirects(
+    client: &Client,
+    initial: url::Url,
+) -> Result<(url::Url, reqwest::Response)> {
+    let mut current = initial;
+    for _ in 0..=MAX_HTTP_REDIRECTS {
+        validate_outbound_url(&current, false)?;
+        let response = client
+            .head(current.as_str())
+            .send()
+            .await
+            .map_err(|e| anyhow!("HEAD request failed: {}", e))?;
+
+        if response.status().is_redirection() {
+            let location = response
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|v| v.to_str().ok())
+                .ok_or_else(|| anyhow!("Redirect missing Location header"))?;
+            current = resolve_redirect_url(&current, location)?;
+            continue;
+        }
+
+        if response.status().is_success() {
+            return Ok((current, response));
+        }
+
+        return Err(anyhow!("Server returned status {}", response.status()));
+    }
+    Err(anyhow!("Too many redirects (max {MAX_HTTP_REDIRECTS})"))
+}
+
 /// Wait until cancel is set (async poll). Used to abort in-flight reqwest futures.
 async fn wait_until_cancelled(token: &CancellationToken) {
     loop {
@@ -172,22 +210,15 @@ impl HttpPayloadReader {
 
         validate_outbound_url(&url, false)?;
 
+        // Never auto-follow redirects: each hop must pass SSRF validation.
         let client = Client::builder()
+            .redirect(Policy::none())
             .timeout(Duration::from_secs(600))
             .connect_timeout(Duration::from_secs(30))
             .build()
             .map_err(|e| anyhow!("Failed to create HTTP client: {}", e))?;
 
-        // HEAD request to check range support and get content length
-        let response = client
-            .head(&url_str)
-            .send()
-            .await
-            .map_err(|e| anyhow!("HEAD request failed: {}", e))?;
-
-        if !response.status().is_success() {
-            return Err(anyhow!("Server returned status {}", response.status()));
-        }
+        let (final_url, response) = head_with_validated_redirects(&client, url).await?;
 
         let supports_ranges = response
             .headers()
@@ -218,7 +249,7 @@ impl HttpPayloadReader {
 
         Ok(Self {
             client,
-            url: url_str,
+            url: final_url.to_string(),
             content_length,
             supports_ranges: true,
             content_type,
@@ -261,6 +292,7 @@ impl HttpPayloadReader {
             return Ok(client.clone());
         }
         let client = reqwest::blocking::Client::builder()
+            .redirect(Policy::none())
             .timeout(RANGE_REQUEST_TIMEOUT)
             .connect_timeout(Duration::from_secs(30))
             .build()
@@ -521,6 +553,7 @@ impl HttpPayloadReader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::{Ipv4Addr, Ipv6Addr};
 
     #[test]
     fn no_range_error_has_structured_code() {
@@ -528,5 +561,28 @@ mod tests {
         let msg = err.to_string();
         assert!(msg.starts_with(ERR_NO_RANGE), "msg={msg}");
         assert!(msg.contains("Accept-Ranges"));
+    }
+
+    #[test]
+    fn blocks_private_and_loopback_ipv4() {
+        assert!(is_blocked_ip(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))));
+        assert!(is_blocked_ip(IpAddr::V4(Ipv4Addr::new(10, 0, 0, 1))));
+        assert!(is_blocked_ip(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1))));
+        assert!(is_blocked_ip(IpAddr::V4(Ipv4Addr::new(169, 254, 169, 254))));
+        assert!(!is_blocked_ip(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8))));
+    }
+
+    #[test]
+    fn blocks_ipv4_mapped_loopback() {
+        let mapped = Ipv6Addr::new(0, 0, 0, 0, 0, 0xffff, 0x7f00, 1); // ::ffff:127.0.0.1
+        assert!(is_blocked_ip(IpAddr::V6(mapped)));
+    }
+
+    #[test]
+    fn private_url_blocks_localhost_host() {
+        let url = url::Url::parse("http://localhost/payload.bin").unwrap();
+        assert!(is_private_url(&url));
+        let public = url::Url::parse("https://example.com/payload.bin").unwrap();
+        assert!(!is_private_url(&public));
     }
 }

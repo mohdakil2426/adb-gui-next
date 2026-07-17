@@ -429,9 +429,8 @@ fn default_output_dir(path: &Path) -> PathBuf {
 }
 
 fn sanitize_output_name(name: &str) -> String {
-    let cleaned = name.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
-    // If name doesn't have an extension, add .img
-    if !cleaned.contains('.') { format!("{cleaned}.img") } else { cleaned }
+    // Always produce a single safe path component (never `..` or separators).
+    crate::helpers::safe_image_file_name(name)
 }
 
 /// Check if a path should be handled by the OPS/OFP pipeline.

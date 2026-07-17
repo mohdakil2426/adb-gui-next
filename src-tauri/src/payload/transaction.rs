@@ -5,12 +5,15 @@
 //! On success, `commit()` marks the transaction as complete (no-op on drop).
 //!
 //! If the guard is dropped without being committed (e.g., due to a panic or
-//! early return), all registered files and the output directory are automatically
-//! cleaned up.
+//! early return), all registered extract files are automatically cleaned up.
+//! The parent output directory itself is never deleted (user-chosen folders
+//! may contain unrelated data).
 
 use std::path::PathBuf;
 
 pub struct TransactionGuard {
+    /// Output directory (kept for context/logging; never wiped wholesale).
+    #[allow(dead_code)]
     dir: PathBuf,
     files: std::sync::Mutex<Vec<PathBuf>>,
     committed: std::sync::Mutex<bool>,
@@ -41,10 +44,11 @@ impl TransactionGuard {
             });
             std::mem::take(&mut *files)
         };
+        // Only delete registered extract artifacts — never wipe the entire
+        // user-chosen output directory (may contain unrelated files).
         for file in files {
             let _ = std::fs::remove_file(&file);
         }
-        let _ = std::fs::remove_dir_all(&self.dir);
     }
 
     pub fn commit(&self) {
@@ -70,10 +74,10 @@ impl Drop for TransactionGuard {
                 });
                 std::mem::take(&mut *files)
             };
+            // Only registered files — never remove_dir_all on user output dirs.
             for file in files {
                 let _ = std::fs::remove_file(&file);
             }
-            let _ = std::fs::remove_dir_all(&self.dir);
         }
     }
 }

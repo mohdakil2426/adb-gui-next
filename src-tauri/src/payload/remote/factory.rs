@@ -541,8 +541,7 @@ fn dedupe_partition_names(entries: &mut [FactoryImageEntry]) {
 }
 
 fn safe_image_file_name(partition_name: &str) -> String {
-    let file_name = format!("{partition_name}.img");
-    crate::helpers::sanitize_filename(&file_name)
+    crate::helpers::safe_image_file_name(partition_name)
 }
 
 /// Extract one factory `.img` using async HTTP ranges.

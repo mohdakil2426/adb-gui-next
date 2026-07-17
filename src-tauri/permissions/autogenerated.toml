@@ -51,7 +51,6 @@ commands.allow = [
   "get_ops_metadata",
   "marketplace_search",
   "marketplace_get_app_detail",
-  "marketplace_get_trending",
   "marketplace_list_versions",
   "marketplace_clear_cache",
   "marketplace_github_device_start",

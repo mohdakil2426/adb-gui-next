@@ -54,11 +54,8 @@ fn run_shell_for_mode(
     access_mode: FileAccessMode,
     cmd: &str,
 ) -> CmdResult<String> {
-    if access_mode == FileAccessMode::Root {
-        run_adb_for_serial(app, serial, &["shell", "su", "-c", cmd])
-    } else {
-        run_adb_for_serial(app, serial, &["shell", cmd])
-    }
+    // Critical mutations must verify the remote shell exit code, not only adb host status.
+    crate::helpers::adb_shell_checked(app, serial, access_mode == FileAccessMode::Root, cmd)
 }
 
 #[tauri::command]
@@ -99,12 +96,30 @@ pub async fn list_files(
             run_adb_for_serial(&app, serial.as_deref(), &["shell", "ls", "-lA", &quoted])?
         };
 
-        // adb shell exits with 0 even when the shell command fails.
-        if output.to_lowercase().contains("permission denied") {
+        // adb shell exits with 0 even when the shell command fails — detect common errors.
+        let lower = output.to_lowercase();
+        if lower.contains("permission denied") {
             return Err(format!("Permission denied: cannot access '{path}'"));
+        }
+        if lower.contains("no such file")
+            || lower.contains("not a directory")
+            || lower.contains("not found")
+            || lower.contains("no such device")
+        {
+            return Err(format!("Cannot list '{path}': {output}"));
         }
 
         let entries = parse_file_entries(&output);
+        // Non-empty error-like single line that did not parse as any listing entry.
+        if entries.is_empty()
+            && !output.trim().is_empty()
+            && !output.lines().any(|line| line.split_whitespace().count() >= 8)
+        {
+            let trimmed = output.trim();
+            if trimmed.contains(':') || trimmed.to_lowercase().contains("error") {
+                return Err(format!("Cannot list '{path}': {trimmed}"));
+            }
+        }
         debug!("Found {} entries at {}", entries.len(), path);
         Ok(entries)
     })

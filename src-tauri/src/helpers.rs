@@ -31,7 +31,85 @@ pub fn sanitize_filename(name: &str) -> String {
         sanitized = sanitized.replace("..", ".");
     }
 
+    // Collapse residual lone-dot basenames that cannot be used as files.
+    while sanitized.starts_with('.') {
+        sanitized = sanitized.trim_start_matches('.').to_string();
+    }
+
     sanitized
+}
+
+/// Safe output basename for firmware images under a user-chosen directory.
+/// Always returns a single path component ending in `.img` (never empty, `.`, or `..`).
+pub fn safe_image_file_name(partition_name: &str) -> String {
+    let mut base = sanitize_filename(partition_name.trim());
+    if base.is_empty() {
+        base = "partition".to_string();
+    }
+    // Strip a trailing .img before re-appending so we never get `.img.img` from
+    // already-suffixed names after sanitize, but allow names like `system.img`.
+    if let Some(stripped) = base.strip_suffix(".img") {
+        if stripped.is_empty() {
+            base = "partition".to_string();
+        } else {
+            base = stripped.to_string();
+        }
+    }
+    format!("{base}.img")
+}
+
+const SHELL_EXIT_MARKER: &str = "__ADB_GUI_EXIT_STATUS__:";
+
+/// Run `adb shell` (or `su -c`) with strict exit-code checking via an echoed marker.
+/// Use for critical device mutations where ADB host success is not enough.
+pub fn adb_shell_checked(
+    app: &AppHandle,
+    serial: Option<&str>,
+    access_root: bool,
+    cmd: &str,
+) -> CmdResult<String> {
+    let wrapped = format!("{cmd}; echo {SHELL_EXIT_MARKER}$?");
+    let mut owned: Vec<String> = Vec::new();
+    if let Some(serial) = serial.map(str::trim).filter(|value| !value.is_empty()) {
+        owned.push("-s".to_string());
+        owned.push(serial.to_string());
+    }
+    owned.push("shell".to_string());
+    if access_root {
+        owned.push("su".to_string());
+        owned.push("-c".to_string());
+        owned.push(wrapped);
+    } else {
+        owned.push(wrapped);
+    }
+    let arg_refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+    let output = run_binary_command(app, "adb", &arg_refs)?;
+
+    let code = parse_shell_exit_code(&output, SHELL_EXIT_MARKER).ok_or_else(|| {
+        format!(
+            "Missing ADB shell exit marker. The shell command may have aborted:\n  cmd: {cmd}\n  output: {output}"
+        )
+    })?;
+
+    if code != 0 {
+        return Err(format!(
+            "ADB shell command failed (exit {code}):\n  cmd: {cmd}\n  output: {output}"
+        ));
+    }
+    Ok(output)
+}
+
+fn parse_shell_exit_code(output: &str, marker: &str) -> Option<i32> {
+    for line in output.lines().rev() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix(marker) {
+            return rest.trim().parse().ok();
+        }
+        if let Some(idx) = trimmed.rfind(marker) {
+            return trimmed[idx + marker.len()..].trim().parse().ok();
+        }
+    }
+    None
 }
 
 pub fn validate_path_components(path: &str) -> Result<(), String> {
@@ -391,5 +469,31 @@ mod tests {
     fn validate_safe_device_path_allows_trailing_slash() {
         assert!(validate_safe_device_path("/sdcard/").is_ok());
         assert!(validate_safe_device_path("/data/").is_ok());
+    }
+
+    #[test]
+    fn sanitize_filename_strips_traversal_and_separators() {
+        assert_eq!(sanitize_filename("../../evil"), "evil");
+        assert_eq!(sanitize_filename("foo/bar"), "foobar");
+        assert_eq!(sanitize_filename(".."), "");
+        assert_eq!(sanitize_filename("system.img"), "system.img");
+    }
+
+    #[test]
+    fn safe_image_file_name_never_escapes_directory() {
+        assert_eq!(safe_image_file_name("../../evil"), "evil.img");
+        assert_eq!(safe_image_file_name(".."), "partition.img");
+        assert_eq!(safe_image_file_name(""), "partition.img");
+        assert_eq!(safe_image_file_name("system"), "system.img");
+        assert_eq!(safe_image_file_name("system.img"), "system.img");
+    }
+
+    #[test]
+    fn parse_shell_exit_code_reads_marker() {
+        let out = "ok\n__ADB_GUI_EXIT_STATUS__:0\n";
+        assert_eq!(parse_shell_exit_code(out, SHELL_EXIT_MARKER), Some(0));
+        let fail = "err\n__ADB_GUI_EXIT_STATUS__:1";
+        assert_eq!(parse_shell_exit_code(fail, SHELL_EXIT_MARKER), Some(1));
+        assert_eq!(parse_shell_exit_code("no marker", SHELL_EXIT_MARKER), None);
     }
 }

@@ -53,21 +53,33 @@ pub async fn extract_payload(
         Some(dir.canonicalize().map_err(|e| format!("Cannot resolve output dir: {e}"))?)
     };
 
-    // Resolve cancellation token if provided
-    let parsed_token_id = cancel_token_id.as_ref().and_then(|id| id.parse::<usize>().ok());
-    let cancel_token = parsed_token_id.and_then(|id| {
-        let registry = TOKEN_REGISTRY.lock().ok()?;
-        registry.get(&id).cloned()
-    });
+    // Resolve cancellation token if provided. A non-None ID must parse and exist.
+    let (parsed_token_id, cancel_token) = if let Some(id) = cancel_token_id.as_ref() {
+        let parsed = id
+            .parse::<usize>()
+            .map_err(|_| "Invalid or unknown cancellation token".to_string())?;
+        let registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
+            log::error!("Lock poisoned, recovering: {}", e);
+            e.into_inner()
+        });
+        let token = registry
+            .get(&parsed)
+            .cloned()
+            .ok_or_else(|| "Invalid or unknown cancellation token".to_string())?;
+        (Some(parsed), Some(token))
+    } else {
+        (None, None)
+    };
 
     // Always drop registry entry when the command finishes (success, error, or cancel).
     struct TokenGuard(Option<usize>);
     impl Drop for TokenGuard {
         fn drop(&mut self) {
-            if let Some(id) = self.0.take() {
-                if let Ok(mut registry) = TOKEN_REGISTRY.lock() {
-                    registry.remove(&id);
-                }
+            let Some(id) = self.0.take() else {
+                return;
+            };
+            if let Ok(mut registry) = TOKEN_REGISTRY.lock() {
+                registry.remove(&id);
             }
         }
     }
@@ -353,16 +365,43 @@ pub async fn extract_delta_payload(
         None
     } else {
         let dir = PathBuf::from(output_dir.trim());
+        // Ensure the output directory exists, then canonicalize to prevent
+        // path traversal (e.g., writing outside the intended directory).
         std::fs::create_dir_all(&dir).map_err(|e| format!("Failed to create output dir: {e}"))?;
-        Some(dir)
+        Some(dir.canonicalize().map_err(|e| format!("Cannot resolve output dir: {e}"))?)
     };
 
-    // Resolve cancellation token if provided
-    let cancel_token = cancel_token_id.and_then(|id| {
-        let id: usize = id.parse().ok()?;
-        let registry = TOKEN_REGISTRY.lock().ok()?;
-        registry.get(&id).cloned()
-    });
+    // Resolve cancellation token if provided. A non-None ID must parse and exist.
+    let (parsed_token_id, cancel_token) = if let Some(id) = cancel_token_id.as_ref() {
+        let parsed = id
+            .parse::<usize>()
+            .map_err(|_| "Invalid or unknown cancellation token".to_string())?;
+        let registry = TOKEN_REGISTRY.lock().unwrap_or_else(|e| {
+            log::error!("Lock poisoned, recovering: {}", e);
+            e.into_inner()
+        });
+        let token = registry
+            .get(&parsed)
+            .cloned()
+            .ok_or_else(|| "Invalid or unknown cancellation token".to_string())?;
+        (Some(parsed), Some(token))
+    } else {
+        (None, None)
+    };
+
+    // Always drop registry entry when the command finishes (success, error, or cancel).
+    struct TokenGuard(Option<usize>);
+    impl Drop for TokenGuard {
+        fn drop(&mut self) {
+            let Some(id) = self.0.take() else {
+                return;
+            };
+            if let Ok(mut registry) = TOKEN_REGISTRY.lock() {
+                registry.remove(&id);
+            }
+        }
+    }
+    let _token_guard = TokenGuard(parsed_token_id);
 
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
