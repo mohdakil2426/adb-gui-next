@@ -58,6 +58,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 - **Feature code** under `src/features/<feature>/`. **shadcn** under `src/shared/ui/`. **Theme tokens** in `src/styles/global.css` (no hard-coded colors in components).
 - **IPC DTOs** live in `src/desktop/models.ts` and match Rust `camelCase` serde.
 - **New production deps** only with clear user-visible payoff; prefer existing stack.
+- **React Doctor:** target **100/100**. FE correctness rules live in `src/AGENTS.md` (pure updaters, effect cleanup, LazyMotion, no height anim, no dead unused UI / suppressions). Multi-APK install stays **serial**.
 
 Keep this list short. Implementation detail stays in module guides.
 

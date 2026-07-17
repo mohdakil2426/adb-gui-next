@@ -120,8 +120,25 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 - Semantic tokens from `global.css` — no raw hex/rgb in components.
 - `gap-*` not `space-x-*` / `space-y-*`; `size-*` when width === height.
 - Icon buttons: `aria-label`. Rows: keyboard accessible or real `<button>`.
-- Virtualized cmdk: `<Command shouldFilter={false}>`. Never `CommandInput` outside `<Command>`.
+- Every non-submit `<button>` needs `type="button"`. Prefer semantic `<main>` over `role="main"`.
 - Errors: `try/catch` + `handleError` / toast + logs (`shared/utils/errorHandler.ts`).
+
+## React correctness (keep doctor green)
+
+Baseline after 2026-07-18 pass: **100/100** (`npx react-doctor@latest .`). Do **not** reintroduce:
+
+| Avoid | Correct |
+| --- | --- |
+| Side effects inside `setState(prev => …)` (other setters, ref writes, flags) | Pure updater; effects in handler / `useEffect` |
+| Timers without cleanup | `return () => clearTimeout/clearInterval` |
+| Animate CSS `height` | transform / opacity / `grid-rows-[0fr]`↔`[1fr]` |
+| Full `import { motion }` under shell | `LazyMotion` once in `MainLayout`; leaves use `m` |
+| Index keys on dynamic lists | Stable ids (shell history: `id` when pushing) |
+| Dead unused `shared/ui/*` / unused exports | Delete or wire a real call site — never eslint-disable / fake import |
+| Parallel multi-APK on one serial | Serial only (`InstallationTab` mapSerial pattern) |
+| `useEffect(() => setMounted(true), [])` for theme/UI flash | `useSyncExternalStore` or lazy `useState` init |
+
+Dead kit removed (do not re-add without product need): `avatar`, `command` (+ `cmdk`), `radio-group`, `slider`, `toggle` (keep `toggle-group` + `toggle-variants`).
 
 ## Feature invariants (verified)
 
@@ -147,6 +164,7 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 | --- | --- |
 | Docs only under `src/` | `git diff --check` |
 | Frontend code | `bun run lint:web`, `bun run test`, `bun run build` |
+| FE quality / doctor-sensitive | Also `npx react-doctor@latest .` when touching state/effects/motion/lists/unused ui |
 | IPC contract | Also update `src-tauri` handler + permissions + desktop models |
 
 Full gate (`bun run check`) only after **all** tasks for the request finish — see `docs/project_rules.md`.

@@ -58,6 +58,23 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 
 - View is thin: `FileExplorerView` + `useFileExplorerViewModel` + `model/fileExplorerReducers`.
 - Stable `loadFiles` (refs; avoid historyIndex dep loops).
+- Selection/sort: **pure** `setState` updaters only (no nested setters / ref writes inside updaters).
+
+### React quality (doctor 100 — keep green)
+
+| Rule | Pattern |
+| --- | --- |
+| Updaters | Pure: return next state only |
+| Effects | Timers/listeners always cleaned up |
+| Motion | One `LazyMotion` in shell; leaf `m.*` (not full `motion`) |
+| Anim | No animating layout `height`; prefer transform/opacity/grid 0fr→1fr |
+| a11y | `type="button"`; semantic `<main>` |
+| Lists | Stable keys / ids at write site (shell history) |
+| Dead UI | Unused `shared/ui` → delete or real use; no suppressions |
+| Multi-APK | Serial install/uninstall on one device (`mapSerial` / then-chain) |
+| Theme first paint | Prefer `useSyncExternalStore` / lazy init — avoid `useEffect(() => setState(), [])` flash |
+
+Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes that touch these areas.
 - Mutations re-list with `loadFiles(path, false)`.
 - Snapshot serial before host dialogs; clear root grant on serial change.
 

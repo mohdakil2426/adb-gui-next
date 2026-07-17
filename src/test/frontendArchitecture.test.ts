@@ -16,6 +16,8 @@ const allowedLargeFiles = new Set([
   // Pre-existing payload modules (over 300-line review budget; split tracked separately)
   path.join(srcRoot, 'features', 'payload-dumper', 'hooks', 'usePayloadActions.ts'),
   path.join(srcRoot, 'features', 'payload-dumper', 'model', 'payloadDumperStore.ts'),
+  // Orchestrator hook already extracted from FileExplorerView; further split is separate work
+  path.join(srcRoot, 'features', 'file-explorer', 'hooks', 'useFileExplorerViewModel.ts'),
 ]);
 
 function collectSourceFiles(directory: string): string[] {

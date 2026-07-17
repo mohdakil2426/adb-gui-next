@@ -12,7 +12,7 @@ Fully functional Tauri 2 desktop app on `main` (v**0.2.5**). Core features shipp
 | Pre-commit | Husky → lint-staged (Ultracite + rustfmt staged only) |
 | CI quality | All branches/PRs (Ubuntu) |
 | CI package | **main push only** — Windows + Linux |
-| React Doctor | **61/100** after top-3 pass; **remaining backlog deferred** (see activeContext + audit report) |
+| React Doctor | **100/100**, 0 issues (2026-07-18 plan). Gate: `npx react-doctor@latest .` |
 
 ## Major capabilities (done)
 
@@ -21,19 +21,21 @@ Fully functional Tauri 2 desktop app on `main` (v**0.2.5**). Core features shipp
 - Payload streaming/mmap, cancel, remote progress, factory ZIP remote
 - Debloat SDK-aware + device-keyed cache; marketplace serial install
 - Emulator root: preflight, autopilot + FAKEBOOTIMG, `su -c id -u == 0` verify
-- Bottom panel: split into `PanelHeader` / `PanelHeaderActions` / resize hook (doctor top-3)
-- File Explorer: thin view + `useFileExplorerViewModel` (doctor top-3)
+- Bottom panel: `PanelHeader` / `PanelHeaderActions` / resize + stable shell history ids
+- File Explorer: thin view + `useFileExplorerViewModel`
+- React Doctor hygiene: pure updaters, effect cleanups, LazyMotion, dead shadcn removed (`avatar`/`command`/`radio-group`/`slider`/`toggle` + `cmdk`)
 
 ## Known issues / gaps
 
 | Item | Note |
 | --- | --- |
-| **React Doctor rest** | **Work later** — errors (impure updaters, FileBanner layout anim, marketplace timer cleanup) + warnings; report under `docs/internal/reports/active/2026-07-18/` |
+| Doctor commit | Working tree may still hold uncommitted doctor fixes — user decides when to commit |
 | Windows `cargo test` | Possible Tauri loader `STATUS_ENTRYPOINT_NOT_FOUND` |
 | Debloat multi-device | Some Rust paths may still use default adb serial |
 | Deferred product audit | OPS stream decrypt, ZIP64 http_zip, ACL split, single-instance |
 | Delta OTA | Limited vs full CrAU extract |
 | Active view | Not URL-persisted |
+| FE view-model size | `useFileExplorerViewModel` large; arch test allowlisted — split later if desired |
 
 ## Changelog policy
 
