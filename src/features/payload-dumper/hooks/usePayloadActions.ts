@@ -72,9 +72,15 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const setExtractingPartitions = usePayloadDumperStore((state) => state.setExtractingPartitions);
   const addCompletedPartitions = usePayloadDumperStore((state) => state.addCompletedPartitions);
   const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
+  const clearTransientPartitionStatuses = usePayloadDumperStore(
+    (state) => state.clearTransientPartitionStatuses,
+  );
+  const failActivePartitions = usePayloadDumperStore((state) => state.failActivePartitions);
   const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
   const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
   const setCancelTokenId = usePayloadDumperStore((state) => state.setCancelTokenId);
+  const beginLoadProgress = usePayloadDumperStore((state) => state.beginLoadProgress);
+  const clearLoadProgress = usePayloadDumperStore((state) => state.clearLoadProgress);
   const reset = usePayloadDumperStore((state) => state.reset);
   const cancelLoadingRef = useRef(false);
   const checkUrlRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -118,6 +124,8 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     await runLoadRemotePartitions(
       remoteUrl,
       {
+        beginLoadProgress,
+        clearLoadProgress,
         setErrorMessage,
         setPartitions,
         setPayloadPath,
@@ -129,12 +137,23 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
         cancelLoadingRef.current = false;
       },
     );
-  }, [remoteUrl, setPartitions, setPayloadPath, setStatus, setErrorMessage, setRemoteMetadata]);
+  }, [
+    remoteUrl,
+    setPartitions,
+    setPayloadPath,
+    setStatus,
+    setErrorMessage,
+    setRemoteMetadata,
+    beginLoadProgress,
+    clearLoadProgress,
+  ]);
   const handleCancelLoadPartitions = useCallback(() => {
     cancelLoadingRef.current = true;
     setStatus('idle');
+    clearLoadProgress();
+    toast.info('Stopped loading partitions.');
     useLogStore.getState().addLog('Cancelling partition loading...', 'info');
-  }, [setStatus]);
+  }, [setStatus, clearLoadProgress]);
   const handlePayloadDrop = useCallback(
     async (paths: string[]) => {
       if (status === 'extracting' || status === 'loading-partitions') {
@@ -214,7 +233,9 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     await runExtractPayload({
       addCompletedPartitions,
       clearPartitionProgress,
+      clearTransientPartitionStatuses,
       completedPartitions,
+      failActivePartitions,
       mode,
       outputDir,
       outputPath,
@@ -245,6 +266,8 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     setExtractionStats,
     addCompletedPartitions,
     clearPartitionProgress,
+    clearTransientPartitionStatuses,
+    failActivePartitions,
     setCancelTokenId,
   ]);
   const handleReset = useCallback(() => {

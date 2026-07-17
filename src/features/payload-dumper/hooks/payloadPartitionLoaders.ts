@@ -14,6 +14,8 @@ import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
 import { formatBytesNum } from '@/shared/utils/formatting';
 
 interface LoaderStoreActions {
+  beginLoadProgress?: () => void;
+  clearLoadProgress?: () => void;
   setErrorMessage: (message: string) => void;
   setPartitions: (partitions: Array<{ name: string; selected: boolean; size: number }>) => void;
   setPayloadPath: (path: string) => void;
@@ -96,6 +98,7 @@ export async function loadRemotePartitions(
   }
   actions.setStatus('loading-partitions');
   actions.setErrorMessage('');
+  actions.beginLoadProgress?.();
   useLogStore.getState().addLog('Loading partitions from remote URL...', 'info');
 
   try {
@@ -104,6 +107,7 @@ export async function loadRemotePartitions(
     if (isCancelled()) {
       useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
       actions.setStatus('idle');
+      actions.clearLoadProgress?.();
       return;
     }
     if (partitionList && partitionList.length > 0) {
@@ -123,6 +127,7 @@ export async function loadRemotePartitions(
       const selectedCount = partitions.filter((p) => p.selected).length;
       actions.setPartitions(partitions);
       actions.setStatus('ready');
+      actions.clearLoadProgress?.();
       if (autoSelectAll) {
         toast.success(`Found ${partitionList.length} partitions`);
       } else {
@@ -145,14 +150,17 @@ export async function loadRemotePartitions(
     }
     actions.setErrorMessage('No partitions found in remote payload');
     actions.setStatus('error');
+    actions.clearLoadProgress?.();
     useLogStore.getState().addLog('No partitions found in remote payload', 'error');
   } catch (error) {
     if (isCancelled()) {
       useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
+      actions.clearLoadProgress?.();
       return;
     }
     actions.setErrorMessage(String(error));
     actions.setStatus('error');
+    actions.clearLoadProgress?.();
     handleError('Load Remote Partitions', error);
   } finally {
     clearCancelled();

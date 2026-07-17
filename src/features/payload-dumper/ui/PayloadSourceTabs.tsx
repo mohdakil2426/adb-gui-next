@@ -1,8 +1,10 @@
-import { FileArchive, Globe, XCircle } from 'lucide-react';
+import { FileArchive, Globe } from 'lucide-react';
+import type { backend } from '@/desktop/models';
 import { DropZone } from '@/shared/components/DropZone';
 import { type ConnectionStatus, RemoteUrlPanel } from '@/shared/components/RemoteUrlPanel';
 import { Button } from '@/shared/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+import { RemoteLoadProgressCard } from './RemoteLoadProgressCard';
 
 const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'];
 
@@ -11,6 +13,12 @@ interface PayloadSourceTabsProps {
   disabled: boolean;
   estimatedSize: string | null;
   isLoadingPartitions: boolean;
+  loadDetail?: string | null;
+  loadMessage?: string;
+  loadPhase?: backend.PayloadLoadPhase | null;
+  loadStartedAt?: number | null;
+  loadStep?: number;
+  loadTotalSteps?: number;
   mode: 'local' | 'remote';
   onCancelLoadPartitions: () => void;
   onCheckUrl: () => void;
@@ -44,7 +52,15 @@ export function PayloadSourceTabs({
   onLoadRemotePartitions,
   onCancelLoadPartitions,
   disabled,
+  loadPhase = null,
+  loadMessage = '',
+  loadDetail = null,
+  loadStep = 0,
+  loadTotalSteps = 4,
+  loadStartedAt = null,
 }: PayloadSourceTabsProps) {
+  const showLoadCard = isLoadingPartitions && mode === 'remote';
+
   return (
     <Tabs
       className="w-full"
@@ -54,7 +70,7 @@ export function PayloadSourceTabs({
       value={mode}
     >
       <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger className="flex items-center gap-2" value="local">
+        <TabsTrigger className="flex items-center gap-2" disabled={showLoadCard} value="local">
           <FileArchive className="size-4" />
           Local File
         </TabsTrigger>
@@ -81,7 +97,7 @@ export function PayloadSourceTabs({
       <TabsContent className="mt-4 min-w-0 overflow-hidden" value="remote">
         <RemoteUrlPanel
           connectionStatus={connectionStatus}
-          disabled={disabled}
+          disabled={disabled || showLoadCard}
           estimatedSize={estimatedSize}
           onCheckUrl={onCheckUrl}
           onPrefetchChange={onPrefetchChange}
@@ -89,21 +105,28 @@ export function PayloadSourceTabs({
           prefetch={prefetch}
           url={remoteUrl}
         />
-        {connectionStatus === 'ready' && (
-          <div className="mt-4 flex min-w-0 gap-2">
-            {isLoadingPartitions ? (
-              <Button className="flex-1" onClick={onCancelLoadPartitions} variant="destructive">
-                <XCircle className="mr-2 size-4" />
-                Cancel Loading…
-              </Button>
-            ) : (
-              <Button className="w-full" onClick={onLoadRemotePartitions}>
-                <Globe className="mr-2 size-4" />
-                Load Partitions from URL
-              </Button>
-            )}
+        {showLoadCard ? (
+          <div className="mt-4">
+            <RemoteLoadProgressCard
+              detail={loadDetail}
+              estimatedSizeLabel={estimatedSize}
+              message={loadMessage}
+              onCancel={onCancelLoadPartitions}
+              phase={loadPhase}
+              startedAt={loadStartedAt ?? Date.now()}
+              step={loadStep}
+              totalSteps={loadTotalSteps}
+            />
           </div>
-        )}
+        ) : null}
+        {connectionStatus === 'ready' && !showLoadCard ? (
+          <div className="mt-4 flex min-w-0 gap-2">
+            <Button className="w-full" onClick={onLoadRemotePartitions}>
+              <Globe className="mr-2 size-4" />
+              Load Partitions from URL
+            </Button>
+          </div>
+        ) : null}
       </TabsContent>
     </Tabs>
   );

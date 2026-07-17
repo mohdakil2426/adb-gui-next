@@ -2,6 +2,7 @@ import { FileArchive, Package } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { usePayloadActions } from '@/features/payload-dumper/hooks/usePayloadActions';
 import { usePayloadEvents } from '@/features/payload-dumper/hooks/usePayloadEvents';
+import { usePayloadLoadEvents } from '@/features/payload-dumper/hooks/usePayloadLoadEvents';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
 import { ActionFooter } from '@/features/payload-dumper/ui/ActionFooter';
 import { ExtractionStatusCard } from '@/features/payload-dumper/ui/ExtractionStatusCard';
@@ -9,6 +10,7 @@ import { FileBanner } from '@/features/payload-dumper/ui/FileBanner';
 import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
 import { PartitionTable } from '@/features/payload-dumper/ui/PartitionTable';
 import { PayloadSourceTabs } from '@/features/payload-dumper/ui/PayloadSourceTabs';
+import { RemoteLoadProgressCard } from '@/features/payload-dumper/ui/RemoteLoadProgressCard';
 import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
@@ -20,13 +22,19 @@ export function ViewPayloadDumper() {
   const extractedFiles = usePayloadDumperStore((state) => state.extractedFiles);
   const errorMessage = usePayloadDumperStore((state) => state.errorMessage);
   const outputDir = usePayloadDumperStore((state) => state.outputDir);
-  const extractingPartitions = usePayloadDumperStore((state) => state.extractingPartitions);
   const completedPartitions = usePayloadDumperStore((state) => state.completedPartitions);
   const partitionProgress = usePayloadDumperStore((state) => state.partitionProgress);
+  const partitionStatuses = usePayloadDumperStore((state) => state.partitionStatuses);
   const remoteUrl = usePayloadDumperStore((state) => state.remoteUrl);
   const activeMode = usePayloadDumperStore((state) => state.activeMode);
   const remoteMetadata = usePayloadDumperStore((state) => state.remoteMetadata);
   const extractionStats = usePayloadDumperStore((state) => state.extractionStats);
+  const loadPhase = usePayloadDumperStore((state) => state.loadPhase);
+  const loadMessage = usePayloadDumperStore((state) => state.loadMessage);
+  const loadDetail = usePayloadDumperStore((state) => state.loadDetail);
+  const loadStep = usePayloadDumperStore((state) => state.loadStep);
+  const loadTotalSteps = usePayloadDumperStore((state) => state.loadTotalSteps);
+  const loadStartedAt = usePayloadDumperStore((state) => state.loadStartedAt);
   const setRemoteUrl = usePayloadDumperStore((state) => state.setRemoteUrl);
   const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
   const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
@@ -39,8 +47,9 @@ export function ViewPayloadDumper() {
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // Subscribe to progress events
+  // Subscribe to extract + remote load progress events
   usePayloadEvents();
+  usePayloadLoadEvents();
 
   // All action handlers
   const actions = usePayloadActions({
@@ -64,13 +73,26 @@ export function ViewPayloadDumper() {
   const toExtractSize = selectedNotExtracted.reduce((acc, p) => acc + p.size, 0);
   const allSelected = partitions.length > 0 && partitions.every((p) => p.selected);
   const hasCompletedPartitions = completedPartitions.size > 0;
-  const isExtractionActive = status === 'extracting' || hasCompletedPartitions;
+  const hasPartitionStatuses = partitionStatuses.size > 0;
+  const isExtractionActive =
+    status === 'extracting' ||
+    status === 'cancelling' ||
+    hasCompletedPartitions ||
+    hasPartitionStatuses;
   const totalPayloadSize = partitions.reduce((acc, p) => acc + p.size, 0);
   const effectiveOutputPath = outputDir || outputPath;
   const isRemote =
     activeMode === 'remote' ||
     payloadPath.startsWith('http://') ||
     payloadPath.startsWith('https://');
+  // Remote list sets payloadPath only after success — show load card with empty path too.
+  const isRemoteLoadingPartitions =
+    status === 'loading-partitions' &&
+    (activeMode === 'remote' ||
+      remoteUrl.startsWith('http://') ||
+      remoteUrl.startsWith('https://') ||
+      payloadPath.startsWith('http://') ||
+      payloadPath.startsWith('https://'));
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-6 pb-10">
@@ -102,8 +124,20 @@ export function ViewPayloadDumper() {
         <CardContent className="flex w-full min-w-0 flex-col gap-4 overflow-hidden">
           {payloadPath ? (
             status === 'loading-partitions' && partitions.length === 0 ? (
-              /* State: Loading — stage indicator */
-              <LoadingState mode={activeMode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
+              isRemoteLoadingPartitions ? (
+                <RemoteLoadProgressCard
+                  detail={loadDetail}
+                  estimatedSizeLabel={estimatedSize}
+                  message={loadMessage}
+                  onCancel={actions.handleCancelLoadPartitions}
+                  phase={loadPhase}
+                  startedAt={loadStartedAt ?? Date.now()}
+                  step={loadStep}
+                  totalSteps={loadTotalSteps}
+                />
+              ) : (
+                <LoadingState mode={activeMode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
+              )
             ) : (
               /* State: Loaded — banner + table + footer */
               <>
@@ -133,13 +167,13 @@ export function ViewPayloadDumper() {
                 {/* Zone 2: Partition Table */}
                 <PartitionTable
                   completedPartitions={completedPartitions}
-                  extractingPartitions={extractingPartitions}
                   isExtractionActive={isExtractionActive}
                   onToggle={togglePartition}
                   onToggleAll={() => {
                     toggleAll(!allSelected);
                   }}
                   partitionProgress={partitionProgress}
+                  partitionStatuses={partitionStatuses}
                   partitions={partitions}
                   status={status}
                 />
@@ -159,12 +193,18 @@ export function ViewPayloadDumper() {
               </>
             )
           ) : (
-            /* State: Empty — Tabs for Local/Remote */
+            /* State: Empty — Tabs for Local/Remote (includes remote load card when path empty) */
             <PayloadSourceTabs
               connectionStatus={connectionStatus}
               disabled={status === 'extracting' || status === 'loading-partitions'}
               estimatedSize={estimatedSize}
               isLoadingPartitions={status === 'loading-partitions'}
+              loadDetail={loadDetail}
+              loadMessage={loadMessage}
+              loadPhase={loadPhase}
+              loadStartedAt={loadStartedAt}
+              loadStep={loadStep}
+              loadTotalSteps={loadTotalSteps}
               mode={activeMode}
               onCancelLoadPartitions={actions.handleCancelLoadPartitions}
               onCheckUrl={actions.handleCheckUrl}
