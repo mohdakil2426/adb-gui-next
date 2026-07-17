@@ -73,13 +73,14 @@ export function useFileExplorerRootAccess(options: Options) {
     setFileList([]);
     setSelectedNames(new Set());
     setIsMultiSelectMode(false);
+    // Clear grant immediately on serial change so IPC never uses the previous device's grant
+    rootAccessGrantedRef.current = false;
+    setRootAccessGranted(false);
     if (activeView !== 'files' || !selectedSerial) {
       return;
     }
 
     if (!getStoredRootAccessGranted()) {
-      rootAccessGrantedRef.current = false;
-      setRootAccessGranted(false);
       void loadFiles(currentPathRef.current, false);
       return;
     }

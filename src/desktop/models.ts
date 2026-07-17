@@ -175,17 +175,18 @@ export namespace backend {
    */
   export type PartitionExtractStatus = 'pending' | 'running' | 'verifying' | 'completed' | 'failed';
 
+  /** Matches Rust `payload:progress` emit (`current`/`total`, optional byte fields). */
   export interface ProgressEvent {
-    bytesWritten: number;
+    bytesWritten?: number;
     completed: boolean;
-    etaSeconds: number;
-    operationIndex: number;
+    current: number;
+    etaSeconds?: number;
     partitionName: string;
     /** Optional explicit status from backend; FE derives when omitted. */
     status?: PartitionExtractStatus;
-    throughputMbps: number;
-    totalBytes: number;
-    totalOperations: number;
+    throughputMbps?: number;
+    total: number;
+    totalBytes?: number;
   }
 
   export interface ExtractPayloadResult {
@@ -462,5 +463,13 @@ export namespace backend {
     disableMode: boolean;
     expertMode: boolean;
     multiUserMode: boolean;
+  }
+
+  /** Combined response for all initial debloater data (`get_debloat_data`). */
+  export interface DebloatData {
+    backups: BackupSummary[];
+    listStatus: DebloatListStatus;
+    packages: DebloatPackageRow[];
+    settings: PerDeviceSettings;
   }
 }

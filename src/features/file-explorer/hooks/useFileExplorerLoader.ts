@@ -101,12 +101,20 @@ export function useFileExplorerLoader(options: Options) {
           const currentIdx = historyIndexRef.current ?? 0;
           const prev = navHistoryRef.current;
           const truncated = prev.slice(0, currentIdx + 1);
-          const next =
-            truncated[truncated.length - 1] === targetPath ? truncated : [...truncated, targetPath];
-          setNavHistory(next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next);
-          const newIdx = Math.min(currentIdx + 1, MAX_HISTORY - 1);
-          historyIndexRef.current = newIdx;
-          setHistoryIndex(newIdx);
+          if (truncated[truncated.length - 1] === targetPath) {
+            // Same path: drop any forward entries, do not advance index
+            if (truncated.length !== prev.length) {
+              setNavHistory(truncated);
+            }
+          } else {
+            const next = [...truncated, targetPath];
+            const limited =
+              next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
+            setNavHistory(limited);
+            const newIdx = limited.length - 1;
+            historyIndexRef.current = newIdx;
+            setHistoryIndex(newIdx);
+          }
         }
       } catch (error) {
         if (requestId !== loadRequestIdRef.current) {

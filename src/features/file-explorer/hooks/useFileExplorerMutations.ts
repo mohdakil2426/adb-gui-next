@@ -76,17 +76,19 @@ export function useFileExplorerMutations(o: Options) {
     if (!trimmed || o.createError) {
       return;
     }
-    const fullPath = path.posix.join(o.currentPath, trimmed);
+    const serial = o.selectedSerialRef.current;
+    const basePath = o.currentPath;
+    const fullPath = path.posix.join(basePath, trimmed);
     o.setIsCreating(true);
     try {
       const accessMode = o.getFileAccessMode(fullPath);
       if (o.creatingType === 'file') {
-        await CreateFile(fullPath, o.selectedSerialRef.current, accessMode);
+        await CreateFile(fullPath, serial, accessMode);
       } else {
-        await CreateDirectory(fullPath, o.selectedSerialRef.current, accessMode);
+        await CreateDirectory(fullPath, serial, accessMode);
       }
       o.setCreatingType(null);
-      void o.loadFiles(o.currentPath);
+      void o.loadFiles(basePath, false);
     } catch (e) {
       handleError(o.creatingType === 'file' ? 'Create File' : 'Create Folder', e);
     } finally {
@@ -131,16 +133,19 @@ export function useFileExplorerMutations(o: Options) {
       o.setRenamingName(null);
       return;
     }
+    const serial = o.selectedSerialRef.current;
+    const basePath = o.currentPath;
+    const renamingName = o.renamingName;
     o.setIsRenaming(true);
     try {
-      const oldPath = path.posix.join(o.currentPath, o.renamingName);
-      const newPath = path.posix.join(o.currentPath, trimmed);
-      await RenameFile(oldPath, newPath, o.selectedSerialRef.current, o.getFileAccessMode(oldPath));
+      const oldPath = path.posix.join(basePath, renamingName);
+      const newPath = path.posix.join(basePath, trimmed);
+      await RenameFile(oldPath, newPath, serial, o.getFileAccessMode(oldPath));
       toast.success(`Renamed to "${trimmed}"`);
-      useLogStore.getState().addLog(`Renamed ${o.renamingName} → ${trimmed}`, 'success');
+      useLogStore.getState().addLog(`Renamed ${renamingName} → ${trimmed}`, 'success');
       o.setRenamingName(null);
       o.setSelectedNames(new Set([trimmed]));
-      void o.loadFiles(o.currentPath);
+      void o.loadFiles(basePath, false);
     } catch (e) {
       handleError('Rename', e);
       o.setRenamingName(null);
@@ -156,12 +161,15 @@ export function useFileExplorerMutations(o: Options) {
     [o],
   );
   const handleConfirmDelete = useCallback(async () => {
-    const paths = o.filesToDelete.map((name) => path.posix.join(o.currentPath, name));
+    // Snapshot serial + path at action start (before any async work)
+    const serial = o.selectedSerialRef.current;
+    const basePath = o.currentPath;
+    const paths = o.filesToDelete.map((name) => path.posix.join(basePath, name));
     o.setIsDeleting(true);
     try {
-      await DeleteFiles(paths, o.selectedSerialRef.current, o.getFileAccessMode(o.currentPath));
+      await DeleteFiles(paths, serial, o.getFileAccessMode(basePath));
       o.setSelectedNames(new Set());
-      void o.loadFiles(o.currentPath);
+      void o.loadFiles(basePath, false);
     } catch (e) {
       handleError('Delete', e);
     } finally {

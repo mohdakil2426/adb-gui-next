@@ -45,6 +45,9 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+  --color-success-light: var(--success-light);
+  --color-success-subtle: var(--success-subtle);
   /* Terminal panel tokens */
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-fg: var(--terminal-fg);

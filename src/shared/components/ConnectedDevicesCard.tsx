@@ -70,14 +70,15 @@ export function ConnectedDevicesCard({
                     <div className="flex items-center gap-1">
                       <span className="truncate font-semibold text-lg">{displayName}</span>
                       <Button
-                        className="size-6 opacity-0 transition-opacity group-hover:opacity-100"
+                        aria-label={`Edit ${displayName} nickname`}
+                        className="size-6 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
                         onClick={() => {
                           onEdit(device.serial);
                         }}
                         size="icon"
                         variant="ghost"
                       >
-                        <Pencil className="size-3.5" />
+                        <Pencil aria-hidden="true" className="size-3.5" />
                       </Button>
                     </div>
                     {description ? (

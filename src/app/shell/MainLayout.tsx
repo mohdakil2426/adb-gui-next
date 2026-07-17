@@ -17,6 +17,7 @@ import { useLogStore } from '@/shared/stores/logStore';
 import { SidebarInset, SidebarProvider } from '@/shared/ui/sidebar';
 import { Toaster } from '@/shared/ui/sonner';
 import { cn } from '@/shared/utils/cn';
+import { handleError } from '@/shared/utils/errorHandler';
 import { isMac } from '@/shared/utils/platform';
 import { fetchAllDevices, queryKeys, STALE_TIME } from '@/shared/utils/queries';
 
@@ -51,9 +52,14 @@ export function MainLayout() {
   const { isFetching: isDeviceRefreshing, refetch: refetchDevices } = useQuery({
     queryKey: queryKeys.allDevices(),
     queryFn: async () => {
-      const devices = await fetchAllDevices();
-      setDevices(devices);
-      return devices;
+      try {
+        const devices = await fetchAllDevices();
+        setDevices(devices);
+        return devices;
+      } catch (error) {
+        handleError('Device Poll', error);
+        throw error;
+      }
     },
     refetchInterval: STALE_TIME.ALL_DEVICES,
     staleTime: STALE_TIME.ALL_DEVICES,

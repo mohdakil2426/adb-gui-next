@@ -89,13 +89,19 @@ export function DropZone({
         }, 150);
       },
 
-      onDrop: (paths) => {
+      onDrop: (paths, x, y) => {
         if (hoverTimeoutRef.current) {
           clearTimeout(hoverTimeoutRef.current);
         }
         setIsDragging(false);
 
         if (paths.length === 0) {
+          return;
+        }
+
+        // Window-level drop — only accept when cursor is over this zone
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!(rect && isPointInRect(x, y, rect))) {
           return;
         }
 

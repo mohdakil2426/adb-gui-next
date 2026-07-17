@@ -8,13 +8,13 @@ import { ExtractionProgressBar } from './ExtractionProgressBar';
 
 interface PartitionRowProps {
   disabled: boolean;
-  extractStatus?: backend.PartitionExtractStatus;
+  extractStatus?: backend.PartitionExtractStatus | undefined;
   index: number;
   onToggle: (index: number) => void;
   partition: { name: string; size: number; selected: boolean };
   progressPercent: number;
   showProgress: boolean;
-  throughputMbps?: number;
+  throughputMbps?: number | undefined;
 }
 
 /**
@@ -148,7 +148,7 @@ function PartitionStatusIcon({
   isCompleted,
   selected,
 }: {
-  extractStatus?: backend.PartitionExtractStatus;
+  extractStatus?: backend.PartitionExtractStatus | undefined;
   isCompleted: boolean;
   selected: boolean;
 }) {

@@ -56,7 +56,7 @@ export function useFlasherDropTargets({
         setDragTarget(target);
         hoverTimeoutRef.current = setTimeout(() => setDragTarget('none'), 150);
       },
-      onDrop: (paths) => {
+      onDrop: (paths, x, y) => {
         if (hoverTimeoutRef.current) {
           clearTimeout(hoverTimeoutRef.current);
         }
@@ -64,33 +64,44 @@ export function useFlasherDropTargets({
         if (paths.length === 0) {
           return;
         }
+
+        // Hit-test which zone (if any) received the drop
+        const flashRect = flashSectionRef.current?.getBoundingClientRect();
+        const sideloadRect = sideloadSectionRef.current?.getBoundingClientRect();
+        const overFlash = flashRect ? isPointInRect(x, y, flashRect) : false;
+        const overSideload = sideloadRect ? isPointInRect(x, y, sideloadRect) : false;
+        if (!(overFlash || overSideload)) {
+          return;
+        }
+
         let lastImg = '';
         let lastZip = '';
-        let rejectedCount = 0;
         for (const p of paths) {
           if (isImgFile(p)) {
             lastImg = p;
           } else if (isZipFile(p)) {
             lastZip = p;
-          } else {
-            rejectedCount++;
           }
         }
-        if (lastImg) {
-          setFilePath(lastImg);
-          toast.info(`Image selected: ${getFileName(lastImg)}`);
+
+        if (overFlash) {
+          if (lastImg) {
+            setFilePath(lastImg);
+            toast.info(`Image selected: ${getFileName(lastImg)}`);
+          } else {
+            toast.error('Unsupported file type', {
+              description: 'Only .img files are accepted in the flash zone.',
+            });
+          }
+          return;
         }
+
         if (lastZip) {
           setSideloadFilePath(lastZip);
           toast.info(`ZIP selected: ${getFileName(lastZip)}`);
-        }
-        if (rejectedCount > 0 && !lastImg && !lastZip) {
+        } else {
           toast.error('Unsupported file type', {
-            description: 'Only .img (flash) and .zip (sideload) files are accepted.',
-          });
-        } else if (rejectedCount > 0) {
-          toast.warning(`${rejectedCount} unsupported file(s) skipped`, {
-            description: 'Only .img and .zip files are accepted.',
+            description: 'Only .zip files are accepted in the sideload zone.',
           });
         }
       },

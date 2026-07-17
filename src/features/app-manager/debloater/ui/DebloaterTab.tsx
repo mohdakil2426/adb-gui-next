@@ -8,6 +8,7 @@ import {
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { applyFilters, useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { handleError } from '@/shared/utils/errorHandler';
 import { DebloaterPackageList } from './DebloaterPackageList';
@@ -16,6 +17,7 @@ import { DescriptionPanel } from './DescriptionPanel';
 import { ReviewSelectionDialog } from './ReviewSelectionDialog';
 
 export function DebloaterTab() {
+  const selectedSerial = useDeviceStore((s) => s.selectedSerial);
   const packages = useDebloatStore((s) => s.packages);
   const listStatus = useDebloatStore((s) => s.listStatus);
   const isLoadingPackages = useDebloatStore((s) => s.isLoadingPackages);
@@ -48,13 +50,13 @@ export function DebloaterTab() {
 
   const [reviewOpen, setReviewOpen] = useState(false);
 
-  // Load settings + packages once on mount
+  // Load settings + packages; reload when selected device changes
   const loadAll = useCallback(async () => {
     setIsLoadingPackages(true);
     try {
       const data = await GetDebloatData();
       setPackages(data.packages);
-      setListStatus(data.list_status);
+      setListStatus(data.listStatus);
       setDisableMode(data.settings.disableMode);
       setExpertMode(data.settings.expertMode);
       setBackups(data.backups);
@@ -67,7 +69,7 @@ export function DebloaterTab() {
 
   useEffect(() => {
     void loadAll();
-  }, [loadAll]);
+  }, [loadAll, selectedSerial]);
 
   // Persist settings changes
   async function handleDisableModeChange(value: boolean) {

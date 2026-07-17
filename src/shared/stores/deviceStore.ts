@@ -37,6 +37,20 @@ export const useDeviceStore = create<DeviceState>()(
 
       setDevices: (devices) => {
         set((state) => {
+          // Skip update when serials + statuses are unchanged (poll thrash)
+          const unchanged =
+            state.devices.length === devices.length &&
+            state.devices.every(
+              (d, i) => d.serial === devices[i]?.serial && d.status === devices[i]?.status,
+            );
+          if (unchanged) {
+            // Still auto-select if nothing selected but devices exist
+            if (!state.selectedSerial && devices.length > 0) {
+              return { selectedSerial: devices[0]?.serial ?? null };
+            }
+            return {};
+          }
+
           let { selectedSerial } = state;
           const previousSerial = selectedSerial;
 

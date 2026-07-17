@@ -58,17 +58,20 @@ export function InstallationTab() {
       setLoadedSerial(selectedSerial);
     } catch (error) {
       handleError('Load Packages', error);
+      // Mark serial as loaded even on error so we don't spin forever
+      setLoadedSerial(selectedSerial);
     } finally {
       setIsLoadingPackages(false);
     }
   }, [selectedSerial, setPackages, setIsLoadingPackages, setLoadedSerial]);
 
   useEffect(() => {
-    if (selectedSerial !== loadedSerial || packages.length === 0) {
+    // Reload only when the selected device changes — not when packages is empty
+    if (selectedSerial !== loadedSerial) {
       setSelectedPackages(new Set());
       void loadPackages();
     }
-  }, [selectedSerial, loadedSerial, packages.length, loadPackages, setSelectedPackages]);
+  }, [selectedSerial, loadedSerial, loadPackages, setSelectedPackages]);
 
   async function handleSelectApk() {
     try {

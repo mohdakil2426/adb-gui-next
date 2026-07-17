@@ -122,7 +122,12 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-0.5" key={nicknameVersion}>
+              <div
+                aria-label="Connected devices"
+                className="flex flex-col gap-0.5"
+                key={nicknameVersion}
+                role="listbox"
+              >
                 {devices.map((device) => {
                   const nickname = getNickname(device.serial);
                   const name = nickname ?? device.serial;
@@ -131,7 +136,8 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                   const isSelected = device.serial === selectedSerial;
 
                   return (
-                    <button
+                    <div
+                      aria-selected={isSelected}
                       className={cn(
                         'group/device relative flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm',
                         'transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
@@ -147,8 +153,8 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                           handleSelect(device.serial);
                         }
                       }}
+                      role="option"
                       tabIndex={0}
-                      type="button"
                     >
                       {/* Selection indicator */}
                       <span
@@ -161,7 +167,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         )}
                       />
 
-                      {/* Device info + edit */}
+                      {/* Device info + edit (separate button — not nested) */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1">
                           <span className="truncate font-medium">{name}</span>
@@ -192,7 +198,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                       >
                         {config.label}
                       </Badge>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

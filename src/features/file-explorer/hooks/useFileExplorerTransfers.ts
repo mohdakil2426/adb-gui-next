@@ -38,10 +38,13 @@ export function useFileExplorerTransfers(options: Options) {
 
   const executePull = useCallback(
     async (file: FileEntry) => {
+      // Snapshot serial + path before dialogs so device switch mid-picker cannot retarget IPC
+      const serial = selectedSerialRef.current;
+      const basePath = currentPath;
       setIsPulling(true);
       let toastId: string | number = '';
       try {
-        const remotePath = path.posix.join(currentPath, file.name);
+        const remotePath = path.posix.join(basePath, file.name);
         const localPath =
           file.type === 'Directory' || file.type === 'Symlink'
             ? await SelectDirectoryForPull()
@@ -50,12 +53,7 @@ export function useFileExplorerTransfers(options: Options) {
           return;
         }
         toastId = toast.loading(`Pulling ${file.name}…`, { description: `From: ${remotePath}` });
-        const output = await PullFile(
-          remotePath,
-          localPath,
-          selectedSerialRef.current,
-          getFileAccessMode(remotePath),
-        );
+        const output = await PullFile(remotePath, localPath, serial, getFileAccessMode(remotePath));
         toast.success('Export Complete', { description: `Saved to ${localPath}`, id: toastId });
         useLogStore.getState().addLog(`Pulled ${file.name} to ${localPath}: ${output}`, 'success');
       } catch (error) {
@@ -71,22 +69,18 @@ export function useFileExplorerTransfers(options: Options) {
   );
 
   const executePush = useCallback(
-    async (localPath: string, targetDir: string) => {
+    async (localPath: string, targetDir: string, serial: string | null) => {
+      const refreshPath = currentPath;
       setIsPushing(true);
       let toastId: string | number = '';
       try {
         const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? '';
         const remotePath = path.posix.join(targetDir, fileName);
         toastId = toast.loading(`Pushing ${fileName}…`, { description: `To: ${remotePath}` });
-        const output = await PushFile(
-          localPath,
-          remotePath,
-          selectedSerialRef.current,
-          getFileAccessMode(remotePath),
-        );
+        const output = await PushFile(localPath, remotePath, serial, getFileAccessMode(remotePath));
         toast.success('Import Complete', { description: output, id: toastId });
         useLogStore.getState().addLog(`Pushed ${fileName} to ${remotePath}: ${output}`, 'success');
-        void loadFiles(currentPath, false);
+        void loadFiles(refreshPath, false);
       } catch (error) {
         if (toastId) {
           toast.error('Import Failed', { id: toastId });
@@ -96,20 +90,26 @@ export function useFileExplorerTransfers(options: Options) {
         setIsPushing(false);
       }
     },
-    [currentPath, getFileAccessMode, loadFiles, selectedSerialRef, setIsPushing],
+    [currentPath, getFileAccessMode, loadFiles, setIsPushing],
   );
 
   const handlePushFile = useCallback(async () => {
+    // Snapshot serial + path before file picker dialog
+    const serial = selectedSerialRef.current;
+    const basePath = currentPath;
     const localPath = await SelectFileToPush();
     if (!localPath) {
       return;
     }
     const fileName = localPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localPath);
-    debugLog(`Pushing file ${fileName} to ${currentPath}`);
-    await executePush(localPath, currentPath);
-  }, [currentPath, executePush]);
+    debugLog(`Pushing file ${fileName} to ${basePath}`);
+    await executePush(localPath, basePath, serial);
+  }, [currentPath, executePush, selectedSerialRef]);
 
   const handlePushFolder = useCallback(async () => {
+    // Snapshot before directory picker dialog
+    const serial = selectedSerialRef.current;
+    const basePath = currentPath;
     setIsPushing(true);
     let toastId: string | number = '';
     try {
@@ -119,19 +119,14 @@ export function useFileExplorerTransfers(options: Options) {
       }
       const folderName =
         localFolderPath.replace(/\\/g, '/').split('/').pop() ?? path.basename(localFolderPath);
-      debugLog(`Pushing folder ${folderName} to ${currentPath}`);
+      debugLog(`Pushing folder ${folderName} to ${basePath}`);
       toastId = toast.loading(`Pushing folder ${folderName}…`, {
-        description: `To: ${currentPath}`,
+        description: `To: ${basePath}`,
       });
-      const output = await PushFile(
-        localFolderPath,
-        currentPath,
-        selectedSerialRef.current,
-        getFileAccessMode(currentPath),
-      );
+      const output = await PushFile(localFolderPath, basePath, serial, getFileAccessMode(basePath));
       toast.success('Import Complete', { description: output, id: toastId });
-      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${currentPath}`, 'success');
-      void loadFiles(currentPath, false);
+      useLogStore.getState().addLog(`Pushed folder ${folderName} to ${basePath}`, 'success');
+      void loadFiles(basePath, false);
     } catch (error) {
       if (toastId) {
         toast.error('Import Failed', { id: toastId });
@@ -153,13 +148,14 @@ export function useFileExplorerTransfers(options: Options) {
   const handlePullItem = useCallback((file: FileEntry) => executePull(file), [executePull]);
   const handlePushFileToDir = useCallback(
     async (targetDir: string) => {
+      const serial = selectedSerialRef.current;
       const localPath = await SelectFileToPush();
       if (!localPath) {
         return;
       }
-      await executePush(localPath, targetDir);
+      await executePush(localPath, targetDir, serial);
     },
-    [executePush],
+    [executePush, selectedSerialRef],
   );
 
   return { handlePull, handlePullItem, handlePushFile, handlePushFileToDir, handlePushFolder };

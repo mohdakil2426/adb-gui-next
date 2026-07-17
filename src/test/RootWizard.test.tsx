@@ -15,11 +15,8 @@ const selectPatchedRootImageFileMock = vi.fn();
 const onFileDropMock = vi.fn();
 const onFileDropOffMock = vi.fn();
 
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn().mockResolvedValue(vi.fn()),
-}));
-
 vi.mock('@/desktop/runtime', () => ({
+  EventsOn: vi.fn().mockReturnValue(vi.fn()),
   OnFileDrop: (...args: unknown[]) => onFileDropMock(...args),
   OnFileDropOff: (...args: unknown[]) => onFileDropOffMock(...args),
 }));

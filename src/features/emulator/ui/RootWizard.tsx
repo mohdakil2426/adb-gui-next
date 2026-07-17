@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { listen } from '@tauri-apps/api/event';
 import { ShieldCheck, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -11,10 +10,12 @@ import {
   VerifyAvdRoot,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import { EventsOn } from '@/desktop/runtime';
 import {
   type RootWizardSource,
   useEmulatorManagerStore,
 } from '@/features/emulator/model/emulatorManagerStore';
+import { useLogStore } from '@/shared/stores/logStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { invalidateAvds } from '@/shared/utils/queries';
 import { RootManualStep } from './RootManualStep';
@@ -56,20 +57,16 @@ export function RootWizard({ avd }: RootWizardProps) {
         : rootWizard.step === 'progress'
           ? 2
           : 3;
-  // Listen for root:progress events from Tauri backend.
-  useEffect(() => {
-    const unlistenPromise = listen<backend.RootProgress>('root:progress', (event) => {
-      if (!cancelledRef.current) {
-        setRootWizardProgress(event.payload);
-      }
-    });
-    return () => {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      unlistenPromise.then((fn) => {
-        fn();
-      });
-    };
-  }, [setRootWizardProgress]);
+  // Listen for root:progress events from Tauri backend via desktop runtime.
+  useEffect(
+    () =>
+      EventsOn<backend.RootProgress>('root:progress', (payload) => {
+        if (!cancelledRef.current) {
+          setRootWizardProgress(payload);
+        }
+      }),
+    [setRootWizardProgress],
+  );
   // Run the preflight scan.
   const runScan = useCallback(async () => {
     setIsScanning(true);
@@ -144,7 +141,7 @@ export function RootWizard({ avd }: RootWizardProps) {
     // Attempt to stop gracefully, then cold boot with no-snapshot flags.
     const stopPromise = avd.serial
       ? StopAvd(avd.serial).catch(() => {
-          // ignore
+          // ignore stop failures — device may already be offline
         })
       : Promise.resolve();
     void stopPromise
@@ -158,8 +155,13 @@ export function RootWizard({ avd }: RootWizardProps) {
           noBootAnim: false,
         }),
       )
-      .catch(() => {
-        // ignore
+      .then(() => {
+        toast.success(`Cold booting ${avd.name}…`);
+        useLogStore.getState().addLog(`Cold boot launched for ${avd.name}`, 'info');
+      })
+      .catch((err: unknown) => {
+        toast.error(`Cold boot failed: ${String(err)}`);
+        useLogStore.getState().addLog(`Cold boot failed for ${avd.name}: ${String(err)}`, 'error');
       });
   }
   async function handleVerifyRoot() {
