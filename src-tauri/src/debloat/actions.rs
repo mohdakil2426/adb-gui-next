@@ -83,8 +83,8 @@ fn build_commands(package: &str, action: &DebloatAction, sdk: u32, user: u32) ->
                     ],
                 ]
             } else {
-                // Disable not supported below SDK 23 — fallback to uninstall
-                build_commands(package, &DebloatAction::Uninstall, sdk, user)
+                // Disable is refused for SDK < 23 in apply_package_actions; never map to uninstall.
+                vec![]
             }
         }
         DebloatAction::Restore => {
@@ -172,8 +172,18 @@ pub fn apply_package_actions(
     sdk: u32,
     user: u32,
 ) -> CmdResult<Vec<DebloatActionResult>> {
+    if sdk == 0 {
+        return Err(
+            "Could not determine Android SDK; refusing destructive action".to_string(),
+        );
+    }
+
     let action = DebloatAction::from_action_str(action_str)
         .ok_or_else(|| format!("Unknown action: {action_str}"))?;
+
+    if action == DebloatAction::Disable && sdk < 23 {
+        return Err("Disable is not supported on API < 23".to_string());
+    }
 
     let results = packages.iter().map(|pkg| apply_single(app, pkg, &action, sdk, user)).collect();
 

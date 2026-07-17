@@ -1,5 +1,6 @@
 use crate::CmdResult;
 use crate::debloat::PackageState;
+use crate::helpers::sanitize_filename;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
@@ -35,12 +36,22 @@ pub struct BackupSummary {
     pub package_count: usize,
 }
 
+/// Sanitize a device serial used as a path component (alphanumeric / `.` / `_` / `-` only).
+fn sanitize_device_id(device_id: &str) -> String {
+    let cleaned = sanitize_filename(device_id);
+    if cleaned.is_empty() {
+        "unknown".to_string()
+    } else {
+        cleaned
+    }
+}
+
 fn backup_dir(app: &AppHandle, device_id: &str) -> PathBuf {
     app.path()
         .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join(BACKUP_DIR_NAME)
-        .join(device_id)
+        .join(sanitize_device_id(device_id))
 }
 
 /// Create a backup of the current package states for a device.
@@ -111,9 +122,33 @@ pub fn list_backups(app: &AppHandle, device_id: &str) -> Vec<BackupSummary> {
 }
 
 /// Load a specific backup file.
+///
+/// `file_name` must be a single basename (no path separators). The resolved path is
+/// checked to stay under the device backup directory.
 pub fn load_backup(app: &AppHandle, device_id: &str, file_name: &str) -> CmdResult<DeviceBackup> {
-    let path = backup_dir(app, device_id).join(file_name);
-    let json = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    if file_name.is_empty()
+        || file_name.contains('/')
+        || file_name.contains('\\')
+        || file_name.contains('\0')
+    {
+        return Err("Invalid backup file name".to_string());
+    }
+
+    let safe_name = sanitize_filename(file_name);
+    if safe_name.is_empty() {
+        return Err("Invalid backup file name".to_string());
+    }
+
+    let dir = backup_dir(app, device_id);
+    let path = dir.join(&safe_name);
+
+    let dir_canon = fs::canonicalize(&dir).map_err(|e| e.to_string())?;
+    let path_canon = fs::canonicalize(&path).map_err(|e| e.to_string())?;
+    if !path_canon.starts_with(&dir_canon) {
+        return Err("Invalid backup path".to_string());
+    }
+
+    let json = fs::read_to_string(&path_canon).map_err(|e| e.to_string())?;
     serde_json::from_str(&json).map_err(|e| e.to_string())
 }
 
@@ -127,11 +162,12 @@ pub struct PerDeviceSettings {
 }
 
 fn settings_path(app: &AppHandle, device_id: &str) -> PathBuf {
+    let safe_id = sanitize_device_id(device_id);
     app.path()
         .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("debloat_settings")
-        .join(format!("{device_id}.json"))
+        .join(format!("{safe_id}.json"))
 }
 
 pub fn load_device_settings(app: &AppHandle, device_id: &str) -> PerDeviceSettings {

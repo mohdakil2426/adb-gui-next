@@ -8,12 +8,32 @@ use tauri::AppHandle;
 // ── Device SDK detection ───────────────────────────────────────────────────────
 
 /// Returns the Android SDK version (API level) of the connected device.
-/// Returns 0 on failure.
+/// Returns 0 on failure. Prefer [`try_get_android_sdk`] for destructive actions.
 pub fn get_android_sdk(app: &AppHandle) -> u32 {
-    run_binary_command(app, "adb", &["shell", "getprop", "ro.build.version.sdk"])
-        .ok()
-        .and_then(|s| s.trim().parse::<u32>().ok())
-        .unwrap_or(0)
+    try_get_android_sdk(app).unwrap_or(0)
+}
+
+/// Returns the Android SDK version (API level), or an error if detection fails.
+///
+/// Fails when ADB fails, the property is empty/unparseable, or the value is 0.
+/// Use this for any path that may uninstall, disable, or otherwise mutate packages.
+pub fn try_get_android_sdk(app: &AppHandle) -> Result<u32, String> {
+    let raw = run_binary_command(app, "adb", &["shell", "getprop", "ro.build.version.sdk"])?;
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(
+            "Could not determine Android SDK; refusing destructive action".to_string(),
+        );
+    }
+    let sdk = trimmed.parse::<u32>().map_err(|_| {
+        "Could not determine Android SDK; refusing destructive action".to_string()
+    })?;
+    if sdk == 0 {
+        return Err(
+            "Could not determine Android SDK; refusing destructive action".to_string(),
+        );
+    }
+    Ok(sdk)
 }
 
 /// Returns the device serial/ID for per-device settings keying.

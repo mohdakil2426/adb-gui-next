@@ -8,7 +8,7 @@ use crate::debloat::{
     },
     cache::DebloatCache,
     lists::load_uad_lists,
-    sync::{build_uad_map, get_android_sdk, get_device_id, sync_device_packages},
+    sync::{build_uad_map, get_android_sdk, get_device_id, sync_device_packages, try_get_android_sdk},
 };
 use log::info;
 use tauri::AppHandle;
@@ -29,17 +29,24 @@ pub async fn get_debloat_data(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
 ) -> CmdResult<DebloatData> {
-    // Check cache first
-    if let Some((packages, status)) = cache.get_packages() {
-        let settings = cache.get_settings().unwrap_or_default();
-        let backups = cache.get_backups().unwrap_or_default();
-        info!("debloat: cache hit");
+    // Resolve device first so cache entries cannot leak across serials.
+    let device_id = tokio::task::spawn_blocking({
+        let app = app.clone();
+        move || get_device_id(&app)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if let Some((packages, status)) = cache.get_packages(&device_id) {
+        let settings = cache.get_settings(&device_id).unwrap_or_default();
+        let backups = cache.get_backups(&device_id).unwrap_or_default();
+        info!("debloat: cache hit for device {device_id}");
         return Ok(DebloatData { packages, list_status: status, settings, backups });
     }
 
     // Cache miss — load everything fresh
-    info!("debloat: cache miss, loading fresh data");
-    load_debloat_data(&app, &cache).await
+    info!("debloat: cache miss for device {device_id}, loading fresh data");
+    load_debloat_data(&app, &cache, &device_id).await
 }
 
 /// Force refresh all debloater data (invalidates cache).
@@ -50,10 +57,22 @@ pub async fn refresh_debloat_data(
 ) -> CmdResult<DebloatData> {
     cache.invalidate();
     info!("debloat: cache invalidated");
-    load_debloat_data(&app, &cache).await
+
+    let device_id = tokio::task::spawn_blocking({
+        let app = app.clone();
+        move || get_device_id(&app)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    load_debloat_data(&app, &cache, &device_id).await
 }
 
-async fn load_debloat_data(app: &AppHandle, cache: &DebloatCache) -> CmdResult<DebloatData> {
+async fn load_debloat_data(
+    app: &AppHandle,
+    cache: &DebloatCache,
+    device_id: &str,
+) -> CmdResult<DebloatData> {
     // Load packages (sync_device_packages returns Vec<DebloatPackageRow>, load_uad_lists returns (Vec, DebloatListStatus))
     let packages = tokio::task::spawn_blocking({
         let app = app.clone();
@@ -87,7 +106,8 @@ async fn load_debloat_data(app: &AppHandle, cache: &DebloatCache) -> CmdResult<D
     // Load settings
     let settings = tokio::task::spawn_blocking({
         let app = app.clone();
-        move || crate::debloat::backup::load_device_settings(&app, &get_device_id(&app))
+        let device_id = device_id.to_string();
+        move || crate::debloat::backup::load_device_settings(&app, &device_id)
     })
     .await
     .map_err(|e| e.to_string())?;
@@ -95,14 +115,15 @@ async fn load_debloat_data(app: &AppHandle, cache: &DebloatCache) -> CmdResult<D
     // Load backups
     let backups = tokio::task::spawn_blocking({
         let app = app.clone();
-        move || list_backups(&app, &get_device_id(&app))
+        let device_id = device_id.to_string();
+        move || list_backups(&app, &device_id)
     })
     .await
     .map_err(|e| e.to_string())?;
 
-    cache.set_packages(packages.clone(), list_status.clone());
-    cache.set_settings(settings.clone());
-    cache.set_backups(backups.clone());
+    cache.set_packages(device_id, packages.clone(), list_status.clone());
+    cache.set_settings(device_id, settings.clone());
+    cache.set_backups(device_id, backups.clone());
 
     Ok(DebloatData { packages, list_status, settings, backups })
 }
@@ -141,7 +162,7 @@ pub async fn debloat_packages(
 ) -> CmdResult<Vec<DebloatActionResult>> {
     info!("debloat_packages: action={} packages={} user={}", action, packages.len(), user);
     let result = tokio::task::spawn_blocking(move || {
-        let sdk = get_android_sdk(&app);
+        let sdk = try_get_android_sdk(&app)?;
         apply_package_actions(&app, &packages, &action, sdk, user)
     })
     .await
@@ -160,18 +181,18 @@ pub async fn create_debloat_backup(
     cache: tauri::State<'_, DebloatCache>,
     packages: Vec<PackageSnapshot>,
 ) -> CmdResult<BackupSummary> {
-    let device_id = get_device_id(&app);
-    let sdk = get_android_sdk(&app);
     let app_clone = app.clone();
-    let device_id_clone = device_id.clone();
 
     let result = tokio::task::spawn_blocking(move || {
-        create_backup(&app_clone, &device_id_clone, sdk, packages)
+        let device_id = get_device_id(&app_clone);
+        let sdk = try_get_android_sdk(&app_clone)?;
+        create_backup(&app_clone, &device_id, sdk, packages)
     })
     .await
     .map_err(|e| e.to_string())??;
 
-    // Refresh backups cache
+    // Refresh backups cache for the same device
+    let device_id = result.device_id.clone();
     let backups = tokio::task::spawn_blocking({
         let app = app.clone();
         let device_id = device_id.clone();
@@ -179,7 +200,7 @@ pub async fn create_debloat_backup(
     })
     .await
     .map_err(|e| e.to_string())?;
-    cache.set_backups(backups);
+    cache.set_backups(&device_id, backups);
 
     Ok(result)
 }
@@ -206,7 +227,7 @@ pub async fn restore_debloat_backup(
         let file_name = file_name.clone();
         move || {
             let backup = load_backup(&app, &device_id, &file_name)?;
-            let sdk = get_android_sdk(&app);
+            let sdk = try_get_android_sdk(&app)?;
 
             let mut results = Vec::new();
             for snapshot in &backup.packages {
@@ -256,15 +277,16 @@ pub async fn save_debloat_device_settings(
 ) -> CmdResult<()> {
     let device_id = get_device_id(&app);
 
-    let _ = tokio::task::spawn_blocking({
+    tokio::task::spawn_blocking({
         let settings = settings.clone();
+        let device_id = device_id.clone();
         move || save_device_settings(&app, &device_id, &settings)
     })
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())??;
 
     // Update settings in cache
-    cache.set_settings(settings);
+    cache.set_settings(&device_id, settings);
 
     Ok(())
 }
