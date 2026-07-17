@@ -19,9 +19,70 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  quality-and-artifacts:
-    name: Quality + ${{ matrix.name }} artifacts
+  quality:
+    name: Quality
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache Bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          cache-on-failure: true
+
+      - name: Install frontend dependencies
+        run: bun ci
+
+      - name: Verify release version files
+        run: bun run release:verify
+
+      - name: Check formatting
+        run: bun run format:check
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Run frontend tests
+        run: bun run test
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: TypeScript + Vite build
+        run: bun run build
+
+  package:
+    name: Package ${{ matrix.name }}
+    needs: quality
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ${{ matrix.platform }}
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +110,14 @@ jobs:
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Cache Bun
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
@@ -58,31 +127,20 @@ jobs:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
 
+      - name: Setup bundled Linux tool permissions
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x src-tauri/resources/linux/adb
+          chmod +x src-tauri/resources/linux/fastboot
+          chmod +x src-tauri/resources/linux/etc1tool
+          chmod +x src-tauri/resources/linux/hprof-conv
+          chmod +x src-tauri/resources/linux/make_f2fs
+          chmod +x src-tauri/resources/linux/make_f2fs_casefold
+          chmod +x src-tauri/resources/linux/mke2fs
+          chmod +x src-tauri/resources/linux/sqlite3
+
       - name: Install frontend dependencies
         run: bun ci
-
-      - name: Verify release version files
-        run: bun run release:verify
-
-      - name: Check formatting
-        run: bun run format:check
-
-      - name: Lint
-        run: bun run lint
-
-      - name: Run frontend tests
-        run: bun run test
-
-      - name: Run Rust tests
-        if: runner.os != 'Windows'
-        run: cargo test --manifest-path src-tauri/Cargo.toml
-
-      - name: Compile Rust tests
-        if: runner.os == 'Windows'
-        run: cargo test --manifest-path src-tauri/Cargo.toml --no-run
-
-      - name: TypeScript + Vite build
-        run: bun run build
 
       - name: Clean stale bundle outputs
         shell: bash

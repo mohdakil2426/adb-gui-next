@@ -23,6 +23,9 @@ jobs:
   preflight:
     name: Release preflight
     runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    outputs:
+      macos_enabled: ${{ steps.macos.outputs.macos_enabled }}
     steps:
       - name: Require main branch
         run: |
@@ -33,10 +36,113 @@ jobs:
 
       - uses: actions/checkout@v5
 
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          shared-key: publish-preflight
+          cache-on-failure: true
+
+      - name: Install frontend dependencies
+        run: bun ci
+
+      - name: Verify requested release version
+        run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
+
+      - name: Detect macOS signing secrets
+        id: macos
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ] && [ -n "$APPLE_CERTIFICATE_PASSWORD" ] && [ -n "$APPLE_ID" ] && [ -n "$APPLE_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ] && [ -n "$KEYCHAIN_PASSWORD" ]; then
+            echo "macos_enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "macos_enabled=false" >> $GITHUB_OUTPUT
+            echo "macOS build skipped: Apple secrets incomplete"
+          fi
+
+      - name: Check formatting
+        run: bun run format:check
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Run frontend tests
+        run: bun run test
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      - name: TypeScript + Vite build
+        run: bun run build
+
+  build:
+    name: Build ${{ matrix.name }} release assets
+    needs: preflight
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            platform: ubuntu-22.04
+            artifact-platform: linux
+            bundle-targets: deb,rpm
+          - name: windows-x64
+            platform: windows-latest
+            artifact-platform: windows
+            bundle-targets: nsis,msi
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -47,90 +153,73 @@ jobs:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
 
+      - name: Setup Bundled Permissions
+        if: runner.os == 'Linux'
+        run: |
+          chmod +x src-tauri/resources/linux/adb || true
+          chmod +x src-tauri/resources/linux/fastboot || true
+
       - name: Install frontend dependencies
         run: bun ci
 
       - name: Verify requested release version
         run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
 
-      - name: Verify macOS signing secrets
+      - name: Clean stale bundle outputs
+        shell: bash
+        run: rm -rf src-tauri/target/release/bundle
+
+      - name: Build Tauri packages
         env:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bun run tauri build --verbose --bundles ${{ matrix.bundle-targets }}
+
+      - name: Collect release assets
+        shell: pwsh
         run: |
-          for name in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID KEYCHAIN_PASSWORD; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Missing required GitHub secret: $name"
-              exit 1
-            fi
-          done
+          ./scripts/collect-release-assets.ps1 `
+            -Version '${{ inputs.version }}' `
+            -Platform '${{ matrix.artifact-platform }}' `
+            -OutputDir 'artifacts/${{ matrix.name }}' `
+            -Release
 
-          if [ "${#APPLE_TEAM_ID}" -lt 3 ]; then
-            echo "::error::APPLE_TEAM_ID must be at least 3 characters"
-            exit 1
-          fi
+      - name: Upload ${{ matrix.name }} release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.name }}
+          path: artifacts/${{ matrix.name }}/
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
 
-      - name: Check formatting
-        run: bun run format:check
-
-      - name: Lint frontend
-        run: bun run lint:web
-
-      - name: Run frontend tests
-        run: bun run test
-
-      - name: TypeScript + Vite build
-        run: bun run build
-
-  build:
-    name: Build ${{ matrix.name }} release assets
+  build-macos:
+    name: Build macos-universal release assets
     needs: preflight
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: linux-x64
-            platform: ubuntu-22.04
-            artifact-platform: linux
-            bundle-targets: deb,rpm
-            target-args: ''
-          - name: windows-x64
-            platform: windows-latest
-            artifact-platform: windows
-            bundle-targets: nsis,msi
-            target-args: ''
-          - name: macos-universal
-            platform: macos-latest
-            artifact-platform: macos
-            bundle-targets: dmg
-            target-args: '--target universal-apple-darwin'
-
+    if: needs.preflight.outputs.macos_enabled == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
-
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libfuse2
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.artifact-platform == 'macos' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Setup Apple Certificate
-        if: runner.os == 'macOS'
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -176,10 +265,7 @@ jobs:
           cache-on-failure: true
 
       - name: Setup Bundled Permissions
-        if: runner.os != 'Windows'
         run: |
-          chmod +x src-tauri/resources/linux/adb || true
-          chmod +x src-tauri/resources/linux/fastboot || true
           chmod +x src-tauri/resources/darwin/adb || true
           chmod +x src-tauri/resources/darwin/fastboot || true
           chmod +x src-tauri/resources/darwin/etc1tool || true
@@ -206,29 +292,30 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY || '-' }}
-        run: bun run tauri build --verbose --bundles ${{ matrix.bundle-targets }} ${{ matrix.target-args }}
+        run: bun run tauri build --verbose --bundles dmg --target universal-apple-darwin
 
       - name: Collect release assets
         shell: pwsh
         run: |
           ./scripts/collect-release-assets.ps1 `
             -Version '${{ inputs.version }}' `
-            -Platform '${{ matrix.artifact-platform }}' `
-            -OutputDir 'artifacts/${{ matrix.name }}' `
+            -Platform 'macos' `
+            -OutputDir 'artifacts/macos-universal' `
             -Release
 
-      - name: Upload ${{ matrix.name }} release assets
+      - name: Upload macos-universal release assets
         uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.name }}
-          path: artifacts/${{ matrix.name }}/
+          name: release-macos-universal
+          path: artifacts/macos-universal/
           retention-days: 7
           if-no-files-found: error
           compression-level: 0
 
   publish-draft:
     name: Publish draft GitHub release
-    needs: build
+    needs: [build, build-macos]
+    if: ${{ !cancelled() && needs.build.result == 'success' && (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') }}
     runs-on: ubuntu-22.04
     permissions:
       contents: write
