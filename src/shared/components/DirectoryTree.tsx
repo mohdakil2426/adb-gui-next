@@ -256,9 +256,11 @@ export interface DirectoryTreeProps {
   serial?: string | null;
 }
 
+const defaultFileAccessMode = (): backend.FileAccessMode => 'normal';
+
 export function DirectoryTree({
   currentPath,
-  getFileAccessMode = () => 'normal',
+  getFileAccessMode = defaultFileAccessMode,
   onNavigate,
   refreshTrigger,
   serial,
@@ -267,13 +269,16 @@ export function DirectoryTree({
 
   // Sync ref — always holds latest nodes for use in async callbacks
   const nodesRef = useRef<TreeNode[]>(INITIAL_NODES);
-  const setNodes = useCallback((updater: (prev: TreeNode[]) => TreeNode[]) => {
-    setNodesRaw((prev) => {
-      const next = updater(prev);
-      nodesRef.current = next;
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  // Keep latest access-mode resolver without rebuilding callbacks every render
+  // (default prop / unstable parent callback would otherwise thrash deps).
+  const getFileAccessModeRef = useRef(getFileAccessMode);
+  useEffect(() => {
+    getFileAccessModeRef.current = getFileAccessMode;
+  }, [getFileAccessMode]);
 
   // Ref to hold the latest expandToPath (avoids circular useCallback dep)
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -314,7 +319,7 @@ export function DirectoryTree({
 
       if (firstToLoad) {
         const loadPath = firstToLoad;
-        loadDirEntries(loadPath, serial, getFileAccessMode)
+        loadDirEntries(loadPath, serial, (path) => getFileAccessModeRef.current(path))
           .then((entries) => {
             const next = applyToNode(nodesRef.current, loadPath, (n) => ({
               ...n,
@@ -336,7 +341,7 @@ export function DirectoryTree({
           });
       }
     },
-    [getFileAccessMode, serial],
+    [serial],
   );
 
   useEffect(() => {
@@ -368,10 +373,10 @@ export function DirectoryTree({
     }
 
     if (node.isExpanded) {
-      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
-      loadDirEntries(currentPath, serial, getFileAccessMode)
+      setNodesRaw((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
+      loadDirEntries(currentPath, serial, (path) => getFileAccessModeRef.current(path))
         .then((entries) => {
-          setNodes((prev) =>
+          setNodesRaw((prev) =>
             applyToNode(prev, currentPath, (n) => ({
               ...n,
               isLoading: false,
@@ -380,43 +385,38 @@ export function DirectoryTree({
           );
         })
         .catch(() => {
-          setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })));
+          setNodesRaw((prev) =>
+            applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })),
+          );
         });
     } else {
       // Invalidate cache so it refetches on next expand
-      setNodes((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
+      setNodesRaw((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
     }
-  }, [refreshTrigger, currentPath, serial, getFileAccessMode, setNodes]);
+  }, [refreshTrigger, currentPath, serial]);
 
   // Toggle expand/collapse with lazy loading (dirs only)
   const handleToggle = useCallback(
     (path: string) => {
-      let shouldLoad = false;
-
-      setNodes((prev) => {
-        const node = findNode(prev, path);
-        if (!(node && node.isDirectory) || node.isLoading) {
-          return prev;
-        }
-
-        if (node.isExpanded) {
-          return applyToNode(prev, path, (n) => ({ ...n, isExpanded: false }));
-        }
-        if (node.children !== null) {
-          return applyToNode(prev, path, (n) => ({ ...n, isExpanded: true }));
-        }
-
-        shouldLoad = true;
-        return applyToNode(prev, path, (n) => ({ ...n, isLoading: true }));
-      });
-
-      if (!shouldLoad) {
+      const node = findNode(nodesRef.current, path);
+      if (!(node && node.isDirectory) || node.isLoading) {
         return;
       }
 
-      loadDirEntries(path, serial, getFileAccessMode)
+      if (node.isExpanded) {
+        setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isExpanded: false })));
+        return;
+      }
+      if (node.children !== null) {
+        setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isExpanded: true })));
+        return;
+      }
+
+      setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: true })));
+
+      loadDirEntries(path, serial, (p) => getFileAccessModeRef.current(p))
         .then((entries) => {
-          setNodes((prev) =>
+          setNodesRaw((prev) =>
             applyToNode(prev, path, (n) => ({
               ...n,
               isLoading: false,
@@ -426,10 +426,10 @@ export function DirectoryTree({
           );
         })
         .catch(() => {
-          setNodes((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
+          setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
         });
     },
-    [getFileAccessMode, serial, setNodes],
+    [serial],
   );
 
   return (
