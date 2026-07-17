@@ -70,16 +70,15 @@ export function useFileExplorerSelection(
         return;
       }
       if (e.ctrlKey || e.metaKey) {
-        setIsMultiSelectMode(true);
+        const removing = selectedNames.has(file.name);
+        const nextSize = removing ? selectedNames.size - 1 : selectedNames.size + 1;
+        setIsMultiSelectMode(nextSize > 0);
         setSelectedNames((prev) => {
           const next = new Set(prev);
           if (next.has(file.name)) {
             next.delete(file.name);
           } else {
             next.add(file.name);
-          }
-          if (next.size === 0) {
-            setIsMultiSelectMode(false);
           }
           return next;
         });
@@ -90,23 +89,28 @@ export function useFileExplorerSelection(
         lastClickedIndexRef.current = clickedIndex;
       }
     },
-    [renamingName, visibleList],
+    [renamingName, selectedNames, visibleList],
   );
 
-  const toggleCheckbox = useCallback((name: string) => {
-    setSelectedNames((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      if (next.size === 0) {
+  const toggleCheckbox = useCallback(
+    (name: string) => {
+      const removing = selectedNames.has(name);
+      const nextSize = removing ? selectedNames.size - 1 : selectedNames.size + 1;
+      if (nextSize === 0) {
         setIsMultiSelectMode(false);
       }
-      return next;
-    });
-  }, []);
+      setSelectedNames((prev) => {
+        const next = new Set(prev);
+        if (next.has(name)) {
+          next.delete(name);
+        } else {
+          next.add(name);
+        }
+        return next;
+      });
+    },
+    [selectedNames],
+  );
 
   const handleSelectAll = useCallback(() => {
     if (allSelected) {
