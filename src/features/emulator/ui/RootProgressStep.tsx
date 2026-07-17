@@ -57,7 +57,7 @@ export function RootProgressStep({ progress, error, avdName, onCancel }: RootPro
                 !(isDone || isActive || isFailed) && 'text-muted-foreground',
               )}
               id={`root-step-${stepNumber}`}
-              key={stepNumber}
+              key={label}
             >
               <span className="mt-0.5 shrink-0">
                 {isFailed ? (

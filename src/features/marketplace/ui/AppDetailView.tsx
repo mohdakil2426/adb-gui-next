@@ -140,12 +140,12 @@ export function AppDetailView() {
       {detail?.screenshots && detail.screenshots.length > 0 ? (
         <section className="gap-4">
           <div className="custom-scroll flex snap-x gap-4 overflow-x-auto pb-4">
-            {detail.screenshots.map((url, i) => (
+            {detail.screenshots.map((url) => (
               <img
                 alt=""
                 className="h-64 shrink-0 snap-start rounded-xl border bg-muted/20 object-contain shadow-sm sm:h-80"
                 height={320}
-                key={`${url}-${i}`}
+                key={url}
                 loading="lazy"
                 src={url}
                 width={320}
