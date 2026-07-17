@@ -47,9 +47,7 @@ function CopyableText({ text }: { text: string }) {
   const handleCopy = useCallback(() => {
     void navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      setTimeout(() => setCopied(false), 2000);
     });
   }, [text]);
   return (
@@ -65,6 +63,7 @@ function CopyableText({ text }: { text: string }) {
               copied && 'text-success',
             )}
             onClick={handleCopy}
+            type="button"
           >
             {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           </button>

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ChevronDown, ExternalLink, FileArchive, FolderOutput, Globe } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
@@ -169,24 +169,31 @@ export const FileBanner = memo(function FileBanner({
               'cursor-pointer rounded-md hover:bg-muted/50',
             )}
             onClick={onToggleDetails}
+            type="button"
           >
-            <motion.span
-              animate={{ rotate: isDetailsOpen ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <m.span animate={{ rotate: isDetailsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
               <ChevronDown className="size-3.5" />
-            </motion.span>
+            </m.span>
             {isDetailsOpen ? 'Hide Details' : 'Show Details'}
           </button>
 
-          <AnimatePresence initial={false}>
-            {isDetailsOpen ? (
-              <motion.div
-                animate={{ height: 'auto', opacity: 1 }}
-                className="overflow-hidden"
-                exit={{ height: 0, opacity: 0 }}
-                initial={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.25, ease: 'easeInOut' }}
+          {/* Grid 0fr→1fr expand: avoids animating height (layout thrash / react-doctor). */}
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-200 ease-in-out',
+              isDetailsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            )}
+          >
+            <div
+              className="min-h-0 overflow-hidden"
+              // Keep collapsed content out of the tab order / a11y tree.
+              inert={!isDetailsOpen}
+            >
+              <div
+                className={cn(
+                  'transition-opacity duration-200 ease-in-out',
+                  isDetailsOpen ? 'opacity-100' : 'opacity-0',
+                )}
               >
                 <FileBannerDetails
                   metadata={remoteMetadata}
@@ -194,9 +201,9 @@ export const FileBanner = memo(function FileBanner({
                   prefetch={prefetch}
                   remoteUrl={remoteUrl}
                 />
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </>
       ) : null}
     </div>
