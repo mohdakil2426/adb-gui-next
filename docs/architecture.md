@@ -765,8 +765,8 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 | Job | When | What |
 | --- | --- | --- |
 | `quality` | All branches + PRs | format:check, lint, FE tests, cargo test, vite build; package.json↔Cargo version match (Ubuntu) |
-| `package` | **main push only** | `tauri-action` builds Win x64/x86/arm64 + Linux x64; per-bundle workflow artifacts; portable via `make-windows-portable.ps1` |
-| `publish` | Manual draft | Same + `tauri-action` uploads to draft `v{version}`; portable + `SHA256SUMS` finalized; macOS only if secrets (product still **paused**) |
+| `package` | **main push only** | `tauri-action` builds Windows/Linux multi-arch; **user-facing** artifact names (`64bit` / `32bit` / `arm`); portable via `make-windows-portable.ps1` |
+| `publish` | Manual draft | Same names on draft `v{version}`; portable + `SHA256SUMS` finalized; macOS only if secrets (product still **paused**) |
 
 ### Rust lint bar
 

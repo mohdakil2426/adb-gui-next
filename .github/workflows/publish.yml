@@ -137,38 +137,44 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: linux-x86_64
+          # cpu = user-facing download label (64bit|32bit|arm); arch = Rust triple prefix
+          - name: linux-64bit
             platform: ubuntu-22.04
             artifact-platform: linux
             arch: x86_64
+            cpu: 64bit
             rust-target: x86_64-unknown-linux-gnu
             args: --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
             chmod-tools: true
-          - name: linux-aarch64
+          - name: linux-arm
             platform: ubuntu-22.04-arm
             artifact-platform: linux
             arch: aarch64
+            cpu: arm
             rust-target: aarch64-unknown-linux-gnu
             args: --target aarch64-unknown-linux-gnu --bundles deb,rpm,appimage --config src-tauri/tauri.linux-arm64.bundle.json
             chmod-tools: false
-          - name: windows-x86_64
+          - name: windows-64bit
             platform: windows-latest
             artifact-platform: windows
             arch: x86_64
+            cpu: 64bit
             rust-target: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
             chmod-tools: false
-          - name: windows-i686
+          - name: windows-32bit
             platform: windows-latest
             artifact-platform: windows
             arch: i686
+            cpu: 32bit
             rust-target: i686-pc-windows-msvc
             args: --target i686-pc-windows-msvc --bundles nsis,msi
             chmod-tools: false
-          - name: windows-aarch64
+          - name: windows-arm
             platform: windows-latest
             artifact-platform: windows
             arch: aarch64
+            cpu: arm
             rust-target: aarch64-pc-windows-msvc
             args: --target aarch64-pc-windows-msvc --bundles nsis
             chmod-tools: false
@@ -247,10 +253,10 @@ jobs:
           releaseCommitish: main
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
-          # Official tokens: platform=windows|linux, arch=x86_64|i686|aarch64, setup=-setup for nsis
-          releaseAssetNamePattern: ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
+          # User-facing: 64bit|32bit|arm (matrix.cpu). [setup]=-setup for NSIS.
+          releaseAssetNamePattern: ADB-GUI-Next-v[version]-${{ matrix.artifact-platform }}-${{ matrix.cpu }}[setup][ext]
           uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: release-file-ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
+          workflowArtifactNamePattern: ADB-GUI-Next-v[version]-${{ matrix.artifact-platform }}-${{ matrix.cpu }}[setup][ext]
 
       - name: Make and upload Windows portable zip
         if: matrix.artifact-platform == 'windows'
@@ -259,7 +265,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $version = '${{ inputs.version }}'
-          $zipName = "ADB-GUI-Next-v${version}-windows-${{ matrix.arch }}-portable.zip"
+          $zipName = "ADB-GUI-Next-v${version}-windows-${{ matrix.cpu }}-portable.zip"
           $zipPath = Join-Path $PWD $zipName
           ./scripts/make-windows-portable.ps1 `
             -Version $version `
@@ -274,7 +280,7 @@ jobs:
         if: matrix.artifact-platform == 'windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: release-file-ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.arch }}-portable.zip
+          name: ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.cpu }}-portable.zip
           path: ${{ env.PORTABLE_ZIP }}
           retention-days: 7
           if-no-files-found: error

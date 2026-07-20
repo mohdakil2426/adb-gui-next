@@ -63,18 +63,18 @@ Copy-Item -LiteralPath $exe -Destination (Join-Path $stage "$DisplayName.exe") -
 Copy-Item -LiteralPath (Join-Path $root 'src-tauri/resources/windows') -Destination $resourcesDest -Recurse -Force
 
 @"
-$DisplayName $Version portable build (windows-$Arch)
+$DisplayName $Version portable build
 
 HOW TO RUN
 1. Extract to a LOCAL folder (not OneDrive cloud-only Files On-Demand).
 2. Run "$DisplayName.exe" (keep the resources/ folder next to it).
 
 REQUIREMENTS
-- Package arch: $Arch (app PE: $appArch).
+- This package matches your download label (64-bit, 32-bit, or ARM).
 - WebView2 Runtime (installers embed bootstrapper; portable expects it installed).
-- Bundled adb.exe PE: $adbArch (often x86 Google platform-tools; OK on x64 via WOW64).
+- Bundled adb is usually 32-bit Google platform-tools (normal on 64-bit Windows).
 
-Not code-signed. Prefer the NSIS/MSI installer for normal users.
+Not code-signed. Prefer the Installer download for normal users.
 "@ | Set-Content -Path (Join-Path $stage 'README-portable.txt') -Encoding UTF8
 
 $outDir = Split-Path -Parent $OutputZip

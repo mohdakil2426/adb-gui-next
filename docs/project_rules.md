@@ -12,17 +12,17 @@ Owns **workflow**, report layout, quality gates, and **hard stops**. Module impl
 
 ## Platforms & packaging (product policy)
 
-| Platform | Product status | Notes |
+| User-facing platform | Product status | Notes |
 | --- | --- | --- |
-| **Windows x86_64** | First-class | NSIS, MSI, portable; Google tools PE **x86** (WOW64 OK) |
-| **Windows i686** | Shipped (CI) | NSIS, MSI, portable; tools PE x86 |
-| **Windows aarch64** | Shipped (CI, NSIS) | App aarch64; **bundled tools still PE x86** — needs x86/WOW64 emulation |
-| **Linux x86_64** | First-class | deb, rpm, AppImage + bundled ELF x86_64 tools |
-| **Linux aarch64** | Shipped (CI) | deb/rpm/AppImage; **no bundled platform-tools** (empty resources) — uses system PATH adb/fastboot |
+| **Windows (64-bit)** | First-class | Installer (setup), MSI, portable; Google tools PE **x86** (WOW64 OK) |
+| **Windows (32-bit)** | Shipped (CI) | Installer, MSI, portable; tools PE x86 |
+| **Windows (ARM)** | Shipped (CI, setup) | App ARM64; **bundled tools still PE x86** — needs x86/WOW64 emulation |
+| **Linux (64-bit)** | First-class | deb, rpm, AppImage + bundled ELF 64-bit tools |
+| **Linux (ARM)** | Shipped (CI) | deb/rpm/AppImage; **no bundled platform-tools** — system PATH adb/fastboot |
 | **macOS** | **Code present, builds paused** | See below |
 | Browser / Next.js / Electron | Out of scope | Never reintroduce |
 
-**Win ARM tools strategy:** keep shipping Google’s Windows platform-tools (x86) until an official aarch64 tree is vendored. Document emulation requirement; do not ship mismatched ELF/PE silently.
+**Win ARM tools strategy:** keep shipping Google’s Windows platform-tools (x86) until an official ARM64 tree is vendored. Document emulation requirement; do not ship mismatched ELF/PE silently.
 
 Full build matrix + portable RCA: `docs/internal/reports/active/2026-07-18/2026-07-18-ci-release-artifact-packaging-audit.md`.
 
@@ -37,6 +37,36 @@ Full build matrix + portable RCA: `docs/internal/reports/active/2026-07-18/2026-
 | Publisher | **Astrixforge** |
 
 Do not reintroduce mixed styles (`AdbGuiNext` / `Adb Gui Next`) in new user-facing strings or release assets.
+
+### User-facing download / artifact names (UX)
+
+Prefer labels users understand. **Do not** put Rust triple tokens (`x86_64`, `i686`, `aarch64`) in download titles or release asset basenames.
+
+| UX token | Means | Internal Rust arch (CI only) |
+| --- | --- | --- |
+| **`64bit`** | Normal 64-bit PC | `x86_64` |
+| **`32bit`** | Old 32-bit Windows | `i686` |
+| **`arm`** | ARM64 devices / Windows on ARM | `aarch64` |
+
+**File pattern:**
+
+```text
+ADB-GUI-Next-v{version}-{windows|linux}-{64bit|32bit|arm}[-setup|-portable].{ext}
+```
+
+**Examples:**
+
+| User sees | File |
+| --- | --- |
+| Windows (64-bit) Installer | `ADB-GUI-Next-v0.2.5-windows-64bit-setup.exe` |
+| Windows (64-bit) MSI | `ADB-GUI-Next-v0.2.5-windows-64bit.msi` |
+| Windows (64-bit) Portable | `ADB-GUI-Next-v0.2.5-windows-64bit-portable.zip` |
+| Windows (32-bit) Installer | `ADB-GUI-Next-v0.2.5-windows-32bit-setup.exe` |
+| Windows (ARM) Installer | `ADB-GUI-Next-v0.2.5-windows-arm-setup.exe` |
+| Linux (64-bit) AppImage / DEB / RPM | `…-linux-64bit.AppImage` / `.deb` / `.rpm` |
+| Linux (ARM) packages | `…-linux-arm.{AppImage,deb,rpm}` |
+
+CI matrix keeps `arch` + `rust-target` for the compiler; `cpu` drives the public name (`64bit` / `32bit` / `arm`).
 
 ### Code signing
 

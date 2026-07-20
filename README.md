@@ -359,14 +359,16 @@ High-level system design, layer boundaries, feature map, IPC conventions, and di
 
 ## 🖥️ Platform Support
 
-| Platform | Status | Installer |
-| -------- | ------ | --------- |
-| Windows x86_64 | ✅ First-class | NSIS + MSI + portable; tools PE x86 (WOW64) |
-| Windows i686 | ✅ Shipped | NSIS + MSI + portable |
-| Windows aarch64 | ✅ Shipped (NSIS) | Portable; bundled tools PE x86 (need emulation) |
-| Linux x86_64 | ✅ First-class | `.deb` + `.rpm` + AppImage + bundled tools |
-| Linux aarch64 | ✅ Shipped | Packages ship; **PATH** adb/fastboot (no bundled tools) |
-| macOS | ⏸ Builds paused | Code may exist; not first-class until unpaused |
+| Platform | Status | What to download |
+| -------- | ------ | ---------------- |
+| **Windows (64-bit)** | ✅ First-class | Installer (`…-windows-64bit-setup.exe`), MSI, portable zip |
+| **Windows (32-bit)** | ✅ Shipped | Installer / MSI / portable (`…-windows-32bit-…`) |
+| **Windows (ARM)** | ✅ Shipped | Installer + portable (`…-windows-arm-…`); bundled adb is x86 (needs emulation) |
+| **Linux (64-bit)** | ✅ First-class | AppImage / DEB / RPM (`…-linux-64bit-…`) + bundled tools |
+| **Linux (ARM)** | ✅ Shipped | AppImage / DEB / RPM (`…-linux-arm-…`); use system **PATH** adb/fastboot |
+| **macOS** | ⏸ Builds paused | Code may exist; not first-class until unpaused |
+
+**Not sure which Windows file?** Choose **Windows (64-bit) Installer** on almost all PCs. Use **Windows (ARM)** only on Snapdragon / “Windows on ARM” devices.
 
 ---
 

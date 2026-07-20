@@ -173,40 +173,45 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # tauri-action [arch] = rust triple prefix (x86_64 | i686 | aarch64)
-          - name: linux-x86_64
+          # rust arch = triple prefix (build). cpu = user-facing download label (64bit|32bit|arm).
+          - name: linux-64bit
             platform: ubuntu-22.04
             artifact-platform: linux
             arch: x86_64
+            cpu: 64bit
             rust-target: x86_64-unknown-linux-gnu
             args: --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
             bundle-config: ''
-          - name: linux-aarch64
+          - name: linux-arm
             platform: ubuntu-22.04-arm
             artifact-platform: linux
             arch: aarch64
+            cpu: arm
             rust-target: aarch64-unknown-linux-gnu
             # No x86_64 platform-tools in resources — empty resources for arm64 (PATH adb/fastboot).
             args: --target aarch64-unknown-linux-gnu --bundles deb,rpm,appimage --config src-tauri/tauri.linux-arm64.bundle.json
             bundle-config: arm64
-          - name: windows-x86_64
+          - name: windows-64bit
             platform: windows-latest
             artifact-platform: windows
             arch: x86_64
+            cpu: 64bit
             rust-target: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
             bundle-config: ''
-          - name: windows-i686
+          - name: windows-32bit
             platform: windows-latest
             artifact-platform: windows
             arch: i686
+            cpu: 32bit
             rust-target: i686-pc-windows-msvc
             args: --target i686-pc-windows-msvc --bundles nsis,msi
             bundle-config: ''
-          - name: windows-aarch64
+          - name: windows-arm
             platform: windows-latest
             artifact-platform: windows
             arch: aarch64
+            cpu: arm
             rust-target: aarch64-pc-windows-msvc
             # Bundled Google platform-tools remain PE x86; need WOW64/x86 emulation on ARM Windows.
             args: --target aarch64-pc-windows-msvc --bundles nsis
@@ -278,7 +283,7 @@ jobs:
         run: bun ci
 
       # Official: https://v2.tauri.app/distribute/pipelines/github/
-      # [platform]=windows|linux [arch]=triple prefix [setup]=-setup for nsis
+      # User-facing names: 64bit|32bit|arm (not x86_64/i686/aarch64). [setup]=-setup for NSIS.
       - name: Build with tauri-action
         # Official docs: https://v2.tauri.app/distribute/pipelines/github/ and tauri-apps/tauri-action@v1
         # Pin full commit of action-v1.0.0 / tags v1,v1.0,v1.0.0 (2026-06-29).
@@ -292,14 +297,15 @@ jobs:
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
           uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
+          # matrix.cpu is UX label; [version]/[setup]/[ext] filled by tauri-action.
+          workflowArtifactNamePattern: ADB-GUI-Next-v[version]-${{ matrix.artifact-platform }}-${{ matrix.cpu }}[setup][ext]
 
       - name: Make Windows portable zip
         if: matrix.artifact-platform == 'windows'
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          $zip = "artifacts/ADB-GUI-Next-v${version}-windows-${{ matrix.arch }}-portable.zip"
+          $zip = "artifacts/ADB-GUI-Next-v${version}-windows-${{ matrix.cpu }}-portable.zip"
           ./scripts/make-windows-portable.ps1 `
             -Version $version `
             -Arch '${{ matrix.arch }}' `
@@ -312,7 +318,7 @@ jobs:
         if: matrix.artifact-platform == 'windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.arch }}-portable.zip
+          name: ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.cpu }}-portable.zip
           path: ${{ env.PORTABLE_ZIP }}
           retention-days: 14
           if-no-files-found: error
@@ -326,19 +332,17 @@ jobs:
             if [ -n "${PORTABLE_ZIP:-}" ] && [ -f "$PORTABLE_ZIP" ]; then
               sha256sum "$PORTABLE_ZIP"
             fi
-          } > "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt" || true
-          # Prefer listing tauri-action artifact downloads is not available mid-job;
-          # sum portable when present. Bundle hashes appear on publish finalize.
-          if [ -f "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt" ]; then
-            cat "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt"
+          } > "artifacts/sums/SHA256SUMS-${{ matrix.artifact-platform }}-${{ matrix.cpu }}.txt" || true
+          if [ -f "artifacts/sums/SHA256SUMS-${{ matrix.artifact-platform }}-${{ matrix.cpu }}.txt" ]; then
+            cat "artifacts/sums/SHA256SUMS-${{ matrix.artifact-platform }}-${{ matrix.cpu }}.txt"
           fi
 
       - name: Upload cell checksums
         if: matrix.artifact-platform == 'windows'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: SHA256SUMS-${{ matrix.name }}
-          path: artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt
+          name: SHA256SUMS-${{ matrix.artifact-platform }}-${{ matrix.cpu }}
+          path: artifacts/sums/SHA256SUMS-${{ matrix.artifact-platform }}-${{ matrix.cpu }}.txt
           retention-days: 14
           if-no-files-found: ignore
           compression-level: 0
