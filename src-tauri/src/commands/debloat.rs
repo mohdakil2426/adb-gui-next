@@ -25,16 +25,25 @@ pub struct DebloatData {
     pub backups: Vec<BackupSummary>,
 }
 
+fn serial_opt(serial: Option<String>) -> Option<String> {
+    serial.and_then(|s| {
+        let t = s.trim().to_string();
+        if t.is_empty() { None } else { Some(t) }
+    })
+}
+
 /// Get all debloater data in one call. Uses in-memory cache when available.
 #[tauri::command]
 pub async fn get_debloat_data(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
+    serial: Option<String>,
 ) -> CmdResult<DebloatData> {
-    // Resolve device first so cache entries cannot leak across serials.
+    let serial = serial_opt(serial);
     let device_id = tokio::task::spawn_blocking({
         let app = app.clone();
-        move || get_device_id(&app)
+        let serial = serial.clone();
+        move || get_device_id(&app, serial.as_deref())
     })
     .await
     .map_err(|e| e.to_string())?;
@@ -46,9 +55,8 @@ pub async fn get_debloat_data(
         return Ok(DebloatData { packages, list_status: status, settings, backups });
     }
 
-    // Cache miss — load everything fresh
     info!("debloat: cache miss for device {device_id}, loading fresh data");
-    load_debloat_data(&app, &cache, &device_id).await
+    load_debloat_data(&app, &cache, &device_id, serial.as_deref()).await
 }
 
 /// Force refresh all debloater data (invalidates cache).
@@ -56,38 +64,42 @@ pub async fn get_debloat_data(
 pub async fn refresh_debloat_data(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
+    serial: Option<String>,
 ) -> CmdResult<DebloatData> {
     cache.invalidate();
     info!("debloat: cache invalidated");
 
+    let serial = serial_opt(serial);
     let device_id = tokio::task::spawn_blocking({
         let app = app.clone();
-        move || get_device_id(&app)
+        let serial = serial.clone();
+        move || get_device_id(&app, serial.as_deref())
     })
     .await
     .map_err(|e| e.to_string())?;
 
-    load_debloat_data(&app, &cache, &device_id).await
+    load_debloat_data(&app, &cache, &device_id, serial.as_deref()).await
 }
 
 async fn load_debloat_data(
     app: &AppHandle,
     cache: &DebloatCache,
     device_id: &str,
+    serial: Option<&str>,
 ) -> CmdResult<DebloatData> {
-    // Load packages (sync_device_packages returns Vec<DebloatPackageRow>, load_uad_lists returns (Vec, DebloatListStatus))
+    let serial_owned = serial.map(str::to_string);
     let packages = tokio::task::spawn_blocking({
         let app = app.clone();
+        let serial_owned = serial_owned.clone();
         move || {
             let (uad_packages, _) = load_uad_lists(&app)?;
             let uad_map = build_uad_map(uad_packages);
-            sync_device_packages(&app, &uad_map)
+            sync_device_packages(&app, &uad_map, serial_owned.as_deref())
         }
     })
     .await
     .map_err(|e| e.to_string())??;
 
-    // Get list status
     let list_status = tokio::task::spawn_blocking({
         let app = app.clone();
         move || {
@@ -105,7 +117,6 @@ async fn load_debloat_data(
     .await
     .map_err(|e| e.to_string())?;
 
-    // Load settings
     let settings = tokio::task::spawn_blocking({
         let app = app.clone();
         let device_id = device_id.to_string();
@@ -114,7 +125,6 @@ async fn load_debloat_data(
     .await
     .map_err(|e| e.to_string())?;
 
-    // Load backups
     let backups = tokio::task::spawn_blocking({
         let app = app.clone();
         let device_id = device_id.to_string();
@@ -141,13 +151,17 @@ pub async fn load_debloat_lists(app: AppHandle) -> CmdResult<DebloatListStatus> 
     .map_err(|e| e.to_string())?
 }
 
-/// Get all system packages merged with UAD metadata for the connected device.
+/// Get all system packages merged with UAD metadata for the selected device.
 #[tauri::command]
-pub async fn get_debloat_packages(app: AppHandle) -> CmdResult<Vec<DebloatPackageRow>> {
+pub async fn get_debloat_packages(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<Vec<DebloatPackageRow>> {
+    let serial = serial_opt(serial);
     tokio::task::spawn_blocking(move || {
         let (packages, _) = load_uad_lists(&app)?;
         let uad_map = build_uad_map(packages);
-        sync_device_packages(&app, &uad_map)
+        sync_device_packages(&app, &uad_map, serial.as_deref())
     })
     .await
     .map_err(|e| e.to_string())?
@@ -161,18 +175,18 @@ pub async fn debloat_packages(
     packages: Vec<String>,
     action: String,
     user: u32,
+    serial: Option<String>,
 ) -> CmdResult<Vec<DebloatActionResult>> {
     info!("debloat_packages: action={} packages={} user={}", action, packages.len(), user);
+    let serial = serial_opt(serial);
     let result = tokio::task::spawn_blocking(move || {
-        let sdk = try_get_android_sdk(&app)?;
-        apply_package_actions(&app, &packages, &action, sdk, user)
+        let sdk = try_get_android_sdk(&app, serial.as_deref())?;
+        apply_package_actions(&app, serial.as_deref(), &packages, &action, sdk, user)
     })
     .await
     .map_err(|e| e.to_string())??;
 
-    // Invalidate cache since package states changed
     cache.invalidate();
-
     Ok(result)
 }
 
@@ -182,18 +196,19 @@ pub async fn create_debloat_backup(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
     packages: Vec<PackageSnapshot>,
+    serial: Option<String>,
 ) -> CmdResult<BackupSummary> {
     let app_clone = app.clone();
+    let serial = serial_opt(serial);
 
     let result = tokio::task::spawn_blocking(move || {
-        let device_id = get_device_id(&app_clone);
-        let sdk = try_get_android_sdk(&app_clone)?;
+        let device_id = get_device_id(&app_clone, serial.as_deref());
+        let sdk = try_get_android_sdk(&app_clone, serial.as_deref())?;
         create_backup(&app_clone, &device_id, sdk, packages)
     })
     .await
     .map_err(|e| e.to_string())??;
 
-    // Refresh backups cache for the same device
     let device_id = result.device_id.clone();
     let backups = tokio::task::spawn_blocking({
         let app = app.clone();
@@ -207,10 +222,14 @@ pub async fn create_debloat_backup(
     Ok(result)
 }
 
-/// List all available backups for the connected device.
+/// List all available backups for the selected device.
 #[tauri::command]
-pub async fn list_debloat_backups(app: AppHandle) -> CmdResult<Vec<BackupSummary>> {
-    let device_id = get_device_id(&app);
+pub async fn list_debloat_backups(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<Vec<BackupSummary>> {
+    let serial = serial_opt(serial);
+    let device_id = get_device_id(&app, serial.as_deref());
     tokio::task::spawn_blocking(move || list_backups(&app, &device_id))
         .await
         .map_err(|e| e.to_string())
@@ -222,14 +241,17 @@ pub async fn restore_debloat_backup(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
     file_name: String,
+    serial: Option<String>,
 ) -> CmdResult<Vec<DebloatActionResult>> {
-    let device_id = get_device_id(&app);
+    let serial = serial_opt(serial);
+    let device_id = get_device_id(&app, serial.as_deref());
 
     let result = tokio::task::spawn_blocking({
         let file_name = file_name.clone();
+        let serial = serial.clone();
         move || {
             let backup = load_backup(&app, &device_id, &file_name)?;
-            let sdk = try_get_android_sdk(&app)?;
+            let sdk = try_get_android_sdk(&app, serial.as_deref())?;
 
             let mut results = Vec::new();
             for snapshot in &backup.packages {
@@ -240,6 +262,7 @@ pub async fn restore_debloat_backup(
                 };
                 let mut r = apply_package_actions(
                     &app,
+                    serial.as_deref(),
                     std::slice::from_ref(&snapshot.name),
                     action_str,
                     sdk,
@@ -253,16 +276,18 @@ pub async fn restore_debloat_backup(
     .await
     .map_err(|e| e.to_string())??;
 
-    // Invalidate cache since package states changed
     cache.invalidate();
-
     Ok(result)
 }
 
-/// Get per-device settings for the connected device.
+/// Get per-device settings for the selected device.
 #[tauri::command]
-pub async fn get_debloat_device_settings(app: AppHandle) -> CmdResult<PerDeviceSettings> {
-    let device_id = get_device_id(&app);
+pub async fn get_debloat_device_settings(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<PerDeviceSettings> {
+    let serial = serial_opt(serial);
+    let device_id = get_device_id(&app, serial.as_deref());
     tokio::task::spawn_blocking(move || {
         crate::debloat::backup::load_device_settings(&app, &device_id)
     })
@@ -270,14 +295,16 @@ pub async fn get_debloat_device_settings(app: AppHandle) -> CmdResult<PerDeviceS
     .map_err(|e| e.to_string())
 }
 
-/// Save per-device settings for the connected device.
+/// Save per-device settings for the selected device.
 #[tauri::command]
 pub async fn save_debloat_device_settings(
     app: AppHandle,
     cache: tauri::State<'_, DebloatCache>,
     settings: PerDeviceSettings,
+    serial: Option<String>,
 ) -> CmdResult<()> {
-    let device_id = get_device_id(&app);
+    let serial = serial_opt(serial);
+    let device_id = get_device_id(&app, serial.as_deref());
 
     tokio::task::spawn_blocking({
         let settings = settings.clone();
@@ -287,16 +314,15 @@ pub async fn save_debloat_device_settings(
     .await
     .map_err(|e| e.to_string())??;
 
-    // Update settings in cache
     cache.set_settings(&device_id, settings);
-
     Ok(())
 }
 
-/// Get the Android SDK version of the connected device.
+/// Get the Android SDK version of the selected device.
 #[tauri::command]
-pub async fn get_device_sdk(app: AppHandle) -> CmdResult<u32> {
-    let sdk = tokio::task::spawn_blocking(move || get_android_sdk(&app))
+pub async fn get_device_sdk(app: AppHandle, serial: Option<String>) -> CmdResult<u32> {
+    let serial = serial_opt(serial);
+    let sdk = tokio::task::spawn_blocking(move || get_android_sdk(&app, serial.as_deref()))
         .await
         .map_err(|e| e.to_string())?;
     Ok(sdk)

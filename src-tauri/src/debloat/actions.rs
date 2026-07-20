@@ -1,6 +1,6 @@
 use crate::CmdResult;
 use crate::debloat::{DebloatActionResult, PackageState};
-use crate::helpers::run_binary_command;
+use crate::helpers::run_adb;
 use log::info;
 use tauri::AppHandle;
 
@@ -124,6 +124,7 @@ fn new_state_for_action(action: &DebloatAction) -> PackageState {
 /// Apply an action to a single package. Runs all required ADB commands in order.
 fn apply_single(
     app: &AppHandle,
+    serial: Option<&str>,
     package: &str,
     action: &DebloatAction,
     sdk: u32,
@@ -146,7 +147,7 @@ fn apply_single(
         commands.iter().map(|cmd| cmd.iter().map(String::as_str).collect()).collect();
 
     for args in &arg_refs {
-        if let Err(e) = run_binary_command(app, "adb", args) {
+        if let Err(e) = run_adb(app, serial, args) {
             return DebloatActionResult {
                 package_name: package.to_string(),
                 success: false,
@@ -167,6 +168,7 @@ fn apply_single(
 /// Apply an action to multiple packages. Returns one result per package.
 pub fn apply_package_actions(
     app: &AppHandle,
+    serial: Option<&str>,
     packages: &[String],
     action_str: &str,
     sdk: u32,
@@ -183,7 +185,8 @@ pub fn apply_package_actions(
         return Err("Disable is not supported on API < 23".to_string());
     }
 
-    let results = packages.iter().map(|pkg| apply_single(app, pkg, &action, sdk, user)).collect();
+    let results =
+        packages.iter().map(|pkg| apply_single(app, serial, pkg, &action, sdk, user)).collect();
 
     Ok(results)
 }

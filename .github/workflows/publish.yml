@@ -1,10 +1,14 @@
 name: Publish Release
 
+# Official: tauri-apps/tauri-action (build + draft release assets).
+# Custom: scripts/make-windows-portable.ps1 only for Windows portable zip.
+# macOS optional if Apple secrets exist; product policy still treats macOS as paused.
+
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, for example 0.2.5'
+        description: 'Release version, for example 0.2.5 (must match package.json)'
         required: true
         default: '0.2.5'
 
@@ -34,7 +38,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
       - name: Install Linux dependencies
         run: |
@@ -42,12 +46,12 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -60,7 +64,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
           workspaces: './src-tauri -> target'
           shared-key: publish-preflight
@@ -69,8 +73,22 @@ jobs:
       - name: Install frontend dependencies
         run: bun ci
 
-      - name: Verify requested release version
-        run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
+      - name: Sync check package.json ↔ Cargo.toml ↔ dispatch input
+        run: |
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          CARGO=$(sed -n 's/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          echo "input=${{ inputs.version }} package.json=$PKG Cargo.toml=$CARGO"
+          test "$PKG" = "${{ inputs.version }}"
+          test "$PKG" = "$CARGO"
+
+      - name: Reject existing GitHub release for this version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "Release v${{ inputs.version }} already exists. Bump version or delete draft/tag first."
+            exit 1
+          fi
 
       - name: Detect macOS signing secrets
         id: macos
@@ -86,7 +104,7 @@ jobs:
             echo "macos_enabled=true" >> $GITHUB_OUTPUT
           else
             echo "macos_enabled=false" >> $GITHUB_OUTPUT
-            echo "macOS build skipped: Apple secrets incomplete"
+            echo "macOS build skipped (secrets incomplete; product builds remain paused by policy)"
           fi
 
       - name: Check formatting
@@ -104,26 +122,58 @@ jobs:
       - name: TypeScript + Vite build
         run: bun run build
 
+      - name: Require release notes file
+        run: test -f ".github/release-notes/v${{ inputs.version }}.md"
+
   build:
-    name: Build ${{ matrix.name }} release assets
+    name: Build ${{ matrix.name }}
     needs: preflight
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: linux-x64
+          - name: linux-x86_64
             platform: ubuntu-22.04
             artifact-platform: linux
-            bundle-targets: deb,rpm
-          - name: windows-x64
+            arch: x86_64
+            rust-target: x86_64-unknown-linux-gnu
+            args: --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
+            chmod-tools: true
+          - name: linux-aarch64
+            platform: ubuntu-22.04-arm
+            artifact-platform: linux
+            arch: aarch64
+            rust-target: aarch64-unknown-linux-gnu
+            args: --target aarch64-unknown-linux-gnu --bundles deb,rpm,appimage --config src-tauri/tauri.linux-arm64.bundle.json
+            chmod-tools: false
+          - name: windows-x86_64
             platform: windows-latest
             artifact-platform: windows
-            bundle-targets: nsis,msi
+            arch: x86_64
+            rust-target: x86_64-pc-windows-msvc
+            args: --target x86_64-pc-windows-msvc --bundles nsis,msi
+            chmod-tools: false
+          - name: windows-i686
+            platform: windows-latest
+            artifact-platform: windows
+            arch: i686
+            rust-target: i686-pc-windows-msvc
+            args: --target i686-pc-windows-msvc --bundles nsis,msi
+            chmod-tools: false
+          - name: windows-aarch64
+            platform: windows-latest
+            artifact-platform: windows
+            arch: aarch64
+            rust-target: aarch64-pc-windows-msvc
+            args: --target aarch64-pc-windows-msvc --bundles nsis
+            chmod-tools: false
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -132,12 +182,12 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -146,68 +196,103 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
 
       - name: Setup Bundled Permissions
-        if: runner.os == 'Linux'
+        if: matrix.chmod-tools
         run: |
-          chmod +x src-tauri/resources/linux/adb || true
-          chmod +x src-tauri/resources/linux/fastboot || true
+          chmod +x src-tauri/resources/linux/adb
+          chmod +x src-tauri/resources/linux/fastboot
+          chmod +x src-tauri/resources/linux/etc1tool
+          chmod +x src-tauri/resources/linux/hprof-conv
+          chmod +x src-tauri/resources/linux/make_f2fs
+          chmod +x src-tauri/resources/linux/make_f2fs_casefold
+          chmod +x src-tauri/resources/linux/mke2fs
+          chmod +x src-tauri/resources/linux/sqlite3
 
       - name: Install frontend dependencies
         run: bun ci
 
-      - name: Verify requested release version
-        run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
+      - name: Verify dispatch version matches package.json
+        run: |
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          test "$PKG" = "${{ inputs.version }}"
 
-      - name: Clean stale bundle outputs
-        shell: bash
-        run: rm -rf src-tauri/target/release/bundle
-
-      - name: Build Tauri packages
+      - name: Build and upload with tauri-action
+        uses: tauri-apps/tauri-action@e3c86271c84e47d58e97b0b7ec773b9b06a19d8b # v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: bun run tauri build --verbose --bundles ${{ matrix.bundle-targets }}
-
-      - name: Collect release assets
-        shell: pwsh
-        run: |
-          ./scripts/collect-release-assets.ps1 `
-            -Version '${{ inputs.version }}' `
-            -Platform '${{ matrix.artifact-platform }}' `
-            -OutputDir 'artifacts/${{ matrix.name }}' `
-            -Release
-
-      - name: Upload ${{ matrix.name }} release assets
-        uses: actions/upload-artifact@v4
         with:
-          name: release-${{ matrix.name }}
-          path: artifacts/${{ matrix.name }}/
+          projectPath: .
+          tauriScript: bun run tauri
+          args: ${{ matrix.args }}
+          tagName: v__VERSION__
+          releaseName: ADB GUI Next v__VERSION__
+          releaseBody: |
+            Draft release for ADB GUI Next. Builds are unsigned. Full notes and SHA256SUMS are applied by the finalize job.
+          releaseDraft: true
+          prerelease: false
+          releaseCommitish: main
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+          # Official tokens: platform=windows|linux, arch=x86_64|i686|aarch64, setup=-setup for nsis
+          releaseAssetNamePattern: ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: release-file-ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
+
+      - name: Make and upload Windows portable zip
+        if: matrix.artifact-platform == 'windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = '${{ inputs.version }}'
+          $zipName = "ADB-GUI-Next-v${version}-windows-${{ matrix.arch }}-portable.zip"
+          $zipPath = Join-Path $PWD $zipName
+          ./scripts/make-windows-portable.ps1 `
+            -Version $version `
+            -Arch '${{ matrix.arch }}' `
+            -TargetTriple '${{ matrix.rust-target }}' `
+            -OutputZip $zipPath
+          gh release upload "v${version}" $zipPath --clobber
+          "PORTABLE_ZIP=$zipPath" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Upload portable as workflow artifact
+        if: matrix.artifact-platform == 'windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: release-file-ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.arch }}-portable.zip
+          path: ${{ env.PORTABLE_ZIP }}
           retention-days: 7
           if-no-files-found: error
           compression-level: 0
 
   build-macos:
-    name: Build macos-universal release assets
+    name: Build macos-universal
     needs: preflight
     if: needs.preflight.outputs.macos_enabled == 'true'
     runs-on: macos-latest
     timeout-minutes: 120
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -234,12 +319,6 @@ jobs:
               exit 1
             fi
           done
-
-          if [ "${#APPLE_TEAM_ID}" -lt 3 ]; then
-            echo "::error::APPLE_TEAM_ID must be at least 3 characters"
-            exit 1
-          fi
-
           echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security default-keychain -s build.keychain
@@ -247,19 +326,16 @@ jobs:
           security set-keychain-settings -t 3600 -u build.keychain
           security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-
           CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep -E "Developer ID Application|Apple Distribution|Apple Development" | head -n 1)
           if [ -z "$CERT_INFO" ]; then
-            echo "::error::No Apple code signing identity found in imported certificate"
-            security find-identity -v -p codesigning build.keychain
+            echo "::error::No Apple code signing identity found"
             exit 1
           fi
-
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
           echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> $GITHUB_ENV
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
@@ -278,73 +354,61 @@ jobs:
       - name: Install frontend dependencies
         run: bun ci
 
-      - name: Verify requested release version
-        run: bun scripts/verify-release-version.mjs '${{ inputs.version }}'
+      - name: Verify dispatch version matches package.json
+        run: |
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          test "$PKG" = "${{ inputs.version }}"
 
-      - name: Clean stale bundle outputs
-        shell: bash
-        run: rm -rf src-tauri/target/release/bundle src-tauri/target/universal-apple-darwin/release/bundle
-
-      - name: Build Tauri packages
+      - name: Build and upload macOS DMG with tauri-action
+        uses: tauri-apps/tauri-action@e3c86271c84e47d58e97b0b7ec773b9b06a19d8b # v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY || '-' }}
-        run: bun run tauri build --verbose --bundles dmg --target universal-apple-darwin
-
-      - name: Collect release assets
-        shell: pwsh
-        run: |
-          ./scripts/collect-release-assets.ps1 `
-            -Version '${{ inputs.version }}' `
-            -Platform 'macos' `
-            -OutputDir 'artifacts/macos-universal' `
-            -Release
-
-      - name: Upload macos-universal release assets
-        uses: actions/upload-artifact@v4
         with:
-          name: release-macos-universal
-          path: artifacts/macos-universal/
-          retention-days: 7
-          if-no-files-found: error
-          compression-level: 0
+          projectPath: .
+          tauriScript: bun run tauri
+          args: --target universal-apple-darwin --bundles dmg
+          tagName: v__VERSION__
+          releaseName: ADB GUI Next v__VERSION__
+          releaseDraft: true
+          prerelease: false
+          releaseCommitish: main
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+          releaseAssetNamePattern: ADB-GUI-Next-v[version]-macos-universal[ext]
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: release-file-ADB-GUI-Next-v[version]-macos-universal[ext]
 
-  publish-draft:
-    name: Publish draft GitHub release
+  finalize:
+    name: Checksums on draft release
     needs: [build, build-macos]
     if: ${{ !cancelled() && needs.build.result == 'success' && (needs.build-macos.result == 'success' || needs.build-macos.result == 'skipped') }}
     runs-on: ubuntu-22.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
-      - name: Download release assets
-        uses: actions/download-artifact@v4
-        with:
-          pattern: release-*
-          path: release-assets
-          merge-multiple: true
-
-      - name: Generate checksums
-        run: |
-          find release-assets -type f ! -name 'build-info-*.json' -print0 \
-            | sort -z \
-            | xargs -0 sha256sum \
-            | sed 's#release-assets/##' > release-assets/SHA256SUMS.txt
-          cat release-assets/SHA256SUMS.txt
-
-      - name: Create draft release
+      - name: Notes, checksums, draft polish
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "v${{ inputs.version }}" \
-            release-assets/AdbGuiNext-v${{ inputs.version }}-* \
-            release-assets/SHA256SUMS.txt \
+          NOTES_FILE=".github/release-notes/v${{ inputs.version }}.md"
+          test -f "$NOTES_FILE"
+          gh release edit "v${{ inputs.version }}" \
             --draft \
-            --target main \
-            --title "Adb Gui Next v${{ inputs.version }}" \
-            --notes-file ".github/release-notes/v${{ inputs.version }}.md"
+            --title "ADB GUI Next v${{ inputs.version }}" \
+            --notes-file "$NOTES_FILE"
+
+          mkdir -p release-assets
+          gh release download "v${{ inputs.version }}" --dir release-assets --pattern 'ADB-GUI-Next-v${{ inputs.version }}-*'
+          (
+            cd release-assets
+            find . -type f ! -name 'SHA256SUMS.txt' -print0 | sort -z | xargs -0 sha256sum | sed 's#^\./##'
+          ) > release-assets/SHA256SUMS.txt
+          cat release-assets/SHA256SUMS.txt
+          ls -la release-assets
+          gh release upload "v${{ inputs.version }}" release-assets/SHA256SUMS.txt --clobber

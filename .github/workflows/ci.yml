@@ -1,5 +1,8 @@
 name: CI
 
+# Paths filter + split quality jobs reduce cost; package only on main packaging-relevant pushes.
+# Action pins: full commit SHAs (GitHub supply-chain guidance).
+
 on:
   push:
     branches:
@@ -19,13 +22,91 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  quality:
-    name: Quality
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+      rust: ${{ steps.filter.outputs.rust }}
+      packaging: ${{ steps.filter.outputs.packaging }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            web:
+              - 'src/**'
+              - 'package.json'
+              - 'bun.lock'
+              - 'vite.config.ts'
+              - 'vitest.config.ts'
+              - 'tsconfig.json'
+              - 'tsconfig.node.json'
+              - 'biome.jsonc'
+              - 'index.html'
+              - 'public/**'
+              - 'components.json'
+            rust:
+              - 'src-tauri/**'
+            packaging:
+              - 'src/**'
+              - 'src-tauri/**'
+              - 'package.json'
+              - 'bun.lock'
+              - '.github/workflows/**'
+              - 'scripts/**'
+
+  quality-web:
+    name: Quality (frontend)
+    needs: changes
+    if: github.event_name == 'pull_request' || needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache Bun
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install frontend dependencies
+        run: bun ci
+
+      - name: Verify package.json and Cargo.toml versions match
+        run: |
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          CARGO=$(sed -n 's/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          echo "package.json=$PKG Cargo.toml=$CARGO"
+          test -n "$PKG" && test "$PKG" = "$CARGO"
+
+      - name: Check frontend formatting
+        run: bun run lint:web
+
+      - name: Run frontend tests
+        run: bun run test
+
+      - name: TypeScript + Vite build
+        run: bun run build
+
+  quality-rust:
+    name: Quality (rust)
+    needs: changes
+    if: github.event_name == 'pull_request' || needs.changes.outputs.rust == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
-
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
       - name: Install Linux dependencies
         run: |
@@ -33,17 +114,9 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Cache Bun
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -51,53 +124,90 @@ jobs:
           components: rustfmt,clippy
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
 
-      - name: Install frontend dependencies
+      - name: Install frontend deps (for tauri build scripts / clippy targets)
         run: bun ci
 
-      - name: Verify release version files
-        run: bun run release:verify
+      - name: Verify package.json and Cargo.toml versions match
+        run: |
+          PKG=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          CARGO=$(sed -n 's/^version = "\([^"]*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          test -n "$PKG" && test "$PKG" = "$CARGO"
 
-      - name: Check formatting
-        run: bun run format:check
+      - name: Rustfmt check
+        run: bun run format:rust:check
 
-      - name: Lint
-        run: bun run lint
+      - name: Clippy
+        run: bun run lint:rust
 
-      - name: Run frontend tests
-        run: bun run test
-
+      # Linux CI owns full cargo test execution. On Windows hosts, linked tests may fail
+      # with STATUS_ENTRYPOINT_NOT_FOUND (0xc0000139); use `cargo test --no-run` locally.
       - name: Run Rust tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
-      - name: TypeScript + Vite build
-        run: bun run build
-
   package:
     name: Package ${{ matrix.name }}
-    needs: quality
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [changes, quality-web, quality-rust]
+    # Main-only packaging; skip when only docs/memory-bank changed (packaging filter false).
+    if: |
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      needs.changes.outputs.packaging == 'true' &&
+      (needs.quality-web.result == 'success' || needs.quality-web.result == 'skipped') &&
+      (needs.quality-rust.result == 'success' || needs.quality-rust.result == 'skipped') &&
+      !(needs.quality-web.result == 'skipped' && needs.quality-rust.result == 'skipped')
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: linux-x64
+          # tauri-action [arch] = rust triple prefix (x86_64 | i686 | aarch64)
+          - name: linux-x86_64
             platform: ubuntu-22.04
             artifact-platform: linux
-            bundle-targets: deb,rpm
-          - name: windows-x64
+            arch: x86_64
+            rust-target: x86_64-unknown-linux-gnu
+            args: --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
+            bundle-config: ''
+          - name: linux-aarch64
+            platform: ubuntu-22.04-arm
+            artifact-platform: linux
+            arch: aarch64
+            rust-target: aarch64-unknown-linux-gnu
+            # No x86_64 platform-tools in resources — empty resources for arm64 (PATH adb/fastboot).
+            args: --target aarch64-unknown-linux-gnu --bundles deb,rpm,appimage --config src-tauri/tauri.linux-arm64.bundle.json
+            bundle-config: arm64
+          - name: windows-x86_64
             platform: windows-latest
             artifact-platform: windows
-            bundle-targets: nsis,msi
+            arch: x86_64
+            rust-target: x86_64-pc-windows-msvc
+            args: --target x86_64-pc-windows-msvc --bundles nsis,msi
+            bundle-config: ''
+          - name: windows-i686
+            platform: windows-latest
+            artifact-platform: windows
+            arch: i686
+            rust-target: i686-pc-windows-msvc
+            args: --target i686-pc-windows-msvc --bundles nsis,msi
+            bundle-config: ''
+          - name: windows-aarch64
+            platform: windows-latest
+            artifact-platform: windows
+            arch: aarch64
+            rust-target: aarch64-pc-windows-msvc
+            # Bundled Google platform-tools remain PE x86; need WOW64/x86 emulation on ARM Windows.
+            args: --target aarch64-pc-windows-msvc --bundles nsis
+            bundle-config: ''
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -106,12 +216,12 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
         with:
           bun-version: ${{ env.BUN_VERSION }}
 
       - name: Cache Bun
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.bun/install/cache
           key: ${{ runner.os }}-bun-${{ hashFiles('bun.lock') }}
@@ -120,15 +230,17 @@ jobs:
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
 
       - name: Rust cache
-        uses: swatinem/rust-cache@v2
+        uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
           workspaces: './src-tauri -> target'
           cache-on-failure: true
 
       - name: Setup bundled Linux tool permissions
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.bundle-config != 'arm64'
         run: |
           chmod +x src-tauri/resources/linux/adb
           chmod +x src-tauri/resources/linux/fastboot
@@ -142,27 +254,66 @@ jobs:
       - name: Install frontend dependencies
         run: bun ci
 
-      - name: Clean stale bundle outputs
-        shell: bash
-        run: rm -rf src-tauri/target/release/bundle
+      # Official: https://v2.tauri.app/distribute/pipelines/github/
+      # [platform]=windows|linux [arch]=triple prefix [setup]=-setup for nsis
+      - name: Build with tauri-action
+        uses: tauri-apps/tauri-action@e3c86271c84e47d58e97b0b7ec773b9b06a19d8b # v1 (pin; update via release notes)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: .
+          tauriScript: bun run tauri
+          args: ${{ matrix.args }}
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: false
+          uploadWorkflowArtifacts: true
+          workflowArtifactNamePattern: ADB-GUI-Next-v[version]-[platform]-[arch][setup][ext]
 
-      - name: Build Tauri x64 packages
-        run: bun run tauri build --verbose --bundles ${{ matrix.bundle-targets }}
-
-      - name: Collect release-style artifacts
+      - name: Make Windows portable zip
+        if: matrix.artifact-platform == 'windows'
         shell: pwsh
         run: |
           $version = (Get-Content package.json | ConvertFrom-Json).version
-          ./scripts/collect-release-assets.ps1 `
+          $zip = "artifacts/ADB-GUI-Next-v${version}-windows-${{ matrix.arch }}-portable.zip"
+          ./scripts/make-windows-portable.ps1 `
             -Version $version `
-            -Platform '${{ matrix.artifact-platform }}' `
-            -OutputDir 'artifacts/${{ matrix.name }}'
+            -Arch '${{ matrix.arch }}' `
+            -TargetTriple '${{ matrix.rust-target }}' `
+            -OutputZip $zip
+          "PORTABLE_ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Upload ${{ matrix.name }} artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Windows portable zip
+        if: matrix.artifact-platform == 'windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: AdbGuiNext-${{ matrix.name }}-${{ github.run_number }}
-          path: artifacts/${{ matrix.name }}/
+          name: ADB-GUI-Next-v${{ env.VERSION }}-windows-${{ matrix.arch }}-portable.zip
+          path: ${{ env.PORTABLE_ZIP }}
           retention-days: 14
           if-no-files-found: error
+          compression-level: 0
+
+      - name: SHA256SUMS for this matrix cell
+        shell: bash
+        run: |
+          mkdir -p artifacts/sums
+          {
+            if [ -n "${PORTABLE_ZIP:-}" ] && [ -f "$PORTABLE_ZIP" ]; then
+              sha256sum "$PORTABLE_ZIP"
+            fi
+          } > "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt" || true
+          # Prefer listing tauri-action artifact downloads is not available mid-job;
+          # sum portable when present. Bundle hashes appear on publish finalize.
+          if [ -f "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt" ]; then
+            cat "artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt"
+          fi
+
+      - name: Upload cell checksums
+        if: matrix.artifact-platform == 'windows'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: SHA256SUMS-${{ matrix.name }}
+          path: artifacts/sums/SHA256SUMS-${{ matrix.name }}.txt
+          retention-days: 14
+          if-no-files-found: ignore
           compression-level: 0

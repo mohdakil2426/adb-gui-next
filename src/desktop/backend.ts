@@ -471,8 +471,8 @@ export function LoadDebloatLists(): Promise<backend.DebloatListStatus> {
 }
 
 /** Get all system packages merged with UAD metadata. */
-export function GetDebloatPackages(): Promise<backend.DebloatPackageRow[]> {
-  return call('get_debloat_packages');
+export function GetDebloatPackages(serial?: string | null): Promise<backend.DebloatPackageRow[]> {
+  return call('get_debloat_packages', { serial: serial ?? null });
 }
 
 /** Apply an action to a batch of packages. action: 'uninstall' | 'disable' | 'restore'. */
@@ -480,36 +480,48 @@ export function DebloatPackages(
   packages: string[],
   action: backend.DebloatAction,
   user = 0,
+  serial?: string | null,
 ): Promise<backend.DebloatActionResult[]> {
-  return call('debloat_packages', { packages, action, user });
+  return call('debloat_packages', { packages, action, user, serial: serial ?? null });
 }
 
 /** Create a backup snapshot of current package states. */
 export function CreateDebloatBackup(
   packages: backend.PackageSnapshot[],
+  serial?: string | null,
 ): Promise<backend.BackupSummary> {
-  return call('create_debloat_backup', { packages });
+  return call('create_debloat_backup', { packages, serial: serial ?? null });
 }
 
-/** List all available backups for the connected device. */
-export function ListDebloatBackups(): Promise<backend.BackupSummary[]> {
-  return call('list_debloat_backups');
+/** List all available backups for the selected device. */
+export function ListDebloatBackups(serial?: string | null): Promise<backend.BackupSummary[]> {
+  return call('list_debloat_backups', { serial: serial ?? null });
 }
 
 /** Get per-device settings (expert mode, disable mode, multi-user mode). */
-export function GetDebloatDeviceSettings(): Promise<backend.PerDeviceSettings> {
-  return call('get_debloat_device_settings');
+export function GetDebloatDeviceSettings(
+  serial?: string | null,
+): Promise<backend.PerDeviceSettings> {
+  return call('get_debloat_device_settings', { serial: serial ?? null });
 }
 
 /** Save per-device settings. */
-export function SaveDebloatDeviceSettings(settings: backend.PerDeviceSettings): Promise<void> {
-  return call('save_debloat_device_settings', { settings });
+export function SaveDebloatDeviceSettings(
+  settings: backend.PerDeviceSettings,
+  serial?: string | null,
+): Promise<void> {
+  return call('save_debloat_device_settings', { settings, serial: serial ?? null });
 }
 
 /** Combined response for all initial debloater data. */
 export type DebloatData = backend.DebloatData;
 
 /** Get all debloater data in one call. Uses in-memory cache when available. */
-export function GetDebloatData(): Promise<backend.DebloatData> {
-  return call('get_debloat_data');
+export function GetDebloatData(serial?: string | null): Promise<backend.DebloatData> {
+  return call('get_debloat_data', { serial: serial ?? null });
+}
+
+/** Force refresh debloater data for the selected device. */
+export function RefreshDebloatData(serial?: string | null): Promise<backend.DebloatData> {
+  return call('refresh_debloat_data', { serial: serial ?? null });
 }

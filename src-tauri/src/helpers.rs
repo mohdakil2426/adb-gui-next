@@ -356,6 +356,24 @@ pub fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdRe
     }
 }
 
+/// Prepend `adb -s <serial>` when `serial` is non-empty (multi-device safety).
+pub fn adb_argv(serial: Option<&str>, args: &[&str]) -> Vec<String> {
+    let mut owned = Vec::with_capacity(args.len() + 2);
+    if let Some(serial) = serial.map(str::trim).filter(|value| !value.is_empty()) {
+        owned.push("-s".to_string());
+        owned.push(serial.to_string());
+    }
+    owned.extend(args.iter().map(|s| (*s).to_string()));
+    owned
+}
+
+/// Run adb with optional device serial.
+pub fn run_adb(app: &AppHandle, serial: Option<&str>, args: &[&str]) -> CmdResult<String> {
+    let owned = adb_argv(serial, args);
+    let refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+    run_binary_command(app, "adb", &refs)
+}
+
 pub fn run_binary_command_allow_output_on_failure(
     app: &AppHandle,
     binary: &str,

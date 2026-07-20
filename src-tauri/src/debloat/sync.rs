@@ -1,6 +1,6 @@
 use crate::CmdResult;
 use crate::debloat::{DebloatPackage, DebloatPackageRow, PackageState};
-use crate::helpers::run_binary_command;
+
 use log::debug;
 use std::collections::{HashMap, HashSet};
 use tauri::AppHandle;
@@ -9,16 +9,16 @@ use tauri::AppHandle;
 
 /// Returns the Android SDK version (API level) of the connected device.
 /// Returns 0 on failure. Prefer [`try_get_android_sdk`] for destructive actions.
-pub fn get_android_sdk(app: &AppHandle) -> u32 {
-    try_get_android_sdk(app).unwrap_or(0)
+pub fn get_android_sdk(app: &AppHandle, serial: Option<&str>) -> u32 {
+    try_get_android_sdk(app, serial).unwrap_or(0)
 }
 
 /// Returns the Android SDK version (API level), or an error if detection fails.
 ///
 /// Fails when ADB fails, the property is empty/unparseable, or the value is 0.
 /// Use this for any path that may uninstall, disable, or otherwise mutate packages.
-pub fn try_get_android_sdk(app: &AppHandle) -> Result<u32, String> {
-    let raw = run_binary_command(app, "adb", &["shell", "getprop", "ro.build.version.sdk"])?;
+pub fn try_get_android_sdk(app: &AppHandle, serial: Option<&str>) -> Result<u32, String> {
+    let raw = crate::helpers::run_adb(app, serial, &["shell", "getprop", "ro.build.version.sdk"])?;
     let trimmed = raw.trim();
     if trimmed.is_empty() {
         return Err("Could not determine Android SDK; refusing destructive action".to_string());
@@ -33,8 +33,12 @@ pub fn try_get_android_sdk(app: &AppHandle) -> Result<u32, String> {
 }
 
 /// Returns the device serial/ID for per-device settings keying.
-pub fn get_device_id(app: &AppHandle) -> String {
-    run_binary_command(app, "adb", &["get-serialno"])
+/// Prefer an explicit FE `serial` when multiple devices are connected.
+pub fn get_device_id(app: &AppHandle, serial: Option<&str>) -> String {
+    if let Some(s) = serial.map(str::trim).filter(|s| !s.is_empty()) {
+        return s.to_string();
+    }
+    crate::helpers::run_adb(app, None, &["get-serialno"])
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -60,19 +64,20 @@ struct DevicePackageStates {
     all_system: HashSet<String>,
 }
 
-fn detect_package_states(app: &AppHandle) -> CmdResult<DevicePackageStates> {
+fn detect_package_states(app: &AppHandle, serial: Option<&str>) -> CmdResult<DevicePackageStates> {
     // All system packages (including uninstalled for this user)
-    let all_out = run_binary_command(app, "adb", &["shell", "pm", "list", "packages", "-s", "-u"])?;
+    let all_out =
+        crate::helpers::run_adb(app, serial, &["shell", "pm", "list", "packages", "-s", "-u"])?;
     let all_system = parse_package_list(&all_out);
 
     // Enabled system packages
     let enabled_out =
-        run_binary_command(app, "adb", &["shell", "pm", "list", "packages", "-s", "-e"])?;
+        crate::helpers::run_adb(app, serial, &["shell", "pm", "list", "packages", "-s", "-e"])?;
     let enabled = parse_package_list(&enabled_out);
 
     // Disabled system packages
     let disabled_out =
-        run_binary_command(app, "adb", &["shell", "pm", "list", "packages", "-s", "-d"])?;
+        crate::helpers::run_adb(app, serial, &["shell", "pm", "list", "packages", "-s", "-d"])?;
     let disabled = parse_package_list(&disabled_out);
 
     debug!(
@@ -105,8 +110,9 @@ fn determine_state(name: &str, states: &DevicePackageStates) -> PackageState {
 pub fn sync_device_packages(
     app: &AppHandle,
     uad_map: &HashMap<String, DebloatPackage>,
+    serial: Option<&str>,
 ) -> CmdResult<Vec<DebloatPackageRow>> {
-    let states = detect_package_states(app)?;
+    let states = detect_package_states(app, serial)?;
 
     let mut rows: Vec<DebloatPackageRow> = states
         .all_system

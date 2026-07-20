@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { CreateDebloatBackup, ListDebloatBackups } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
+import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Button } from '@/shared/ui/button';
@@ -60,8 +61,9 @@ export function ReviewSelectionDialog({
         name: p.name,
         state: p.state,
       }));
-      await CreateDebloatBackup(snapshots);
-      const backups = await ListDebloatBackups();
+      const serial = useDeviceStore.getState().selectedSerial;
+      await CreateDebloatBackup(snapshots, serial);
+      const backups = await ListDebloatBackups(serial);
       setBackups(backups);
       setBackupCreated(true);
       useLogStore.getState().addLog('Debloat backup created', 'success');

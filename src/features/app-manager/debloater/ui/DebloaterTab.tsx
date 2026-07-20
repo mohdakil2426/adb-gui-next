@@ -52,9 +52,15 @@ export function DebloaterTab() {
 
   // Load settings + packages; reload when selected device changes
   const loadAll = useCallback(async () => {
+    if (!selectedSerial) {
+      setPackages([]);
+      setListStatus(null);
+      setBackups([]);
+      return;
+    }
     setIsLoadingPackages(true);
     try {
-      const data = await GetDebloatData();
+      const data = await GetDebloatData(selectedSerial);
       setPackages(data.packages);
       setListStatus(data.listStatus);
       setDisableMode(data.settings.disableMode);
@@ -65,7 +71,15 @@ export function DebloaterTab() {
     } finally {
       setIsLoadingPackages(false);
     }
-  }, [setIsLoadingPackages, setDisableMode, setExpertMode, setPackages, setListStatus, setBackups]);
+  }, [
+    selectedSerial,
+    setIsLoadingPackages,
+    setDisableMode,
+    setExpertMode,
+    setPackages,
+    setListStatus,
+    setBackups,
+  ]);
 
   useEffect(() => {
     void loadAll();
@@ -75,8 +89,8 @@ export function DebloaterTab() {
   async function handleDisableModeChange(value: boolean) {
     setDisableMode(value);
     try {
-      const settings = await GetDebloatDeviceSettings();
-      await SaveDebloatDeviceSettings({ ...settings, disableMode: value });
+      const settings = await GetDebloatDeviceSettings(selectedSerial);
+      await SaveDebloatDeviceSettings({ ...settings, disableMode: value }, selectedSerial);
     } catch {
       /* best-effort */
     }
@@ -85,8 +99,8 @@ export function DebloaterTab() {
   async function handleExpertModeChange(value: boolean) {
     setExpertMode(value);
     try {
-      const settings = await GetDebloatDeviceSettings();
-      await SaveDebloatDeviceSettings({ ...settings, expertMode: value });
+      const settings = await GetDebloatDeviceSettings(selectedSerial);
+      await SaveDebloatDeviceSettings({ ...settings, expertMode: value }, selectedSerial);
     } catch {
       /* best-effort */
     }
@@ -114,7 +128,7 @@ export function DebloaterTab() {
     const action: backend.DebloatAction = disableMode ? 'disable' : 'uninstall';
     setIsApplying(true);
     try {
-      const results = await DebloatPackages(pkgNames, action, 0);
+      const results = await DebloatPackages(pkgNames, action, 0, selectedSerial);
       applyResults(results);
 
       const succeeded = results.filter((r) => r.success).length;
