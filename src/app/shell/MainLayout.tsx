@@ -14,10 +14,11 @@ import { BottomPanel } from '@/app/shell/BottomPanel/BottomPanel';
 import { Header } from '@/app/shell/Header';
 import { LoadingScreen } from '@/app/shell/LoadingScreen';
 import { ViewContent } from '@/app/shell/ViewContent';
-import { VIEW_RENDERERS, VIEWS, type ViewType } from '@/app/shell/viewConfig';
+import { VIEW_RENDERERS, VIEWS } from '@/app/shell/viewConfig';
 import { LaunchDeviceManager, LaunchTerminal } from '@/desktop/backend';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { ThemeProvider } from '@/shared/components/ThemeProvider';
+import { usePersistedActiveView } from '@/shared/hooks/usePersistedActiveView';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { SidebarInset, SidebarProvider } from '@/shared/ui/sidebar';
@@ -33,7 +34,7 @@ const DEFAULT_PANEL_HEIGHT = 300;
 
 export function MainLayout() {
   const shouldReduceMotion = useReducedMotion();
-  const [activeView, setActiveView] = useState<ViewType>(VIEWS.DASHBOARD);
+  const { activeView, setActiveView } = usePersistedActiveView();
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const viewportHeight = useSyncExternalStore(

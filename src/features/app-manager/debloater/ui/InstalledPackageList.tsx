@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Filter, Loader2, Package, Search, Trash2 } from 'lucide-react';
+import { Filter, Loader2, Package, Package2, Search, Trash2 } from 'lucide-react';
 import { useMemo, useRef } from 'react';
 import type { backend } from '@/desktop/models';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
@@ -192,7 +192,11 @@ export function InstalledPackageList({
                 >
                   <CheckboxItem checked={isSelected} />
                   <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                    <Package className="size-4 text-muted-foreground" />
+                    {pkg.packageType === 'system' ? (
+                      <Package2 aria-hidden className="size-4 text-muted-foreground" />
+                    ) : (
+                      <Package aria-hidden className="size-4 text-primary/80" />
+                    )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col py-1">
                     <span className="truncate font-semibold text-foreground text-xs leading-tight">
