@@ -4,7 +4,7 @@
 > **Product:** Desktop toolkit for ADB, fastboot, firmware extraction, debloat, marketplace, and emulator workflows  
 > **Version:** 0.2.5  
 > **Stack:** Tauri 2 · React 19 · TypeScript · Vite 8 · Rust 2024 · Bun  
-> **Platforms:** Windows & Linux first-class · macOS out of product scope  
+> **Platforms:** Windows (x64/x86/ARM64) & Linux x64 first-class · macOS code present, builds paused  
 > **Source of truth:** This document describes the **current** tree under `src/` and `src-tauri/`.
 
 ---
@@ -46,7 +46,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore |
 | Bottom panel | Logs + adb/fastboot shell (VS Code–style) |
 
-**Out of scope:** browser deployment, Next.js routing, Electron, macOS as a supported product target.
+**Out of scope:** browser deployment, Next.js routing, Electron. **macOS:** implementation may exist; **builds/shipping paused** until explicitly unpaused (`docs/project_rules.md`).
 
 ---
 
@@ -299,7 +299,7 @@ flowchart LR
 
 **Nav groups** (`AppSidebar`): Main = dashboard / apps / files / marketplace · Advanced = flasher / utils / emulator / payload · Footer = about.
 
-Active view is **ephemeral** (full reload returns to dashboard).
+Active view is **persisted** in `localStorage` (`adb-gui-next.activeView`) via `usePersistedActiveView` (not URL routing).
 
 ### 6.3 Feature module shape
 
@@ -568,7 +568,7 @@ SDK-aware action builder; refuse Disable when SDK unknown or API &lt; 23.
 src-tauri/resources/
 ├── windows/   adb.exe, fastboot.exe, DLLs, label_reader.jar, …
 ├── linux/     adb, fastboot, …
-└── darwin/    present in tree; product still Win/Linux first-class
+└── darwin/    present; wired via tauri.macos.conf.json; **builds paused**
 ```
 
 Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
@@ -764,9 +764,9 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 
 | Job | When | What |
 | --- | --- | --- |
-| `quality` | All branches + PRs | format:check, lint, FE tests, cargo test, vite build (Ubuntu) |
-| `package` | **main push only** | Windows nsis/msi + Linux deb/rpm artifacts |
-| `publish` | Manual | Full preflight; Win/Linux always; macOS if Apple secrets |
+| `quality` | All branches + PRs | format:check, lint, FE tests, cargo test, vite build; package.json↔Cargo version match (Ubuntu) |
+| `package` | **main push only** | `tauri-action` builds Win x64/x86/arm64 + Linux x64; per-bundle workflow artifacts; portable via `make-windows-portable.ps1` |
+| `publish` | Manual draft | Same + `tauri-action` uploads to draft `v{version}`; portable + `SHA256SUMS` finalized; macOS only if secrets (product still **paused**) |
 
 ### Rust lint bar
 
@@ -797,12 +797,17 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 
 | Topic | Detail |
 | --- | --- |
-| macOS | Not a first-class product target (resources may exist for experiments) |
-| Debloat multi-device | FE reloads on `selectedSerial`, but some Rust debloat paths historically use default `adb get-serialno` rather than explicit FE serial — treat multi-device debloat carefully |
-| Windows `cargo test` | Known Tauri-linked loader failure (`0xc0000139` / `STATUS_ENTRYPOINT_NOT_FOUND`) can block execution; prefer `--no-run` + Linux CI |
-| Active view not persisted | Reload returns to dashboard |
+| macOS | Code/resources may exist; **builds paused** (not first-class until unpaused) |
+| Code signing | **Not used** — Windows Authenticode / notarization out of current ship policy |
+| Debloat multi-device | Commands accept explicit `serial` from FE (`-s`); always select device in UI when multiple attached |
+| Windows `cargo test` | Known Tauri-linked loader failure (`0xc0000139`); use `--no-run` locally; Linux CI executes tests |
+| Active view persistence | `localStorage` key `adb-gui-next.activeView` via `usePersistedActiveView` |
+| Single-instance | `tauri-plugin-single-instance` focuses existing main window |
+| ACL | Capabilities use `allow-device-read` + `allow-device-mutate` (split permissions) |
 | `OnFileDrop` single owner | Only one window handler active; pages must re-register carefully |
-| Delta OTA | Domain hooks exist; full “real work” path may be limited vs full CrAU extract |
+| Delta OTA | Path exists but incremental/source-copy work remains limited; UI gets explicit error text |
+| ZIP64 remote CD extras | Central-directory ZIP64 size parse implemented + unit test enabled |
+| OPS stream decrypt | Full-file OPS/OFP path exists; pure stream/network OPS decrypt still deferred |
 
 ---
 

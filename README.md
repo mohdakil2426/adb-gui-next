@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/assets/icon.png" alt="Adb Gui Next app icon" width="140" />
+<img src="docs/assets/icon.png" alt="ADB GUI Next app icon" width="140" />
 
-# Adb Gui Next
+# ADB GUI Next
 
 **A modern desktop toolkit for Android Debug Bridge & Fastboot workflows**
 
@@ -37,8 +37,9 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 - ⚡ ~30 MB installer — Tauri 2 (no Electron bloat)
 - 🔒 Hardened CSP, least-privilege capabilities, `freezePrototype`
 - 📦 Bundled ADB & Fastboot — no system install required
-- 🖥️ Windows & Linux first-class support
+- 🖥️ Windows (x64 / x86 / ARM64) & Linux x64 first-class packaging; macOS builds paused
 - 🔧 70+ Rust-powered backend commands across 10 modules
+- ⚠️ Release builds are **not code-signed** (SmartScreen may warn on Windows)
 
 ---
 
@@ -58,7 +59,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 2. **Enable USB Debugging** on your device:
    - Go to `Settings > About Phone` → tap **Build Number** 7 times
    - Go to `Settings > Developer Options` → enable **USB Debugging**
-3. **Launch Adb Gui Next** — your device should appear in the Dashboard automatically
+3. **Launch ADB GUI Next** — your device should appear in the Dashboard automatically
 4. **Authorize** the USB debugging prompt on your device when prompted
 
 > **Tip**: The app auto-detects ADB and Fastboot devices every **30 seconds** (plus manual refresh). No per-view polling.
@@ -358,11 +359,14 @@ High-level system design, layer boundaries, feature map, IPC conventions, and di
 
 ## 🖥️ Platform Support
 
-| Platform | Status         | Installer       |
-| -------- | -------------- | --------------- |
-| Windows x64 | ✅ First-class | NSIS setup `.exe` + MSI + portable zip |
-| Linux x64   | ✅ First-class | `.deb` + `.rpm`                       |
-| macOS    | ❌ Not planned | —               |
+| Platform | Status | Installer |
+| -------- | ------ | --------- |
+| Windows x86_64 | ✅ First-class | NSIS + MSI + portable; tools PE x86 (WOW64) |
+| Windows i686 | ✅ Shipped | NSIS + MSI + portable |
+| Windows aarch64 | ✅ Shipped (NSIS) | Portable; bundled tools PE x86 (need emulation) |
+| Linux x86_64 | ✅ First-class | `.deb` + `.rpm` + AppImage + bundled tools |
+| Linux aarch64 | ✅ Shipped | Packages ship; **PATH** adb/fastboot (no bundled tools) |
+| macOS | ⏸ Builds paused | Code may exist; not first-class until unpaused |
 
 ---
 
