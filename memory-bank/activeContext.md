@@ -2,42 +2,45 @@
 
 ## Current state
 
-ADB GUI Next is a **working Tauri 2 app on `main`**, app version **0.2.5**. Agent docs: thin root `AGENTS.md` router + `src/AGENTS.md`, `src-tauri/AGENTS.md`, `docs/project_rules.md`, `docs/architecture.md`. Reports: `docs/internal/reports/`.
+ADB GUI Next is a **working Tauri 2 app on `main`** (pushed through `82bc219`), app version **0.2.5**. Agent docs: root `AGENTS.md` router + `src/AGENTS.md` / `src-tauri/AGENTS.md`, `docs/project_rules.md`, `docs/architecture.md`. Reports: `docs/internal/reports/`.
 
-## Focus / recent durable changes (keep short)
+## Focus / recent durable changes (2026-07 packaging + app hardening)
 
 | Area | Note |
 | --- | --- |
-| Agent/docs layout | Router + module guides; skills; Ultracite pointers |
-| Quality scripts | Slim package scripts; Husky → lint-staged |
-| CI / Rust bar | Quality all branches; package main-only; clippy `-D warnings` |
-| Scaffold cleanup | Removed unused `public` SVGs + `src/assets/react.svg` |
-| **React Doctor** | Plan pass done: **100/100**, 0 issues (`npx react-doctor@latest .`). Fixes may still be **uncommitted** — commit when user asks |
+| **Versioning** | Official: `tauri.conf.json` → `"version": "../package.json"`. Cargo still bumped; `bun run version:sync` |
+| **Packaging** | `tauri-apps/tauri-action` for installers; custom only `scripts/make-windows-portable.ps1` |
+| **CI** | Path filters; split `quality-web` / `quality-rust`; package multi-arch on main packaging paths |
+| **Platforms** | Win x86_64/i686/aarch64; Linux x86_64 + aarch64 (PATH tools); macOS **code present, builds paused** |
+| **Identity** | `productName` ADB GUI Next; `identifier` `com.astrixforge.adbguinext`; artifacts `ADB-GUI-Next-v…` |
+| **Debloat** | Explicit FE `serial` on debloat IPC (`adb -s`) for multi-device |
+| **Desktop** | `tauri-plugin-single-instance`; ACL `allow-device-read` + `allow-device-mutate` |
+| **UI** | Active view in `localStorage` via `usePersistedActiveView` |
+| **Signing** | Not used (product decision) |
 
-## Open / deferred — work later
+## Open / deferred
 
-- OPS stream decrypt, ZIP64 `http_zip`, ACL split, Tauri single-instance
-- Payload delta “real work” skipped
-- Windows `cargo test` loader (`0xc0000139`)
-- App Manager icons: Lucide placeholders
-- Optional: split large `useFileExplorerViewModel` (size allowlisted for arch test)
+- OPS **stream** decrypt (full-file OPS/OFP exists)
+- Delta OTA full “real work” (clearer errors only for now)
+- Native Win aarch64 platform-tools (currently PE x86 + emulation)
+- Optional FE: further `useFileExplorerViewModel` size split
+- Windows local `cargo test` loader `0xc0000139` — use `--no-run`; Linux CI executes
 
-## Session lessons (doctor 100 — do not reintroduce)
+## Session lessons (keep)
 
 | Never | Do instead |
 | --- | --- |
-| `setState` / ref writes / other setters **inside** a functional updater | Pure updater only; side effects in handler/`useEffect` |
-| `setTimeout`/`setInterval` in effect without cleanup | Always `return () => clear…` |
-| Animate **height** (layout thrash) | `transform` / opacity / `grid-rows-[0fr→1fr]` |
-| Import full `motion` under shell | One `LazyMotion` + `m.*` (`MainLayout`) |
-| Bare `<button>` | `type="button"` unless submit |
-| `role="main"` | Semantic `<main>` |
-| Index keys on reorderable lists | Stable ids (e.g. shell history `id` at write site) |
-| Dead unused `shared/ui/*` + unused exports | Delete or real import — never fake-import / eslint-disable to silence doctor |
-| Parallel multi-APK install on one device | Keep **serial** install/uninstall |
-| Device smoke on real Pixel 7a without user OK | Prefer emulator when agent-testing devices |
+| Triple-sync version with custom verify script | package.json SoT + conf path + Cargo via `version:sync` |
+| Full collect-release renamer for installers | tauri-action naming patterns |
+| Ship Linux aarch64 with x86_64 bundled adb | Empty resources conf + PATH tools |
+| `setState` side effects inside functional updaters | Pure updater only |
+| Parallel multi-APK install on one device | Serial install/uninstall |
+| Reintroduce macOS as shipped without explicit unpause | Policy in `docs/project_rules.md` |
 
 ## Next steps
 
-- User-owned: manual app smoke + commit when ready
-- Prefer architecture + module AGENTS over bloating this file
+- Watch first CI package run on `main` (tauri-action names, arm runners)
+- Manual smoke: installers + portable + multi-device debloat
+- Only unpause macOS on explicit product request
+
+**Last updated:** 2026-07-20

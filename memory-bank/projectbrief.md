@@ -8,7 +8,7 @@ ADB GUI Next is a Tauri 2 desktop app for ADB, fastboot, firmware extract, deblo
 
 - Cover ADB/fastboot power-user workflows in a native desktop GUI
 - Keep a clean Tauri 2 architecture (thin IPC, domain logic in Rust)
-- Bundle platform-tools for standalone Windows/Linux installs
+- Bundle platform-tools for standalone Windows/Linux installs where arch matches
 
 ## Primary Users
 
@@ -20,9 +20,9 @@ ADB GUI Next is a Tauri 2 desktop app for ADB, fastboot, firmware extract, deblo
 
 | Platform | Status |
 | --- | --- |
-| Windows | First-class |
-| Linux | First-class |
-| macOS | Out of product scope |
+| Windows x86_64 / i686 / aarch64 | First-class / shipped (see project_rules for tools notes) |
+| Linux x86_64 / aarch64 | First-class / shipped (arm uses PATH tools) |
+| macOS | Code may exist; **builds paused** (not first-class) |
 
 ## Major feature areas
 
@@ -30,6 +30,8 @@ Dashboard · Wireless ADB · App Manager (+ UAD debloat) · File Explorer · Fla
 
 ## Version
 
-- **App:** 0.2.5 (`package.json` / Tauri config)
+- **App SoT:** `package.json` **0.2.5**
+- **Tauri:** `"version": "../package.json"`
+- **Cargo:** must match (`bun run version:sync`)
 - **Rust edition:** 2024
-- **Last memory-bank refresh:** 2026-07-18
+- **Last memory-bank refresh:** 2026-07-20

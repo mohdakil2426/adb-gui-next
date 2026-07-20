@@ -226,7 +226,7 @@ jobs:
           test "$PKG" = "${{ inputs.version }}"
 
       - name: Build and upload with tauri-action
-        uses: tauri-apps/tauri-action@e3c86271c84e47d58e97b0b7ec773b9b06a19d8b # v1
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -360,7 +360,7 @@ jobs:
           test "$PKG" = "${{ inputs.version }}"
 
       - name: Build and upload macOS DMG with tauri-action
-        uses: tauri-apps/tauri-action@e3c86271c84e47d58e97b0b7ec773b9b06a19d8b # v1
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
