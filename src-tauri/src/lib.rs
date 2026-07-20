@@ -39,6 +39,14 @@ fn build_log_targets() -> Vec<tauri_plugin_log::Target> {
 pub fn run() {
     let _ = fix_path_env::fix();
     tauri::Builder::default()
+        // Official single-instance: second launch focuses the existing main window.
+        // https://v2.tauri.app/plugin/single-instance/
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            }
+        }))
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)

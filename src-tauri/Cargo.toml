@@ -20,7 +20,7 @@ protoc-bin-vendored = "3.2.0"
 tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-anyhow = "1.0.103"
+anyhow = "1.0.104"
 apk-info-axml = "1.0.11"
 base64 = "0.22.1"
 bzip2 = "0.6.1"
@@ -30,12 +30,12 @@ libc = "0.2.186"
 memmap2 = "0.9.11"
 prost = "0.14.4"
 rayon = "1.12.0"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.150"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 sha2 = "0.11.0"
 tauri = { version = "2.11.5", features = [] }
 tokio = { version = "1.53.0", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
-tauri-plugin-dialog = "2.7.1"
+tauri-plugin-dialog = "2.7.2"
 tauri-plugin-log = "2.9.0"
 tauri-plugin-opener = "2.5.4"
 tempfile = "3.27.0"
@@ -63,9 +63,10 @@ brotli = { version = "8.0.4", optional = true }
 # HTTP client for marketplace + payload
 reqwest = { version = "0.13.4", features = ["rustls", "stream", "http2", "blocking", "json"] }
 
-futures-util = "0.3.32"
+futures-util = "0.3.33"
 # zlib-rs: pure-Rust zlib backend (~1.5–2× inflate vs miniz_oxide on factory/ZIP deflate).
 flate2 = { version = "1.1.9", default-features = false, features = ["zlib-rs"] }
+tauri-plugin-single-instance = "2"
 
 [dev-dependencies]
 proptest = { version = "1.11.0", features = ["attr-macro"] }

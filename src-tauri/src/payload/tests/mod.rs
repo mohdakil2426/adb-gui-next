@@ -542,7 +542,6 @@ mod http_zip_tests {
     }
 
     #[test]
-    #[ignore = "ZIP64 central-directory size parse deferred (http_zip backlog)"]
     fn parses_zip64_sizes_from_central_directory_extra_field() {
         let mut cd = Vec::new();
         cd.extend_from_slice(&0x02014b50u32.to_le_bytes());

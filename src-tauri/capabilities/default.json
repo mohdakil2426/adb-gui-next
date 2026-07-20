@@ -10,6 +10,7 @@
     "log:default",
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
-    "allow-all"
+    "allow-device-read",
+    "allow-device-mutate"
   ]
 }

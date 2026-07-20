@@ -425,11 +425,22 @@ pub async fn extract_delta_payload(
         }
         Err(e) => {
             error!("Delta payload extraction failed: {}", e);
+            let detail = e.to_string();
+            let msg = if detail.to_ascii_lowercase().contains("not implemented")
+                || detail.to_ascii_lowercase().contains("stub")
+            {
+                format!(
+                    "Delta OTA extract is limited in this build (incremental/source-copy path incomplete). \
+                     Prefer a full OTA payload.bin when possible. Detail: {detail}"
+                )
+            } else {
+                detail
+            };
             Ok(ExtractPayloadResult {
                 success: false,
                 output_dir: String::new(),
                 extracted_files: Vec::new(),
-                error: Some(e.to_string()),
+                error: Some(msg),
                 stats: None,
             })
         }
