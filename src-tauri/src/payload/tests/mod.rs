@@ -543,32 +543,47 @@ mod http_zip_tests {
 
     #[test]
     fn parses_zip64_sizes_from_central_directory_extra_field() {
+        // CD entry with ZIP32_MAX size fields; real u64 sizes live in ZIP64 extra (0x0001).
+        // Layout matches APPNOTE.TXT central directory file header (46-byte fixed prefix).
+        let name = b"product.img";
+        let uncompressed: u64 = 5_368_709_120;
+        let compressed: u64 = 1_737_857_320;
+        // ZIP64 extra: header id (2) + data size (2) + uncompressed (8) + compressed (8).
+        let extra_len: u16 = 20;
+
         let mut cd = Vec::new();
-        cd.extend_from_slice(&0x02014b50u32.to_le_bytes());
-        cd.extend_from_slice(&[0; 6]);
-        cd.extend_from_slice(&0u16.to_le_bytes());
-        cd.extend_from_slice(&8u16.to_le_bytes());
-        cd.extend_from_slice(&[0; 8]);
-        cd.extend_from_slice(&u32::MAX.to_le_bytes());
-        cd.extend_from_slice(&u32::MAX.to_le_bytes());
-        cd.extend_from_slice(&"product.img".len().to_le_bytes()[..2]);
-        cd.extend_from_slice(&20u16.to_le_bytes());
-        cd.extend_from_slice(&0u16.to_le_bytes());
-        cd.extend_from_slice(&[0; 8]);
-        cd.extend_from_slice(&123u32.to_le_bytes());
-        cd.extend_from_slice(b"product.img");
+        cd.extend_from_slice(&0x0201_4b50u32.to_le_bytes()); // CD signature
+        cd.extend_from_slice(&0u16.to_le_bytes()); // version made by
+        cd.extend_from_slice(&0u16.to_le_bytes()); // version needed
+        cd.extend_from_slice(&0u16.to_le_bytes()); // flags
+        cd.extend_from_slice(&0u16.to_le_bytes()); // method stored
+        cd.extend_from_slice(&0u16.to_le_bytes()); // mod time
+        cd.extend_from_slice(&0u16.to_le_bytes()); // mod date
+        cd.extend_from_slice(&0u32.to_le_bytes()); // crc
+        cd.extend_from_slice(&u32::MAX.to_le_bytes()); // compressed (ZIP64 sentinel)
+        cd.extend_from_slice(&u32::MAX.to_le_bytes()); // uncompressed (ZIP64 sentinel)
+        cd.extend_from_slice(&(name.len() as u16).to_le_bytes());
+        cd.extend_from_slice(&extra_len.to_le_bytes()); // extra
+        cd.extend_from_slice(&0u16.to_le_bytes()); // comment
+        cd.extend_from_slice(&0u16.to_le_bytes()); // disk start
+        cd.extend_from_slice(&0u16.to_le_bytes()); // int attrs
+        cd.extend_from_slice(&0u32.to_le_bytes()); // ext attrs
+        cd.extend_from_slice(&123u32.to_le_bytes()); // local header offset (fits in u32)
+        cd.extend_from_slice(name);
+        // ZIP64 extended information extra field (APPNOTE 4.5.3): uncompressed then compressed.
         cd.extend_from_slice(&0x0001u16.to_le_bytes());
         cd.extend_from_slice(&16u16.to_le_bytes());
-        cd.extend_from_slice(&5_368_709_120u64.to_le_bytes());
-        cd.extend_from_slice(&1_737_857_320u64.to_le_bytes());
+        cd.extend_from_slice(&uncompressed.to_le_bytes());
+        cd.extend_from_slice(&compressed.to_le_bytes());
 
         let entries = parse_central_directory_entries(&cd).expect("parse central directory");
 
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].name, "product.img");
-        assert_eq!(entries[0].uncompressed_size, 5_368_709_120);
-        assert_eq!(entries[0].compressed_size, 1_737_857_320);
+        assert_eq!(entries[0].uncompressed_size, uncompressed);
+        assert_eq!(entries[0].compressed_size, compressed);
         assert_eq!(entries[0].local_header_offset, 123);
+        assert_eq!(entries[0].compression_method, 0);
     }
 }
 
