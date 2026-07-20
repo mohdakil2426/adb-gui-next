@@ -1,6 +1,21 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "bundle": {
-    "resources": ["resources/windows/**/*"]
+    "resources": ["resources/windows/**/*"],
+    "windows": {
+      "allowDowngrades": false,
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false,
+        "startMenuFolder": "ADB GUI Next"
+      },
+      "wix": {
+        "language": "en-US"
+      }
+    }
   }
 }

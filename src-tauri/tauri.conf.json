@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "AdbGuiNext",
-  "version": "0.2.5",
-  "identifier": "com.akila.adbguinext",
+  "productName": "ADB GUI Next",
+  "version": "../package.json",
+  "identifier": "com.astrixforge.adbguinext",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -10,9 +10,10 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "enableGTKAppId": true,
     "windows": [
       {
-        "title": "Adb Gui Next",
+        "title": "ADB GUI Next",
         "width": 1280,
         "height": 820,
         "minWidth": 1024,
@@ -34,7 +35,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis", "msi", "deb", "rpm", "appimage"],
+    "publisher": "Astrixforge",
+    "category": "DeveloperTool",
+    "shortDescription": "Desktop toolkit for ADB, fastboot, and Android device workflows",
+    "longDescription": "ADB GUI Next is a Tauri desktop app for Android Debug Bridge and fastboot workflows: device dashboard, app manager, debloat, file explorer, flasher, utilities, payload dumper, marketplace, and emulator management. ADB and fastboot are bundled.",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "homepage": "https://github.com/mohdakil2426/adb-gui-next",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
