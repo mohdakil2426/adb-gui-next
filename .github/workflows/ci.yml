@@ -152,15 +152,19 @@ jobs:
   package:
     name: Package ${{ matrix.name }}
     needs: [changes, quality-web, quality-rust]
-    # Main-only packaging; skip when only docs/memory-bank changed (packaging filter false).
+    # Main-only packaging when packaging paths change (src, src-tauri, package locks, workflows, scripts).
+    # Quality may be skipped for workflow-only fixes; still build artifacts unless a quality job failed.
+    # Official artifact path: tauri-action uploadWorkflowArtifacts (no draft release on CI).
+    # https://github.com/tauri-apps/tauri-action#usage
     if: |
       always() &&
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&
       needs.changes.outputs.packaging == 'true' &&
-      (needs.quality-web.result == 'success' || needs.quality-web.result == 'skipped') &&
-      (needs.quality-rust.result == 'success' || needs.quality-rust.result == 'skipped') &&
-      !(needs.quality-web.result == 'skipped' && needs.quality-rust.result == 'skipped')
+      needs.quality-web.result != 'failure' &&
+      needs.quality-rust.result != 'failure' &&
+      needs.quality-web.result != 'cancelled' &&
+      needs.quality-rust.result != 'cancelled'
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 120
     strategy:
