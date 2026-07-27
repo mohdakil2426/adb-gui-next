@@ -43,7 +43,7 @@ export function RemoteUrlPanel({
       <FieldGroup>
         <Field>
           <FieldLabel className="flex items-center gap-2" htmlFor="remote-url">
-            <Globe className="size-4" />
+            <Globe aria-hidden="true" className="size-4" />
             Payload or factory image URL
           </FieldLabel>
           <InputGroup>
@@ -69,8 +69,9 @@ export function RemoteUrlPanel({
                     onUrlChange('');
                   }}
                   size="icon-xs"
+                  type="button"
                 >
-                  <X className="size-4" />
+                  <X aria-hidden="true" className="size-4" />
                 </InputGroupButton>
               </InputGroupAddon>
             ) : null}
@@ -83,16 +84,18 @@ export function RemoteUrlPanel({
         className="w-full"
         disabled={!url.trim() || isChecking || disabled}
         onClick={onCheckUrl}
+        size="sm"
+        type="button"
         variant="outline"
       >
         {isChecking ? (
           <>
-            <Loader2 className="animate-spin" data-icon="inline-start" />
+            <Loader2 aria-hidden="true" className="animate-spin" />
             Checking connection…
           </>
         ) : (
           <>
-            <Globe data-icon="inline-start" />
+            <Globe aria-hidden="true" />
             Check URL
           </>
         )}
@@ -124,25 +127,28 @@ export function RemoteUrlPanel({
         >
           {isChecking ? (
             <>
-              <Loader2 className="size-4 animate-spin" />
-              <AlertTitle>Checking connection...</AlertTitle>
+              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              <AlertTitle>Checking connection…</AlertTitle>
             </>
           ) : null}
           {isReady ? (
             <>
-              <CheckCircle2 className="size-4" />
+              <CheckCircle2 aria-hidden="true" className="size-4" />
               <AlertTitle>Range requests supported</AlertTitle>
               {estimatedSize ? (
-                <AlertDescription>Estimated download: {estimatedSize}</AlertDescription>
+                <AlertDescription className="numeric">
+                  Estimated download: {estimatedSize}
+                </AlertDescription>
               ) : null}
             </>
           ) : null}
           {isError ? (
             <>
-              <AlertCircle className="size-4" />
+              <AlertCircle aria-hidden="true" className="size-4" />
               <AlertTitle>Connection check failed</AlertTitle>
               <AlertDescription>
-                Server does not support range requests or URL is invalid
+                The server refused a range request, or the URL is not reachable. Check the address,
+                then retry — or turn on Prefetch mode to download the whole archive first.
               </AlertDescription>
             </>
           ) : null}

@@ -9,8 +9,13 @@ interface CheckboxItemProps {
 }
 
 /**
- * A consistent checkbox indicator used in virtualised list items
- * (AppManager package list, PayloadDumper partition list).
+ * The selection *indicator* drawn inside virtualised rows (debloat and installed
+ * package lists, payload partition list).
+ *
+ * Deliberately not `ui/checkbox.tsx`: the row itself is the interactive control
+ * and owns `role`/`aria-selected`, so this is presentation only — mounting a
+ * Radix checkbox per virtual row would add a second focus target and a listener
+ * to every row. It is `aria-hidden` for exactly that reason.
  */
 export const CheckboxItem = memo(function CheckboxItem({
   checked,
@@ -19,13 +24,12 @@ export const CheckboxItem = memo(function CheckboxItem({
 }: CheckboxItemProps) {
   return (
     <div
+      aria-hidden="true"
       className={cn(
-        'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
-        checked
-          ? 'border-primary bg-primary'
-          : disabled
-            ? 'border-muted-foreground/30 opacity-50'
-            : 'border-muted-foreground/50',
+        'flex size-4 shrink-0 items-center justify-center rounded-sm border transition-colors duration-90 ease-standard',
+        checked && 'border-primary bg-primary',
+        !checked && disabled && 'border-border opacity-50',
+        !(checked || disabled) && 'border-border-strong',
         className,
       )}
     >

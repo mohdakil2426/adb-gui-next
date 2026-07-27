@@ -41,24 +41,27 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div
-          className="flex min-h-[200px] flex-col items-center justify-center gap-4 p-8 text-center"
+          className="flex min-h-50 flex-col items-center justify-center gap-4 p-8 text-center"
           role="alert"
         >
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-destructive/20 blur-xl" />
-            <div className="relative flex size-12 items-center justify-center rounded-xl bg-destructive/10">
-              <AlertTriangle aria-hidden="true" className="size-6 text-destructive" />
-            </div>
+          {/* Depth from a surface step and a hairline border — the previous
+              blurred halo was invisible on the dark canvas and a smudge on light. */}
+          <div className="flex size-10 items-center justify-center rounded-lg border border-destructive/30 bg-destructive-muted">
+            <AlertTriangle aria-hidden="true" className="size-5 text-destructive" />
           </div>
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold">
+          <div className="flex max-w-md flex-col gap-1">
+            <p className="text-title">
               {this.props.viewName ? `${this.props.viewName} crashed` : 'View crashed'}
             </p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-body text-muted-foreground">
               {this.state.error?.message ?? 'An unexpected render error occurred.'}
             </p>
+            <p className="text-caption text-foreground-subtle">
+              Retry re-mounts this view. If it crashes again, open the Logs panel — the full stack
+              is recorded there.
+            </p>
           </div>
-          <Button onClick={this.handleRetry} size="sm" variant="outline">
+          <Button onClick={this.handleRetry} size="sm" type="button" variant="outline">
             Retry
           </Button>
         </div>

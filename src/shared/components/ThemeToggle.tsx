@@ -53,12 +53,12 @@ export function ThemeToggle() {
 
   const getIcon = () => {
     if (activeTheme === 'dark') {
-      return <Moon className="size-4" />;
+      return <Moon aria-hidden="true" className="size-4" />;
     }
     if (activeTheme === 'system') {
-      return <Laptop className="size-4" />;
+      return <Laptop aria-hidden="true" className="size-4" />;
     }
-    return <Sun className="size-4" />;
+    return <Sun aria-hidden="true" className="size-4" />;
   };
 
   const getTooltipText = () => {
@@ -74,17 +74,15 @@ export function ThemeToggle() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="relative">
-          <Button
-            aria-label="Toggle theme"
-            className="size-9"
-            onClick={cycleTheme}
-            size="icon"
-            variant="ghost"
-          >
-            {getIcon()}
-          </Button>
-        </div>
+        <Button
+          aria-label="Toggle theme"
+          onClick={cycleTheme}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          {getIcon()}
+        </Button>
       </TooltipTrigger>
       <TooltipContent>
         <p>{getTooltipText()}</p>

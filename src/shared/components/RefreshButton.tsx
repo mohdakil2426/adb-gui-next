@@ -15,7 +15,10 @@ type RefreshButtonIcon = RefreshButtonBase & {
   /** Icon-only button for toolbars. Requires aria-label. */
   mode: 'icon';
   'aria-label': string;
-  /** Override button size. Defaults to "icon-sm" (32px). */
+  /**
+   * @deprecated Toolbar icon controls are 32px app-wide (`icon-sm`). This escape
+   * hatch exists only for the call sites that still pass `icon`; do not add more.
+   */
   buttonSize?: ComponentProps<typeof Button>['size'] | undefined;
   buttonVariant?: ComponentProps<typeof Button>['variant'] | undefined;
   /** Tooltip text rendered around the button. */
@@ -34,12 +37,13 @@ type RefreshButtonAction = RefreshButtonBase & {
 type RefreshButtonProps = RefreshButtonIcon | RefreshButtonAction;
 
 /**
- * Standardized refresh button for the app.
+ * The one refresh control in the app.
  *
- * - `mode="icon"`: compact icon-only button with tooltip and aria-label — for toolbars.
- * - `mode="action"`: text+icon button with optional loading label — for standalone actions.
+ * - `mode="icon"` — 32px icon-only button with tooltip and aria-label, for toolbars.
+ * - `mode="action"` — small text+icon button with an optional loading label.
  *
- * Always uses `RefreshCw` for the icon and `Loader2` for the loading spinner.
+ * Both sizes are fixed here rather than at the call site: the ten call sites had
+ * previously drifted to five different heights.
  */
 export function RefreshButton(props: RefreshButtonProps) {
   const { className, disabled = false, isLoading = false, mode, onClick } = props;
@@ -55,9 +59,14 @@ export function RefreshButton(props: RefreshButtonProps) {
         disabled={disabled || isLoading}
         onClick={onClick}
         size={buttonSize ?? 'icon-sm'}
+        type="button"
         variant={buttonVariant}
       >
-        {isLoading ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+        {isLoading ? (
+          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        ) : (
+          <RefreshCw aria-hidden="true" className="size-4" />
+        )}
       </Button>
     );
 
@@ -80,12 +89,14 @@ export function RefreshButton(props: RefreshButtonProps) {
       className={className}
       disabled={disabled || isLoading}
       onClick={onClick}
+      size="sm"
+      type="button"
       variant={buttonVariant}
     >
       {isLoading ? (
-        <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
+        <Loader2 aria-hidden="true" className="animate-spin" />
       ) : (
-        <RefreshCw data-icon="inline-start" />
+        <RefreshCw aria-hidden="true" />
       )}
       {isLoading && loadingLabel ? loadingLabel : label}
     </Button>

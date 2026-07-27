@@ -1,6 +1,6 @@
 import { Upload } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { OnFileDrop, OnFileDropOff } from '@/desktop/runtime';
 import { Button } from '@/shared/ui/button';
@@ -52,25 +52,31 @@ export function DropZone({
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Filter files by extension
-  const filterFiles = useCallback(
-    (paths: string[]): string[] => {
-      if (acceptExtensions.length === 0) {
-        return paths;
-      }
-      return paths.filter((p) => {
-        const lower = p.toLowerCase();
-        return acceptExtensions.some((ext) => lower.endsWith(ext.toLowerCase()));
-      });
-    },
-    [acceptExtensions],
-  );
+  // Latest props in a ref. `OnFileDrop` is a single window-level registration
+  // whose setup is an async IPC round-trip, so re-registering on every parent
+  // render (array literals and inline callbacks change identity) opened a
+  // window where drops were silently lost.
+  const latestRef = useRef({ acceptExtensions, onFilesDropped, rejectMessage });
+  useEffect(() => {
+    latestRef.current = { acceptExtensions, onFilesDropped, rejectMessage };
+  });
 
   // Register Tauri native drag-drop handler with position-based hit-testing
   useEffect(() => {
     if (disabled) {
       return;
     }
+
+    const filterFiles = (paths: string[]): string[] => {
+      const extensions = latestRef.current.acceptExtensions;
+      if (extensions.length === 0) {
+        return paths;
+      }
+      return paths.filter((p) => {
+        const lower = p.toLowerCase();
+        return extensions.some((ext) => lower.endsWith(ext.toLowerCase()));
+      });
+    };
 
     OnFileDrop({
       onHover: (x, y) => {
@@ -107,11 +113,12 @@ export function DropZone({
 
         const valid = filterFiles(paths);
         if (valid.length === 0) {
-          toast.error(rejectMessage ?? `No valid files. Accepted: ${acceptExtensions.join(', ')}`);
+          const { acceptExtensions: extensions, rejectMessage: message } = latestRef.current;
+          toast.error(message ?? `No valid files. Accepted: ${extensions.join(', ')}`);
           return;
         }
 
-        onFilesDropped(valid);
+        latestRef.current.onFilesDropped(valid);
       },
 
       onCancel: () => {
@@ -128,7 +135,7 @@ export function DropZone({
       }
       OnFileDropOff();
     };
-  }, [disabled, filterFiles, onFilesDropped, rejectMessage, acceptExtensions]);
+  }, [disabled]);
 
   return (
     <div
@@ -167,14 +174,14 @@ export function DropZone({
 
         <div className="flex flex-col items-center gap-1">
           <p className="font-medium text-muted-foreground text-sm">{label}</p>
-          <p className="text-muted-foreground/50 text-xs">or</p>
+          <p className="text-label text-muted-foreground">or</p>
         </div>
 
         <Button disabled={disabled} onClick={onBrowse} size="sm" variant="outline">
           {browseLabel}
         </Button>
 
-        {sublabel ? <p className="text-muted-foreground/40 text-xs">{sublabel}</p> : null}
+        {sublabel ? <p className="text-label text-muted-foreground">{sublabel}</p> : null}
       </div>
     </div>
   );
