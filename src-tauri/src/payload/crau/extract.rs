@@ -10,15 +10,15 @@
 //! (`io::with_io_buf`). The full decompressed block is never buffered; bytes are written
 //! to the output file as they stream out of the decoder.
 
-use super::parser::{LoadedPayload, load_payload, open_mmap, parse_header};
+use super::parser::{load_payload, open_mmap, parse_header};
 use crate::payload::cancel::CancellationToken;
 use crate::payload::chromeos_update_engine;
 use crate::payload::io::NonTemporalWriter;
 use crate::payload::transaction::TransactionGuard;
 use crate::payload::types::{ExtractPayloadResult, ExtractionStats, PayloadDiagnostics};
 use crate::payload::verify::VerifyMode;
-use crate::payload::zip::PayloadCache;
-use anyhow::Result;
+use crate::payload::zip::{PayloadCache, ZipPayloadMmap};
+use anyhow::{Context, Result};
 use prost::Message;
 use rayon::prelude::*;
 use std::{
@@ -103,7 +103,6 @@ pub fn extract_payload(
             let output_dir = Arc::clone(&output_dir);
             let guard = Arc::clone(&guard);
             let mmap = Arc::clone(&payload.mmap);
-            let manifest = payload.manifest.clone();
             let data_offset = payload.data_offset;
             let partition_name = partition.partition_name.clone();
             let app = app_handle.clone();
@@ -120,10 +119,9 @@ pub fn extract_payload(
             let mut writer = NonTemporalWriter::new(&image_path, partition_size)
                 .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-            let payload_ref = LoadedPayload { mmap, manifest, data_offset };
-
             extract_partition(
-                &payload_ref,
+                &mmap,
+                data_offset,
                 partition,
                 &mut writer,
                 block_size,
@@ -216,7 +214,8 @@ fn emit_progress(
 
 #[allow(clippy::too_many_arguments)]
 fn extract_partition(
-    payload: &LoadedPayload,
+    mmap: &ZipPayloadMmap,
+    payload_data_offset: usize,
     partition: &chromeos_update_engine::PartitionUpdate,
     writer: &mut (impl Write + Seek),
     block_size: u32,
@@ -262,13 +261,26 @@ fn extract_partition(
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
         }
 
-        let data_offset = payload.data_offset + operation.data_offset.unwrap_or_default() as usize;
-        let data_length = operation.data_length.unwrap_or_default() as usize;
-        let data_end = data_offset.saturating_add(data_length);
-        if data_end > payload.mmap.len() {
-            anyhow::bail!("payload operation data exceeds file size");
-        }
-        let raw_data = &payload.mmap[data_offset..data_end];
+        // `data_offset` / `data_length` come from an untrusted manifest. Release builds
+        // have `overflow-checks` off, so plain `+` here wraps silently: the bounds check
+        // below would pass and the slice index would then read the wrong region (silent
+        // image corruption) or panic. Every step is checked.
+        let data_offset = operation
+            .data_offset
+            .unwrap_or_default()
+            .try_into()
+            .ok()
+            .and_then(|relative: usize| payload_data_offset.checked_add(relative))
+            .context("payload operation data offset overflows")?;
+        let data_length: usize = operation
+            .data_length
+            .unwrap_or_default()
+            .try_into()
+            .context("payload operation data length overflows")?;
+        let data_end =
+            data_offset.checked_add(data_length).context("payload operation data end overflows")?;
+        let raw_data =
+            mmap.get(data_offset..data_end).context("payload operation data exceeds file size")?;
 
         // L3: AOSP data_sha256_hash is over the payload-stored (compressed) blob.
         if verify_mode.layer3_enabled()
@@ -394,8 +406,23 @@ fn extract_partition(
                 current_pos = start_offset;
             }
 
-            let slice_end = coal_start.saturating_add(coal_size).min(raw_data.len());
-            let slice = &raw_data[coal_start..slice_end];
+            // REPLACE: the stored blob must cover the coalesced run exactly.
+            // Clamping to `raw_data.len()` (the previous behaviour) wrote fewer
+            // bytes than the extents declare while still crediting the full
+            // `coal_size` below — a silently short, corrupt image reported as
+            // success. The coalescing loop above only bounds-checks *extensions*,
+            // so the initial `coal_size = extent_size` reached here unchecked.
+            // Matches the two remote paths in `payload/remote/mod.rs`.
+            let slice_end = coal_start
+                .checked_add(coal_size)
+                .ok_or_else(|| anyhow::anyhow!("payload operation data end overflows"))?;
+            let slice = raw_data.get(coal_start..slice_end).ok_or_else(|| {
+                anyhow::anyhow!(
+                    "payload operation {index} REPLACE data is short: extent needs {} bytes, blob has {}",
+                    slice_end,
+                    raw_data.len()
+                )
+            })?;
             writer.write_all(slice)?;
             decoded_offset = slice_end;
             current_pos += coal_size as u64;
