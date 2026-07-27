@@ -20,8 +20,10 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
   const panelLeft =
     sidebarState === 'expanded' ? 'var(--sidebar-width, 16rem)' : 'var(--sidebar-width-icon, 3rem)';
 
+  // Deliberately NOT subscribed to `logs`: the array identity changes on every
+  // append, which defeats the shallow compare and re-rendered this whole panel
+  // (and its ~7 tooltips) per log line. PanelHeader subscribes to the count.
   const {
-    logs,
     isOpen,
     togglePanel,
     clearLogs,
@@ -39,7 +41,6 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
     setPanelHeight,
   } = useLogStore(
     useShallow((state) => ({
-      logs: state.logs,
       isOpen: state.isOpen,
       togglePanel: state.togglePanel,
       clearLogs: state.clearLogs,
@@ -183,7 +184,6 @@ export function BottomPanel({ viewportHeight }: BottomPanelProps) {
           filter={filter}
           isFollowing={isFollowing}
           isPanelMaximized={isPanelMaximized}
-          logs={logs}
           onTabChange={setActiveTab}
           searchQuery={searchQuery}
           setFilter={setFilter}

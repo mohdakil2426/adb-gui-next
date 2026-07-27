@@ -1,7 +1,7 @@
 import { Logs, Search, Terminal, X } from 'lucide-react';
 import { useState } from 'react';
 import { PanelHeaderActions } from '@/app/shell/BottomPanel/PanelHeaderActions';
-import type { LogLevel } from '@/shared/stores/logStore';
+import { type LogLevel, useLogStore } from '@/shared/stores/logStore';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/utils/cn';
@@ -13,7 +13,6 @@ interface PanelHeaderProps {
   filter: LogLevel | 'all';
   isFollowing: boolean;
   isPanelMaximized: boolean;
-  logs: Array<{ timestamp: string; type: string; message: string }>;
   onTabChange: (tab: 'logs' | 'shell') => void;
   searchQuery: string;
   setFilter: (filter: LogLevel | 'all') => void;
@@ -26,7 +25,6 @@ interface PanelHeaderProps {
 export function PanelHeader({
   activeTab,
   onTabChange,
-  logs,
   filter,
   setFilter,
   isFollowing,
@@ -40,6 +38,8 @@ export function PanelHeader({
   setSearchQuery,
 }: PanelHeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // A number, not the array — only the tab counter re-renders per log line.
+  const logCount = useLogStore((state) => state.logs.length);
 
   return (
     <>
@@ -74,8 +74,8 @@ export function PanelHeader({
           >
             <Logs aria-hidden="true" className="size-3.5" />
             Logs
-            {logs.length > 0 && (
-              <span className="ml-1 text-[10px] opacity-60">({logs.length})</span>
+            {logCount > 0 && (
+              <span className="ml-1 text-caption tabular-nums opacity-60">({logCount})</span>
             )}
           </button>
           <button
@@ -112,10 +112,10 @@ export function PanelHeader({
           clearHistory={clearHistory}
           clearLogs={clearLogs}
           filter={filter}
+          hasLogs={logCount > 0}
           isFollowing={isFollowing}
           isPanelMaximized={isPanelMaximized}
           isSearchOpen={isSearchOpen}
-          logs={logs}
           setFilter={setFilter}
           setIsFollowing={setIsFollowing}
           setIsSearchOpen={setIsSearchOpen}

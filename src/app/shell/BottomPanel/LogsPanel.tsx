@@ -1,87 +1,15 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+/* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the panel and is not passed across memoized boundaries. */
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { LogEntry, LogLevel } from '@/shared/stores/logStore';
+import { LogRow } from '@/app/shell/BottomPanel/LogRow';
 import { useLogStore } from '@/shared/stores/logStore';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 
-const LOG_LEVEL_CONFIG: Record<LogLevel, { label: string; icon: string; colorVar: string }> = {
-  info: { label: 'INFO', icon: '›', colorVar: 'var(--terminal-log-info)' },
-  success: {
-    label: 'SUCCESS',
-    icon: '✓',
-    colorVar: 'var(--terminal-log-success)',
-  },
-  error: { label: 'ERROR', icon: '✗', colorVar: 'var(--terminal-log-error)' },
-  warning: {
-    label: 'WARN',
-    icon: '!',
-    colorVar: 'var(--terminal-log-warning)',
-  },
-};
+const ESTIMATED_ROW_HEIGHT = 20;
+const AT_BOTTOM_TOLERANCE_PX = 30;
+const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
-function HighlightedText({ text, query }: { text: string; query: string }) {
-  if (!query) {
-    return <>{text}</>;
-  }
-
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(escaped, 'gi');
-  const nodes: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  for (const match of text.matchAll(regex)) {
-    const start = match.index ?? 0;
-    const matched = match[0];
-
-    if (start > lastIndex) {
-      nodes.push(
-        <React.Fragment key={`t-${lastIndex}`}>{text.slice(lastIndex, start)}</React.Fragment>,
-      );
-    }
-
-    nodes.push(
-      <mark className="rounded-sm bg-warning/30 px-0.5 text-inherit" key={`m-${start}`}>
-        {matched}
-      </mark>,
-    );
-    lastIndex = start + matched.length;
-  }
-
-  if (lastIndex < text.length) {
-    nodes.push(<React.Fragment key={`t-${lastIndex}`}>{text.slice(lastIndex)}</React.Fragment>);
-  }
-
-  return <>{nodes}</>;
-}
-
-function LogRow({ log, searchQuery }: { log: LogEntry; searchQuery: string }) {
-  const config = LOG_LEVEL_CONFIG[log.type];
-
-  return (
-    <div className="flex gap-2 px-3 py-0.5 transition-colors hover:bg-accent/20">
-      <span
-        className="shrink-0 select-none font-mono text-[11px] leading-5 opacity-50"
-        style={{ color: 'var(--terminal-fg)' }}
-      >
-        {log.timestamp}
-      </span>
-      <span
-        className="w-16 shrink-0 select-none font-mono font-semibold text-[11px] leading-5"
-        style={{ color: config.colorVar }}
-      >
-        {config.icon} {config.label}
-      </span>
-      <span
-        className="break-all font-mono text-[12px] leading-5"
-        style={{ color: 'var(--terminal-fg)' }}
-      >
-        <HighlightedText query={searchQuery} text={log.message} />
-      </span>
-    </div>
-  );
-}
-
-export function LogsPanel() {
+export const LogsPanel = memo(function LogsPanel() {
   const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore(
     useShallow((state) => ({
       logs: state.logs,
@@ -109,26 +37,41 @@ export function LogsPanel() {
     return result;
   }, [logs, filter, searchQuery]);
 
+  // Compiled once per query instead of once per row per render.
+  const searchRegex = useMemo(
+    () => (searchQuery ? new RegExp(searchQuery.replace(REGEX_ESCAPE, '\\$&'), 'gi') : null),
+    [searchQuery],
+  );
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredLogs.length,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    getItemKey: (index) => filteredLogs[index]?.id ?? index,
+    getScrollElement: () => scrollRef.current,
+    overscan: 12,
+  });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
   // Auto-scroll to bottom when following
   useEffect(() => {
-    if (isFollowing && scrollRef.current) {
-      const viewport = scrollRef.current.querySelector('[data-slot="scroll-area-viewport"]');
-      if (viewport) {
-        viewport.scrollTop = viewport.scrollHeight;
-      }
+    const viewport = scrollRef.current;
+    if (isFollowing && viewport) {
+      viewport.scrollTop = viewport.scrollHeight;
     }
   }, [filteredLogs, isFollowing]);
 
   // Detect manual scroll to disable following
   useEffect(() => {
-    const viewport = scrollRef.current?.querySelector('[data-slot="scroll-area-viewport"]');
+    const viewport = scrollRef.current;
     if (!viewport) {
       return;
     }
 
     const handleScroll = () => {
       if (isUserScrollingRef.current) {
-        const isAtBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 30;
+        const isAtBottom =
+          viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <
+          AT_BOTTOM_TOLERANCE_PX;
         if (!isAtBottom && isFollowing) {
           setIsFollowing(false);
         } else if (isAtBottom && !isFollowing) {
@@ -157,22 +100,56 @@ export function LogsPanel() {
       className="flex h-full flex-col overflow-hidden"
       style={{ backgroundColor: 'var(--terminal-bg)' }}
     >
-      <ScrollArea className="min-h-0 w-full flex-1" ref={scrollRef}>
-        <div aria-live="polite" aria-relevant="additions" className="flex flex-col py-1" role="log">
-          {filteredLogs.length === 0 ? (
-            <div
-              className="select-none py-8 text-center text-sm italic opacity-40"
-              style={{ color: 'var(--terminal-fg)' }}
-            >
-              {logs.length === 0
-                ? 'No logs yet. Operations will appear here.'
-                : 'No logs match the current filter.'}
-            </div>
-          ) : (
-            filteredLogs.map((log) => <LogRow key={log.id} log={log} searchQuery={searchQuery} />)
-          )}
-        </div>
-      </ScrollArea>
+      <div
+        aria-live="polite"
+        aria-relevant="additions"
+        className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden py-1"
+        ref={scrollRef}
+        role="log"
+      >
+        {filteredLogs.length === 0 ? (
+          <div
+            className="select-none py-8 text-center text-sm italic opacity-40"
+            style={{ color: 'var(--terminal-fg)' }}
+          >
+            {logs.length === 0
+              ? 'No logs yet. Operations will appear here.'
+              : 'No logs match the current filter.'}
+          </div>
+        ) : (
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              position: 'relative',
+              width: '100%',
+            }}
+          >
+            {virtualRows.map((vRow) => {
+              const log = filteredLogs[vRow.index];
+              if (!log) {
+                return null;
+              }
+
+              return (
+                <div
+                  data-index={vRow.index}
+                  key={vRow.key}
+                  ref={rowVirtualizer.measureElement}
+                  style={{
+                    left: 0,
+                    position: 'absolute',
+                    top: 0,
+                    transform: `translateY(${vRow.start}px)`,
+                    width: '100%',
+                  }}
+                >
+                  <LogRow log={log} searchRegex={searchRegex} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+});
