@@ -19,17 +19,22 @@ export function FileExplorerRootAccessButton({ disabled, onToggle, rootAccessGra
           aria-label={label}
           aria-pressed={rootAccessGranted}
           className={cn(
-            'size-11',
-            rootAccessGranted && 'text-destructive hover:bg-destructive/10 hover:text-destructive',
+            'size-8 shrink-0',
+            rootAccessGranted &&
+              'text-destructive hover:bg-destructive-muted hover:text-destructive',
           )}
           disabled={disabled}
           onClick={() => {
             void onToggle();
           }}
-          size="icon"
+          size="icon-sm"
           variant="ghost"
         >
-          {rootAccessGranted ? <ShieldCheck className="size-4" /> : <Shield className="size-4" />}
+          {rootAccessGranted ? (
+            <ShieldCheck aria-hidden="true" className="size-4" />
+          ) : (
+            <Shield aria-hidden="true" className="size-4" />
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>

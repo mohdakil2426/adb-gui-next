@@ -17,6 +17,7 @@ import {
 } from '@/features/payload-dumper/hooks/payloadPartitionLoaders';
 import type { ExtractionStatus } from '@/features/payload-dumper/model/payloadDumperStore';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import { usePayloadProgressStore } from '@/features/payload-dumper/model/payloadProgressStore';
 import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
 import { useLogStore } from '@/shared/stores/logStore';
 import { debugLog } from '@/shared/utils/debug';
@@ -61,7 +62,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const outputPath = usePayloadDumperStore((state) => state.outputPath);
   const partitions = usePayloadDumperStore((state) => state.partitions);
   const outputDir = usePayloadDumperStore((state) => state.outputDir);
-  const completedPartitions = usePayloadDumperStore((state) => state.completedPartitions);
+  const completedPartitions = usePayloadProgressStore((state) => state.completedPartitions);
   const setPayloadPath = usePayloadDumperStore((state) => state.setPayloadPath);
   const setOutputPath = usePayloadDumperStore((state) => state.setOutputPath);
   const setPartitions = usePayloadDumperStore((state) => state.setPartitions);
@@ -69,13 +70,13 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   const setExtractedFiles = usePayloadDumperStore((state) => state.setExtractedFiles);
   const setErrorMessage = usePayloadDumperStore((state) => state.setErrorMessage);
   const setOutputDir = usePayloadDumperStore((state) => state.setOutputDir);
-  const setExtractingPartitions = usePayloadDumperStore((state) => state.setExtractingPartitions);
+  const setExtractingPartitions = usePayloadProgressStore((state) => state.setExtractingPartitions);
   const addCompletedPartitions = usePayloadDumperStore((state) => state.addCompletedPartitions);
-  const clearPartitionProgress = usePayloadDumperStore((state) => state.clearPartitionProgress);
-  const clearTransientPartitionStatuses = usePayloadDumperStore(
+  const clearPartitionProgress = usePayloadProgressStore((state) => state.clearPartitionProgress);
+  const clearTransientPartitionStatuses = usePayloadProgressStore(
     (state) => state.clearTransientPartitionStatuses,
   );
-  const failActivePartitions = usePayloadDumperStore((state) => state.failActivePartitions);
+  const failActivePartitions = usePayloadProgressStore((state) => state.failActivePartitions);
   const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
   const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
   const setCancelTokenId = usePayloadDumperStore((state) => state.setCancelTokenId);

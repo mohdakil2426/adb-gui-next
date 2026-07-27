@@ -24,7 +24,7 @@ describe('PartitionTable', () => {
       />,
     );
 
-    await user.type(screen.getByPlaceholderText('Search partitions...'), 'vendor');
+    await user.type(screen.getByLabelText('Search partitions'), 'vendor');
     await user.click(screen.getByRole('checkbox', { name: /vendor_boot\.img/i }));
 
     expect(onToggle).toHaveBeenCalledWith(1);

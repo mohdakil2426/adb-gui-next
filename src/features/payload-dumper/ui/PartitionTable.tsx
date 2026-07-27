@@ -1,9 +1,10 @@
+import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { backend } from '@/desktop/models';
+import { PARTITION_GRID_COLUMNS } from '@/features/payload-dumper/ui/partitionGrid';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { cn } from '@/shared/utils/cn';
-import { formatBytesNum } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
 import { PartitionRow } from './PartitionRow';
 
 interface PartitionProgressView {
@@ -25,10 +26,12 @@ interface PartitionTableProps {
 }
 
 /**
- * Partition table with adaptive column layout.
- * Shows 3 columns (checkbox, name, size) normally,
- * expands to 4 columns (+ progress) during/after extraction.
- * Includes summary bar with select/deselect all toggle.
+ * Partition table on a **fixed** four-column grid.
+ *
+ * The header and every row used to switch between a 3- and a 4-column template
+ * the moment extraction started, so pressing Extract reflowed the entire list
+ * under the cursor. The progress column is now always reserved and simply left
+ * empty until there is progress to put in it.
  */
 export function PartitionTable({
   partitions,
@@ -79,57 +82,69 @@ export function PartitionTable({
   const selectionLocked = status === 'extracting' || status === 'cancelling';
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-2">
       {/* Summary + toggle */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-muted-foreground text-xs">
-          {isFiltered ? `${filteredPartitions.length} of ${partitions.length} shown \u2022 ` : ''}
+        <span className="numeric text-caption text-muted-foreground">
+          {isFiltered ? `${filteredPartitions.length} of ${partitions.length} shown · ` : ''}
           {selectedCount}/{filteredPartitions.length} selected
-          {hasCompletedPartitions ? ` \u2022 ${completedPartitions.size} extracted` : null}
-          {failedCount > 0 ? ` \u2022 ${failedCount} failed` : null}
-          {toExtractCount > 0 && ` \u2022 ${formatBytesNum(toExtractSize)} to extract`}
+          {hasCompletedPartitions ? ` · ${completedPartitions.size} extracted` : null}
+          {failedCount > 0 ? ` · ${failedCount} failed` : null}
+          {toExtractCount > 0 && ` · ${formatBytes(toExtractSize)} to extract`}
         </span>
         <Button
-          className="h-7 text-xs"
           disabled={selectionLocked}
           onClick={onToggleAll}
           size="sm"
+          type="button"
           variant="ghost"
         >
-          {allSelected ? 'Deselect All' : 'Select All'}
+          {allSelected ? 'Deselect all' : 'Select all'}
         </Button>
       </div>
 
       {/* Table container */}
-      <div className="overflow-hidden rounded-lg border bg-muted/30">
-        <div className="flex justify-center border-border/50 border-b px-4 py-3">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="relative flex items-center border-border border-b px-3 py-2">
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-5 size-3.5 text-muted-foreground"
+          />
           <Input
-            className="h-8 w-full max-w-xl text-sm"
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
+            aria-label="Search partitions"
+            className="h-8 w-full pl-7 text-body"
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
             }}
-            placeholder="Search partitions..."
+            placeholder="Search partitions…"
             value={searchQuery}
           />
         </div>
 
-        {/* Header — adaptive */}
+        {/* Header — the grid never changes, so rows never reflow mid-extraction */}
         <div
-          className={cn(
-            'grid gap-2 border-b bg-muted/50 px-4 py-2.5 font-semibold text-muted-foreground text-xs uppercase tracking-wider',
-            isExtractionActive
-              ? 'grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]'
-              : 'grid-cols-[28px_minmax(0,1fr)_72px]',
-          )}
+          className="grid gap-2 border-border border-b bg-surface-raised px-3 py-2 text-caption text-muted-foreground uppercase tracking-wide"
+          style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
         >
           <span />
           <span>Partition</span>
-          {isExtractionActive ? <span className="text-center">Progress</span> : null}
+          <span className="text-center">Progress</span>
           <span className="text-right">Size</span>
         </div>
 
-        {/* Rows — scrollable */}
-        <div className="max-h-[40vh] min-h-[120px] divide-y divide-border/50 overflow-y-auto overflow-x-hidden">
+        {/* Rows — scrollable. Capped with `min(40vh,28rem)` rather than a bare
+            `40vh`: this view scrolls as a normal page (it is not viewport-locked
+            like File Explorer/Marketplace), so the table cannot flex to fill an
+            exact remaining height — but a raw vh value would still keep growing
+            on a tall/4K window well past the point of being useful. The rem
+            ceiling caps that growth; `min-h-[120px]` keeps it from collapsing at
+            the 720px window-height floor. */}
+        <div className="max-h-[min(40vh,28rem)] min-h-[120px] divide-y divide-border/60 overflow-y-auto overflow-x-hidden">
+          {filteredPartitions.length === 0 ? (
+            <p className="px-3 py-6 text-center text-body text-muted-foreground">
+              {`No partition matches “${searchQuery}” — clear the search to see all ${partitions.length}.`}
+            </p>
+          ) : null}
           {filteredPartitions.map(({ partition, index }) => {
             const extractStatus = resolveRowStatus(
               partition.name,

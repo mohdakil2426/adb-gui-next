@@ -1,8 +1,9 @@
+import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import { FileExplorerTreePane } from '@/features/file-explorer/ui/FileExplorerTreePane';
 import { FileExplorerTreeResizeHandle } from '@/features/file-explorer/ui/FileExplorerTreeResizeHandle';
 
-interface Props {
+export interface FileExplorerTreeConfig {
   currentPath: string;
   getFileAccessMode: (path: string) => backend.FileAccessMode;
   handleCollapseTree: () => void;
@@ -16,40 +17,34 @@ interface Props {
   treeRefreshKey: number;
 }
 
-export function FileExplorerTreeSection({
-  currentPath,
-  getFileAccessMode,
-  handleCollapseTree,
-  handleResizeKeyDown,
-  isResizing,
-  isTreeCollapsed,
-  leftWidth,
-  loadFiles,
-  selectedSerial,
-  startResizing,
-  treeRefreshKey,
-}: Props) {
-  if (isTreeCollapsed) {
+/** Memoized: the directory tree must not re-render for file-list or
+ *  selection state, only for its own slice. */
+export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
+  tree,
+}: {
+  tree: FileExplorerTreeConfig;
+}) {
+  if (tree.isTreeCollapsed) {
     return null;
   }
 
   return (
     <>
       <FileExplorerTreePane
-        currentPath={currentPath}
-        getFileAccessMode={getFileAccessMode}
-        handleCollapseTree={handleCollapseTree}
-        leftWidth={leftWidth}
-        loadFiles={loadFiles}
-        selectedSerial={selectedSerial}
-        treeRefreshKey={treeRefreshKey}
+        currentPath={tree.currentPath}
+        getFileAccessMode={tree.getFileAccessMode}
+        handleCollapseTree={tree.handleCollapseTree}
+        leftWidth={tree.leftWidth}
+        loadFiles={tree.loadFiles}
+        selectedSerial={tree.selectedSerial}
+        treeRefreshKey={tree.treeRefreshKey}
       />
       <FileExplorerTreeResizeHandle
-        isResizing={isResizing}
-        leftWidth={leftWidth}
-        onKeyDown={handleResizeKeyDown}
-        onPointerDown={startResizing}
+        isResizing={tree.isResizing}
+        leftWidth={tree.leftWidth}
+        onKeyDown={tree.handleResizeKeyDown}
+        onPointerDown={tree.startResizing}
       />
     </>
   );
-}
+});

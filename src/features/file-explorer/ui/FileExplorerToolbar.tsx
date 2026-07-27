@@ -1,5 +1,6 @@
-import { ArrowLeft, ArrowRight, ArrowUp, Folder, PanelLeft, Search, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUp, PanelLeft, Search, X } from 'lucide-react';
 import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
+import { FileExplorerPathBar } from '@/features/file-explorer/ui/FileExplorerPathBar';
 import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
 import { FileExplorerTransferButton } from '@/features/file-explorer/ui/FileExplorerTransferButton';
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
@@ -25,22 +26,32 @@ interface FileExplorerToolbarProps {
   onCreateFolder: () => void;
   onExpandTree: () => void;
   onExport: () => void;
+  /** History forward — the mirror of `onBack`. */
+  onForward: () => void;
+  /** One level up the current path. Unrelated to history. */
   onGoUp: () => void;
   onImportFile: () => void;
   onImportFolder: () => void;
+  onNavigate: (targetPath: string) => void;
   onPathClick: () => void;
   onPathEditingChange: (value: string) => void;
   onPathEditingCommit: () => void;
   onPathEditingStop: () => void;
   onRefresh: () => void;
   onRootAccessToggle: () => Promise<void>;
-  onSearchClear: () => void;
   onSearchQueryChange: (value: string) => void;
-  onUp: () => void;
   rootAccessGranted: boolean;
   searchQuery: string;
 }
 
+/**
+ * Single 44px toolbar row on the unified control scale.
+ *
+ * Every control here was 44px square — the largest icon button in the app, in
+ * the one view that needs the most of them — while the filter input was 28px
+ * tall and 112px wide, the narrowest. Both now sit on the 32px / h-8 scale the
+ * header and Dashboard use.
+ */
 export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
   const {
     canGoBack,
@@ -59,9 +70,11 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onCreateFolder,
     onExpandTree,
     onExport,
+    onForward,
     onGoUp,
     onImportFile,
     onImportFolder,
+    onNavigate,
     onPathClick,
     onPathEditingChange,
     onPathEditingCommit,
@@ -69,101 +82,86 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onRefresh,
     onRootAccessToggle,
     onSearchQueryChange,
-    onUp,
     rootAccessGranted,
     searchQuery,
   } = props;
+
   return (
-    <div className="flex h-11 shrink-0 items-center gap-1 overflow-hidden border-border border-b px-2">
+    <div className="flex h-11 shrink-0 items-center gap-1 overflow-hidden border-border border-b bg-surface px-2">
       {isTreeCollapsed ? (
         <>
           <ToolbarTooltip label="Show tree panel">
             <Button
               aria-label="Show tree panel"
-              className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
               onClick={onExpandTree}
-              size="icon"
+              size="icon-sm"
               variant="ghost"
             >
-              <PanelLeft className="size-4" />
+              <PanelLeft aria-hidden="true" className="size-4" />
             </Button>
           </ToolbarTooltip>
           <Separator className="mx-0.5 h-4" orientation="vertical" />
         </>
       ) : null}
-      <div className="flex min-w-24 flex-1 items-center gap-1">
+
+      <div className="flex shrink-0 items-center gap-0.5">
         <ToolbarTooltip label="Back (Alt+Left)">
           <Button
             aria-label="Navigate back"
-            className="size-11 shrink-0"
+            className="size-8 shrink-0"
             disabled={!canGoBack || isBusy}
             onClick={onBack}
-            size="icon"
+            size="icon-sm"
             variant="ghost"
           >
-            <ArrowLeft className="size-4 shrink-0" />
+            <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
         <ToolbarTooltip label="Forward (Alt+Right)">
           <Button
             aria-label="Navigate forward"
-            className="size-11 shrink-0"
+            className="size-8 shrink-0"
             disabled={!canGoForward || isBusy}
-            onClick={onGoUp}
-            size="icon"
+            onClick={onForward}
+            size="icon-sm"
             variant="ghost"
           >
-            <ArrowRight className="size-4 shrink-0" />
+            <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
-        <ToolbarTooltip label="Go up">
+        <ToolbarTooltip label="Go up one directory">
           <Button
-            aria-label="Go up"
-            className="size-11 shrink-0"
+            aria-label="Go up one directory"
+            className="size-8 shrink-0"
             disabled={currentPath === '/' || isBusy}
-            onClick={onUp}
-            size="icon"
+            onClick={onGoUp}
+            size="icon-sm"
             variant="ghost"
           >
-            <ArrowUp className="size-4 shrink-0" />
+            <ArrowUp aria-hidden="true" className="size-4 shrink-0" />
           </Button>
         </ToolbarTooltip>
-        {isEditingPath ? (
-          <div className="relative flex min-w-0 flex-1 items-center">
-            <Folder className="pointer-events-none absolute left-1.5 size-3.5 shrink-0 text-muted-foreground" />
-            <Input
-              autoFocus
-              className="h-7 min-w-0 flex-1 border-input pr-2 pl-6 font-mono text-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-              onBlur={onPathEditingStop}
-              onChange={(e) => onPathEditingChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  onPathEditingCommit();
-                }
-                if (e.key === 'Escape') {
-                  onPathEditingStop();
-                }
-              }}
-              value={editPathValue}
-            />
-          </div>
-        ) : (
-          <button
-            className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            onClick={onPathClick}
-            title="Click to edit path"
-            type="button"
-          >
-            {currentPath}
-          </button>
-        )}
       </div>
-      <Separator className="mx-1 h-4 shrink-0" orientation="vertical" />
-      <div className="flex min-w-0 shrink-0 items-center gap-1">
+
+      <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
+
+      <FileExplorerPathBar
+        currentPath={currentPath}
+        editPathValue={editPathValue}
+        isEditingPath={isEditingPath}
+        onNavigate={onNavigate}
+        onPathClick={onPathClick}
+        onPathEditingChange={onPathEditingChange}
+        onPathEditingCommit={onPathEditingCommit}
+        onPathEditingStop={onPathEditingStop}
+      />
+
+      <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
+
+      <div className="flex min-w-0 shrink-0 items-center gap-0.5">
         <RefreshButton
           aria-label="Refresh directory"
-          buttonSize="icon"
           isLoading={isLoading}
           mode="icon"
           onClick={onRefresh}
@@ -176,25 +174,29 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         />
         <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
         <div className="relative flex items-center">
-          <Search className="pointer-events-none absolute left-1.5 size-3.5 shrink-0 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2 size-3.5 shrink-0 text-muted-foreground"
+          />
           <Input
             aria-label="Filter files"
-            className="h-7 w-28 pr-6 pl-6 text-xs transition-[width] duration-200 focus-visible:w-40 md:w-32 md:focus-visible:w-48"
+            className="h-8 @md:w-44 w-36 pr-7 pl-7 text-body transition-[width] duration-200 ease-standard @md:focus-visible:w-64 focus-visible:w-52"
             id="fe-search-input"
-            onChange={(e) => onSearchQueryChange(e.target.value)}
+            onChange={(event) => onSearchQueryChange(event.target.value)}
             placeholder="Filter…"
             value={searchQuery}
           />
           {searchQuery ? (
-            <button
+            <Button
               aria-label="Clear filter"
-              className="absolute right-1.5 text-muted-foreground hover:text-foreground"
+              className="absolute right-1 size-6 text-muted-foreground hover:text-foreground"
               onClick={onClearSearch}
-              tabIndex={-1}
+              size="icon-sm"
               type="button"
+              variant="ghost"
             >
-              <X className="size-3" />
-            </button>
+              <X aria-hidden="true" className="size-3.5" />
+            </Button>
           ) : null}
         </div>
         <FileExplorerTransferButton

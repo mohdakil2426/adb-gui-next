@@ -2,6 +2,10 @@ import { toast } from 'sonner';
 import { CreateCancellationToken, ExtractPayload } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import {
+  DOWNLOAD_PARTITION,
+  usePayloadProgressStore,
+} from '@/features/payload-dumper/model/payloadProgressStore';
 import { useLogStore } from '@/shared/stores/logStore';
 
 interface PartitionInfo {
@@ -193,12 +197,12 @@ export async function runExtractPayload({
 
 /** Best-effort stats from last progress samples when ExtractPayloadResult.stats is missing. */
 function aggregateProgressStats(partitionsExtracted: number): backend.ExtractionStats | null {
-  const progress = usePayloadDumperStore.getState().partitionProgress;
+  const progress = usePayloadProgressStore.getState().partitionProgress;
   let totalBytes = 0;
   let throughputSum = 0;
   let throughputCount = 0;
   for (const [name, p] of progress) {
-    if (name === '__download__') {
+    if (name === DOWNLOAD_PARTITION) {
       continue;
     }
     totalBytes += p.bytesWritten || p.totalBytes || 0;

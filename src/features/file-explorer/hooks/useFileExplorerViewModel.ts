@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { useFileExplorerKeyboardShortcuts } from '@/features/file-explorer/hooks/useFileExplorerKeyboardShortcuts';
 import { useFileExplorerLayout } from '@/features/file-explorer/hooks/useFileExplorerLayout';
 import { useFileExplorerLoader } from '@/features/file-explorer/hooks/useFileExplorerLoader';
@@ -8,7 +8,6 @@ import {
   useFileExplorerRootAccess,
   usePathFileAccessMode,
 } from '@/features/file-explorer/hooks/useFileExplorerRootAccess';
-import { useFileExplorerRowVirtualizer } from '@/features/file-explorer/hooks/useFileExplorerRowVirtualizer';
 import { useFileExplorerSelection } from '@/features/file-explorer/hooks/useFileExplorerSelection';
 import { useFileExplorerSort } from '@/features/file-explorer/hooks/useFileExplorerSort';
 import { useFileExplorerTransfers } from '@/features/file-explorer/hooks/useFileExplorerTransfers';
@@ -26,10 +25,19 @@ import {
 import type {
   CreatingType,
   FileEntry,
+  FileExplorerActions,
+  FileExplorerEditing,
+  FileExplorerListing,
+  FileExplorerNavigation,
+  FileExplorerSelection,
+  FileExplorerStatus,
   LoadError,
 } from '@/features/file-explorer/model/fileExplorerTypes';
 import { categorizeError } from '@/features/file-explorer/utils/fileExplorerErrors';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
+
+/** Splitter drags emit a leftWidth change per frame; only persist once it settles. */
+const TREE_WIDTH_PERSIST_DELAY_MS = 250;
 
 export function useFileExplorerViewModel(activeView: string) {
   const [fileState, fileDispatch] = useReducer(fileReducer, undefined, initFileState);
@@ -191,6 +199,7 @@ export function useFileExplorerViewModel(activeView: string) {
   const fileListRef = useRef<FileEntry[]>([]);
   const navHistoryRef = useRef(navHistory);
   const treeRefreshKeyRef = useRef(treeRefreshKey);
+  const editPathValueRef = useRef(editPathValue);
 
   // Sync refs with reducer state
   useEffect(() => {
@@ -214,7 +223,18 @@ export function useFileExplorerViewModel(activeView: string) {
   }, [treeRefreshKey]);
 
   useEffect(() => {
-    localStorage.setItem('fe.treeWidth', String(leftWidth));
+    editPathValueRef.current = editPathValue;
+  }, [editPathValue]);
+
+  // Debounced: leftWidth changes on every pointermove frame while dragging the
+  // splitter, and localStorage.setItem is synchronous.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem('fe.treeWidth', String(leftWidth));
+    }, TREE_WIDTH_PERSIST_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [leftWidth]);
 
   // Derived state
@@ -224,6 +244,11 @@ export function useFileExplorerViewModel(activeView: string) {
   const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
 
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
+  // Proactive, not reactive: the no-device state is derived from the global
+  // device poll, so it renders before any ListFiles call is attempted instead of
+  // being string-matched out of adb's error text afterwards.
+  const deviceCount = useDeviceStore((state) => state.devices.length);
+  const hasDevice = deviceCount > 0;
   useEffect(() => {
     selectedSerialRef.current = selectedSerial;
   }, [selectedSerial]);
@@ -255,7 +280,6 @@ export function useFileExplorerViewModel(activeView: string) {
     ? FILE_TABLE_COLUMNS_WITH_SELECTION
     : FILE_TABLE_COLUMNS;
   const isPullDisabled = isPulling || !singleSelected;
-  const rowVirtualizer = useFileExplorerRowVirtualizer(visibleList, tableScrollRef);
 
   const getFileAccessMode = usePathFileAccessMode(rootAccessGrantedRef);
 
@@ -348,9 +372,9 @@ export function useFileExplorerViewModel(activeView: string) {
     [startRenameByName],
   );
   const {
-    handleBackClick,
     handleClearSearch,
     handleDeleteFromSelection,
+    handleNavigateUp,
     handlePathClick,
     handleRefreshClick,
     handleRowDoubleClick,
@@ -398,87 +422,237 @@ export function useFileExplorerViewModel(activeView: string) {
     startRename,
   });
 
+  // ---------------------------------------------------------------------------
+  // Grouped, independently memoized slices.
+  //
+  // The previous shape was one 80-key literal rebuilt every render, spread as
+  // ~55 props (three of them inline object literals) into the main pane, which
+  // made memoization impossible anywhere below. Each slice below changes only
+  // when the state it describes changes.
+  // ---------------------------------------------------------------------------
+
+  const startCreateFile = useCallback(() => {
+    startCreate('file');
+  }, [startCreate]);
+  const startCreateFolder = useCallback(() => {
+    startCreate('folder');
+  }, [startCreate]);
+  const stopPathEditing = useCallback(() => {
+    setIsEditingPath(false);
+  }, [setIsEditingPath]);
+  const handlePathEditCommit = useCallback(() => {
+    const trimmedPath = editPathValueRef.current.trim();
+    void loadFiles(
+      trimmedPath && !trimmedPath.endsWith('/') ? `${trimmedPath}/` : trimmedPath || '/',
+    );
+    setIsEditingPath(false);
+  }, [loadFiles, setIsEditingPath]);
+
+  const actions = useMemo<FileExplorerActions>(
+    () => ({
+      cancelCreate,
+      clearSelection,
+      handleClearSearch,
+      handleCreateChange,
+      handleCreateConfirm,
+      handleDeleteFromSelection,
+      handleExpandTree,
+      handleGoBack,
+      handleGoForward,
+      handleNavigateUp,
+      handlePathClick,
+      handlePathEditCommit,
+      handlePull,
+      handlePullItem,
+      handlePushFile,
+      handlePushFileToDir,
+      handlePushFolder,
+      handleRefreshClick,
+      handleRenameCancel,
+      handleRenameChange,
+      handleRenameConfirm,
+      handleRootAccessToggle,
+      handleRowClick,
+      handleRowDoubleClick,
+      handleSelectAll,
+      handleSelectFromMenu,
+      handleSortColumn,
+      loadFiles,
+      openDeleteDialog,
+      setEditPathValue,
+      setIsEditingPath,
+      setSearchQuery,
+      startCreate,
+      startCreateFile,
+      startCreateFolder,
+      startRename,
+      stopPathEditing,
+      toggleCheckbox,
+    }),
+    [
+      cancelCreate,
+      clearSelection,
+      handleClearSearch,
+      handleCreateChange,
+      handleCreateConfirm,
+      handleDeleteFromSelection,
+      handleExpandTree,
+      handleGoBack,
+      handleGoForward,
+      handleNavigateUp,
+      handlePathClick,
+      handlePathEditCommit,
+      handlePull,
+      handlePullItem,
+      handlePushFile,
+      handlePushFileToDir,
+      handlePushFolder,
+      handleRefreshClick,
+      handleRenameCancel,
+      handleRenameChange,
+      handleRenameConfirm,
+      handleRootAccessToggle,
+      handleRowClick,
+      handleRowDoubleClick,
+      handleSelectAll,
+      handleSelectFromMenu,
+      handleSortColumn,
+      loadFiles,
+      openDeleteDialog,
+      setEditPathValue,
+      setIsEditingPath,
+      setSearchQuery,
+      startCreate,
+      startCreateFile,
+      startCreateFolder,
+      startRename,
+      stopPathEditing,
+      toggleCheckbox,
+    ],
+  );
+
+  const listing = useMemo<FileExplorerListing>(
+    () => ({
+      currentPath,
+      fileList,
+      fileTableColumns,
+      loadError,
+      phantomOffset,
+      searchQuery,
+      sortDir,
+      sortField,
+      visibleList,
+    }),
+    [
+      currentPath,
+      fileList,
+      fileTableColumns,
+      loadError,
+      phantomOffset,
+      searchQuery,
+      sortDir,
+      sortField,
+      visibleList,
+    ],
+  );
+
+  const editing = useMemo<FileExplorerEditing>(
+    () => ({ createError, createName, creatingType, renameError, renameValue, renamingName }),
+    [createError, createName, creatingType, renameError, renameValue, renamingName],
+  );
+
+  const selection = useMemo<FileExplorerSelection>(
+    () => ({ allSelected, isMultiSelectMode, selectedNames, someSelected }),
+    [allSelected, isMultiSelectMode, selectedNames, someSelected],
+  );
+
+  const navigation = useMemo<FileExplorerNavigation>(
+    () => ({ canGoBack, canGoForward }),
+    [canGoBack, canGoForward],
+  );
+
+  const status = useMemo<FileExplorerStatus>(
+    () => ({
+      editPathValue,
+      hasDevice,
+      isBusy,
+      isCreating,
+      isEditingPath,
+      isLoading,
+      isPullDisabled,
+      isPushing,
+    }),
+    [
+      editPathValue,
+      hasDevice,
+      isBusy,
+      isCreating,
+      isEditingPath,
+      isLoading,
+      isPullDisabled,
+      isPushing,
+    ],
+  );
+
+  const tree = useMemo(
+    () => ({
+      currentPath,
+      getFileAccessMode,
+      handleCollapseTree,
+      handleResizeKeyDown,
+      isResizing,
+      isTreeCollapsed,
+      leftWidth,
+      loadFiles,
+      selectedSerial,
+      startResizing,
+      treeRefreshKey,
+    }),
+    [
+      currentPath,
+      getFileAccessMode,
+      handleCollapseTree,
+      handleResizeKeyDown,
+      isResizing,
+      isTreeCollapsed,
+      leftWidth,
+      loadFiles,
+      selectedSerial,
+      startResizing,
+      treeRefreshKey,
+    ],
+  );
+
+  const deleteDialog = useMemo(
+    () => ({
+      fileList,
+      filesToDelete,
+      isDeleting,
+      onConfirm: handleConfirmDelete,
+      onOpenChange: setDeleteDialogOpen,
+      open: deleteDialogOpen,
+    }),
+    [
+      deleteDialogOpen,
+      fileList,
+      filesToDelete,
+      handleConfirmDelete,
+      isDeleting,
+      setDeleteDialogOpen,
+    ],
+  );
+
   return {
-    PHANTOM_ROW_HEIGHT,
-    allSelected,
-    canGoBack,
-    canGoForward,
-    cancelCreate,
-    clearSelection,
+    actions,
     containerRef,
-    createError,
-    createName,
-    creatingType,
-    currentPath,
-    deleteDialogOpen,
-    editPathValue,
-    fileList,
-    fileTableColumns,
-    filesToDelete,
-    getFileAccessMode,
-    handleBackClick,
-    handleClearSearch,
-    handleCollapseTree,
-    handleConfirmDelete,
-    handleCreateChange,
-    handleCreateConfirm,
-    handleDeleteFromSelection,
-    handleExpandTree,
-    handleGoBack,
-    handleGoForward,
-    handlePathClick,
-    handlePull,
-    handlePullItem,
-    handlePushFile,
-    handlePushFileToDir,
-    handlePushFolder,
-    handleRefreshClick,
-    handleRenameCancel,
-    handleRenameChange,
-    handleRenameConfirm,
-    handleResizeKeyDown,
-    handleRootAccessToggle,
-    handleRowClick,
-    handleRowDoubleClick,
-    handleSelectAll,
-    handleSelectFromMenu,
-    handleSortColumn,
-    isBusy,
-    isCreating,
-    isDeleting,
-    isEditingPath,
-    isLoading,
-    isMultiSelectMode,
-    isPullDisabled,
-    isPushing,
-    isResizing,
-    isTreeCollapsed,
-    leftWidth,
-    loadError,
-    loadFiles,
-    openDeleteDialog,
-    phantomOffset,
-    renameError,
-    renameValue,
-    renamingName,
+    deleteDialog,
+    editing,
+    listing,
+    navigation,
     rootAccessGranted,
-    rowVirtualizer,
-    searchQuery,
-    selectedNames,
-    selectedSerial,
-    setDeleteDialogOpen,
-    setEditPathValue,
-    setIsEditingPath,
-    setSearchQuery,
-    someSelected,
-    sortDir,
-    sortField,
-    startCreate,
-    startRename,
-    startResizing,
+    selection,
+    status,
     tableScrollRef,
-    toggleCheckbox,
-    treeRefreshKey,
-    visibleList,
+    tree,
   };
 }

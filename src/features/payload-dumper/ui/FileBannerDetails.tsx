@@ -18,7 +18,7 @@ import {
 } from '@/features/payload-dumper/utils/fileBannerMetadata';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
-import { formatBytesNum } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
 
 interface FileBannerDetailsProps {
   metadata: backend.RemotePayloadMetadata;
@@ -28,7 +28,7 @@ interface FileBannerDetailsProps {
 }
 function MetadataRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid min-w-0 grid-cols-[140px_1fr] gap-2 text-sm">
+    <div className="grid min-w-0 grid-cols-[140px_1fr] gap-2 text-body">
       <span className="truncate text-muted-foreground">{label}</span>
       <span className="min-w-0 break-all">{value}</span>
     </div>
@@ -36,7 +36,7 @@ function MetadataRow({ label, value }: { label: string; value: React.ReactNode }
 }
 function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
-    <div className="flex items-center gap-2 border-border/50 border-b pb-1 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+    <div className="flex items-center gap-2 border-border/50 border-b pb-1 text-caption text-muted-foreground uppercase tracking-wide">
       <Icon className="size-3.5" />
       {title}
     </div>
@@ -52,7 +52,7 @@ function CopyableText({ text }: { text: string }) {
   }, [text]);
   return (
     <div className="flex min-w-0 items-start gap-1.5">
-      <span className="min-w-0 break-all font-mono text-xs leading-relaxed">{text}</span>
+      <span className="min-w-0 break-all font-mono text-mono">{text}</span>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -114,13 +114,13 @@ export function FileBannerDetails({
             {buildInfo ? (
               <MetadataRow
                 label="Build"
-                value={<span className="font-mono text-xs">{metadata.postBuildIncremental}</span>}
+                value={<span className="font-mono text-mono">{metadata.postBuildIncremental}</span>}
               />
             ) : null}
             {metadata.postBuild ? (
               <MetadataRow
                 label="Fingerprint"
-                value={<span className="font-mono text-xs">{metadata.postBuild}</span>}
+                value={<span className="font-mono text-mono">{metadata.postBuild}</span>}
               />
             ) : null}
             {metadata.otaType ? (
@@ -129,9 +129,9 @@ export function FileBannerDetails({
                 value={
                   <span
                     className={cn(
-                      'inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs',
+                      'inline-flex items-center rounded-full px-2 py-0.5 font-medium text-caption',
                       metadata.otaType === 'AB'
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary-muted text-primary'
                         : 'bg-muted text-muted-foreground',
                     )}
                   >
@@ -149,7 +149,7 @@ export function FileBannerDetails({
             {metadata.otaVersion ? (
               <MetadataRow
                 label="Version"
-                value={<span className="font-mono text-xs">{metadata.otaVersion}</span>}
+                value={<span className="font-mono text-mono">{metadata.otaVersion}</span>}
               />
             ) : null}
             {metadata.wipe !== null && (
@@ -164,13 +164,13 @@ export function FileBannerDetails({
           <SectionHeader icon={FileKey} title="Payload Properties" />
           <div className="gap-1.5 pl-1">
             {metadata.fileSize !== null && (
-              <MetadataRow label="Payload Size" value={formatBytesNum(metadata.fileSize)} />
+              <MetadataRow label="Payload Size" value={formatBytes(metadata.fileSize)} />
             )}
             {metadata.fileHash ? (
               <MetadataRow label="File Hash" value={<CopyableText text={metadata.fileHash} />} />
             ) : null}
             {metadata.metadataSize !== null && (
-              <MetadataRow label="Metadata Size" value={formatBytesNum(metadata.metadataSize)} />
+              <MetadataRow label="Metadata Size" value={formatBytes(metadata.metadataSize)} />
             )}
             {metadata.metadataHash ? (
               <MetadataRow
@@ -186,7 +186,7 @@ export function FileBannerDetails({
         <SectionHeader icon={Globe} title="HTTP" />
         <div className="gap-1.5 pl-1">
           <MetadataRow label="Full URL" value={<CopyableText text={remoteUrl} />} />
-          <MetadataRow label="File Size" value={formatBytesNum(metadata.contentLength)} />
+          <MetadataRow label="File Size" value={formatBytes(metadata.contentLength)} />
           {metadata.contentType ? (
             <MetadataRow label="Content-Type" value={metadata.contentType} />
           ) : null}
@@ -197,7 +197,7 @@ export function FileBannerDetails({
           {metadata.etag ? (
             <MetadataRow
               label="ETag"
-              value={<span className="font-mono text-xs">{metadata.etag}</span>}
+              value={<span className="font-mono text-mono">{metadata.etag}</span>}
             />
           ) : null}
         </div>
@@ -222,7 +222,7 @@ export function FileBannerDetails({
               <MetadataRow
                 label="Payload Offset"
                 value={
-                  <span className="font-mono text-xs">
+                  <span className="font-mono text-mono">
                     0x{metadata.zipPayloadOffset.toString(16).toUpperCase()}
                   </span>
                 }
@@ -231,7 +231,7 @@ export function FileBannerDetails({
             {metadata.zipUncompressedSize !== null && (
               <MetadataRow
                 label="Payload Size"
-                value={`${formatBytesNum(metadata.zipUncompressedSize)} (uncompressed)`}
+                value={`${formatBytes(metadata.zipUncompressedSize)} (uncompressed)`}
               />
             )}
           </div>
@@ -266,7 +266,7 @@ export function FileBannerDetails({
                   <span>
                     {group.size !== null && (
                       <span className="mr-2 text-muted-foreground">
-                        ({formatBytesNum(group.size)})
+                        ({formatBytes(group.size)})
                       </span>
                     )}
                     {group.partitions.join(', ')}
@@ -288,7 +288,7 @@ export function FileBannerDetails({
           {outputPath ? (
             <MetadataRow
               label="Output"
-              value={<span className="break-all font-mono text-xs">{outputPath}</span>}
+              value={<span className="break-all font-mono text-mono">{outputPath}</span>}
             />
           ) : null}
         </div>

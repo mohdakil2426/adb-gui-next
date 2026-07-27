@@ -102,11 +102,11 @@ export function RemoteLoadProgressCard({
     <div
       aria-busy={!isError}
       aria-live="polite"
-      className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4"
+      className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
     >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold text-sm">Loading partitions</h3>
-        <span className="text-muted-foreground text-xs tabular-nums">
+        <h3 className="text-title">Loading partitions</h3>
+        <span className="numeric text-caption text-muted-foreground">
           Step {Math.min(activeStep, totalSteps)} of {totalSteps}
         </span>
       </div>
@@ -118,14 +118,14 @@ export function RemoteLoadProgressCard({
           const working = !isError && activeStep === stepNumber;
           const pending = !(done || working);
           return (
-            <li className="flex min-w-0 items-center gap-2 text-sm" key={label}>
+            <li className="flex min-w-0 items-center gap-2 text-body" key={label}>
               <span
                 aria-hidden="true"
                 className={cn(
-                  'flex size-5 shrink-0 items-center justify-center rounded-full border font-medium text-[10px]',
-                  done && 'border-success/40 bg-success/15 text-success',
-                  working && 'border-primary/40 bg-primary/10 text-primary',
-                  pending && 'border-border bg-background text-muted-foreground',
+                  'numeric flex size-5 shrink-0 items-center justify-center rounded-full border text-caption',
+                  done && 'border-success/40 bg-success-muted text-success',
+                  working && 'border-primary/40 bg-primary-muted text-primary',
+                  pending && 'border-border bg-surface text-muted-foreground',
                   isError && stepNumber === activeStep && 'border-destructive/40 text-destructive',
                 )}
               >
@@ -143,7 +143,7 @@ export function RemoteLoadProgressCard({
               >
                 {label}
               </span>
-              <span className="ml-auto shrink-0 text-muted-foreground text-xs">
+              <span className="ml-auto shrink-0 text-caption text-muted-foreground">
                 {done ? 'done' : null}
                 {working ? 'working' : null}
                 {pending ? 'waiting' : null}
@@ -156,7 +156,7 @@ export function RemoteLoadProgressCard({
       {/* Indeterminate progress bar (not a percentage of full download) */}
       <div
         aria-hidden="true"
-        className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary/20"
+        className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary-muted"
       >
         {isError ? (
           <div className="h-full w-full bg-destructive/40" />
@@ -165,17 +165,17 @@ export function RemoteLoadProgressCard({
         )}
       </div>
 
-      <div className="flex flex-col gap-1 text-xs">
+      <div className="flex flex-col gap-1 text-caption">
         <p className="text-muted-foreground">
-          <span className="tabular-nums">{elapsedLabel}</span>
-          <span className="mx-1 text-muted-foreground/50">·</span>
+          <span className="numeric">{elapsedLabel}</span>
+          <span className="mx-1 text-foreground-subtle">·</span>
           {sizeCopy}
         </p>
         <p className={cn('font-medium', isError ? 'text-destructive' : 'text-foreground')}>
           {statusLine}
         </p>
         {detail ? (
-          <p className="truncate text-muted-foreground" title={detail}>
+          <p className="truncate font-mono text-mono-sm text-muted-foreground" title={detail}>
             {detail}
           </p>
         ) : null}
@@ -186,9 +186,11 @@ export function RemoteLoadProgressCard({
         aria-label="Cancel loading partitions"
         className="w-full"
         onClick={onCancel}
+        size="sm"
+        type="button"
         variant="destructive"
       >
-        <XCircle aria-hidden="true" className="size-4" />
+        <XCircle aria-hidden="true" />
         Cancel loading
       </Button>
     </div>

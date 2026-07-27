@@ -136,6 +136,29 @@ describe('ViewFileExplorer', () => {
     );
   });
 
+  it('shows the no-device state from the device store, not from adb error text', async () => {
+    useDeviceStore.getState().reset();
+
+    render(<ViewFileExplorer activeView="files" />);
+
+    expect(await screen.findByText('No device connected')).toBeInTheDocument();
+    expect(screen.getByText(/Connect a device over USB/)).toBeInTheDocument();
+  });
+
+  it('navigates to an ancestor from a breadcrumb segment', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem('fe.currentPath', '/sdcard/Download/');
+
+    render(<ViewFileExplorer activeView="files" />);
+
+    await screen.findByText(longFileName);
+    // Ancestors are real controls, not decorative text: clicking one jumps
+    // straight there instead of requiring repeated presses of the up arrow.
+    await user.click(screen.getByRole('button', { name: 'sdcard' }));
+
+    expect(listFilesMock).toHaveBeenLastCalledWith('/sdcard/', 'device-a', 'normal');
+  });
+
   it('keeps normal root access grant state when verification fails', async () => {
     const user = userEvent.setup();
     verifyFileRootAccessMock.mockRejectedValue(new Error('su denied'));

@@ -1,208 +1,222 @@
-import type { Virtualizer } from '@tanstack/react-virtual';
 import { File, Folder, Loader2 } from 'lucide-react';
-import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import { useState } from 'react';
+import { useFileExplorerRowVirtualizer } from '@/features/file-explorer/hooks/useFileExplorerRowVirtualizer';
+import {
+  FILE_TABLE_CELL_COUNT,
+  FILE_TABLE_CELL_COUNT_WITH_SELECTION,
+  PHANTOM_ROW_HEIGHT,
+} from '@/features/file-explorer/model/fileExplorerConstants';
+import type {
+  FileEntry,
+  FileExplorerActions,
+  FileExplorerEditing,
+  FileExplorerListing,
+  FileExplorerSelection,
+  FileExplorerStatus,
+} from '@/features/file-explorer/model/fileExplorerTypes';
+import { FileExplorerCreateMenuItems } from '@/features/file-explorer/ui/FileExplorerCreateMenuItems';
+import { FileExplorerRow } from '@/features/file-explorer/ui/FileExplorerRow';
+import { FileExplorerRowMenuItems } from '@/features/file-explorer/ui/FileExplorerRowMenuItems';
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/shared/ui/context-menu';
 import { Input } from '@/shared/ui/input';
 import { TableBody, TableCell, TableRow } from '@/shared/ui/table';
 import { cn } from '@/shared/utils/cn';
-import { FileExplorerRow } from './FileExplorerRow';
+
+interface Props {
+  actions: FileExplorerActions;
+  editing: FileExplorerEditing;
+  listing: FileExplorerListing;
+  selection: FileExplorerSelection;
+  status: FileExplorerStatus;
+  tableScrollRef: React.RefObject<HTMLDivElement | null>;
+}
+
+/** Resolve the entry under the pointer from the row element's data-index. */
+function resolveRowEntry(target: EventTarget | null, visibleList: FileEntry[]): FileEntry | null {
+  const element = target instanceof Element ? target.closest('[data-index]') : null;
+  const index = Number(element?.getAttribute('data-index') ?? Number.NaN);
+  return Number.isInteger(index) ? (visibleList[index] ?? null) : null;
+}
 
 export function FileExplorerVirtualBody({
-  cancelCreate,
-  createError,
-  createName,
-  creatingType,
-  fileList,
-  fileTableColumns,
-  handleCreateChange,
-  handleCreateConfirm,
-  handlePullItem,
-  handlePushFileToDir,
-  handleRenameCancel,
-  handleRenameChange,
-  handleRenameConfirm,
-  handleRowClick,
-  handleRowDoubleClick,
-  handleSelectFromMenu,
-  isBusy,
-  isCreating,
-  isMultiSelectMode,
-  openDeleteDialog,
-  phantomOffset,
-  PHANTOM_ROW_HEIGHT,
-  renameError,
-  renameValue,
-  renamingName,
-  rowVirtualizer,
-  searchQuery,
-  selectedNames,
-  startRename,
-  toggleCheckbox,
-  visibleList,
-  currentPath,
-  loadFiles,
-}: {
-  cancelCreate: () => void;
-  createError: string;
-  createName: string;
-  creatingType: 'file' | 'folder' | null;
-  currentPath: string;
-  fileList: FileEntry[];
-  fileTableColumns: string;
-  handleCreateChange: (value: string) => void;
-  handleCreateConfirm: () => Promise<void>;
-  handlePullItem: (entry: FileEntry) => Promise<void>;
-  handlePushFileToDir: (targetDir: string) => Promise<void>;
-  handleRenameCancel: () => void;
-  handleRenameChange: (value: string) => void;
-  handleRenameConfirm: () => Promise<void>;
-  handleRowClick: (file: FileEntry, e: React.MouseEvent | React.KeyboardEvent) => void;
-  handleRowDoubleClick: (file: FileEntry) => void;
-  handleSelectFromMenu: (name: string) => void;
-  isBusy: boolean;
-  isCreating: boolean;
-  isMultiSelectMode: boolean;
-  loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
-  openDeleteDialog: (names: string[]) => void;
-  PHANTOM_ROW_HEIGHT: number;
-  phantomOffset: number;
-  renameError: string;
-  renameValue: string;
-  renamingName: string | null;
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
-  searchQuery: string;
-  selectedNames: Set<string>;
-  startRename: (entry: FileEntry) => void;
-  toggleCheckbox: (name: string) => void;
-  visibleList: FileEntry[];
-}) {
+  actions,
+  editing,
+  listing,
+  selection,
+  status,
+  tableScrollRef,
+}: Props) {
+  // The virtualizer lives here, not in the view model: scrolling then re-renders
+  // this list only, instead of the whole File Explorer tree from the top.
+  const rowVirtualizer = useFileExplorerRowVirtualizer(listing.visibleList, tableScrollRef);
+  const [menuFile, setMenuFile] = useState<FileEntry | null>(null);
+
   return (
-    <TableBody
-      className="block"
-      style={{
-        position: 'relative',
-        height: `${rowVirtualizer.getTotalSize() + phantomOffset}px`,
-      }}
-    >
-      {creatingType !== null && (
-        <TableRow
-          className="grid"
+    <ContextMenu>
+      <ContextMenuTrigger
+        asChild
+        onContextMenu={(event) => {
+          // The pane wraps the whole scroll container in its own ContextMenu for
+          // right-clicks outside the table body. Without this, a right-click on a
+          // row bubbles up and opens *both* roots, and the pane's create-only menu
+          // covers the row actions.
+          event.stopPropagation();
+          setMenuFile(resolveRowEntry(event.target, listing.visibleList));
+        }}
+      >
+        <TableBody
+          className="block"
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: PHANTOM_ROW_HEIGHT,
-            gridTemplateColumns: fileTableColumns,
+            position: 'relative',
+            height: `${rowVirtualizer.getTotalSize() + listing.phantomOffset}px`,
           }}
         >
-          {isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-3" /> : null}
-          <TableCell className="min-w-0 pr-0">
-            {creatingType === 'folder' ? (
-              <Folder className="size-4 shrink-0 text-primary" />
-            ) : (
-              <File className="size-4 shrink-0 text-muted-foreground" />
-            )}
-          </TableCell>
-          <TableCell className="col-span-4 min-w-0" colSpan={4}>
-            <div className="flex min-w-0 items-center gap-2">
-              <Input
-                aria-label={creatingType === 'folder' ? 'New folder name' : 'New file name'}
-                autoFocus
-                className={cn(
-                  'h-7 max-w-xs px-1.5 py-0 font-mono text-sm',
-                  createError && 'border-destructive focus-visible:ring-destructive',
+          {editing.creatingType !== null && (
+            <TableRow
+              className="grid"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: PHANTOM_ROW_HEIGHT,
+                gridTemplateColumns: listing.fileTableColumns,
+              }}
+            >
+              {selection.isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-2" /> : null}
+              <TableCell className="min-w-0 py-1 pr-0 pl-2">
+                {editing.creatingType === 'folder' ? (
+                  <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                ) : (
+                  <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
                 )}
-                disabled={isCreating}
-                onBlur={cancelCreate}
-                onChange={(e) => handleCreateChange(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    void handleCreateConfirm();
-                  }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    cancelCreate();
-                  }
-                }}
-                placeholder={creatingType === 'folder' ? 'New folder name' : 'filename.ext'}
-                value={createName}
+              </TableCell>
+              <TableCell className="col-span-3 min-w-0 py-1" colSpan={3}>
+                <div className="flex min-w-0 items-center gap-2">
+                  <Input
+                    aria-label={
+                      editing.creatingType === 'folder' ? 'New folder name' : 'New file name'
+                    }
+                    autoFocus
+                    className={cn(
+                      'h-7 max-w-xs px-1.5 py-0 font-mono text-mono',
+                      editing.createError && 'border-destructive focus-visible:ring-destructive',
+                    )}
+                    disabled={status.isCreating}
+                    onBlur={actions.cancelCreate}
+                    onChange={(e) => actions.handleCreateChange(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void actions.handleCreateConfirm();
+                      }
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        actions.cancelCreate();
+                      }
+                    }}
+                    placeholder={
+                      editing.creatingType === 'folder' ? 'New folder name' : 'filename.ext'
+                    }
+                    value={editing.createName}
+                  />
+                  {editing.createError ? (
+                    <span className="shrink-0 text-caption text-destructive">
+                      {editing.createError}
+                    </span>
+                  ) : null}
+                  {status.isCreating ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+                    />
+                  ) : null}
+                </div>
+              </TableCell>
+            </TableRow>
+          )}
+
+          {listing.fileList.length > 0 && listing.visibleList.length === 0 ? (
+            <TableRow
+              className="grid"
+              style={{
+                position: 'absolute',
+                top: listing.phantomOffset,
+                left: 0,
+                width: '100%',
+                gridTemplateColumns: listing.fileTableColumns,
+              }}
+            >
+              <TableCell
+                className="col-span-full h-32 text-center text-body text-muted-foreground"
+                colSpan={
+                  selection.isMultiSelectMode
+                    ? FILE_TABLE_CELL_COUNT_WITH_SELECTION
+                    : FILE_TABLE_CELL_COUNT
+                }
+              >
+                No files match &ldquo;{listing.searchQuery}&rdquo; — clear the filter to see all{' '}
+                {listing.fileList.length} entries.
+              </TableCell>
+            </TableRow>
+          ) : null}
+
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const file = listing.visibleList[virtualRow.index];
+            if (!file) {
+              return null;
+            }
+            const isBeingRenamed = editing.renamingName === file.name;
+            return (
+              <FileExplorerRow
+                currentPath={listing.currentPath}
+                file={file}
+                fileTableColumns={listing.fileTableColumns}
+                index={virtualRow.index}
+                isBeingRenamed={isBeingRenamed}
+                isMultiSelectMode={selection.isMultiSelectMode}
+                isNavigable={file.type === 'Directory' || file.type === 'Symlink'}
+                isSelected={selection.selectedNames.has(file.name)}
+                key={virtualRow.key}
+                loadFiles={actions.loadFiles}
+                measureElement={rowVirtualizer.measureElement}
+                onRenameCancel={actions.handleRenameCancel}
+                onRenameChange={actions.handleRenameChange}
+                onRenameConfirm={actions.handleRenameConfirm}
+                onRowClick={actions.handleRowClick}
+                onRowDoubleClick={actions.handleRowDoubleClick}
+                openDeleteDialog={actions.openDeleteDialog}
+                phantomOffset={listing.phantomOffset}
+                // Only the row being renamed needs the editor value, so a
+                // keystroke there cannot invalidate every other row's memo.
+                renameError={isBeingRenamed ? editing.renameError : ''}
+                renameValue={isBeingRenamed ? editing.renameValue : ''}
+                start={virtualRow.start}
+                toggleCheckbox={actions.toggleCheckbox}
+                visibleCount={listing.visibleList.length}
               />
-              {createError ? (
-                <span className="shrink-0 text-destructive text-xs leading-none">
-                  {createError}
-                </span>
-              ) : null}
-              {isCreating ? (
-                <Loader2 className="size-3.5 shrink-0 animate-spin text-muted-foreground" />
-              ) : null}
-            </div>
-          </TableCell>
-        </TableRow>
-      )}
-
-      {fileList.length > 0 && visibleList.length === 0 ? (
-        <TableRow
-          className="grid"
-          style={{
-            position: 'absolute',
-            top: phantomOffset,
-            left: 0,
-            width: '100%',
-            gridTemplateColumns: fileTableColumns,
-          }}
-        >
-          <TableCell
-            className="col-span-full h-32 text-center text-muted-foreground text-sm"
-            colSpan={isMultiSelectMode ? 6 : 5}
-          >
-            No files match &ldquo;{searchQuery}&rdquo;
-          </TableCell>
-        </TableRow>
-      ) : null}
-
-      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-        const file = visibleList[virtualRow.index];
-        if (!file) {
-          return null;
-        }
-        const isSelected = selectedNames.has(file.name);
-        const isBeingRenamed = renamingName === file.name;
-        const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
-        return (
-          <FileExplorerRow
-            currentPath={currentPath}
-            file={file}
-            fileTableColumns={fileTableColumns}
-            handlePullItem={handlePullItem}
-            handlePushFileToDir={handlePushFileToDir}
-            handleRenameCancel={handleRenameCancel}
-            handleRenameChange={handleRenameChange}
-            handleRenameConfirm={handleRenameConfirm}
-            handleRowClick={handleRowClick}
-            handleRowDoubleClick={handleRowDoubleClick}
-            handleSelectFromMenu={handleSelectFromMenu}
-            isBeingRenamed={isBeingRenamed}
-            isBusy={isBusy}
-            isMultiSelectMode={isMultiSelectMode}
-            isNavigable={isNavigable}
-            isSelected={isSelected}
-            key={virtualRow.key}
-            loadFiles={loadFiles}
-            openDeleteDialog={openDeleteDialog}
-            phantomOffset={phantomOffset}
-            renameError={renameError}
-            renameValue={renameValue}
-            rowVirtualizer={rowVirtualizer}
-            selectedNames={selectedNames}
-            startRename={startRename}
-            toggleCheckbox={toggleCheckbox}
-            virtualRow={virtualRow}
-            visibleCount={visibleList.length}
+            );
+          })}
+        </TableBody>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        {menuFile ? (
+          <FileExplorerRowMenuItems
+            actions={actions}
+            currentPath={listing.currentPath}
+            file={menuFile}
+            isBusy={status.isBusy}
+            selectedNames={selection.selectedNames}
           />
-        );
-      })}
-    </TableBody>
+        ) : (
+          <FileExplorerCreateMenuItems
+            disabled={status.isBusy}
+            onCreateFile={actions.startCreateFile}
+            onCreateFolder={actions.startCreateFolder}
+          />
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }

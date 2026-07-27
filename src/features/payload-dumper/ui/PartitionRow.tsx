@@ -1,9 +1,10 @@
 import { CheckCircle2, Clock, HardDrive, Loader2, ShieldCheck, XCircle } from 'lucide-react';
 import React from 'react';
 import type { backend } from '@/desktop/models';
+import { PARTITION_GRID_COLUMNS } from '@/features/payload-dumper/ui/partitionGrid';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
 import { cn } from '@/shared/utils/cn';
-import { formatBytesNum } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
 import { ExtractionProgressBar } from './ExtractionProgressBar';
 
 interface PartitionRowProps {
@@ -44,14 +45,11 @@ export const PartitionRow = React.memo(function PartitionRow({
       aria-checked={isCompleted ? true : partition.selected}
       aria-disabled={rowDisabled}
       className={cn(
-        'grid items-center gap-2 px-4 py-3 text-sm transition-colors',
-        showProgress
-          ? 'grid-cols-[28px_minmax(0,0.8fr)_minmax(0,5fr)_72px]'
-          : 'grid-cols-[28px_minmax(0,1fr)_72px]',
-        !rowDisabled && 'cursor-pointer hover:bg-muted/50',
-        partition.selected && !isCompleted && !isFailed && 'bg-primary/5',
-        isCompleted && 'bg-success/5',
-        isFailed && 'bg-destructive/5',
+        'grid items-center gap-2 px-3 py-2 text-body transition-colors duration-90 ease-standard',
+        !rowDisabled && 'cursor-pointer hover:bg-accent',
+        partition.selected && !isCompleted && !isFailed && 'bg-primary-muted',
+        isCompleted && 'bg-success-muted',
+        isFailed && 'bg-destructive-muted',
       )}
       onClick={() => {
         if (!rowDisabled) {
@@ -65,13 +63,14 @@ export const PartitionRow = React.memo(function PartitionRow({
         }
       }}
       role="checkbox"
+      style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
       tabIndex={rowDisabled ? -1 : 0}
     >
       {/* Checkbox / terminal status icon */}
       {isCompleted ? (
-        <CheckCircle2 aria-label="Completed" className="size-5 text-success" />
+        <CheckCircle2 aria-label="Completed" className="size-4 text-success" />
       ) : isFailed ? (
-        <XCircle aria-label="Failed" className="size-5 text-destructive" />
+        <XCircle aria-label="Failed" className="size-4 text-destructive" />
       ) : (
         <CheckboxItem checked={partition.selected} disabled={disabled} />
       )}
@@ -85,7 +84,7 @@ export const PartitionRow = React.memo(function PartitionRow({
         />
         <span
           className={cn(
-            'whitespace-normal break-words font-medium leading-snug',
+            'min-w-0 truncate font-mono text-mono',
             isCompleted
               ? 'text-success'
               : isFailed
@@ -94,13 +93,14 @@ export const PartitionRow = React.memo(function PartitionRow({
                   ? 'text-foreground'
                   : 'text-muted-foreground',
           )}
+          title={`${partition.name}.img`}
         >
           {partition.name}.img
         </span>
         {extractStatus && showProgress ? (
           <span
             className={cn(
-              'shrink-0 rounded px-1.5 py-0.5 font-medium text-[10px] uppercase tracking-wide',
+              'shrink-0 rounded-sm px-1.5 py-0.5 text-caption uppercase',
               statusBadgeClass(extractStatus),
             )}
           >
@@ -109,27 +109,29 @@ export const PartitionRow = React.memo(function PartitionRow({
         ) : null}
       </div>
 
-      {/* Progress — only when extraction active */}
-      {showProgress ? (
-        <div className="flex min-w-0 flex-col items-stretch justify-center gap-0.5">
-          <ExtractionProgressBar
-            isCompleted={isCompleted}
-            isExtracting={isActive}
-            isFailed={isFailed}
-            realProgress={progressPercent}
-          />
-          {isRunning && throughputMbps != null && throughputMbps > 0 ? (
-            <span className="text-center text-[10px] text-muted-foreground tabular-nums">
-              {throughputMbps.toFixed(1)} MB/s
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      {/* Progress — the column is always reserved, so the row never reflows */}
+      <div className="flex min-w-0 flex-col items-stretch justify-center gap-0.5">
+        {showProgress ? (
+          <>
+            <ExtractionProgressBar
+              isCompleted={isCompleted}
+              isExtracting={isActive}
+              isFailed={isFailed}
+              realProgress={progressPercent}
+            />
+            {isRunning && throughputMbps != null && throughputMbps > 0 ? (
+              <span className="numeric text-center text-caption text-muted-foreground">
+                {throughputMbps.toFixed(1)} MB/s
+              </span>
+            ) : null}
+          </>
+        ) : null}
+      </div>
 
       {/* Size */}
       <span
         className={cn(
-          'text-right text-xs tabular-nums',
+          'numeric text-right text-caption',
           isCompleted
             ? 'font-medium text-success'
             : isFailed
@@ -137,7 +139,7 @@ export const PartitionRow = React.memo(function PartitionRow({
               : 'text-muted-foreground',
         )}
       >
-        {formatBytesNum(partition.size)}
+        {formatBytes(partition.size)}
       </span>
     </div>
   );
@@ -153,25 +155,25 @@ function PartitionStatusIcon({
   selected: boolean;
 }) {
   if (extractStatus === 'running') {
-    return <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin text-primary" />;
+    return <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-primary" />;
   }
   if (extractStatus === 'verifying') {
     return (
-      <ShieldCheck aria-hidden="true" className="size-4 shrink-0 animate-pulse text-primary" />
+      <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0 animate-pulse text-primary" />
     );
   }
   if (extractStatus === 'pending') {
-    return <Clock aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />;
+    return <Clock aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />;
   }
   if (extractStatus === 'failed') {
-    return <XCircle aria-hidden="true" className="size-4 shrink-0 text-destructive" />;
+    return <XCircle aria-hidden="true" className="size-3.5 shrink-0 text-destructive" />;
   }
   return (
     <HardDrive
       aria-hidden="true"
       className={cn(
-        'size-4 shrink-0',
-        isCompleted ? 'text-success' : selected ? 'text-primary' : 'text-muted-foreground',
+        'size-3.5 shrink-0',
+        isCompleted ? 'text-success' : selected ? 'text-primary' : 'text-foreground-subtle',
       )}
     />
   );
@@ -180,15 +182,12 @@ function PartitionStatusIcon({
 function statusBadgeClass(status: backend.PartitionExtractStatus): string {
   switch (status) {
     case 'completed':
-      return 'bg-success/15 text-success';
+      return 'bg-success-muted text-success';
     case 'failed':
-      return 'bg-destructive/15 text-destructive';
+      return 'bg-destructive-muted text-destructive';
     case 'running':
-      return 'bg-primary/15 text-primary';
     case 'verifying':
-      return 'bg-primary/10 text-primary';
-    case 'pending':
-      return 'bg-muted text-muted-foreground';
+      return 'bg-primary-muted text-primary';
     default:
       return 'bg-muted text-muted-foreground';
   }

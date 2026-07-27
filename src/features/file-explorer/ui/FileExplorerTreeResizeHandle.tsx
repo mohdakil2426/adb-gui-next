@@ -26,7 +26,7 @@ export function FileExplorerTreeResizeHandle({
       aria-valuenow={leftWidth}
       className={cn(
         'group relative z-10 flex w-3 shrink-0 cursor-col-resize justify-center outline-none',
-        'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-0',
+        'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0',
         isResizing && 'select-none',
       )}
       onKeyDown={onKeyDown}
@@ -36,7 +36,7 @@ export function FileExplorerTreeResizeHandle({
     >
       <div
         className={cn(
-          'h-full w-px bg-border transition-colors group-hover:bg-primary/60 group-active:bg-primary',
+          'h-full w-px bg-border transition-colors duration-90 ease-standard group-hover:bg-primary/60 group-active:bg-primary',
           isResizing && 'bg-primary',
         )}
       />

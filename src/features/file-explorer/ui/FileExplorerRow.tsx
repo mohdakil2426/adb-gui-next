@@ -1,261 +1,175 @@
-import type { VirtualItem, Virtualizer } from '@tanstack/react-virtual';
-import {
-  Copy,
-  Download,
-  File,
-  Folder,
-  FolderOpen,
-  Link,
-  Pencil,
-  SquareCheck,
-  Trash2,
-  Upload,
-} from 'lucide-react';
+import { File, Folder, Link } from 'lucide-react';
 import path from 'path-browserify';
+import { memo } from 'react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
 import { Checkbox } from '@/shared/ui/checkbox';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from '@/shared/ui/context-menu';
 import { Input } from '@/shared/ui/input';
 import { TableCell, TableRow } from '@/shared/ui/table';
 import { cn } from '@/shared/utils/cn';
-import { formatBytes } from '@/shared/utils/formatting';
+import { EMPTY_VALUE, formatBytes } from '@/shared/utils/format';
 
 interface Props {
   currentPath: string;
   file: FileEntry;
   fileTableColumns: string;
-  handlePullItem: (entry: FileEntry) => Promise<void>;
-  handlePushFileToDir: (targetDir: string) => Promise<void>;
-  handleRenameCancel: () => void;
-  handleRenameChange: (value: string) => void;
-  handleRenameConfirm: () => Promise<void>;
-  handleRowClick: (file: FileEntry, e: React.MouseEvent | React.KeyboardEvent) => void;
-  handleRowDoubleClick: (file: FileEntry) => void;
-  handleSelectFromMenu: (name: string) => void;
+  index: number;
   isBeingRenamed: boolean;
-  isBusy: boolean;
   isMultiSelectMode: boolean;
   isNavigable: boolean;
   isSelected: boolean;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  measureElement: (node: Element | null) => void;
+  onRenameCancel: () => void;
+  onRenameChange: (value: string) => void;
+  onRenameConfirm: () => Promise<void>;
+  onRowClick: (file: FileEntry, e: React.MouseEvent | React.KeyboardEvent) => void;
+  onRowDoubleClick: (file: FileEntry) => void;
   openDeleteDialog: (names: string[]) => void;
   phantomOffset: number;
   renameError: string;
   renameValue: string;
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element>;
-  selectedNames: Set<string>;
-  startRename: (entry: FileEntry) => void;
+  start: number;
   toggleCheckbox: (name: string) => void;
-  virtualRow: VirtualItem;
   visibleCount: number;
 }
 
-export function FileExplorerRow(props: Props) {
-  const {
-    currentPath,
-    file,
-    fileTableColumns,
-    handlePullItem,
-    handlePushFileToDir,
-    handleRenameCancel,
-    handleRenameChange,
-    handleRenameConfirm,
-    handleRowClick,
-    handleRowDoubleClick,
-    handleSelectFromMenu,
-    isBeingRenamed,
-    isBusy,
-    isMultiSelectMode,
-    isNavigable,
-    isSelected,
-    loadFiles,
-    openDeleteDialog,
-    phantomOffset,
-    renameError,
-    renameValue,
-    rowVirtualizer,
-    selectedNames,
-    startRename,
-    toggleCheckbox,
-    virtualRow,
-    visibleCount,
-  } = props;
-
+/**
+ * Memoized row. Every callback prop is identity-stable and every value prop is
+ * a primitive or the row's own entry, so a selection or rename change re-renders
+ * only the rows it actually touches. The context menu lives once on the table
+ * body — mounting a Radix menu per row was the bulk of this list's render cost.
+ */
+export const FileExplorerRow = memo(function FileExplorerRow({
+  currentPath,
+  file,
+  fileTableColumns,
+  index,
+  isBeingRenamed,
+  isMultiSelectMode,
+  isNavigable,
+  isSelected,
+  loadFiles,
+  measureElement,
+  onRenameCancel,
+  onRenameChange,
+  onRenameConfirm,
+  onRowClick,
+  onRowDoubleClick,
+  openDeleteDialog,
+  phantomOffset,
+  renameError,
+  renameValue,
+  start,
+  toggleCheckbox,
+  visibleCount,
+}: Props) {
   return (
-    <ContextMenu key={virtualRow.key}>
-      <ContextMenuTrigger asChild>
-        <TableRow
-          aria-posinset={virtualRow.index + 1}
-          aria-setsize={visibleCount}
-          className="grid cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-          data-index={virtualRow.index}
-          data-state={isSelected ? 'selected' : ''}
-          onClick={(e) => handleRowClick(file, e)}
-          onDoubleClick={() => handleRowDoubleClick(file)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleRowClick(file, e);
-            }
-            if (e.key === 'ArrowRight' && isNavigable) {
-              e.preventDefault();
-              void loadFiles(path.posix.join(currentPath, file.name) + '/');
-            }
-            if (e.key === 'Delete') {
-              e.preventDefault();
-              openDeleteDialog([file.name]);
+    <TableRow
+      aria-posinset={index + 1}
+      aria-setsize={visibleCount}
+      className="grid cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      data-index={index}
+      data-state={isSelected ? 'selected' : ''}
+      onClick={(e) => onRowClick(file, e)}
+      onDoubleClick={() => onRowDoubleClick(file)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onRowClick(file, e);
+        }
+        if (e.key === 'ArrowRight' && isNavigable) {
+          e.preventDefault();
+          void loadFiles(path.posix.join(currentPath, file.name) + '/');
+        }
+        if (e.key === 'Delete') {
+          e.preventDefault();
+          openDeleteDialog([file.name]);
+        }
+      }}
+      ref={measureElement}
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        transform: `translateY(${start + phantomOffset}px)`,
+        gridTemplateColumns: fileTableColumns,
+      }}
+      tabIndex={0}
+    >
+      {isMultiSelectMode ? (
+        <TableCell
+          className="min-w-0 py-1 pr-0 pl-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isBeingRenamed) {
+              toggleCheckbox(file.name);
             }
           }}
-          ref={rowVirtualizer.measureElement}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            transform: `translateY(${virtualRow.start + phantomOffset}px)`,
-            gridTemplateColumns: fileTableColumns,
-          }}
-          tabIndex={0}
         >
-          {isMultiSelectMode ? (
-            <TableCell
-              className="min-w-0 pr-0 pl-3"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isBeingRenamed) {
-                  toggleCheckbox(file.name);
+          {isBeingRenamed ? null : (
+            <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
+          )}
+        </TableCell>
+      ) : null}
+      <TableCell className="min-w-0 py-1 pl-2">
+        {file.type === 'Directory' ? (
+          <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+        ) : file.type === 'Symlink' ? (
+          <Link aria-hidden="true" className="size-4 shrink-0 text-info" />
+        ) : (
+          <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
+        )}
+      </TableCell>
+      <TableCell className="min-w-0 whitespace-normal break-words py-1 text-body">
+        {isBeingRenamed ? (
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <Input
+              autoFocus
+              className={cn(
+                'h-7 w-full px-1.5 py-0 text-body',
+                renameError && 'border-destructive focus-visible:ring-destructive',
+              )}
+              onBlur={onRenameCancel}
+              onChange={(e) => onRenameChange(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onFocus={(e) => e.target.select()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void onRenameConfirm();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  onRenameCancel();
                 }
               }}
-            >
-              {isBeingRenamed ? null : (
-                <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
-              )}
-            </TableCell>
-          ) : null}
-          <TableCell className="min-w-0">
-            {file.type === 'Directory' ? (
-              <Folder className="size-4 shrink-0 text-primary" />
-            ) : file.type === 'Symlink' ? (
-              <Link className="size-4 shrink-0 text-primary/70" />
-            ) : (
-              <File className="size-4 shrink-0 text-muted-foreground" />
-            )}
-          </TableCell>
-          <TableCell className="min-w-0 whitespace-normal break-words font-medium">
-            {isBeingRenamed ? (
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <Input
-                  autoFocus
-                  className={cn(
-                    'h-7 w-full px-1.5 py-0 font-medium text-sm',
-                    renameError && 'border-destructive focus-visible:ring-destructive',
-                  )}
-                  onBlur={handleRenameCancel}
-                  onChange={(e) => handleRenameChange(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  onFocus={(e) => e.target.select()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      void handleRenameConfirm();
-                    }
-                    if (e.key === 'Escape') {
-                      e.preventDefault();
-                      handleRenameCancel();
-                    }
-                  }}
-                  value={renameValue}
-                />
-                {renameError ? (
-                  <span className="text-destructive text-xs leading-none">{renameError}</span>
-                ) : null}
-              </div>
-            ) : (
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="min-w-0 break-words leading-tight">{file.name}</span>
-                {file.type === 'Symlink' && file.linkTarget ? (
-                  <span className="min-w-0 break-words font-mono text-[10px] text-muted-foreground/60 leading-none">
-                    → {file.linkTarget}
-                  </span>
-                ) : null}
-              </div>
-            )}
-          </TableCell>
-          <TableCell className="min-w-0 text-muted-foreground text-xs tabular-nums">
-            {file.type === 'Directory' ? '—' : formatBytes(file.size)}
-          </TableCell>
-          <TableCell className="min-w-0 text-xs tabular-nums">{file.date}</TableCell>
-          <TableCell className="min-w-0 text-xs tabular-nums">{file.time}</TableCell>
-        </TableRow>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={() => handleSelectFromMenu(file.name)}>
-          <SquareCheck className="size-4 shrink-0" />
-          Select
-        </ContextMenuItem>
-        <ContextMenuItem
-          onClick={() =>
-            void navigator.clipboard.writeText(path.posix.join(currentPath, file.name))
-          }
-        >
-          <Copy className="size-4 shrink-0" />
-          Copy Path
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        {isNavigable ? (
-          <>
-            <ContextMenuItem
-              onClick={() => void loadFiles(path.posix.join(currentPath, file.name) + '/')}
-            >
-              <FolderOpen className="size-4 shrink-0" />
-              Open
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-          </>
-        ) : null}
-        <ContextMenuItem
-          disabled={
-            (isSelected && selectedNames.size > 1) || (!isSelected && selectedNames.size > 0)
-          }
-          onClick={() => startRename(file)}
-        >
-          <Pencil className="size-4 shrink-0" />
-          Rename
-        </ContextMenuItem>
-        <ContextMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => {
-            const namesToDelete =
-              isSelected && selectedNames.size > 0 ? Array.from(selectedNames) : [file.name];
-            openDeleteDialog(namesToDelete);
-          }}
-        >
-          <Trash2 className="size-4 shrink-0" />
-          {isSelected && selectedNames.size > 1 ? `Delete ${selectedNames.size} items` : 'Delete'}
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-        <ContextMenuItem
-          disabled={isBusy}
-          onClick={() =>
-            void handlePushFileToDir(
-              isNavigable ? path.posix.join(currentPath, file.name) + '/' : currentPath,
-            )
-          }
-        >
-          <Upload className="size-4 shrink-0" />
-          {isNavigable ? `Import into "${file.name}"` : 'Import File'}
-        </ContextMenuItem>
-        <ContextMenuItem disabled={isBusy} onClick={() => void handlePullItem(file)}>
-          <Download className="size-4 shrink-0" />
-          Export
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+              value={renameValue}
+            />
+            {renameError ? (
+              <span className="text-caption text-destructive">{renameError}</span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="min-w-0 break-words leading-tight">{file.name}</span>
+            {file.type === 'Symlink' && file.linkTarget ? (
+              <span className="min-w-0 break-words font-mono text-mono-sm text-muted-foreground">
+                → {file.linkTarget}
+              </span>
+            ) : null}
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="numeric min-w-0 py-1 text-caption text-muted-foreground">
+        {/* `ls` reports size as text; parse once so the one numeric formatter applies. */}
+        {file.type === 'Directory' ? EMPTY_VALUE : formatBytes(Number.parseInt(file.size, 10))}
+      </TableCell>
+      <TableCell className="numeric min-w-0 py-1 text-caption text-muted-foreground">
+        {file.date}
+        <span className="px-1 text-foreground-subtle">·</span>
+        {file.time}
+      </TableCell>
+    </TableRow>
   );
-}
+});

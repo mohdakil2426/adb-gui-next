@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+import { Kbd, KbdGroup } from '@/shared/ui/kbd';
 
 interface Props {
   disabled: boolean;
@@ -27,28 +28,35 @@ export function FileExplorerMoreActionsMenu({
       <DropdownMenuTrigger asChild>
         <Button
           aria-label="More file actions"
-          className="size-11"
+          className="size-8 shrink-0"
           disabled={disabled}
-          size="icon"
+          size="icon-sm"
           variant="ghost"
         >
-          <MoreHorizontal className="size-4 shrink-0" />
+          <MoreHorizontal aria-hidden="true" className="size-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onCreateFile}>
-          <FilePlus2 className="size-4 shrink-0" />
-          New File
-          <span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+N</span>
+          <FilePlus2 aria-hidden="true" className="size-4 shrink-0" />
+          New file
+          <KbdGroup className="ml-auto pl-4">
+            <Kbd>Ctrl</Kbd>
+            <Kbd>N</Kbd>
+          </KbdGroup>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onCreateFolder}>
-          <FolderPlus className="size-4 shrink-0" />
-          New Folder
-          <span className="ml-auto pl-4 text-muted-foreground text-xs">Ctrl+Shift+N</span>
+          <FolderPlus aria-hidden="true" className="size-4 shrink-0" />
+          New folder
+          <KbdGroup className="ml-auto pl-4">
+            <Kbd>Ctrl</Kbd>
+            <Kbd>Shift</Kbd>
+            <Kbd>N</Kbd>
+          </KbdGroup>
         </DropdownMenuItem>
         <DropdownMenuItem disabled={isPullDisabled} onClick={onExport}>
-          <Download className="size-4 shrink-0" />
-          Export
+          <Download aria-hidden="true" className="size-4 shrink-0" />
+          Export selected
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

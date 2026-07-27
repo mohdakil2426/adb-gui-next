@@ -39,18 +39,20 @@ export function FileExplorerTreePane(props: Props) {
       className="flex min-h-0 shrink-0 flex-col overflow-hidden"
       style={{ width: `${leftWidth}px` }}
     >
-      <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
-        <Layers className="size-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 font-medium text-muted-foreground text-sm">Device</span>
+      <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-surface px-2">
+        <Layers aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-caption text-muted-foreground uppercase tracking-wide">
+          Device
+        </span>
         <ToolbarTooltip label="Collapse tree panel">
           <Button
             aria-label="Collapse tree panel"
-            className="size-11 shrink-0 text-muted-foreground hover:text-foreground"
+            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
             onClick={handleCollapseTree}
-            size="icon"
+            size="icon-sm"
             variant="ghost"
           >
-            <PanelLeftClose className="size-3.5" />
+            <PanelLeftClose aria-hidden="true" className="size-4" />
           </Button>
         </ToolbarTooltip>
       </div>

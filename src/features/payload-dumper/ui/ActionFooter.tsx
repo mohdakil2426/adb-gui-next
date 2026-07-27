@@ -1,6 +1,6 @@
 import { Download, Loader2, RefreshCw, StopCircle } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
-import { formatBytesNum } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
 
 interface ActionFooterProps {
   hasCompletedPartitions: boolean;
@@ -15,9 +15,9 @@ interface ActionFooterProps {
 }
 
 /**
- * Action footer with Reset and Extract buttons.
- * Zone 3 of the loaded state layout.
- * Extract button shows dynamic labels based on state.
+ * Reset and Extract. The extract label states exactly what pressing it will do
+ * — count and total bytes — so the destination of a multi-gigabyte write is
+ * never a surprise.
  */
 export function ActionFooter({
   payloadPath,
@@ -31,67 +31,60 @@ export function ActionFooter({
   onCancel,
 }: ActionFooterProps) {
   const getExtractLabel = (): string => {
-    if (status === 'extracting') {
-      return 'Extracting...';
-    }
     if (toExtractCount > 0) {
-      return `Extract (${toExtractCount}) \u2014 ${formatBytesNum(toExtractSize)}`;
+      return `Extract ${toExtractCount} · ${formatBytes(toExtractSize)}`;
     }
     if (selectedCount > 0 && hasCompletedPartitions) {
-      return 'Already Extracted';
+      return 'Already extracted';
     }
-    return 'Select Partitions';
+    return 'Select partitions';
   };
 
   const isBusy = status === 'extracting' || status === 'cancelling';
 
   return (
-    <div className="border-t pt-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Button
-          className="h-11 w-full"
-          // Allow Reset during cancel so a hung backend cannot trap the UI forever.
-          disabled={status === 'extracting'}
-          onClick={onReset}
-          size="lg"
-          variant="outline"
-        >
-          <RefreshCw className="mr-2 size-4" />
-          Reset
+    <div className="flex flex-wrap items-center justify-end gap-2 border-border border-t pt-3">
+      <Button
+        // Allow Reset during cancel so a hung backend cannot trap the UI forever.
+        disabled={status === 'extracting'}
+        onClick={onReset}
+        type="button"
+        variant="outline"
+      >
+        <RefreshCw aria-hidden="true" />
+        Reset
+      </Button>
+      {status === 'extracting' && onCancel ? (
+        <Button onClick={onCancel} type="button" variant="destructive">
+          <StopCircle aria-hidden="true" />
+          Cancel
         </Button>
-        {status === 'extracting' && onCancel ? (
-          <Button className="h-11 w-full" onClick={onCancel} size="lg" variant="destructive">
-            <StopCircle className="mr-2 size-4" />
-            Cancel
-          </Button>
-        ) : status === 'cancelling' && onCancel ? (
-          <Button className="h-11 w-full" disabled size="lg" variant="destructive">
-            <Loader2 className="mr-2 size-4 animate-spin" />
-            Cancelling...
-          </Button>
-        ) : (
-          <Button
-            className="h-11 w-full"
-            disabled={
-              !payloadPath || isBusy || status === 'loading-partitions' || toExtractCount === 0
-            }
-            onClick={onExtract}
-            size="lg"
-          >
-            {isBusy ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                {status === 'cancelling' ? 'Cancelling...' : 'Extracting...'}
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 size-4" />
-                {getExtractLabel()}
-              </>
-            )}
-          </Button>
-        )}
-      </div>
+      ) : status === 'cancelling' && onCancel ? (
+        <Button disabled type="button" variant="destructive">
+          <Loader2 aria-hidden="true" className="animate-spin" />
+          Cancelling…
+        </Button>
+      ) : (
+        <Button
+          disabled={
+            !payloadPath || isBusy || status === 'loading-partitions' || toExtractCount === 0
+          }
+          onClick={onExtract}
+          type="button"
+        >
+          {isBusy ? (
+            <>
+              <Loader2 aria-hidden="true" className="animate-spin" />
+              Extracting…
+            </>
+          ) : (
+            <>
+              <Download aria-hidden="true" />
+              {getExtractLabel()}
+            </>
+          )}
+        </Button>
+      )}
     </div>
   );
 }
