@@ -18,6 +18,8 @@ export function useMarketplaceSearch() {
   const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
   const setQuery = useMarketplaceStore((state) => state.setQuery);
   const setResults = useMarketplaceStore((state) => state.setResults);
+  const searchError = useMarketplaceStore((state) => state.searchError);
+  const setSearchError = useMarketplaceStore((state) => state.setSearchError);
   const setIsSearching = useMarketplaceStore((state) => state.setIsSearching);
   const addToSearchHistory = useMarketplaceStore((state) => state.addToSearchHistory);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
@@ -41,10 +43,12 @@ export function useMarketplaceSearch() {
       if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
         setQuery('');
         setResults([]);
+        setSearchError(null);
         setIsSearching(false);
         return;
       }
 
+      setSearchError(null);
       setIsSearching(true);
       setQuery(trimmed);
       addToSearchHistory(trimmed);
@@ -64,6 +68,9 @@ export function useMarketplaceSearch() {
         if (requestId === requestIdRef.current) {
           handleError('Marketplace Search', error);
           setResults([]);
+          // Without this the view falls through to "No apps matched that search",
+          // which blames the query for a request that never completed.
+          setSearchError(error instanceof Error ? error.message : String(error));
         }
       } finally {
         if (requestId === requestIdRef.current) {
@@ -79,6 +86,7 @@ export function useMarketplaceSearch() {
       setIsSearching,
       setQuery,
       setResults,
+      setSearchError,
       sortBy,
     ],
   );
@@ -92,6 +100,7 @@ export function useMarketplaceSearch() {
         requestIdRef.current += 1;
         setQuery('');
         setResults([]);
+        setSearchError(null);
         setIsSearching(false);
         return;
       }
@@ -101,7 +110,7 @@ export function useMarketplaceSearch() {
         void performSearch(value);
       }, DEBOUNCE_MS);
     },
-    [clearPendingDebounce, performSearch, setIsSearching, setQuery, setResults],
+    [clearPendingDebounce, performSearch, setIsSearching, setQuery, setResults, setSearchError],
   );
 
   const handleClear = useCallback(() => {
@@ -110,8 +119,9 @@ export function useMarketplaceSearch() {
     setLocalQuery('');
     setQuery('');
     setResults([]);
+    setSearchError(null);
     setIsSearching(false);
-  }, [clearPendingDebounce, setIsSearching, setQuery, setResults]);
+  }, [clearPendingDebounce, setIsSearching, setQuery, setResults, setSearchError]);
 
   const handleQuickSearch = useCallback(
     (quickQuery: string) => {
@@ -137,15 +147,19 @@ export function useMarketplaceSearch() {
     [clearPendingDebounce],
   );
 
+  const handleRetry = useCallback(() => {
+    void performSearch(localQuery);
+  }, [localQuery, performSearch]);
+
   return {
     localQuery,
     results,
     isSearching,
+    searchError,
     hasQuery: localQuery.trim().length >= MIN_QUERY_LENGTH,
     handleInputChange,
     handleClear,
     handleQuickSearch,
-    performSearch,
-    setLocalQuery,
+    handleRetry,
   };
 }

@@ -1,9 +1,13 @@
-import { Check, Download, Loader2, Package } from 'lucide-react';
+import { Check, Download, Loader2, Package, Star } from 'lucide-react';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Button } from '@/shared/ui/button';
-import { formatFileSize } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
+
+const ICON_PX = 72;
 
 interface AppDetailHeroProps {
+  /** Why install is unavailable — shown under the button, never left silent. */
+  blockedReason: string | null;
   canInstall: boolean;
   displayName: string;
   downloadsLabel: string | null;
@@ -17,79 +21,80 @@ interface AppDetailHeroProps {
 }
 
 export function AppDetailHero({
-  displayName,
-  packageName,
-  iconUrl,
-  source,
-  repoStars,
-  downloadsLabel,
-  installState,
+  blockedReason,
   canInstall,
+  displayName,
+  downloadsLabel,
+  iconUrl,
   installSize,
+  installState,
   onInstall,
+  packageName,
+  repoStars,
+  source,
 }: AppDetailHeroProps) {
+  const sizeSuffix = installSize ? ` (${formatBytes(installSize)})` : '';
+
   return (
-    <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-      <div className="flex min-w-0 flex-1 items-start gap-4">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-muted/40 shadow-sm sm:size-24">
+    <div className="flex @md:flex-row flex-col @md:items-start @md:justify-between gap-4">
+      <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-raised">
           {iconUrl ? (
             <img
               alt=""
               className="size-full object-cover"
-              height={96}
+              height={ICON_PX}
               loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
               src={iconUrl}
-              width={96}
+              width={ICON_PX}
             />
           ) : (
-            <Package aria-hidden="true" className="size-10 text-muted-foreground" />
+            <Package aria-hidden="true" className="size-7 text-muted-foreground" />
           )}
         </div>
-        <div className="flex min-w-0 flex-col gap-2 pt-1">
-          <h1 className="truncate font-semibold text-2xl tracking-tight sm:text-3xl">
-            {displayName}
-          </h1>
-          <p className="truncate text-muted-foreground text-sm">{packageName}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 className="truncate font-semibold text-display text-foreground">{displayName}</h2>
+          <p className="truncate font-mono text-mono text-muted-foreground">{packageName}</p>
+          <div className="numeric flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
             <ProviderBadge source={source} />
-            <div className="flex items-center gap-2 font-medium text-muted-foreground text-xs">
-              {repoStars ? <span>★ {repoStars.toLocaleString()}</span> : null}
-              {downloadsLabel ? (
-                <>
-                  <span>•</span>
-                  <span>{downloadsLabel} Downloads</span>
-                </>
-              ) : null}
-            </div>
+            {repoStars ? (
+              <span className="inline-flex items-center gap-1">
+                <Star aria-hidden="true" className="size-3 fill-current" />
+                {repoStars.toLocaleString()}
+              </span>
+            ) : null}
+            {downloadsLabel ? <span>{downloadsLabel} downloads</span> : null}
           </div>
         </div>
       </div>
 
-      <div className="shrink-0 sm:pt-2">
+      <div className="flex @md:max-w-72 shrink-0 flex-col @md:items-end items-stretch gap-1.5">
         <Button
-          className="w-full px-8 font-semibold shadow-sm sm:w-auto"
+          className="@md:w-auto w-full"
           disabled={!canInstall || installState === 'running'}
           onClick={onInstall}
-          size="lg"
+          type="button"
         >
           {installState === 'done' ? (
-            <Check aria-hidden="true" data-icon="inline-start" />
+            <Check aria-hidden="true" />
           ) : installState === 'running' ? (
-            <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
+            <Loader2 aria-hidden="true" className="animate-spin" />
           ) : (
-            <Download aria-hidden="true" data-icon="inline-start" />
+            <Download aria-hidden="true" />
           )}
           {installState === 'done'
             ? 'Installed'
             : installState === 'running'
               ? 'Installing…'
-              : canInstall
-                ? `Install ${installSize ? `(${formatFileSize(installSize)})` : ''}`
-                : 'No APK available'}
+              : `Install${sizeSuffix}`}
         </Button>
+        {canInstall || !blockedReason ? null : (
+          <p className="@md:text-right text-caption text-muted-foreground">{blockedReason}</p>
+        )}
       </div>
     </div>
   );

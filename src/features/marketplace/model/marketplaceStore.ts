@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { backend } from '@/desktop/models';
+import { ALL_PROVIDER_IDS } from '@/features/marketplace/model/providers';
 
 type MarketplaceApp = backend.MarketplaceApp;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
@@ -7,7 +8,7 @@ type ProviderSource = backend.ProviderSource;
 type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
-const ALL_PROVIDERS: ProviderSource[] = ['F-Droid', 'GitHub', 'Aptoide'];
+const ALL_PROVIDERS: ProviderSource[] = ALL_PROVIDER_IDS;
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
 interface GithubSessionState {
@@ -41,6 +42,7 @@ interface MarketplaceState {
   reset: () => void;
   results: MarketplaceApp[];
   resultsPerProvider: number;
+  searchError: string | null;
   searchHistory: string[];
   selectedApp: MarketplaceApp | null;
   setAllProviders: () => void;
@@ -53,6 +55,7 @@ interface MarketplaceState {
   setQuery: (query: string) => void;
   setResults: (results: MarketplaceApp[]) => void;
   setResultsPerProvider: (resultsPerProvider: number) => void;
+  setSearchError: (searchError: string | null) => void;
   setSortBy: (sortBy: MarketplaceSortBy) => void;
   setViewMode: (viewMode: 'grid' | 'list') => void;
   sortBy: MarketplaceSortBy;
@@ -106,6 +109,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   query: '',
   results: [],
   isSearching: false,
+  searchError: null,
   selectedApp: null,
   isDetailOpen: false,
   activeProviders: loadFromStorage<ProviderSource[]>('marketplace_providers', ALL_PROVIDERS),
@@ -129,6 +133,9 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   },
   setResults: (results) => {
     set({ results });
+  },
+  setSearchError: (searchError) => {
+    set({ searchError });
   },
   setIsSearching: (isSearching) => {
     set({ isSearching });
@@ -241,6 +248,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
       query: '',
       results: [],
       isSearching: false,
+      searchError: null,
       selectedApp: null,
       isDetailOpen: false,
       githubDeviceChallenge: null,

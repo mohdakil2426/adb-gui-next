@@ -1,61 +1,42 @@
-import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
-import { memo, useState } from 'react';
+import { Package, Star } from 'lucide-react';
+import { memo } from 'react';
 import type { backend } from '@/desktop/models';
-import {
-  formatDownloadCount,
-  installMarketplacePackage,
-} from '@/features/marketplace/utils/install';
-import { Button } from '@/shared/ui/button';
-import { cn } from '@/shared/utils/cn';
-import { formatRating } from '@/shared/utils/formatting';
+import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
+import { formatDownloadCount } from '@/features/marketplace/utils/install';
+import { formatRating } from '@/shared/utils/format';
 import { ProviderBadge } from './ProviderBadge';
 
 type MarketplaceApp = backend.MarketplaceApp;
 
 interface AppListItemProps {
   app: MarketplaceApp;
-  onSelect: () => void;
+  /** Receives the app so the parent can pass one stable callback for every row. */
+  onSelect: (app: MarketplaceApp) => void;
+  /** Install availability — a blocked target disables install with the reason. */
+  target: InstallTarget;
 }
 
-export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListItemProps) {
-  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
-
-  const handleInstall = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-
-    if (!app.downloadUrl) {
-      onSelect();
-      return;
-    }
-
-    try {
-      setInstallState('running');
-      await installMarketplacePackage(app.name, app.downloadUrl);
-      setInstallState('done');
-      setTimeout(() => {
-        setInstallState('idle');
-      }, 2000);
-    } catch {
-      setInstallState('idle');
-    }
-  };
-
+export const AppListItem = memo(function AppListItem({ app, onSelect, target }: AppListItemProps) {
   const downloadsLabel = formatDownloadCount(app.downloadsCount);
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg p-3 transition-colors hover:bg-accent/50">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-90 ease-standard hover:bg-accent">
       <button
         aria-label={`View details for ${app.name}`}
         className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"
-        onClick={onSelect}
+        onClick={() => {
+          onSelect(app);
+        }}
         type="button"
       >
-        <div className="flex size-10 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
+        <div className="flex size-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
           {app.iconUrl ? (
             <img
               alt=""
               className="size-10 object-cover"
               height={40}
+              loading="lazy"
               onError={(event) => {
                 (event.target as HTMLImageElement).style.display = 'none';
               }}
@@ -63,69 +44,41 @@ export const AppListItem = memo(function AppListItem({ app, onSelect }: AppListI
               width={40}
             />
           ) : (
-            <Package className="size-4 text-muted-foreground" />
+            <Package aria-hidden="true" className="size-4 text-muted-foreground" />
           )}
         </div>
 
-        <div className="min-w-0 gap-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="truncate font-medium text-sm">{app.name}</span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <span className="min-w-0 truncate font-medium text-body text-foreground">
+              {app.name}
+            </span>
             <ProviderBadge source={app.source} />
-            {app.availableSources.length > 1 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{app.availableSources.length - 1} source
-                {app.availableSources.length > 2 ? 's' : ''}
-              </span>
-            )}
           </div>
-          <p className="truncate text-muted-foreground text-xs">
+          <p className="truncate text-body text-muted-foreground">
             {app.summary || 'No description available yet.'}
           </p>
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            <span>{app.version || 'Unknown version'}</span>
-            {app.rating != null && app.rating > 0 && (
+          <div className="numeric flex flex-wrap items-center gap-x-3 text-caption text-muted-foreground">
+            <span className="truncate font-mono">{app.packageName}</span>
+            <span>{app.version || 'Version unknown'}</span>
+            {app.rating != null && app.rating > 0 ? (
               <span className="inline-flex items-center gap-1">
-                <Star className="size-3.5 fill-current" />
+                <Star aria-hidden="true" className="size-3 fill-current" />
                 {formatRating(app.rating)}
               </span>
-            )}
-            {downloadsLabel ? <span>{downloadsLabel}</span> : null}
-            {app.language ? (
-              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[10px]">
-                {app.language}
+            ) : null}
+            {downloadsLabel ? <span>{downloadsLabel} downloads</span> : null}
+            {app.availableSources.length > 1 ? (
+              <span>
+                +{app.availableSources.length - 1} source
+                {app.availableSources.length > 2 ? 's' : ''}
               </span>
             ) : null}
           </div>
         </div>
       </button>
 
-      <Button
-        aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
-        className={cn('h-8 gap-1.5', installState === 'done' && 'pointer-events-none')}
-        disabled={installState === 'running'}
-        onClick={handleInstall}
-        size="sm"
-        variant={installState === 'done' ? 'default' : 'outline'}
-      >
-        {installState === 'done' ? (
-          <Check data-icon="inline-start" />
-        ) : installState === 'idle' ? (
-          app.downloadUrl ? (
-            <Download data-icon="inline-start" />
-          ) : (
-            <ExternalLink data-icon="inline-start" />
-          )
-        ) : (
-          <Loader2 className="animate-spin" data-icon="inline-start" />
-        )}
-        {installState === 'running'
-          ? 'Installing'
-          : installState === 'done'
-            ? 'Installed'
-            : app.downloadUrl
-              ? 'Install'
-              : 'Details'}
-      </Button>
+      <AppInstallButton app={app} onSelect={onSelect} target={target} />
     </div>
   );
 });

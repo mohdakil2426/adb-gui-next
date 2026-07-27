@@ -1,9 +1,10 @@
-import { ArrowDownWideNarrow, LayoutGrid, List, SlidersHorizontal } from 'lucide-react';
+import { ArrowDownWideNarrow, LayoutGrid, List } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import {
   getMarketplaceActiveFilterSummary,
   useMarketplaceStore,
 } from '@/features/marketplace/model/marketplaceStore';
+import { MARKETPLACE_PROVIDERS } from '@/features/marketplace/model/providers';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import {
@@ -18,14 +19,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
 import { cn } from '@/shared/utils/cn';
 
-type ProviderSource = backend.ProviderSource;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
-
-const PROVIDERS: { id: ProviderSource; label: string }[] = [
-  { id: 'F-Droid', label: 'F-Droid' },
-  { id: 'GitHub', label: 'GitHub' },
-  { id: 'Aptoide', label: 'Aptoide' },
-];
 
 const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
   { value: 'relevance', label: 'Best match' },
@@ -34,11 +28,11 @@ const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
   { value: 'name', label: 'Alphabetical' },
 ];
 
-interface FilterBarProps {
-  resultCount: number;
+function GroupLabel({ children }: { children: string }) {
+  return <h3 className="text-caption text-muted-foreground uppercase tracking-wide">{children}</h3>;
 }
 
-export function FilterBar({ resultCount }: FilterBarProps) {
+export function FilterBar({ resultCount }: { resultCount: number }) {
   const activeProviders = useMarketplaceStore((state) => state.activeProviders);
   const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
   const setAllProviders = useMarketplaceStore((state) => state.setAllProviders);
@@ -53,36 +47,33 @@ export function FilterBar({ resultCount }: FilterBarProps) {
     sortBy,
     resultsPerProvider,
   });
-  const allActive = activeProviders.length === PROVIDERS.length;
+  const allActive = activeProviders.length === MARKETPLACE_PROVIDERS.length;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-3">
-        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-          Sources
-        </h4>
-        <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <GroupLabel>Sources</GroupLabel>
+        <div className="flex flex-col gap-0.5">
           <Button
-            className="w-full justify-start font-medium text-xs"
+            className="w-full justify-start"
             onClick={setAllProviders}
             size="sm"
-            variant={allActive ? 'default' : 'ghost'}
+            type="button"
+            variant={allActive ? 'secondary' : 'ghost'}
           >
             All sources
           </Button>
-          {PROVIDERS.map((provider) => {
+          {MARKETPLACE_PROVIDERS.map((provider) => {
             const isActive = activeProviders.includes(provider.id);
             return (
               <Button
-                className={cn(
-                  'w-full justify-start font-medium text-xs',
-                  !isActive && 'text-muted-foreground',
-                )}
+                className={cn('w-full justify-start', !isActive && 'text-muted-foreground')}
                 key={provider.id}
                 onClick={() => {
                   toggleProvider(provider.id);
                 }}
                 size="sm"
+                type="button"
                 variant={isActive ? 'secondary' : 'ghost'}
               >
                 {provider.label}
@@ -92,10 +83,8 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-          View Mode
-        </h4>
+      <div className="flex flex-col gap-1.5">
+        <GroupLabel>Layout</GroupLabel>
         <ToggleGroup
           className="grid w-full grid-cols-2"
           onValueChange={(value) => {
@@ -108,36 +97,24 @@ export function FilterBar({ resultCount }: FilterBarProps) {
           value={viewMode}
           variant="outline"
         >
-          <ToggleGroupItem aria-label="Grid view" className="gap-2" value="grid">
+          <ToggleGroupItem aria-label="Grid view" className="gap-1.5" value="grid">
             <LayoutGrid aria-hidden="true" />
             Grid
           </ToggleGroupItem>
-          <ToggleGroupItem aria-label="List view" className="gap-2" value="list">
+          <ToggleGroupItem aria-label="List view" className="gap-1.5" value="list">
             <List aria-hidden="true" />
             List
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-          Sort By
-        </h4>
+      <div className="flex flex-col gap-1.5">
+        <GroupLabel>Sort by</GroupLabel>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              className="w-full justify-start gap-2 font-normal text-muted-foreground text-xs"
-              size="sm"
-              variant="outline"
-            >
-              <ArrowDownWideNarrow
-                aria-hidden="true"
-                className="text-foreground"
-                data-icon="inline-start"
-              />
-              <span className="font-medium text-foreground">
-                {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
-              </span>
+            <Button className="w-full justify-start" size="sm" type="button" variant="outline">
+              <ArrowDownWideNarrow aria-hidden="true" />
+              {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
@@ -159,30 +136,17 @@ export function FilterBar({ resultCount }: FilterBarProps) {
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h4 className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-          Active Filters
-        </h4>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="mb-1 flex w-full items-center gap-2 text-muted-foreground text-xs">
-            <SlidersHorizontal aria-hidden="true" className="size-3.5" />
-            <span>
-              {resultCount} result{resultCount === 1 ? '' : 's'}
-            </span>
-          </div>
-          {summaries.length > 0 ? (
-            summaries.map((summary) => (
-              <Badge
-                className="rounded-full px-2 py-0.5 text-[10px] text-muted-foreground"
-                key={summary}
-                variant="outline"
-              >
-                {summary}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-muted-foreground text-xs">No active filters</span>
-          )}
+      <div className="flex flex-col gap-1.5">
+        <GroupLabel>Active filters</GroupLabel>
+        <span className="numeric text-caption text-muted-foreground">
+          {resultCount} result{resultCount === 1 ? '' : 's'}
+        </span>
+        <div className="flex flex-wrap gap-1.5">
+          {summaries.map((summary) => (
+            <Badge key={summary} variant="neutral">
+              {summary}
+            </Badge>
+          ))}
         </div>
       </div>
     </div>
