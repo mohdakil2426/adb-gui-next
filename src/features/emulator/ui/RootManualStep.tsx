@@ -1,4 +1,5 @@
-import { CheckCircle2, FileCheck2, FolderOpen, Loader2, ShieldCheck } from 'lucide-react';
+import { CircleCheck, FileCheck2, FolderOpen, Loader2, ShieldCheck, Star } from 'lucide-react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
   FinalizeAvdRoot,
@@ -18,9 +19,15 @@ interface RootManualStepProps {
   serial: string | null;
 }
 
+/** Module constant: a fresh array literal re-registers the window drag-drop handler. */
+const PATCHED_IMAGE_EXTENSIONS = ['.img'];
+
 export function RootManualStep({ avdName, serial }: RootManualStepProps) {
-  const { rootWizard, setRootWizardResult, updateManualState } = useEmulatorManagerStore();
-  const state = rootWizard.manualState;
+  // Atomic selectors: subscribing to the whole store re-rendered this step on
+  // every root:progress tick, which fires many times per second while patching.
+  const state = useEmulatorManagerStore((s) => s.rootWizard.manualState);
+  const setRootWizardResult = useEmulatorManagerStore((s) => s.setRootWizardResult);
+  const updateManualState = useEmulatorManagerStore((s) => s.updateManualState);
 
   async function handleChoosePackage() {
     const path = await SelectRootPackageFile();
@@ -106,20 +113,32 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
     }
   }
 
+  const handlePatchedImageDropped = useCallback(
+    (paths: string[]) => {
+      updateManualState({
+        patchedImagePath: paths[0] ?? '',
+        finalizeResult: null,
+        error: null,
+      });
+    },
+    [updateManualState],
+  );
+
   const packageName = state.packagePath?.split(/[/\\]/).pop() ?? null;
   const patchedImageName = state.patchedImagePath?.split(/[/\\]/).pop() ?? null;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold text-base text-foreground">Manual FAKEBOOTIMG Mode</h3>
-          <p className="mt-1 font-semibold text-success text-xs">
-            ★ Recommended Primary Method for Modern Magisk (v26.0 - v30.0+)
+        <div className="min-w-0">
+          <h3 className="text-title">Manual FAKEBOOTIMG Mode</h3>
+          <p className="mt-0.5 flex items-center gap-1.5 text-caption text-success">
+            <Star aria-hidden="true" className="size-3.5" />
+            Recommended for modern Magisk (v26 and above)
           </p>
-          <p className="mt-1 text-muted-foreground text-sm">
-            Create a custom temporary fake boot image, patch it inside the modern Magisk app in your
-            emulator, then install the patched output back into the AVD ramdisk.
+          <p className="mt-1 text-body text-muted-foreground">
+            Create a temporary fake boot image, patch it inside the Magisk app on the emulator, then
+            install the patched output back into the AVD ramdisk.
           </p>
         </div>
         <Badge variant="success">Modern Magisk</Badge>
@@ -127,91 +146,98 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
 
       {!serial && (
         <Alert variant="destructive">
-          <ShieldCheck />
+          <ShieldCheck aria-hidden="true" />
           <AlertTitle>Emulator is not online</AlertTitle>
           <AlertDescription>
-            Launch the AVD and wait until ADB shows it as online before creating fakeboot.img.
+            Launch the AVD and wait until it appears as online in ADB, then create fakeboot.img.
           </AlertDescription>
         </Alert>
       )}
 
       {state.error ? (
         <Alert variant="destructive">
-          <ShieldCheck />
+          <ShieldCheck aria-hidden="true" />
           <AlertTitle>Manual root failed</AlertTitle>
-          <AlertDescription>{state.error}</AlertDescription>
+          <AlertDescription>
+            {state.error}. Confirm the emulator is online and the package is a Magisk .apk or .zip,
+            then try again.
+          </AlertDescription>
         </Alert>
       ) : null}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         <Button
-          className="h-auto w-full justify-start gap-3 border-dashed px-4 py-5 text-left"
+          className="h-auto w-full justify-start gap-3 border-dashed px-3 py-4 text-left"
           id="root-manual-pick-package"
-          onClick={handleChoosePackage}
+          onClick={() => {
+            void handleChoosePackage();
+          }}
           type="button"
           variant="outline"
         >
-          <FolderOpen className="size-5 shrink-0 text-muted-foreground" data-icon="inline-start" />
+          <FolderOpen aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
-            <span className="block font-medium text-sm">
+            <span className="block font-medium text-body">
               {packageName ?? 'Choose Magisk Package'}
             </span>
-            <span className="block truncate text-muted-foreground text-xs">
+            <span className="block truncate font-mono text-mono-sm text-muted-foreground">
               {state.packagePath ?? 'Supports .apk and .zip packages'}
             </span>
           </span>
         </Button>
 
         <Button
-          className="w-full gap-2"
+          className="w-full"
           disabled={!(serial && state.packagePath) || state.isPreparing}
           id="root-manual-create-fakeboot"
-          onClick={handlePrepare}
+          onClick={() => {
+            void handlePrepare();
+          }}
+          size="sm"
           type="button"
         >
           {state.isPreparing ? (
-            <Loader2 className="size-4 animate-spin" data-icon="inline-start" />
+            <Loader2 aria-hidden="true" className="animate-spin" />
           ) : (
-            <FileCheck2 className="size-4" data-icon="inline-start" />
+            <FileCheck2 aria-hidden="true" />
           )}
           Create fakeboot.img
         </Button>
       </div>
 
       {state.prepareResult ? (
-        <div className="flex flex-col gap-4 rounded-lg border bg-muted/30 p-4">
+        <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-raised p-3">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" />
+            <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
             <div className="min-w-0">
-              <p className="font-semibold text-foreground text-sm">fakeboot.img is ready</p>
-              <p className="mt-1 font-mono text-muted-foreground text-xs">
+              <p className="text-body text-foreground">fakeboot.img is ready</p>
+              <p className="mt-0.5 break-all font-mono text-mono text-muted-foreground">
                 {state.prepareResult.fakeBootRemotePath}
               </p>
             </div>
           </div>
 
-          <ol className="grid gap-2 text-muted-foreground text-sm">
+          <ol className="grid gap-1.5 text-body text-muted-foreground">
             {state.prepareResult.instructions.map((instruction) => (
-              <li className="rounded-md border bg-background px-3 py-2" key={instruction}>
+              <li
+                className="rounded-md border border-border bg-surface px-3 py-2"
+                key={instruction}
+              >
                 {instruction}
               </li>
             ))}
           </ol>
 
           <DropZone
-            acceptExtensions={['.img']}
+            acceptExtensions={PATCHED_IMAGE_EXTENSIONS}
             browseLabel="Select Patched Image"
-            className="py-5"
+            className="py-4"
             icon={FileCheck2}
             label={patchedImageName ?? 'Drop patched Magisk image here'}
-            onBrowse={handleChoosePatchedImage}
-            onFilesDropped={(paths) => {
-              updateManualState({
-                patchedImagePath: paths[0] ?? '',
-                finalizeResult: null,
-                error: null,
-              });
+            onBrowse={() => {
+              void handleChoosePatchedImage();
             }}
+            onFilesDropped={handlePatchedImageDropped}
             rejectMessage="Drop the Magisk patched .img file."
             sublabel={
               state.patchedImagePath ?? 'Optional: use this if ADB auto-detect cannot find it'
@@ -219,16 +245,19 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
           />
 
           <Button
-            className="w-full gap-2"
+            className="w-full"
             disabled={state.isFinalizing || !(serial || state.patchedImagePath)}
             id="root-manual-finalize"
-            onClick={handleFinalize}
+            onClick={() => {
+              void handleFinalize();
+            }}
+            size="sm"
             type="button"
           >
             {state.isFinalizing ? (
-              <Loader2 className="animate-spin" data-icon="inline-start" />
+              <Loader2 aria-hidden="true" className="animate-spin" />
             ) : (
-              <ShieldCheck data-icon="inline-start" />
+              <ShieldCheck aria-hidden="true" />
             )}
             Finalize Root
           </Button>
@@ -236,10 +265,10 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
       ) : null}
 
       {state.finalizeResult ? (
-        <Alert className="border-success/40 bg-success/10 text-success">
-          <CheckCircle2 />
-          <AlertTitle>Manual Patch Installed</AlertTitle>
-          <AlertDescription>
+        <Alert className="border-success/30 bg-success-muted">
+          <CircleCheck aria-hidden="true" className="text-success" />
+          <AlertTitle>Manual patch installed</AlertTitle>
+          <AlertDescription className="numeric">
             {state.finalizeResult.nextBootRecommendation} Restored{' '}
             {state.finalizeResult.restoredFiles.length} file
             {state.finalizeResult.restoredFiles.length === 1 ? '' : 's'}.

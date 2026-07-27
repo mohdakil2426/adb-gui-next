@@ -1,10 +1,10 @@
 import {
-  AlertTriangle,
-  CheckCircle2,
+  CircleCheck,
   Download,
   FolderOpen,
   Loader2,
   RefreshCw,
+  TriangleAlert,
   WifiOff,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -16,10 +16,11 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
 import { cn } from '@/shared/utils/cn';
-import { formatDisplayDate, formatFileSize } from '@/shared/utils/formatting';
+import { formatBytes, formatDisplayDate } from '@/shared/utils/format';
 
 interface RootSourceStepProps {
   onContinue: () => void;
+  /** Must be referentially stable — it is an effect dependency. */
   onSourceChange: (source: RootWizardSource) => void;
   source: RootWizardSource;
 }
@@ -33,30 +34,35 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
   const [mode, setMode] = useState<'download' | 'local'>(
     source?.type === 'local' ? 'local' : 'download',
   );
-  const [fetchState, setFetchState] = useState<FetchState>({
-    status: 'loading',
-  });
+  const [fetchState, setFetchState] = useState<FetchState>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
 
-  function loadRelease() {
+  useEffect(() => {
+    let cancelled = false;
     setFetchState({ status: 'loading' });
     FetchMagiskStableRelease()
       .then((release) => {
-        setFetchState({ status: 'ok', release });
-        if (source?.type !== 'local') {
-          onSourceChange({ type: 'stable' });
+        if (!cancelled) {
+          setFetchState({ status: 'ok', release });
         }
       })
       .catch((err: unknown) => {
-        setFetchState({ status: 'error', message: String(err) });
+        if (!cancelled) {
+          setFetchState({ status: 'error', message: String(err) });
+        }
       });
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadToken]);
 
-  // Fetch once on mount — source/onSourceChange are only needed at mount-time for the
-  // initial auto-select, so the empty dep array is intentional here.
+  // Pre-select the fetched release when nothing is chosen yet. Split out of the
+  // fetch so neither needs a dependency suppression.
   useEffect(() => {
-    loadRelease();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (fetchState.status === 'ok' && source === null) {
+      onSourceChange({ type: 'stable' });
+    }
+  }, [fetchState.status, onSourceChange, source]);
 
   async function handleLocalPick() {
     const path = await SelectRootPackageFile();
@@ -68,11 +74,9 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
 
   function handleSelectMode(next: 'download' | 'local') {
     setMode(next);
-    if (next === 'download') {
-      // Switch back to stable source when toggling back to download mode.
-      if (fetchState.status === 'ok') {
-        onSourceChange({ type: 'stable' });
-      }
+    // Switch back to the stable source when toggling back to download mode.
+    if (next === 'download' && fetchState.status === 'ok') {
+      onSourceChange({ type: 'stable' });
     }
   }
 
@@ -81,31 +85,23 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
     (source.type === 'local' || (source.type === 'stable' && fetchState.status === 'ok'));
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <div>
-        <h3 className="font-semibold text-base text-foreground">
-          Select Magisk Source (Autopilot Mode)
-        </h3>
-        <p className="mt-1 text-muted-foreground text-sm">
-          Magisk is the tool that gives your emulator root access. Choose the recommended legacy
-          rootAVD-compatible package for automated patching.
+        <h3 className="text-title">Select Magisk source (Autopilot)</h3>
+        <p className="mt-0.5 text-body text-muted-foreground">
+          Magisk is what gives the emulator root access. Autopilot patches the boot image for you.
         </p>
       </div>
 
-      <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
-        <AlertTriangle className="size-4 animate-pulse text-warning" />
-        <AlertTitle className="font-semibold text-warning-foreground">
-          Magisk Version Constraint
-        </AlertTitle>
-        <AlertDescription className="mt-1 text-muted-foreground text-xs leading-relaxed">
-          Autopilot automated patching **only works with legacy Magisk versions (v25.2 and below)**.
-          If you are rooting using modern Magisk (v26.0 - v30.0+), please switch to the **Manual
-          FAKEBOOTIMG** tab above, as automated patching is incompatible with newer Magisk
-          structures.
+      <Alert className="border-warning/30 bg-warning-muted">
+        <TriangleAlert aria-hidden="true" className="size-4 text-warning" />
+        <AlertTitle>Autopilot needs Magisk v25.2 or older</AlertTitle>
+        <AlertDescription>
+          Newer Magisk releases (v26 and above) changed their internal layout and cannot be patched
+          automatically. For those, switch to the Manual FAKEBOOTIMG tab above.
         </AlertDescription>
       </Alert>
 
-      {/* Mode toggle */}
       <ToggleGroup
         className="grid w-full grid-cols-2"
         onValueChange={(value) => {
@@ -122,11 +118,13 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
           id="root-source-mode-download"
           value="download"
         >
-          <Download />
-          <div className="min-w-0">
-            <p className="font-medium text-sm">Download</p>
-            <p className="text-muted-foreground text-xs">Official stable from GitHub</p>
-          </div>
+          <Download aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block font-medium text-body">Download</span>
+            <span className="block text-caption text-muted-foreground">
+              Official stable from GitHub
+            </span>
+          </span>
         </ToggleGroupItem>
 
         <ToggleGroupItem
@@ -134,131 +132,129 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
           id="root-source-mode-local"
           value="local"
         >
-          <FolderOpen />
-          <div className="min-w-0">
-            <p className="font-medium text-sm">Local File</p>
-            <p className="text-muted-foreground text-xs">Pick .apk or .zip</p>
-          </div>
+          <FolderOpen aria-hidden="true" />
+          <span className="min-w-0">
+            <span className="block font-medium text-body">Local file</span>
+            <span className="block text-caption text-muted-foreground">Pick an .apk or .zip</span>
+          </span>
         </ToggleGroupItem>
       </ToggleGroup>
 
-      {/* Download panel */}
       {mode === 'download' && (
         <div className="flex flex-col gap-3">
-          {/* Loading */}
           {fetchState.status === 'loading' && (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <Loader2 className="size-4 animate-spin" />
-              Fetching latest stable release…
-            </div>
+            <output className="flex items-center gap-2 text-body text-muted-foreground">
+              <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+              Fetching the latest stable release…
+            </output>
           )}
 
-          {/* Error */}
           {fetchState.status === 'error' && (
             <Alert variant="destructive">
-              <WifiOff />
+              <WifiOff aria-hidden="true" />
               <AlertTitle>Could not reach GitHub</AlertTitle>
-              <AlertDescription>{fetchState.message}</AlertDescription>
+              <AlertDescription>
+                {fetchState.message}. Retry, or switch to Local file and use a package you already
+                downloaded.
+              </AlertDescription>
               <Button
-                className="w-fit gap-1.5"
+                className="w-fit"
                 id="root-source-retry"
-                onClick={loadRelease}
+                onClick={() => {
+                  setReloadToken((token) => token + 1);
+                }}
                 size="sm"
+                type="button"
                 variant="outline"
               >
-                <RefreshCw data-icon="inline-start" />
+                <RefreshCw aria-hidden="true" />
                 Retry
               </Button>
-              <p className="text-muted-foreground text-xs">
-                No internet? Switch to <strong>Local File</strong> to use a pre-downloaded package.
-              </p>
             </Alert>
           )}
 
-          {/* Release card */}
           {fetchState.status === 'ok' && (
-            <button
-              className={cn(
-                'flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors',
-                source?.type === 'stable'
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/40',
-              )}
-              id="root-source-stable-card"
-              onClick={() => {
-                onSourceChange({ type: 'stable' });
-              }}
-              type="button"
-            >
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-foreground text-sm">
-                    Magisk {fetchState.release.tag}
-                  </p>
-                  <Badge className="text-xs" variant="default">
-                    Automated
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {fetchState.release.assetName} · {formatFileSize(fetchState.release.size)} ·{' '}
-                  {formatDisplayDate(fetchState.release.publishedAt)}
-                </p>
-                {fetchState.release.sha256 ? (
-                  <p
-                    className="mt-0.5 max-w-xs truncate font-mono text-[10px] text-muted-foreground/60"
-                    title={`sha256: ${fetchState.release.sha256}`}
-                  >
-                    sha256: {fetchState.release.sha256.slice(0, 16)}…
-                  </p>
+            <>
+              <button
+                className={cn(
+                  'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2.5 text-left transition-colors duration-90 ease-standard',
+                  source?.type === 'stable'
+                    ? 'border-primary bg-primary-muted'
+                    : 'border-border bg-surface-raised hover:border-border-strong',
+                )}
+                id="root-source-stable-card"
+                onClick={() => {
+                  onSourceChange({ type: 'stable' });
+                }}
+                type="button"
+              >
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="flex items-center gap-2">
+                    <span className="font-medium text-body text-foreground">
+                      Magisk {fetchState.release.tag}
+                    </span>
+                    <Badge variant="info">Automated</Badge>
+                  </span>
+                  <span className="numeric truncate text-caption text-muted-foreground">
+                    {fetchState.release.assetName} · {formatBytes(fetchState.release.size)} ·{' '}
+                    {formatDisplayDate(fetchState.release.publishedAt)}
+                  </span>
+                  {fetchState.release.sha256 ? (
+                    <span className="truncate font-mono text-mono-sm text-muted-foreground">
+                      sha256 {fetchState.release.sha256.slice(0, 16)}…
+                    </span>
+                  ) : null}
+                </span>
+
+                {source?.type === 'stable' ? (
+                  <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
                 ) : null}
-              </div>
-
-              {source?.type === 'stable' && (
-                <CheckCircle2 className="size-5 shrink-0 text-primary" />
-              )}
-            </button>
-          )}
-
-          {fetchState.status === 'ok' && (
-            <p className="text-muted-foreground text-xs">
-              The APK will be downloaded automatically when you proceed. Already cached packages are
-              reused.
-            </p>
+              </button>
+              <p className="text-caption text-muted-foreground">
+                The package downloads when you continue. An already-cached copy is reused.
+              </p>
+            </>
           )}
         </div>
       )}
 
-      {/* Local file panel */}
       {mode === 'local' && (
         <div className="flex flex-col gap-3">
           <Button
-            className="h-auto justify-start gap-3 border-dashed px-4 py-6 text-center"
+            className="h-auto justify-start gap-3 border-dashed px-3 py-5"
             id="root-local-file-picker"
-            onClick={handleLocalPick}
+            onClick={() => {
+              void handleLocalPick();
+            }}
             type="button"
             variant="outline"
           >
-            <FolderOpen className="text-muted-foreground" data-icon="inline-start" />
-            <div className="text-left">
+            <FolderOpen aria-hidden="true" className="text-muted-foreground" />
+            <span className="min-w-0 text-left">
               {source?.type === 'local' ? (
                 <>
-                  <p className="font-medium text-foreground text-sm">
+                  <span className="block font-medium text-body text-foreground">
                     {source.path.split(/[/\\]/).pop()}
-                  </p>
-                  <p className="max-w-xs truncate text-muted-foreground text-xs">{source.path}</p>
+                  </span>
+                  <span className="block truncate font-mono text-mono-sm text-muted-foreground">
+                    {source.path}
+                  </span>
                 </>
               ) : (
                 <>
-                  <p className="font-medium text-foreground text-sm">Click to select a file</p>
-                  <p className="text-muted-foreground text-xs">Supports .apk and .zip packages</p>
+                  <span className="block font-medium text-body text-foreground">
+                    Click to select a file
+                  </span>
+                  <span className="block text-caption text-muted-foreground">
+                    Supports .apk and .zip packages
+                  </span>
                 </>
               )}
-            </div>
+            </span>
           </Button>
 
-          <p className="text-muted-foreground text-xs">
-            Local packages are best for manual FAKEBOOTIMG mode or when testing a specific Magisk
-            fork.
+          <p className="text-caption text-muted-foreground">
+            Use a local package for Manual FAKEBOOTIMG mode, or when testing a specific Magisk fork.
           </p>
         </div>
       )}
@@ -268,8 +264,10 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
         disabled={!canContinue}
         id="root-source-continue"
         onClick={onContinue}
+        size="sm"
+        type="button"
       >
-        Start Automated Root →
+        Start Automated Root
       </Button>
     </div>
   );

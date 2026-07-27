@@ -1,73 +1,83 @@
-import { Snowflake } from 'lucide-react';
+import { Info, Lock, Play, Snowflake } from 'lucide-react';
 import type { backend } from '@/desktop/models';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
+import {
+  COLD_BOOT_LAUNCH_OPTIONS,
+  DEFAULT_LAUNCH_OPTIONS,
+} from '@/features/emulator/model/launchOptions';
+import { RootWizard } from '@/features/emulator/ui/RootWizard';
 import { Button } from '@/shared/ui/button';
-import { RootWizard } from './RootWizard';
 
 interface EmulatorRootTabProps {
   avd: backend.AvdSummary | null;
   onLaunch: (options: backend.EmulatorLaunchOptions) => void;
 }
 
-function createLaunchOptions(preset: 'default' | 'coldBoot'): backend.EmulatorLaunchOptions {
-  return {
-    wipeData: false,
-    writableSystem: false,
-    coldBoot: preset === 'coldBoot',
-    noSnapshotLoad: preset === 'coldBoot',
-    noSnapshotSave: preset === 'coldBoot',
-    noBootAnim: false,
-  };
-}
-
 export function EmulatorRootTab({ avd, onLaunch }: EmulatorRootTabProps) {
+  const applyLaunchPreset = useEmulatorManagerStore((state) => state.applyLaunchPreset);
+
   if (!avd) {
     return (
-      <p className="py-4 text-muted-foreground text-sm">
+      <p className="py-4 text-body text-muted-foreground">
         Select an AVD before starting the root workflow.
       </p>
     );
   }
 
   if (!(avd.isRunning && avd.serial)) {
+    // Smart gate, not a dead end: say why it is blocked, then offer both
+    // remedies inline and name the one to pick. Each remedy also writes the
+    // preset into the shared launch options, so the Launch tab shows what ran.
+    const launchWith = (options: backend.EmulatorLaunchOptions) => {
+      applyLaunchPreset(options);
+      onLaunch(options);
+    };
+
     return (
-      <div className="flex flex-col gap-4 py-2">
-        {/* Smart gate — not a dead end */}
-        <div className="rounded-lg border border-border bg-muted/20 p-5">
-          <div className="mb-1 flex items-center gap-2">
-            <span className="font-semibold text-base text-foreground">
-              🔒 {avd.name} is not running
-            </span>
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4">
+        <div className="flex items-start gap-2.5">
+          <Lock aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <div className="min-w-0">
+            <p className="text-title">{avd.name} is not running</p>
+            <p className="mt-0.5 text-body text-muted-foreground">
+              Rooting patches the live emulator, so it has to be started first. Choose how:
+            </p>
           </div>
-          <p className="mb-4 text-muted-foreground text-sm">
-            The emulator must be running before rooting. Choose how to start it:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              id="root-gate-launch-btn"
-              onClick={() => {
-                onLaunch(createLaunchOptions('default'));
-              }}
-              size="sm"
-            >
-              ▶ Launch
-            </Button>
-            <Button
-              id="root-gate-cold-boot-btn"
-              onClick={() => {
-                onLaunch(createLaunchOptions('coldBoot'));
-              }}
-              size="sm"
-              variant="outline"
-            >
-              <Snowflake data-icon="inline-start" />
-              Cold Boot (Recommended)
-            </Button>
-          </div>
-          <p className="mt-3 text-muted-foreground text-xs">
-            ℹ️ <strong>Cold Boot</strong> is recommended for rooting: it starts the emulator fresh
-            without loading a saved state, so your root patch won't be overwritten by a snapshot.
-          </p>
         </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            id="root-gate-cold-boot-btn"
+            onClick={() => {
+              launchWith(COLD_BOOT_LAUNCH_OPTIONS);
+            }}
+            size="sm"
+            type="button"
+          >
+            <Snowflake aria-hidden="true" />
+            Cold boot (recommended)
+          </Button>
+          <Button
+            id="root-gate-launch-btn"
+            onClick={() => {
+              launchWith(DEFAULT_LAUNCH_OPTIONS);
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Play aria-hidden="true" />
+            Normal launch
+          </Button>
+        </div>
+
+        <p className="flex items-start gap-2 text-caption text-muted-foreground">
+          <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+          <span>
+            Cold boot starts the emulator without restoring a saved snapshot. A normal launch can
+            reload a snapshot taken before rooting, which silently reverts the patch.
+          </span>
+        </p>
       </div>
     );
   }

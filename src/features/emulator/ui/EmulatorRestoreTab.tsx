@@ -1,24 +1,27 @@
-import { CheckCircle2, ExternalLink, RotateCcw } from 'lucide-react';
+import { CircleCheck, ExternalLink, Info, RotateCcw } from 'lucide-react';
 import { OpenFolder } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { LoadingButton } from '@/shared/components/LoadingButton';
-import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { SectionHeader } from '@/shared/components/SectionHeader';
 import { Button } from '@/shared/ui/button';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
+import { cn } from '@/shared/utils/cn';
 import { handleError } from '@/shared/utils/errorHandler';
 
 interface EmulatorRestoreTabProps {
   avd: backend.AvdSummary | null;
   isLoadingPlan: boolean;
   isRestoring: boolean;
-  onRestore: () => Promise<void>;
+  /** Opens the confirmation. Restore itself is never one click. */
+  onRequestRestore: () => void;
   restorePlan: backend.RestorePlan | null;
 }
 
 async function openBackupFolder(backupPath: string) {
   try {
-    const folderPath = backupPath.substring(0, backupPath.lastIndexOf('\\'));
-    await OpenFolder(folderPath);
+    const separator = Math.max(backupPath.lastIndexOf('\\'), backupPath.lastIndexOf('/'));
+    await OpenFolder(separator > 0 ? backupPath.slice(0, separator) : backupPath);
   } catch (error) {
     handleError('Open Backup Folder', error);
   }
@@ -29,86 +32,107 @@ export function EmulatorRestoreTab({
   isLoadingPlan,
   isRestoring,
   restorePlan,
-  onRestore,
+  onRequestRestore,
 }: EmulatorRestoreTabProps) {
   if (!avd) {
     return (
-      <p className="py-4 text-muted-foreground text-sm">
+      <p className="py-4 text-body text-muted-foreground">
         Select an AVD to inspect restore candidates and backup state.
       </p>
     );
   }
 
   const hasEntries = Boolean(restorePlan && restorePlan.entries.length > 0);
+  const canRestore = avd.hasBackups && hasEntries && !isLoadingPlan;
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Backup status */}
-      <Alert className={avd.hasBackups ? 'border-success/30 bg-success/10 text-success' : ''}>
-        <CheckCircle2 />
-        <AlertTitle>{avd.hasBackups ? 'Backups detected' : 'No backups yet'}</AlertTitle>
-        <AlertDescription>
-          {avd.hasBackups
-            ? 'Restore will put backed-up files back in place.'
-            : 'Run a root preparation first to create restore artifacts.'}
-        </AlertDescription>
-      </Alert>
+    <div className="flex flex-col gap-4">
+      <div
+        className={cn(
+          'flex items-start gap-2.5 rounded-md border p-3',
+          avd.hasBackups ? 'border-success/30 bg-success-muted' : 'border-border bg-surface-raised',
+        )}
+      >
+        {avd.hasBackups ? (
+          <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
+        ) : (
+          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        )}
+        <div className="min-w-0">
+          <p className="text-body text-foreground">
+            {avd.hasBackups ? 'Backups detected' : 'No backups yet'}
+          </p>
+          <p className="text-caption text-muted-foreground">
+            {avd.hasBackups
+              ? 'Restoring copies the stock files back over the emulator, undoing any root patch.'
+              : 'Backups are created the first time you run the root workflow. Run it once to get a restore point.'}
+          </p>
+        </div>
+      </div>
 
-      {/* Plan header + restore button */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-medium text-sm">Restore plan</p>
-          <p className="mt-0.5 text-muted-foreground text-sm">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <SectionHeader>Restore plan</SectionHeader>
+          <p className="mt-1 text-body text-muted-foreground">
             {isLoadingPlan
-              ? 'Refreshing backup metadata…'
+              ? 'Reading backup metadata…'
               : hasEntries
-                ? `Source: ${restorePlan?.source}`
-                : 'No restorable entries found.'}
+                ? `From ${restorePlan?.source}`
+                : 'Nothing to restore — no backed-up files were found for this AVD.'}
           </p>
         </div>
         <LoadingButton
-          disabled={!(avd.hasBackups && hasEntries) || isLoadingPlan}
-          icon={<RotateCcw className="size-4" />}
+          disabled={!canRestore}
+          icon={<RotateCcw aria-hidden="true" className="size-4" />}
           isLoading={isRestoring}
           loadingLabel="Restoring…"
-          onClick={() => void onRestore()}
+          onClick={onRequestRestore}
           variant="outline"
         >
           Restore stock state
         </LoadingButton>
       </div>
 
-      {/* Plan entries */}
-      {hasEntries ? (
+      {isLoadingPlan ? (
         <div className="flex flex-col gap-2">
+          <Skeleton className="h-13 w-full" />
+          <Skeleton className="h-13 w-full" />
+        </div>
+      ) : null}
+
+      {!isLoadingPlan && hasEntries ? (
+        <ul className="flex flex-col gap-1.5">
           {restorePlan?.entries.map((entry) => (
-            <div
-              className="rounded-lg border bg-muted/30 px-3 py-2.5 text-sm"
+            <li
+              className="rounded-md border border-border bg-surface-raised px-3 py-2"
               key={entry.originalPath}
             >
-              <p className="break-all font-medium">{entry.originalPath}</p>
-              <div className="mt-1 flex items-center gap-2">
-                <p className="break-all text-muted-foreground text-xs">← {entry.backupPath}</p>
+              <p className="break-all font-mono text-foreground text-mono">{entry.originalPath}</p>
+              <div className="mt-0.5 flex items-center gap-2">
+                <p className="min-w-0 break-all font-mono text-mono-sm text-muted-foreground">
+                  ← {entry.backupPath}
+                </p>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      aria-label="Open backup location"
-                      className="size-6 shrink-0"
+                      aria-label={`Open the folder containing ${entry.backupPath}`}
+                      className="shrink-0"
                       onClick={() => {
                         void openBackupFolder(entry.backupPath);
                       }}
-                      size="icon"
+                      size="icon-sm"
+                      type="button"
                       variant="ghost"
                     >
-                      <ExternalLink className="size-3" />
+                      <ExternalLink aria-hidden="true" className="size-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">Open backup location</TooltipContent>
                 </Tooltip>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
     </div>
   );

@@ -1,193 +1,134 @@
-import { AlertTriangle, Play } from 'lucide-react';
-import { useReducer } from 'react';
+import { Play, RotateCcw, TriangleAlert } from 'lucide-react';
+import { useId } from 'react';
 import type { backend } from '@/desktop/models';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
+import {
+  COLD_BOOT_LAUNCH_OPTIONS,
+  DEFAULT_LAUNCH_OPTIONS,
+  isColdBootPreset,
+  LAUNCH_OPTIONS,
+  unacknowledgedLaunchOptions,
+} from '@/features/emulator/model/launchOptions';
 import { LoadingButton } from '@/shared/components/LoadingButton';
-import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Button } from '@/shared/ui/button';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Label } from '@/shared/ui/label';
 import { Switch } from '@/shared/ui/switch';
 
-type State = {
-  wipeData: boolean;
-  writableSystem: boolean;
-  coldBoot: boolean;
-  noSnapshotLoad: boolean;
-  noSnapshotSave: boolean;
-  noBootAnim: boolean;
-  confirmWipeData: boolean;
-  confirmWritableSystem: boolean;
-};
-
-type Action =
-  | { type: 'SET_WIPE_DATA'; payload: boolean }
-  | { type: 'SET_WRITABLE_SYSTEM'; payload: boolean }
-  | { type: 'SET_COLD_BOOT'; payload: boolean }
-  | { type: 'SET_NO_SNAPSHOT_LOAD'; payload: boolean }
-  | { type: 'SET_NO_SNAPSHOT_SAVE'; payload: boolean }
-  | { type: 'SET_NO_BOOT_ANIM'; payload: boolean }
-  | { type: 'SET_CONFIRM_WIPE_DATA'; payload: boolean }
-  | { type: 'SET_CONFIRM_WRITABLE_SYSTEM'; payload: boolean };
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'SET_WIPE_DATA':
-      return { ...state, wipeData: action.payload };
-    case 'SET_WRITABLE_SYSTEM':
-      return { ...state, writableSystem: action.payload };
-    case 'SET_COLD_BOOT':
-      return { ...state, coldBoot: action.payload };
-    case 'SET_NO_SNAPSHOT_LOAD':
-      return { ...state, noSnapshotLoad: action.payload };
-    case 'SET_NO_SNAPSHOT_SAVE':
-      return { ...state, noSnapshotSave: action.payload };
-    case 'SET_NO_BOOT_ANIM':
-      return { ...state, noBootAnim: action.payload };
-    case 'SET_CONFIRM_WIPE_DATA':
-      return { ...state, confirmWipeData: action.payload };
-    case 'SET_CONFIRM_WRITABLE_SYSTEM':
-      return { ...state, confirmWritableSystem: action.payload };
-    default:
-      return state;
-  }
-}
-
-const initialState: State = {
-  wipeData: false,
-  writableSystem: false,
-  coldBoot: false,
-  noSnapshotLoad: false,
-  noSnapshotSave: false,
-  noBootAnim: false,
-  confirmWipeData: false,
-  confirmWritableSystem: false,
-};
-
 interface EmulatorLaunchTabProps {
   avd: backend.AvdSummary | null;
   isLaunching: boolean;
-  onLaunch: (options: backend.EmulatorLaunchOptions) => Promise<void>;
+  onLaunch: () => void;
 }
 
+/**
+ * The launch configuration surface — and the only place launch flags are set.
+ *
+ * The flags live in the emulator store rather than in local state, so the
+ * toolbar's Launch button applies exactly what is shown here. Presets write the
+ * same object, which means picking "Cold boot" visibly flips the switches
+ * instead of running a hidden configuration.
+ */
 export function EmulatorLaunchTab({ avd, isLaunching, onLaunch }: EmulatorLaunchTabProps) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const options = useEmulatorManagerStore((state) => state.launchOptions);
+  const acknowledgements = useEmulatorManagerStore((state) => state.launchAcknowledgements);
+  const setLaunchOption = useEmulatorManagerStore((state) => state.setLaunchOption);
+  const setLaunchAcknowledged = useEmulatorManagerStore((state) => state.setLaunchAcknowledged);
+  const applyLaunchPreset = useEmulatorManagerStore((state) => state.applyLaunchPreset);
+  const fieldPrefix = useId();
 
-  const destructiveBlocked =
-    (state.wipeData && !state.confirmWipeData) ||
-    (state.writableSystem && !state.confirmWritableSystem);
+  const pendingAcknowledgements = unacknowledgedLaunchOptions(options, acknowledgements);
 
   if (!avd) {
     return (
-      <p className="py-4 text-muted-foreground text-sm">
-        Select an AVD to configure advanced launch options.
+      <p className="py-4 text-body text-muted-foreground">
+        Select an AVD to configure how it launches.
       </p>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {(
-          [
-            {
-              id: 'coldBoot',
-              label: 'Cold boot',
-              value: state.coldBoot,
-              action: 'SET_COLD_BOOT' as const,
-            },
-            {
-              id: 'noSnapLoad',
-              label: 'Skip snapshot load',
-              value: state.noSnapshotLoad,
-              action: 'SET_NO_SNAPSHOT_LOAD' as const,
-            },
-            {
-              id: 'noSnapSave',
-              label: 'Skip snapshot save',
-              value: state.noSnapshotSave,
-              action: 'SET_NO_SNAPSHOT_SAVE' as const,
-            },
-            {
-              id: 'noBootAnim',
-              label: 'Disable boot animation',
-              value: state.noBootAnim,
-              action: 'SET_NO_BOOT_ANIM' as const,
-            },
-            {
-              id: 'writableSystem',
-              label: 'Writable system',
-              value: state.writableSystem,
-              action: 'SET_WRITABLE_SYSTEM' as const,
-            },
-            {
-              id: 'wipeData',
-              label: 'Wipe user data',
-              value: state.wipeData,
-              action: 'SET_WIPE_DATA' as const,
-            },
-          ] as const
-        ).map((opt) => (
-          <Label className="flex items-center gap-2.5 text-sm" key={opt.id}>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          disabled={isColdBootPreset(options)}
+          onClick={() => {
+            applyLaunchPreset(COLD_BOOT_LAUNCH_OPTIONS);
+          }}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          Cold boot preset
+        </Button>
+        <Button
+          onClick={() => {
+            applyLaunchPreset(DEFAULT_LAUNCH_OPTIONS);
+          }}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          <RotateCcw aria-hidden="true" />
+          Reset to defaults
+        </Button>
+      </div>
+
+      <div className="grid @lg:grid-cols-2 gap-3">
+        {LAUNCH_OPTIONS.map((option) => (
+          <div
+            className="flex items-start gap-2.5 rounded-md border border-border bg-surface-raised p-3"
+            key={option.key}
+          >
             <Switch
-              checked={opt.value}
-              id={`launch-opt-${opt.id}`}
+              checked={options[option.key]}
+              id={`${fieldPrefix}-${option.key}`}
               onCheckedChange={(checked) => {
-                dispatch({ type: opt.action, payload: checked });
+                setLaunchOption(option.key, checked);
               }}
             />
-            {opt.label}
-          </Label>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <Label className="text-body" htmlFor={`${fieldPrefix}-${option.key}`}>
+                {option.label}
+              </Label>
+              <span className="text-caption text-muted-foreground">{option.description}</span>
+            </div>
+          </div>
         ))}
       </div>
 
-      {state.wipeData || state.writableSystem ? (
-        <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
-          <AlertTriangle />
-          <AlertTitle>Safety confirmation required</AlertTitle>
-          <AlertDescription className="text-warning-foreground/90">
-            Acknowledge the risks before launching with destructive flags.
-          </AlertDescription>
-          <div className="col-start-2 mt-2 flex flex-col gap-3">
-            {state.wipeData ? (
-              <Label className="flex items-center gap-2.5 text-sm">
-                <Checkbox
-                  checked={state.confirmWipeData}
-                  onCheckedChange={(checked: boolean) => {
-                    dispatch({ type: 'SET_CONFIRM_WIPE_DATA', payload: checked });
-                  }}
-                />
-                I understand wiping data resets this emulator profile.
-              </Label>
-            ) : null}
-            {state.writableSystem ? (
-              <Label className="flex items-center gap-2.5 text-sm">
-                <Checkbox
-                  checked={state.confirmWritableSystem}
-                  onCheckedChange={(checked: boolean) => {
-                    dispatch({ type: 'SET_CONFIRM_WRITABLE_SYSTEM', payload: checked });
-                  }}
-                />
-                I understand writable-system can leave this AVD in a modified state.
-              </Label>
-            ) : null}
+      {pendingAcknowledgements.length > 0 ? (
+        <div className="flex flex-col gap-3 rounded-md border border-warning/30 bg-warning-muted p-3">
+          <div className="flex items-start gap-2">
+            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+            <div className="min-w-0">
+              <p className="text-body text-foreground">Confirm the destructive flags</p>
+              <p className="text-caption text-muted-foreground">
+                Launch stays disabled until each one is acknowledged.
+              </p>
+            </div>
           </div>
-        </Alert>
+          {pendingAcknowledgements.map((option) => (
+            <Label className="flex items-start gap-2.5 text-body" key={option.key}>
+              <Checkbox
+                checked={acknowledgements[option.key] ?? false}
+                onCheckedChange={(checked: boolean) => {
+                  setLaunchAcknowledged(option.key, checked);
+                }}
+              />
+              {option.acknowledgement}
+            </Label>
+          ))}
+        </div>
       ) : null}
 
       <LoadingButton
-        disabled={destructiveBlocked}
-        icon={<Play className="size-4" />}
+        className="w-fit"
+        disabled={pendingAcknowledgements.length > 0}
+        icon={<Play aria-hidden="true" className="size-4" />}
         isLoading={isLaunching}
-        loadingLabel="Launching..."
-        onClick={() =>
-          void onLaunch({
-            wipeData: state.wipeData,
-            writableSystem: state.writableSystem,
-            coldBoot: state.coldBoot,
-            noSnapshotLoad: state.noSnapshotLoad,
-            noSnapshotSave: state.noSnapshotSave,
-            noBootAnim: state.noBootAnim,
-          })
-        }
+        loadingLabel="Launching…"
+        onClick={onLaunch}
       >
         Launch with these options
       </LoadingButton>

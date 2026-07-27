@@ -1,9 +1,11 @@
-import { Clock, FileUp, HardDrive, Loader2, Package, X } from 'lucide-react';
+import { FileUp, HardDrive, Loader2, Package, X } from 'lucide-react';
 import { useRef } from 'react';
 import { useFlasherActions } from '@/features/flasher/hooks/useFlasherActions';
 import { useFlasherDropTargets } from '@/features/flasher/hooks/useFlasherDropTargets';
 import { DangerZoneCard } from '@/features/flasher/ui/DangerZoneCard';
+import { DeviceGate } from '@/features/flasher/ui/DeviceGate';
 import { DropArea } from '@/features/flasher/ui/DropArea';
+import { FlasherConfirmations } from '@/features/flasher/ui/FlasherConfirmations';
 import { FileSelector } from '@/shared/components/FileSelector';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -35,20 +37,23 @@ const COMMON_PARTITIONS = [
 
 export function ViewFlasher() {
   const {
+    confirmFlash,
+    confirmSideload,
     filePath,
-    handleFlash,
+    handleConfirmOpenChange,
     handleSelectImageFile,
     handleSelectSideloadFile,
-    handleSideload,
     handleWipe,
     isGlobalLoading,
     loadingAction,
     partition,
-    queuedAction,
+    pendingConfirm,
+    requestFlash,
+    requestSideload,
     selectedFastbootSerial,
+    selectedSideloadSerial,
     setFilePath,
     setPartition,
-    setQueuedAction,
     setSideloadFilePath,
     sideloadFilePath,
   } = useFlasherActions();
@@ -65,11 +70,14 @@ export function ViewFlasher() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h1 className="sr-only">Flasher</h1>
 
-      {/* Side-by-Side Grid for Primary Flasher Tools */}
-      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+      {/* Side-by-Side Grid for Primary Flasher Tools. `@3xl` queries the shell's
+          content-area container (ViewContent) — each card needs real room for a
+          drop zone and fields, so this waits for genuine width rather than the
+          window's viewport, which is blind to sidebar collapse. */}
+      <div className="grid @3xl:grid-cols-2 grid-cols-1 items-stretch gap-6">
         {/* ── Flash Partition ─────────────────────────────────────────── */}
         <div className="flex" ref={flashSectionRef}>
           <Card className="flex h-full w-full flex-col justify-between">
@@ -121,9 +129,6 @@ export function ViewFlasher() {
                             disabled={isGlobalLoading}
                             onClick={() => {
                               setFilePath('');
-                              if (queuedAction?.type === 'flash') {
-                                setQueuedAction(null);
-                              }
                             }}
                             size="icon"
                             variant="ghost"
@@ -152,20 +157,22 @@ export function ViewFlasher() {
             <div className="px-6 pt-2 pb-6">
               <Button
                 className="w-full"
-                disabled={isGlobalLoading || !partition || !filePath}
-                onClick={handleFlash}
+                disabled={isGlobalLoading || !partition || !filePath || !selectedFastbootSerial}
+                onClick={requestFlash}
               >
                 {loadingAction === 'flash' ? (
                   <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
-                ) : queuedAction?.type === 'flash' ? (
-                  <Clock className="mr-2 size-4 shrink-0" />
                 ) : (
                   <FileUp className="mr-2 size-4 shrink-0" />
                 )}
-                {queuedAction?.type === 'flash' && loadingAction !== 'flash'
-                  ? 'Waiting for Device...'
-                  : 'Flash Partition'}
+                Flash Partition
               </Button>
+              {selectedFastbootSerial ? null : (
+                <DeviceGate>
+                  Flashing needs the selected device in fastboot or bootloader mode. Use Utilities →
+                  Reboot Bootloader, then pick it in the device switcher.
+                </DeviceGate>
+              )}
             </div>
           </Card>
         </div>
@@ -201,9 +208,6 @@ export function ViewFlasher() {
                             disabled={isGlobalLoading}
                             onClick={() => {
                               setSideloadFilePath('');
-                              if (queuedAction?.type === 'sideload') {
-                                setQueuedAction(null);
-                              }
                             }}
                             size="icon"
                             variant="ghost"
@@ -238,20 +242,22 @@ export function ViewFlasher() {
             <div className="px-6 pt-2 pb-6">
               <Button
                 className="w-full"
-                disabled={isGlobalLoading || !sideloadFilePath}
-                onClick={handleSideload}
+                disabled={isGlobalLoading || !sideloadFilePath || !selectedSideloadSerial}
+                onClick={requestSideload}
               >
                 {loadingAction === 'sideload' ? (
                   <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
-                ) : queuedAction?.type === 'sideload' ? (
-                  <Clock className="mr-2 size-4 shrink-0" />
                 ) : (
                   <Package className="mr-2 size-4 shrink-0" />
                 )}
-                {queuedAction?.type === 'sideload' && loadingAction !== 'sideload'
-                  ? 'Waiting for Device...'
-                  : 'Sideload Package'}
+                Sideload Package
               </Button>
+              {selectedSideloadSerial ? null : (
+                <DeviceGate>
+                  Sideload needs the selected device in recovery with &quot;Apply update from
+                  ADB&quot; chosen on the device screen.
+                </DeviceGate>
+              )}
             </div>
           </Card>
         </div>
@@ -263,6 +269,19 @@ export function ViewFlasher() {
         onWipe={() => {
           void handleWipe();
         }}
+        serial={selectedFastbootSerial}
+      />
+
+      <FlasherConfirmations
+        fastbootSerial={selectedFastbootSerial}
+        imagePath={filePath}
+        onConfirmFlash={confirmFlash}
+        onConfirmSideload={confirmSideload}
+        onOpenChange={handleConfirmOpenChange}
+        packagePath={sideloadFilePath}
+        partition={partition}
+        pending={pendingConfirm}
+        sideloadSerial={selectedSideloadSerial}
       />
     </div>
   );

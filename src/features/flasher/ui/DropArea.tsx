@@ -54,12 +54,12 @@ export function DropArea({
         </div>
         <div className="flex flex-col items-center gap-1">
           <p className="font-medium text-muted-foreground text-sm">{label}</p>
-          <p className="text-muted-foreground/50 text-xs">or</p>
+          <p className="text-label text-muted-foreground">or</p>
         </div>
         <Button disabled={disabled} onClick={onBrowse} size="sm" variant="outline">
           {browseLabel}
         </Button>
-        <p className="text-muted-foreground/40 text-xs">{sublabel}</p>
+        <p className="text-label text-muted-foreground">{sublabel}</p>
       </div>
     </div>
   );
