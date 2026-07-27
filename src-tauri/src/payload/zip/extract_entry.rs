@@ -43,16 +43,33 @@ impl std::fmt::Debug for PayloadCacheInner {
     }
 }
 
+/// Last-resort cleanup: a cache dropped without `cleanup()` would otherwise leave
+/// its multi-GB temp extraction on disk forever.
+impl Drop for PayloadCache {
+    fn drop(&mut self) {
+        let Ok(mut inner) = self.inner.lock() else {
+            return;
+        };
+        discard_cached_temp(&mut inner);
+    }
+}
+
+/// Drop the mapping before unlinking its backing file — Windows refuses to delete
+/// a file that is still mapped, which is exactly how the temp file leaked.
+fn discard_cached_temp(inner: &mut PayloadCacheInner) {
+    drop(inner.cached_payload.take());
+    if let Some(path) = inner.cached_temp_path.take() {
+        let _ = fs::remove_file(path);
+    }
+}
+
 impl PayloadCache {
     /// Clean up any cached temporary files and reset state.
     pub fn cleanup(&self) -> Result<()> {
         let mut inner =
             self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
-        if let Some(path) = inner.cached_temp_path.take() {
-            let _ = fs::remove_file(path);
-        }
+        discard_cached_temp(&mut inner);
         inner.cached_source_path = None;
-        inner.cached_payload = None;
         Ok(())
     }
 
@@ -69,27 +86,49 @@ impl PayloadCache {
             });
         }
 
+        if let Some(hit) = self.cached_view(payload_path)? {
+            return Ok(hit);
+        }
+
+        // Lock released: `open_zip_payload` streams a multi-GB member to a temp
+        // file, and holding the guard across it blocked every other payload
+        // operation for the whole download.
+        let opened = open_zip_payload(payload_path)?;
+
         let mut inner =
             self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
 
+        // Another caller may have finished the same work while we were unlocked.
         if inner.cached_source_path.as_deref() == Some(payload_path)
             && let Some(ref payload) = inner.cached_payload
         {
-            return Ok(Arc::clone(payload));
+            let winner = Arc::clone(payload);
+            drop(inner);
+            drop(opened.mmap);
+            if let Some(path) = opened.temp_path {
+                let _ = fs::remove_file(path);
+            }
+            return Ok(winner);
         }
 
-        if let Some(previous_path) = inner.cached_temp_path.take() {
-            let _ = fs::remove_file(previous_path);
-        }
-        inner.cached_source_path = None;
-        inner.cached_payload = None;
-
-        let opened = open_zip_payload(payload_path)?;
+        discard_cached_temp(&mut inner);
         inner.cached_source_path = Some(payload_path.to_path_buf());
         inner.cached_temp_path = opened.temp_path;
         let arc = Arc::new(opened.mmap);
         inner.cached_payload = Some(Arc::clone(&arc));
         Ok(arc)
+    }
+
+    /// Cache lookup that holds the lock only for the lookup itself.
+    fn cached_view(&self, payload_path: &Path) -> Result<Option<Arc<ZipPayloadMmap>>> {
+        let inner =
+            self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
+        if inner.cached_source_path.as_deref() == Some(payload_path)
+            && let Some(ref payload) = inner.cached_payload
+        {
+            return Ok(Some(Arc::clone(payload)));
+        }
+        Ok(None)
     }
 
     /// Returns the filesystem path to `payload.bin`, extracting it from a ZIP if needed.
@@ -102,25 +141,26 @@ impl PayloadCache {
             return Ok(payload_path.to_path_buf());
         }
 
+        {
+            let inner =
+                self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
+
+            // Return cached temp path if same ZIP is already extracted and temp file still exists.
+            if inner.cached_source_path.as_deref() == Some(payload_path)
+                && let Some(ref p) = inner.cached_temp_path
+                && p.exists()
+            {
+                return Ok(p.clone());
+            }
+        }
+
+        // Lock released across the streaming extract (same reason as `open_payload`).
+        let temp_path = extract_payload_to_tempfile(payload_path)?;
+
         let mut inner =
             self.inner.lock().map_err(|_| anyhow::anyhow!("payload cache lock poisoned"))?;
-
-        // Return cached temp path if same ZIP is already extracted and temp file still exists.
-        if inner.cached_source_path.as_deref() == Some(payload_path)
-            && let Some(ref p) = inner.cached_temp_path
-            && p.exists()
-        {
-            return Ok(p.clone());
-        }
-
-        if let Some(previous_path) = inner.cached_temp_path.take() {
-            let _ = fs::remove_file(previous_path);
-        }
         // Path-based API forces temp extract; drop any STORED window cache for this source.
-        inner.cached_payload = None;
-        inner.cached_source_path = None;
-
-        let temp_path = extract_payload_to_tempfile(payload_path)?;
+        discard_cached_temp(&mut inner);
         inner.cached_source_path = Some(payload_path.to_path_buf());
         inner.cached_temp_path = Some(temp_path.clone());
         Ok(temp_path)

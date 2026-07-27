@@ -16,6 +16,7 @@ pub mod http;
 pub mod http_zip;
 pub mod load_progress;
 pub mod prefetch;
+pub mod progress;
 pub mod session;
 
 pub use factory::{
@@ -34,10 +35,12 @@ use crate::payload::cancel::CancellationToken;
 use crate::payload::chromeos_update_engine::DeltaArchiveManifest;
 use crate::payload::crau::parse_header;
 use crate::payload::io::NonTemporalWriter;
+use crate::payload::transaction::TransactionGuard;
 use crate::payload::verify::{op_blob_matches, verify_sha256};
 use anyhow::{Result, anyhow};
 use http_zip::read_from_zip_or_direct;
 use memmap2::Mmap;
+use progress::ProgressThrottle;
 use prost::Message;
 use rayon::prelude::*;
 use std::fs::File;
@@ -471,6 +474,23 @@ pub async fn get_remote_payload_metadata(
     })
 }
 
+/// Allocate a byte buffer sized from an **untrusted** ZIP/manifest length.
+///
+/// `Vec::with_capacity` aborts the process on a bogus multi-exabyte size, and on
+/// 32-bit targets `size as usize` silently truncates. `try_reserve` turns both into
+/// an ordinary error, matching the factory path.
+fn reserved_buffer(size_hint: u64) -> Result<Vec<u8>> {
+    let mut buffer = Vec::new();
+    if let Ok(capacity) = usize::try_from(size_hint)
+        && capacity > 0
+    {
+        buffer
+            .try_reserve(capacity)
+            .map_err(|error| anyhow!("failed to allocate {capacity} bytes: {error}"))?;
+    }
+    Ok(buffer)
+}
+
 /// Parse a `key=value` text file into a HashMap. Skips blank lines and trims whitespace.
 fn parse_kv_text(text: &str) -> std::collections::HashMap<String, String> {
     text.lines()
@@ -564,6 +584,7 @@ pub async fn extract_remote_prefetch(
     let mut temp = NamedTempFile::new()?;
     let chunk_size = 1024 * 1024; // 1 MB
     let mut downloaded = 0u64;
+    let throttle = Arc::new(ProgressThrottle::new());
 
     while downloaded < download_len {
         if cancel_token.is_some_and(CancellationToken::is_cancelled) {
@@ -576,8 +597,10 @@ pub async fn extract_remote_prefetch(
         temp.as_file_mut().write_all(&data)?;
         downloaded = chunk_end;
 
-        // Emit download progress
-        if let Some(ref handle) = app_handle {
+        // Emit download progress (throttled; the final chunk always emits).
+        if let Some(ref handle) = app_handle
+            && throttle.should_emit(downloaded >= download_len)
+        {
             let _ = handle.emit(
                 "payload:progress",
                 serde_json::json!({
@@ -594,16 +617,21 @@ pub async fn extract_remote_prefetch(
     // For deflated ZIP payload.bin, rewrite temp as decompressed payload prefix/full member.
     if deflated_zip {
         let zi = zip_info.as_ref().ok_or_else(|| anyhow!("ZIP payload info missing"))?;
-        temp.as_file_mut().seek(SeekFrom::Start(0))?;
-        let mut compressed = Vec::with_capacity(zi.compressed_size as usize);
-        temp.as_file_mut().read_to_end(&mut compressed)?;
-        let mut decoder = flate2::read::DeflateDecoder::new(&compressed[..]);
-        let mut decompressed = Vec::with_capacity(zi.uncompressed_size as usize);
-        decoder.read_to_end(&mut decompressed)?;
-        temp.as_file_mut().seek(SeekFrom::Start(0))?;
-        temp.as_file_mut().set_len(0)?;
-        temp.as_file_mut().write_all(&decompressed)?;
-        temp.flush()?;
+        // Inflating a multi-GB member is CPU-bound blocking work; keep it off the
+        // Tokio worker driving this future.
+        tokio::task::block_in_place(|| -> Result<()> {
+            temp.as_file_mut().seek(SeekFrom::Start(0))?;
+            let mut compressed = reserved_buffer(zi.compressed_size)?;
+            temp.as_file_mut().read_to_end(&mut compressed)?;
+            let mut decoder = flate2::read::DeflateDecoder::new(&compressed[..]);
+            let mut decompressed = reserved_buffer(zi.uncompressed_size)?;
+            decoder.read_to_end(&mut decompressed)?;
+            temp.as_file_mut().seek(SeekFrom::Start(0))?;
+            temp.as_file_mut().set_len(0)?;
+            temp.as_file_mut().write_all(&decompressed)?;
+            temp.flush()?;
+            Ok(())
+        })?;
     }
 
     // Persist the temp file on disk — NamedTempFile::drop() would delete it.
@@ -656,58 +684,73 @@ pub async fn extract_remote_prefetch(
     let block_size = manifest.block_size.unwrap_or(4096);
 
     let output_dir = Arc::new(output_dir);
-    let results: Vec<Result<String>> = partitions_to_extract
-        .par_iter()
-        .map(|partition| {
-            let output_dir = Arc::clone(&output_dir);
-            let mmap = Arc::clone(&mmap);
-            let partition_name = partition.partition_name.clone();
-            let app = app_handle.clone();
+    // Partial images must not survive a failure — mirrors the local CrAU path.
+    let guard = Arc::new(TransactionGuard::new((*output_dir).clone()));
 
-            let file_name = crate::helpers::safe_image_file_name(&partition_name);
-            let image_path = output_dir.join(&file_name);
+    // rayon + blocking file IO: keep it off the Tokio worker that drives this future.
+    let results: Vec<Result<String>> = tokio::task::block_in_place(|| {
+        partitions_to_extract
+            .par_iter()
+            .map(|partition| {
+                let output_dir = Arc::clone(&output_dir);
+                let guard = Arc::clone(&guard);
+                let mmap = Arc::clone(&mmap);
+                let throttle = Arc::clone(&throttle);
+                let partition_name = partition.partition_name.clone();
+                let app = app_handle.clone();
 
-            let partition_size =
-                partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
+                let file_name = crate::helpers::safe_image_file_name(&partition_name);
+                let image_path = output_dir.join(&file_name);
+                guard.add_file(image_path.clone());
 
-            let mut writer = NonTemporalWriter::new(&image_path, partition_size)
-                .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
+                let partition_size =
+                    partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
 
-            extract_partition_from_mmap(
-                &mmap,
-                data_offset,
-                block_size,
-                partition,
-                &mut writer,
-                |name, current, total, completed| {
-                    if let Some(ref handle) = app {
-                        let _ = handle.emit(
-                            "payload:progress",
-                            serde_json::json!({
-                                "partitionName": name,
-                                "current": current,
-                                "total": total,
-                                "completed": completed,
-                            }),
-                        );
-                    }
-                },
-                cancel_token,
-            )?;
+                let mut writer = NonTemporalWriter::new(&image_path, partition_size)
+                    .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-            writer.flush()?;
-            verify_partition_output_hash(partition, &image_path, &partition_name)?;
-            Ok(file_name)
-        })
-        .collect();
+                extract_partition_from_mmap(
+                    &mmap,
+                    data_offset,
+                    block_size,
+                    partition,
+                    &mut writer,
+                    |name, current, total, completed| {
+                        if let Some(ref handle) = app
+                            && throttle.should_emit(completed)
+                        {
+                            let _ = handle.emit(
+                                "payload:progress",
+                                serde_json::json!({
+                                    "partitionName": name,
+                                    "current": current,
+                                    "total": total,
+                                    "completed": completed,
+                                }),
+                            );
+                        }
+                    },
+                    cancel_token,
+                )?;
+
+                writer.flush()?;
+                verify_partition_output_hash(partition, &image_path, &partition_name)?;
+                Ok(file_name)
+            })
+            .collect()
+    });
 
     let mut extracted_files = Vec::new();
     for result in results {
         match result {
             Ok(file_name) => extracted_files.push(file_name),
-            Err(e) => return Err(e),
+            Err(e) => {
+                guard.abort();
+                return Err(e);
+            }
         }
     }
+    guard.commit();
 
     let total_bytes: u64 = partitions_to_extract
         .iter()
@@ -819,61 +862,77 @@ pub async fn extract_remote_direct(
     let block_size = manifest.block_size.unwrap_or(4096);
 
     let output_dir = Arc::new(output_dir);
-    let results: Vec<Result<String>> = partitions_to_extract
-        .par_iter()
-        .map(|partition| {
-            let output_dir = Arc::clone(&output_dir);
-            let http = http.clone();
-            let zip_info = zip_info_arc.clone();
-            let partition_name = partition.partition_name.clone();
-            let app = app_handle.clone();
+    // Partial images must not survive a failure — mirrors the local CrAU path.
+    let guard = Arc::new(TransactionGuard::new((*output_dir).clone()));
+    let throttle = Arc::new(ProgressThrottle::new());
 
-            let file_name = crate::helpers::safe_image_file_name(&partition_name);
-            let image_path = output_dir.join(&file_name);
+    // rayon + blocking range reads: keep them off the Tokio worker driving this future.
+    let results: Vec<Result<String>> = tokio::task::block_in_place(|| {
+        partitions_to_extract
+            .par_iter()
+            .map(|partition| {
+                let output_dir = Arc::clone(&output_dir);
+                let guard = Arc::clone(&guard);
+                let throttle = Arc::clone(&throttle);
+                let http = http.clone();
+                let zip_info = zip_info_arc.clone();
+                let partition_name = partition.partition_name.clone();
+                let app = app_handle.clone();
 
-            let partition_size =
-                partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
+                let file_name = crate::helpers::safe_image_file_name(&partition_name);
+                let image_path = output_dir.join(&file_name);
+                guard.add_file(image_path.clone());
 
-            let mut writer = NonTemporalWriter::new(&image_path, partition_size)
-                .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
+                let partition_size =
+                    partition.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or(0);
 
-            let read_context =
-                RemoteReadContext { http: &http, zip_info: zip_info.as_deref(), data_offset };
+                let mut writer = NonTemporalWriter::new(&image_path, partition_size)
+                    .map_err(|e| anyhow::anyhow!("NonTemporalWriter: {e}"))?;
 
-            extract_partition_from_remote(
-                read_context,
-                block_size,
-                partition,
-                &mut writer,
-                |name, current, total, completed| {
-                    if let Some(ref handle) = app {
-                        let _ = handle.emit(
-                            "payload:progress",
-                            serde_json::json!({
-                                "partitionName": name,
-                                "current": current,
-                                "total": total,
-                                "completed": completed,
-                            }),
-                        );
-                    }
-                },
-                cancel_token,
-            )?;
+                let read_context =
+                    RemoteReadContext { http: &http, zip_info: zip_info.as_deref(), data_offset };
 
-            writer.flush()?;
-            verify_partition_output_hash(partition, &image_path, &partition_name)?;
-            Ok(file_name)
-        })
-        .collect();
+                extract_partition_from_remote(
+                    read_context,
+                    block_size,
+                    partition,
+                    &mut writer,
+                    |name, current, total, completed| {
+                        if let Some(ref handle) = app
+                            && throttle.should_emit(completed)
+                        {
+                            let _ = handle.emit(
+                                "payload:progress",
+                                serde_json::json!({
+                                    "partitionName": name,
+                                    "current": current,
+                                    "total": total,
+                                    "completed": completed,
+                                }),
+                            );
+                        }
+                    },
+                    cancel_token,
+                )?;
+
+                writer.flush()?;
+                verify_partition_output_hash(partition, &image_path, &partition_name)?;
+                Ok(file_name)
+            })
+            .collect()
+    });
 
     let mut extracted_files = Vec::new();
     for result in results {
         match result {
             Ok(file_name) => extracted_files.push(file_name),
-            Err(e) => return Err(e),
+            Err(e) => {
+                guard.abort();
+                return Err(e);
+            }
         }
     }
+    guard.commit();
 
     let total_bytes: u64 = partitions_to_extract
         .iter()
@@ -948,13 +1007,29 @@ fn extract_partition_from_mmap(
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
         }
 
-        let data_offset_op = operation.data_offset.unwrap_or_default() as usize;
-        let data_length = operation.data_length.unwrap_or_default() as usize;
-        let data_end = data_offset.saturating_add(data_offset_op) + data_length;
-        if data_end > mmap.len() {
-            anyhow::bail!("payload operation data exceeds file size");
-        }
-        let raw_data = &mmap[data_offset + data_offset_op..data_end];
+        // `data_offset` / `data_length` come from an untrusted manifest and release
+        // builds have `overflow-checks` off, so a plain `+` here wraps silently: the
+        // bounds check would pass and the slice index would then panic (with
+        // `panic = "abort"`, killing the process) or read the wrong region. Every
+        // step is checked and the slice is taken with `get`.
+        let data_start = operation
+            .data_offset
+            .unwrap_or_default()
+            .try_into()
+            .ok()
+            .and_then(|relative: usize| data_offset.checked_add(relative))
+            .ok_or_else(|| anyhow!("payload operation data offset overflows"))?;
+        let data_length: usize = operation
+            .data_length
+            .unwrap_or_default()
+            .try_into()
+            .map_err(|_| anyhow!("payload operation data length overflows"))?;
+        let data_end = data_start
+            .checked_add(data_length)
+            .ok_or_else(|| anyhow!("payload operation data end overflows"))?;
+        let raw_data = mmap
+            .get(data_start..data_end)
+            .ok_or_else(|| anyhow!("payload operation data exceeds file size"))?;
 
         // L3: hash full payload-stored blob (compressed for REPLACE_*) before decompress.
         if let Some(expected) = operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty())
@@ -974,7 +1049,7 @@ fn extract_partition_from_mmap(
             Type::ReplaceXz => {
                 log::debug!(
                     "mmap XZ data at offset {} len {} first_bytes={:?}",
-                    data_offset_op,
+                    data_start,
                     data_length,
                     raw_data.first().copied(),
                 );
@@ -1005,15 +1080,29 @@ fn extract_partition_from_mmap(
             }
 
             if is_zero {
-                writer.seek(SeekFrom::Current(extent_size as i64))?;
+                let skip = i64::try_from(extent_size)
+                    .map_err(|_| anyhow!("destination extent size overflow"))?;
+                writer.seek(SeekFrom::Current(skip))?;
             } else if let Some(ref mut dec) = compressed_reader {
                 // Fail-hard: stream_copy returns UnexpectedEof on short decompress.
                 super::io::with_io_buf(|buf| {
                     super::io::stream_copy(dec, writer, buf, extent_size, None)
                 })?;
             } else {
-                let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
-                let slice = &raw_data[decoded_offset..slice_end];
+                // REPLACE: the stored blob must cover the extent exactly. Clamping to
+                // `raw_data.len()` (the previous behaviour) wrote fewer bytes than the
+                // extent declares and reported success — a silently short, corrupt
+                // image. Fail hard, matching the compressed path.
+                let slice_end = decoded_offset
+                    .checked_add(extent_size)
+                    .ok_or_else(|| anyhow!("payload operation data end overflows"))?;
+                let slice = raw_data.get(decoded_offset..slice_end).ok_or_else(|| {
+                    anyhow!(
+                        "payload operation {index} REPLACE data is short: extent needs {} bytes, blob has {}",
+                        slice_end,
+                        raw_data.len()
+                    )
+                })?;
                 writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
@@ -1065,20 +1154,31 @@ fn extract_partition_from_remote(
             anyhow::bail!("missing destination extent for {}", partition.partition_name);
         }
 
+        // Untrusted manifest values: every offset addition is checked so a hostile
+        // payload cannot wrap into a valid-looking range (release builds have
+        // `overflow-checks` off).
         let data_offset_op = operation.data_offset.unwrap_or_default();
         let data_length = operation.data_length.unwrap_or_default();
 
-        let raw_data = if let Some(zi) = read_context.zip_info {
-            let abs_offset =
-                zi.offset + (read_context.data_offset as u64).saturating_add(data_offset_op);
-            read_context.http.read_range_sync_cancellable(abs_offset, data_length, cancel_token)?
-        } else {
-            read_context.http.read_range_sync_cancellable(
-                (read_context.data_offset as u64).saturating_add(data_offset_op),
-                data_length,
-                cancel_token,
-            )?
+        let payload_relative_offset = (read_context.data_offset as u64)
+            .checked_add(data_offset_op)
+            .ok_or_else(|| anyhow!("payload operation data offset overflows"))?;
+        let read_offset = match read_context.zip_info {
+            Some(zi) => zi
+                .offset
+                .checked_add(payload_relative_offset)
+                .ok_or_else(|| anyhow!("payload operation data offset overflows"))?,
+            None => payload_relative_offset,
         };
+        if read_offset.checked_add(data_length).is_none() {
+            anyhow::bail!("payload operation data end overflows");
+        }
+
+        let raw_data = read_context.http.read_range_sync_cancellable(
+            read_offset,
+            data_length,
+            cancel_token,
+        )?;
 
         // L3: hash full payload-stored blob (compressed for REPLACE_*) before decompress.
         if let Some(expected) = operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty())
@@ -1123,15 +1223,29 @@ fn extract_partition_from_remote(
             }
 
             if is_zero {
-                writer.seek(SeekFrom::Current(extent_size as i64))?;
+                let skip = i64::try_from(extent_size)
+                    .map_err(|_| anyhow!("destination extent size overflow"))?;
+                writer.seek(SeekFrom::Current(skip))?;
             } else if let Some(ref mut dec) = compressed_reader {
                 // Fail-hard: stream_copy returns UnexpectedEof on short decompress.
                 super::io::with_io_buf(|buf| {
                     super::io::stream_copy(dec, writer, buf, extent_size, None)
                 })?;
             } else {
-                let slice_end = decoded_offset.saturating_add(extent_size).min(raw_data.len());
-                let slice = &raw_data[decoded_offset..slice_end];
+                // REPLACE: the stored blob must cover the extent exactly. Clamping to
+                // `raw_data.len()` (the previous behaviour) wrote fewer bytes than the
+                // extent declares and reported success — a silently short, corrupt
+                // image. Fail hard, matching the compressed path.
+                let slice_end = decoded_offset
+                    .checked_add(extent_size)
+                    .ok_or_else(|| anyhow!("payload operation data end overflows"))?;
+                let slice = raw_data.get(decoded_offset..slice_end).ok_or_else(|| {
+                    anyhow!(
+                        "payload operation {index} REPLACE data is short: extent needs {} bytes, blob has {}",
+                        slice_end,
+                        raw_data.len()
+                    )
+                })?;
                 writer.write_all(slice)?;
                 decoded_offset = slice_end;
             }
