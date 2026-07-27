@@ -1,13 +1,4 @@
-import type { ReactNode } from 'react';
-import { ViewAbout } from '@/features/about/AboutView';
-import { AppManagerView } from '@/features/app-manager/AppManagerView';
-import { ViewDashboard } from '@/features/dashboard/DashboardView';
-import { ViewEmulatorManager } from '@/features/emulator/EmulatorView';
-import { ViewFileExplorer } from '@/features/file-explorer/FileExplorerView';
-import { ViewFlasher } from '@/features/flasher/FlasherView';
-import { ViewMarketplace } from '@/features/marketplace/MarketplaceView';
-import { ViewPayloadDumper } from '@/features/payload-dumper/PayloadDumperView';
-import { ViewUtilities } from '@/features/utilities/UtilitiesView';
+import { lazy, type ReactNode } from 'react';
 
 export const VIEWS = {
   DASHBOARD: 'dashboard',
@@ -22,6 +13,58 @@ export const VIEWS = {
 } as const;
 
 export type ViewType = (typeof VIEWS)[keyof typeof VIEWS];
+
+// Views are code-split: previously all nine were statically imported, so the
+// Payload Dumper, Marketplace, Emulator root wizard and File Explorer all shipped
+// in the initial chunk even when the user only opened the Dashboard.
+// `ViewContent` supplies the <Suspense> boundary.
+const ViewDashboard = lazy(() =>
+  import('@/features/dashboard/DashboardView').then((m) => ({ default: m.ViewDashboard })),
+);
+const AppManagerView = lazy(() =>
+  import('@/features/app-manager/AppManagerView').then((m) => ({ default: m.AppManagerView })),
+);
+const ViewFileExplorer = lazy(() =>
+  import('@/features/file-explorer/FileExplorerView').then((m) => ({
+    default: m.ViewFileExplorer,
+  })),
+);
+const ViewMarketplace = lazy(() =>
+  import('@/features/marketplace/MarketplaceView').then((m) => ({ default: m.ViewMarketplace })),
+);
+const ViewFlasher = lazy(() =>
+  import('@/features/flasher/FlasherView').then((m) => ({ default: m.ViewFlasher })),
+);
+const ViewUtilities = lazy(() =>
+  import('@/features/utilities/UtilitiesView').then((m) => ({ default: m.ViewUtilities })),
+);
+const ViewPayloadDumper = lazy(() =>
+  import('@/features/payload-dumper/PayloadDumperView').then((m) => ({
+    default: m.ViewPayloadDumper,
+  })),
+);
+const ViewEmulatorManager = lazy(() =>
+  import('@/features/emulator/EmulatorView').then((m) => ({ default: m.ViewEmulatorManager })),
+);
+const ViewAbout = lazy(() =>
+  import('@/features/about/AboutView').then((m) => ({ default: m.ViewAbout })),
+);
+
+/**
+ * Warm a view's chunk without rendering it. Called on sidebar hover/focus so the
+ * network-free local fetch completes before the click lands.
+ */
+export const VIEW_PRELOADERS: Record<ViewType, () => void> = {
+  [VIEWS.DASHBOARD]: () => void import('@/features/dashboard/DashboardView'),
+  [VIEWS.APPS]: () => void import('@/features/app-manager/AppManagerView'),
+  [VIEWS.FILES]: () => void import('@/features/file-explorer/FileExplorerView'),
+  [VIEWS.MARKETPLACE]: () => void import('@/features/marketplace/MarketplaceView'),
+  [VIEWS.FLASHER]: () => void import('@/features/flasher/FlasherView'),
+  [VIEWS.UTILS]: () => void import('@/features/utilities/UtilitiesView'),
+  [VIEWS.PAYLOAD]: () => void import('@/features/payload-dumper/PayloadDumperView'),
+  [VIEWS.EMULATOR]: () => void import('@/features/emulator/EmulatorView'),
+  [VIEWS.ABOUT]: () => void import('@/features/about/AboutView'),
+};
 
 export const VIEW_RENDERERS: Record<ViewType, (activeView: ViewType) => ReactNode> = {
   [VIEWS.DASHBOARD]: (activeView) => <ViewDashboard activeView={activeView} />,
