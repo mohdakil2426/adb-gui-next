@@ -1,4 +1,8 @@
 use crate::CmdResult;
+use crate::adb::{
+    AdbClient,
+    telemetry::{self, DeviceTelemetry},
+};
 use crate::helpers::*;
 use log::{debug, info};
 use serde::Serialize;
@@ -195,6 +199,24 @@ pub async fn get_device_info(app: AppHandle, serial: Option<String>) -> CmdResul
             brand: get_prop_for_serial(&app, serial, "ro.product.brand"),
             device_name: get_prop_for_serial(&app, serial, "ro.product.name"),
         })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Structured, chartable device telemetry in **one** `adb shell` round-trip.
+///
+/// Supersedes [`get_device_info`], which returns pre-formatted display strings over
+/// twelve sequential spawns. Both stay available while views migrate.
+#[tauri::command]
+pub async fn get_device_telemetry(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<DeviceTelemetry> {
+    info!("Getting device telemetry");
+    tokio::task::spawn_blocking(move || {
+        let serial = selected_serial(serial.as_deref());
+        telemetry::collect(&AdbClient::new(&app, serial), serial)
     })
     .await
     .map_err(|e| e.to_string())?

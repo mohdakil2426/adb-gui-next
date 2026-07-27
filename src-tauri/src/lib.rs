@@ -3,6 +3,7 @@
 // forking the dependency tree.
 #![allow(clippy::multiple_crate_versions)]
 
+pub mod adb;
 mod commands;
 pub mod debloat;
 pub mod emulator;
@@ -86,6 +87,7 @@ pub fn run() {
             commands::get_device_info,
             commands::get_device_mode,
             commands::get_device_sdk,
+            commands::get_device_telemetry,
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,

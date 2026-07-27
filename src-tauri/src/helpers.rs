@@ -58,58 +58,18 @@ pub fn safe_image_file_name(partition_name: &str) -> String {
     format!("{base}.img")
 }
 
-const SHELL_EXIT_MARKER: &str = "__ADB_GUI_EXIT_STATUS__:";
-
 /// Run `adb shell` (or `su -c`) with strict exit-code checking via an echoed marker.
 /// Use for critical device mutations where ADB host success is not enough.
+///
+/// Thin wrapper over [`crate::adb::AdbClient::shell_checked`], which owns the single
+/// implementation of exit-marker wrapping and parsing.
 pub fn adb_shell_checked(
     app: &AppHandle,
     serial: Option<&str>,
     access_root: bool,
     cmd: &str,
 ) -> CmdResult<String> {
-    let wrapped = format!("{cmd}; echo {SHELL_EXIT_MARKER}$?");
-    let mut owned: Vec<String> = Vec::new();
-    if let Some(serial) = serial.map(str::trim).filter(|value| !value.is_empty()) {
-        owned.push("-s".to_string());
-        owned.push(serial.to_string());
-    }
-    owned.push("shell".to_string());
-    if access_root {
-        owned.push("su".to_string());
-        owned.push("-c".to_string());
-        owned.push(wrapped);
-    } else {
-        owned.push(wrapped);
-    }
-    let arg_refs: Vec<&str> = owned.iter().map(String::as_str).collect();
-    let output = run_binary_command(app, "adb", &arg_refs)?;
-
-    let code = parse_shell_exit_code(&output, SHELL_EXIT_MARKER).ok_or_else(|| {
-        format!(
-            "Missing ADB shell exit marker. The shell command may have aborted:\n  cmd: {cmd}\n  output: {output}"
-        )
-    })?;
-
-    if code != 0 {
-        return Err(format!(
-            "ADB shell command failed (exit {code}):\n  cmd: {cmd}\n  output: {output}"
-        ));
-    }
-    Ok(output)
-}
-
-fn parse_shell_exit_code(output: &str, marker: &str) -> Option<i32> {
-    for line in output.lines().rev() {
-        let trimmed = line.trim();
-        if let Some(rest) = trimmed.strip_prefix(marker) {
-            return rest.trim().parse().ok();
-        }
-        if let Some(idx) = trimmed.rfind(marker) {
-            return trimmed[idx + marker.len()..].trim().parse().ok();
-        }
-    }
-    None
+    crate::adb::AdbClient::new(app, serial).shell_checked(access_root, cmd)
 }
 
 pub fn validate_path_components(path: &str) -> Result<(), String> {
@@ -504,14 +464,5 @@ mod tests {
         assert_eq!(safe_image_file_name(""), "partition.img");
         assert_eq!(safe_image_file_name("system"), "system.img");
         assert_eq!(safe_image_file_name("system.img"), "system.img");
-    }
-
-    #[test]
-    fn parse_shell_exit_code_reads_marker() {
-        let out = "ok\n__ADB_GUI_EXIT_STATUS__:0\n";
-        assert_eq!(parse_shell_exit_code(out, SHELL_EXIT_MARKER), Some(0));
-        let fail = "err\n__ADB_GUI_EXIT_STATUS__:1";
-        assert_eq!(parse_shell_exit_code(fail, SHELL_EXIT_MARKER), Some(1));
-        assert_eq!(parse_shell_exit_code("no marker", SHELL_EXIT_MARKER), None);
     }
 }
