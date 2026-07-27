@@ -1,19 +1,28 @@
 import { cva, type VariantProps } from 'class-variance-authority';
 
+/**
+ * Button styling.
+ *
+ * Depth comes from a solid fill plus a 1px inset top highlight
+ * (`--control-highlight`), never from an outer glow: the previous
+ * `shadow-[0_0_15px_…var(--primary)…]` rendered a black halo in light mode,
+ * where `--primary` was black. Hover and active both *increase* contrast, in
+ * both themes, via dedicated `-hover` / `-active` tokens.
+ */
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-body outline-none transition-colors duration-90 ease-standard focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow-[0_0_15px_color-mix(in_oklch,var(--primary)_50%,transparent)] transition-shadow duration-300 hover:bg-primary/90 hover:shadow-[0_0_25px_3px_color-mix(in_oklch,var(--primary)_50%,transparent)]',
+          'bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_var(--control-highlight)] hover:bg-primary-hover focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-primary-active',
         destructive:
-          'bg-destructive text-white shadow-[0_0_15px_color-mix(in_oklch,var(--destructive)_40%,transparent)] transition-shadow duration-300 hover:bg-destructive/90 hover:shadow-[0_0_25px_3px_color-mix(in_oklch,var(--destructive)_55%,transparent)] focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40',
+          'bg-destructive text-destructive-foreground shadow-[inset_0_1px_0_0_var(--control-highlight)] hover:bg-destructive-hover focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-destructive-active',
         outline:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
-        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'border border-border bg-surface text-foreground hover:border-border-strong hover:bg-accent active:bg-accent-active',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-accent active:bg-accent-active',
+        ghost: 'hover:bg-accent hover:text-accent-foreground active:bg-accent-active',
+        link: 'text-primary underline-offset-4 hover:text-primary-hover hover:underline',
       },
       size: {
         default: 'h-9 px-4 py-2 has-[>svg]:px-3',

@@ -53,7 +53,7 @@ function CardTitle<T extends CardTitleElement = 'h2'>({
 function CardDescription({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('text-muted-foreground text-sm', className)}
+      className={cn('text-body text-muted-foreground', className)}
       data-slot="card-description"
       {...props}
     />

@@ -6,7 +6,7 @@ function Empty({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       className={cn(
-        'flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center md:p-12',
+        'flex min-w-0 flex-1 flex-col items-center justify-center gap-6 text-balance rounded-lg border-dashed p-6 text-center',
         className,
       )}
       data-slot="empty"
@@ -55,13 +55,14 @@ function EmptyMedia({
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<'div'>) {
+/**
+ * A heading element, not a `<div>`: an empty state is the only content in its
+ * region, so screen-reader users need it in the document outline. `h3` sits
+ * under the view's `h1` and any surrounding `CardTitle` (`h2`).
+ */
+function EmptyTitle({ className, ...props }: React.ComponentProps<'h3'>) {
   return (
-    <div
-      className={cn('font-medium text-lg tracking-tight', className)}
-      data-slot="empty-title"
-      {...props}
-    />
+    <h3 className={cn('text-title tracking-tight', className)} data-slot="empty-title" {...props} />
   );
 }
 
@@ -69,7 +70,7 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <div
       className={cn(
-        'text-muted-foreground text-sm/relaxed [&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4',
+        'text-body text-muted-foreground [&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4',
         className,
       )}
       data-slot="empty-description"
@@ -82,7 +83,7 @@ function EmptyContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       className={cn(
-        'flex w-full min-w-0 max-w-sm flex-col items-center gap-4 text-balance text-sm',
+        'flex w-full min-w-0 max-w-sm flex-col items-center gap-4 text-balance text-body',
         className,
       )}
       data-slot="empty-content"
