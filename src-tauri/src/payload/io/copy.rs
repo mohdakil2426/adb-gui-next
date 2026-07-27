@@ -1,176 +1,24 @@
 //! Shared I/O utilities for payload extraction.
-#![allow(unsafe_code)] // SIMD copy paths (x86_64)
-
-#[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::{__m512i, _mm512_loadu_si512, _mm512_storeu_si512};
 
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
-use std::sync::OnceLock;
 
 #[allow(dead_code)]
 const COPY_BUF_SIZE: usize = 65536;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CopyStrategy {
-    Scalar,
-    Sse2,
-    Avx2,
-    Avx512,
-}
-
-impl CopyStrategy {
-    #[allow(dead_code)]
-    fn name(&self) -> &'static str {
-        match self {
-            CopyStrategy::Scalar => "scalar",
-            CopyStrategy::Sse2 => "SSE2",
-            CopyStrategy::Avx2 => "AVX2",
-            CopyStrategy::Avx512 => "AVX-512",
-        }
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-pub fn detect_copy_strategy() -> CopyStrategy {
-    if std::arch::is_x86_feature_detected!("avx512f") {
-        CopyStrategy::Avx512
-    } else if std::arch::is_x86_feature_detected!("avx2") {
-        CopyStrategy::Avx2
-    } else if std::arch::is_x86_feature_detected!("sse2") {
-        CopyStrategy::Sse2
-    } else {
-        CopyStrategy::Scalar
-    }
-}
-
-#[cfg(not(target_arch = "x86_64"))]
-pub fn detect_copy_strategy() -> CopyStrategy {
-    CopyStrategy::Scalar
-}
-
-static COPY_STRATEGY: OnceLock<CopyStrategy> = OnceLock::new();
-
-pub fn get_copy_strategy() -> CopyStrategy {
-    *COPY_STRATEGY.get_or_init(detect_copy_strategy)
-}
-
-pub struct Copier {
-    strategy: CopyStrategy,
-}
-
-impl Copier {
-    pub fn new() -> Self {
-        Self { strategy: get_copy_strategy() }
-    }
-
-    pub fn copy(&self, dst: &mut [u8], src: &[u8]) {
-        match self.strategy {
-            CopyStrategy::Scalar => copy_scalar(dst, src),
-            CopyStrategy::Sse2 => copy_sse2(dst, src),
-            CopyStrategy::Avx2 => copy_avx2(dst, src),
-            CopyStrategy::Avx512 => copy_avx512(dst, src),
-        }
-    }
-}
-
-impl Default for Copier {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-fn copy_sse2(dst: &mut [u8], src: &[u8]) {
-    use std::arch::x86_64::*;
-    let len = dst.len().min(src.len());
-    let mut i = 0usize;
-
-    while i + 16 <= len {
-        unsafe {
-            let mash = _mm_loadu_si128(src.as_ptr().add(i) as *const __m128i);
-            _mm_storeu_si128(dst.as_mut_ptr().add(i) as *mut __m128i, mash);
-        }
-        i += 16;
-    }
-
-    while i < len {
-        dst[i] = src[i];
-        i += 1;
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-fn copy_avx2(dst: &mut [u8], src: &[u8]) {
-    use std::arch::x86_64::*;
-    let len = dst.len().min(src.len());
-    let mut i = 0usize;
-
-    while i + 32 <= len {
-        unsafe {
-            let mash = _mm256_loadu_si256(src.as_ptr().add(i) as *const __m256i);
-            _mm256_storeu_si256(dst.as_mut_ptr().add(i) as *mut __m256i, mash);
-        }
-        i += 32;
-    }
-
-    while i < len {
-        dst[i] = src[i];
-        i += 1;
-    }
-}
-
-#[cfg(target_arch = "x86_64")]
-fn copy_avx512(dst: &mut [u8], src: &[u8]) {
-    use std::arch::x86_64::_mm_sfence;
-    let len = dst.len().min(src.len());
-    let mut i = 0usize;
-
-    while i + 64 <= len {
-        unsafe {
-            let data = _mm512_loadu_si512(src.as_ptr().add(i) as *const __m512i);
-            _mm512_storeu_si512(dst.as_mut_ptr().add(i) as *mut __m512i, data);
-        }
-        i += 64;
-    }
-
-    let remainder = len - i;
-    if remainder > 0 {
-        copy_avx2(&mut dst[i..], &src[i..]);
-    }
-
-    unsafe {
-        _mm_sfence();
-    }
-}
-
-#[cfg(not(target_arch = "x86_64"))]
-fn copy_sse2(dst: &mut [u8], src: &[u8]) {
-    copy_scalar(dst, src);
-}
-
-#[cfg(not(target_arch = "x86_64"))]
-fn copy_avx2(dst: &mut [u8], src: &[u8]) {
-    copy_scalar(dst, src);
-}
-
-#[cfg(not(target_arch = "x86_64"))]
-fn copy_avx512(dst: &mut [u8], src: &[u8]) {
-    copy_scalar(dst, src);
-}
-
-fn copy_scalar(dst: &mut [u8], src: &[u8]) {
-    let len = dst.len().min(src.len());
-    let mut i = 0usize;
-    while i < len {
-        dst[i] = src[i];
-        i += 1;
-    }
-}
-
+/// Copy `min(dst.len(), src.len())` bytes from `src` to `dst`.
+///
+/// Lowers to `memcpy`, which every supported target implements with hand-tuned
+/// vectorized routines (and switches to non-temporal stores above its own
+/// streaming threshold). A previous revision hand-rolled SSE2/AVX2/AVX-512
+/// paths here; they were slower than `memcpy` on x86_64 because the intrinsics
+/// were called from functions without `#[target_feature]`, so LLVM could not
+/// widen or unroll them — and on every non-x86_64 target (including the shipped
+/// `aarch64-pc-windows-msvc` and `aarch64-unknown-linux-gnu` builds) they fell
+/// back to a bounds-checked byte-at-a-time loop.
 pub fn copy_raw_slice(dst: &mut [u8], src: &[u8]) {
-    let copier = Copier::new();
-    copier.copy(dst, src);
+    let len = dst.len().min(src.len());
+    dst[..len].copy_from_slice(&src[..len]);
 }
 
 /// Read from `src` into `buf` in a loop, writing each chunk to `dst`, until `limit` bytes
@@ -223,4 +71,40 @@ pub fn copy_all<R: Read, W: Write>(reader: &mut R, writer: &mut W) -> std::io::R
         total += n as u64;
     }
     Ok(total)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::copy_raw_slice;
+
+    #[test]
+    fn copies_full_slice() {
+        let src = [1u8, 2, 3, 4];
+        let mut dst = [0u8; 4];
+        copy_raw_slice(&mut dst, &src);
+        assert_eq!(dst, src);
+    }
+
+    #[test]
+    fn clamps_to_shorter_destination() {
+        let src = [1u8, 2, 3, 4];
+        let mut dst = [0u8; 2];
+        copy_raw_slice(&mut dst, &src);
+        assert_eq!(dst, [1, 2]);
+    }
+
+    #[test]
+    fn clamps_to_shorter_source() {
+        let src = [9u8, 8];
+        let mut dst = [0u8; 4];
+        copy_raw_slice(&mut dst, &src);
+        assert_eq!(dst, [9, 8, 0, 0]);
+    }
+
+    #[test]
+    fn handles_empty_input() {
+        let mut dst = [7u8; 3];
+        copy_raw_slice(&mut dst, &[]);
+        assert_eq!(dst, [7, 7, 7]);
+    }
 }

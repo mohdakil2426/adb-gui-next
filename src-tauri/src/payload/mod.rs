@@ -60,7 +60,7 @@ pub use crau::{
     LoadedPayload, diagnose_payload_file, extract_payload, list_payload_partitions,
     list_payload_partitions_with_details, open_mmap, parse_header,
 };
-pub use io::{NonTemporalWriter, copy_raw_slice, detect_copy_strategy};
+pub use io::{NonTemporalWriter, copy_raw_slice};
 pub use types::{
     DynamicGroupInfo, ExtractPayloadResult, ExtractionStats, PartitionDetail, PayloadDiagnostics,
     RemotePayloadMetadata,
