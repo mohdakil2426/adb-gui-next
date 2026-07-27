@@ -23,28 +23,62 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 
 ### Device selection
 
-- Single device list poll in `MainLayout` (30s). No per-view device polls.
+- Single device **list** poll in `MainLayout` (30s). No second device-list poll.
+- Device-scoped reads may own a query if they are mounted-view scoped: dashboard telemetry (15s, Dashboard only, stops on error), AVD list (5s, Emulator view).
 - Features pass `selectedSerial` into device-scoped APIs (including **debloat**).
 - Prefer `run_adb` / `run_adb_for_serial` with `-s` over bare `adb get-serialno` when UI has a selection.
+- Query defaults (`App.tsx`): `staleTime` 30s, `retry: false`, `refetchOnWindowFocus: false` — every query spawns a subprocess.
 
 ### Shell layout
 
 - Outer `h-svh overflow-hidden`; `SidebarProvider` `h-full` (not `min-h-svh`).
-- Header structural pin (`shrink-0`); no sticky-header hacks.
+- Column inside `SidebarInset`: Header (44px, structural `shrink-0`) → `ViewContent` (`flex-1 min-h-0`) → `StatusBar` (26px) → bottom-panel dock.
+- `BottomPanel` stays `position: fixed`; a `shrink-0` **dock spacer** of equal height reserves its space. No `paddingBottom` compensation.
+- `ViewContent` is fluid width — no centred max-width cap.
+- Header title + breadcrumb come from `VIEW_META`; views keep their own `sr-only <h1>`.
 - BottomPanel resize: DOM-first during drag; React state on mouseup.
 - Active view: **localStorage** via `usePersistedActiveView` (no React Router / URL routes).
+- Splash gating: `useAppReady()` (fonts settled + one frame, 2s ceiling), not a fixed animation.
+
+### Code splitting
+
+- Views are `React.lazy` in `viewConfig.tsx`; `ViewContent` owns the only `<Suspense>`.
+- `VIEW_PRELOADERS` warm chunks from `AppSidebar` `onPointerEnter` / `onFocus`. New view ⇒ both maps.
+- `renderView` stays module-level so memoized `ViewContent` is not invalidated.
+- No static **value** import from a view module into shell/shared — it rejoins the entry chunk. `import type` only.
+
+### Command palette
+
+- Registry in `shared/commands/` (`registry.ts` composes `appCommands` + `deviceCommands`); rendered by `app/shell/CommandPalette.tsx` over `cmdk`.
+- `VIEW_META` names a view once — sidebar label, header title/breadcrumb and palette Navigate group all read it.
+- `useGlobalShortcuts` owns **only** ⌘/Ctrl+K (capture phase + `stopPropagation`, so it beats view-local Ctrl+K). ⌘/Ctrl+B stays in `shared/ui/sidebar`, `Ctrl+\`` in `BottomPanel`. Every shortcut also gets a `SHORTCUT_HELP` row.
+
+### Design tokens
+
+- All colour/type/motion/z-index tokens in `src/styles/global.css`; no raw hex/rgb/oklch in components.
+- Palette: chroma-tinted neutrals (hue 250), one accent (electric cyan, hue 210) for primary/active only, status colours for **device** state.
+- Surfaces: `canvas` < `surface` < `surface-raised` < `surface-overlay`.
+- Type: 13px base; `display`/`title`/`body`/`label`/`caption`/`mono`/`mono-sm`, each with its own line-height/tracking/weight. **11px floor.** `numeric` utility on updating values.
+- Motion: transform/opacity only; never `height`, never `all`.
+- Fonts self-hosted from `public/fonts/`; CSP `font-src 'self'`.
 
 ### Feature modules
 
 - Code under `src/features/<feature>/` with View + hooks/model/ui/utils as needed.
 - Feature stores stay in feature `model/`; app-wide stores in `shared/stores/`.
+- Persisted vs churn: durable selections in the persisted store, high-frequency progress in a sibling **non-persisted** store (`payloadProgressStore`, `memoryHistoryStore`, `operationStore`). `zustand/persist` writes `localStorage` synchronously on every `setState`.
+- Long-running work registers with `operationStore` (`startOperation` / `updateOperation` / `finishOperation`) so `StatusBar` shows it — App Manager is wired; extend rather than adding a parallel mechanism.
 - App Manager tabs: Installation + Debloater (UAD).
 - Package list icons: Lucide `Package` (user) / `Package2` (system) until real icons exist.
 
 ### Domain (Rust)
 
-- Thin `commands/*`; logic in `payload/`, `marketplace/`, `emulator/`, `debloat/`, `helpers.rs`.
-- Critical shell: `adb_shell_checked` (host OK ≠ shell OK).
+- Thin `commands/*`; logic in `adb/`, `payload/`, `marketplace/`, `emulator/`, `debloat/`, `helpers.rs`.
+- **All `adb` invocation goes through `adb::AdbClient`** — binary path resolved once per process (`OnceLock`), one exit-marker implementation, per-batch nonce markers.
+- Critical shell: `AdbClient::shell_checked` (host OK ≠ shell OK); `helpers::adb_shell_checked` is a forwarder.
+- Multiple device reads ⇒ `AdbClient::shell_batch` (N commands, 1 process, per-command exit codes). `get_device_telemetry` = 9 commands in 1 process.
+- Rust returns **typed numbers**, not display strings; formatting is a frontend concern.
+- `[profile.release]` is the speed profile (`opt-level = 3`, lto, 1 CGU). No `release-fast`, no `opt-level = "s"`.
 - Payload: mmap/streaming; cancel tokens; `TransactionGuard` file-only cleanup; ZIP64 CD extras for remote factory ZIP.
 - Events FE must use via runtime: `payload:progress`, `payload:load-progress`, `root:progress`.
 
@@ -99,6 +133,8 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 | Dead UI | Unused `shared/ui` → delete or real use; no suppressions |
 | Multi-APK | Serial install/uninstall on one device |
 | Theme first paint | Prefer `useSyncExternalStore` / lazy init — avoid `useEffect(() => setState(), [])` flash |
+| High-churn state | Isolate the subscriber in a leaf (`UnreadLogBadge`), never in `MainLayout` |
+| Lazy boundaries | No static value import from a view module into shell/shared |
 
 Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes that touch these areas.
 
@@ -106,7 +142,12 @@ Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes tha
 
 - Raw `invoke` / raw event listen in features
 - React Router or Next.js patterns
-- Per-view device polling
+- A second device-**list** poll outside `MainLayout`
+- Fresh `Command::new(adb)` or hand-rolled exit markers instead of `adb::AdbClient`
+- `opt-level = "s"` on `[profile.release]`, or re-adding a `release-fast` profile
+- Google Fonts / CDN font loading (CSP is `font-src 'self'`)
+- Type below 11px, or Tailwind default `text-xs`/`text-sm` in place of the scale tokens
+- `paddingBottom` compensation for the fixed bottom panel
 - `remove_dir_all` on user extract output dirs
 - Auto-follow HTTP redirects without re-validating hops
 - Reintroducing ESLint/Prettier as the FE toolchain (Ultracite is active)
@@ -114,4 +155,4 @@ Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes tha
 - Shipping Linux aarch64 with wrong-arch bundled adb
 - Claiming macOS first-class while builds are paused
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-27

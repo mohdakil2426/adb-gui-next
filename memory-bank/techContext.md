@@ -4,11 +4,19 @@
 
 ### Frontend
 
-React 19 · TypeScript · Vite 8 · Tailwind v4 · shadcn/Radix · Zustand 5 · TanStack Query 5 · React Hook Form · Zod · Framer Motion · lucide · next-themes · sonner · TanStack Virtual · Tauri API 2.11 + dialog/opener/clipboard plugins · Bun **1.3.14**
+React 19 · TypeScript · Vite 8 · Tailwind v4 · shadcn/Radix · Zustand 5 · TanStack Query 5 · React Hook Form · Zod · Framer Motion · lucide · next-themes · sonner · TanStack Virtual · **cmdk** (⌘K palette) · **no charting library** · Tauri API 2.11 + dialog/opener/clipboard plugins · Bun **1.3.14**
+
+**Why no charting library.** `freezePrototype: true` (`tauri.conf.json`) freezes `Object.prototype`, so any dependency that writes to a built-in prototype at module-evaluation time throws `TypeError` in strict mode and kills the whole view. Recharts was added and then removed for exactly this: its `decimal.js-light` does `Decimal.prototype.valueOf = …`. It never reproduces in `vite build`, Vitest or the browser preview — only inside the webview. **Vet every new frontend dependency for module-eval prototype writes.** All charts are hand-rolled SVG/CSS against the `chart-1..5` tokens.
+
+**Adaptivity.** Container queries only — the window is pinned to `minWidth: 1024`, so `sm:`/`md:` can never evaluate false, and the content box tracks the sidebar (`16rem` ↔ `3rem`) rather than the viewport. See `docs/architecture.md` §12.1.
+
+Fonts are **not** an npm runtime dep: Inter + JetBrains Mono variable woff2 are vendored into `public/fonts/` with their OFL texts, declared with `@font-face` in `global.css`, and preloaded from `index.html`.
 
 ### Backend
 
 Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · optional brotli · sha2 · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
+
+`[profile.release]`: `opt-level = 3` · `lto = true` · `codegen-units = 1` · `panic = "abort"` · `strip = true`. The old `opt-level = "s"` and the separate `release-fast` profile are gone — the workload is CPU-bound, so `release` **is** the speed profile.
 
 ## Tooling
 
@@ -27,16 +35,21 @@ Commands: see `docs/project_rules.md` (source of truth for gates). Do not re-add
 ## Layout (high level)
 
 ```text
+public/
+  fonts/        self-hosted Inter + JetBrains Mono woff2 (+ OFL texts)
 src/
-  app/          shell, MainLayout, view map
+  app/          shell: MainLayout, viewConfig (lazy views), Header, AppSidebar,
+                StatusBar, CommandPalette, BottomPanel
   desktop/      only invoke / events / models
-  features/     product views
-  shared/       ui, stores, utils, hooks (e.g. usePersistedActiveView)
-  styles/       global.css tokens
+  features/     product views (all React.lazy)
+  shared/       commands/ (palette registry, VIEW_META, shortcuts), ui, components,
+                stores, hooks (useAppReady, useGlobalShortcuts, usePersistedActiveView), utils
+  styles/       global.css design tokens (palette, type scale, motion, z-index)
   test/         Vitest
 src-tauri/
   commands/     thin IPC
-  helpers.rs    binary, shell, path safety, adb serial helpers
+  adb/          AdbClient (single adb spawn point) + telemetry + parse
+  helpers.rs    binary, path safety, adb serial helpers (adb_shell_checked forwards to adb/)
   payload/ marketplace/ emulator/ debloat/
   resources/{windows,linux,darwin}/
   permissions/ + capabilities/
@@ -76,5 +89,7 @@ Full design: `docs/architecture.md`.
 - Debloat: serial-keyed cache + explicit FE serial; fail closed on unknown SDK for Disable
 - Marketplace install: owned temp path + selected serial
 - Capabilities: `allow-device-read` + `allow-device-mutate` (not a single opaque allow-all in default cap)
+- CSP: `font-src 'self'`, `style-src 'unsafe-inline' 'self'` — the Google Fonts allowances were removed when fonts were vendored
+- Destructive flows gated by explicit confirmation dialogs (flash, sideload, wipe, uninstall, AVD backup restore)
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-07-27
