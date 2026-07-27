@@ -10,6 +10,64 @@ const MAGISK_AVD_RECOMMENDED_URL: &str =
     "https://github.com/topjohnwu/Magisk/releases/download/v25.2/Magisk-v25.2.apk";
 const MAGISK_GITHUB_LATEST_URL: &str =
     "https://api.github.com/repos/topjohnwu/Magisk/releases/latest";
+const MAX_REDIRECTS: usize = 5;
+
+/// Build a blocking client that never auto-follows redirects.
+///
+/// reqwest's default policy silently follows up to 10 hops, and only the *initial*
+/// URL was ever validated — the artifact whose `magiskinit` is installed as the
+/// emulator's `init` could be served from anywhere. Each hop is validated in
+/// [`get_with_validated_redirects`], matching `commands/marketplace.rs`.
+fn build_client(timeout_secs: u64) -> CmdResult<reqwest::blocking::Client> {
+    reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(timeout_secs))
+        .redirect(reqwest::redirect::Policy::none())
+        .user_agent("adb-gui-next")
+        .build()
+        .map_err(|e| format!("HTTP client error: {e}"))
+}
+
+/// GET `url`, following redirects manually and validating every hop.
+fn get_with_validated_redirects(
+    client: &reqwest::blocking::Client,
+    url: &str,
+) -> CmdResult<reqwest::blocking::Response> {
+    let mut current = url::Url::parse(url).map_err(|e| format!("Invalid URL '{url}': {e}"))?;
+
+    for _ in 0..=MAX_REDIRECTS {
+        crate::payload::remote::validate_outbound_url(&current, true)
+            .map_err(|e| format!("Magisk URL rejected: {e}"))?;
+
+        let response =
+            client.get(current.clone()).send().map_err(|e| format!("Request failed: {e}"))?;
+
+        if !response.status().is_redirection() {
+            return Ok(response);
+        }
+
+        let location = response
+            .headers()
+            .get(reqwest::header::LOCATION)
+            .and_then(|value| value.to_str().ok())
+            .ok_or_else(|| "Redirect response has no Location header".to_string())?;
+        current = crate::payload::remote::resolve_redirect_url(&current, location)
+            .map_err(|e| format!("Invalid redirect: {e}"))?;
+    }
+
+    Err(format!("Too many redirects (max {MAX_REDIRECTS})"))
+}
+
+/// Verify a downloaded file against the release's `sha256` digest.
+fn verify_apk_digest(path: &Path, expected_hex: &str) -> CmdResult<()> {
+    let digest = crate::payload::verify::compute_file_sha256(path)
+        .map_err(|e| format!("Failed to hash {}: {e}", path.display()))?;
+    let actual = hex::encode(digest);
+    if actual.eq_ignore_ascii_case(expected_hex.trim()) {
+        Ok(())
+    } else {
+        Err(format!("SHA-256 mismatch: expected {expected_hex}, got {actual}"))
+    }
+}
 
 /// Fetch the latest official stable Magisk release from the GitHub releases API.
 ///
@@ -57,15 +115,8 @@ fn hardcoded_fallback_release() -> MagiskStableRelease {
 }
 
 fn fetch_from_github() -> CmdResult<MagiskStableRelease> {
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .user_agent("adb-gui-next")
-        .build()
-        .map_err(|e| format!("HTTP client error: {e}"))?;
-
-    let response = client
-        .get(MAGISK_GITHUB_LATEST_URL)
-        .send()
+    let client = build_client(30)?;
+    let response = get_with_validated_redirects(&client, MAGISK_GITHUB_LATEST_URL)
         .map_err(|e| format!("GitHub API request failed: {e}"))?;
 
     if !response.status().is_success() {
@@ -184,11 +235,25 @@ pub fn download_magisk_stable(
 
     if dest.exists() {
         let cached_size = dest.metadata().map_or(0, |m| m.len());
-        if cached_size > 0 {
+        // A cached file is installed as the emulator's `init` without ever hitting
+        // the network again, so it has to clear the same digest bar as a fresh one.
+        let cached_digest_ok = match release.sha256.as_deref() {
+            Some(expected) => match verify_apk_digest(&dest, expected) {
+                Ok(()) => true,
+                Err(error) => {
+                    log::warn!("Cached Magisk {} rejected: {error}", release.tag);
+                    false
+                }
+            },
+            None => true,
+        };
+        if cached_size > 0 && cached_digest_ok {
             log::info!("Magisk {} already cached at {:?}", release.tag, dest);
             return Ok(dest);
         }
-        log::warn!("Cached Magisk {} is empty (0 bytes); re-downloading", release.tag);
+        if cached_size == 0 {
+            log::warn!("Cached Magisk {} is empty (0 bytes); re-downloading", release.tag);
+        }
         let _ = std::fs::remove_file(&dest);
     }
 
@@ -199,14 +264,9 @@ pub fn download_magisk_stable(
         release.download_url
     );
 
-    let client = reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(120))
-        .user_agent("adb-gui-next")
-        .build()
-        .map_err(|e| format!("HTTP client error: {e}"))?;
-
-    let mut response =
-        client.get(&release.download_url).send().map_err(|e| format!("Download failed: {e}"))?;
+    let client = build_client(120)?;
+    let mut response = get_with_validated_redirects(&client, &release.download_url)
+        .map_err(|e| format!("Download failed: {e}"))?;
 
     if !response.status().is_success() {
         return Err(format!(
@@ -224,6 +284,19 @@ pub fn download_magisk_stable(
     if final_size == 0 {
         let _ = std::fs::remove_file(&dest);
         return Err(format!("Downloaded Magisk {} is empty", release.tag));
+    }
+
+    // The APK's `magiskinit` is installed as the emulator's `init`. GitHub publishes
+    // the asset digest and it was parsed but never checked — verify it, and never
+    // leave a mismatching file on disk where the cache branch above could pick it up.
+    if let Some(expected) = release.sha256.as_deref() {
+        if let Err(error) = verify_apk_digest(&dest, expected) {
+            let _ = std::fs::remove_file(&dest);
+            return Err(format!("Downloaded Magisk {} failed verification: {error}", release.tag));
+        }
+        log::info!("Verified Magisk {} SHA-256", release.tag);
+    } else {
+        log::warn!("Magisk {} publishes no SHA-256 digest; cannot verify", release.tag);
     }
 
     log::info!("Downloaded Magisk {} to {:?} ({final_size} bytes)", release.tag, dest);
@@ -337,6 +410,22 @@ mod tests {
         if local_rootavd_magisk_zip().is_some() {
             assert_eq!(release.tag, MAGISK_AVD_RECOMMENDED_TAG);
         }
+    }
+
+    #[test]
+    fn digest_verification_accepts_matching_and_rejects_tampered_files() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("Magisk-test.apk");
+        std::fs::write(&path, b"magisk-payload").expect("write");
+
+        // sha256("magisk-payload")
+        let expected =
+            hex::encode(crate::payload::verify::compute_file_sha256(&path).expect("hash"));
+        assert!(verify_apk_digest(&path, &expected).is_ok());
+        assert!(verify_apk_digest(&path, &expected.to_uppercase()).is_ok());
+
+        std::fs::write(&path, b"tampered").expect("rewrite");
+        assert!(verify_apk_digest(&path, &expected).is_err());
     }
 
     #[test]
