@@ -1,8 +1,9 @@
 import { act } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import { usePayloadProgressStore } from '@/features/payload-dumper/model/payloadProgressStore';
 
-// Reset store state before each test
+// Reset store state before each test — `reset()` also clears the progress store.
 beforeEach(() => {
   act(() => {
     usePayloadDumperStore.getState().reset();
@@ -67,70 +68,17 @@ describe('payloadDumperStore', () => {
       usePayloadDumperStore
         .getState()
         .setPartitions([{ name: 'boot', size: 4096, selected: true }]);
-      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot']));
+      usePayloadProgressStore.getState().setExtractingPartitions(new Set(['boot']));
     });
     act(() => {
       usePayloadDumperStore.getState().markPartitionCompleted('boot');
     });
-    const { completedPartitions, extractingPartitions, partitions, partitionStatuses } =
-      usePayloadDumperStore.getState();
+    const { completedPartitions, extractingPartitions, partitionStatuses } =
+      usePayloadProgressStore.getState();
     expect(completedPartitions.has('boot')).toBe(true);
     expect(extractingPartitions.has('boot')).toBe(false);
-    expect(partitions[0]?.selected).toBe(false);
+    expect(usePayloadDumperStore.getState().partitions[0]?.selected).toBe(false);
     expect(partitionStatuses.get('boot')).toBe('completed');
-  });
-
-  it('setExtractingPartitions seeds pending partition statuses', () => {
-    act(() => {
-      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot', 'system']));
-    });
-    const { partitionStatuses } = usePayloadDumperStore.getState();
-    expect(partitionStatuses.get('boot')).toBe('pending');
-    expect(partitionStatuses.get('system')).toBe('pending');
-  });
-
-  it('updatePartitionProgress maps running then completed status', () => {
-    act(() => {
-      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot']));
-      usePayloadDumperStore.getState().updatePartitionProgress('boot', 50, 200, false);
-    });
-    expect(usePayloadDumperStore.getState().partitionStatuses.get('boot')).toBe('running');
-
-    act(() => {
-      usePayloadDumperStore
-        .getState()
-        .updatePartitionProgress('boot', 200, 200, true, 4096, 4096, 12, 0, 'completed');
-    });
-    expect(usePayloadDumperStore.getState().partitionStatuses.get('boot')).toBe('completed');
-    const progress = usePayloadDumperStore.getState().partitionProgress.get('boot');
-    expect(progress?.current).toBe(200);
-    expect(progress?.total).toBe(200);
-    expect(progress?.percentage).toBe(100);
-    expect(progress?.throughputMbps).toBe(12);
-  });
-
-  it('updatePartitionProgress computes percentage correctly', () => {
-    act(() => {
-      usePayloadDumperStore.getState().updatePartitionProgress('boot', 50, 200);
-    });
-    const progress = usePayloadDumperStore.getState().partitionProgress.get('boot');
-    expect(progress?.current).toBe(50);
-    expect(progress?.total).toBe(200);
-    expect(progress?.percentage).toBe(25);
-  });
-
-  it('failActivePartitions marks pending/running as failed', () => {
-    act(() => {
-      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot', 'vendor', 'dtbo']));
-      usePayloadDumperStore.getState().updatePartitionProgress('boot', 1, 10, false);
-      usePayloadDumperStore.getState().markPartitionCompleted('vendor');
-      usePayloadDumperStore.getState().failActivePartitions();
-    });
-    const statuses = usePayloadDumperStore.getState().partitionStatuses;
-    expect(statuses.get('boot')).toBe('failed');
-    expect(statuses.get('dtbo')).toBe('failed');
-    expect(statuses.get('vendor')).toBe('completed');
-    expect(usePayloadDumperStore.getState().extractingPartitions.size).toBe(0);
   });
 
   it('reset restores initial state', () => {
@@ -148,12 +96,11 @@ describe('payloadDumperStore', () => {
     act(() => {
       usePayloadDumperStore.getState().setStatus('extracting');
       usePayloadDumperStore.getState().setCancelTokenId(null);
-      usePayloadDumperStore.getState().setExtractingPartitions(new Set(['boot']));
+      usePayloadProgressStore.getState().setExtractingPartitions(new Set(['boot']));
       usePayloadDumperStore.getState().cancelExtraction();
     });
-    const { status, extractingPartitions } = usePayloadDumperStore.getState();
-    expect(status).toBe('ready');
-    expect(extractingPartitions.size).toBe(0);
+    expect(usePayloadDumperStore.getState().status).toBe('ready');
+    expect(usePayloadProgressStore.getState().extractingPartitions.size).toBe(0);
   });
 
   it('cancelExtraction with token enters cancelling state', () => {

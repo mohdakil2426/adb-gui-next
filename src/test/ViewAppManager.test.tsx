@@ -78,7 +78,7 @@ describe('ViewAppManager', () => {
 
     render(<AppManagerView activeView="apps" />);
 
-    await user.click(screen.getByRole('tab', { name: /installation/i }));
+    await user.click(screen.getByRole('tab', { name: /installed apps/i }));
 
     expect(await screen.findByText('com.example.camera')).toBeInTheDocument();
     expect(await screen.findByText('Camera')).toBeInTheDocument();

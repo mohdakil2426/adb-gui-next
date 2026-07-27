@@ -51,7 +51,7 @@ export function useUtilityActions() {
   }, [allDevices, selectedSerial]);
 
   const handleReboot = async (mode: string, modeId: RebootMode, actionId: string) => {
-    if (loadingAction || sentAction) {
+    if (loadingAction) {
       return;
     }
     setLoadingAction(actionId);
@@ -72,7 +72,7 @@ export function useUtilityActions() {
   };
 
   const handleRestartServer = async () => {
-    if (loadingAction || sentAction) {
+    if (loadingAction) {
       return;
     }
     setLoadingAction('restart_server');
@@ -93,7 +93,7 @@ export function useUtilityActions() {
   };
 
   const handleKillServer = async () => {
-    if (loadingAction || sentAction) {
+    if (loadingAction) {
       return;
     }
     setLoadingAction('kill_server');
@@ -112,7 +112,7 @@ export function useUtilityActions() {
   };
 
   const handleSetActiveSlot = async (slot: string) => {
-    if (loadingAction || sentAction) {
+    if (loadingAction) {
       return;
     }
     setLoadingAction(`set_active_${slot}`);
@@ -131,7 +131,7 @@ export function useUtilityActions() {
   };
 
   const handleFastbootGetVars = async () => {
-    if (loadingAction || sentAction) {
+    if (loadingAction) {
       return;
     }
     setLoadingAction('get_vars');
@@ -192,7 +192,7 @@ export function useUtilityActions() {
     handleSetActiveSlot,
     handleWipeData,
     isEditing,
-    isGlobalLoading: !!loadingAction || !!sentAction,
+    isGlobalLoading: !!loadingAction,
     loadingAction,
     refetchDevices,
     sentAction,

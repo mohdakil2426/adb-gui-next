@@ -5,64 +5,56 @@ import {
   PKG_STATE_LABELS,
   REMOVAL_TIER_CLASSES,
   REMOVAL_TIER_LABELS,
+  REMOVAL_TIER_MEANINGS,
 } from './debloaterUtils';
 
-interface DescriptionPanelProps {
-  pkg: backend.DebloatPackageRow | null;
-}
-
-export function DescriptionPanel({ pkg }: DescriptionPanelProps) {
-  if (!pkg) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-        Select a package to see details.
-      </div>
-    );
-  }
-
-  const tierClasses = REMOVAL_TIER_CLASSES[pkg.removal];
-  const stateClass = PKG_STATE_CLASSES[pkg.state];
-
+/**
+ * Detail for the highlighted row. Mounted only while a row is highlighted —
+ * an always-present empty box reserved vertical space for nothing.
+ */
+export function DescriptionPanel({ pkg }: { pkg: backend.DebloatPackageRow }) {
   return (
-    <div className="flex flex-col gap-2 text-sm">
+    <section className="flex flex-col gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2.5">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium font-mono text-foreground">{pkg.name}</span>
-        {/* State dot + label */}
-        <span className="flex items-center gap-1 text-muted-foreground text-xs">
-          <span className={cn('inline-block size-2 rounded-full', stateClass)} />
+        <span className="min-w-0 truncate font-medium font-mono text-foreground text-mono">
+          {pkg.name}
+        </span>
+        <span className="flex items-center gap-1 text-caption text-muted-foreground">
+          <span
+            aria-hidden="true"
+            className={cn('inline-block size-2 rounded-full', PKG_STATE_CLASSES[pkg.state])}
+          />
           {PKG_STATE_LABELS[pkg.state]}
         </span>
-        {/* Safety badge */}
         <span
           className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 font-medium text-[10px]',
-            tierClasses.badge,
+            'inline-flex items-center rounded-full px-2 py-0.5 font-medium text-caption',
+            REMOVAL_TIER_CLASSES[pkg.removal].badge,
           )}
         >
           {REMOVAL_TIER_LABELS[pkg.removal]}
         </span>
-        {/* List badge */}
-        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-[10px] text-muted-foreground">
+        <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 font-medium text-caption text-muted-foreground">
           {pkg.list}
         </span>
       </div>
 
-      {pkg.description ? (
-        <p className="text-muted-foreground leading-relaxed">{pkg.description}</p>
-      ) : (
-        <p className="text-muted-foreground italic">No description available.</p>
-      )}
+      <p className="text-caption text-muted-foreground">{REMOVAL_TIER_MEANINGS[pkg.removal]}</p>
 
-      <div className="flex flex-wrap gap-4 text-muted-foreground text-xs">
-        <span>
-          <span className="font-medium text-foreground">Dependencies:</span>{' '}
-          {pkg.dependencies.length > 0 ? pkg.dependencies.join(', ') : 'none'}
+      <p className="text-body text-muted-foreground">
+        {pkg.description || 'The debloat list carries no description for this package.'}
+      </p>
+
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-caption text-muted-foreground">
+        <span className="min-w-0">
+          <span className="font-medium text-foreground">Depends on:</span>{' '}
+          {pkg.dependencies.length > 0 ? pkg.dependencies.join(', ') : 'nothing'}
         </span>
-        <span>
+        <span className="min-w-0">
           <span className="font-medium text-foreground">Needed by:</span>{' '}
-          {pkg.neededBy.length > 0 ? pkg.neededBy.join(', ') : 'none'}
+          {pkg.neededBy.length > 0 ? pkg.neededBy.join(', ') : 'nothing'}
         </span>
       </div>
-    </div>
+    </section>
   );
 }

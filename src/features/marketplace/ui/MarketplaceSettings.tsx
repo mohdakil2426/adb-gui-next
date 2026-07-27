@@ -93,7 +93,7 @@ export function MarketplaceSettings() {
 
   return (
     <Dialog onOpenChange={handleOpenChange} open={isSettingsOpen}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-140">
+      <DialogContent className="max-h-[85vh] max-w-140 overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="size-5" />
@@ -113,15 +113,15 @@ export function MarketplaceSettings() {
           <Separator />
 
           <section className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 font-medium text-sm">
+            <div className="flex items-center gap-2 font-medium text-body">
               <GitBranch className="size-4 text-muted-foreground" />
               GitHub session
             </div>
             <div className="rounded-lg border bg-muted/20 p-4">
               <FieldGroup className="gap-4">
                 <div>
-                  <p className="font-medium text-sm">{authStatus}</p>
-                  <p className="mt-1 text-muted-foreground text-xs">
+                  <p className="font-medium text-body">{authStatus}</p>
+                  <p className="mt-1 text-caption text-muted-foreground">
                     Device-flow sign-in is optional and improves GitHub API rate limits without
                     affecting anonymous browsing.
                   </p>
@@ -131,7 +131,7 @@ export function MarketplaceSettings() {
                   <FieldLabel htmlFor="github-oauth-client-id">GitHub OAuth client ID</FieldLabel>
                   <Input
                     autoComplete="off"
-                    className="font-mono text-xs"
+                    className="font-mono text-mono"
                     id="github-oauth-client-id"
                     name="github-oauth-client-id"
                     onChange={(event) => {
@@ -144,7 +144,7 @@ export function MarketplaceSettings() {
                 </Field>
 
                 {githubSession.user ? (
-                  <div className="rounded-lg border bg-background/80 p-3 text-muted-foreground text-xs">
+                  <div className="rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
                     <div className="flex items-center gap-2 text-foreground">
                       <CheckCircle2 className="size-4" />
                       <span className="font-medium">{githubSession.user.login}</span>
@@ -162,9 +162,9 @@ export function MarketplaceSettings() {
                 ) : null}
 
                 {githubDeviceChallenge && isGithubAuthenticating ? (
-                  <div className="rounded-lg border bg-background/80 p-3 text-muted-foreground text-xs">
+                  <div className="rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
                     <p className="font-medium text-foreground">Verification code</p>
-                    <p className="mt-1 font-mono text-foreground text-sm tracking-[0.2em]">
+                    <p className="mt-1 font-mono text-foreground text-title tracking-[0.2em]">
                       {githubDeviceChallenge.challenge.userCode}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -176,11 +176,12 @@ export function MarketplaceSettings() {
                           );
                         }}
                         size="sm"
+                        type="button"
                         variant="outline"
                       >
                         Open verification page
                       </Button>
-                      <Button onClick={cancelGithubSignIn} size="sm" variant="ghost">
+                      <Button onClick={cancelGithubSignIn} size="sm" type="button" variant="ghost">
                         Cancel
                       </Button>
                     </div>
@@ -189,19 +190,20 @@ export function MarketplaceSettings() {
 
                 <div className="flex flex-wrap gap-2">
                   {githubSession.user ? (
-                    <Button onClick={signOutGithub} variant="outline">
-                      <LogOut data-icon="inline-start" />
+                    <Button onClick={signOutGithub} type="button" variant="outline">
+                      <LogOut />
                       Sign out
                     </Button>
                   ) : (
                     <Button
                       disabled={!localClientId.trim() || isGithubAuthenticating}
                       onClick={() => void handleStartGithubSignIn()}
+                      type="button"
                     >
                       {isGithubAuthenticating ? (
-                        <Loader2 className="animate-spin" data-icon="inline-start" />
+                        <Loader2 className="animate-spin" />
                       ) : (
-                        <GitBranch data-icon="inline-start" />
+                        <GitBranch />
                       )}
                       Sign in with GitHub
                     </Button>

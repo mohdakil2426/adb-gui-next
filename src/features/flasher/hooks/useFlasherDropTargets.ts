@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { OnFileDrop, OnFileDropOff } from '@/desktop/runtime';
-import { getFileName } from '@/shared/utils/formatting';
+import { getFileName } from '@/shared/utils/filePath';
 
 type DragTarget = 'none' | 'flash' | 'sideload';
 

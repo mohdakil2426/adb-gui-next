@@ -46,7 +46,7 @@ pub async fn get_debloat_data(
         move || get_device_id(&app, serial.as_deref())
     })
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())??;
 
     if let Some((packages, status)) = cache.get_packages(&device_id) {
         let settings = cache.get_settings(&device_id).unwrap_or_default();
@@ -76,7 +76,7 @@ pub async fn refresh_debloat_data(
         move || get_device_id(&app, serial.as_deref())
     })
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())??;
 
     load_debloat_data(&app, &cache, &device_id, serial.as_deref()).await
 }
@@ -88,34 +88,20 @@ async fn load_debloat_data(
     serial: Option<&str>,
 ) -> CmdResult<DebloatData> {
     let serial_owned = serial.map(str::to_string);
-    let packages = tokio::task::spawn_blocking({
+    // One `load_uad_lists` per load: it was called twice, so every refresh did two
+    // network GETs and two ~1 MB JSON parses, then threw half the work away.
+    let (packages, list_status) = tokio::task::spawn_blocking({
         let app = app.clone();
         let serial_owned = serial_owned.clone();
-        move || {
-            let (uad_packages, _) = load_uad_lists(&app)?;
+        move || -> CmdResult<(Vec<DebloatPackageRow>, DebloatListStatus)> {
+            let (uad_packages, status) = load_uad_lists(&app)?;
             let uad_map = build_uad_map(uad_packages);
-            sync_device_packages(&app, &uad_map, serial_owned.as_deref())
+            let rows = sync_device_packages(&app, &uad_map, serial_owned.as_deref())?;
+            Ok((rows, status))
         }
     })
     .await
     .map_err(|e| e.to_string())??;
-
-    let list_status = tokio::task::spawn_blocking({
-        let app = app.clone();
-        move || {
-            let (_, status) = load_uad_lists(&app).unwrap_or((
-                vec![],
-                DebloatListStatus {
-                    source: "error".to_string(),
-                    last_updated: "unknown".to_string(),
-                    total_entries: 0,
-                },
-            ));
-            status
-        }
-    })
-    .await
-    .map_err(|e| e.to_string())?;
 
     let settings = tokio::task::spawn_blocking({
         let app = app.clone();
@@ -202,7 +188,7 @@ pub async fn create_debloat_backup(
     let serial = serial_opt(serial);
 
     let result = tokio::task::spawn_blocking(move || {
-        let device_id = get_device_id(&app_clone, serial.as_deref());
+        let device_id = get_device_id(&app_clone, serial.as_deref())?;
         let sdk = try_get_android_sdk(&app_clone, serial.as_deref())?;
         create_backup(&app_clone, &device_id, sdk, packages)
     })
@@ -229,7 +215,7 @@ pub async fn list_debloat_backups(
     serial: Option<String>,
 ) -> CmdResult<Vec<BackupSummary>> {
     let serial = serial_opt(serial);
-    let device_id = get_device_id(&app, serial.as_deref());
+    let device_id = get_device_id(&app, serial.as_deref())?;
     tokio::task::spawn_blocking(move || list_backups(&app, &device_id))
         .await
         .map_err(|e| e.to_string())
@@ -244,7 +230,7 @@ pub async fn restore_debloat_backup(
     serial: Option<String>,
 ) -> CmdResult<Vec<DebloatActionResult>> {
     let serial = serial_opt(serial);
-    let device_id = get_device_id(&app, serial.as_deref());
+    let device_id = get_device_id(&app, serial.as_deref())?;
 
     let result = tokio::task::spawn_blocking({
         let file_name = file_name.clone();
@@ -253,22 +239,38 @@ pub async fn restore_debloat_backup(
             let backup = load_backup(&app, &device_id, &file_name)?;
             let sdk = try_get_android_sdk(&app, serial.as_deref())?;
 
-            let mut results = Vec::new();
+            // Group by target state and replay each group as one batch.
+            // Replaying package-by-package cost 3 adb spawns per Disabled entry —
+            // 400-500 spawns for a full 200-500 package snapshot.
+            let mut grouped: [(&str, Vec<String>); 3] =
+                [("restore", Vec::new()), ("disable", Vec::new()), ("uninstall", Vec::new())];
             for snapshot in &backup.packages {
-                let action_str = match snapshot.state {
-                    crate::debloat::PackageState::Enabled => "restore",
-                    crate::debloat::PackageState::Disabled => "disable",
-                    crate::debloat::PackageState::Uninstalled => "uninstall",
+                let slot = match snapshot.state {
+                    crate::debloat::PackageState::Enabled => 0,
+                    crate::debloat::PackageState::Disabled => 1,
+                    crate::debloat::PackageState::Uninstalled => 2,
                 };
-                let mut r = apply_package_actions(
-                    &app,
-                    serial.as_deref(),
-                    std::slice::from_ref(&snapshot.name),
-                    action_str,
-                    sdk,
-                    0,
-                )?;
-                results.append(&mut r);
+                grouped[slot].1.push(snapshot.name.clone());
+            }
+
+            let mut results = Vec::with_capacity(backup.packages.len());
+            for (action_str, packages) in grouped {
+                if packages.is_empty() {
+                    continue;
+                }
+                // `disable` is rejected below API 23; keep the rest of the restore going.
+                if action_str == "disable" && sdk < 23 {
+                    results.extend(packages.into_iter().map(|package_name| DebloatActionResult {
+                        package_name,
+                        success: false,
+                        error: Some("Disable is not supported on API < 23".to_string()),
+                        new_state: crate::debloat::PackageState::Enabled,
+                    }));
+                    continue;
+                }
+                let mut applied =
+                    apply_package_actions(&app, serial.as_deref(), &packages, action_str, sdk, 0)?;
+                results.append(&mut applied);
             }
             Ok::<Vec<DebloatActionResult>, String>(results)
         }
@@ -287,7 +289,7 @@ pub async fn get_debloat_device_settings(
     serial: Option<String>,
 ) -> CmdResult<PerDeviceSettings> {
     let serial = serial_opt(serial);
-    let device_id = get_device_id(&app, serial.as_deref());
+    let device_id = get_device_id(&app, serial.as_deref())?;
     tokio::task::spawn_blocking(move || {
         crate::debloat::backup::load_device_settings(&app, &device_id)
     })
@@ -304,7 +306,7 @@ pub async fn save_debloat_device_settings(
     serial: Option<String>,
 ) -> CmdResult<()> {
     let serial = serial_opt(serial);
-    let device_id = get_device_id(&app, serial.as_deref());
+    let device_id = get_device_id(&app, serial.as_deref())?;
 
     tokio::task::spawn_blocking({
         let settings = settings.clone();

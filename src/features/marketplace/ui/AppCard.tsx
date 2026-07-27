@@ -1,159 +1,101 @@
-import { Check, Download, ExternalLink, Loader2, Package, Star } from 'lucide-react';
-import { memo, useState } from 'react';
+import { ExternalLink, Package, Star } from 'lucide-react';
+import { memo } from 'react';
 import type { backend } from '@/desktop/models';
-import {
-  formatDownloadCount,
-  installMarketplacePackage,
-} from '@/features/marketplace/utils/install';
-import { Button } from '@/shared/ui/button';
+import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
+import { formatDownloadCount } from '@/features/marketplace/utils/install';
 import { Card, CardContent, CardFooter, CardHeader } from '@/shared/ui/card';
-import { cn } from '@/shared/utils/cn';
-import { formatDisplayDate, formatRating } from '@/shared/utils/formatting';
+import { formatDisplayDate, formatRating } from '@/shared/utils/format';
 import { ProviderBadge } from './ProviderBadge';
 
 type MarketplaceApp = backend.MarketplaceApp;
 
 interface AppCardProps {
   app: MarketplaceApp;
-  onSelect: () => void;
+  /** Receives the app so the parent can pass one stable callback for every card. */
+  onSelect: (app: MarketplaceApp) => void;
+  /** Install availability — a blocked target disables install with the reason. */
+  target: InstallTarget;
 }
 
-export const AppCard = memo(function AppCard({ app, onSelect }: AppCardProps) {
-  const [installState, setInstallState] = useState<'idle' | 'running' | 'done'>('idle');
-
-  const handleInstall = async (event: React.MouseEvent) => {
-    event.stopPropagation();
-
-    if (!app.downloadUrl) {
-      onSelect();
-      return;
-    }
-
-    try {
-      setInstallState('running');
-      await installMarketplacePackage(app.name, app.downloadUrl);
-      setInstallState('done');
-      setTimeout(() => {
-        setInstallState('idle');
-      }, 2000);
-    } catch {
-      setInstallState('idle');
-    }
-  };
-
+export const AppCard = memo(function AppCard({ app, onSelect, target }: AppCardProps) {
   const downloadLabel = formatDownloadCount(app.downloadsCount);
 
   return (
-    <Card className="group border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/10 hover:shadow-md">
+    <Card className="gap-0 rounded-lg border-border bg-surface py-0 shadow-none transition-colors duration-90 ease-standard hover:border-border-strong">
       <button
         aria-label={`View details for ${app.name}`}
         className="w-full cursor-pointer text-left"
-        onClick={onSelect}
+        onClick={() => {
+          onSelect(app);
+        }}
         type="button"
       >
-        <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
-          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-muted/40">
+        <CardHeader className="flex flex-row items-start gap-3 px-3 pt-3">
+          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
             {app.iconUrl ? (
               <img
                 alt=""
-                className="size-12 object-cover"
-                height={48}
+                className="size-10 object-cover"
+                height={40}
                 loading="lazy"
                 onError={(event) => {
                   (event.target as HTMLImageElement).style.display = 'none';
                 }}
                 src={app.iconUrl}
-                width={48}
+                width={40}
               />
             ) : (
-              <Package className="size-5 text-muted-foreground" />
+              <Package aria-hidden="true" className="size-4 text-muted-foreground" />
             )}
           </div>
 
-          <div className="min-w-0 flex-1 gap-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="truncate font-semibold text-sm leading-none">{app.name}</h3>
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <h3 className="min-w-0 truncate font-semibold text-body text-foreground">
+                {app.name}
+              </h3>
               <ProviderBadge source={app.source} />
-              {app.availableSources.length > 1 && (
-                <span className="text-[10px] text-muted-foreground">
-                  +{app.availableSources.length - 1} more source
-                  {app.availableSources.length > 2 ? 's' : ''}
-                </span>
-              )}
             </div>
-            <p className="text-muted-foreground text-xs">
-              {app.version || 'Version info unavailable'}
+            <p className="truncate font-mono text-mono-sm text-muted-foreground">
+              {app.packageName}
             </p>
           </div>
         </CardHeader>
-        <CardContent className="gap-4 p-4 pt-2">
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-                {app.summary || 'No description available yet.'}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
-            {app.rating != null && app.rating > 0 && (
+        <CardContent className="flex flex-col gap-2 px-3 pt-2">
+          <p className="line-clamp-2 text-body text-muted-foreground">
+            {app.summary || 'No description available yet.'}
+          </p>
+
+          <div className="numeric flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-muted-foreground">
+            <span>{app.version || 'Version unknown'}</span>
+            {app.rating != null && app.rating > 0 ? (
               <span className="flex items-center gap-1">
-                <Star className="size-3.5 fill-current text-foreground" />
+                <Star aria-hidden="true" className="size-3 fill-current" />
                 {formatRating(app.rating)}
               </span>
-            )}
-            {downloadLabel ? <span>{downloadLabel}</span> : null}
-            {app.language ? (
-              <span className="rounded bg-muted px-1.5 py-0.5 font-medium text-[10px]">
-                {app.language}
+            ) : null}
+            {downloadLabel ? <span>{downloadLabel} downloads</span> : null}
+            {app.updatedAt ? <span>{formatDisplayDate(app.updatedAt)}</span> : null}
+            {app.availableSources.length > 1 ? (
+              <span>
+                +{app.availableSources.length - 1} more source
+                {app.availableSources.length > 2 ? 's' : ''}
               </span>
             ) : null}
-            {app.updatedAt ? <span>{formatDisplayDate(app.updatedAt)}</span> : null}
             {!app.installable && app.repoUrl ? (
               <span className="inline-flex items-center gap-1">
-                <ExternalLink className="size-3.5" />
+                <ExternalLink aria-hidden="true" className="size-3" />
                 Repo only
               </span>
             ) : null}
           </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[11px] text-muted-foreground">
-              {app.installable
-                ? 'Ready to install over ADB'
-                : 'Open details to inspect this source'}
-            </p>
-          </div>
         </CardContent>
       </button>
-      <CardFooter className="justify-end p-4 pt-0">
-        <Button
-          aria-label={app.downloadUrl ? `Install ${app.name}` : `View details for ${app.name}`}
-          className={cn('h-8 shrink-0 gap-1.5', installState === 'done' && 'pointer-events-none')}
-          disabled={installState === 'running'}
-          onClick={handleInstall}
-          size="sm"
-          variant={installState === 'done' ? 'default' : 'outline'}
-        >
-          {installState === 'done' ? (
-            <Check data-icon="inline-start" />
-          ) : installState === 'idle' ? (
-            app.downloadUrl ? (
-              <Download data-icon="inline-start" />
-            ) : (
-              <ExternalLink data-icon="inline-start" />
-            )
-          ) : (
-            <Loader2 className="animate-spin" data-icon="inline-start" />
-          )}
-          {installState === 'running'
-            ? 'Installing'
-            : installState === 'done'
-              ? 'Installed'
-              : app.downloadUrl
-                ? 'Install'
-                : 'View details'}
-        </Button>
+
+      <CardFooter className="justify-end px-3 py-3">
+        <AppInstallButton app={app} onSelect={onSelect} target={target} />
       </CardFooter>
     </Card>
   );

@@ -5,6 +5,7 @@
 //! parses those ZIP central directories with HTTP ranges and streams only the selected images.
 
 use super::http::HttpPayloadReader;
+use super::progress::ProgressThrottle;
 use super::session;
 use crate::payload::cancel::CancellationToken;
 use crate::payload::io::NonTemporalWriter;
@@ -220,6 +221,8 @@ pub async fn extract_remote_factory_images(
     std::fs::create_dir_all(&output_dir)?;
 
     let mut extracted_files = Vec::with_capacity(entries_to_extract.len());
+    // One shared emission budget for the whole extraction, not one per chunk.
+    let throttle = ProgressThrottle::new();
     for entry in entries_to_extract {
         if cancel_token.is_some_and(CancellationToken::is_cancelled) {
             return cancelled_factory_result(&output_dir, extracted_files);
@@ -232,6 +235,7 @@ pub async fn extract_remote_factory_images(
             &entry,
             &output_path,
             app_handle.as_ref(),
+            &throttle,
             cancel_token,
         )
         .await
@@ -556,6 +560,7 @@ async fn extract_factory_entry(
     entry: &FactoryImageEntry,
     output_path: &Path,
     app_handle: Option<&AppHandle>,
+    throttle: &ProgressThrottle,
     cancel_token: Option<&CancellationToken>,
 ) -> Result<()> {
     if entry.compression_method != 0 && entry.compression_method != 8 {
@@ -568,7 +573,14 @@ async fn extract_factory_entry(
 
     let mut writer = NonTemporalWriter::new(output_path, entry.uncompressed_size)?;
     let mut written = 0u64;
-    emit_progress(app_handle, &entry.partition_name, written, entry.uncompressed_size, false);
+    emit_progress(
+        app_handle,
+        throttle,
+        &entry.partition_name,
+        written,
+        entry.uncompressed_size,
+        false,
+    );
 
     if entry.compression_method == 0 {
         let mut offset = 0u64;
@@ -583,6 +595,7 @@ async fn extract_factory_entry(
             written += chunk.len() as u64;
             emit_progress(
                 app_handle,
+                throttle,
                 &entry.partition_name,
                 written,
                 entry.uncompressed_size,
@@ -627,6 +640,7 @@ async fn extract_factory_entry(
             written += n as u64;
             emit_progress(
                 app_handle,
+                throttle,
                 &entry.partition_name,
                 written,
                 entry.uncompressed_size,
@@ -638,6 +652,7 @@ async fn extract_factory_entry(
     writer.flush()?;
     emit_progress(
         app_handle,
+        throttle,
         &entry.partition_name,
         entry.uncompressed_size,
         entry.uncompressed_size,
@@ -653,15 +668,23 @@ fn ensure_not_cancelled(cancel_token: Option<&CancellationToken>) -> Result<()> 
     Ok(())
 }
 
+/// Emit a `payload:progress` event, subject to the shared emission budget.
+///
+/// Without the budget this fires once per 8 MiB range chunk and once per 256 KiB
+/// inflate chunk — thousands of IPC messages per image. `completed` events always
+/// go out so the UI still reaches 100%.
 #[cfg(feature = "remote_zip")]
 fn emit_progress(
     app_handle: Option<&AppHandle>,
+    throttle: &ProgressThrottle,
     partition_name: &str,
     current: u64,
     total: u64,
     completed: bool,
 ) {
-    if let Some(handle) = app_handle {
+    if let Some(handle) = app_handle
+        && throttle.should_emit(completed)
+    {
         let _ = handle.emit(
             "payload:progress",
             serde_json::json!({

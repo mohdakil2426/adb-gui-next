@@ -1,19 +1,20 @@
 import { Loader2 } from 'lucide-react';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '@/shared/ui/button';
 
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
-  /** Icon to show when not loading */
-  icon: React.ReactNode;
-  /** Whether the button should show a spinner and be disabled */
+  /** Icon shown when idle. Swapped for a spinner while `isLoading`. */
+  icon: ReactNode;
+  /** Shows a spinner and disables the button. */
   isLoading: boolean;
-  /** Optional label override shown while loading (e.g. "Flashing...") */
+  /** Label substituted while loading — end it with an ellipsis character. */
   loadingLabel?: string;
 }
 
 /**
- * A Button with a built-in loading state that replaces the icon with a spinner
- * and optionally substitutes a different label while the action is in progress.
+ * A `Button` that swaps its icon for a spinner and optionally its label while an
+ * action runs. Spacing comes from the button's own `gap-2`; the icon carries no
+ * margin of its own.
  */
 export function LoadingButton({
   isLoading,
@@ -21,11 +22,19 @@ export function LoadingButton({
   loadingLabel,
   children,
   disabled,
+  size = 'sm',
+  type = 'button',
   ...props
 }: LoadingButtonProps) {
   return (
-    <Button disabled={disabled ?? isLoading} {...props}>
-      {isLoading ? <Loader2 className="mr-2 size-4 animate-spin" /> : icon}
+    <Button
+      aria-busy={isLoading}
+      disabled={disabled ?? isLoading}
+      size={size}
+      type={type}
+      {...props}
+    >
+      {isLoading ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : icon}
       {isLoading && loadingLabel ? loadingLabel : children}
     </Button>
   );

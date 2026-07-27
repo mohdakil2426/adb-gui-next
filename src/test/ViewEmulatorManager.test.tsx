@@ -10,6 +10,8 @@ const getAvdRestorePlanMock = vi.fn();
 vi.mock('@/shared/utils/queries', () => ({
   queryKeys: { avds: () => ['avds'] },
   fetchAvds: () => fetchAvdsMock(),
+  invalidateAvds: vi.fn(),
+  STALE_TIME: { EMULATOR_LIST: 30_000 },
 }));
 
 vi.mock('@/desktop/backend', () => ({

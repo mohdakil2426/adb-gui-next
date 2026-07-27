@@ -1,28 +1,22 @@
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/shared/ui/alert-dialog';
+import { useState } from 'react';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { Button } from '@/shared/ui/button';
-import { buttonVariants } from '@/shared/ui/button-variants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 export function DangerZoneCard({
   disabled,
   isLoading,
   onWipe,
+  serial,
 }: {
   disabled: boolean;
   isLoading: boolean;
   onWipe: () => void;
+  serial: string | null;
 }) {
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <Card className="border-destructive">
       <CardHeader>
@@ -35,37 +29,38 @@ export function DangerZoneCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="w-full" disabled={disabled} variant="destructive">
-              {isLoading ? (
-                <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 size-4 shrink-0" />
-              )}
-              Wipe Data (Factory Reset)
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently erase all user data (photos,
-                files, settings) from your device, performing a full factory reset.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className={buttonVariants({ variant: 'destructive' })}
-                onClick={onWipe}
-              >
-                Yes, Wipe Data
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button
+          className="w-full"
+          disabled={disabled}
+          onClick={() => {
+            setConfirming(true);
+          }}
+          variant="destructive"
+        >
+          {isLoading ? (
+            <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
+          ) : (
+            <Trash2 className="mr-2 size-4 shrink-0" />
+          )}
+          Wipe Data (Factory Reset)
+        </Button>
       </CardContent>
+
+      <ConfirmDialog
+        confirmLabel="Yes, Wipe Data"
+        consequence={
+          <p>
+            All photos, files, accounts and settings are erased. There is no undo and no backup is
+            taken.
+          </p>
+        }
+        description="Performs a full factory reset by erasing the userdata partition over fastboot."
+        details={[{ label: 'Target', mono: true, value: serial ?? 'the selected device' }]}
+        onConfirm={onWipe}
+        onOpenChange={setConfirming}
+        open={confirming}
+        title="Erase all user data?"
+      />
     </Card>
   );
 }

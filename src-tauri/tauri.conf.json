@@ -25,9 +25,9 @@
       "csp": {
         "default-src": "'self' ipc: http://ipc.localhost asset: http://asset.localhost",
         "connect-src": "ipc: http://ipc.localhost",
-        "font-src": "'self' https://fonts.gstatic.com",
+        "font-src": "'self'",
         "img-src": "'self' asset: http://asset.localhost data: blob:",
-        "style-src": "'unsafe-inline' 'self' https://fonts.googleapis.com",
+        "style-src": "'unsafe-inline' 'self'",
         "script-src": "'self'"
       },
       "freezePrototype": true

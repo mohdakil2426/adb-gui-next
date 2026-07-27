@@ -1,35 +1,37 @@
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 import { MarketplaceGetAppDetail } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import {
   getMarketplaceEffectiveGithubToken,
   useMarketplaceStore,
 } from '@/features/marketplace/model/marketplaceStore';
 import { AppDetailHero } from '@/features/marketplace/ui/app-detail/AppDetailHero';
 import { AppDetailSidebar } from '@/features/marketplace/ui/app-detail/AppDetailSidebar';
+import { AppDetailSkeleton } from '@/features/marketplace/ui/app-detail/AppDetailSkeleton';
 import { AppDetailVersions } from '@/features/marketplace/ui/app-detail/AppDetailVersions';
+import { AppScreenshots } from '@/features/marketplace/ui/app-detail/AppScreenshots';
 import {
   formatDownloadCount,
   installMarketplacePackage,
 } from '@/features/marketplace/utils/install';
 import { Button } from '@/shared/ui/button';
-import { Skeleton } from '@/shared/ui/skeleton';
 import { handleError } from '@/shared/utils/errorHandler';
 
 type AppDetail = backend.MarketplaceAppDetail;
+type InstallState = 'idle' | 'running' | 'done';
 
-export function AppDetailView() {
+const DONE_RESET_MS = 2000;
+
+export function AppDetailView({ target }: { target: InstallTarget }) {
   const selectedApp = useMarketplaceStore((state) => state.selectedApp);
   const closeDetail = useMarketplaceStore((state) => state.closeDetail);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [detail, setDetail] = useState<AppDetail | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
-  const [primaryInstallState, setPrimaryInstallState] = useState<'idle' | 'running' | 'done'>(
-    'idle',
-  );
+  const [primaryInstallState, setPrimaryInstallState] = useState<InstallState>('idle');
   const [activeVersionName, setActiveVersionName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,6 +43,7 @@ export function AppDetailView() {
     }
 
     let cancelled = false;
+    setDetail(null);
     setIsLoadingDetail(true);
 
     MarketplaceGetAppDetail(selectedApp.packageName, selectedApp.source, githubToken)
@@ -74,7 +77,6 @@ export function AppDetailView() {
 
   const handlePrimaryInstall = async () => {
     if (!effectiveDownloadUrl) {
-      toast.error('No downloadable APK is available for this app');
       return;
     }
     try {
@@ -83,7 +85,7 @@ export function AppDetailView() {
       setPrimaryInstallState('done');
       setTimeout(() => {
         setPrimaryInstallState('idle');
-      }, 2000);
+      }, DONE_RESET_MS);
     } catch {
       setPrimaryInstallState('idle');
     }
@@ -93,8 +95,7 @@ export function AppDetailView() {
     try {
       setActiveVersionName(versionName);
       await installMarketplacePackage(`${displayName} ${versionName}`, downloadUrl);
-      setActiveVersionName(null);
-    } catch {
+    } finally {
       setActiveVersionName(null);
     }
   };
@@ -103,101 +104,94 @@ export function AppDetailView() {
     return null;
   }
 
+  const canInstall = Boolean(effectiveDownloadUrl) && target.canInstall;
+  const blockedReason = effectiveDownloadUrl
+    ? target.blockedReason
+    : 'This source publishes no downloadable APK for this app. Open the repository to get one.';
+
   return (
-    <div className="fade-in mt-2 flex animate-in flex-col gap-8 pb-12 duration-300">
+    <div className="flex flex-col gap-5">
       <div>
-        <Button
-          className="-ml-3 text-muted-foreground hover:text-foreground"
-          onClick={closeDetail}
-          size="sm"
-          variant="ghost"
-        >
-          <ArrowLeft aria-hidden="true" className="mr-2 size-4" />
+        <Button className="-ml-2" onClick={closeDetail} size="sm" type="button" variant="ghost">
+          <ArrowLeft aria-hidden="true" />
           Back to results
         </Button>
       </div>
 
       <AppDetailHero
-        canInstall={Boolean(effectiveDownloadUrl)}
+        blockedReason={blockedReason}
+        canInstall={canInstall}
         displayName={displayName}
         downloadsLabel={downloadsLabel}
         iconUrl={selectedApp.iconUrl}
         installSize={detail?.size}
         installState={primaryInstallState}
-        onInstall={handlePrimaryInstall}
+        onInstall={() => {
+          void handlePrimaryInstall();
+        }}
         packageName={detail?.packageName ?? selectedApp.packageName}
         repoStars={detail?.repoStars}
         source={selectedApp.source}
       />
 
-      {isLoadingDetail ? (
-        <div className="flex items-center gap-3">
-          <Skeleton className="size-4 rounded-full" />
-          <Skeleton className="h-4 w-56" />
-        </div>
-      ) : null}
+      {isLoadingDetail && !detail ? (
+        <AppDetailSkeleton />
+      ) : (
+        <>
+          {detail?.screenshots && detail.screenshots.length > 0 ? (
+            <AppScreenshots appName={displayName} urls={detail.screenshots} />
+          ) : null}
 
-      {detail?.screenshots && detail.screenshots.length > 0 ? (
-        <section className="gap-4">
-          <div className="custom-scroll flex snap-x gap-4 overflow-x-auto pb-4">
-            {detail.screenshots.map((url) => (
-              <img
-                alt=""
-                className="h-64 shrink-0 snap-start rounded-xl border bg-muted/20 object-contain shadow-sm sm:h-80"
-                height={320}
-                key={url}
-                loading="lazy"
-                src={url}
-                width={320}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
+          <div className="grid @2xl:grid-cols-[1fr_280px] gap-6">
+            <div className="flex min-w-0 flex-col gap-5">
+              <section className="flex flex-col gap-2">
+                <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+                  About this app
+                </h2>
+                <p className="whitespace-pre-wrap text-body text-muted-foreground">
+                  {detail?.description ??
+                    selectedApp.summary ??
+                    'No description is available for this app yet.'}
+                </p>
+              </section>
 
-      <div className="grid gap-12 lg:grid-cols-[1fr_300px]">
-        <div className="min-w-0 gap-10">
-          <section className="gap-4">
-            <h2 className="font-semibold text-xl tracking-tight">About this app</h2>
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-muted-foreground leading-relaxed">
-              {detail?.description ??
-                selectedApp.summary ??
-                'No description is available for this app yet.'}
+              {detail?.changelog ? (
+                <section className="flex flex-col gap-2">
+                  <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+                    What's new
+                  </h2>
+                  <p className="whitespace-pre-wrap rounded-lg border border-border bg-surface-raised p-3 text-body text-muted-foreground">
+                    {detail.changelog}
+                  </p>
+                </section>
+              ) : null}
             </div>
-          </section>
 
-          {detail?.changelog ? (
-            <section className="gap-4">
-              <h2 className="font-semibold text-xl tracking-tight">What's New</h2>
-              <div className="whitespace-pre-wrap rounded-xl border bg-muted/10 p-5 text-muted-foreground text-sm leading-relaxed">
-                {detail.changelog}
-              </div>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="gap-8">
-          <AppDetailSidebar
-            author={detail?.author}
-            license={detail?.license}
-            packageName={detail?.packageName ?? selectedApp.packageName}
-            repoUrl={detail?.repoUrl ?? selectedApp.repoUrl}
-            source={selectedApp.source}
-            updatedAt={detail?.updatedAt}
-            version={detail?.version ?? selectedApp.version}
-          />
-          {detail?.versions && detail.versions.length > 0 ? (
-            <AppDetailVersions
-              activeVersionName={activeVersionName}
-              isPrimaryInstalling={primaryInstallState === 'running'}
-              onInstallVersion={(versionName, downloadUrl) => {
-                void handleVersionInstall(versionName, downloadUrl);
-              }}
-              versions={detail.versions}
-            />
-          ) : null}
-        </div>
-      </div>
+            <div className="flex flex-col gap-5">
+              <AppDetailSidebar
+                author={detail?.author}
+                license={detail?.license}
+                packageName={detail?.packageName ?? selectedApp.packageName}
+                repoUrl={detail?.repoUrl ?? selectedApp.repoUrl}
+                source={selectedApp.source}
+                updatedAt={detail?.updatedAt}
+                version={detail?.version ?? selectedApp.version}
+              />
+              {detail?.versions && detail.versions.length > 0 ? (
+                <AppDetailVersions
+                  activeVersionName={activeVersionName}
+                  canInstall={target.canInstall}
+                  isPrimaryInstalling={primaryInstallState === 'running'}
+                  onInstallVersion={(versionName, downloadUrl) => {
+                    void handleVersionInstall(versionName, downloadUrl);
+                  }}
+                  versions={detail.versions}
+                />
+              ) : null}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

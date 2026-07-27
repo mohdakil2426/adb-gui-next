@@ -49,8 +49,9 @@ export function EditNicknameDialog({
         <DialogHeader>
           <DialogTitle>Edit Nickname</DialogTitle>
           <DialogDescription>
-            Give a nickname to the device:
-            <span className="mt-2 block font-mono text-foreground">{serial}</span>
+            A nickname replaces the serial wherever this device is shown. It is stored on this
+            computer only.
+            <span className="mt-2 block font-mono text-foreground text-mono">{serial}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -80,11 +81,15 @@ export function EditNicknameDialog({
             onClick={() => {
               onOpenChange(false);
             }}
+            size="sm"
+            type="button"
             variant="outline"
           >
             Cancel
           </Button>
-          <Button onClick={handleSaveNickname}>Save</Button>
+          <Button onClick={handleSaveNickname} size="sm" type="button">
+            Save
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,251 +1,231 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { toast } from 'sonner';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { CircleAlert, Radar } from 'lucide-react';
+import { type ReactNode, useCallback, useState } from 'react';
+import { useDeviceTelemetry } from '@/features/dashboard/hooks/useDeviceTelemetry';
+import { useRebootActions } from '@/features/dashboard/hooks/useRebootActions';
+import { useWirelessAdb } from '@/features/dashboard/hooks/useWirelessAdb';
 import {
-  ConnectWirelessAdb,
-  DisconnectWirelessAdb,
-  EnableWirelessAdb,
-  GetDeviceInfo,
-} from '@/desktop/backend';
-import type { backend } from '@/desktop/models';
-import { DeviceInfoCard } from '@/features/dashboard/ui/DeviceInfoCard';
-import { WirelessAdbCard } from '@/features/dashboard/ui/WirelessAdbCard';
-import { ConnectedDevicesCard } from '@/shared/components/ConnectedDevicesCard';
-import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
+  getDeviceMode,
+  isWirelessSerial,
+  supportsTelemetry,
+  telemetryBlockedReason,
+} from '@/features/dashboard/model/deviceMode';
+import { useMemorySamples } from '@/features/dashboard/model/memoryHistoryStore';
+import { BatteryPanel } from '@/features/dashboard/ui/BatteryPanel';
+import { IdentityPanel } from '@/features/dashboard/ui/IdentityPanel';
+import { MemoryPanel } from '@/features/dashboard/ui/MemoryPanel';
+import { NoDeviceOnboarding } from '@/features/dashboard/ui/NoDeviceOnboarding';
+import { PanelCard } from '@/features/dashboard/ui/PanelCard';
+import { QuickActionsPanel } from '@/features/dashboard/ui/QuickActionsPanel';
+import { RebootConfirmDialog } from '@/features/dashboard/ui/RebootConfirmDialog';
+import { SecurityPanel } from '@/features/dashboard/ui/SecurityPanel';
+import { StoragePanel } from '@/features/dashboard/ui/StoragePanel';
+import { WirelessAdbPanel } from '@/features/dashboard/ui/WirelessAdbPanel';
+import { RefreshButton } from '@/shared/components/RefreshButton';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
-import { useWirelessAdbStore } from '@/shared/stores/wirelessAdbStore';
-import { debugLog } from '@/shared/utils/debug';
-import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
-import { queryKeys } from '@/shared/utils/queries';
-import { type WirelessAdbValues, wirelessAdbSchema } from '@/shared/utils/schemas';
+import { useLogStore } from '@/shared/stores/logStore';
+import { Button } from '@/shared/ui/button';
+import { invalidateDevices, queryKeys } from '@/shared/utils/queries';
+
+const updatedAtFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
+
+/**
+ * Shared shape for the two "row of three" groups below (vitals; security +
+ * actions) — same-weight panels, grouped by meaning rather than forced into a
+ * fixed 2/1 split.
+ *
+ * Container queries, not viewport ones: the window is never below 1024px
+ * (`minWidth` in `tauri.conf.json`), so `sm:`/`md:` could never evaluate false,
+ * and what actually varies is this column's width as the sidebar collapses
+ * (16rem expanded ↔ 3rem icon-only).
+ *
+ * The steps are measured, not guessed. At the 1024px window minimum with the
+ * sidebar expanded the container is 1024 − 256 − 40 (p-5) − 10 (scrollbar
+ * gutter) ≈ 718px. Going straight to three columns there gives ~228px per
+ * panel, which truncates real values on a large device ("109.9 GB of 512.0 GB"
+ * beside "402.1 GB free"). So there is a two-column step first:
+ *   < 32rem  → 1 column
+ *   ≥ 32rem  → 2 columns (~351px each at the 718px minimum)
+ *   ≥ 56rem  → 3 columns (~314px each at a 1280px window, sidebar expanded)
+ *
+ * `items-start` stops a shorter card stretching to match a taller neighbour —
+ * same-kind panels can still differ in natural height (Storage lists a variable
+ * number of volumes), and that is an honest content difference, not the old
+ * rigid pairing.
+ *
+ * In the two-column step a third panel would otherwise sit alone beside a gap.
+ * `:nth-child(odd):last-child` matches an item that is both last and in an odd
+ * slot — i.e. exactly the one that would be stranded — so it spans the full
+ * row. It deliberately does not fire when only two panels render (telemetry
+ * blocked hides Security), where the row is already balanced.
+ */
+const TRIO_GRID_CLASS = [
+  'grid grid-cols-1 items-start gap-4',
+  '@lg:grid-cols-2 @4xl:grid-cols-3',
+  '@lg:[&>*:nth-child(odd):last-child]:col-span-2',
+  '@4xl:[&>*:nth-child(odd):last-child]:col-span-1',
+].join(' ');
+
+function TelemetryNotice({
+  action,
+  message,
+  title,
+}: {
+  action?: ReactNode | undefined;
+  message: string;
+  title: string;
+}) {
+  return (
+    <PanelCard icon={CircleAlert} title={title}>
+      <div className="flex flex-col items-start gap-3">
+        <p className="text-body text-muted-foreground">{message}</p>
+        {action}
+      </div>
+    </PanelCard>
+  );
+}
 
 export function ViewDashboard({ activeView }: { activeView: string }) {
-  const queriedDevices = useDeviceStore((state) => state.devices);
+  const devices = useDeviceStore((state) => state.devices);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
-  const deviceInfo = useDeviceStore((state) => state.deviceInfo);
-  const setDeviceInfo = useDeviceStore((state) => state.setDeviceInfo);
-  const persistedIp = useWirelessAdbStore((state) => state.persistedIp);
-  const persistedPort = useWirelessAdbStore((state) => state.persistedPort);
-  const setPersistedIp = useWirelessAdbStore((state) => state.setPersistedIp);
-  const setPersistedPort = useWirelessAdbStore((state) => state.setPersistedPort);
-  const isCollapsibleOpen = useWirelessAdbStore((state) => state.isCollapsibleOpen);
-  const setIsCollapsibleOpen = useWirelessAdbStore((state) => state.setIsCollapsibleOpen);
+  const setActiveTab = useLogStore((state) => state.setActiveTab);
+  const setPanelOpen = useLogStore((state) => state.setPanelOpen);
   const queryClient = useQueryClient();
-  const [isRefreshingInfo, setIsRefreshingInfo] = useState(false);
-  const [isEnablingTcpip, setIsEnablingTcpip] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const isEditing = useDeviceStore((state) => state.isEditingNickname);
-  const setIsEditing = useDeviceStore((state) => state.setIsEditingNickname);
-  const editingSerial = useDeviceStore((state) => state.editingDeviceSerial);
-  const setEditingSerial = useDeviceStore((state) => state.setEditingDeviceSerial);
-  const selectedDevice = queriedDevices.find((device) => device.serial === selectedSerial);
-  const dashboardMode =
-    selectedDevice && (selectedDevice.status === 'device' || selectedDevice.status === 'recovery')
-      ? 'adb'
-      : selectedDevice &&
-          (selectedDevice.status === 'fastboot' || selectedDevice.status === 'bootloader')
-        ? 'fastboot'
-        : 'unknown';
+  const [showWirelessPairing, setShowWirelessPairing] = useState(false);
 
-  const wirelessForm = useForm<WirelessAdbValues>({
-    resolver: zodResolver(wirelessAdbSchema),
-    defaultValues: { ip: persistedIp || '', port: persistedPort || '5555' },
-  });
+  const selectedDevice = devices.find((device) => device.serial === selectedSerial) ?? null;
+  const mode = getDeviceMode(selectedDevice);
+  const canReadTelemetry = supportsTelemetry(selectedDevice);
 
-  const refreshDevices = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.allDevices() });
+  const { telemetry, isLoading, isFetching, error, updatedAt, refresh } = useDeviceTelemetry(
+    selectedSerial,
+    activeView === 'dashboard' && canReadTelemetry,
+  );
+  const samples = useMemorySamples(selectedSerial);
+  const wireless = useWirelessAdb(selectedSerial, telemetry?.network.ipAddress ?? null);
+  const reboot = useRebootActions(selectedSerial);
+
+  const isScanningDevices = useIsFetching({ queryKey: queryKeys.allDevices() }) > 0;
+
+  const scanAgain = useCallback(() => {
+    invalidateDevices(queryClient);
   }, [queryClient]);
 
-  const refreshInfo = useCallback(async () => {
-    if (!selectedSerial) {
-      setDeviceInfo(null);
-      return;
-    }
+  const openShell = useCallback(() => {
+    setActiveTab('shell');
+    setPanelOpen(true);
+  }, [setActiveTab, setPanelOpen]);
 
-    setIsRefreshingInfo(true);
-    try {
-      debugLog('Refreshing device info');
-      const result = await GetDeviceInfo(selectedSerial);
-      setDeviceInfo(result);
-      debugLog('Device info refreshed:', result);
-    } catch (error) {
-      handleError('Refresh Device Info', error);
-      setDeviceInfo(null);
-    } finally {
-      setIsRefreshingInfo(false);
-    }
-  }, [selectedSerial, setDeviceInfo]);
+  const toggleWirelessPairing = useCallback(() => {
+    setShowWirelessPairing((open) => !open);
+  }, []);
 
-  useEffect(() => {
-    if (activeView === 'dashboard' && selectedSerial && !deviceInfo) {
-      void refreshInfo();
-    }
-  }, [activeView, selectedSerial, deviceInfo, refreshInfo]);
+  if (!selectedDevice) {
+    return (
+      <>
+        <h1 className="sr-only">Dashboard</h1>
+        <NoDeviceOnboarding
+          isScanning={isScanningDevices}
+          onScanAgain={scanAgain}
+          onToggleWireless={toggleWirelessPairing}
+          showWireless={showWirelessPairing}
+          wireless={wireless}
+        />
+      </>
+    );
+  }
 
-  useEffect(() => {
-    if (deviceInfo?.ipAddress && !deviceInfo.ipAddress.startsWith('N/A')) {
-      wirelessForm.setValue('ip', deviceInfo.ipAddress, {
-        shouldValidate: false,
-      });
-      setPersistedIp(deviceInfo.ipAddress);
-    }
-  }, [deviceInfo?.ipAddress, wirelessForm, setPersistedIp]);
-
-  const watchedIp = useWatch({
-    control: wirelessForm.control,
-    name: 'ip',
-    defaultValue: '',
-  });
-  const watchedPort = useWatch({
-    control: wirelessForm.control,
-    name: 'port',
-    defaultValue: persistedPort || '5555',
-  });
-
-  useEffect(() => {
-    if (watchedIp) {
-      setPersistedIp(watchedIp);
-    }
-  }, [watchedIp, setPersistedIp]);
-
-  useEffect(() => {
-    if (watchedPort) {
-      setPersistedPort(watchedPort);
-    }
-  }, [watchedPort, setPersistedPort]);
-
-  const handleEnableTcpip = async () => {
-    setIsEnablingTcpip(true);
-    const toastId = toast.loading('Enabling wireless mode (port 5555)...', {
-      description: 'Please wait... Device must be connected via USB.',
-    });
-    try {
-      debugLog('Enabling wireless ADB on port 5555');
-      const output = await EnableWirelessAdb('5555', selectedSerial);
-      toast.success('Wireless mode enabled!', {
-        id: toastId,
-        description: output,
-      });
-      handleSuccess('Wireless ADB', `Wireless mode enabled: ${output}`);
-      refreshDevices();
-    } catch (error) {
-      toast.error('Failed to enable wireless mode', { id: toastId });
-      handleError('Enable Wireless ADB', error);
-    }
-    setIsEnablingTcpip(false);
-  };
-
-  const handleConnect = async (values: WirelessAdbValues) => {
-    setIsConnecting(true);
-    const toastId = toast.loading(`Connecting to ${values.ip}:${values.port}...`);
-    try {
-      debugLog(`Connecting to ${values.ip}:${values.port}`);
-      const output = await ConnectWirelessAdb(values.ip, values.port);
-      toast.success('Connection successful!', {
-        id: toastId,
-        description: output,
-      });
-      handleSuccess('Wireless ADB', `Connected to ${values.ip}:${values.port}: ${output}`);
-      refreshDevices();
-    } catch (error) {
-      toast.error('Connection failed', { id: toastId });
-      handleError('Wireless ADB Connect', error);
-    }
-    setIsConnecting(false);
-  };
-
-  const handleDisconnect = async () => {
-    const values = wirelessForm.getValues();
-    const parsed = wirelessAdbSchema.safeParse(values);
-    if (!parsed.success) {
-      toast.error('Invalid input', {
-        description: parsed.error.issues[0]?.message ?? 'Unknown error',
-      });
-      return;
-    }
-    setIsDisconnecting(true);
-    const toastId = toast.loading(`Disconnecting from ${values.ip}:${values.port}...`);
-    try {
-      debugLog(`Disconnecting from ${values.ip}:${values.port}`);
-      const output = await DisconnectWirelessAdb(values.ip, values.port);
-      toast.success('Disconnected', { id: toastId, description: output });
-      handleSuccess('Wireless ADB', `Disconnected from ${values.ip}:${values.port}: ${output}`);
-      refreshDevices();
-    } catch (error) {
-      toast.error('Disconnect failed', { id: toastId });
-      handleError('Wireless ADB Disconnect', error);
-    }
-    setIsDisconnecting(false);
-  };
-
-  const openEditDialog = useCallback(
-    (device: backend.Device) => {
-      setEditingSerial(device.serial);
-      setIsEditing(true);
-    },
-    [setEditingSerial, setIsEditing],
+  const deviceLabel = `${selectedDevice.serial} · ${selectedDevice.status}`;
+  const quickActions = (
+    <QuickActionsPanel
+      isDisabled={mode === 'unavailable'}
+      mode={mode}
+      onOpenShell={openShell}
+      onReboot={reboot.request}
+      runningTarget={reboot.runningTarget}
+    />
+  );
+  const wirelessPanel = (
+    <WirelessAdbPanel
+      isConnected={isWirelessSerial(selectedDevice.serial)}
+      showEnableStep={mode === 'adb' && !isWirelessSerial(selectedDevice.serial)}
+      wireless={wireless}
+    />
   );
 
-  const handleNicknameSaved = useCallback(() => {
-    refreshDevices();
-  }, [refreshDevices]);
-
   return (
-    <div className="flex flex-col gap-6">
+    <div className="@container flex w-full max-w-[90rem] flex-col gap-4">
       <h1 className="sr-only">Dashboard</h1>
-      <ConnectedDevicesCard
-        devices={queriedDevices.map((device) => ({
-          serial: device.serial,
-          status: device.status,
-        }))}
-        isLoading={false}
-        onEdit={(serial) => {
-          const device = queriedDevices.find((d) => d.serial === serial);
-          if (device) {
-            openEditDialog(device);
-          }
-        }}
-        onRefresh={refreshDevices}
-      />
 
-      <WirelessAdbCard
-        connectionBusy={{
-          connecting: isConnecting,
-          disconnecting: isDisconnecting,
-          enablingTcpip: isEnablingTcpip,
-        }}
-        deviceMode={dashboardMode}
-        handleConnect={handleConnect}
-        handleDisconnect={handleDisconnect}
-        handleEnableTcpip={handleEnableTcpip}
-        isCollapsibleOpen={isCollapsibleOpen}
-        selectedSerial={selectedSerial}
-        setIsCollapsibleOpen={setIsCollapsibleOpen}
-        watchedIp={watchedIp}
-        wirelessForm={wirelessForm}
-      />
-      <DeviceInfoCard
-        deviceInfo={deviceInfo}
-        isRefreshingInfo={isRefreshingInfo}
-        onRefresh={() => {
-          void refreshInfo();
-        }}
-        selectedSerial={selectedSerial}
-      />
+      <div className="flex items-center justify-end gap-2">
+        <span className="numeric text-caption text-muted-foreground">
+          {updatedAt > 0 ? `Updated ${updatedAtFormatter.format(updatedAt)}` : null}
+        </span>
+        <RefreshButton
+          aria-label="Refresh device telemetry"
+          disabled={!canReadTelemetry}
+          isLoading={isFetching}
+          mode="icon"
+          onClick={refresh}
+          tooltip="Refresh telemetry"
+        />
+        <Button
+          disabled={isScanningDevices}
+          onClick={scanAgain}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <Radar aria-hidden="true" />
+          Scan devices
+        </Button>
+      </div>
 
-      <EditNicknameDialog
-        isOpen={isEditing}
-        onOpenChange={(open) => {
-          setIsEditing(open);
-          if (!open) {
-            setEditingSerial(null);
-          }
-        }}
-        onSaved={handleNicknameSaved}
-        serial={editingSerial}
+      {/* Identity is metadata about the device, not a metric — a full-width
+          band sized to its own content, never forced to match a neighbour. */}
+      <IdentityPanel device={selectedDevice} isLoading={isLoading} telemetry={telemetry} />
+
+      {/* Vitals: battery / memory / storage are the same kind of thing —
+          "resource X of Y with a percentage" — so sharing a row is honest. */}
+      {canReadTelemetry ? (
+        <div className={TRIO_GRID_CLASS}>
+          <BatteryPanel battery={telemetry?.battery ?? null} isLoading={isLoading} />
+          <MemoryPanel isLoading={isLoading} memory={telemetry?.memory ?? null} samples={samples} />
+          {error && !telemetry ? (
+            <TelemetryNotice
+              action={
+                <Button onClick={refresh} size="sm" type="button" variant="outline">
+                  Try again
+                </Button>
+              }
+              message={error.message}
+              title="Telemetry failed"
+            />
+          ) : (
+            <StoragePanel isLoading={isLoading} volumes={telemetry?.storage ?? []} />
+          )}
+        </div>
+      ) : (
+        <TelemetryNotice
+          message={telemetryBlockedReason(selectedDevice)}
+          title="Telemetry unavailable"
+        />
+      )}
+
+      {/* Security posture and the things you can do about it. */}
+      <div className={TRIO_GRID_CLASS}>
+        {canReadTelemetry ? (
+          <SecurityPanel isLoading={isLoading} security={telemetry?.security ?? null} />
+        ) : null}
+        {quickActions}
+        {wirelessPanel}
+      </div>
+
+      <RebootConfirmDialog
+        deviceLabel={deviceLabel}
+        onCancel={reboot.dismiss}
+        onConfirm={reboot.confirm}
+        target={reboot.pendingConfirmation}
       />
     </div>
   );

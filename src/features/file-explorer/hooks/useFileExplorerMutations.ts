@@ -1,5 +1,5 @@
 import path from 'path-browserify';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { CreateDirectory, CreateFile, DeleteFiles, RenameFile } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
@@ -36,39 +36,45 @@ interface Options {
   setSelectedNames: (v: Set<string>) => void;
 }
 
-export function useFileExplorerMutations(o: Options) {
-  const startCreate = useCallback(
-    (type: 'file' | 'folder') => {
-      o.setRenamingName(null);
-      o.setRenameError('');
-      o.setCreatingType(type);
-      o.setCreateName('');
-      o.setCreateError('');
-    },
-    [o],
-  );
+export function useFileExplorerMutations(options: Options) {
+  // Latest-options ref. The options object is a fresh literal on every render;
+  // reading it at call time (instead of closing over it) keeps every callback
+  // below identity-stable, which is what lets the row list stay memoized.
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  });
+
+  const startCreate = useCallback((type: 'file' | 'folder') => {
+    const o = optionsRef.current;
+    o.setRenamingName(null);
+    o.setRenameError('');
+    o.setCreatingType(type);
+    o.setCreateName('');
+    o.setCreateError('');
+  }, []);
   const cancelCreate = useCallback(() => {
+    const o = optionsRef.current;
     o.setCreatingType(null);
     o.setCreateName('');
     o.setCreateError('');
-  }, [o]);
-  const handleCreateChange = useCallback(
-    (val: string) => {
-      o.setCreateName(val);
-      if (!val.trim()) {
-        return o.setCreateError('Name cannot be empty');
-      }
-      if (FORBIDDEN_CHARS.test(val)) {
-        return o.setCreateError('Invalid characters: / \\ : * ? " < > |');
-      }
-      if (RESERVED_NAMES.test(val.trim())) {
-        return o.setCreateError('Reserved name: use a different name');
-      }
-      o.setCreateError('');
-    },
-    [o],
-  );
+  }, []);
+  const handleCreateChange = useCallback((val: string) => {
+    const o = optionsRef.current;
+    o.setCreateName(val);
+    if (!val.trim()) {
+      return o.setCreateError('Name cannot be empty');
+    }
+    if (FORBIDDEN_CHARS.test(val)) {
+      return o.setCreateError('Invalid characters: / \\ : * ? " < > |');
+    }
+    if (RESERVED_NAMES.test(val.trim())) {
+      return o.setCreateError('Reserved name: use a different name');
+    }
+    o.setCreateError('');
+  }, []);
   const handleCreateConfirm = useCallback(async () => {
+    const o = optionsRef.current;
     if (!o.creatingType) {
       return;
     }
@@ -94,37 +100,35 @@ export function useFileExplorerMutations(o: Options) {
     } finally {
       o.setIsCreating(false);
     }
-  }, [o]);
-  const startRename = useCallback(
-    (name: string) => {
-      o.setCreatingType(null);
-      o.setCreateName('');
-      o.setCreateError('');
-      o.setSelectedNames(new Set([name]));
-      o.setRenamingName(name);
-      o.setRenameValue(name);
-      o.setRenameError('');
-    },
-    [o],
-  );
-  const handleRenameChange = useCallback(
-    (val: string) => {
-      o.setRenameValue(val);
-      if (!val.trim()) {
-        return o.setRenameError('Name cannot be empty');
-      }
-      if (FORBIDDEN_CHARS.test(val)) {
-        return o.setRenameError('Invalid characters: / \\ : * ? " < > |');
-      }
-      o.setRenameError('');
-    },
-    [o],
-  );
+  }, []);
+  const startRename = useCallback((name: string) => {
+    const o = optionsRef.current;
+    o.setCreatingType(null);
+    o.setCreateName('');
+    o.setCreateError('');
+    o.setSelectedNames(new Set([name]));
+    o.setRenamingName(name);
+    o.setRenameValue(name);
+    o.setRenameError('');
+  }, []);
+  const handleRenameChange = useCallback((val: string) => {
+    const o = optionsRef.current;
+    o.setRenameValue(val);
+    if (!val.trim()) {
+      return o.setRenameError('Name cannot be empty');
+    }
+    if (FORBIDDEN_CHARS.test(val)) {
+      return o.setRenameError('Invalid characters: / \\ : * ? " < > |');
+    }
+    o.setRenameError('');
+  }, []);
   const handleRenameCancel = useCallback(() => {
+    const o = optionsRef.current;
     o.setRenamingName(null);
     o.setRenameError('');
-  }, [o]);
+  }, []);
   const handleRenameConfirm = useCallback(async () => {
+    const o = optionsRef.current;
     if (!o.renamingName) {
       return;
     }
@@ -152,15 +156,14 @@ export function useFileExplorerMutations(o: Options) {
     } finally {
       o.setIsRenaming(false);
     }
-  }, [o]);
-  const openDeleteDialog = useCallback(
-    (names: string[]) => {
-      o.setFilesToDelete(names);
-      o.setDeleteDialogOpen(true);
-    },
-    [o],
-  );
+  }, []);
+  const openDeleteDialog = useCallback((names: string[]) => {
+    const o = optionsRef.current;
+    o.setFilesToDelete(names);
+    o.setDeleteDialogOpen(true);
+  }, []);
   const handleConfirmDelete = useCallback(async () => {
+    const o = optionsRef.current;
     // Snapshot serial + path at action start (before any async work)
     const serial = o.selectedSerialRef.current;
     const basePath = o.currentPath;
@@ -176,7 +179,7 @@ export function useFileExplorerMutations(o: Options) {
       o.setIsDeleting(false);
       o.setDeleteDialogOpen(false);
     }
-  }, [o]);
+  }, []);
   return {
     cancelCreate,
     handleConfirmDelete,

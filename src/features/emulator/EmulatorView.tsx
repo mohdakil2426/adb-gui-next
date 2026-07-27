@@ -1,63 +1,64 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, MonitorSmartphone } from 'lucide-react';
+import { CircleAlert, MonitorSmartphone } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-  GetAvdRestorePlan,
-  LaunchAvd,
-  OpenFolder,
-  RestoreAvdBackups,
-  StopAvd,
-} from '@/desktop/backend';
+import { LaunchAvd, OpenFolder, RestoreAvdBackups, StopAvd } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import { useAvdRestorePlan } from '@/features/emulator/hooks/useAvdRestorePlan';
 import {
   type EmulatorManagerTab,
   useEmulatorManagerStore,
 } from '@/features/emulator/model/emulatorManagerStore';
+import { unacknowledgedLaunchOptions } from '@/features/emulator/model/launchOptions';
 import { EmulatorLaunchTab } from '@/features/emulator/ui/EmulatorLaunchTab';
 import { EmulatorRestoreTab } from '@/features/emulator/ui/EmulatorRestoreTab';
 import { EmulatorRootTab } from '@/features/emulator/ui/EmulatorRootTab';
 import { EmulatorToolbar } from '@/features/emulator/ui/EmulatorToolbar';
+import { RestoreConfirmDialog } from '@/features/emulator/ui/RestoreConfirmDialog';
 import { EmptyState } from '@/shared/components/EmptyState';
-import { RefreshButton } from '@/shared/components/RefreshButton';
+import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
-import { fetchAvds, invalidateAvds, queryKeys } from '@/shared/utils/queries';
+import { fetchAvds, invalidateAvds, queryKeys, STALE_TIME } from '@/shared/utils/queries';
 
-function createPresetOptions(preset: 'default' | 'coldBoot'): backend.EmulatorLaunchOptions {
-  return {
-    wipeData: false,
-    writableSystem: false,
-    coldBoot: preset === 'coldBoot',
-    noSnapshotLoad: preset === 'coldBoot',
-    noSnapshotSave: preset === 'coldBoot',
-    noBootAnim: false,
-  };
-}
 export function ViewEmulatorManager() {
   const {
     data: avds = [],
+    error: avdsError,
+    isError: isAvdsError,
     isLoading,
     isFetching,
     refetch,
   } = useQuery({
     queryKey: queryKeys.avds(),
     queryFn: fetchAvds,
-    refetchInterval: 5000,
+    // Each poll spawns several adb processes (`devices`, then `emu avd name` and a
+    // getprop per running emulator). 5s was ~48 spawns/minute while this view was open.
+    refetchInterval: STALE_TIME.EMULATOR_LIST,
+    staleTime: STALE_TIME.EMULATOR_LIST,
   });
   const selectedAvdName = useEmulatorManagerStore((state) => state.selectedAvdName);
   const activeTab = useEmulatorManagerStore((state) => state.activeTab);
   const restorePlan = useEmulatorManagerStore((state) => state.restorePlan);
   const pendingAction = useEmulatorManagerStore((state) => state.pendingAction);
+  const launchOptions = useEmulatorManagerStore((state) => state.launchOptions);
+  const launchAcknowledgements = useEmulatorManagerStore((state) => state.launchAcknowledgements);
   const setSelectedAvdName = useEmulatorManagerStore((state) => state.setSelectedAvdName);
   const setActiveTab = useEmulatorManagerStore((state) => state.setActiveTab);
   const setRestorePlan = useEmulatorManagerStore((state) => state.setRestorePlan);
   const setPendingAction = useEmulatorManagerStore((state) => state.setPendingAction);
-  const [isRestorePlanLoading, setIsRestorePlanLoading] = useState(false);
+  const [isRestoreConfirmOpen, setIsRestoreConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
   const selectedAvd = avds.find((item) => item.name === selectedAvdName) ?? null;
+  const isRestorePlanLoading = useAvdRestorePlan(selectedAvd);
   const isBusy = pendingAction !== null;
   const isRefreshing = isFetching && pendingAction === 'refreshPlan';
+  const unacknowledged = unacknowledgedLaunchOptions(launchOptions, launchAcknowledgements);
+  const launchBlockedReason =
+    unacknowledged.length === 0
+      ? null
+      : `${unacknowledged.map((option) => option.label).join(' and ')} needs to be acknowledged in the Launch tab first.`;
+
   // Auto-select first AVD
   useEffect(() => {
     if (avds.length === 0) {
@@ -69,41 +70,14 @@ export function ViewEmulatorManager() {
       setSelectedAvdName(avds[0]?.name ?? null);
     }
   }, [avds, selectedAvdName, setRestorePlan, setSelectedAvdName]);
-  // Load restore plan on AVD change
-  useEffect(() => {
-    let cancelled = false;
-    async function loadRestorePlan() {
-      if (!selectedAvd?.ramdiskPath) {
-        setRestorePlan(null);
-        return;
-      }
-      setIsRestorePlanLoading(true);
-      try {
-        const plan = await GetAvdRestorePlan(selectedAvd.name);
-        if (!cancelled) {
-          setRestorePlan(plan);
-        }
-      } catch {
-        if (!cancelled) {
-          setRestorePlan(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setIsRestorePlanLoading(false);
-        }
-      }
-    }
-    void loadRestorePlan();
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedAvd, setRestorePlan]);
+
   async function refreshAvds() {
     const result = await refetch();
     if (result.error) {
       throw result.error;
     }
   }
+
   async function runAction(
     action: Exclude<typeof pendingAction, null>,
     task: () => Promise<void>,
@@ -118,21 +92,32 @@ export function ViewEmulatorManager() {
       setPendingAction(null);
     }
   }
-  async function handleLaunch(options: backend.EmulatorLaunchOptions) {
+
+  /**
+   * The one launch path. `options` is only passed by guided remedies (the root
+   * gate's cold boot); everything else launches with the flags configured in the
+   * Launch tab, so the toolbar can never silently discard them.
+   */
+  async function handleLaunch(options?: backend.EmulatorLaunchOptions) {
     if (!selectedAvd) {
       return;
     }
+    if (!options && launchBlockedReason) {
+      return;
+    }
+    const effective = options ?? launchOptions;
     await runAction(
       'launch',
       async () => {
-        const message = await LaunchAvd(selectedAvd.name, options);
+        const message = await LaunchAvd(selectedAvd.name, effective);
         handleSuccess('Emulator', message);
         invalidateAvds(queryClient);
         await refreshAvds();
       },
-      `Failed to launch ${selectedAvd.name}`,
+      `Failed to launch ${selectedAvd.name}. Check that Android Studio's emulator binary is on PATH.`,
     );
   }
+
   async function handleStop() {
     const serial = selectedAvd?.serial;
     if (!(selectedAvd && serial)) {
@@ -146,9 +131,10 @@ export function ViewEmulatorManager() {
         invalidateAvds(queryClient);
         await refreshAvds();
       },
-      `Failed to stop ${selectedAvd.name}`,
+      `Failed to stop ${selectedAvd.name}. Close the emulator window manually, then refresh.`,
     );
   }
+
   async function handleOpenFolder() {
     if (!selectedAvd) {
       return;
@@ -159,16 +145,19 @@ export function ViewEmulatorManager() {
       handleError('Emulator', error);
     }
   }
+
   async function handleRefresh() {
     await runAction(
       'refreshPlan',
       async () => {
         await refreshAvds();
       },
-      'Failed to refresh emulator roster',
+      'Failed to refresh the emulator roster. Confirm the Android SDK path, then try again.',
     );
   }
-  async function handleRestore() {
+
+  async function handleRestoreConfirmed() {
+    setIsRestoreConfirmOpen(false);
     if (!selectedAvd) {
       return;
     }
@@ -180,40 +169,25 @@ export function ViewEmulatorManager() {
         invalidateAvds(queryClient);
         await refreshAvds();
       },
-      `Failed to restore ${selectedAvd.name}`,
+      `Failed to restore ${selectedAvd.name}. Close the emulator, then restore again.`,
     );
   }
+
   return (
-    <div className="flex flex-col gap-5 pb-10">
-      {/* ── Row 1: Page header ─────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-primary/10 text-primary">
-            <Bot className="size-5" />
-          </div>
-          <div>
-            <h1 className="sr-only">Emulator Manager</h1>
-            <p className="text-muted-foreground text-sm">
-              Manage AVDs, launch with safe presets, and run root / restore workflows.
-            </p>
-          </div>
-        </div>
-        {/* Refresh — top-right of header */}
-        <RefreshButton
-          isLoading={isRefreshing}
-          label="Refresh"
-          loadingLabel="Refreshing…"
-          mode="action"
-          onClick={() => void handleRefresh()}
-        />
-      </div>
+    <div className="flex flex-col gap-4">
+      <h1 className="sr-only">Emulator Manager</h1>
+
       <EmulatorToolbar
         avds={avds}
         isBusy={isBusy}
         isLoading={isLoading}
         isRefreshing={isRefreshing}
-        onColdBoot={() => void handleLaunch(createPresetOptions('coldBoot'))}
-        onLaunch={() => void handleLaunch(createPresetOptions('default'))}
+        launchBlockedReason={launchBlockedReason}
+        launchOptions={launchOptions}
+        onConfigureLaunch={() => {
+          setActiveTab('launch');
+        }}
+        onLaunch={() => void handleLaunch()}
         onOpenFolder={() => void handleOpenFolder()}
         onRefresh={() => void handleRefresh()}
         onSelectAvd={setSelectedAvdName}
@@ -221,41 +195,72 @@ export function ViewEmulatorManager() {
         selectedAvd={selectedAvd}
         selectedAvdName={selectedAvdName}
       />
-      {/* ── Card: content only (tabs flush at top) ────────────────────────── */}
-      <Card>
+
+      <Card className="gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
         <CardContent className="p-0">
-          {selectedAvd ? (
+          {isAvdsError ? (
+            // `fetchAvds` throwing (no Android SDK on PATH is the common cause)
+            // used to fall through to "No AVD selected", which reads as "you have
+            // no virtual devices" for what is a configuration failure.
+            <EmptyState
+              action={
+                <Button
+                  disabled={isFetching}
+                  onClick={() => void handleRefresh()}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              }
+              className="py-12"
+              description={
+                avdsError instanceof Error
+                  ? avdsError.message
+                  : 'The Android SDK emulator tools could not be reached. Check that Android Studio is installed and its SDK path is on PATH.'
+              }
+              icon={CircleAlert}
+              title="Could not list AVDs"
+              tone="danger"
+            />
+          ) : selectedAvd ? (
             <Tabs
               onValueChange={(value) => {
                 setActiveTab(value as EmulatorManagerTab);
               }}
-              value={activeTab === 'overview' ? 'launch' : activeTab}
+              value={activeTab}
             >
               <TabsList
-                className="w-full justify-start rounded-none rounded-t-xl border-b px-4"
+                className="w-full justify-start rounded-none rounded-t-lg border-b px-4"
                 variant="line"
               >
                 <TabsTrigger value="launch">Launch</TabsTrigger>
                 <TabsTrigger value="root">Root</TabsTrigger>
                 <TabsTrigger value="restore">Restore</TabsTrigger>
               </TabsList>
-              <div className="p-6">
+              <div className="p-4">
                 <TabsContent value="launch">
                   <EmulatorLaunchTab
                     avd={selectedAvd}
                     isLaunching={pendingAction === 'launch'}
-                    onLaunch={handleLaunch}
+                    onLaunch={() => void handleLaunch()}
                   />
                 </TabsContent>
                 <TabsContent value="root">
-                  <EmulatorRootTab avd={selectedAvd} onLaunch={handleLaunch} />
+                  <EmulatorRootTab
+                    avd={selectedAvd}
+                    onLaunch={(options) => void handleLaunch(options)}
+                  />
                 </TabsContent>
                 <TabsContent value="restore">
                   <EmulatorRestoreTab
                     avd={selectedAvd}
                     isLoadingPlan={isRestorePlanLoading}
                     isRestoring={pendingAction === 'restore'}
-                    onRestore={handleRestore}
+                    onRequestRestore={() => {
+                      setIsRestoreConfirmOpen(true);
+                    }}
                     restorePlan={restorePlan}
                   />
                 </TabsContent>
@@ -263,11 +268,11 @@ export function ViewEmulatorManager() {
             </Tabs>
           ) : (
             <EmptyState
-              className="py-16"
+              className="py-12"
               description={
                 isLoading
                   ? 'Looking for Android Studio virtual devices.'
-                  : 'Use the emulator switcher above to pick an AVD and begin.'
+                  : 'Pick an AVD from the switcher above, or create one in Android Studio first.'
               }
               icon={MonitorSmartphone}
               title={isLoading ? 'Scanning AVDs…' : 'No AVD selected'}
@@ -275,6 +280,16 @@ export function ViewEmulatorManager() {
           )}
         </CardContent>
       </Card>
+
+      <RestoreConfirmDialog
+        avd={selectedAvd}
+        onCancel={() => {
+          setIsRestoreConfirmOpen(false);
+        }}
+        onConfirm={() => void handleRestoreConfirmed()}
+        open={isRestoreConfirmOpen}
+        restorePlan={restorePlan}
+      />
     </div>
   );
 }

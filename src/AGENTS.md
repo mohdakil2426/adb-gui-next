@@ -26,17 +26,19 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 | Area | Path |
 | --- | --- |
 | Bootstrap | `src/main.tsx` → `src/app/App.tsx` (`QueryClientProvider`) |
-| Shell | `src/app/shell/` — MainLayout, viewConfig, Header, AppSidebar, BottomPanel, ViewContent |
+| Shell | `src/app/shell/` — MainLayout, viewConfig, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
+| Command registry | `src/shared/commands/` — palette actions, `VIEW_META`, `NAV_SECTIONS`, shortcut reference |
 | Desktop IPC only | `src/desktop/backend.ts`, `runtime.ts`, `models.ts` |
 | Features | `src/features/<feature>/` — `*View.tsx`, optional `hooks/`, `model/`, `ui/`, `utils/` |
-| Shared | `src/shared/{ui,components,stores,utils}/` |
-| Theme | `src/styles/global.css` |
+| Shared | `src/shared/{ui,components,stores,hooks,utils}/` |
+| Design tokens | `src/styles/global.css` |
+| Fonts | `public/fonts/` — self-hosted Inter + JetBrains Mono woff2 (+ OFL texts), preloaded in `index.html` |
 | Tests | `src/test/` only |
 | Alias | `@/` → `src/` (`vite.config.ts`) |
 
-### Views (no React Router)
+### Views (no React Router, code-split)
 
-Defined in `src/app/shell/viewConfig.tsx`:
+Defined in `src/app/shell/viewConfig.tsx`. Every view is a `React.lazy` dynamic import, and every view also has a `VIEW_PRELOADERS` entry:
 
 | `ViewType` | Feature entry |
 | --- | --- |
@@ -50,7 +52,24 @@ Defined in `src/app/shell/viewConfig.tsx`:
 | `emulator` | `features/emulator/EmulatorView.tsx` |
 | `about` | `features/about/AboutView.tsx` |
 
-Switching: `MainLayout` `useState<ViewType>` + `VIEW_RENDERERS`. Active view is not URL-persisted (reload → dashboard).
+- Switching: `MainLayout` view state (persisted to `localStorage` via `usePersistedActiveView`) + `VIEW_RENDERERS`. `renderView` must stay a **module-level** function — `ViewContent` is `memo`ized and a fresh closure defeats it.
+- `ViewContent` owns the single `<Suspense>` boundary and its skeleton fallback. Do not add per-view `Suspense`.
+- `AppSidebar` warms chunks with `VIEW_PRELOADERS[view]` on `onPointerEnter` / `onFocus`. A new view must be added to **both** maps.
+- **Never let a static value-import cross the lazy boundary.** Importing any runtime value from a view module (or its heavy deps) into shell/shared code pulls that chunk back into the entry bundle and silently undoes the split. `import type` is fine.
+
+### Command palette + navigation metadata (`src/shared/commands/`)
+
+| File | Owns |
+| --- | --- |
+| `navigation.ts` | `VIEW_META` (title / icon / description / palette keywords), `NAV_SECTIONS`, `sectionForView` |
+| `registry.ts` | `buildCommands(ctx)`, `COMMAND_GROUPS` (`actions` · `navigate` · `devices`) |
+| `appCommands.ts` / `deviceCommands.ts` | Action definitions composed by the registry |
+| `shortcuts.ts` | `MOD_KEY`, `SHORTCUT_HELP` — the app's whole keyboard surface, rendered by the palette |
+| `types.ts` | `CommandAction`, `CommandContext`, `CommandGroupId` |
+
+A view is named **once**, in `VIEW_META`. Sidebar label, header title/breadcrumb and the palette's Navigate group all read from it — do not hard-code a view title anywhere else.
+
+Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/Ctrl+K, in the **capture** phase with `stopPropagation` so it beats view-local Ctrl+K handlers (Marketplace search binds the same chord on `window` in the bubble phase). ⌘/Ctrl+B stays in `shared/ui/sidebar`; `Ctrl+\`` stays in `BottomPanel`. Any new shortcut also needs a `SHORTCUT_HELP` row — that table is the only user-visible reference.
 
 ## Desktop IPC (`src/desktop/`)
 
@@ -82,42 +101,92 @@ Switching: `MainLayout` `useState<ViewType>` + `VIEW_RENDERERS`. Active view is 
 | `useLogStore` | `logStore.ts` | logs + bottom-panel chrome |
 | `useShellStore` | `shellStore.ts` | shell history |
 | `useWirelessAdbStore` | `wirelessAdbStore.ts` | wireless ADB form persistence |
+| `useOperationStore` | `operationStore.ts` | long-running operations shown in the status bar (never persisted) |
 | nickname helpers | `nicknameStore.ts` | localStorage helpers (not Zustand `create`) |
+
+`logStore.unreadCount` is **high-churn** (every log line, ~100 call sites). Read it only from `UnreadLogBadge` / `UnreadLogAnnouncer`. Subscribing from `MainLayout` re-renders header, sidebar, panel and the whole active view once per log line.
+
+`operationStore` producers (`startOperation` / `updateOperation` / `finishOperation`) are plain functions, safe to call outside React. Currently wired from App Manager only (install, uninstall, debloat batch, backup restore) — extend to flasher / payload / emulator rather than adding a second progress mechanism.
 
 ### Feature stores (under `features/*/model/`)
 
 - `app-manager/debloater/model/debloatStore.ts`, `installationStore.ts`
 - `marketplace/model/marketplaceStore.ts`
-- `payload-dumper/model/payloadDumperStore.ts`
+- `payload-dumper/model/payloadDumperStore.ts` (persisted, `partialize`d — durable selections/settings only)
+- `payload-dumper/model/payloadProgressStore.ts` (**not** persisted — high-frequency extraction progress)
 - `emulator/model/emulatorManagerStore.ts`
+- `dashboard/model/memoryHistoryStore.ts` (**not** persisted — session RAM samples for the sparkline)
+
+**Never put high-frequency updates in a `zustand/persist` store.** `persist` wraps every `setState` with `partialize` + `JSON.stringify` + a blocking `localStorage.setItem` — no dirty check, no debounce. Split the churn into a sibling non-persisted store, as `payloadProgressStore` does.
 
 File Explorer, Flasher, Utilities, About: local React state / hooks (no feature Zustand required).
 
 ### TanStack Query
 
-- Provider defaults: `App.tsx` (`staleTime: 0`, `gcTime: 5m`, `retry: 1`).
-- **Device poll only in `MainLayout`:** `queryKeys.allDevices()`, `STALE_TIME.ALL_DEVICES` = **30_000** ms (`shared/utils/queries.ts`). `fetchAllDevices` merges ADB + fastboot by serial.
-- **Do not** add per-view device polling.
-- Emulator view: separate AVD list poll with **`refetchInterval: 5000`** in `EmulatorView.tsx` (AVDs only, not phone devices).
+- Provider defaults: `App.tsx` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess; do not restore focus-refetch or blind retries globally. Queries that need to be fresher opt in individually.
+- **Device *list* poll only in `MainLayout`:** `queryKeys.allDevices()`, `STALE_TIME.ALL_DEVICES` = **30_000** ms (`shared/utils/queries.ts`). `fetchAllDevices` merges ADB + fastboot by serial.
+- **Do not** add a second device-list poll.
+- Dashboard telemetry: `features/dashboard/hooks/useDeviceTelemetry.ts` — `GetDeviceTelemetry` for the selected serial, `staleTime` 10 s, `refetchInterval` 15 s, and the interval **stops on error** (inline error state carries the retry, no toast loop). Mounted only while the Dashboard is; it also feeds `deviceStore.setDeviceInfo` via `toLegacyDeviceInfo` and records `memoryHistoryStore` samples.
+- Emulator view: separate AVD list poll (`STALE_TIME.EMULATOR_LIST`) in `EmulatorView.tsx` (AVDs only, not phone devices).
 - Query keys / `STALE_TIME` catalog: `shared/utils/queries.ts`.
+- Prefer `GetDeviceTelemetry` (typed numbers) over `GetDeviceInfo` (display strings) for anything charted, compared or computed. `GetDeviceInfo` currently has no caller.
 
 ## Shell / layout invariants
 
 - Outer boundary: `h-svh overflow-hidden` on MainLayout.
 - `SidebarProvider` fills with `h-full` (not `min-h-svh`).
-- Header: structural `shrink-0` pin — no sticky hacks.
+- Header: structural `shrink-0` pin (44px) — no sticky hacks. Visible page title + breadcrumb come from `VIEW_META`; views keep their own `sr-only` `<h1>` (exactly one per view).
+- Column order inside `SidebarInset`: Header → `ViewContent` (`flex-1 min-h-0`) → `StatusBar` (26px) → bottom-panel dock. `BottomPanel` is still `position: fixed`; the dock is a `shrink-0` spacer of the same height so `<main>` gets honest height. **No `paddingBottom` compensation.** When the panel becomes a static flex child, delete the dock.
+- `ViewContent` is fluid width — no `max-w-(--content-max-width)` cap.
 - Main scroll: `main-scroll-area` with `overflow-y-auto overflow-x-hidden` by default; File Explorer and Marketplace may own internal scroll.
 - Preserve `min-w-0` chain for truncating text.
 - BottomPanel resize: DOM-first during drag; React height commit on mouseup.
+- Splash gating: `useAppReady()` (fonts settled + one frame, 2 s ceiling). Do not reintroduce a fixed-duration fake progress animation.
 - Sonner: top-right in `MainLayout`.
-- New view: update `viewConfig.tsx` + `AppSidebar` + add `features/<feature>/`.
+- New view: update `viewConfig.tsx` (**renderer + preloader**) + `shared/commands/navigation.ts` (`VIEW_META`, `NAV_SECTIONS`) + add `features/<feature>/`.
+
+## Adaptivity — container queries, not viewport breakpoints
+
+This is a resizable desktop window, not a web page. `src-tauri/tauri.conf.json` pins it to **`minWidth: 1024, minHeight: 720`**.
+
+| Rule | Why |
+| --- | --- |
+| **Never use `sm:` (640px) or `md:` (768px).** | They can never evaluate false above a 1024px floor — permanently-on conditionals that mislead the next reader. |
+| **Use `@container` + `@xs`/`@sm`/`@lg`/`@xl`/`@2xl`/`@4xl`.** | The content width tracks the **sidebar** (`16rem` expanded ↔ `3rem` icon-only), not the window. At a 1280px window the content box is ~974px or ~1182px depending only on `Ctrl+B`. Viewport queries are blind to that. |
+| Viewport queries only for genuine window-size concerns | e.g. bottom-panel max height. Pick a threshold meaningfully above 1024px. |
+| **No fixed `vh` list heights** (`h-[40vh]`, `max-h-[38vh]`). | At the 720px minimum height with header (44px), status bar (26px) and an open bottom panel, they overflow or waste space. Use `min-h-0` + `flex-1` so lists fill what is actually available. |
+| No horizontal page scroll at any size | Wide content scrolls inside its own container. |
+
+Container scale (Tailwind 4.3.3 defaults): `@xs` 20rem · `@sm` 24rem · `@lg` 32rem · `@xl` 36rem · `@2xl` 42rem · `@4xl` 56rem.
+
+**Reference arithmetic** — the narrowest real content box is the 1024px window with the sidebar expanded: `1024 − 256 (sidebar) − 40 (p-5) − 10 (scrollbar gutter) ≈ 718px`. Size breakpoints against that, not against the window.
+
+Check any layout change at: 1024×720 sidebar-expanded **with the bottom panel open** (tightest real case), 1024×720 collapsed, 1280×820 (default), and 2560×1440 (cards must not smear to absurd line lengths).
 
 ## UI / style invariants
 
 - Vite/Tauri client only — no Next.js patterns, no router.
 - Prefer `@/` imports; `import type` for type-only imports.
 - shadcn primitives in `shared/ui/`; feature UI stays in `features/`.
-- Semantic tokens from `global.css` — no raw hex/rgb in components.
+- Design tokens from `global.css` — no raw hex/rgb/oklch in components.
+- **Palette ("Precision Instrument"):** neutrals are chroma-tinted blue (hue 250); a single accent — electric cyan (hue 210) — marks the primary action or the active state and nothing else. `success` / `warning` / `destructive` / `info` describe **device** state, never UI emphasis.
+- **Surfaces:** `canvas` < `surface` < `surface-raised` < `surface-overlay`. Pick a level; do not invent one with an ad-hoc `bg-*`.
+- **Type scale** (each token carries its own line-height, tracking and weight — no companion `leading-*` / `font-*` needed):
+
+  | Token | Size | Use |
+  | --- | --- | --- |
+  | `text-display` | 24px | view titles |
+  | `text-title` | 17px | card headers, dialog titles |
+  | `text-body` | **13px** | default body copy (base scale) |
+  | `text-label` | 12px | form labels, table headers |
+  | `text-caption` | 11px | metadata, timestamps, badges |
+  | `text-mono` / `text-mono-sm` | 12 / 11px | serials, paths, logs, shell (pair with `font-mono`) |
+
+  **11px is the floor** — nothing may be smaller. Do not use Tailwind's default `text-xs` / `text-sm` sizes in place of these.
+- Numeric readouts (tables, byte counts, percentages, telemetry) get the `numeric` utility so digits do not jitter.
+- Motion: `--motion-*` durations + `ease-standard`. Transform/opacity only — never `height`, never `all`.
+- Fonts are **self-hosted** (`public/fonts/`, `@font-face` in `global.css`, preload in `index.html`). CSP allows `font-src 'self'` only — never re-add a Google Fonts link or CDN.
+- **No charting library.** All charts are hand-rolled SVG/CSS against the `chart-1..5` tokens. Recharts was removed: its `decimal.js-light` dependency assigns `Decimal.prototype.valueOf` at module-eval time, which throws under Tauri `freezePrototype: true` and crashes the whole view. That failure is invisible to `vite build`, Vitest and the browser preview — it only reproduces inside the webview.
 - `gap-*` not `space-x-*` / `space-y-*`; `size-*` when width === height.
 - Icon buttons: `aria-label`. Rows: keyboard accessible or real `<button>`.
 - Every non-submit `<button>` needs `type="button"`. Prefer semantic `<main>` over `role="main"`.
@@ -137,14 +206,30 @@ Baseline after 2026-07-18 pass: **100/100** (`npx react-doctor@latest .`). Do **
 | Dead unused `shared/ui/*` / unused exports | Delete or wire a real call site — never eslint-disable / fake import |
 | Parallel multi-APK on one serial | Serial only (`InstallationTab` mapSerial pattern) |
 | `useEffect(() => setMounted(true), [])` for theme/UI flash | `useSyncExternalStore` or lazy `useState` init |
+| Subscribing the shell root to a high-churn counter (`logStore.unreadCount`) | Isolated leaf subscriber (`UnreadLogBadge` / `UnreadLogAnnouncer`) |
+| High-frequency writes into a `zustand/persist` store | Sibling non-persisted store (`payloadProgressStore`) |
+| Static **value** import from a lazy view module into shell/shared | `import type`, or move the value into `shared/` |
 
-Dead kit removed (do not re-add without product need): `avatar`, `command` (+ `cmdk`), `radio-group`, `slider`, `toggle` (keep `toggle-group` + `toggle-variants`).
+Dead kit removed (do not re-add without product need): `avatar`, `radio-group`, `slider`, `toggle`, `collapsible` (keep `toggle-group` + `toggle-variants`).
+
+Re-added **with real call sites** — each stays only while its call site exists:
+
+| Primitive | Call site |
+| --- | --- |
+| `command` (+ `cmdk`) | global ⌘K palette — `app/shell/CommandPalette.tsx`, registry in `shared/commands/` |
+| `kbd` | shortcut chips in `Header` and the palette footer / shortcut reference |
+| `breadcrumb` | `Header` view breadcrumb from `VIEW_META` / `sectionForView` |
+
+### Charts — do not add a charting library
+
+`MemorySparkline` (polyline + gradient), `PackageCompositionDonut` (`stroke-dasharray` arcs), `PartitionSizeChart` (CSS grid bars), `BatteryGauge` and `UsageBar` are all hand-rolled. Any library that writes to a built-in prototype at import time (`recharts` → `decimal.js-light`) is incompatible with `freezePrototype: true` in `src-tauri/tauri.conf.json`.
 
 ## Feature invariants (verified)
 
 | Feature | Must keep |
 | --- | --- |
 | Device targeting | Pass `selectedSerial` into device-scoped desktop APIs |
+| Dashboard | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers |
 | File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change |
 | Debloat | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase) |
 | Marketplace | Install with selected serial; session-only PAT/OAuth (not localStorage); provider orchestration stays on Rust side |

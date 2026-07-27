@@ -23,12 +23,12 @@ export function SearchPreferencesSection({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 font-medium text-sm">
+      <div className="flex items-center gap-2 font-medium text-body">
         <SlidersHorizontal className="size-4 text-muted-foreground" />
         Search preferences
       </div>
       <FieldSet>
-        <FieldGroup className="grid gap-4 sm:grid-cols-2">
+        <FieldGroup className="grid grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
             <Select
@@ -53,7 +53,7 @@ export function SearchPreferencesSection({
             <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
             <Input
               autoComplete="off"
-              className="font-mono text-xs"
+              className="font-mono text-mono"
               id="github-pat"
               name="github-pat"
               onChange={(event) => onLocalPatChange(event.target.value)}

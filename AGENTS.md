@@ -57,7 +57,8 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 - **One global device poll** in `MainLayout` (30s). Do not add per-view device polling.
 - **Feature code** under `src/features/<feature>/`. **shadcn** under `src/shared/ui/`. **Theme tokens** in `src/styles/global.css` (no hard-coded colors in components).
 - **IPC DTOs** live in `src/desktop/models.ts` and match Rust `camelCase` serde.
-- **New production deps** only with clear user-visible payoff; prefer existing stack.
+- **New production deps** only with clear user-visible payoff; prefer existing stack. **Vet frontend deps for module-eval prototype writes** — `freezePrototype: true` makes any `SomeBuiltin.prototype.x = …` at import time a `TypeError` that kills the view, and it reproduces *only* in the webview (never in `vite build`, Vitest, or the browser preview). This is why there is no charting library.
+- **Container queries, not viewport breakpoints.** Window `minWidth` is 1024, so `sm:`/`md:` can never evaluate false; content width tracks the sidebar, not the viewport. See `docs/architecture.md` §12.1.
 - **React Doctor:** target **100/100**. FE correctness rules live in `src/AGENTS.md` (pure updaters, effect cleanup, LazyMotion, no height anim, no dead unused UI / suppressions). Multi-APK install stays **serial**.
 
 Keep this list short. Implementation detail stays in module guides.

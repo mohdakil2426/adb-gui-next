@@ -22,11 +22,11 @@ tauri-build = { version = "2.6.3", features = [] }
 [dependencies]
 anyhow = "1.0.104"
 apk-info-axml = "1.0.11"
-base64 = "0.22.1"
+base64 = "0.23.0"
 bzip2 = "0.6.1"
 hex = "0.4.3"
 log = "0.4.33"
-libc = "0.2.186"
+libc = "0.2.189"
 memmap2 = "0.9.11"
 prost = "0.14.4"
 rayon = "1.12.0"
@@ -34,7 +34,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 sha2 = "0.11.0"
 tauri = { version = "2.11.5", features = [] }
-tokio = { version = "1.53.0", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
 tauri-plugin-dialog = "2.7.2"
 tauri-plugin-log = "2.9.0"
 tauri-plugin-opener = "2.5.4"
@@ -112,16 +112,13 @@ manual_string_new = "warn"
 [profile.dev]
 incremental = true
 
+# The workload is CPU-bound (sha2, inflate/zstd/lzma, large memcpy) so release is
+# speed-optimized. `opt-level = "s"` was previously set here, which disables loop
+# vectorization and most unrolling — exactly what the extract path needs — and every
+# shipped artifact was built with it.
 [profile.release]
 codegen-units = 1
 lto = true
-opt-level = "s"
+opt-level = 3
 panic = "abort"
 strip = true
-
-# Speed-optimized release for CPU-bound extract (sha2, decomp). Larger binary than [profile.release].
-# Build: cargo build --profile release-fast --manifest-path src-tauri/Cargo.toml
-# Tauri: cargo tauri build -- --profile release-fast
-[profile.release-fast]
-inherits = "release"
-opt-level = 3

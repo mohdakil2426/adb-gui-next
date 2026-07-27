@@ -14,7 +14,6 @@ export interface ActionButtonProps {
   onClick: () => void;
   sentAction: string | null;
   sentLabel?: string;
-  tall?: boolean;
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   wrapperClassName?: string;
 }
@@ -29,7 +28,6 @@ export function ActionButton({
   onClick,
   disabled = false,
   variant = 'outline',
-  tall = false,
   className,
   wrapperClassName,
   justifyStart = false,
@@ -37,18 +35,19 @@ export function ActionButton({
   const isLoading = loadingAction === actionId;
   const isSent = sentAction === actionId;
 
-  // We consider it disabled if explicitly disabled, or if ANY action is currently loading/sent
-  const isGlobalLoadingOrSent = loadingAction !== null || sentAction !== null;
-  const isDisabled = disabled || isGlobalLoadingOrSent;
+  // Disabled while *some* action is in flight. `sentAction` is a post-success
+  // confirmation that lingers for 2s — it must not take the whole panel with it.
+  const isDisabled = disabled || loadingAction !== null;
 
   return (
     <Button
       className={cn(
-        'w-full transition-all duration-200 active:scale-[0.97]',
-        tall ? 'flex h-20 flex-col items-center justify-center gap-2' : 'gap-2',
+        // `transition-colors`, not `transition-all`: the token file allows only
+        // transform/opacity to animate. The "sent" state is a ring, not an outer
+        // glow — the glow rendered as a dirty halo on the light surface.
+        'w-full gap-2 transition-colors active:scale-[0.97]',
         justifyStart && 'justify-start pl-4',
-        isSent &&
-          'shadow-[0_0_12px_color-mix(in_oklch,var(--success)_40%,transparent)] ring-2 ring-success/50',
+        isSent && 'ring-2 ring-success',
         className,
         wrapperClassName,
       )}
@@ -60,33 +59,33 @@ export function ActionButton({
         {isSent ? (
           <m.div
             animate={{ scale: 1 }}
-            className={tall ? '' : 'shrink-0'}
+            className="shrink-0"
             exit={{ scale: 0.95, opacity: 0 }}
             initial={{ scale: 0.95, opacity: 0 }}
             key="check"
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           >
-            <Check className={cn('text-success', tall ? 'size-5' : 'mr-2 size-4')} />
+            <Check className="mr-2 size-4 text-success" />
           </m.div>
         ) : isLoading ? (
           <m.div
             animate={{ opacity: 1 }}
-            className={tall ? '' : 'shrink-0'}
+            className="shrink-0"
             exit={{ opacity: 0 }}
             initial={{ opacity: 0 }}
             key="spin"
           >
-            <Loader2 className={cn('animate-spin', tall ? 'size-5' : 'mr-2 size-4')} />
+            <Loader2 className="mr-2 size-4 animate-spin" />
           </m.div>
         ) : (
           <m.div
             animate={{ opacity: 1 }}
-            className={tall ? '' : 'shrink-0'}
+            className="shrink-0"
             exit={{ opacity: 0 }}
             initial={{ opacity: 0 }}
             key="icon"
           >
-            <Icon className={cn(tall ? 'size-5' : 'mr-2 size-4')} />
+            <Icon className="mr-2 size-4" />
           </m.div>
         )}
       </AnimatePresence>

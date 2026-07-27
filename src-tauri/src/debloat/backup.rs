@@ -37,17 +37,25 @@ pub struct BackupSummary {
 }
 
 /// Sanitize a device serial used as a path component (alphanumeric / `.` / `_` / `-` only).
-fn sanitize_device_id(device_id: &str) -> String {
-    let cleaned = sanitize_filename(device_id);
-    if cleaned.is_empty() { "unknown".to_string() } else { cleaned }
+///
+/// Refuses unresolved ids instead of falling back to a shared `"unknown"` folder:
+/// two different devices writing into one directory commingles their backups, and
+/// restoring then replays the wrong device's package states.
+fn sanitize_device_id(device_id: &str) -> CmdResult<String> {
+    let cleaned = sanitize_filename(device_id.trim());
+    if cleaned.is_empty() || cleaned.eq_ignore_ascii_case("unknown") {
+        return Err(crate::debloat::sync::ERR_UNKNOWN_DEVICE.to_string());
+    }
+    Ok(cleaned)
 }
 
-fn backup_dir(app: &AppHandle, device_id: &str) -> PathBuf {
-    app.path()
+fn backup_dir(app: &AppHandle, device_id: &str) -> CmdResult<PathBuf> {
+    Ok(app
+        .path()
         .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join(BACKUP_DIR_NAME)
-        .join(sanitize_device_id(device_id))
+        .join(sanitize_device_id(device_id)?))
 }
 
 /// Create a backup of the current package states for a device.
@@ -57,7 +65,7 @@ pub fn create_backup(
     android_sdk: u32,
     packages: Vec<PackageSnapshot>,
 ) -> CmdResult<BackupSummary> {
-    let dir = backup_dir(app, device_id);
+    let dir = backup_dir(app, device_id)?;
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
 
     let created_at = crate::debloat::lists::now_timestamp();
@@ -86,7 +94,9 @@ pub fn create_backup(
 
 /// List all backups for a device, newest first.
 pub fn list_backups(app: &AppHandle, device_id: &str) -> Vec<BackupSummary> {
-    let dir = backup_dir(app, device_id);
+    let Ok(dir) = backup_dir(app, device_id) else {
+        return vec![];
+    };
     if !dir.exists() {
         return vec![];
     }
@@ -135,7 +145,7 @@ pub fn load_backup(app: &AppHandle, device_id: &str, file_name: &str) -> CmdResu
         return Err("Invalid backup file name".to_string());
     }
 
-    let dir = backup_dir(app, device_id);
+    let dir = backup_dir(app, device_id)?;
     let path = dir.join(&safe_name);
 
     let dir_canon = fs::canonicalize(&dir).map_err(|e| e.to_string())?;
@@ -157,17 +167,20 @@ pub struct PerDeviceSettings {
     pub expert_mode: bool,
 }
 
-fn settings_path(app: &AppHandle, device_id: &str) -> PathBuf {
-    let safe_id = sanitize_device_id(device_id);
-    app.path()
+fn settings_path(app: &AppHandle, device_id: &str) -> CmdResult<PathBuf> {
+    let safe_id = sanitize_device_id(device_id)?;
+    Ok(app
+        .path()
         .app_data_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join("debloat_settings")
-        .join(format!("{safe_id}.json"))
+        .join(format!("{safe_id}.json")))
 }
 
 pub fn load_device_settings(app: &AppHandle, device_id: &str) -> PerDeviceSettings {
-    let path = settings_path(app, device_id);
+    let Ok(path) = settings_path(app, device_id) else {
+        return PerDeviceSettings::default();
+    };
     fs::read_to_string(&path).ok().and_then(|j| serde_json::from_str(&j).ok()).unwrap_or_default()
 }
 
@@ -176,7 +189,7 @@ pub fn save_device_settings(
     device_id: &str,
     settings: &PerDeviceSettings,
 ) -> CmdResult<()> {
-    let path = settings_path(app, device_id);
+    let path = settings_path(app, device_id)?;
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }

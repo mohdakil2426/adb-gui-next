@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
-import { getFileName } from '@/shared/utils/formatting';
+import { Skeleton } from '@/shared/ui/skeleton';
+import { getFileName } from '@/shared/utils/filePath';
 
 interface LoadingStateProps {
   mode: 'local' | 'remote';
@@ -8,41 +9,30 @@ interface LoadingStateProps {
 }
 
 /**
- * Loading stage indicator shown while partitions are being loaded.
- * Displays contextual messages based on source type (remote URL, ZIP, or plain .bin).
+ * Local payload parse. Indeterminate — the manifest is read in one pass and
+ * there is no byte count to report — so it says what it is doing and reserves
+ * the shape of the partition table rather than pretending to a percentage.
  */
 export function LoadingState({ mode, remoteUrl, payloadPath }: LoadingStateProps) {
-  const getMessage = (): string => {
-    if (mode === 'remote') {
-      return 'Connecting to remote URL...';
-    }
-    if (payloadPath.toLowerCase().endsWith('.zip')) {
-      return 'Extracting payload from ZIP...';
-    }
-    return 'Parsing partition manifest...';
-  };
-
-  const getSubtitle = (): string => {
-    if (mode === 'remote') {
-      return remoteUrl;
-    }
-    return getFileName(payloadPath);
-  };
+  const message =
+    mode === 'remote'
+      ? 'Connecting to remote URL…'
+      : payloadPath.toLowerCase().endsWith('.zip')
+        ? 'Extracting payload from ZIP…'
+        : 'Parsing partition manifest…';
+  const subtitle = mode === 'remote' ? remoteUrl : getFileName(payloadPath);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-12">
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl" />
-        <div className="relative rounded-full bg-primary/10 p-5">
-          <Loader2 className="size-8 animate-spin text-primary" />
-        </div>
+    <output aria-busy="true" className="flex w-full flex-col gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin text-primary" />
+        <span className="font-medium text-body">{message}</span>
       </div>
-      <div className="flex flex-col items-center gap-1.5 text-center">
-        <p className="font-medium text-sm">{getMessage()}</p>
-        <p className="max-w-xs truncate text-muted-foreground text-xs" title={getSubtitle()}>
-          {getSubtitle()}
-        </p>
-      </div>
-    </div>
+      <p className="min-w-0 truncate font-mono text-mono text-muted-foreground" title={subtitle}>
+        {subtitle}
+      </p>
+      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-32 w-full" />
+    </output>
   );
 }

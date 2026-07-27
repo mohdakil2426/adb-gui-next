@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   FlashPartition,
@@ -11,30 +11,46 @@ import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { debugLog } from '@/shared/utils/debug';
 import { handleError } from '@/shared/utils/errorHandler';
-import { getFileName } from '@/shared/utils/formatting';
+import { getFileName } from '@/shared/utils/filePath';
 import { partitionSchema } from '@/shared/utils/schemas';
 
-interface QueuedAction {
-  filePath: string;
-  partition?: string;
-  type: 'flash' | 'sideload';
+/** Which destructive flasher action is waiting on an explicit confirmation. */
+export type FlasherConfirm = 'flash' | 'sideload' | null;
+
+/**
+ * Session-scoped draft so switching views does not clear a half-filled form.
+ *
+ * Deliberately **not** persisted. These fields used to live in `localStorage`,
+ * which meant an image path chosen days earlier was silently reloaded into a
+ * partition-write button on the next launch. It dies with the process instead.
+ */
+const flasherDraft = { filePath: '', partition: '', sideloadFilePath: '' };
+
+// Drop the keys the previous implementation wrote. Nothing reads them any more,
+// but a months-old image path sitting in localStorage is the hazard itself.
+for (const staleKey of ['flasher.partition', 'flasher.filePath', 'flasher.sideloadFilePath']) {
+  localStorage.removeItem(staleKey);
 }
 
 export function useFlasherActions() {
-  const [partition, setPartition] = useState(() => localStorage.getItem('flasher.partition') ?? '');
-  const [filePath, setFilePath] = useState(() => localStorage.getItem('flasher.filePath') ?? '');
-  const [sideloadFilePath, setSideloadFilePath] = useState(
-    () => localStorage.getItem('flasher.sideloadFilePath') ?? '',
-  );
+  const [partition, setPartitionState] = useState(flasherDraft.partition);
+  const [filePath, setFilePathState] = useState(flasherDraft.filePath);
+  const [sideloadFilePath, setSideloadFilePathState] = useState(flasherDraft.sideloadFilePath);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
-  const [queuedAction, setQueuedAction] = useState<QueuedAction | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<FlasherConfirm>(null);
 
-  useEffect(() => localStorage.setItem('flasher.partition', partition), [partition]);
-  useEffect(() => localStorage.setItem('flasher.filePath', filePath), [filePath]);
-  useEffect(
-    () => localStorage.setItem('flasher.sideloadFilePath', sideloadFilePath),
-    [sideloadFilePath],
-  );
+  const setPartition = useCallback((value: string) => {
+    flasherDraft.partition = value;
+    setPartitionState(value);
+  }, []);
+  const setFilePath = useCallback((value: string) => {
+    flasherDraft.filePath = value;
+    setFilePathState(value);
+  }, []);
+  const setSideloadFilePath = useCallback((value: string) => {
+    flasherDraft.sideloadFilePath = value;
+    setSideloadFilePathState(value);
+  }, []);
 
   const devices = useDeviceStore((state) => state.devices);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
@@ -99,35 +115,6 @@ export function useFlasherActions() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!queuedAction || isGlobalLoading) {
-      return;
-    }
-    const isReady =
-      queuedAction.type === 'flash'
-        ? Boolean(selectedFastbootSerial)
-        : Boolean(selectedSideloadSerial);
-    if (!isReady) {
-      return;
-    }
-    const action = queuedAction;
-    setQueuedAction(null);
-    if (action.type === 'flash') {
-      if (action.partition && selectedFastbootSerial) {
-        void executeFlash(action.partition, action.filePath, selectedFastbootSerial);
-      }
-      return;
-    }
-    void executeSideload(action.filePath, selectedSideloadSerial);
-  }, [
-    executeFlash,
-    executeSideload,
-    isGlobalLoading,
-    queuedAction,
-    selectedFastbootSerial,
-    selectedSideloadSerial,
-  ]);
-
   const handleSelectImageFile = useCallback(async () => {
     try {
       debugLog('Selecting image file');
@@ -139,7 +126,7 @@ export function useFlasherActions() {
     } catch (error) {
       handleError('Select Image File', error);
     }
-  }, []);
+  }, [setFilePath]);
 
   const handleSelectSideloadFile = useCallback(async () => {
     try {
@@ -152,9 +139,14 @@ export function useFlasherActions() {
     } catch (error) {
       handleError('Select ZIP File', error);
     }
-  }, []);
+  }, [setSideloadFilePath]);
 
-  const handleFlash = useCallback(() => {
+  /**
+   * Opens the flash confirmation. Nothing is written to the device here — and a
+   * missing device is a hard stop, never a queued action that fires on cable
+   * insertion.
+   */
+  const requestFlash = useCallback(() => {
     const parsed = partitionSchema.safeParse(partition);
     if (!parsed.success) {
       toast.error('Invalid partition name', {
@@ -163,33 +155,53 @@ export function useFlasherActions() {
       return;
     }
     if (!filePath) {
-      toast.error('No file selected.');
+      toast.error('No image file selected.');
       return;
     }
-    if (selectedFastbootSerial) {
-      void executeFlash(partition, filePath, selectedFastbootSerial);
+    if (!selectedFastbootSerial) {
+      toast.error('No fastboot device connected', {
+        description: 'Boot the device into bootloader or fastboot mode, then try again.',
+      });
       return;
     }
-    setQueuedAction({ type: 'flash', partition, filePath });
-    toast.info('Waiting for fastboot device...', {
-      description: 'Action will execute automatically when a fastboot device connects.',
-    });
-  }, [executeFlash, filePath, partition, selectedFastbootSerial]);
+    setPendingConfirm('flash');
+  }, [filePath, partition, selectedFastbootSerial]);
 
-  const handleSideload = useCallback(() => {
+  const requestSideload = useCallback(() => {
     if (!sideloadFilePath) {
       toast.error('No update package selected.');
       return;
     }
-    if (selectedSideloadSerial) {
-      void executeSideload(sideloadFilePath, selectedSideloadSerial);
+    if (!selectedSideloadSerial) {
+      toast.error('No sideload device connected', {
+        description: 'Put the device into recovery and choose "Apply update from ADB".',
+      });
       return;
     }
-    setQueuedAction({ type: 'sideload', filePath: sideloadFilePath });
-    toast.info('Waiting for sideload device...', {
-      description: 'Action will execute automatically when a sideload/recovery device connects.',
-    });
+    setPendingConfirm('sideload');
+  }, [selectedSideloadSerial, sideloadFilePath]);
+
+  const confirmFlash = useCallback(() => {
+    setPendingConfirm(null);
+    if (!(selectedFastbootSerial && filePath && partition)) {
+      return;
+    }
+    void executeFlash(partition, filePath, selectedFastbootSerial);
+  }, [executeFlash, filePath, partition, selectedFastbootSerial]);
+
+  const confirmSideload = useCallback(() => {
+    setPendingConfirm(null);
+    if (!(selectedSideloadSerial && sideloadFilePath)) {
+      return;
+    }
+    void executeSideload(sideloadFilePath, selectedSideloadSerial);
   }, [executeSideload, selectedSideloadSerial, sideloadFilePath]);
+
+  const handleConfirmOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      setPendingConfirm(null);
+    }
+  }, []);
 
   const handleWipe = useCallback(async () => {
     setLoadingAction('wipe');
@@ -207,21 +219,23 @@ export function useFlasherActions() {
   }, [selectedFastbootSerial]);
 
   return {
+    confirmFlash,
+    confirmSideload,
     filePath,
-    handleFlash,
+    handleConfirmOpenChange,
     handleSelectImageFile,
     handleSelectSideloadFile,
-    handleSideload,
     handleWipe,
     isGlobalLoading,
     loadingAction,
     partition,
-    queuedAction,
+    pendingConfirm,
+    requestFlash,
+    requestSideload,
     selectedFastbootSerial,
     selectedSideloadSerial,
     setFilePath,
     setPartition,
-    setQueuedAction,
     setSideloadFilePath,
     sideloadFilePath,
   };

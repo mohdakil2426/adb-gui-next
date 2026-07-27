@@ -46,17 +46,17 @@ export function DeleteDialog({
                   : 'These items will be permanently deleted from the device. This action cannot be undone.'}
               </p>
               {filesToDelete.length > 1 && (
-                <ul className="mt-2 flex min-w-0 flex-col gap-0.5 font-mono text-xs">
+                <ul className="mt-2 flex min-w-0 flex-col gap-0.5 font-mono text-mono">
                   {filesToDelete.slice(0, 5).map((name) => {
                     const file = fileList.find((entry) => entry.name === name);
                     return (
                       <li className="flex min-w-0 items-start gap-1.5" key={name}>
                         {file?.type === 'Directory' ? (
-                          <Folder className="size-3 shrink-0" />
+                          <Folder aria-hidden="true" className="size-3 shrink-0" />
                         ) : file?.type === 'Symlink' ? (
-                          <Link className="size-3 shrink-0" />
+                          <Link aria-hidden="true" className="size-3 shrink-0" />
                         ) : (
-                          <File className="size-3 shrink-0" />
+                          <File aria-hidden="true" className="size-3 shrink-0" />
                         )}
                         <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span>
                       </li>
@@ -78,9 +78,9 @@ export function DeleteDialog({
             onClick={onConfirm}
           >
             {isDeleting ? (
-              <Loader2 className="size-4 shrink-0 animate-spin" />
+              <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin" />
             ) : (
-              <Trash2 className="size-4 shrink-0" />
+              <Trash2 aria-hidden="true" className="size-4 shrink-0" />
             )}
             Delete permanently
           </AlertDialogAction>

@@ -335,6 +335,7 @@ pub async fn list_remote_payload_partitions(
 
 #[tauri::command]
 pub async fn extract_delta_payload(
+    payload_cache: State<'_, PayloadCache>,
     payload_path: String,
     source_dir: String,
     output_dir: String,
@@ -400,12 +401,15 @@ pub async fn extract_delta_payload(
     }
     let _token_guard = TokenGuard(parsed_token_id);
 
+    // Use the managed cache, never a per-call `PayloadCache::default()`: a throwaway
+    // cache is dropped with its multi-GB temp extraction still on disk and no one
+    // left holding a handle to clean it up.
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
             std::path::Path::new(&payload_path),
             output.as_deref(),
             &selected_partitions,
-            &PayloadCache::default(),
+            &payload_cache,
             None,
             payload::VerifyMode::default(),
             |_, _, _, _| {},

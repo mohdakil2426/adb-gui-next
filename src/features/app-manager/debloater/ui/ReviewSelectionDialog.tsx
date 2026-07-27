@@ -24,6 +24,7 @@ import {
   countByTier,
   REMOVAL_TIER_CLASSES,
   REMOVAL_TIER_LABELS,
+  REMOVAL_TIER_MEANINGS,
 } from './debloaterUtils';
 
 interface ReviewSelectionDialogProps {
@@ -110,15 +111,21 @@ export function ReviewSelectionDialog({
                     <TableCell>
                       <span
                         className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-[10px]',
+                          'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-caption',
                           classes.badge,
                         )}
                       >
-                        <span className={cn('size-1.5 rounded-full', classes.dot)} />
+                        <span
+                          aria-hidden="true"
+                          className={cn('size-1.5 rounded-full', classes.dot)}
+                        />
                         {REMOVAL_TIER_LABELS[tier]}
                       </span>
+                      <span className="mt-1 block text-caption text-muted-foreground">
+                        {REMOVAL_TIER_MEANINGS[tier]}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-right font-mono">{count}</TableCell>
+                    <TableCell className="numeric text-right font-mono">{count}</TableCell>
                   </TableRow>
                 );
               })}
@@ -127,30 +134,32 @@ export function ReviewSelectionDialog({
         </div>
 
         {/* Package list */}
-        <div className="max-h-40 overflow-y-auto rounded-lg border p-1 text-xs">
+        <div className="custom-scroll max-h-40 overflow-y-auto rounded-lg border border-border p-1">
           {selectedRows.map((pkg) => {
             const classes = REMOVAL_TIER_CLASSES[pkg.removal];
             return (
               <div
-                className="flex items-center gap-2 rounded px-2 py-1 hover:bg-muted/40"
+                className="flex h-7 items-center gap-2 rounded-md px-2 hover:bg-accent"
                 key={pkg.name}
               >
                 <span
                   className={cn(
-                    'shrink-0 rounded-full px-1.5 py-0.5 font-medium text-[9px]',
+                    'shrink-0 rounded-full px-1.5 py-0.5 font-medium text-caption',
                     classes.badge,
                   )}
                 >
                   {pkg.removal}
                 </span>
-                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-medium text-[9px] text-muted-foreground">
+                <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-caption text-muted-foreground">
                   {pkg.list}
                 </span>
-                <span className="flex-1 truncate font-mono text-foreground">{pkg.name}</span>
+                <span className="min-w-0 flex-1 truncate font-mono text-foreground text-mono">
+                  {pkg.name}
+                </span>
                 <span
                   className={cn(
-                    'shrink-0 font-medium text-[9px]',
-                    disableMode ? 'text-warning-foreground' : 'text-destructive',
+                    'shrink-0 font-medium text-caption',
+                    disableMode ? 'text-warning' : 'text-destructive',
                   )}
                 >
                   {actionLabel}
@@ -161,24 +170,23 @@ export function ReviewSelectionDialog({
         </div>
 
         {/* Backup prompt */}
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2.5">
-          <HardDrive className="size-4 shrink-0 text-muted-foreground" />
-          <div className="flex-1 text-muted-foreground text-xs">
+        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2.5">
+          <HardDrive aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+          <div className="flex-1 text-body text-muted-foreground">
             {backupCreated
-              ? '✓ Backup created — you can restore later from the Backup tab.'
-              : 'Create a device backup before applying to restore if needed.'}
+              ? 'Backup created — restore it any time from Backups, below the package list.'
+              : 'Create a device backup before applying so this is reversible.'}
           </div>
           {!backupCreated && (
             <Button
-              className="h-7 shrink-0 text-xs"
+              className="shrink-0"
               disabled={isCreatingBackup}
               onClick={() => void handleCreateBackup()}
               size="sm"
+              type="button"
               variant="outline"
             >
-              {isCreatingBackup ? (
-                <Loader2 className="animate-spin" data-icon="inline-start" />
-              ) : null}
+              {isCreatingBackup ? <Loader2 className="animate-spin" /> : null}
               Backup
             </Button>
           )}
@@ -195,12 +203,12 @@ export function ReviewSelectionDialog({
           </Alert>
         ) : null}
 
-        <Alert className="border-warning/30 bg-warning/10 text-warning-foreground">
+        <Alert className="border-warning/30 bg-warning-muted">
           <AlertTriangle />
           <AlertTitle>Disclaimer</AlertTitle>
-          <AlertDescription className="text-warning-foreground/90">
+          <AlertDescription>
             You cannot brick your device with user-space debloating, but removing essential packages
-            may cause a bootloop requiring a factory reset. Always backup first.
+            may cause a bootloop requiring a factory reset. Always back up first.
           </AlertDescription>
         </Alert>
 
@@ -210,6 +218,7 @@ export function ReviewSelectionDialog({
             onClick={() => {
               onOpenChange(false);
             }}
+            type="button"
             variant="ghost"
           >
             Cancel
@@ -217,9 +226,10 @@ export function ReviewSelectionDialog({
           <Button
             disabled={isApplying}
             onClick={() => void onConfirm()}
+            type="button"
             variant={hasUnsafe ? 'destructive' : 'default'}
           >
-            {isApplying ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+            {isApplying ? <Loader2 className="animate-spin" /> : null}
             {isApplying
               ? 'Applying…'
               : `Apply ${selectedPackages.size} Action${selectedPackages.size === 1 ? '' : 's'}`}

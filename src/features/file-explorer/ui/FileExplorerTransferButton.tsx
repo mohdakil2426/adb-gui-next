@@ -29,26 +29,26 @@ export function FileExplorerTransferButton({
       <DropdownMenuTrigger asChild>
         <Button
           aria-label="Transfer options"
-          className="size-11"
+          className="size-8 shrink-0"
           disabled={disabled}
-          size="icon"
+          size="icon-sm"
           variant="ghost"
         >
-          <ArrowUpToLine className="size-4 shrink-0" />
+          <ArrowUpToLine aria-hidden="true" className="size-4 shrink-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onImportFile}>
-          <File className="size-4 shrink-0" />
-          Import File
+          <File aria-hidden="true" className="size-4 shrink-0" />
+          Import file
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onImportFolder}>
-          <FolderOpen className="size-4 shrink-0" />
-          Import Folder
+          <FolderOpen aria-hidden="true" className="size-4 shrink-0" />
+          Import folder
         </DropdownMenuItem>
         <DropdownMenuItem disabled={isPullDisabled || isPushing} onClick={onExport}>
-          <ArrowDownToLine className="size-4 shrink-0" />
-          Export
+          <ArrowDownToLine aria-hidden="true" className="size-4 shrink-0" />
+          Export selected
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

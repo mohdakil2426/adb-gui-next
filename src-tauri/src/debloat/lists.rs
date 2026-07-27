@@ -11,6 +11,9 @@ use tauri::{AppHandle, Manager};
 const UAD_GITHUB_URL: &str = "https://raw.githubusercontent.com/0x192/universal-android-debloater/main/resources/assets/uad_lists.json";
 const CACHE_FILE_NAME: &str = "uad_lists.json";
 const FETCH_TIMEOUT_SECS: u64 = 30;
+/// Offline (no route / DNS blackhole) must fall through to the cache quickly —
+/// with only a total timeout the two GETs stalled the debloater for ~60 s.
+const CONNECT_TIMEOUT_SECS: u64 = 5;
 
 fn cache_path(app: &AppHandle) -> PathBuf {
     app.path()
@@ -61,10 +64,14 @@ fn parse_json(json: &str) -> Result<Vec<DebloatPackage>, String> {
 pub fn load_uad_lists(app: &AppHandle) -> Result<(Vec<DebloatPackage>, DebloatListStatus), String> {
     let cache = cache_path(app);
 
-    // 1. Try fetching from GitHub
-    match fetch_remote(UAD_GITHUB_URL) {
-        Ok(json) => {
-            let packages = parse_json(&json)?;
+    // 1. Try fetching from GitHub. Parse failures must fall through to the cache
+    //    exactly like transport failures do — a `?` here meant one bad response body
+    //    (a 404/500 HTML page) skipped both fallbacks and broke debloat entirely.
+    match fetch_remote(UAD_GITHUB_URL).and_then(|json| {
+        let packages = parse_json(&json)?;
+        Ok((json, packages))
+    }) {
+        Ok((json, packages)) => {
             let count = packages.len();
             // Save to cache (best-effort)
             if let Some(parent) = cache.parent() {
@@ -81,7 +88,7 @@ pub fn load_uad_lists(app: &AppHandle) -> Result<(Vec<DebloatPackage>, DebloatLi
                 },
             ));
         }
-        Err(e) => warn!("Failed to fetch UAD lists from remote: {}", e),
+        Err(e) => warn!("Failed to load UAD lists from remote: {}", e),
     }
 
     // 2. Try local cache
@@ -106,18 +113,21 @@ pub fn load_uad_lists(app: &AppHandle) -> Result<(Vec<DebloatPackage>, DebloatLi
 
     // 3. Bundled fallback
     if let Some(bundled) = bundled_json_path(app) {
-        let json = fs::read_to_string(&bundled).map_err(|e| e.to_string())?;
-        let packages = parse_json(&json)?;
-        let count = packages.len();
-        debug!("UAD lists loaded from bundled fallback ({} packages)", count);
-        return Ok((
-            packages,
-            DebloatListStatus {
-                source: "bundled".to_string(),
-                last_updated: "bundled".to_string(),
-                total_entries: count,
-            },
-        ));
+        match fs::read_to_string(&bundled).map_err(|e| e.to_string()).and_then(|j| parse_json(&j)) {
+            Ok(packages) => {
+                let count = packages.len();
+                debug!("UAD lists loaded from bundled fallback ({} packages)", count);
+                return Ok((
+                    packages,
+                    DebloatListStatus {
+                        source: "bundled".to_string(),
+                        last_updated: "bundled".to_string(),
+                        total_entries: count,
+                    },
+                ));
+            }
+            Err(e) => warn!("Bundled UAD list unusable: {}", e),
+        }
     }
 
     Err("UAD lists unavailable: remote fetch failed, no cache, no bundled file.".to_string())
@@ -125,11 +135,20 @@ pub fn load_uad_lists(app: &AppHandle) -> Result<(Vec<DebloatPackage>, DebloatLi
 
 fn fetch_remote(url: &str) -> Result<String, String> {
     let client = reqwest::blocking::Client::builder()
+        .connect_timeout(Duration::from_secs(CONNECT_TIMEOUT_SECS))
         .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
         .build()
         .map_err(|e| e.to_string())?;
 
-    client.get(url).send().map_err(|e| e.to_string())?.text().map_err(|e| e.to_string())
+    client
+        .get(url)
+        .send()
+        .map_err(|e| e.to_string())?
+        // Without this a 404/500 body flows straight into the JSON parser.
+        .error_for_status()
+        .map_err(|e| e.to_string())?
+        .text()
+        .map_err(|e| e.to_string())
 }
 
 /// Return the current age of the cached list file for display.

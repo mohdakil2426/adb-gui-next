@@ -1,5 +1,6 @@
 import { Progress } from '@/shared/ui/progress';
 import { cn } from '@/shared/utils/cn';
+import { EMPTY_VALUE } from '@/shared/utils/format';
 
 interface ExtractionProgressBarProps {
   isCompleted: boolean;
@@ -35,11 +36,11 @@ export function ExtractionProgressBar({
       />
       <span
         className={cn(
-          'w-8 shrink-0 text-right font-medium text-[10px] tabular-nums',
+          'numeric w-9 shrink-0 text-right text-caption',
           isCompleted ? 'text-success' : isFailed ? 'text-destructive' : 'text-primary',
         )}
       >
-        {isFailed && displayProgress === 0 ? '—' : `${Math.round(displayProgress)}%`}
+        {isFailed && displayProgress === 0 ? EMPTY_VALUE : `${Math.round(displayProgress)}%`}
       </span>
     </div>
   );

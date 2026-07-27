@@ -3,28 +3,105 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ==========================================================================
+   Self-hosted variable fonts
+   --------------------------------------------------------------------------
+   Files live in `public/fonts/` and are served from the app origin — this is an
+   offline-first desktop tool, so no Google Fonts round-trip and no CSP
+   allowance for fonts.googleapis.com / fonts.gstatic.com.
+
+   Both families are SIL Open Font License 1.1; the licence texts ship next to
+   the woff2 files (`public/fonts/*-LICENSE.txt`). Subsets and unicode-ranges
+   are taken verbatim from @fontsource-variable v5.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url("/fonts/jetbrains-mono-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Surface ladder — canvas < surface < raised < overlay */
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-subtle: var(--foreground-subtle);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-muted: var(--primary-muted);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
+  --color-accent-active: var(--accent-active);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-active: var(--destructive-active);
+  --color-destructive-muted: var(--destructive-muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-control: var(--border-control);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
@@ -43,11 +120,15 @@
   /* Semantic status tokens */
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-muted: var(--success-muted);
   --color-success-light: var(--success-light);
   --color-success-subtle: var(--success-subtle);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
   /* Terminal panel tokens */
   --color-terminal-bg: var(--terminal-bg);
   --color-terminal-fg: var(--terminal-fg);
@@ -59,10 +140,81 @@
   --color-terminal-log-success: var(--terminal-log-success);
   --color-terminal-log-error: var(--terminal-log-error);
   --color-terminal-log-warning: var(--terminal-log-warning);
+
+  /* ------------------------------------------------------------------------
+     Type scale — base is 13px (desktop-dense: VS Code / Linear / Xcode), not
+     the web's 16px. Each entry ships its own line-height, tracking and weight,
+     so `text-title` alone is a complete typographic decision.
+
+       text-display   24px / 1.2  / -0.02em / 600   view titles
+       text-title     17px / 1.3  / -0.01em / 600   card headers, dialog titles
+       text-body      13px / 1.5  /  0      / 400   default body copy
+       text-label     12px / 1.4  /  0      / 500   form labels, table headers
+       text-caption   11px / 1.4  /  0.01em / 500   metadata, timestamps, badges
+       text-mono      12px / 1.5  /  0      / 400   serials, paths, logs, shell
+       text-mono-sm   11px / 1.5  /  0      / 400   dense log gutters
+
+     `text-mono` / `text-mono-sm` are *sizes*; pair them with `font-mono`.
+     11px is the floor — nothing in this app may be smaller.
+     Numeric contexts (tables, byte counts, percentages, telemetry) add the
+     `numeric` utility so digits do not jitter as values update.
+     ------------------------------------------------------------------------ */
+  --text-display: 1.5rem;
+  --text-display--line-height: 1.2;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 600;
+  --text-title: 1.0625rem;
+  --text-title--line-height: 1.3;
+  --text-title--letter-spacing: -0.01em;
+  --text-title--font-weight: 600;
+  --text-body: 0.8125rem;
+  --text-body--line-height: 1.5;
+  --text-body--letter-spacing: 0;
+  --text-body--font-weight: 400;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0;
+  --text-label--font-weight: 500;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: 0.01em;
+  --text-caption--font-weight: 500;
+  --text-mono: 0.75rem;
+  --text-mono--line-height: 1.5;
+  --text-mono--letter-spacing: 0;
+  --text-mono--font-weight: 400;
+  --text-mono-sm: 0.6875rem;
+  --text-mono-sm--line-height: 1.5;
+  --text-mono-sm--letter-spacing: 0;
+  --text-mono-sm--font-weight: 400;
+
+  /* Motion — only transform/opacity animate; never height, never `all`. */
+  --ease-standard: var(--motion-ease);
 }
 
+/* Tabular figures for every numeric readout. */
+@utility numeric {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   "Precision Instrument" palette
+   --------------------------------------------------------------------------
+   Neutrals carry a trace of blue (hue 250, chroma 0.008–0.016) so the whole
+   surface reads as designed rather than default. One accent — electric cyan
+   (hue 210) — marks the primary action or the active state, nothing else.
+   Status colours (success / warning / danger / info) are an orthogonal
+   vocabulary: they describe device state, never UI emphasis.
+
+   Raw values are declared once per theme in `:root` / `.dark`. Everything
+   derived (`var()` / `color-mix()`) is declared once in `:root` and resolves
+   per theme automatically, because both blocks target <html>.
+   ========================================================================== */
+
 :root {
-  --radius: 0.625rem;
+  /* radius ladder: sm 4 · md 6 · lg 8 · xl 12 */
+  --radius: 0.5rem;
 
   /* Layout constants for responsive design */
   --content-min-width: 0px;
@@ -75,219 +227,263 @@
   --z-toast: 500;
   --z-tooltip: 600;
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-rgb: 31 31 31;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --font-sans: "Onest", sans-serif;
-  /* Semantic status tokens */
-  --warning: oklch(0.84 0.16 84);
-  --warning-foreground: oklch(0.28 0.07 46);
-  --success: oklch(0.52 0.176 142.5);
-  --success-foreground: oklch(0.985 0 0);
+  /* Motion — interruptible, compositor-only. `--ease-standard` (Tailwind
+     `ease-standard`) is mapped to `--motion-ease` in the theme block above. */
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+  --motion-instant: 90ms;
+  --motion-fast: 140ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono:
+    "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", "Segoe UI Mono",
+    "Roboto Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* ---- Surface ladder (light) ---- */
+  --canvas: oklch(0.985 0.003 250);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(0.975 0.004 250);
+  --surface-overlay: oklch(1 0 0);
+
+  /* ---- Line work (light) ----
+     `border` / `border-strong` are decorative: dividers, card edges, hairlines.
+     `border-control` is the *boundary of an interactive control* (text fields,
+     selects, textareas, checkboxes) and is held at >= 3:1 against every surface
+     in the ladder, per WCAG 2.1 SC 1.4.11 — 3.36:1 on surface, 3.22:1 on
+     canvas, 3.13:1 on surface-raised. Do not use it as a divider. */
+  --border: oklch(0.905 0.006 250);
+  --border-strong: oklch(0.845 0.008 250);
+  --border-control: oklch(0.64 0.012 250);
+
+  /* ---- Text (light) — three tiers, all ≥ 4.5:1 on canvas and surface ---- */
+  --foreground: oklch(0.205 0.014 250);
+  --muted-foreground: oklch(0.505 0.014 250);
+  --foreground-subtle: oklch(0.56 0.012 250);
+
+  /* ---- Accent (light) — hover/active go darker, so contrast against both
+     the white surface and the button's own label increases on interaction ---- */
+  --primary: oklch(0.51 0.165 210);
+  --primary-hover: oklch(0.46 0.165 210);
+  --primary-active: oklch(0.41 0.16 210);
+  --primary-foreground: oklch(0.99 0.005 210);
+
+  /* ---- Interactive tint (light): hover / pressed surface for ghost,
+     outline and secondary controls. Contrast increases on press. ---- */
+  --accent: oklch(0.945 0.006 250);
+  --accent-active: oklch(0.905 0.007 250);
+
+  /* ---- Status (light) ---- */
+  --success: oklch(0.52 0.155 155);
+  --success-foreground: oklch(0.99 0.01 155);
+  /* `warning` is read as *text* (`text-warning`) far more often than as a fill,
+     so it is held to 4.5:1 on the whole light surface ladder: 5.65:1 on
+     surface, 5.41:1 on canvas, 5.26:1 on surface-raised. That makes it too
+     dark for the near-black label the brighter amber used to carry, so
+     `warning-foreground` flips to near-white (5.42:1), matching how `success`
+     and `destructive` already work in this theme. */
+  --warning: oklch(0.52 0.13 70);
+  --warning-foreground: oklch(0.99 0.02 70);
+  --destructive: oklch(0.55 0.215 25);
+  --destructive-hover: oklch(0.49 0.215 25);
+  --destructive-active: oklch(0.44 0.2 25);
+  --destructive-foreground: oklch(0.99 0.005 25);
+  --info: oklch(0.52 0.155 250);
+  --info-foreground: oklch(0.99 0.005 250);
+
+  /* ---- Chart ramp (light) — lightness varies with hue so the series stay
+     separable for deutan/protan vision, not just by hue ---- */
+  --chart-1: oklch(0.58 0.165 210);
+  --chart-2: oklch(0.54 0.15 155);
+  --chart-3: oklch(0.63 0.145 75);
+  --chart-4: oklch(0.53 0.2 300);
+  --chart-5: oklch(0.56 0.19 25);
+
+  /* ---- Terminal (light) ---- */
+  --terminal-bg: oklch(0.975 0.004 250);
+  --terminal-fg: oklch(0.245 0.014 250);
+  --terminal-header-bg: oklch(0.955 0.005 250);
+
+  /* ---- Inset top highlight on solid controls ---- */
+  --control-highlight: oklch(1 0 0 / 22%);
+
+  /* ======================================================================
+     Derived tokens — theme-agnostic, declared once.
+     ====================================================================== */
+
+  --background: var(--canvas);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface-overlay);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--surface-raised);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-raised);
+  --accent-foreground: var(--foreground);
+  /* Fill only (`bg-input/30`, the unchecked switch track). The *boundary* of a
+     form control is `--border-control`, which alone meets SC 1.4.11. */
+  --input: var(--border);
+  --ring: var(--primary);
+  --primary-muted: color-mix(in oklch, var(--primary) 14%, transparent);
+  --destructive-muted: color-mix(in oklch, var(--destructive) 14%, transparent);
+  --warning-muted: color-mix(in oklch, var(--warning) 14%, transparent);
+  --info-muted: color-mix(in oklch, var(--info) 14%, transparent);
   --success-muted: color-mix(in oklch, var(--success) 10%, transparent);
   --success-light: color-mix(in oklch, var(--success) 15%, transparent);
   --success-subtle: color-mix(in oklch, var(--success) 20%, transparent);
-  --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
-  --device-status-adb-fg: var(--success);
-  --device-status-adb-border: color-mix(
-    in oklch,
-    var(--success) 35%,
-    transparent
-  );
-  --device-status-fastboot-bg: color-mix(
-    in oklch,
-    var(--warning) 18%,
-    transparent
-  );
-  --device-status-fastboot-fg: var(--warning-foreground);
-  --device-status-fastboot-border: color-mix(
-    in oklch,
-    var(--warning) 38%,
-    transparent
-  );
-  --device-status-recovery-bg: color-mix(
-    in oklch,
-    var(--success) 18%,
-    transparent
-  );
-  --device-status-recovery-fg: var(--success);
-  --device-status-recovery-border: color-mix(
-    in oklch,
-    var(--success) 35%,
-    transparent
-  );
-  --device-status-neutral-bg: color-mix(
-    in oklch,
-    var(--muted-foreground) 16%,
-    transparent
-  );
-  --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(
-    in oklch,
-    var(--muted-foreground) 28%,
-    transparent
-  );
-  --device-status-unauthorized-bg: color-mix(
-    in oklch,
-    var(--destructive) 16%,
-    transparent
-  );
-  --device-status-unauthorized-fg: var(--destructive);
-  --device-status-unauthorized-border: color-mix(
-    in oklch,
-    var(--destructive) 32%,
-    transparent
-  );
 
-  /* Terminal panel tokens */
-  --terminal-bg: oklch(0.97 0 0);
-  --terminal-fg: oklch(0.145 0 0);
-  --terminal-border: oklch(0.922 0 0);
-  --terminal-header-bg: oklch(0.96 0 0);
-  --terminal-tab-active: oklch(0.205 0 0);
-  --terminal-tab-inactive: oklch(0.556 0 0);
-  --terminal-log-info: oklch(0.488 0.243 264.376);
-  --terminal-log-success: oklch(0.52 0.176 142.5);
-  --terminal-log-error: oklch(0.577 0.245 27.325);
-  --terminal-log-warning: oklch(0.75 0.183 55.934);
-}
+  --sidebar: var(--canvas);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-rgb: 233 233 233;
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --font-sans: "Onest", sans-serif;
-  /* Semantic status tokens */
-  --warning: oklch(0.82 0.17 80);
-  --warning-foreground: oklch(0.985 0 0);
-  --success: oklch(0.72 0.19 150);
-  --success-foreground: oklch(0.985 0 0);
-  --success-muted: color-mix(in oklch, var(--success) 10%, transparent);
-  --success-light: color-mix(in oklch, var(--success) 15%, transparent);
-  --success-subtle: color-mix(in oklch, var(--success) 20%, transparent);
-  --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
-  --device-status-adb-fg: var(--success);
+  /* ---- Device status: one bg/fg/border triple per connection state.
+     `recovery` is info, not success — it must never look like a healthy
+     `adb` connection. ---- */
+  --device-status-adb-bg: color-mix(in oklch, var(--success) 16%, transparent);
+  --device-status-adb-fg: color-mix(
+    in oklab,
+    var(--success) 78%,
+    var(--foreground)
+  );
   --device-status-adb-border: color-mix(
     in oklch,
     var(--success) 34%,
     transparent
   );
-  --device-status-fastboot-bg: color-mix(
+  --device-status-recovery-bg: color-mix(
     in oklch,
-    var(--warning) 18%,
+    var(--info) 16%,
     transparent
   );
-  --device-status-fastboot-fg: var(--warning);
+  --device-status-recovery-fg: color-mix(
+    in oklab,
+    var(--info) 78%,
+    var(--foreground)
+  );
+  --device-status-recovery-border: color-mix(
+    in oklch,
+    var(--info) 34%,
+    transparent
+  );
+  --device-status-fastboot-bg: color-mix(
+    in oklch,
+    var(--warning) 16%,
+    transparent
+  );
+  --device-status-fastboot-fg: color-mix(
+    in oklab,
+    var(--warning) 78%,
+    var(--foreground)
+  );
   --device-status-fastboot-border: color-mix(
     in oklch,
     var(--warning) 34%,
     transparent
   );
-  --device-status-recovery-bg: color-mix(
-    in oklch,
-    var(--success) 18%,
-    transparent
-  );
-  --device-status-recovery-fg: var(--success);
-  --device-status-recovery-border: color-mix(
-    in oklch,
-    var(--success) 34%,
-    transparent
-  );
-  --device-status-neutral-bg: color-mix(
-    in oklch,
-    var(--muted-foreground) 16%,
-    transparent
-  );
-  --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(
-    in oklch,
-    var(--muted-foreground) 28%,
-    transparent
-  );
   --device-status-unauthorized-bg: color-mix(
     in oklch,
     var(--destructive) 16%,
     transparent
   );
-  --device-status-unauthorized-fg: var(--destructive);
+  --device-status-unauthorized-fg: color-mix(
+    in oklab,
+    var(--destructive) 78%,
+    var(--foreground)
+  );
   --device-status-unauthorized-border: color-mix(
     in oklch,
-    var(--destructive) 30%,
+    var(--destructive) 34%,
+    transparent
+  );
+  --device-status-neutral-bg: color-mix(
+    in oklch,
+    var(--foreground-subtle) 14%,
+    transparent
+  );
+  --device-status-neutral-fg: var(--muted-foreground);
+  --device-status-neutral-border: color-mix(
+    in oklch,
+    var(--foreground-subtle) 28%,
     transparent
   );
 
-  /* Terminal panel tokens */
-  --terminal-bg: oklch(0.12 0 0);
-  --terminal-fg: oklch(0.92 0 0);
-  --terminal-border: oklch(1 0 0 / 10%);
-  --terminal-header-bg: oklch(0.16 0 0);
-  --terminal-tab-active: oklch(0.985 0 0);
-  --terminal-tab-inactive: oklch(0.556 0 0);
-  --terminal-log-info: oklch(0.62 0.2 255);
-  --terminal-log-success: oklch(0.72 0.19 150);
-  --terminal-log-error: oklch(0.704 0.191 22.216);
-  --terminal-log-warning: oklch(0.82 0.17 80);
+  --terminal-border: var(--border);
+  --terminal-tab-active: var(--foreground);
+  --terminal-tab-inactive: var(--foreground-subtle);
+  --terminal-log-info: var(--info);
+  --terminal-log-success: var(--success);
+  --terminal-log-error: var(--destructive);
+  --terminal-log-warning: var(--warning);
+}
+
+.dark {
+  /* ---- Surface ladder (dark) — ~+0.03 L per step, so four levels stack
+     without borders and never approach mid-grey ---- */
+  --canvas: oklch(0.145 0.012 250);
+  --surface: oklch(0.185 0.014 250);
+  --surface-raised: oklch(0.215 0.015 250);
+  --surface-overlay: oklch(0.235 0.016 250);
+
+  /* ---- Line work (dark) ---- see the light block for the split. 3.39:1 on
+     surface, 3.60:1 on canvas, 3.18:1 on surface-raised, 3.03:1 on overlay. */
+  --border: oklch(0.285 0.014 250);
+  --border-strong: oklch(0.365 0.016 250);
+  --border-control: oklch(0.52 0.016 250);
+
+  /* ---- Text (dark) ---- */
+  --foreground: oklch(0.965 0.004 250);
+  --muted-foreground: oklch(0.715 0.012 250);
+  --foreground-subtle: oklch(0.6 0.012 250);
+
+  /* ---- Accent (dark) — the fill carries a *dark* label, so brightening on
+     hover/active raises contrast both against the canvas and against the
+     label itself ---- */
+  --primary: oklch(0.72 0.155 210);
+  --primary-hover: oklch(0.78 0.15 210);
+  --primary-active: oklch(0.83 0.145 210);
+  --primary-foreground: oklch(0.145 0.02 250);
+
+  /* ---- Interactive tint (dark) ---- */
+  --accent: oklch(0.245 0.016 250);
+  --accent-active: oklch(0.29 0.017 250);
+
+  /* ---- Status (dark) ---- */
+  --success: oklch(0.72 0.17 155);
+  --success-foreground: oklch(0.16 0.03 155);
+  --warning: oklch(0.8 0.15 75);
+  --warning-foreground: oklch(0.19 0.035 70);
+  /* Danger carries a near-white label, so it moves the other way from the
+     accent: darker on hover/active keeps the label legible. */
+  --destructive: oklch(0.6 0.215 22);
+  --destructive-hover: oklch(0.55 0.215 22);
+  --destructive-active: oklch(0.5 0.21 22);
+  --destructive-foreground: oklch(0.985 0.005 22);
+  --info: oklch(0.7 0.14 240);
+  --info-foreground: oklch(0.15 0.025 240);
+
+  /* ---- Chart ramp (dark) ---- */
+  --chart-1: oklch(0.72 0.155 210);
+  --chart-2: oklch(0.68 0.17 155);
+  --chart-3: oklch(0.78 0.15 75);
+  --chart-4: oklch(0.65 0.19 300);
+  --chart-5: oklch(0.7 0.18 25);
+
+  /* ---- Terminal (dark) — the deepest surface in the app ---- */
+  --terminal-bg: oklch(0.115 0.011 250);
+  --terminal-fg: oklch(0.925 0.006 250);
+  --terminal-header-bg: oklch(0.175 0.014 250);
+
+  --control-highlight: oklch(1 0 0 / 12%);
+
+  /* Chrome sits one step above the canvas in dark. */
+  --sidebar: var(--surface);
 }
 
 @layer base {
@@ -304,12 +500,26 @@
   }
 
   body {
+    font-size: 0.8125rem;
+    line-height: 1.5;
     color-scheme: light;
     @apply bg-background text-foreground;
   }
 
   html.dark body {
     color-scheme: dark;
+  }
+
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  a[href],
+  label,
+  select,
+  summary {
+    touch-action: manipulation;
   }
 
   button,
@@ -323,20 +533,14 @@
 
 html,
 body {
-  scrollbar-color: oklch(0 0 0 / 20%) transparent;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 22%, transparent)
+    transparent;
   scrollbar-width: thin;
 }
 
 /* Only the main content scroll area gets a stable gutter to prevent layout shift */
 .main-scroll-area {
   scrollbar-gutter: stable;
-}
-
-.dark html,
-.dark body,
-html.dark,
-body.dark {
-  scrollbar-color: oklch(1 0 0 / 25%) transparent;
 }
 
 body::-webkit-scrollbar,
@@ -347,26 +551,16 @@ body::-webkit-scrollbar,
 
 body::-webkit-scrollbar-thumb,
 .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: oklch(0 0 0 / 20%);
+  background-color: color-mix(in oklch, var(--foreground) 22%, transparent);
   background-clip: content-box;
   border: 2px solid transparent;
   border-radius: 9999px;
-  transition: background-color 0.2s ease;
-}
-
-.dark body::-webkit-scrollbar-thumb,
-.dark .custom-scroll::-webkit-scrollbar-thumb {
-  background-color: oklch(1 0 0 / 25%);
+  transition: background-color var(--motion-base) var(--ease-standard);
 }
 
 body::-webkit-scrollbar-thumb:hover,
 .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: oklch(0 0 0 / 35%);
-}
-
-.dark body::-webkit-scrollbar-thumb:hover,
-.dark .custom-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: oklch(1 0 0 / 45%);
+  background-color: color-mix(in oklch, var(--foreground) 38%, transparent);
 }
 
 body::-webkit-scrollbar-track,

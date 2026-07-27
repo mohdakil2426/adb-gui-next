@@ -28,7 +28,7 @@ export function SourceSelectionSection({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 font-medium text-sm">
+      <div className="flex items-center gap-2 font-medium text-body">
         <ShieldCheck className="size-4 text-muted-foreground" />
         Source selection
       </div>

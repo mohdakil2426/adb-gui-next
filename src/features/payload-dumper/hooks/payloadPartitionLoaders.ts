@@ -6,12 +6,12 @@ import {
   ListRemotePayloadPartitions,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
-import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import { usePayloadProgressStore } from '@/features/payload-dumper/model/payloadProgressStore';
 import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
 import { useLogStore } from '@/shared/stores/logStore';
 import { debugLog } from '@/shared/utils/debug';
 import { handleError, handleSuccess } from '@/shared/utils/errorHandler';
-import { formatBytesNum } from '@/shared/utils/formatting';
+import { formatBytes } from '@/shared/utils/format';
 
 interface LoaderStoreActions {
   beginLoadProgress?: () => void;
@@ -35,7 +35,7 @@ export async function loadLocalPartitions(path: string, actions: LoaderStoreActi
     debugLog(`Loading partitions from: ${path}`);
     const partitionList = await ListPayloadPartitionsWithDetails(path);
     if (partitionList && partitionList.length > 0) {
-      const currentCompleted = usePayloadDumperStore.getState().completedPartitions;
+      const currentCompleted = usePayloadProgressStore.getState().completedPartitions;
       actions.setPartitions(
         partitionList.map((p) => ({
           name: p.name,
@@ -69,11 +69,9 @@ export function checkRemoteUrl(
     .then((info) => {
       if (info.supportsRanges) {
         setConnectionStatus('ready');
-        setEstimatedSize(formatBytesNum(info.contentLength));
+        setEstimatedSize(formatBytes(info.contentLength));
         toast.success('URL verified - range requests supported');
-        useLogStore
-          .getState()
-          .addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
+        useLogStore.getState().addLog(`URL verified: ${formatBytes(info.contentLength)}`, 'info');
         return;
       }
       setConnectionStatus('error');

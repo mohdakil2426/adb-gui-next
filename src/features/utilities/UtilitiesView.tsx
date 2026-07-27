@@ -32,8 +32,13 @@ export function ViewUtilities() {
     [setShowGetVarDialog],
   );
 
+  // `refetchDevices` is recreated per render upstream; a memo here would be a lie.
+  const handleRescan = () => {
+    void refetchDevices();
+  };
+
   return (
-    <div className="flex flex-col gap-6 pb-10">
+    <div className="flex flex-col gap-4">
       <h1 className="sr-only">Utilities</h1>
       <EditNicknameDialog
         isOpen={isEditing}
@@ -45,20 +50,24 @@ export function ViewUtilities() {
       <div className="flex flex-col gap-6">
         <AdbUtilitiesPanel
           deviceMode={deviceMode}
+          deviceSerial={deviceSerial}
           handleKillServer={handleKillServer}
           handleReboot={handleReboot}
           handleRestartServer={handleRestartServer}
           loadingAction={loadingAction}
+          onRescan={handleRescan}
           sentAction={sentAction}
         />
         <FastbootUtilitiesPanel
           deviceMode={deviceMode}
+          deviceSerial={deviceSerial}
           handleFastbootGetVars={handleFastbootGetVars}
           handleReboot={handleReboot}
           handleSetActiveSlot={handleSetActiveSlot}
           handleWipeData={handleWipeData}
           isGlobalLoading={isGlobalLoading}
           loadingAction={loadingAction}
+          onRescan={handleRescan}
           sentAction={sentAction}
         />
       </div>

@@ -11,10 +11,11 @@ import {
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { EventsOn } from '@/desktop/runtime';
+import { useEmulatorManagerStore } from '@/features/emulator/model/emulatorManagerStore';
 import {
-  type RootWizardSource,
-  useEmulatorManagerStore,
-} from '@/features/emulator/model/emulatorManagerStore';
+  COLD_BOOT_LAUNCH_OPTIONS,
+  DEFAULT_LAUNCH_OPTIONS,
+} from '@/features/emulator/model/launchOptions';
 import { useLogStore } from '@/shared/stores/logStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { invalidateAvds } from '@/shared/utils/queries';
@@ -29,34 +30,35 @@ interface RootWizardProps {
   avd: backend.AvdSummary;
 }
 export function RootWizard({ avd }: RootWizardProps) {
-  const {
-    rootWizard,
-    setRootWizardStep,
-    setRootWizardSource,
-    setRootWizardProgress,
-    setRootWizardResult,
-    setRootVerification,
-    setRootVerifying,
-    setPreflightScan,
-    resetRootWizard,
-    setActiveTab,
-    setSetupTab,
-  } = useEmulatorManagerStore();
+  // Atomic selectors. `root:progress` writes many times per second; subscribing
+  // to the whole store re-rendered the wizard (and its children) on every tick
+  // and on every unrelated emulator-store write.
+  const step = useEmulatorManagerStore((s) => s.rootWizard.step);
+  const setupTab = useEmulatorManagerStore((s) => s.rootWizard.setupTab);
+  const source = useEmulatorManagerStore((s) => s.rootWizard.source);
+  const progress = useEmulatorManagerStore((s) => s.rootWizard.progress);
+  const result = useEmulatorManagerStore((s) => s.rootWizard.result);
+  const verification = useEmulatorManagerStore((s) => s.rootWizard.verification);
+  const isVerifying = useEmulatorManagerStore((s) => s.rootWizard.isVerifying);
+  const error = useEmulatorManagerStore((s) => s.rootWizard.error);
+  const preflightScan = useEmulatorManagerStore((s) => s.rootWizard.preflightScan);
+  const setRootWizardStep = useEmulatorManagerStore((s) => s.setRootWizardStep);
+  const setRootWizardSource = useEmulatorManagerStore((s) => s.setRootWizardSource);
+  const setRootWizardProgress = useEmulatorManagerStore((s) => s.setRootWizardProgress);
+  const setRootWizardResult = useEmulatorManagerStore((s) => s.setRootWizardResult);
+  const setRootVerification = useEmulatorManagerStore((s) => s.setRootVerification);
+  const setRootVerifying = useEmulatorManagerStore((s) => s.setRootVerifying);
+  const setPreflightScan = useEmulatorManagerStore((s) => s.setPreflightScan);
+  const resetRootWizard = useEmulatorManagerStore((s) => s.resetRootWizard);
+  const setActiveTab = useEmulatorManagerStore((s) => s.setActiveTab);
+  const setSetupTab = useEmulatorManagerStore((s) => s.setSetupTab);
+  const applyLaunchPreset = useEmulatorManagerStore((s) => s.applyLaunchPreset);
   const queryClient = useQueryClient();
   const cancelledRef = useRef(false);
-  const autoScanKeyRef = useRef<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const scanKey = `${avd.name}:${avd.serial ?? 'stopped'}`;
 
   // Map wizard step to STEPS index: Preflight (0), Setup (1), Patching (2), Verify (3)
-  const stepIndex =
-    rootWizard.step === 'preflight'
-      ? 0
-      : rootWizard.step === 'setup'
-        ? 1
-        : rootWizard.step === 'progress'
-          ? 2
-          : 3;
+  const stepIndex = step === 'preflight' ? 0 : step === 'setup' ? 1 : step === 'progress' ? 2 : 3;
   // Listen for root:progress events from Tauri backend via desktop runtime.
   useEffect(
     () =>
@@ -79,11 +81,8 @@ export function RootWizard({ avd }: RootWizardProps) {
       setIsScanning(false);
     }
   }, [avd.name, avd.serial, setPreflightScan]);
-  function handleSourceChange(src: RootWizardSource) {
-    setRootWizardSource(src);
-  }
   function handleContinue() {
-    if (!rootWizard.source) {
+    if (!source) {
       return;
     }
     setRootWizardStep('progress');
@@ -91,7 +90,7 @@ export function RootWizard({ avd }: RootWizardProps) {
     void startRoot();
   }
   async function startRoot() {
-    const src = rootWizard.source;
+    const src = source;
     if (!(src && avd.serial)) {
       setRootWizardResult(null, 'Emulator is not running. Launch it first.');
       return;
@@ -124,37 +123,25 @@ export function RootWizard({ avd }: RootWizardProps) {
     resetRootWizard();
     toast.info('Rooting cancelled');
   }
+  // Both remedies write the preset they use into the shared launch options, so
+  // the Launch tab always shows the configuration the emulator actually got.
   function handleLaunch() {
-    LaunchAvd(avd.name, {
-      wipeData: false,
-      writableSystem: false,
-      coldBoot: false,
-      noSnapshotLoad: false,
-      noSnapshotSave: false,
-      noBootAnim: false,
-    })
+    applyLaunchPreset(DEFAULT_LAUNCH_OPTIONS);
+    LaunchAvd(avd.name, DEFAULT_LAUNCH_OPTIONS)
       .then(() => toast.success(`Launching ${avd.name}…`))
       .catch((err: unknown) => toast.error(String(err)));
   }
   function handleColdBoot() {
     // The emulator may already be stopped (auto-shutdown after patching).
     // Attempt to stop gracefully, then cold boot with no-snapshot flags.
+    applyLaunchPreset(COLD_BOOT_LAUNCH_OPTIONS);
     const stopPromise = avd.serial
       ? StopAvd(avd.serial).catch(() => {
           // ignore stop failures — device may already be offline
         })
       : Promise.resolve();
     void stopPromise
-      .then(() =>
-        LaunchAvd(avd.name, {
-          wipeData: false,
-          writableSystem: false,
-          coldBoot: true,
-          noSnapshotLoad: true,
-          noSnapshotSave: true,
-          noBootAnim: false,
-        }),
-      )
+      .then(() => LaunchAvd(avd.name, COLD_BOOT_LAUNCH_OPTIONS))
       .then(() => {
         toast.success(`Cold booting ${avd.name}…`);
         useLogStore.getState().addLog(`Cold boot launched for ${avd.name}`, 'info');
@@ -196,10 +183,10 @@ export function RootWizard({ avd }: RootWizardProps) {
     setSetupTab('manual');
   }, [resetRootWizard, setRootWizardStep, setSetupTab]);
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <RootStepIndicator stepIndex={stepIndex} />
       {/* Step content */}
-      {rootWizard.step === 'preflight' && (
+      {step === 'preflight' && (
         <RootPreflightStep
           avdName={avd.name}
           isScanning={isScanning}
@@ -209,67 +196,64 @@ export function RootWizard({ avd }: RootWizardProps) {
           }}
           onLaunch={handleLaunch}
           onRescan={() => {
-            autoScanKeyRef.current = scanKey;
             setPreflightScan(null);
             void runScan();
           }}
           onRestoreStock={handleRestoreStock}
-          scan={rootWizard.preflightScan}
+          scan={preflightScan}
         />
       )}
-      {rootWizard.step === 'setup' && (
-        <div className="flex flex-col gap-6">
-          <Tabs
-            className="w-full"
-            onValueChange={(v) => setSetupTab(v as 'autopilot' | 'manual')}
-            value={rootWizard.setupTab}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger className="gap-2" value="autopilot">
-                <Zap className="size-4 text-primary" />
-                Autopilot (Legacy Magisk ≤ v25.2)
-              </TabsTrigger>
-              <TabsTrigger className="gap-2" value="manual">
-                <ShieldCheck className="size-4 text-success" />
-                Manual FAKEBOOTIMG (Modern Magisk v26 - v30+)
-              </TabsTrigger>
-            </TabsList>
-            <div className="mt-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-              <TabsContent value="autopilot">
-                <RootSourceStep
-                  onContinue={handleContinue}
-                  onSourceChange={handleSourceChange}
-                  source={rootWizard.source}
-                />
-              </TabsContent>
-              <TabsContent value="manual">
-                <RootManualStep avdName={avd.name} serial={avd.serial ?? null} />
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
+      {step === 'setup' && (
+        <Tabs
+          className="w-full"
+          onValueChange={(v) => setSetupTab(v as 'autopilot' | 'manual')}
+          value={setupTab}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger className="gap-2" value="autopilot">
+              <Zap aria-hidden="true" className="size-4" />
+              Autopilot (Magisk v25.2 and older)
+            </TabsTrigger>
+            <TabsTrigger className="gap-2" value="manual">
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              Manual FAKEBOOTIMG (Magisk v26+)
+            </TabsTrigger>
+          </TabsList>
+          <div className="mt-3 rounded-md border border-border bg-surface-raised p-4">
+            <TabsContent value="autopilot">
+              <RootSourceStep
+                onContinue={handleContinue}
+                onSourceChange={setRootWizardSource}
+                source={source}
+              />
+            </TabsContent>
+            <TabsContent value="manual">
+              <RootManualStep avdName={avd.name} serial={avd.serial ?? null} />
+            </TabsContent>
+          </div>
+        </Tabs>
       )}
-      {rootWizard.step === 'progress' && (
+      {step === 'progress' && (
         <RootProgressStep
           avdName={avd.name}
-          error={rootWizard.error}
+          error={error}
           onCancel={handleCancel}
-          progress={rootWizard.progress}
+          progress={progress}
         />
       )}
-      {rootWizard.step === 'result' && (
+      {step === 'result' && (
         <RootResultStep
           avdName={avd.name}
-          error={rootWizard.error}
-          isVerifying={rootWizard.isVerifying}
+          error={error}
+          isVerifying={isVerifying}
           onColdBoot={handleColdBoot}
           onReset={resetRootWizard}
           onRestoreStock={handleRestoreStock}
           onTryManual={handleTryManual}
           onVerifyRoot={handleVerifyRoot}
-          result={rootWizard.result}
+          result={result}
           serial={avd.serial ?? ''}
-          verification={rootWizard.verification}
+          verification={verification}
         />
       )}
     </div>

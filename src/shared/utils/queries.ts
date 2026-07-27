@@ -34,6 +34,8 @@ export const queryKeys = {
 // staleTime constants — in milliseconds
 // ---------------------------------------------------------------------------
 export const STALE_TIME = {
+  /** Global default applied in `App.tsx`. */
+  DEFAULT: 30 * 1000,
   DEVICES: 30 * 1000,
   FASTBOOT_DEVICES: 30 * 1000,
   ALL_DEVICES: 30 * 1000,

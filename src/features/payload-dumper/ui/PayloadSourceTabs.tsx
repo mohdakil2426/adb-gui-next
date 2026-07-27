@@ -71,16 +71,16 @@ export function PayloadSourceTabs({
     >
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger className="flex items-center gap-2" disabled={showLoadCard} value="local">
-          <FileArchive className="size-4" />
-          Local File
+          <FileArchive aria-hidden="true" className="size-4" />
+          Local file
         </TabsTrigger>
         <TabsTrigger className="flex items-center gap-2" value="remote">
-          <Globe className="size-4" />
+          <Globe aria-hidden="true" className="size-4" />
           Remote URL
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent className="mt-4" value="local">
+      <TabsContent className="mt-3" value="local">
         <DropZone
           acceptExtensions={ACCEPTED_PAYLOAD_EXTENSIONS}
           browseLabel="Select Payload File"
@@ -94,7 +94,7 @@ export function PayloadSourceTabs({
         />
       </TabsContent>
 
-      <TabsContent className="mt-4 min-w-0 overflow-hidden" value="remote">
+      <TabsContent className="mt-3 min-w-0 overflow-hidden" value="remote">
         <RemoteUrlPanel
           connectionStatus={connectionStatus}
           disabled={disabled || showLoadCard}
@@ -106,7 +106,7 @@ export function PayloadSourceTabs({
           url={remoteUrl}
         />
         {showLoadCard ? (
-          <div className="mt-4">
+          <div className="mt-3">
             <RemoteLoadProgressCard
               detail={loadDetail}
               estimatedSizeLabel={estimatedSize}
@@ -120,10 +120,10 @@ export function PayloadSourceTabs({
           </div>
         ) : null}
         {connectionStatus === 'ready' && !showLoadCard ? (
-          <div className="mt-4 flex min-w-0 gap-2">
-            <Button className="w-full" onClick={onLoadRemotePartitions}>
-              <Globe className="mr-2 size-4" />
-              Load Partitions from URL
+          <div className="mt-3 flex min-w-0 gap-2">
+            <Button className="w-full" onClick={onLoadRemotePartitions} type="button">
+              <Globe aria-hidden="true" />
+              Load partitions from URL
             </Button>
           </div>
         ) : null}

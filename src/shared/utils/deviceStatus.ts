@@ -6,7 +6,7 @@
  *
  * Import `getStatusConfig` wherever a device status badge is rendered to
  * eliminate the duplicated STATUS_CONFIG that previously lived in both
- * DeviceSwitcher.tsx and ConnectedDevicesCard.tsx.
+ * DeviceSwitcher.tsx.
  */
 
 export type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';

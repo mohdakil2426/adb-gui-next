@@ -2,18 +2,16 @@ import { Copy, ExternalLink, GitBranch } from 'lucide-react';
 import { toast } from 'sonner';
 import { BrowserOpenURL } from '@/desktop/runtime';
 import { Button } from '@/shared/ui/button';
-import { formatDisplayDate } from '@/shared/utils/formatting';
+import { formatDisplayDate } from '@/shared/utils/format';
 
 function MetadataItem({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) {
     return null;
   }
   return (
-    <div className="flex flex-col">
-      <span className="font-semibold text-[11px] text-muted-foreground uppercase tracking-wider">
-        {label}
-      </span>
-      <span className="mt-0.5 font-medium text-sm">{value}</span>
+    <div className="flex flex-col gap-0.5">
+      <span className="text-caption text-muted-foreground uppercase tracking-wide">{label}</span>
+      <span className="truncate font-medium text-body text-foreground">{value}</span>
     </div>
   );
 }
@@ -29,57 +27,65 @@ interface AppDetailSidebarProps {
 }
 
 export function AppDetailSidebar({
-  version,
-  updatedAt,
-  license,
   author,
+  license,
+  packageName,
   repoUrl,
   source,
-  packageName,
+  updatedAt,
+  version,
 }: AppDetailSidebarProps) {
   return (
-    <section className="gap-4">
-      <h3 className="font-semibold text-muted-foreground text-sm uppercase tracking-wider">
-        App Information
-      </h3>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+    <section className="flex flex-col gap-3">
+      <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+        App information
+      </h2>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
         <MetadataItem label="Version" value={version} />
         <MetadataItem label="Updated" value={updatedAt ? formatDisplayDate(updatedAt) : null} />
         <MetadataItem label="License" value={license} />
         <MetadataItem label="Author" value={author} />
       </div>
-      {repoUrl ? (
-        <div className="pt-2">
+
+      <div className="flex flex-col gap-1.5">
+        {repoUrl ? (
           <Button
             className="w-full"
             onClick={() => {
               BrowserOpenURL(repoUrl);
             }}
+            size="sm"
+            type="button"
             variant="outline"
           >
             {source === 'GitHub' ? (
-              <GitBranch aria-hidden="true" data-icon="inline-start" />
+              <GitBranch aria-hidden="true" />
             ) : (
-              <ExternalLink aria-hidden="true" data-icon="inline-start" />
+              <ExternalLink aria-hidden="true" />
             )}
-            Open Repository
+            Open repository
           </Button>
-        </div>
-      ) : null}
-      <Button
-        className="mt-2 w-full text-muted-foreground hover:text-foreground"
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(packageName);
-            toast.success('Package name copied');
-          } catch {
-            toast.error('Unable to copy package name');
-          }
-        }}
-        variant="ghost"
-      >
-        <Copy aria-hidden="true" data-icon="inline-start" /> Copy Package ID
-      </Button>
+        ) : null}
+        <Button
+          className="w-full"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(packageName);
+              toast.success('Package name copied');
+            } catch {
+              toast.error('Unable to copy the package name', {
+                description: 'Clipboard access was refused — select and copy the name manually.',
+              });
+            }
+          }}
+          size="sm"
+          type="button"
+          variant="ghost"
+        >
+          <Copy aria-hidden="true" />
+          Copy package ID
+        </Button>
+      </div>
     </section>
   );
 }

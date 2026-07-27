@@ -1,26 +1,22 @@
 import { m } from 'framer-motion';
-import { ChevronDown, ExternalLink, FileArchive, FolderOutput, Globe } from 'lucide-react';
+import { ChevronDown, FileArchive, Globe } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import { FileBannerDetails } from '@/features/payload-dumper/ui/FileBannerDetails';
 import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
-import { formatBytesNum, getFileName } from '@/shared/utils/formatting';
+import { getFileName } from '@/shared/utils/filePath';
+import { formatBytes } from '@/shared/utils/format';
 
 interface FileBannerProps {
-  effectiveOutputPath: string;
   isDetailsOpen: boolean;
   isRemote: boolean;
-  onOpenOutputFolder: () => void;
   onRefreshPartitions: () => void;
-  onSelectOutput: () => void;
   onSelectPayload: () => void;
   onToggleDetails: () => void;
-  outputDir: string;
   outputPath: string;
-  partitions: { name: string; size: number }[];
+  partitionCount: number;
   payloadPath: string;
   prefetch: boolean;
   remoteMetadata: backend.RemotePayloadMetadata | null;
@@ -30,157 +26,99 @@ interface FileBannerProps {
 }
 
 /**
- * File info banner showing payload details, partition count, and action buttons.
- * Zone 1 of the loaded state layout.
+ * What is loaded, and where it came from.
+ *
+ * The banner used to carry four identical 28px ghost icon buttons — the
+ * smallest controls in the app — one of which was the required output
+ * directory. Output moved out to its own labelled field; what remains are the
+ * two actions that operate on the payload itself, on the 32px toolbar scale.
  */
 export const FileBanner = memo(function FileBanner({
-  payloadPath,
-  isRemote,
-  remoteUrl,
-  partitions,
-  totalPayloadSize,
-  effectiveOutputPath,
-  outputDir,
-  outputPath,
-  status,
-  onSelectPayload,
-  onRefreshPartitions,
-  onSelectOutput,
-  onOpenOutputFolder,
-  remoteMetadata,
   isDetailsOpen,
+  isRemote,
+  onRefreshPartitions,
+  onSelectPayload,
   onToggleDetails,
+  outputPath,
+  partitionCount,
+  payloadPath,
   prefetch,
+  remoteMetadata,
+  remoteUrl,
+  status,
+  totalPayloadSize,
 }: FileBannerProps) {
   const displayName = isRemote ? remoteUrl : getFileName(payloadPath);
   const sourceValue = isRemote ? remoteUrl : payloadPath;
   const isDisabled = status === 'extracting' || status === 'loading-partitions';
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-lg border bg-muted/30 p-3">
-      <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+    <div className="flex w-full min-w-0 flex-col gap-2 overflow-hidden rounded-lg border border-border bg-surface-raised p-3">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
           {isRemote ? (
-            <Globe className="size-4 shrink-0 text-primary" />
+            <Globe aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
           ) : (
-            <FileArchive className="size-4 shrink-0 text-primary" />
+            <FileArchive aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
           )}
-          <div className="min-w-0 flex-1">
-            <p className="min-w-0 max-w-full truncate font-medium text-sm" title={displayName}>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <p className="min-w-0 max-w-full truncate font-medium text-body" title={displayName}>
               {displayName}
             </p>
-            <p className="mt-1 whitespace-normal break-all text-muted-foreground text-xs">
-              <span className="font-medium">Source</span>{' '}
-              <span className="select-all font-mono text-foreground/90">{sourceValue}</span>
+            <p className="min-w-0 select-all break-all font-mono text-mono text-muted-foreground">
+              {sourceValue}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label="Change payload file"
-                className="size-7"
-                disabled={isDisabled}
-                onClick={onSelectPayload}
-                size="icon"
-                variant="ghost"
-              >
-                <FileArchive className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Change Payload</TooltipContent>
-          </Tooltip>
-          {partitions.length > 0 && (
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            aria-label="Change payload file"
+            disabled={isDisabled}
+            onClick={onSelectPayload}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <FileArchive aria-hidden="true" />
+            Change
+          </Button>
+          {partitionCount > 0 ? (
             <RefreshButton
               aria-label="Refresh partitions"
-              className="size-7"
               isLoading={status === 'loading-partitions'}
               mode="icon"
               onClick={onRefreshPartitions}
-              tooltip="Refresh Partitions"
+              tooltip="Refresh partitions"
             />
-          )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label="Select output directory"
-                className="size-7"
-                disabled={status === 'extracting'}
-                onClick={onSelectOutput}
-                size="icon"
-                variant="ghost"
-              >
-                <FolderOutput className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {effectiveOutputPath || 'Select Output Directory'}
-            </TooltipContent>
-          </Tooltip>
-          {effectiveOutputPath ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  aria-label="Open output folder"
-                  className="size-7"
-                  onClick={onOpenOutputFolder}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <ExternalLink className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Open Output Folder</TooltipContent>
-            </Tooltip>
           ) : null}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
-        {partitions.length > 0 && (
-          <span>
-            {partitions.length} partitions &bull; {formatBytesNum(totalPayloadSize)} total
-          </span>
-        )}
-        {effectiveOutputPath ? (
-          <>
-            <span>&bull;</span>
-            <div className="min-w-0 flex-1">
-              <p
-                className={cn('truncate', outputDir && !outputPath && 'text-success')}
-                title={effectiveOutputPath}
-              >
-                {getFileName(effectiveOutputPath)}
-                {outputDir && !outputPath ? ' (auto)' : null}
-              </p>
-            </div>
-          </>
-        ) : null}
-      </div>
+
+      {partitionCount > 0 ? (
+        <p className="numeric text-caption text-muted-foreground">
+          {partitionCount} partitions · {formatBytes(totalPayloadSize)} total
+        </p>
+      ) : null}
 
       {/* Collapsible details toggle — only for remote payloads with metadata */}
       {isRemote && remoteMetadata ? (
         <>
           <button
             aria-expanded={isDetailsOpen}
-            className={cn(
-              'flex w-full items-center justify-center gap-1.5 py-1',
-              'text-muted-foreground text-xs transition-colors hover:text-foreground',
-              'cursor-pointer rounded-md hover:bg-muted/50',
-            )}
+            className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-caption text-muted-foreground transition-colors duration-90 ease-standard hover:bg-accent hover:text-foreground"
             onClick={onToggleDetails}
             type="button"
           >
-            <m.span animate={{ rotate: isDetailsOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronDown className="size-3.5" />
+            <m.span animate={{ rotate: isDetailsOpen ? 180 : 0 }} transition={{ duration: 0.14 }}>
+              <ChevronDown aria-hidden="true" className="size-3.5" />
             </m.span>
-            {isDetailsOpen ? 'Hide Details' : 'Show Details'}
+            {isDetailsOpen ? 'Hide details' : 'Show details'}
           </button>
 
           {/* Grid 0fr→1fr expand: avoids animating height (layout thrash / react-doctor). */}
           <div
             className={cn(
-              'grid transition-[grid-template-rows] duration-200 ease-in-out',
+              'grid transition-[grid-template-rows] duration-200 ease-standard',
               isDetailsOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
             )}
           >
@@ -191,13 +129,13 @@ export const FileBanner = memo(function FileBanner({
             >
               <div
                 className={cn(
-                  'transition-opacity duration-200 ease-in-out',
+                  'transition-opacity duration-200 ease-standard',
                   isDetailsOpen ? 'opacity-100' : 'opacity-0',
                 )}
               >
                 <FileBannerDetails
                   metadata={remoteMetadata}
-                  outputPath={effectiveOutputPath}
+                  outputPath={outputPath}
                   prefetch={prefetch}
                   remoteUrl={remoteUrl}
                 />

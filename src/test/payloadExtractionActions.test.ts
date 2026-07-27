@@ -19,6 +19,7 @@ vi.mock('sonner', () => ({
 
 import { runExtractPayload } from '@/features/payload-dumper/hooks/payloadExtractionActions';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
+import { usePayloadProgressStore } from '@/features/payload-dumper/model/payloadProgressStore';
 
 describe('runExtractPayload', () => {
   beforeEach(() => {
@@ -29,12 +30,13 @@ describe('runExtractPayload', () => {
 
   function baseDeps() {
     const store = usePayloadDumperStore.getState();
+    const progress = usePayloadProgressStore.getState();
     return {
       addCompletedPartitions: store.addCompletedPartitions,
-      clearPartitionProgress: store.clearPartitionProgress,
-      clearTransientPartitionStatuses: store.clearTransientPartitionStatuses,
+      clearPartitionProgress: progress.clearPartitionProgress,
+      clearTransientPartitionStatuses: progress.clearTransientPartitionStatuses,
       completedPartitions: new Set<string>(),
-      failActivePartitions: store.failActivePartitions,
+      failActivePartitions: progress.failActivePartitions,
       mode: 'remote' as const,
       outputDir: '',
       outputPath: 'C:\\out',
@@ -44,7 +46,7 @@ describe('runExtractPayload', () => {
       setCancelTokenId: store.setCancelTokenId,
       setErrorMessage: store.setErrorMessage,
       setExtractedFiles: store.setExtractedFiles,
-      setExtractingPartitions: store.setExtractingPartitions,
+      setExtractingPartitions: progress.setExtractingPartitions,
       setExtractionStats: store.setExtractionStats,
       setOutputDir: store.setOutputDir,
       setStatus: store.setStatus,
@@ -64,7 +66,7 @@ describe('runExtractPayload', () => {
     expect(mockCreateCancellationToken).toHaveBeenCalled();
     expect(mockExtractPayload).toHaveBeenCalled();
     expect(usePayloadDumperStore.getState().status).toBe('success');
-    expect(usePayloadDumperStore.getState().completedPartitions.has('dtbo')).toBe(true);
+    expect(usePayloadProgressStore.getState().completedPartitions.has('dtbo')).toBe(true);
     expect(usePayloadDumperStore.getState().cancelTokenId).toBeNull();
   });
 
@@ -81,7 +83,7 @@ describe('runExtractPayload', () => {
     const state = usePayloadDumperStore.getState();
     expect(state.status).toBe('success');
     expect(state.extractedFiles).toContain('dtbo.img');
-    expect(state.completedPartitions.has('dtbo')).toBe(true);
+    expect(usePayloadProgressStore.getState().completedPartitions.has('dtbo')).toBe(true);
     expect(state.errorMessage).toBe('');
     expect(state.cancelTokenId).toBeNull();
   });

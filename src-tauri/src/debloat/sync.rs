@@ -32,17 +32,36 @@ pub fn try_get_android_sdk(app: &AppHandle, serial: Option<&str>) -> Result<u32,
     Ok(sdk)
 }
 
-/// Returns the device serial/ID for per-device settings keying.
-/// Prefer an explicit FE `serial` when multiple devices are connected.
-pub fn get_device_id(app: &AppHandle, serial: Option<&str>) -> String {
-    if let Some(s) = serial.map(str::trim).filter(|s| !s.is_empty()) {
-        return s.to_string();
+/// Error surfaced when the device serial cannot be resolved.
+pub const ERR_UNKNOWN_DEVICE: &str = "Could not determine which device to use. \
+     Select a device in the device switcher (`adb get-serialno` fails whenever more \
+     than one device is attached).";
+
+/// Returns the device serial/ID for per-device settings, cache, and backup keying.
+///
+/// Prefer an explicit FE `serial`. Falls back to `adb get-serialno`, which fails on
+/// the ordinary "multiple devices attached" case — that used to degrade to the
+/// literal id `"unknown"`, so two different devices shared one cache key (device A's
+/// package list served for device B) and one backup directory. Refuse instead.
+pub fn get_device_id(app: &AppHandle, serial: Option<&str>) -> CmdResult<String> {
+    let resolved = match serial.map(str::trim).filter(|s| !s.is_empty()) {
+        Some(explicit) => explicit.to_string(),
+        None => crate::helpers::run_adb(app, None, &["get-serialno"])
+            .map_err(|e| format!("{ERR_UNKNOWN_DEVICE} ({e})"))?
+            .trim()
+            .to_string(),
+    };
+
+    // `get-serialno` prints literals like "unknown" or "adb: no devices/emulators
+    // found" on some platform-tools builds instead of failing.
+    if resolved.is_empty()
+        || resolved.eq_ignore_ascii_case("unknown")
+        || crate::helpers::sanitize_filename(&resolved).is_empty()
+    {
+        return Err(ERR_UNKNOWN_DEVICE.to_string());
     }
-    crate::helpers::run_adb(app, None, &["get-serialno"])
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "unknown".to_string())
+
+    Ok(resolved)
 }
 
 // ── Package state detection ────────────────────────────────────────────────────
@@ -102,6 +121,30 @@ fn determine_state(name: &str, states: &DevicePackageStates) -> PackageState {
         // Not a system package at all — treat as enabled (shouldn't normally happen)
         PackageState::Enabled
     }
+}
+
+/// Read the real on-device state of `packages` in a single batch (3 adb spawns,
+/// independent of how many packages are asked about).
+///
+/// Used after a batch action so results report what the device actually ended up
+/// with instead of the state the action was *supposed* to produce.
+/// Packages the device does not report at all are omitted from the map, so callers
+/// can tell "state unknown" apart from "state is Enabled".
+pub fn query_package_states(
+    app: &AppHandle,
+    serial: Option<&str>,
+    packages: &[String],
+) -> CmdResult<HashMap<String, PackageState>> {
+    let states = detect_package_states(app, serial)?;
+    Ok(packages
+        .iter()
+        .filter(|name| {
+            states.all_system.contains(*name)
+                || states.enabled.contains(*name)
+                || states.disabled.contains(*name)
+        })
+        .map(|name| (name.clone(), determine_state(name, &states)))
+        .collect())
 }
 
 // ── Main sync function ─────────────────────────────────────────────────────────

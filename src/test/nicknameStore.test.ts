@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getNickname, NICKNAME_STORAGE_KEY, setNickname } from '@/shared/stores/nicknameStore';
+import {
+  getNickname,
+  NICKNAME_STORAGE_KEY,
+  setNickname,
+  useNicknameStore,
+} from '@/shared/stores/nicknameStore';
 
 describe('nicknameStore', () => {
   beforeEach(() => {
     localStorage.clear();
+    // Nicknames are hydrated from localStorage once at module load and served
+    // from memory thereafter, so clearing storage alone does not reset the store.
+    useNicknameStore.setState({ nicknames: {} });
     vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -63,7 +71,7 @@ describe('nicknameStore', () => {
     });
 
     it('should return empty string for empty nickname', () => {
-      localStorage.setItem(NICKNAME_STORAGE_KEY, JSON.stringify({ 'device-1': '' }));
+      useNicknameStore.setState({ nicknames: { 'device-1': '' } });
 
       expect(getNickname('device-1')).toBe('');
     });

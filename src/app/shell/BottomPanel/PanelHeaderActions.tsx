@@ -11,9 +11,10 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
+import { memo } from 'react';
 import { toast } from 'sonner';
 import { SaveLog } from '@/desktop/backend';
-import type { LogLevel } from '@/shared/stores/logStore';
+import { type LogLevel, useLogStore } from '@/shared/stores/logStore';
 import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
@@ -42,10 +43,10 @@ interface PanelHeaderActionsProps {
   clearHistory: () => void;
   clearLogs: () => void;
   filter: LogLevel | 'all';
+  hasLogs: boolean;
   isFollowing: boolean;
   isPanelMaximized: boolean;
   isSearchOpen: boolean;
-  logs: Array<{ timestamp: string; type: string; message: string }>;
   setFilter: (filter: LogLevel | 'all') => void;
   setIsFollowing: (following: boolean) => void;
   setIsSearchOpen: (open: boolean) => void;
@@ -53,9 +54,15 @@ interface PanelHeaderActionsProps {
   togglePanel: () => void;
 }
 
-export function PanelHeaderActions({
+/** Serialised on demand — the log array is never a prop, so appends never re-render this. */
+function serializeLogs(): string {
+  const { logs } = useLogStore.getState();
+  return logs.map((l) => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`).join('\n');
+}
+
+export const PanelHeaderActions = memo(function PanelHeaderActions({
   activeTab,
-  logs,
+  hasLogs,
   filter,
   setFilter,
   isFollowing,
@@ -69,11 +76,8 @@ export function PanelHeaderActions({
   setIsSearchOpen,
 }: PanelHeaderActionsProps) {
   const handleCopy = async () => {
-    const text = logs
-      .map((l) => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`)
-      .join('\n');
     try {
-      await writeText(text);
+      await writeText(serializeLogs());
       toast.info('Logs copied to clipboard');
     } catch {
       toast.error('Failed to copy logs to clipboard');
@@ -81,9 +85,7 @@ export function PanelHeaderActions({
   };
 
   const handleSave = async () => {
-    const text = logs
-      .map((l) => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`)
-      .join('\n');
+    const text = serializeLogs();
     const toastId = toast.loading('Saving logs...');
     try {
       const path = await SaveLog(text, 'terminal-logs');
@@ -207,7 +209,7 @@ export function PanelHeaderActions({
 
       <Separator className="mx-1 h-4" orientation="vertical" />
 
-      {activeTab === 'logs' && logs.length > 0 && (
+      {activeTab === 'logs' && hasLogs && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -225,7 +227,7 @@ export function PanelHeaderActions({
         </Tooltip>
       )}
 
-      {activeTab === 'logs' && logs.length > 0 && (
+      {activeTab === 'logs' && hasLogs && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -294,4 +296,4 @@ export function PanelHeaderActions({
       </Tooltip>
     </div>
   );
-}
+});

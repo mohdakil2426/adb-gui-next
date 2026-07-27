@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import type { backend } from '@/desktop/models';
+import {
+  DEFAULT_LAUNCH_OPTIONS,
+  type LaunchAcknowledgements,
+  type LaunchOptionKey,
+} from '@/features/emulator/model/launchOptions';
 
-export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
+export type EmulatorManagerTab = 'launch' | 'root' | 'restore';
 export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
 
 /** Wizard step for the root flow. */
@@ -58,6 +63,15 @@ const INITIAL_ROOT_WIZARD: RootWizardState = {
 
 interface EmulatorManagerState {
   activeTab: EmulatorManagerTab;
+  /** Replaces every flag at once (presets) and clears acknowledgements. */
+  applyLaunchPreset: (options: backend.EmulatorLaunchOptions) => void;
+  launchAcknowledgements: LaunchAcknowledgements;
+  /**
+   * The single source of truth for how the selected AVD is launched. The
+   * toolbar's Launch button and the Launch tab both read this object, so the
+   * toolbar can no longer discard flags the user just set.
+   */
+  launchOptions: backend.EmulatorLaunchOptions;
   pendingAction: EmulatorPendingAction;
   reset: () => void;
   resetManualState: () => void;
@@ -66,6 +80,8 @@ interface EmulatorManagerState {
   rootWizard: RootWizardState;
   selectedAvdName: string | null;
   setActiveTab: (tab: EmulatorManagerTab) => void;
+  setLaunchAcknowledged: (key: LaunchOptionKey, acknowledged: boolean) => void;
+  setLaunchOption: (key: LaunchOptionKey, value: boolean) => void;
   setPendingAction: (action: EmulatorPendingAction) => void;
   setPreflightScan: (scan: backend.RootReadinessScan | null) => void;
   setRestorePlan: (plan: backend.RestorePlan | null) => void;
@@ -82,10 +98,12 @@ interface EmulatorManagerState {
 
 const INITIAL_STATE = {
   selectedAvdName: null,
-  activeTab: 'overview' as EmulatorManagerTab,
+  activeTab: 'launch' as EmulatorManagerTab,
   rootWizard: INITIAL_ROOT_WIZARD,
   restorePlan: null as backend.RestorePlan | null,
   pendingAction: null as EmulatorPendingAction,
+  launchOptions: DEFAULT_LAUNCH_OPTIONS,
+  launchAcknowledgements: {} as LaunchAcknowledgements,
 };
 
 export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
@@ -96,6 +114,26 @@ export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
   },
   setActiveTab: (activeTab) => {
     set({ activeTab });
+  },
+
+  setLaunchOption: (key, value) => {
+    set((state) => ({
+      launchOptions: { ...state.launchOptions, [key]: value },
+      // Turning a destructive flag off retires its tick, so re-enabling it asks again.
+      launchAcknowledgements: value
+        ? state.launchAcknowledgements
+        : { ...state.launchAcknowledgements, [key]: false },
+    }));
+  },
+
+  setLaunchAcknowledged: (key, acknowledged) => {
+    set((state) => ({
+      launchAcknowledgements: { ...state.launchAcknowledgements, [key]: acknowledged },
+    }));
+  },
+
+  applyLaunchPreset: (launchOptions) => {
+    set({ launchOptions, launchAcknowledgements: {} });
   },
 
   setRootWizardStep: (step) => {
