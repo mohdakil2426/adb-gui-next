@@ -60,12 +60,12 @@ function FilterDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="h-9 gap-1.5 text-xs" size="sm" variant="outline">
-          <Filter data-icon="inline-start" />
+        <Button className="h-9" size="sm" type="button" variant="outline">
+          <Filter aria-hidden="true" />
           {label}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Filter</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup onValueChange={onValueChange} value={value}>
@@ -78,6 +78,27 @@ function FilterDropdown({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+interface DebloaterToolbarProps {
+  disableMode: boolean;
+  expertMode: boolean;
+  filteredCount: number;
+  isLoadingPackages: boolean;
+  listFilter: DebloatListFilter;
+  listStatusLabel: string | null;
+  onDisableModeChange: (value: boolean) => void;
+  onExpertModeChange: (value: boolean) => void;
+  onListFilterChange: (v: DebloatListFilter) => void;
+  onRefresh: () => void;
+  onRemovalFilterChange: (v: RemovalFilter) => void;
+  onSearchQueryChange: (v: string) => void;
+  onStateFilterChange: (v: StateFilter) => void;
+  packagesCount: number;
+  removalFilter: RemovalFilter;
+  searchQuery: string;
+  selectedSerial: string | null;
+  stateFilter: StateFilter;
 }
 
 export function DebloaterToolbar({
@@ -97,34 +118,21 @@ export function DebloaterToolbar({
   packagesCount,
   removalFilter,
   searchQuery,
+  selectedSerial,
   stateFilter,
-}: {
-  disableMode: boolean;
-  expertMode: boolean;
-  filteredCount: number;
-  isLoadingPackages: boolean;
-  listFilter: DebloatListFilter;
-  listStatusLabel: string | null;
-  onDisableModeChange: (value: boolean) => void;
-  onExpertModeChange: (value: boolean) => void;
-  onListFilterChange: (v: DebloatListFilter) => void;
-  onRefresh: () => void;
-  onRemovalFilterChange: (v: RemovalFilter) => void;
-  onSearchQueryChange: (v: string) => void;
-  onStateFilterChange: (v: StateFilter) => void;
-  packagesCount: number;
-  removalFilter: RemovalFilter;
-  searchQuery: string;
-  stateFilter: StateFilter;
-}) {
+}: DebloaterToolbarProps) {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-48 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             aria-label="Search system package list"
-            className="h-9 pl-8"
+            className="h-9 pl-8 text-body"
+            disabled={!selectedSerial}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder="Search packages…"
             value={searchQuery}
@@ -149,16 +157,19 @@ export function DebloaterToolbar({
           value={stateFilter}
         />
         <RefreshButton
-          aria-label="Refresh packages"
-          className="size-9"
+          aria-label="Refresh system packages"
+          buttonSize="icon"
+          buttonVariant="outline"
+          disabled={!selectedSerial}
           isLoading={isLoadingPackages}
           mode="icon"
           onClick={onRefresh}
+          tooltip="Refresh system packages"
         />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
-        <span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="numeric text-caption text-muted-foreground">
           {isLoadingPackages
             ? 'Loading packages…'
             : `${filteredCount} of ${packagesCount} system packages`}
@@ -172,10 +183,12 @@ export function DebloaterToolbar({
               onCheckedChange={onDisableModeChange}
             />
             <FieldContent className="gap-0">
-              <FieldLabel className="text-xs" htmlFor="debloat-disable-mode">
-                Disable mode
+              <FieldLabel className="text-label" htmlFor="debloat-disable-mode">
+                Disable instead of uninstall
               </FieldLabel>
-              <FieldDescription className="sr-only">Disable instead of uninstall.</FieldDescription>
+              <FieldDescription className="sr-only">
+                Disable packages rather than removing them, so they can be re-enabled later.
+              </FieldDescription>
             </FieldContent>
           </Field>
           <Field className="w-auto gap-2" orientation="horizontal">
@@ -185,12 +198,12 @@ export function DebloaterToolbar({
               onCheckedChange={onExpertModeChange}
             />
             <FieldContent className="gap-0">
-              <FieldLabel className="text-xs" htmlFor="debloat-expert-mode">
-                <Shield className="size-3" />
+              <FieldLabel className="text-label" htmlFor="debloat-expert-mode">
+                <Shield aria-hidden="true" className="size-3" />
                 Expert mode
               </FieldLabel>
               <FieldDescription className="sr-only">
-                Allow unsafe package selection.
+                Allow Unsafe packages to be selected.
               </FieldDescription>
             </FieldContent>
           </Field>

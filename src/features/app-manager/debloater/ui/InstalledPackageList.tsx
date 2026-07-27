@@ -1,22 +1,128 @@
+/* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
+
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Filter, Loader2, Package, Package2, Search, Trash2 } from 'lucide-react';
-import { useMemo, useRef } from 'react';
+import { Package, Package2, SearchX, Smartphone } from 'lucide-react';
+import { type ReactNode, useMemo, useRef } from 'react';
 import type { backend } from '@/desktop/models';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
-import { RefreshButton } from '@/shared/components/RefreshButton';
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
-// biome-ignore format: keep single line to preserve architectural line count limits
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/ui/alert-dialog';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { buttonVariants } from '@/shared/ui/button-variants';
-// biome-ignore format: keep single line to preserve architectural line count limits
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu';
-import { Input } from '@/shared/ui/input';
 import { cn } from '@/shared/utils/cn';
+import { INSTALLED_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
+import { InstalledPackageToolbar, type PackageFilter } from './InstalledPackageToolbar';
+import { PackageListEmpty, PackageListError, PackageListSkeleton } from './PackageListState';
+import { UninstallConfirmDialog } from './UninstallConfirmDialog';
+
+interface InstalledPackageListProps {
+  /** `true` once a load for the current serial settled — separates "empty" from "not yet asked". */
+  hasLoaded: boolean;
+  isLoadingPackages: boolean;
+  isUninstalling: boolean;
+  /** Why the last load failed, or `null` — separates "no apps" from "could not ask". */
+  loadError: string | null;
+  onPackageFilterChange: (v: PackageFilter) => void;
+  onRefresh: () => void;
+  onSearchQueryChange: (v: string) => void;
+  onSelectedPackagesChange: (v: Set<string>) => void;
+  onUninstall: () => void;
+  packageFilter: PackageFilter;
+  packages: backend.InstalledPackage[];
+  searchQuery: string;
+  selectedPackages: Set<string>;
+  selectedSerial: string | null;
+}
+
+/**
+ * Which of the four non-list states applies, or `null` to render rows.
+ *
+ * "No packages found." used to cover both "this device reported nothing" and
+ * "no device is connected", which read as "this phone has no apps".
+ */
+function resolveListState({
+  filteredCount,
+  hasLoaded,
+  isLoadingPackages,
+  loadError,
+  onPackageFilterChange,
+  onRefresh,
+  onSearchQueryChange,
+  packageCount,
+  selectedSerial,
+}: {
+  filteredCount: number;
+  hasLoaded: boolean;
+  isLoadingPackages: boolean;
+  loadError: string | null;
+  onPackageFilterChange: (v: PackageFilter) => void;
+  onRefresh: () => void;
+  onSearchQueryChange: (v: string) => void;
+  packageCount: number;
+  selectedSerial: string | null;
+}): ReactNode {
+  if (!selectedSerial) {
+    return (
+      <PackageListEmpty
+        description="Connect a device over USB and pick it in the sidebar — its installed apps appear here."
+        icon={Smartphone}
+        title="No device selected"
+      />
+    );
+  }
+  if (isLoadingPackages && packageCount === 0) {
+    return <PackageListSkeleton rowHeight={INSTALLED_ROW_HEIGHT} />;
+  }
+  // Before the empty branch: a failed `pm list` is not an empty device.
+  if (loadError) {
+    return <PackageListError message={loadError} onRetry={onRefresh} />;
+  }
+  if (packageCount === 0) {
+    return (
+      <PackageListEmpty
+        action={
+          <Button onClick={onRefresh} size="sm" type="button" variant="outline">
+            Try again
+          </Button>
+        }
+        description={
+          hasLoaded
+            ? 'The device returned an empty package list. Unlock the screen, reconnect the cable, then refresh.'
+            : 'Waiting for the device to report its packages.'
+        }
+        icon={Package}
+        title="No packages reported"
+      />
+    );
+  }
+  if (filteredCount === 0) {
+    return (
+      <PackageListEmpty
+        action={
+          <Button
+            onClick={() => {
+              onSearchQueryChange('');
+              onPackageFilterChange('all');
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Clear search and filter
+          </Button>
+        }
+        description={`None of the ${packageCount} installed packages match the current search and type filter.`}
+        icon={SearchX}
+        title="No matches"
+      />
+    );
+  }
+  return null;
+}
 
 export function InstalledPackageList({
+  hasLoaded,
   isLoadingPackages,
+  loadError,
   isUninstalling,
   onPackageFilterChange,
   onRefresh,
@@ -28,20 +134,7 @@ export function InstalledPackageList({
   searchQuery,
   selectedPackages,
   selectedSerial,
-}: {
-  isLoadingPackages: boolean;
-  isUninstalling: boolean;
-  onPackageFilterChange: (v: 'all' | 'user' | 'system') => void;
-  onRefresh: () => void;
-  onSearchQueryChange: (v: string) => void;
-  onSelectedPackagesChange: (v: Set<string>) => void;
-  onUninstall: () => void;
-  packageFilter: 'all' | 'user' | 'system';
-  packages: backend.InstalledPackage[];
-  searchQuery: string;
-  selectedPackages: Set<string>;
-  selectedSerial: string | null;
-}) {
+}: InstalledPackageListProps) {
   const filteredPackages = useMemo(() => {
     const q = searchQuery.toLowerCase();
     return packages
@@ -67,10 +160,10 @@ export function InstalledPackageList({
   const listRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredPackages.length,
-    estimateSize: () => 48,
+    estimateSize: () => INSTALLED_ROW_HEIGHT,
     getItemKey: (i) => filteredPackages[i]?.name ?? i,
     getScrollElement: () => listRef.current,
-    overscan: 5,
+    overscan: 8,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
 
@@ -84,80 +177,42 @@ export function InstalledPackageList({
     onSelectedPackagesChange(next);
   }
 
+  const listState = resolveListState({
+    filteredCount: filteredPackages.length,
+    hasLoaded,
+    isLoadingPackages,
+    loadError,
+    onPackageFilterChange,
+    onRefresh,
+    onSearchQueryChange,
+    packageCount: packages.length,
+    selectedSerial,
+  });
+
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <p className="font-medium text-sm">Uninstall Apps</p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-48 flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              aria-label="Search installed packages"
-              className="h-9 pl-8"
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              placeholder="Search packages…"
-              value={searchQuery}
-            />
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="h-9 gap-1.5 text-xs" size="sm" variant="outline">
-                <Filter className="size-3.5" />
-                {packageFilter === 'all' ? 'All' : packageFilter}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>Filter by Type</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup
-                onValueChange={(v) => onPackageFilterChange(v as 'all' | 'user' | 'system')}
-                value={packageFilter}
-              >
-                <DropdownMenuRadioItem value="all">All ({packages.length})</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="user">
-                  User ({packages.filter((p) => p.packageType === 'user').length})
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="system">
-                  System ({packages.filter((p) => p.packageType === 'system').length})
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <RefreshButton
-            aria-label="Refresh packages"
-            buttonSize="icon"
-            buttonVariant="outline"
-            className="size-9"
-            isLoading={isLoadingPackages}
-            mode="icon"
-            onClick={onRefresh}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 text-muted-foreground text-xs">
-          <span>
-            {isLoadingPackages
-              ? 'Loading packages…'
-              : `${filteredPackages.length} of ${packages.length} packages`}
-          </span>
-        </div>
-      </div>
+      <InstalledPackageToolbar
+        isLoadingPackages={isLoadingPackages}
+        onPackageFilterChange={onPackageFilterChange}
+        onRefresh={onRefresh}
+        onSearchQueryChange={onSearchQueryChange}
+        packageFilter={packageFilter}
+        packages={packages}
+        searchQuery={searchQuery}
+        selectedSerial={selectedSerial}
+      />
 
       <div
         aria-label="Installed packages"
         aria-multiselectable="true"
-        className="h-[40vh] min-h-60 overflow-y-auto overflow-x-hidden rounded-lg border shadow-sm"
+        className={cn(
+          PACKAGE_LIST_VIEWPORT,
+          'overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-surface',
+        )}
         ref={listRef}
         role="listbox"
       >
-        {filteredPackages.length === 0 ? (
-          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-            {searchQuery ? 'No packages match your search.' : 'No packages found.'}
-          </div>
-        ) : (
+        {listState ?? (
           <div
             style={{
               height: `${rowVirtualizer.getTotalSize()}px`,
@@ -175,8 +230,8 @@ export function InstalledPackageList({
                 <div
                   aria-selected={isSelected}
                   className={cn(
-                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground',
-                    isSelected && 'bg-accent/60 text-accent-foreground',
+                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 outline-none transition-colors duration-90 ease-standard hover:bg-accent',
+                    isSelected && 'bg-primary-muted',
                   )}
                   key={pkg.name}
                   onClick={() => togglePackage(pkg.name)}
@@ -191,24 +246,20 @@ export function InstalledPackageList({
                   tabIndex={0}
                 >
                   <CheckboxItem checked={isSelected} />
-                  <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-                    {pkg.packageType === 'system' ? (
-                      <Package2 aria-hidden className="size-4 text-muted-foreground" />
-                    ) : (
-                      <Package aria-hidden className="size-4 text-primary/80" />
-                    )}
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col py-1">
-                    <span className="truncate font-semibold text-foreground text-xs leading-tight">
-                      {pkg.label || pkg.name}
-                    </span>
-                    <span className="truncate text-[10px] text-muted-foreground leading-tight">
-                      {pkg.name}
-                    </span>
-                  </div>
+                  {pkg.packageType === 'system' ? (
+                    <Package2 aria-hidden="true" className="size-4 shrink-0 text-info" />
+                  ) : (
+                    <Package aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                  )}
+                  <span className="min-w-0 flex-1 truncate font-medium text-body text-foreground">
+                    {pkg.label || pkg.name}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-mono-sm text-muted-foreground">
+                    {pkg.name}
+                  </span>
                   <Badge
-                    className="ml-2 shrink-0 px-1.5 py-0 text-[10px]"
-                    variant={pkg.packageType === 'user' ? 'secondary' : 'outline'}
+                    className="shrink-0"
+                    variant={pkg.packageType === 'user' ? 'secondary' : 'neutral'}
                   >
                     {pkg.packageType}
                   </Badge>
@@ -219,69 +270,27 @@ export function InstalledPackageList({
         )}
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="numeric text-caption text-muted-foreground">
+          {isLoadingPackages
+            ? 'Loading packages…'
+            : `${filteredPackages.length} of ${packages.length} packages`}
+        </span>
+      </div>
+
       <SelectionSummaryBar
         count={selectedPackages.size}
         label="package(s)"
         onClear={() => onSelectedPackagesChange(new Set())}
       />
 
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button
-            className="w-full"
-            disabled={isUninstalling || selectedPackages.size === 0 || !selectedSerial}
-            variant="destructive"
-          >
-            <Trash2 className="mr-2 size-4" />
-            Uninstall
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div>
-                <p>
-                  You are about to uninstall{' '}
-                  <span className="font-semibold text-foreground">{selectedPackages.size}</span>{' '}
-                  package(s).
-                </p>
-                <div className="mt-2 max-h-24 overflow-y-auto rounded bg-muted p-2 text-xs">
-                  {Array.from(selectedPackages).map((p) => {
-                    const pkg = packages.find((x) => x.name === p);
-                    const displayName = pkg ? `${pkg.label} (${pkg.name})` : p;
-                    return (
-                      <div className="truncate" key={p}>
-                        {displayName}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-3 rounded-md border border-warning/20 bg-warning/10 p-3 text-left text-warning-foreground text-xs">
-                  <span className="font-bold">Disclaimer:</span> ADB GUI Next is not responsible for
-                  any system instability, bootloops, or data loss resulting from uninstalling
-                  packages.
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className={buttonVariants({ variant: 'destructive' })}
-              disabled={isUninstalling || !selectedSerial}
-              onClick={onUninstall}
-            >
-              {isUninstalling ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 size-4" />
-              )}
-              Yes, Uninstall
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <UninstallConfirmDialog
+        isUninstalling={isUninstalling}
+        onUninstall={onUninstall}
+        packages={packages}
+        selectedPackages={selectedPackages}
+        selectedSerial={selectedSerial}
+      />
     </div>
   );
 }

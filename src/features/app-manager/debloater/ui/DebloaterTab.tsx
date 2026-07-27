@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  DebloatPackages,
   GetDebloatData,
   GetDebloatDeviceSettings,
   SaveDebloatDeviceSettings,
@@ -10,11 +9,15 @@ import type { backend } from '@/desktop/models';
 import { applyFilters, useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
+import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
 import { handleError } from '@/shared/utils/errorHandler';
+import { BackupRestorePanel } from './BackupRestorePanel';
 import { DebloaterPackageList } from './DebloaterPackageList';
 import { DebloaterToolbar } from './DebloaterToolbar';
 import { DescriptionPanel } from './DescriptionPanel';
+import { applyInChunks } from './debloatApply';
 import { ReviewSelectionDialog } from './ReviewSelectionDialog';
+import { SafetyTierLegend } from './SafetyTierLegend';
 
 export function DebloaterTab() {
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
@@ -47,6 +50,7 @@ export function DebloaterTab() {
   const setDisableMode = useDebloatStore((s) => s.setDisableMode);
   const applyResults = useDebloatStore((s) => s.applyResults);
   const setBackups = useDebloatStore((s) => s.setBackups);
+  const resetFilters = useDebloatStore((s) => s.resetFilters);
 
   const [reviewOpen, setReviewOpen] = useState(false);
 
@@ -126,9 +130,35 @@ export function DebloaterTab() {
   async function handleApply() {
     const pkgNames = Array.from(selectedPackages);
     const action: backend.DebloatAction = disableMode ? 'disable' : 'uninstall';
+    const verb = action === 'disable' ? 'Disabling' : 'Uninstalling';
+    const total = pkgNames.length;
+
+    // Close first: the batch reports itself through the status bar and a
+    // determinate toast, so there is no reason to trap the user behind a modal.
+    setReviewOpen(false);
     setIsApplying(true);
+
+    const operationId = startOperation({
+      detail: `0 of ${total}`,
+      label: `${verb} ${total} package${total === 1 ? '' : 's'}`,
+      progress: 0,
+      view: 'apps',
+    });
+    const toastId = toast.loading(`${verb} 0 of ${total}…`);
+
     try {
-      const results = await DebloatPackages(pkgNames, action, 0, selectedSerial);
+      const results = await applyInChunks({
+        action,
+        onProgress: (processed) => {
+          updateOperation(operationId, {
+            detail: `${processed} of ${total}`,
+            progress: Math.round((processed / total) * 100),
+          });
+          toast.loading(`${verb} ${processed} of ${total}…`, { id: toastId });
+        },
+        packages: pkgNames,
+        serial: selectedSerial,
+      });
       applyResults(results);
 
       const succeeded = results.filter((r) => r.success).length;
@@ -137,17 +167,19 @@ export function DebloaterTab() {
       if (failed === 0) {
         toast.success(
           `${action === 'disable' ? 'Disabled' : 'Uninstalled'} ${succeeded} package${succeeded === 1 ? '' : 's'}`,
+          { id: toastId },
         );
         useLogStore.getState().addLog(`Debloat: ${action} ${succeeded} packages`, 'success');
       } else {
-        toast.warning(`Done: ${succeeded} succeeded, ${failed} failed`);
+        toast.warning(`Done: ${succeeded} succeeded, ${failed} failed`, { id: toastId });
         useLogStore.getState().addLog(`Debloat: ${failed} failures`, 'error');
       }
     } catch (error) {
+      toast.dismiss(toastId);
       handleError('Debloat', error);
     } finally {
+      finishOperation(operationId);
       setIsApplying(false);
-      setReviewOpen(false);
     }
   }
 
@@ -180,15 +212,20 @@ export function DebloaterTab() {
         packagesCount={packages.length}
         removalFilter={removalFilter}
         searchQuery={searchQuery}
+        selectedSerial={selectedSerial}
         stateFilter={stateFilter}
       />
+
+      <SafetyTierLegend expertMode={expertMode} />
 
       <DebloaterPackageList
         currentPackageName={currentPackageName}
         expertMode={expertMode}
         filteredPackages={filteredPackages}
+        hasPackages={packages.length > 0}
         isApplying={isApplying}
         isLoadingPackages={isLoadingPackages}
+        onClearFilters={resetFilters}
         onCurrentPackageNameChange={setCurrentPackageName}
         onReview={() => {
           setReviewOpen(true);
@@ -202,12 +239,15 @@ export function DebloaterTab() {
           }
         }}
         selectedPackages={selectedPackages}
+        selectedSerial={selectedSerial}
       />
 
-      {/* ── Description panel ───────────────────────────────────────────────── */}
-      <div className="min-h-20 rounded-lg border bg-muted/20 px-4 py-3">
-        <DescriptionPanel pkg={currentPackage} />
-      </div>
+      {/* Rendered only when a row is highlighted — this used to be a permanently
+          reserved empty box holding "Select a package to see details." */}
+      {currentPackage ? <DescriptionPanel pkg={currentPackage} /> : null}
+
+      {/* ── Undo path ───────────────────────────────────────────────────────── */}
+      <BackupRestorePanel />
 
       <ReviewSelectionDialog
         disableMode={disableMode}

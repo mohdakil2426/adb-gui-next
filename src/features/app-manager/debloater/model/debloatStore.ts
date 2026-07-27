@@ -2,7 +2,12 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { backend } from '@/desktop/models';
 
-export type AppManagerTab = 'debloater' | 'installation';
+/**
+ * Three jobs, three tabs. `installation` (install APKs) and `installed`
+ * (browse / uninstall what is on the device) used to share one tab separated by
+ * a bare rule; `installation` keeps its old value so a persisted tab still resolves.
+ */
+export type AppManagerTab = 'debloater' | 'installation' | 'installed';
 export type DebloatListFilter = backend.DebloatList | 'All';
 export type RemovalFilter = backend.RemovalTier | 'All';
 export type StateFilter = backend.PkgState | 'All';

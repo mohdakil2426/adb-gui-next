@@ -1,9 +1,27 @@
 import { FileUp, Loader2, Package, Trash2 } from 'lucide-react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
+import type { InstallProgress } from '@/features/app-manager/debloater/model/installationStore';
+import { InstallProgressCard } from '@/features/app-manager/debloater/ui/InstallProgressCard';
 import { DropZone } from '@/shared/components/DropZone';
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
 import { Button } from '@/shared/ui/button';
-import { Label } from '@/shared/ui/label';
+import { getFileName } from '@/shared/utils/filePath';
+
+/** Module constant: a fresh array literal here re-registered the window-level
+ *  drag-drop handler on every render. */
+const APK_EXTENSIONS = ['.apk', '.apks'];
+
+interface ApkPickerPanelProps {
+  apkPaths: string[];
+  installProgress: InstallProgress | null;
+  isInstalling: boolean;
+  onAddMore: () => void;
+  onClearAll: () => void;
+  onInstall: () => void;
+  onPathsChange: (next: string[]) => void;
+  selectedSerial: string | null;
+}
 
 export function ApkPickerPanel({
   apkPaths,
@@ -14,78 +32,73 @@ export function ApkPickerPanel({
   onInstall,
   onPathsChange,
   selectedSerial,
-}: {
-  apkPaths: string[];
-  installProgress: { current: number; total: number } | null;
-  isInstalling: boolean;
-  onAddMore: () => void;
-  onClearAll: () => void;
-  onInstall: () => void;
-  onPathsChange: (next: string[]) => void;
-  selectedSerial: string | null;
-}) {
+}: ApkPickerPanelProps) {
+  const handleFilesDropped = useCallback(
+    (paths: string[]) => {
+      onPathsChange([...apkPaths, ...paths]);
+      toast.info(`${paths.length} file(s) added`);
+    },
+    [apkPaths, onPathsChange],
+  );
+
   return (
     <div className="flex flex-col gap-3">
-      <div>
-        <p className="font-medium text-sm">Install Apps</p>
-        <p className="text-muted-foreground text-xs">
-          Select .apk or .apks files to install on your device.
-        </p>
-      </div>
-
       {apkPaths.length === 0 ? (
         <DropZone
-          acceptExtensions={['.apk', '.apks']}
-          browseLabel="Select App Files"
+          acceptExtensions={APK_EXTENSIONS}
+          browseLabel="Select APK files"
           disabled={isInstalling || !selectedSerial}
           icon={FileUp}
           label="Drop APK files here"
           onBrowse={onAddMore}
-          onFilesDropped={(paths) => {
-            onPathsChange([...apkPaths, ...paths]);
-            toast.info(`${paths.length} file(s) added`);
-          }}
+          onFilesDropped={handleFilesDropped}
           rejectMessage="Only .apk and .apks files are accepted"
           sublabel="Accepts .apk and .apks files"
         />
       ) : (
         <>
-          <div className="flex items-center justify-between">
-            <Label>Selected APKs</Label>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-label text-muted-foreground">Queued for install</span>
             <Button
-              className="h-7 gap-1.5 text-xs"
               disabled={isInstalling || !selectedSerial}
               onClick={onAddMore}
               size="sm"
+              type="button"
               variant="ghost"
             >
-              <FileUp className="size-3.5" />
-              Add More
+              <FileUp aria-hidden="true" />
+              Add more
             </Button>
           </div>
 
-          <div className="overflow-hidden rounded-lg border bg-popover shadow-sm">
-            <div className="max-h-[30vh] min-h-24 overflow-y-auto p-1">
+          <div className="overflow-hidden rounded-lg border border-border bg-surface">
+            <div className="custom-scroll max-h-64 min-h-24 overflow-y-auto p-1">
               {apkPaths.map((path) => (
                 <div
-                  className="group flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-accent"
+                  className="group flex h-8 items-center justify-between gap-2 rounded-md px-2 hover:bg-accent"
                   key={path}
                 >
-                  <div className="mr-2 flex min-w-0 flex-1 items-center gap-2">
-                    <Package className="size-4 shrink-0 opacity-70" />
-                    <span className="truncate">{path.split(/[/\\]/).pop()}</span>
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <Package
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0 text-muted-foreground"
+                    />
+                    <span className="truncate font-mono text-foreground text-mono">
+                      {getFileName(path)}
+                    </span>
                   </div>
                   <Button
-                    aria-label="Remove APK file"
-                    className="size-6 opacity-0 hover:bg-transparent hover:text-destructive focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
+                    aria-label={`Remove ${getFileName(path)}`}
+                    className="opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
                     disabled={isInstalling}
                     onClick={() => {
                       onPathsChange(apkPaths.filter((p) => p !== path));
                     }}
-                    size="icon"
+                    size="icon-sm"
+                    type="button"
                     variant="ghost"
                   >
-                    <Trash2 className="size-3" />
+                    <Trash2 aria-hidden="true" className="size-3.5" />
                   </Button>
                 </div>
               ))}
@@ -99,29 +112,22 @@ export function ApkPickerPanel({
             onClear={onClearAll}
           />
 
+          {isInstalling && installProgress ? (
+            <InstallProgressCard progress={installProgress} />
+          ) : null}
+
           <Button
-            className="relative w-full overflow-hidden"
+            className="w-full"
             disabled={isInstalling || !selectedSerial}
             onClick={onInstall}
+            type="button"
           >
-            {isInstalling && installProgress ? (
-              <div
-                className="absolute inset-0 left-0 bg-primary/20 transition-all duration-300"
-                style={{
-                  width: `${(installProgress.current / installProgress.total) * 100}%`,
-                }}
-              />
-            ) : null}
-            <span className="relative z-10 flex items-center">
-              {isInstalling ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Package className="mr-2 size-4" />
-              )}
-              {isInstalling
-                ? `Installing ${installProgress?.current}/${installProgress?.total}…`
-                : `Install (${apkPaths.length})`}
-            </span>
+            {isInstalling ? (
+              <Loader2 aria-hidden="true" className="animate-spin" />
+            ) : (
+              <Package aria-hidden="true" />
+            )}
+            {isInstalling ? 'Installing…' : `Install ${apkPaths.length} file(s)`}
           </Button>
         </>
       )}
