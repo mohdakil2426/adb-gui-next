@@ -94,6 +94,14 @@ export function GetDeviceInfo(serial?: string | null): Promise<backend.DeviceInf
   return call('get_device_info', { serial });
 }
 
+/**
+ * Structured device telemetry — numbers, not display strings — in one adb round-trip.
+ * Prefer this over {@link GetDeviceInfo} for anything charted, compared, or computed.
+ */
+export function GetDeviceTelemetry(serial?: string | null): Promise<backend.DeviceTelemetry> {
+  return call('get_device_telemetry', { serial: serial ?? null });
+}
+
 export function GetDevices(): Promise<backend.Device[]> {
   return call('get_devices');
 }
@@ -496,6 +504,17 @@ export function CreateDebloatBackup(
 /** List all available backups for the selected device. */
 export function ListDebloatBackups(serial?: string | null): Promise<backend.BackupSummary[]> {
   return call('list_debloat_backups', { serial: serial ?? null });
+}
+
+/**
+ * Restore a previously created backup by file name, reapplying each package's recorded
+ * state. `fileName` comes from {@link backend.BackupSummary.fileName}.
+ */
+export function RestoreDebloatBackup(
+  fileName: string,
+  serial?: string | null,
+): Promise<backend.DebloatActionResult[]> {
+  return call('restore_debloat_backup', { fileName, serial: serial ?? null });
 }
 
 /** Get per-device settings (expert mode, disable mode, multi-user mode). */

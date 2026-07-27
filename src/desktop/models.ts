@@ -145,6 +145,10 @@ export namespace backend {
     status: string;
   }
 
+  /**
+   * Legacy display-string device snapshot (`get_device_info`).
+   * Pre-formatted and unchartable — prefer {@link DeviceTelemetry} for new work.
+   */
   export interface DeviceInfo {
     androidVersion: string;
     batteryLevel: string;
@@ -158,6 +162,80 @@ export namespace backend {
     rootStatus: string;
     serial: string;
     storageInfo: string;
+  }
+
+  // ── Device telemetry (`get_device_telemetry`) ──────────────────────────────
+  // Numbers, not display strings. `null` means the device did not report the
+  // property; formatting and unit choice are frontend concerns.
+
+  export interface DeviceIdentity {
+    androidVersion: string | null;
+    arch: string | null;
+    brand: string | null;
+    buildId: string | null;
+    codename: string | null;
+    deviceName: string | null;
+    model: string | null;
+    sdkInt: number | null;
+    serial: string | null;
+  }
+
+  export interface BatteryInfo {
+    health: string | null;
+    isCharging: boolean;
+    levelPct: number | null;
+    status: string | null;
+    temperatureC: number | null;
+    voltageMv: number | null;
+  }
+
+  /** All-zero when the device did not report `/proc/meminfo`. */
+  export interface MemoryInfo {
+    availableBytes: number;
+    totalBytes: number;
+    usedBytes: number;
+  }
+
+  /**
+   * `mount` is the path telemetry asked `df` about (`/data`, `/storage/emulated`,
+   * `/sdcard`) — authoritative and the value to key/label on. `rawMount` is `df`'s own
+   * "Mounted on" text for that query; it can differ (e.g. a resolved symlink) or even
+   * be implausible on some builds, so treat it as diagnostic-only, never identity.
+   */
+  export interface StorageVolume {
+    freeBytes: number;
+    mount: string;
+    rawMount: string;
+    totalBytes: number;
+    usedBytes: number;
+  }
+
+  export interface SecurityInfo {
+    bootloaderUnlocked: boolean | null;
+    encryptionState: string | null;
+    rooted: boolean;
+    securityPatch: string | null;
+    selinuxEnforcing: boolean | null;
+    verifiedBootState: string | null;
+  }
+
+  export interface NetworkInfo {
+    ipAddress: string | null;
+    macAddress: string | null;
+    wifiSsid: string | null;
+  }
+
+  /** Structured device snapshot collected in a single `adb shell` round-trip. */
+  export interface DeviceTelemetry {
+    battery: BatteryInfo;
+    identity: DeviceIdentity;
+    memory: MemoryInfo;
+    network: NetworkInfo;
+    security: SecurityInfo;
+    /** Only volumes the device actually reported; may be empty. */
+    storage: StorageVolume[];
+    /** Seconds since boot; `0` when unavailable. */
+    uptimeSeconds: number;
   }
 
   export interface ExtractionStats {
