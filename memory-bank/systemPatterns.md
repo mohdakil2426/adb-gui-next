@@ -56,7 +56,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 ### Design tokens
 
 - All colour/type/motion/z-index tokens in `src/styles/global.css`; no raw hex/rgb/oklch in components.
-- Palette: **shadcn Neutral** achromatic (light `oklch(1 0 0)` / dark `oklch(0 0 0)` canvas). Primary inverts with theme. Status colours (`success` / `warning` / `destructive` / `info`) describe **device** state, never UI emphasis.
+- Palette: **official shadcn Neutral** (light `oklch(1 0 0)` / dark `oklch(0.145 0 0)` background). Primary inverts with theme. Status colours (`success` / `warning` / `destructive` / `info`) describe **device** state, never UI emphasis.
 - Surfaces: `canvas` < `surface` < `surface-raised` < `surface-overlay`.
 - Type: 13px base; `display`/`title`/`body`/`label`/`caption`/`mono`/`mono-sm`, each with its own line-height/tracking/weight. **11px floor.** `numeric` utility on updating values.
 - Motion: transform/opacity only; never `height`, never `all`.

@@ -9,7 +9,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 - Follow platform, developer, and current-user instructions first.
 - Read this guide, then the **closest** module `AGENTS.md` to paths you edit (`src/` or `src-tauri/`).
 - Nested module guide closer to the path applies after root.
-- Module guides own local implementation. `docs/project_rules.md` owns workflow, reports, verification, and hard stops. `docs/architecture.md` owns cross-module design.
+- Module guides own local implementation. `docs/project_rules.md` owns workflow, reports, verification, and hard stops. `docs/architecture.md` owns cross-module design. `DESIGN.md` owns look and feel — **only when the task is UI**.
 - If a module guide and project rules conflict → **stop and ask**.
 
 ## Start every scoped task
@@ -26,6 +26,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 | --- | --- |
 | Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
 | Cross-module design / data flow / IPC map | `docs/architecture.md` |
+| Visual design, theme, type, shared UI taste | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
 | Entire frontend (`src/**`) | `src/AGENTS.md` |
 | Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` |
 | FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
@@ -41,6 +42,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 | `src/features/` | Product views and feature-local state |
 | `src/shared/` | Cross-feature components, stores, shadcn, shared utils |
 | `src/styles/` | Theme tokens (`global.css`) |
+| `DESIGN.md` | UI system (taste, tokens, components) — UI tasks only |
 | `src/test/` | All Vitest frontend tests |
 | `src-tauri/` | Rust lib, thin commands, domains, bundled platform-tools |
 | `docs/architecture.md` | Cross-module architecture reference |

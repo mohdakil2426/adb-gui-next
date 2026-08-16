@@ -860,7 +860,7 @@ All tokens are declared in `src/styles/global.css`; raw values live once per the
 | Token group | Content |
 | --- | --- |
 | Surface ladder | `canvas` < `surface` < `surface-raised` < `surface-overlay` |
-| Neutrals | shadcn/ui classic black-and-white palette: achromatic OKLCH values (chroma 0) with light/dark inversion |
+| Neutrals | Official shadcn Neutral: light `--background: oklch(1 0 0)`, dark `--background: oklch(0.145 0 0)`. `canvas`/`surface`/`surface-raised`/`surface-overlay` alias `background`/`card`/`secondary`/`popover`. |
 | Primary | Neutral black in light mode and neutral white in dark mode as `primary` / `primary-hover` / `primary-active` / `primary-muted`. Marks the primary action or active state. |
 | Status | `success` / `warning` / `destructive` / `info` (+ `-foreground`, `-muted`) — describe *device* state, never UI emphasis |
 | Charts | `chart-1..5` |

@@ -172,7 +172,7 @@ Check any layout change at: 1024×720 sidebar-expanded **with the bottom panel o
 - Prefer `@/` imports; `import type` for type-only imports.
 - shadcn primitives in `shared/ui/`; feature UI stays in `features/`.
 - Design tokens from `global.css` — no raw hex/rgb/oklch in components.
-- **Palette ("Neutral"):** achromatic surfaces and inverted primary actions between light and dark. Dark canvas is true black (`oklch(0 0 0)`). `success` / `warning` / `destructive` / `info` describe **device** state, never UI emphasis.
+- **Palette ("Neutral"):** official shadcn Neutral tokens in `src/styles/global.css` (`:root` / `.dark`). Dark canvas is `oklch(0.145 0 0)`, not true black. `success` / `warning` / `destructive` / `info` describe **device** state, never UI emphasis.
 - **Surfaces:** `canvas` < `surface` < `surface-raised` < `surface-overlay`. Pick a level; do not invent one with an ad-hoc `bg-*`.
 - **Type scale** (each token carries its own line-height, tracking and weight — no companion `leading-*` / `font-*` needed):
 
