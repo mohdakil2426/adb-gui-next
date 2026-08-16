@@ -603,4 +603,31 @@ export namespace backend {
     adb: string;
     fastboot: string;
   }
+
+  export interface HostSetupStatus {
+    adbPresent: boolean;
+    driverInstalled: boolean;
+    driverLabel: string;
+    fastbootPresent: boolean;
+    installPath: string;
+    latestPlatformTools: string | null;
+    latestUsbDriver: string | null;
+    onPath: boolean;
+    supported: boolean;
+    unsupportedReason: string | null;
+  }
+
+  export interface HostSetupResult {
+    driverInstalled: boolean;
+    driverMessage: string | null;
+    installPath: string;
+    pathUpdated: boolean;
+    platformToolsVersion: string;
+  }
+
+  export interface HostSetupProgress {
+    received: number;
+    stage: string;
+    total: number | null;
+  }
 }

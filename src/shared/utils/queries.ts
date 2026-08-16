@@ -22,6 +22,9 @@ export const queryKeys = {
   scrcpy: {
     status: ['scrcpy', 'status'] as const,
   },
+  hostSetup: {
+    status: ['hostSetup', 'status'] as const,
+  },
   marketplace: {
     search: (query: string, filters: object) => ['marketplace', 'search', query, filters] as const,
     trending: ['marketplace', 'trending'] as const,

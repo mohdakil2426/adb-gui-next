@@ -32,5 +32,10 @@ describe('Tauri command permissions', () => {
     expect(permissions).toContain('"restart_adb_server"');
     expect(permissions).toContain('"kill_adb_server"');
     expect(permissions).toContain('"get_host_tool_versions"');
+    expect(permissions).toContain('"host_setup_status"');
+    expect(permissions).toContain('"host_setup_install"');
+    expect(permissions).toContain('"host_setup_install_driver"');
+    expect(permissions).toContain('"launch_host_setup_terminal"');
+    expect(permissions).toContain('"host_setup_repair_path"');
   });
 });

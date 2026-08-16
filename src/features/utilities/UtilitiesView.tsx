@@ -4,6 +4,7 @@ import { AdbUtilitiesPanel } from '@/features/utilities/ui/AdbUtilitiesPanel';
 import { DiagnosticsPanel } from '@/features/utilities/ui/DiagnosticsPanel';
 import { FastbootUtilitiesPanel } from '@/features/utilities/ui/FastbootUtilitiesPanel';
 import { GetVarDialog } from '@/features/utilities/ui/GetVarDialog';
+import { HostSetupPanel } from '@/features/utilities/ui/HostSetupPanel';
 import { HostToolsPanel } from '@/features/utilities/ui/HostToolsPanel';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
 import { SectionHeader } from '@/shared/components/SectionHeader';
@@ -95,6 +96,7 @@ export function ViewUtilities() {
             loadingAction={loadingAction}
             sentAction={sentAction}
           />
+          <HostSetupPanel />
         </UtilitySection>
         <UtilitySection title="Device">
           <AdbUtilitiesPanel

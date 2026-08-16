@@ -232,6 +232,26 @@ export function GetHostToolVersions(): Promise<backend.HostToolVersions> {
   return call('get_host_tool_versions');
 }
 
+export function HostSetupStatus(): Promise<backend.HostSetupStatus> {
+  return call('host_setup_status');
+}
+
+export function HostSetupInstall(): Promise<backend.HostSetupResult> {
+  return call('host_setup_install');
+}
+
+export function HostSetupInstallDriver(): Promise<backend.HostSetupResult> {
+  return call('host_setup_install_driver');
+}
+
+export function LaunchHostSetupTerminal(): Promise<void> {
+  return call('launch_host_setup_terminal');
+}
+
+export function HostSetupRepairPath(): Promise<backend.HostSetupResult> {
+  return call('host_setup_repair_path');
+}
+
 export function RestoreAvdBackups(avdName: string): Promise<string> {
   return call('restore_avd_backups', { avdName });
 }
