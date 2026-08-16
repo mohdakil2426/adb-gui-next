@@ -26,7 +26,7 @@ ADB GUI Next is a Tauri 2 desktop app for ADB, fastboot, firmware extract, deblo
 
 ## Major feature areas
 
-Dashboard · Wireless ADB · App Manager (+ UAD debloat) · File Explorer · Flasher · Utilities · Payload Dumper · Marketplace · Emulator Manager · Bottom panel (Logs + Shell)
+Dashboard · Wireless ADB · App Manager (+ UAD debloat + APK icons) · File Explorer · Flasher · Utilities · **Scrcpy** (official binaries, native window) · Payload Dumper · Marketplace · Emulator Manager · Bottom panel (Logs + Shell)
 
 ## Version
 
@@ -34,4 +34,4 @@ Dashboard · Wireless ADB · App Manager (+ UAD debloat) · File Explorer · Fla
 - **Tauri:** `"version": "../package.json"`
 - **Cargo:** must match (`bun run version:sync`)
 - **Rust edition:** 2024
-- **Last memory-bank refresh:** 2026-07-20
+- **Last memory-bank refresh:** 2026-08-16

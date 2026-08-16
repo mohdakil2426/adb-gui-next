@@ -2,13 +2,11 @@
 
 ## Overall status
 
-Fully functional Tauri 2 desktop app on `main` (v**0.2.5**). Core features shipped: device dashboard, wireless ADB, app manager + UAD debloat, file explorer (incl. root grant), flasher, utilities, payload dumper (local/remote/OPS/OFP/factory), marketplace, emulator + Magisk root wizard, bottom logs/shell.
+Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README), emulator + Magisk root wizard, bottom logs/shell.
 
-Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official version path, portable-only custom script, multi-device debloat serial, single-instance, ACL split, view persistence.
+Packaging/CI: tauri-action multi-arch, official version path, portable-only custom script, multi-device debloat serial, single-instance, ACL split, view persistence, `persist-credentials: false` on checkout.
 
-**In flight (worktree `adb-gui-next-scrcpy-overhaul`, branch `feat/scrcpy-and-ui-overhaul`, no commits):** Neutral true-black theme, official scrcpy manager, Rust app-icon cache, file open-in-editor, GitHub marketplace all-releases + README, marketplace browse redesign, utilities regroup + `utilities/` domain, logcat/screenshot, CI `persist-credentials: false`. See `memory-bank/activeContext.md`.
-
-**Previously in flight (already on this HEAD):** the "Precision Instrument" UI/UX reimagine, later retinted to Neutral.
+**Overhaul is merged into local `main`** (`5a6d3d5` + `540d152`). Same SHA as `feat/scrcpy-and-ui-overhaul`. **Not pushed.** v2 “Precision Instrument” UI later retinted to Neutral black/white is also on this HEAD (PR #1).
 
 ## Quality / CI (current)
 
@@ -26,25 +24,29 @@ Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official versi
 ## Major capabilities (done)
 
 - FE layout: `src/app`, `src/desktop`, `src/features/*`, `src/shared`, `src/test`
+- **11 views** code-split (`React.lazy` + `VIEW_PRELOADERS`), including Scrcpy
 - Device-list poll 30s (`MainLayout`); AVD poll 5s (Emulator view); dashboard telemetry poll 15s (Dashboard only, stops on error)
 - Payload streaming/mmap, cancel, remote progress, factory ZIP remote; ZIP64 CD extra parse tested
-- Debloat SDK-aware + device-keyed cache + **explicit serial** IPC; backup restore wired end-to-end (`RestoreDebloatBackup`)
+- Debloat SDK-aware + device-keyed cache + **explicit serial** IPC; backup restore wired (`RestoreDebloatBackup`)
+- App icons: Rust `get_app_icons` + disk/memory cache; Installed apps tab via `useAppIcons`
 - Emulator root: preflight, autopilot + FAKEBOOTIMG, `su -c id -u == 0` verify
 - Bottom panel + shell history stable ids
-- File Explorer: thin view + hook composition under `useFileExplorerViewModel`
+- File Explorer: thin view + hook composition; open allowlisted text in host editor; `ls -lA`
+- Scrcpy: download/install/update/launch native process; CLI options only
+- Utilities: typed host ADB restart/kill/versions; logcat snapshot; PNG screenshot; wipe phrase `WIPE`
+- Marketplace: Rust search/install; GitHub all-releases + README; browse toolbar filters
 - Single-instance; ACL read/mutate permissions; active view localStorage
 - Packaging: Win x86_64/i686/aarch64; Linux x86_64 + aarch64 (PATH tools on arm)
 
-### v2 redesign (branch `feat/ui-ux-reimagine-v2`)
+### v2 redesign (already on `main`)
 
-- Design-token system in `global.css`: "Precision Instrument" oklch palette, four surface levels, 13px-base type scale (11px floor), motion + z-index tokens
+- Design-token system in `global.css`: Neutral black/white (not chroma-tinted), four surface levels, 13px-base type scale (11px floor), motion + z-index tokens
 - Self-hosted Inter + JetBrains Mono; Google Fonts removed from `index.html` **and** CSP
-- All 10 views code-split (`React.lazy` + `VIEW_PRELOADERS`), including Scrcpy
-- Shell: Header (`VIEW_META` title + breadcrumb) → `ViewContent` (fluid width) → `StatusBar` → bottom-panel dock spacer; `paddingBottom` hack removed
-- ⌘K command palette + `shared/commands/` registry + `SHORTCUT_HELP` keyboard reference
-- `operationStore` + `StatusBar` operation surface (App Manager wired)
-- Dashboard rebuilt on `get_device_telemetry`: identity / battery gauge / memory sparkline / storage / security / wireless panels
-- Rust `src/adb/` — `AdbClient`, `shell_batch`, telemetry parsers; `release` profile back to `opt-level = 3`
+- Shell: Header (`VIEW_META` title + breadcrumb) → `ViewContent` (fluid width) → `StatusBar` → bottom-panel dock spacer
+- ⌘K command palette + `shared/commands/` registry + `SHORTCUT_HELP`
+- `operationStore` + `StatusBar` (App Manager wired)
+- Dashboard on `get_device_telemetry`: identity / battery gauge / memory sparkline / storage / security / wireless
+- Rust `src/adb/` — `AdbClient`, `shell_batch`, telemetry parsers; `release` profile `opt-level = 3`
 - Confirmation gates on flash + sideload; charts hand-rolled SVG/CSS (no charting library)
 
 ## Known issues / gaps
@@ -55,13 +57,17 @@ Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official versi
 | Delta OTA | Limited incremental path; errors call out limitation |
 | OPS stream decrypt | Deferred vs full-file OPS/OFP |
 | Win aarch64 tools | Still PE x86 Google tools (emulation) |
+| Scrcpy ARM | No official Genymobile ARM zip; PATH fallback |
 | FE view-model size | Large orchestrator still allowlisted if arch-tested |
 | macOS | Code/resources present; **builds paused** by product policy |
-| First multi-arch CI | Confirm arm runners + tauri-action artifact name tokens in Actions UI |
-| v2 branch unmerged | `feat/ui-ux-reimagine-v2` still needs review + merge to `main` |
 | `get_device_info` | Registered + permitted, **no frontend caller** left; keep or remove is undecided |
-| `operationStore` coverage | App Manager only; flasher / payload / emulator still on their own progress UI |
+| `operationStore` coverage | App Manager only; flasher / payload / emulator / scrcpy use their own progress |
 | `--content-max-width` | Token declared in `global.css`, no longer applied anywhere |
+| Overhaul not on origin | Local `main` ahead of `origin/main` until push |
+| GUI smoke | Overhaul not run inside the Tauri webview in that session |
+| Marketplace catalog | Search-first; no F-Droid “home” browse without a query |
+| Logcat | Snapshot only, not a live stream |
+| Flasher wipe | Own confirm UI; does not send utilities `WIPE` phrase |
 
 ## Changelog policy
 

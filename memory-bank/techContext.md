@@ -50,7 +50,7 @@ src-tauri/
   commands/     thin IPC
   adb/          AdbClient (single adb spawn point) + telemetry + parse
   helpers.rs    binary, path safety, adb serial helpers (adb_shell_checked forwards to adb/)
-  payload/ marketplace/ emulator/ debloat/
+  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ app_icons.rs
   resources/{windows,linux,darwin}/
   permissions/ + capabilities/
 scripts/
@@ -90,6 +90,7 @@ Full design: `docs/architecture.md`.
 - Marketplace install: owned temp path + selected serial
 - Capabilities: `allow-device-read` + `allow-device-mutate` (not a single opaque allow-all in default cap)
 - CSP: `font-src 'self'`, `style-src 'unsafe-inline' 'self'` — the Google Fonts allowances were removed when fonts were vendored
-- Destructive flows gated by explicit confirmation dialogs (flash, sideload, wipe, uninstall, AVD backup restore)
+- Destructive flows gated by explicit confirmation dialogs (flash, sideload, wipe, uninstall, AVD backup restore); utilities wipe requires typing `WIPE`
+- Scrcpy: official release assets + SHA256; no in-tree scrcpy source; outbound URL validation on GitHub hops
 
-**Last updated:** 2026-07-27
+**Last updated:** 2026-08-16

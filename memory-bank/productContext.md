@@ -14,15 +14,16 @@ ADB/fastboot are powerful but awkward for repetitive work. This app is a local d
 ## UX goals
 
 - Native-feeling Tauri desktop shell (sidebar views, no web router)
-- Light / dark / system theme; semantic tokens; shared shadcn components
+- Light / dark / system theme; **shadcn Neutral** (white canvas / true-black canvas); semantic tokens; shared shadcn components
 - Logs + shell in a VS Code–style bottom panel
-- Viewport-locked layout (`h-svh`); pinned header; responsive, no horizontal overflow
+- Viewport-locked layout (`h-svh`); pinned header; **container-query** adaptivity (window `minWidth` 1024 — never `sm:`/`md:`)
 - Active view remembered across reloads (localStorage, not URL routing)
 - Single app instance (second launch focuses existing window)
+- Device screen mirror via **official scrcpy**, launched as its own native process
 
 ## Boundaries
 
-**In scope:** local ADB/fastboot, file transfer, packages, wireless ADB, payload/OPS/OFP (local + remote where implemented), marketplace installs, emulator AVD tools, Win/Linux multi-arch packaging (unsigned).
+**In scope:** local ADB/fastboot, file transfer, packages, wireless ADB, payload/OPS/OFP (local + remote where implemented), marketplace installs, official scrcpy host (download/launch, no fork of scrcpy source), emulator AVD tools, Win/Linux multi-arch packaging (unsigned).
 
 **Out of scope:** cloud multi-user, browser/Next.js deployment, device farms. **macOS:** implementation may exist; product **builds paused** until explicitly unpaused. **Code signing:** not used.
 
@@ -30,4 +31,4 @@ ADB/fastboot are powerful but awkward for repetitive work. This app is a local d
 
 0.2.5 — SoT `package.json` (see `projectbrief.md` / `docs/project_rules.md`).
 
-**Last updated:** 2026-07-20
+**Last updated:** 2026-08-16

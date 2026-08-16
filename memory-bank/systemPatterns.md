@@ -56,7 +56,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 ### Design tokens
 
 - All colour/type/motion/z-index tokens in `src/styles/global.css`; no raw hex/rgb/oklch in components.
-- Palette: chroma-tinted neutrals (hue 250), one accent (electric cyan, hue 210) for primary/active only, status colours for **device** state.
+- Palette: **shadcn Neutral** achromatic (light `oklch(1 0 0)` / dark `oklch(0 0 0)` canvas). Primary inverts with theme. Status colours (`success` / `warning` / `destructive` / `info`) describe **device** state, never UI emphasis.
 - Surfaces: `canvas` < `surface` < `surface-raised` < `surface-overlay`.
 - Type: 13px base; `display`/`title`/`body`/`label`/`caption`/`mono`/`mono-sm`, each with its own line-height/tracking/weight. **11px floor.** `numeric` utility on updating values.
 - Motion: transform/opacity only; never `height`, never `all`.
@@ -68,27 +68,29 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 - Feature stores stay in feature `model/`; app-wide stores in `shared/stores/`.
 - Persisted vs churn: durable selections in the persisted store, high-frequency progress in a sibling **non-persisted** store (`payloadProgressStore`, `memoryHistoryStore`, `operationStore`). `zustand/persist` writes `localStorage` synchronously on every `setState`.
 - Long-running work registers with `operationStore` (`startOperation` / `updateOperation` / `finishOperation`) so `StatusBar` shows it — App Manager is wired; extend rather than adding a parallel mechanism.
-- App Manager tabs: Installation + Debloater (UAD).
-- Package list icons: Lucide `Package` (user) / `Package2` (system) until real icons exist.
+- App Manager tabs: Install + Installed apps + Debloat (UAD).
+- Package list icons: Rust `get_app_icons` (APK raster cache, batch 24) via `useAppIcons`; Lucide placeholders only while a batch is in flight / missing.
 
 ### Domain (Rust)
 
-- Thin `commands/*`; logic in `adb/`, `payload/`, `marketplace/`, `emulator/`, `debloat/`, `helpers.rs`.
+- Thin `commands/*`; logic in `adb/`, `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `app_icons.rs`, `helpers.rs`.
 - **All `adb` invocation goes through `adb::AdbClient`** — binary path resolved once per process (`OnceLock`), one exit-marker implementation, per-batch nonce markers.
 - Critical shell: `AdbClient::shell_checked` (host OK ≠ shell OK); `helpers::adb_shell_checked` is a forwarder.
 - Multiple device reads ⇒ `AdbClient::shell_batch` (N commands, 1 process, per-command exit codes). `get_device_telemetry` = 9 commands in 1 process.
 - Rust returns **typed numbers**, not display strings; formatting is a frontend concern.
 - `[profile.release]` is the speed profile (`opt-level = 3`, lto, 1 CGU). No `release-fast`, no `opt-level = "s"`.
 - Payload: mmap/streaming; cancel tokens; `TransactionGuard` file-only cleanup; ZIP64 CD extras for remote factory ZIP.
-- Events FE must use via runtime: `payload:progress`, `payload:load-progress`, `root:progress`.
+- Events FE must use via runtime: `payload:progress`, `payload:load-progress`, `root:progress`, `scrcpy:download-progress`.
 
 ### Marketplace / emulator / debloat (short)
 
 | Area | Pattern |
 | --- | --- |
-| Marketplace | Thin commands → service/providers/ranking/cache; session tokens only; install owned temp + serial |
+| Marketplace | Thin commands → service/providers/ranking/cache; session tokens only; install owned temp + serial; GitHub releases paginated + README fetch in Rust |
 | Emulator | AVD via `~/.android/avd/*.ini`; root proof `verify_avd_root` / `su -c id -u == 0` |
 | Debloat | Device-keyed cache; **explicit serial** from FE; SDK-aware actions; no Disable when SDK unknown / API &lt; 23 |
+| Scrcpy | Official Genymobile archives + SHA256; `app_data_dir()/scrcpy/`; detached spawn; CLI flags only; no scrcpy source in-tree |
+| Utilities | Domain validates slot/wipe/logcat; dedicated restart/kill/version commands (not arbitrary host shell) |
 
 ### File Explorer
 
@@ -97,6 +99,8 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 - Selection/sort: **pure** `setState` updaters only (no nested setters / ref writes inside updaters).
 - Mutations re-list with `loadFiles(path, false)`.
 - Snapshot serial before host dialogs; clear root grant on serial change.
+- Hidden entries: device listing is `ls -lA`.
+- Open allowlisted text (`.sh`, `.md`, `.txt`, `.toml`, `.xml`, `.bak`, … — not archives) by pulling to temp, then host editor (`code` / Notepad / Linux editors / macOS `open -t`).
 
 ### Bottom panel
 
@@ -154,5 +158,7 @@ Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes tha
 - Reintroducing `collect-release-assets.ps1` / `verify-release-version.mjs`
 - Shipping Linux aarch64 with wrong-arch bundled adb
 - Claiming macOS first-class while builds are paused
+- Charting libraries that write built-in prototypes at import time (Recharts / `decimal.js-light` vs `freezePrototype: true`)
+- Viewport `sm:` / `md:` layout (window minWidth is 1024; use `@container`)
 
-**Last updated:** 2026-07-27
+**Last updated:** 2026-08-16
