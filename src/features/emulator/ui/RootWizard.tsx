@@ -209,13 +209,13 @@ export function RootWizard({ avd }: RootWizardProps) {
           onValueChange={(v) => setSetupTab(v as 'autopilot' | 'manual')}
           value={setupTab}
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger className="gap-2" value="autopilot">
-              <Zap aria-hidden="true" className="size-4" />
+          <TabsList>
+            <TabsTrigger value="autopilot">
+              <Zap aria-hidden="true" />
               Autopilot (Magisk v25.2 and older)
             </TabsTrigger>
-            <TabsTrigger className="gap-2" value="manual">
-              <ShieldCheck aria-hidden="true" className="size-4" />
+            <TabsTrigger value="manual">
+              <ShieldCheck aria-hidden="true" />
               Manual FAKEBOOTIMG (Magisk v26+)
             </TabsTrigger>
           </TabsList>

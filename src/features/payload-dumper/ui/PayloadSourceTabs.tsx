@@ -69,13 +69,13 @@ export function PayloadSourceTabs({
       }}
       value={mode}
     >
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger className="flex items-center gap-2" disabled={showLoadCard} value="local">
-          <FileArchive aria-hidden="true" className="size-4" />
+      <TabsList>
+        <TabsTrigger disabled={showLoadCard} value="local">
+          <FileArchive aria-hidden="true" />
           Local file
         </TabsTrigger>
-        <TabsTrigger className="flex items-center gap-2" value="remote">
-          <Globe aria-hidden="true" className="size-4" />
+        <TabsTrigger value="remote">
+          <Globe aria-hidden="true" />
           Remote URL
         </TabsTrigger>
       </TabsList>

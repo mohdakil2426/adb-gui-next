@@ -226,45 +226,41 @@ export function ViewEmulatorManager() {
             />
           ) : selectedAvd ? (
             <Tabs
+              className="w-full gap-4 p-4"
               onValueChange={(value) => {
                 setActiveTab(value as EmulatorManagerTab);
               }}
               value={activeTab}
             >
-              <TabsList
-                className="w-full justify-start rounded-none rounded-t-lg border-b px-4"
-                variant="line"
-              >
+              <TabsList>
                 <TabsTrigger value="launch">Launch</TabsTrigger>
                 <TabsTrigger value="root">Root</TabsTrigger>
                 <TabsTrigger value="restore">Restore</TabsTrigger>
               </TabsList>
-              <div className="p-4">
-                <TabsContent value="launch">
-                  <EmulatorLaunchTab
-                    avd={selectedAvd}
-                    isLaunching={pendingAction === 'launch'}
-                    onLaunch={() => void handleLaunch()}
-                  />
-                </TabsContent>
-                <TabsContent value="root">
-                  <EmulatorRootTab
-                    avd={selectedAvd}
-                    onLaunch={(options) => void handleLaunch(options)}
-                  />
-                </TabsContent>
-                <TabsContent value="restore">
-                  <EmulatorRestoreTab
-                    avd={selectedAvd}
-                    isLoadingPlan={isRestorePlanLoading}
-                    isRestoring={pendingAction === 'restore'}
-                    onRequestRestore={() => {
-                      setIsRestoreConfirmOpen(true);
-                    }}
-                    restorePlan={restorePlan}
-                  />
-                </TabsContent>
-              </div>
+              <TabsContent value="launch">
+                <EmulatorLaunchTab
+                  avd={selectedAvd}
+                  isLaunching={pendingAction === 'launch'}
+                  onLaunch={() => void handleLaunch()}
+                />
+              </TabsContent>
+              <TabsContent value="root">
+                <EmulatorRootTab
+                  avd={selectedAvd}
+                  onLaunch={(options) => void handleLaunch(options)}
+                />
+              </TabsContent>
+              <TabsContent value="restore">
+                <EmulatorRestoreTab
+                  avd={selectedAvd}
+                  isLoadingPlan={isRestorePlanLoading}
+                  isRestoring={pendingAction === 'restore'}
+                  onRequestRestore={() => {
+                    setIsRestoreConfirmOpen(true);
+                  }}
+                  restorePlan={restorePlan}
+                />
+              </TabsContent>
             </Tabs>
           ) : (
             <EmptyState

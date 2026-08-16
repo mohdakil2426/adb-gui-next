@@ -1,5 +1,6 @@
 import { Server, Smartphone, Zap } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { TabsWithIcon } from '@/components/shadcn-studio/tabs/tabs-03';
 import { useUtilityActions } from '@/features/utilities/hooks/useUtilityActions';
 import { AdbUtilitiesPanel } from '@/features/utilities/ui/AdbUtilitiesPanel';
 import { DiagnosticsPanel } from '@/features/utilities/ui/DiagnosticsPanel';
@@ -9,7 +10,6 @@ import { HostSetupPanel } from '@/features/utilities/ui/HostSetupPanel';
 import { HostToolsPanel } from '@/features/utilities/ui/HostToolsPanel';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
 import { Badge } from '@/shared/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
 type UtilitiesTab = 'host' | 'adb' | 'fastboot';
 
@@ -49,6 +49,66 @@ export function ViewUtilities() {
   const modeLabel =
     deviceMode === 'adb' ? 'ADB' : deviceMode === 'fastboot' ? 'Fastboot' : 'No device';
 
+  const utilityTabs = [
+    {
+      content: (
+        <div className="flex flex-col gap-4">
+          <HostToolsPanel
+            handleKillServer={handleKillServer}
+            handleRestartServer={handleRestartServer}
+            loadingAction={loadingAction}
+            sentAction={sentAction}
+          />
+          <HostSetupPanel />
+        </div>
+      ),
+      icon: <Server aria-hidden="true" />,
+      name: 'Host',
+      value: 'host',
+    },
+    {
+      content: (
+        <div className="flex flex-col gap-4">
+          <AdbUtilitiesPanel
+            deviceMode={deviceMode}
+            deviceSerial={deviceSerial}
+            handleReboot={handleReboot}
+            loadingAction={loadingAction}
+            onRescan={handleRescan}
+            sentAction={sentAction}
+          />
+          <DiagnosticsPanel
+            disabled={deviceMode !== 'adb'}
+            loadingAction={loadingAction}
+            serial={deviceSerial}
+          />
+        </div>
+      ),
+      icon: <Smartphone aria-hidden="true" />,
+      name: 'ADB',
+      value: 'adb',
+    },
+    {
+      content: (
+        <FastbootUtilitiesPanel
+          deviceMode={deviceMode}
+          deviceSerial={deviceSerial}
+          handleFastbootGetVars={handleFastbootGetVars}
+          handleReboot={handleReboot}
+          handleSetActiveSlot={handleSetActiveSlot}
+          handleWipeData={handleWipeData}
+          isGlobalLoading={isGlobalLoading}
+          loadingAction={loadingAction}
+          onRescan={handleRescan}
+          sentAction={sentAction}
+        />
+      ),
+      icon: <Zap aria-hidden="true" />,
+      name: 'Fastboot',
+      value: 'fastboot',
+    },
+  ];
+
   return (
     <div className="@container flex flex-col gap-4">
       <h1 className="sr-only">Utilities</h1>
@@ -74,70 +134,14 @@ export function ViewUtilities() {
         </div>
       </div>
 
-      <Tabs
+      <TabsWithIcon
+        className="w-full"
         onValueChange={(value) => {
           setTab(value as UtilitiesTab);
         }}
+        tabs={utilityTabs}
         value={tab}
-      >
-        <TabsList className="w-full justify-start border-border border-b" variant="line">
-          <TabsTrigger className="flex-none gap-1.5" value="host">
-            <Server aria-hidden="true" />
-            Host
-          </TabsTrigger>
-          <TabsTrigger className="flex-none gap-1.5" value="adb">
-            <Smartphone aria-hidden="true" />
-            ADB
-          </TabsTrigger>
-          <TabsTrigger className="flex-none gap-1.5" value="fastboot">
-            <Zap aria-hidden="true" />
-            Fastboot
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="host">
-          <div className="flex flex-col gap-4">
-            <HostToolsPanel
-              handleKillServer={handleKillServer}
-              handleRestartServer={handleRestartServer}
-              loadingAction={loadingAction}
-              sentAction={sentAction}
-            />
-            <HostSetupPanel />
-          </div>
-        </TabsContent>
-        <TabsContent value="adb">
-          <div className="flex flex-col gap-4">
-            <AdbUtilitiesPanel
-              deviceMode={deviceMode}
-              deviceSerial={deviceSerial}
-              handleReboot={handleReboot}
-              loadingAction={loadingAction}
-              onRescan={handleRescan}
-              sentAction={sentAction}
-            />
-            <DiagnosticsPanel
-              disabled={deviceMode !== 'adb'}
-              loadingAction={loadingAction}
-              serial={deviceSerial}
-            />
-          </div>
-        </TabsContent>
-        <TabsContent value="fastboot">
-          <FastbootUtilitiesPanel
-            deviceMode={deviceMode}
-            deviceSerial={deviceSerial}
-            handleFastbootGetVars={handleFastbootGetVars}
-            handleReboot={handleReboot}
-            handleSetActiveSlot={handleSetActiveSlot}
-            handleWipeData={handleWipeData}
-            isGlobalLoading={isGlobalLoading}
-            loadingAction={loadingAction}
-            onRescan={handleRescan}
-            sentAction={sentAction}
-          />
-        </TabsContent>
-      </Tabs>
+      />
 
       <GetVarDialog
         getVarContent={getVarContent}

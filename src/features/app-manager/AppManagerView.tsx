@@ -57,22 +57,20 @@ export function AppManagerView({ activeView }: { activeView: string }) {
       />
 
       <Card className="gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
-        <CardContent className="p-0">
+        <CardContent className="p-4">
           <Tabs
+            className="w-full gap-4"
             onValueChange={(v) => {
               setActiveTab(v as AppManagerTab);
             }}
             value={activeTab}
           >
-            <TabsList
-              className="w-full justify-start rounded-none rounded-t-lg border-border border-b px-4"
-              variant="line"
-            >
-              <TabsTrigger className="flex-none gap-1.5" value="installation">
+            <TabsList>
+              <TabsTrigger value="installation">
                 <FileUp aria-hidden="true" />
                 Install
               </TabsTrigger>
-              <TabsTrigger className="flex-none gap-1.5" value="installed">
+              <TabsTrigger value="installed">
                 <Package aria-hidden="true" />
                 Installed apps
                 {isLoading ? (
@@ -83,7 +81,7 @@ export function AppManagerView({ activeView }: { activeView: string }) {
                   </span>
                 )}
               </TabsTrigger>
-              <TabsTrigger className="flex-none gap-1.5" value="debloater">
+              <TabsTrigger value="debloater">
                 <ShieldCheck aria-hidden="true" />
                 Debloat
                 {isLoadingDebloat ? (
@@ -92,23 +90,21 @@ export function AppManagerView({ activeView }: { activeView: string }) {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-4">
-              <TabsContent value="installation">
-                <InstallationTab onInstalled={refresh} />
-              </TabsContent>
+            <TabsContent value="installation">
+              <InstallationTab onInstalled={refresh} />
+            </TabsContent>
 
-              <TabsContent value="installed">
-                <InstalledAppsTab
-                  hasLoaded={hasLoaded}
-                  loadError={packagesError}
-                  onRefresh={refresh}
-                />
-              </TabsContent>
+            <TabsContent value="installed">
+              <InstalledAppsTab
+                hasLoaded={hasLoaded}
+                loadError={packagesError}
+                onRefresh={refresh}
+              />
+            </TabsContent>
 
-              <TabsContent value="debloater">
-                <DebloaterTab />
-              </TabsContent>
-            </div>
+            <TabsContent value="debloater">
+              <DebloaterTab />
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
