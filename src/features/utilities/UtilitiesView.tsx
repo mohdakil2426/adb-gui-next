@@ -1,4 +1,5 @@
-import { type ReactNode, useCallback } from 'react';
+import { Server, Smartphone, Zap } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useUtilityActions } from '@/features/utilities/hooks/useUtilityActions';
 import { AdbUtilitiesPanel } from '@/features/utilities/ui/AdbUtilitiesPanel';
 import { DiagnosticsPanel } from '@/features/utilities/ui/DiagnosticsPanel';
@@ -7,27 +8,10 @@ import { GetVarDialog } from '@/features/utilities/ui/GetVarDialog';
 import { HostSetupPanel } from '@/features/utilities/ui/HostSetupPanel';
 import { HostToolsPanel } from '@/features/utilities/ui/HostToolsPanel';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
-import { SectionHeader } from '@/shared/components/SectionHeader';
 import { Badge } from '@/shared/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
-function UtilitySection({
-  children,
-  title,
-  tone = 'default',
-}: {
-  children: ReactNode;
-  title: string;
-  tone?: 'default' | 'danger';
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <SectionHeader className={tone === 'danger' ? 'text-destructive' : undefined}>
-        {title}
-      </SectionHeader>
-      {children}
-    </section>
-  );
-}
+type UtilitiesTab = 'host' | 'adb' | 'fastboot';
 
 export function ViewUtilities() {
   const {
@@ -50,6 +34,8 @@ export function ViewUtilities() {
     setShowGetVarDialog,
     showGetVarDialog,
   } = useUtilityActions();
+
+  const [tab, setTab] = useState<UtilitiesTab>(deviceMode === 'fastboot' ? 'fastboot' : 'adb');
 
   const handleCloseGetVarDialog = useCallback(
     () => setShowGetVarDialog(false),
@@ -75,8 +61,8 @@ export function ViewUtilities() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-body text-muted-foreground">
-          Host ADB, device power, diagnostics, then fastboot danger tools. Destructive actions
-          confirm first; wipe requires typing WIPE.
+          Host ADB and Windows setup, device power and diagnostics, then fastboot. Destructive
+          actions confirm first; wipe requires typing WIPE.
         </p>
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="neutral">{modeLabel}</Badge>
@@ -88,34 +74,56 @@ export function ViewUtilities() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
-        <UtilitySection title="Host">
-          <HostToolsPanel
-            handleKillServer={handleKillServer}
-            handleRestartServer={handleRestartServer}
-            loadingAction={loadingAction}
-            sentAction={sentAction}
-          />
-          <HostSetupPanel />
-        </UtilitySection>
-        <UtilitySection title="Device">
-          <AdbUtilitiesPanel
-            deviceMode={deviceMode}
-            deviceSerial={deviceSerial}
-            handleReboot={handleReboot}
-            loadingAction={loadingAction}
-            onRescan={handleRescan}
-            sentAction={sentAction}
-          />
-        </UtilitySection>
-        <UtilitySection title="Inspect">
-          <DiagnosticsPanel
-            disabled={deviceMode !== 'adb'}
-            loadingAction={loadingAction}
-            serial={deviceSerial}
-          />
-        </UtilitySection>
-        <UtilitySection title="Danger" tone="danger">
+      <Tabs
+        onValueChange={(value) => {
+          setTab(value as UtilitiesTab);
+        }}
+        value={tab}
+      >
+        <TabsList className="w-full justify-start border-border border-b" variant="line">
+          <TabsTrigger className="flex-none gap-1.5" value="host">
+            <Server aria-hidden="true" />
+            Host
+          </TabsTrigger>
+          <TabsTrigger className="flex-none gap-1.5" value="adb">
+            <Smartphone aria-hidden="true" />
+            ADB
+          </TabsTrigger>
+          <TabsTrigger className="flex-none gap-1.5" value="fastboot">
+            <Zap aria-hidden="true" />
+            Fastboot
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="host">
+          <div className="flex flex-col gap-4">
+            <HostToolsPanel
+              handleKillServer={handleKillServer}
+              handleRestartServer={handleRestartServer}
+              loadingAction={loadingAction}
+              sentAction={sentAction}
+            />
+            <HostSetupPanel />
+          </div>
+        </TabsContent>
+        <TabsContent value="adb">
+          <div className="flex flex-col gap-4">
+            <AdbUtilitiesPanel
+              deviceMode={deviceMode}
+              deviceSerial={deviceSerial}
+              handleReboot={handleReboot}
+              loadingAction={loadingAction}
+              onRescan={handleRescan}
+              sentAction={sentAction}
+            />
+            <DiagnosticsPanel
+              disabled={deviceMode !== 'adb'}
+              loadingAction={loadingAction}
+              serial={deviceSerial}
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="fastboot">
           <FastbootUtilitiesPanel
             deviceMode={deviceMode}
             deviceSerial={deviceSerial}
@@ -128,8 +136,8 @@ export function ViewUtilities() {
             onRescan={handleRescan}
             sentAction={sentAction}
           />
-        </UtilitySection>
-      </div>
+        </TabsContent>
+      </Tabs>
 
       <GetVarDialog
         getVarContent={getVarContent}
