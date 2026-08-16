@@ -141,7 +141,7 @@ export const ShellInput = memo(function ShellInput() {
 
   return (
     <div className="shrink-0 border-t px-3 py-2" style={{ borderColor: 'var(--terminal-border)' }}>
-      <InputGroup className="border-0 bg-transparent shadow-none dark:bg-transparent">
+      <InputGroup className="border-0 bg-transparent shadow-none">
         <InputGroupAddon>
           <InputGroupText
             className="select-none font-mono font-semibold text-sm"

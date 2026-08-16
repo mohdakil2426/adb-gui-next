@@ -175,7 +175,7 @@ export function MainLayout() {
           </AnimatePresence>
           <div
             className={cn(
-              'h-svh overflow-hidden',
+              'h-svh overflow-hidden bg-background text-foreground',
               isReady ? 'opacity-100 transition-opacity duration-300 ease-out' : 'opacity-0',
             )}
           >

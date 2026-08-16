@@ -64,10 +64,13 @@
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Surface ladder — canvas < surface < raised < overlay */
   --color-canvas: var(--canvas);
@@ -199,21 +202,16 @@
 }
 
 /* ==========================================================================
-   Neutral palette (shadcn classic black / white)
+   shadcn Neutral theme (official :root / .dark tokens)
    --------------------------------------------------------------------------
-   Surfaces, text and primary actions are achromatic OKLCH (chroma 0). Light is
-   white; dark canvas is true black (`oklch(0 0 0)`) with raised greys from the
-   official Neutral ladder. Status colours (success / warning / danger / info)
-   remain chromatic and describe device state, never UI emphasis.
-
-   Raw values are declared once per theme in `:root` / `.dark`. Everything
-   derived (`var()` / `color-mix()`) is declared once in `:root` and resolves
-   per theme automatically, because both blocks target <html>.
+   Core surfaces follow the Neutral scaffold from ui.shadcn.com/docs/theming.
+   `canvas` / `surface` / `surface-raised` / `surface-overlay` alias those
+   tokens so existing app classes stay in lockstep. Status colours (success /
+   warning / info) stay chromatic and describe device state, never UI emphasis.
    ========================================================================== */
 
 :root {
-  /* radius ladder: sm 4 · md 6 · lg 8 · xl 12 */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
   /* Layout constants for responsive design */
   --content-min-width: 0px;
@@ -241,89 +239,75 @@
     "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", "Segoe UI Mono",
     "Roboto Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
-  /* ---- Surface ladder (light) ---- */
-  --canvas: oklch(1 0 0);
-  --surface: oklch(1 0 0);
-  --surface-raised: oklch(0.97 0 0);
-  --surface-overlay: oklch(1 0 0);
-
-  /* ---- Line work (light) ----
-     `border` / `border-strong` are decorative: dividers, card edges, hairlines.
-     `border-control` is the *boundary of an interactive control* (text fields,
-     selects, textareas, checkboxes) and is held at >= 3:1 against every surface
-     in the ladder, per WCAG 2.1 SC 1.4.11 — 3.36:1 on surface, 3.22:1 on
-     canvas, 3.13:1 on surface-raised. Do not use it as a divider. */
-  --border: oklch(0.922 0 0);
-  --border-strong: oklch(0.845 0 0);
-  --border-control: oklch(0.64 0 0);
-
-  /* ---- Text (light) — three tiers, all ≥ 4.5:1 on canvas and surface ---- */
+  /* Official Neutral — light */
+  --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --foreground-subtle: oklch(0.62 0 0);
-
-  /* ---- Primary (light) — shadcn Neutral action scale ---- */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
-  --primary-hover: oklch(0.145 0 0);
-  --primary-active: oklch(0.1 0 0);
   --primary-foreground: oklch(0.985 0 0);
-
-  /* ---- Interactive tint (light): hover / pressed surface for ghost,
-     outline and secondary controls. Contrast increases on press. ---- */
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
-  --accent-active: oklch(0.93 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 
-  /* ---- Status (light) ---- */
+  /* App surface ladder — aliases of official tokens */
+  --canvas: var(--background);
+  --surface: var(--card);
+  --surface-raised: var(--secondary);
+  --surface-overlay: var(--popover);
+  --foreground-subtle: var(--muted-foreground);
+  --border-strong: color-mix(in oklch, var(--border) 55%, var(--foreground));
+  --border-control: var(--input);
+  --primary-hover: color-mix(in oklch, var(--primary) 88%, var(--foreground));
+  --primary-active: color-mix(in oklch, var(--primary) 76%, var(--foreground));
+  --accent-active: color-mix(in oklch, var(--accent) 82%, var(--foreground));
+  --destructive-foreground: oklch(0.985 0 0);
+  --destructive-hover: color-mix(
+    in oklch,
+    var(--destructive) 88%,
+    var(--foreground)
+  );
+  --destructive-active: color-mix(
+    in oklch,
+    var(--destructive) 76%,
+    var(--foreground)
+  );
+
+  /* Device-state accents (not part of the Neutral scaffold) */
   --success: oklch(0.52 0.155 155);
   --success-foreground: oklch(0.99 0.01 155);
-  /* `warning` is read as *text* (`text-warning`) far more often than as a fill,
-     so it is held to 4.5:1 on the whole light surface ladder: 5.65:1 on
-     surface, 5.41:1 on canvas, 5.26:1 on surface-raised. That makes it too
-     dark for the near-black label the brighter amber used to carry, so
-     `warning-foreground` flips to near-white (5.42:1), matching how `success`
-     and `destructive` already work in this theme. */
   --warning: oklch(0.52 0.13 70);
   --warning-foreground: oklch(0.99 0.02 70);
-  --destructive: oklch(0.55 0.215 25);
-  --destructive-hover: oklch(0.49 0.215 25);
-  --destructive-active: oklch(0.44 0.2 25);
-  --destructive-foreground: oklch(0.99 0.005 25);
   --info: oklch(0.52 0.155 250);
   --info-foreground: oklch(0.99 0.005 250);
 
-  /* ---- Chart ramp (light) — lightness varies with hue so the series stay
-     separable for deutan/protan vision, not just by hue ---- */
-  --chart-1: oklch(0.58 0.165 210);
-  --chart-2: oklch(0.54 0.15 155);
-  --chart-3: oklch(0.63 0.145 75);
-  --chart-4: oklch(0.53 0.2 300);
-  --chart-5: oklch(0.56 0.19 25);
-
-  /* ---- Terminal (light) ---- */
-  --terminal-bg: oklch(0.97 0 0);
-  --terminal-fg: oklch(0.205 0 0);
-  --terminal-header-bg: oklch(0.95 0 0);
-
-  /* ---- Inset top highlight on solid controls ---- */
+  --terminal-bg: var(--muted);
+  --terminal-fg: var(--foreground);
+  --terminal-header-bg: var(--secondary);
   --control-highlight: oklch(1 0 0 / 22%);
 
-  /* ======================================================================
-     Derived tokens — theme-agnostic, declared once.
-     ====================================================================== */
-
-  --background: var(--canvas);
-  --card: var(--surface);
-  --card-foreground: var(--foreground);
-  --popover: var(--surface-overlay);
-  --popover-foreground: var(--foreground);
-  --secondary: var(--surface-raised);
-  --secondary-foreground: var(--foreground);
-  --muted: var(--surface-raised);
-  --accent-foreground: var(--foreground);
-  /* Fill only (`bg-input/30`, the unchecked switch track). The *boundary* of a
-     form control is `--border-control`, which alone meets SC 1.4.11. */
-  --input: var(--border);
-  --ring: var(--primary);
   --primary-muted: color-mix(in oklch, var(--primary) 14%, transparent);
   --destructive-muted: color-mix(in oklch, var(--destructive) 14%, transparent);
   --warning-muted: color-mix(in oklch, var(--warning) 14%, transparent);
@@ -331,15 +315,6 @@
   --success-muted: color-mix(in oklch, var(--success) 10%, transparent);
   --success-light: color-mix(in oklch, var(--success) 15%, transparent);
   --success-subtle: color-mix(in oklch, var(--success) 20%, transparent);
-
-  --sidebar: var(--canvas);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
 
   /* ---- Device status: one bg/fg/border triple per connection state.
      `recovery` is info, not success — it must never look like a healthy
@@ -422,62 +397,65 @@
 }
 
 .dark {
-  /* ---- Surface ladder (dark) — true-black canvas, Neutral greys above ---- */
-  --canvas: oklch(0 0 0);
-  --surface: oklch(0.145 0 0);
-  --surface-raised: oklch(0.205 0 0);
-  --surface-overlay: oklch(0.269 0 0);
-
-  /* ---- Line work (dark) ---- see the light block for the split. */
-  --border: oklch(0.269 0 0);
-  --border-strong: oklch(0.365 0 0);
-  --border-control: oklch(0.52 0 0);
-
-  /* ---- Text (dark) ---- */
+  /* Official Neutral — dark */
+  --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --foreground-subtle: oklch(0.62 0 0);
-
-  /* ---- Primary (dark) — inverted Neutral action scale ---- */
-  --primary: oklch(0.985 0 0);
-  --primary-hover: oklch(1 0 0);
-  --primary-active: oklch(0.922 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
-
-  /* ---- Interactive tint (dark) ---- */
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
-  --accent-active: oklch(0.32 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 
-  /* ---- Status (dark) ---- */
+  --primary-hover: color-mix(in oklch, var(--primary) 92%, oklch(1 0 0));
+  --primary-active: color-mix(in oklch, var(--primary) 82%, var(--background));
+  --accent-active: color-mix(in oklch, var(--accent) 88%, oklch(1 0 0));
+  --destructive-foreground: oklch(0.985 0 0);
+  --destructive-hover: color-mix(
+    in oklch,
+    var(--destructive) 88%,
+    var(--background)
+  );
+  --destructive-active: color-mix(
+    in oklch,
+    var(--destructive) 76%,
+    var(--background)
+  );
+
   --success: oklch(0.72 0.17 155);
   --success-foreground: oklch(0.16 0.03 155);
   --warning: oklch(0.8 0.15 75);
   --warning-foreground: oklch(0.19 0.035 70);
-  /* Danger carries a near-white label, so it moves the other way from the
-     accent: darker on hover/active keeps the label legible. */
-  --destructive: oklch(0.6 0.215 22);
-  --destructive-hover: oklch(0.55 0.215 22);
-  --destructive-active: oklch(0.5 0.21 22);
-  --destructive-foreground: oklch(0.985 0.005 22);
   --info: oklch(0.7 0.14 240);
   --info-foreground: oklch(0.15 0.025 240);
 
-  /* ---- Chart ramp (dark) ---- */
-  --chart-1: oklch(0.72 0.155 210);
-  --chart-2: oklch(0.68 0.17 155);
-  --chart-3: oklch(0.78 0.15 75);
-  --chart-4: oklch(0.65 0.19 300);
-  --chart-5: oklch(0.7 0.18 25);
-
-  /* ---- Terminal (dark) — sits on true black ---- */
-  --terminal-bg: oklch(0 0 0);
-  --terminal-fg: oklch(0.925 0 0);
-  --terminal-header-bg: oklch(0.145 0 0);
-
+  --terminal-bg: var(--background);
+  --terminal-fg: var(--foreground);
+  --terminal-header-bg: var(--card);
   --control-highlight: oklch(1 0 0 / 12%);
-
-  /* Chrome sits one step above the canvas in dark. */
-  --sidebar: var(--surface);
 }
 
 @layer base {

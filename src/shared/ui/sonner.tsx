@@ -5,6 +5,8 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import type { CSSProperties } from 'react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
 /**
@@ -42,23 +44,27 @@ const TOAST_TOKENS = {
   '--info-bg': 'color-mix(in oklch, var(--info) 12%, var(--popover))',
   '--info-border': 'color-mix(in oklch, var(--info) 32%, var(--border))',
   '--info-text': 'color-mix(in oklab, var(--info) 72%, var(--foreground))',
-} as React.CSSProperties;
+} as CSSProperties;
 
-const Toaster = ({ style, ...props }: ToasterProps) => (
-  <Sonner
-    className="toaster group"
-    icons={{
-      success: <CircleCheckIcon className="size-4" />,
-      info: <InfoIcon className="size-4" />,
-      warning: <TriangleAlertIcon className="size-4" />,
-      error: <OctagonXIcon className="size-4" />,
-      loading: <Loader2Icon className="size-4 animate-spin" />,
-    }}
-    style={{ ...TOAST_TOKENS, ...style }}
-    theme="system"
-    toastOptions={{ classNames: { title: 'text-body', description: 'text-caption' } }}
-    {...props}
-  />
-);
+const Toaster = ({ style, ...props }: ToasterProps) => {
+  const { resolvedTheme } = useTheme();
+
+  return (
+    <Sonner
+      className="toaster group"
+      icons={{
+        success: <CircleCheckIcon className="size-4" />,
+        info: <InfoIcon className="size-4" />,
+        warning: <TriangleAlertIcon className="size-4" />,
+        error: <OctagonXIcon className="size-4" />,
+        loading: <Loader2Icon className="size-4 animate-spin" />,
+      }}
+      style={{ ...TOAST_TOKENS, ...style }}
+      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+      toastOptions={{ classNames: { title: 'text-body', description: 'text-caption' } }}
+      {...props}
+    />
+  );
+};
 
 export { Toaster };
