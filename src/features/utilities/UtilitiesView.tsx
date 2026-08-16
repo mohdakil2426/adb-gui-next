@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { type ReactNode, useCallback } from 'react';
 import { useUtilityActions } from '@/features/utilities/hooks/useUtilityActions';
 import { AdbUtilitiesPanel } from '@/features/utilities/ui/AdbUtilitiesPanel';
 import { DiagnosticsPanel } from '@/features/utilities/ui/DiagnosticsPanel';
@@ -6,8 +6,27 @@ import { FastbootUtilitiesPanel } from '@/features/utilities/ui/FastbootUtilitie
 import { GetVarDialog } from '@/features/utilities/ui/GetVarDialog';
 import { HostToolsPanel } from '@/features/utilities/ui/HostToolsPanel';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
+import { SectionHeader } from '@/shared/components/SectionHeader';
 import { Badge } from '@/shared/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+
+function UtilitySection({
+  children,
+  title,
+  tone = 'default',
+}: {
+  children: ReactNode;
+  title: string;
+  tone?: 'default' | 'danger';
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <SectionHeader className={tone === 'danger' ? 'text-destructive' : undefined}>
+        {title}
+      </SectionHeader>
+      {children}
+    </section>
+  );
+}
 
 export function ViewUtilities() {
   const {
@@ -68,22 +87,16 @@ export function ViewUtilities() {
         </div>
       </div>
 
-      <Tabs defaultValue="host">
-        <TabsList className="flex w-full flex-wrap">
-          <TabsTrigger value="host">Host</TabsTrigger>
-          <TabsTrigger value="device">Device</TabsTrigger>
-          <TabsTrigger value="inspect">Inspect</TabsTrigger>
-          <TabsTrigger value="danger">Danger</TabsTrigger>
-        </TabsList>
-        <TabsContent className="mt-4" value="host">
+      <div className="flex flex-col gap-8">
+        <UtilitySection title="Host">
           <HostToolsPanel
             handleKillServer={handleKillServer}
             handleRestartServer={handleRestartServer}
             loadingAction={loadingAction}
             sentAction={sentAction}
           />
-        </TabsContent>
-        <TabsContent className="mt-4" value="device">
+        </UtilitySection>
+        <UtilitySection title="Device">
           <AdbUtilitiesPanel
             deviceMode={deviceMode}
             deviceSerial={deviceSerial}
@@ -92,15 +105,15 @@ export function ViewUtilities() {
             onRescan={handleRescan}
             sentAction={sentAction}
           />
-        </TabsContent>
-        <TabsContent className="mt-4" value="inspect">
+        </UtilitySection>
+        <UtilitySection title="Inspect">
           <DiagnosticsPanel
             disabled={deviceMode !== 'adb'}
             loadingAction={loadingAction}
             serial={deviceSerial}
           />
-        </TabsContent>
-        <TabsContent className="mt-4" value="danger">
+        </UtilitySection>
+        <UtilitySection title="Danger" tone="danger">
           <FastbootUtilitiesPanel
             deviceMode={deviceMode}
             deviceSerial={deviceSerial}
@@ -113,8 +126,8 @@ export function ViewUtilities() {
             onRescan={handleRescan}
             sentAction={sentAction}
           />
-        </TabsContent>
-      </Tabs>
+        </UtilitySection>
+      </div>
 
       <GetVarDialog
         getVarContent={getVarContent}

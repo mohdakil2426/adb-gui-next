@@ -48,15 +48,18 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe('ViewUtilities', () => {
-  it('groups utilities into host, device, inspect, and danger tabs', async () => {
+  it('shows host, device, inspect, and danger as stacked sections', async () => {
     render(<ViewUtilities />, { wrapper });
 
     expect(screen.getByRole('heading', { name: 'Utilities', hidden: true })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Host' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Device' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Inspect' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Danger' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Host' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Device' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Inspect' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Danger' })).toBeInTheDocument();
     expect(await screen.findByText('Host ADB')).toBeInTheDocument();
+    expect(screen.getByText('Device power')).toBeInTheDocument();
+    expect(screen.getByText('Diagnostics')).toBeInTheDocument();
+    expect(screen.getByText('Fastboot Utilities')).toBeInTheDocument();
     expect(screen.getByText('SERIAL123')).toBeInTheDocument();
   });
 });

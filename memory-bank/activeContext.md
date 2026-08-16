@@ -31,7 +31,7 @@ v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on this HEAD. This overhaul adds
 | **File editor** | Pull allowlisted text to temp; Windows `code`→Notepad; Linux `code`→gedit/kate→xdg-open; macOS `code`→`open -t` |
 | **Marketplace GitHub** | Paginate releases (10×100), every APK asset; raw README; FE renders a small Markdown subset (no new dep) |
 | **Marketplace browse** | Last-search cache + installable-only filter are display-only; Rust still owns search/install |
-| **Utilities** | Tabs: Host / Device / Inspect / Danger. Wipe requires typing `WIPE`. Screenshot is `save_screenshot` PNG |
+| **Utilities** | Single scroll: Host / Device / Inspect / Danger sections. Wipe requires typing `WIPE`. Screenshot is `save_screenshot` PNG |
 | **CI** | `actions/checkout` `persist-credentials: false` (and `lfs: true` where platform-tools are needed) |
 
 ## Open / deferred
