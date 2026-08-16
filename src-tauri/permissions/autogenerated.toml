@@ -38,7 +38,8 @@ commands.allow = [
   "scrcpy_check_update",
   "get_app_icons",
   "get_logcat_snapshot",
-  "get_host_tool_versions"
+  "get_host_tool_versions",
+  "host_setup_status"
 ]
 
 [[permission]]
@@ -94,7 +95,11 @@ commands.allow = [
   "open_device_file_in_editor",
   "save_screenshot",
   "restart_adb_server",
-  "kill_adb_server"
+  "kill_adb_server",
+  "host_setup_install",
+  "host_setup_install_driver",
+  "launch_host_setup_terminal",
+  "host_setup_repair_path"
 ]
 
 [[permission]]
@@ -185,5 +190,10 @@ commands.allow = [
   "save_screenshot",
   "restart_adb_server",
   "kill_adb_server",
-  "get_host_tool_versions"
+  "get_host_tool_versions",
+  "host_setup_status",
+  "host_setup_install",
+  "host_setup_install_driver",
+  "launch_host_setup_terminal",
+  "host_setup_repair_path"
 ]

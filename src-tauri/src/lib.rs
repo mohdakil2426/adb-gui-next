@@ -9,6 +9,7 @@ mod commands;
 pub mod debloat;
 pub mod emulator;
 mod helpers;
+pub mod host_setup;
 pub mod marketplace;
 pub mod payload;
 pub mod scrcpy;
@@ -159,6 +160,11 @@ pub fn run() {
             commands::restart_adb_server,
             commands::kill_adb_server,
             commands::get_host_tool_versions,
+            commands::host_setup_status,
+            commands::host_setup_install,
+            commands::host_setup_install_driver,
+            commands::launch_host_setup_terminal,
+            commands::host_setup_repair_path,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
