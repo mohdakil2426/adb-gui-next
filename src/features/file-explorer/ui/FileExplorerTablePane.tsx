@@ -19,6 +19,7 @@ import { FileExplorerVirtualBody } from '@/features/file-explorer/ui/FileExplore
 import { Checkbox } from '@/shared/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/shared/ui/context-menu';
 import { Table, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
+import { cn } from '@/shared/utils/cn';
 
 interface Props {
   actions: FileExplorerActions;
@@ -100,14 +101,14 @@ export function FileExplorerTablePane({
           ) : null}
           {paneState === 'listing' ? (
             <div className="relative w-full">
-              <Table className="min-w-[42rem]">
+              <Table className="min-w-0">
                 <TableHeader className="sticky top-0 z-10 block border-border border-b bg-surface-raised">
                   <TableRow
                     className="grid hover:bg-transparent"
                     style={{ gridTemplateColumns: listing.fileTableColumns }}
                   >
                     {selection.isMultiSelectMode ? (
-                      <TableHead className="min-w-0 pl-2">
+                      <TableHead className="min-w-0 pl-3">
                         <Checkbox
                           aria-label="Select all"
                           checked={
@@ -132,7 +133,10 @@ export function FileExplorerTablePane({
                               : 'descending'
                             : 'none'
                         }
-                        className="h-8 min-w-0 px-2 text-label text-muted-foreground"
+                        className={cn(
+                          'h-9 min-w-0 px-3 text-label text-muted-foreground',
+                          field !== 'name' && 'justify-self-end text-right',
+                        )}
                         key={field}
                         role="columnheader"
                       >

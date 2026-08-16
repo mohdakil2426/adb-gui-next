@@ -67,7 +67,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
     <TableRow
       aria-posinset={index + 1}
       aria-setsize={visibleCount}
-      className="grid cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className="grid cursor-pointer items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       data-index={index}
       data-state={isSelected ? 'selected' : ''}
       onClick={(e) => onRowClick(file, e)}
@@ -99,7 +99,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
     >
       {isMultiSelectMode ? (
         <TableCell
-          className="min-w-0 py-1 pr-0 pl-2"
+          className="min-w-0 py-2 pr-0 pl-3"
           onClick={(e) => {
             e.stopPropagation();
             if (!isBeingRenamed) {
@@ -112,7 +112,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
           )}
         </TableCell>
       ) : null}
-      <TableCell className="min-w-0 py-1 pl-2">
+      <TableCell className="min-w-0 py-2 pl-3">
         {file.type === 'Directory' ? (
           <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
         ) : file.type === 'Symlink' ? (
@@ -121,7 +121,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
           <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
         )}
       </TableCell>
-      <TableCell className="min-w-0 whitespace-normal break-words py-1 text-body">
+      <TableCell className="min-w-0 whitespace-normal break-words px-3 py-2 text-body">
         {isBeingRenamed ? (
           <div className="flex min-w-0 flex-col gap-0.5">
             <Input
@@ -161,11 +161,11 @@ export const FileExplorerRow = memo(function FileExplorerRow({
           </div>
         )}
       </TableCell>
-      <TableCell className="numeric min-w-0 py-1 text-caption text-muted-foreground">
+      <TableCell className="numeric min-w-0 px-3 py-2 text-right text-caption text-muted-foreground">
         {/* `ls` reports size as text; parse once so the one numeric formatter applies. */}
         {file.type === 'Directory' ? EMPTY_VALUE : formatBytes(Number.parseInt(file.size, 10))}
       </TableCell>
-      <TableCell className="numeric min-w-0 py-1 text-caption text-muted-foreground">
+      <TableCell className="numeric min-w-0 px-3 py-2 text-right text-caption text-muted-foreground">
         {file.date}
         <span className="px-1 text-foreground-subtle">·</span>
         {file.time}

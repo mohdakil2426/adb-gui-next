@@ -83,15 +83,15 @@ export function FileExplorerVirtualBody({
                 gridTemplateColumns: listing.fileTableColumns,
               }}
             >
-              {selection.isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-2" /> : null}
-              <TableCell className="min-w-0 py-1 pr-0 pl-2">
+              {selection.isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-3" /> : null}
+              <TableCell className="min-w-0 py-2 pr-0 pl-3">
                 {editing.creatingType === 'folder' ? (
                   <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
                 ) : (
                   <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
                 )}
               </TableCell>
-              <TableCell className="col-span-3 min-w-0 py-1" colSpan={3}>
+              <TableCell className="col-span-3 min-w-0 py-2" colSpan={3}>
                 <div className="flex min-w-0 items-center gap-2">
                   <Input
                     aria-label={

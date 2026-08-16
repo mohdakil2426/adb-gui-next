@@ -160,7 +160,7 @@ const TreeRow = memo(function TreeRow({
       aria-level={depth + 1}
       aria-selected={isActive}
       className={cn(
-        'flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-sm py-[3px] text-sm transition-colors',
+        'flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 text-body transition-colors',
         'hover:bg-accent hover:text-accent-foreground',
         isActive && 'bg-accent font-medium text-accent-foreground',
         isAncestor && 'text-foreground',
@@ -184,7 +184,7 @@ const TreeRow = memo(function TreeRow({
         }
       }}
       role="treeitem"
-      style={{ paddingLeft: `${depth * 14 + 6}px`, paddingRight: '6px' }}
+      style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: '8px' }}
       tabIndex={0}
     >
       <button
@@ -415,13 +415,13 @@ export function DirectoryTree({
 
   return (
     <ScrollArea className="h-full min-h-0 w-full">
-      <div aria-label="Device filesystem" className="min-w-0 py-1 pr-1" role="tree">
+      <div aria-label="Device filesystem" className="min-w-0 py-1.5 pr-1.5" role="tree">
         {rows.map((row) =>
           row.kind === 'empty' ? (
             <div
-              className="py-1 text-muted-foreground text-xs italic"
+              className="py-1.5 text-caption text-muted-foreground italic"
               key={row.key}
-              style={{ paddingLeft: `${row.depth * 14 + 28}px` }}
+              style={{ paddingLeft: `${row.depth * 16 + 32}px` }}
             >
               Empty
             </div>

@@ -34,7 +34,7 @@ export function FileExplorerRowSkeleton() {
     <output aria-label="Loading directory…" className="block w-full">
       {SKELETON_ROWS.map((index) => (
         <div
-          className="grid items-center gap-2 border-border/60 border-b px-2"
+          className="grid items-center gap-3 border-border/60 border-b px-3"
           key={index}
           style={{ gridTemplateColumns: FILE_TABLE_COLUMNS, height: FILE_ROW_HEIGHT }}
         >

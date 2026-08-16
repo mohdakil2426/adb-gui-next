@@ -19,11 +19,12 @@ const ADB_STATE_DOT: Record<AdbServerState, string> = {
 };
 
 function AdbSegment({ state }: { state: AdbServerState }) {
+  const label = `ADB ${ADB_STATE_LABEL[state]}`;
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
+    <span className="flex shrink-0 items-center gap-1.5" title={label}>
       <span aria-hidden="true" className={cn('size-1.5 rounded-full', ADB_STATE_DOT[state])} />
       <span className="font-mono text-mono-sm">adb</span>
-      <span>{ADB_STATE_LABEL[state]}</span>
+      <span className="sr-only">{ADB_STATE_LABEL[state]}</span>
     </span>
   );
 }
@@ -43,10 +44,12 @@ function DeviceSegment() {
   }
 
   return (
-    <span className="flex min-w-0 shrink items-center gap-1.5">
+    <span
+      className="flex min-w-0 shrink items-center gap-1.5"
+      title={status ? `${nickname ?? selectedSerial} (${status})` : (nickname ?? selectedSerial)}
+    >
       <Smartphone aria-hidden="true" className="size-3 shrink-0" />
       <span className="truncate text-foreground">{nickname ?? selectedSerial}</span>
-      {status ? <span className="shrink-0">· {status}</span> : null}
     </span>
   );
 }
@@ -111,10 +114,9 @@ export function StatusBar({ adbState }: StatusBarProps) {
   return (
     <section
       aria-label="Status bar"
-      className="flex h-6.5 shrink-0 items-center gap-3 border-t bg-surface px-3 text-caption text-muted-foreground"
+      className="flex h-6.5 shrink-0 items-center gap-3 bg-surface px-3 text-caption text-muted-foreground"
     >
       <AdbSegment state={adbState} />
-      <span aria-hidden="true" className="h-3 w-px shrink-0 bg-border" />
       <DeviceSegment />
       <OperationSegment />
     </section>
