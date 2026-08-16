@@ -14,7 +14,7 @@ Fonts are **not** an npm runtime dep: Inter + JetBrains Mono variable woff2 are 
 
 ### Backend
 
-Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · optional brotli · sha2 · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
+Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · optional brotli · sha1 · sha2 · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
 
 `[profile.release]`: `opt-level = 3` · `lto = true` · `codegen-units = 1` · `panic = "abort"` · `strip = true`. The old `opt-level = "s"` and the separate `release-fast` profile are gone — the workload is CPU-bound, so `release` **is** the speed profile.
 
@@ -50,7 +50,7 @@ src-tauri/
   commands/     thin IPC
   adb/          AdbClient (single adb spawn point) + telemetry + parse
   helpers.rs    binary, path safety, adb serial helpers (adb_shell_checked forwards to adb/)
-  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ app_icons.rs
+  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ host_setup/ app_icons.rs
   resources/{windows,linux,darwin}/
   permissions/ + capabilities/
 scripts/
@@ -92,5 +92,6 @@ Full design: `docs/architecture.md`.
 - CSP: `font-src 'self'`, `style-src 'unsafe-inline' 'self'` — the Google Fonts allowances were removed when fonts were vendored
 - Destructive flows gated by explicit confirmation dialogs (flash, sideload, wipe, uninstall, AVD backup restore); utilities wipe requires typing `WIPE`
 - Scrcpy: official release assets + SHA256; no in-tree scrcpy source; outbound URL validation on GitHub hops
+- Host setup: Google catalog hops re-validated; UAC for HKLM Path / `pnputil`; app ADB stays bundled
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-17

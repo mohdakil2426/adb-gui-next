@@ -1,0 +1,9 @@
+# Cargo's published manifest JSON schema rejects valid `[lints.rust]` + `[lints.clippy]`
+# tables (schemars flatten / anyOf). rustc and clippy accept them.
+# https://github.com/rust-lang/cargo/issues/15030
+
+[[rule]]
+include = ["**/Cargo.toml"]
+
+[rule.schema]
+enabled = false

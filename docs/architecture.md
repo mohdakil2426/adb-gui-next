@@ -40,7 +40,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | App Manager | Install / uninstall packages; Universal Android Debloater (UAD) integration |
 | File Explorer | Dual-pane browse, push/pull, mutate, optional verified root mode |
 | Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
-| Utilities | Reboot modes, host tools, bootloader vars, terminal/device manager launch |
+| Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
 | Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
 | Marketplace | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth) |
 | Scrcpy | Download official binaries, launch a native mirror window for the selected serial |
@@ -244,7 +244,7 @@ adb-gui-next/
 | shadcn primitives | `src/shared/ui/` | Hand-roll base controls |
 | Cross-feature stores | `src/shared/stores/` | App-wide state inside one feature |
 | Tauri commands | `src-tauri/src/commands/*.rs` | Fat handlers in domain |
-| Domain logic | `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `app_icons.rs` | Inline complex logic in commands |
+| Domain logic | `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `host_setup/`, `app_icons.rs` | Inline complex logic in commands |
 | `adb shell` invocation | `src-tauri/src/adb/` (`AdbClient`) | New `Command::new(adb)` / hand-rolled exit markers |
 | Shared process helpers | `helpers.rs` | Duplicate binary resolution / path sanitize |
 | FE tests | `src/test/` | Tests next to components |
@@ -450,6 +450,7 @@ export function ListFiles(
 | `payload:load-progress` | Remote metadata / list load |
 | `root:progress` | Emulator Magisk root pipeline |
 | `scrcpy:download-progress` | Official scrcpy archive download |
+| `host-setup:progress` | Official Google platform-tools / USB driver download |
 
 ### Drag-and-drop
 
@@ -510,6 +511,7 @@ flowchart TB
     payload["payload/"]
     market["marketplace/"]
     scrcpy["scrcpy/"]
+    hostsetup["host_setup/"]
     utilities["utilities/"]
     emu["emulator/"]
     deb["debloat/"]
@@ -549,6 +551,7 @@ flowchart TB
 | `commands/adb.rs` | Wireless ADB, host/shell runners, logcat snapshot, screenshot |
 | `commands/fastboot.rs` | Flash, reboot, wipe, slots, fastboot host |
 | `commands/utilities.rs` | Typed ADB server restart/kill + host tool versions (thin over `utilities/`) |
+| `commands/host_setup.rs` | Windows Google platform-tools + USB driver install (thin over `host_setup/`) |
 | `commands/files.rs` | Explorer list/push/pull/mutate + root verify + open-in-editor |
 | `commands/apps.rs` | Packages install/uninstall/sideload/list + icon batch |
 | `commands/system.rs` | Open folder, terminal, device manager, save log |
@@ -642,6 +645,10 @@ SDK-aware action builder; refuse Disable when SDK unknown or API &lt; 23.
 
 Typed helpers for the Utilities view: A/B slot parse (`a`/`b` only), logcat line clamp, wipe confirmation phrase `WIPE`, and host-tool version line parse. Thin commands: `restart_adb_server`, `kill_adb_server`, `get_host_tool_versions`. Slot switch and wipe still use `set_active_slot` / `wipe_data` but validate through this module. Arbitrary `run_adb_host_command` stays for the bottom-panel shell, not this view.
 
+#### Host setup (`src-tauri/src/host_setup/`)
+
+Windows-only OS install of official Google platform-tools and the Google USB Driver as **separate** actions. Catalog XML from `dl.google.com`, checksum verification, extract, then UAC: platform-tools copies into `C:\Android\platform-tools` and appends the **system** Path (`HKLM\...\Environment`, `REG_EXPAND_SZ`) with `WM_SETTINGCHANGE`; USB driver only runs `pnputil` on `android_winusb.inf`. Status reads Machine Path from the registry (not the current process env) and Google USB driver presence from `pnputil /enum-drivers`. The app’s bundled ADB is unchanged. Linux/macOS commands return a clear unsupported error; the Utilities card is hidden off Windows.
+
 ### 8.5 Shared helpers (`helpers.rs`)
 
 | Helper | Why it exists |
@@ -684,7 +691,7 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
 | File Explorer | `features/file-explorer` | hooks + localStorage | list/push/pull/mutate/root | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/sideload/wipe + DnD | `fastboot`, `apps` |
-| Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe | `utilities` domain + `adb`/`fastboot` |
+| Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
 | Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
 | Marketplace | `features/marketplace` | `marketplaceStore` | search/download/install/auth | `marketplace` domain |
 | Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
@@ -846,15 +853,15 @@ Vertical adaptivity matters equally: fixed `vh` list heights misbehave at the 72
 
 Verify layout changes at 1024×720 sidebar-expanded **with the bottom panel open** (tightest real case), 1024×720 collapsed, 1280×820, and 2560×1440.
 
-### 12.2 Design tokens ("Precision Instrument")
+### 12.2 Design tokens ("Neutral")
 
 All tokens are declared in `src/styles/global.css`; raw values live once per theme in `:root` / `.dark`, derived values (`var()` / `color-mix()`) once in `:root`.
 
 | Token group | Content |
 | --- | --- |
 | Surface ladder | `canvas` < `surface` < `surface-raised` < `surface-overlay` |
-| Neutrals | oklch, chroma-tinted blue (hue 250, chroma 0.008–0.016) — not pure grey |
-| Accent | One: electric cyan (hue 210) as `primary` / `primary-hover` / `primary-active` / `primary-muted`. Marks the primary action or the active state, nothing else. |
+| Neutrals | shadcn/ui classic black-and-white palette: achromatic OKLCH values (chroma 0) with light/dark inversion |
+| Primary | Neutral black in light mode and neutral white in dark mode as `primary` / `primary-hover` / `primary-active` / `primary-muted`. Marks the primary action or active state. |
 | Status | `success` / `warning` / `destructive` / `info` (+ `-foreground`, `-muted`) — describe *device* state, never UI emphasis |
 | Charts | `chart-1..5` |
 | Terminal | `terminal-*` for the bottom panel |
@@ -984,6 +991,7 @@ Device / ADB / Fastboot
   connect_wireless_adb, disconnect_wireless_adb, enable_wireless_adb
   run_adb_host_command, run_shell_command, run_fastboot_host_command, get_logcat_snapshot, save_screenshot
   save_screenshot, restart_adb_server, kill_adb_server, get_host_tool_versions
+  host_setup_status, host_setup_install, host_setup_install_driver, host_setup_repair_path, launch_host_setup_terminal
   flash_partition, get_bootloader_variables, reboot, set_active_slot, wipe_data
 
 Files

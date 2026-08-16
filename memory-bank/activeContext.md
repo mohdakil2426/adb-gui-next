@@ -4,11 +4,13 @@
 
 ADB GUI Next is a working Tauri 2 app, version **0.2.5**. Agent docs: root `AGENTS.md` router + `src/AGENTS.md` / `src-tauri/AGENTS.md`, `docs/project_rules.md`, `docs/architecture.md`.
 
-**Work here on local `main` only** (`C:\Users\akila\OneDrive\Desktop\OSS\WindowsApps\adb-gui-next`). HEAD includes the 2026-08-16 overhaul (`5a6d3d5`) and Utilities one-page layout (`540d152`). The worktree `adb-gui-next-scrcpy-overhaul` / branch `feat/scrcpy-and-ui-overhaul` is the same SHA; do not treat it as in-flight. **Nothing from this overhaul has been pushed to `origin/main`.**
+**Work here on local `main` only** (`C:\Users\akila\OneDrive\Desktop\OSS\WindowsApps\adb-gui-next`). HEAD includes the 2026-08-16 overhaul plus Utilities one-page layout. The worktree `adb-gui-next-scrcpy-overhaul` / branch `feat/scrcpy-and-ui-overhaul` is the same overhaul SHA; do not treat it as in-flight. **Overhaul commits are still unpushed** (`origin/main` behind).
+
+Current product work: **Windows host setup** on Utilities → Host. Official Google platform-tools and USB driver are **separate** installs. Tools go to `C:\Android\platform-tools`; system Path is HKLM; USB uses `pnputil`. This app still uses bundled ADB.
 
 Research/plan (historical): `docs/internal/reports/2026-08-16-scrcpy-and-ui-overhaul-research.md`, `PLAN-scrcpy-and-ui-overhaul.md`.
 
-v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1). The overhaul retinted Neutral to true black/white and added scrcpy, app icons, editor open, marketplace README/releases + browse toolbar, utilities sections + typed host IPC, logcat/screenshot, CI `persist-credentials: false`.
+v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1).
 
 ### Durable decisions (verify in code)
 
@@ -21,6 +23,7 @@ v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1). The
 | **Marketplace GitHub** | Paginate releases (10×100), every APK asset; raw README; FE renders a small Markdown subset (no markdown library). |
 | **Marketplace browse** | Search-first toolbar (source chips, installable-only, sort, grid/list). Last-search cache + installable filter are display-only; Rust owns search/install. |
 | **Utilities** | Single scroll: Host / Device / Inspect / Danger sections. Domain `utilities/` validates slot (`a`/`b`), wipe phrase `WIPE`, logcat clamp. IPC: `restart_adb_server`, `kill_adb_server`, `get_host_tool_versions`. Screenshot: `save_screenshot` PNG. |
+| **Host setup** | Domain `host_setup/`. Official `dl.google.com` catalog only (no third-party setup EXE). Separate UAC actions: copy platform-tools + HKLM Path vs `pnputil` USB INF. Status: registry Path + `pnputil /enum-drivers`. Event `host-setup:progress`. Card hidden off Windows. |
 | **CI** | `actions/checkout` `persist-credentials: false` (keep `lfs: true` where platform-tools are needed). |
 | **Branch policy** | Continue on **local `main`**. Do not reopen the overhaul worktree for new work unless asked. |
 
@@ -29,17 +32,18 @@ v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1). The
 - Desktop GUI was not smoke-tested in the overhaul session (lint/tests only)
 - Official scrcpy archives: Windows x64 + Linux x64 only — no official Win ARM64 / Linux ARM64 zip
 - macOS builds still paused; scrcpy/editor paths exist for a future unpause
-- `operationStore` still App Manager–centric; scrcpy download uses `scrcpy:download-progress`
+- `operationStore` still App Manager–centric; scrcpy download uses `scrcpy:download-progress`; host setup uses `host-setup:progress`
 - Windows local `cargo test` may hit loader `0xc0000139` — use `--no-run` if so
 - No F-Droid catalog home (search-first); logcat is a snapshot, not a live stream
 - Flasher wipe uses its own UI confirm, not the utilities `WIPE` phrase
 - `origin/main` is behind local `main` until the user asks to push
-- Unrelated unstaged leftovers on this checkout (do not mix into feature commits unless asked): `.gitignore`, `docs/architecture.md`
+- Unrelated unstaged leftover: `.gitignore` (`akila-prompt-temp.md`) — do not mix into feature commits unless asked
+- Host setup needs a Windows rebuild + UAC smoke: tools Path in a **new** cmd, USB row from `pnputil`
 
 ## Next steps
 
 - Stay on **main** for further product work
 - Push to origin only when the user asks
-- Manual smoke when a device is available: scrcpy download+launch, icon batch, open `.prop` in editor, GitHub marketplace README, utilities WIPE, stacked Utilities sections
+- Manual smoke: host setup split installs + system Path; scrcpy; icons; editor; marketplace; utilities WIPE
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-17

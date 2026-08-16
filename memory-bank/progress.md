@@ -2,7 +2,7 @@
 
 ## Overall status
 
-Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README), emulator + Magisk root wizard, bottom logs/shell.
+Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger + Windows Google host setup), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README), emulator + Magisk root wizard, bottom logs/shell.
 
 Packaging/CI: tauri-action multi-arch, official version path, portable-only custom script, multi-device debloat serial, single-instance, ACL split, view persistence, `persist-credentials: false` on checkout.
 
@@ -34,6 +34,7 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 - File Explorer: thin view + hook composition; open allowlisted text in host editor; `ls -lA`
 - Scrcpy: download/install/update/launch native process; CLI options only
 - Utilities: typed host ADB restart/kill/versions; logcat snapshot; PNG screenshot; wipe phrase `WIPE`
+- Windows host setup: official Google platform-tools + USB driver (separate UAC); `C:\Android\platform-tools`; HKLM system Path; `pnputil`; status from registry + driver enum
 - Marketplace: Rust search/install; GitHub all-releases + README; browse toolbar filters
 - Single-instance; ACL read/mutate permissions; active view localStorage
 - Packaging: Win x86_64/i686/aarch64; Linux x86_64 + aarch64 (PATH tools on arm)
@@ -68,9 +69,11 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 | Marketplace catalog | Search-first; no F-Droid “home” browse without a query |
 | Logcat | Snapshot only, not a live stream |
 | Flasher wipe | Own confirm UI; does not send utilities `WIPE` phrase |
+| Host setup smoke | Needs a rebuilt Windows app + UAC: Path in a new terminal, USB row vs Device Manager |
+| Cargo.toml `[lints]` squiggle | Editor schema bug; `taplo.toml` disables Cargo.toml JSON schema |
 
 ## Changelog policy
 
 No long session diaries here. Design → `docs/architecture.md`. Investigations → `docs/internal/reports/`. Status/gaps only in this file.
 
-**Last updated:** 2026-08-16
+**Last updated:** 2026-08-17

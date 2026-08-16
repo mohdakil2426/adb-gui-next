@@ -52,7 +52,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 
 - **Desktop-only.** No Next.js, no browser-first routing, no Electron.
 - **IPC only through `src/desktop/`.** Features must not call raw `core.invoke` or raw Tauri event APIs.
-- **Thin Rust commands, fat domains.** Logic in `src-tauri/src/{payload,marketplace,emulator,debloat}/` or `helpers.rs`; not bloated `commands/*` bodies.
+- **Thin Rust commands, fat domains.** Logic in `src-tauri/src/{payload,marketplace,emulator,debloat,host_setup}/` or `helpers.rs`; not bloated `commands/*` bodies.
 - **No React Router.** View switching is `ViewType` + `VIEW_RENDERERS` in the shell.
 - **One global device poll** in `MainLayout` (30s). Do not add per-view device polling.
 - **Feature code** under `src/features/<feature>/`. **shadcn** under `src/shared/ui/`. **Theme tokens** in `src/styles/global.css` (no hard-coded colors in components).

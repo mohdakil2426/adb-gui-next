@@ -88,6 +88,7 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 | `payload:load-progress` | `features/payload-dumper/hooks/usePayloadLoadEvents.ts` |
 | `root:progress` | `features/emulator/ui/RootWizard.tsx` |
 | `scrcpy:download-progress` | `features/scrcpy/hooks/useScrcpyProgress.ts` |
+| `host-setup:progress` | `features/utilities/hooks/useHostSetupProgress.ts` |
 
 ### File drop
 
@@ -238,7 +239,7 @@ Re-added **with real call sites** — each stays only while its call site exists
 | Emulator | AVD discovery is backend `~/.android/avd/*.ini`; root progress via `EventsOn('root:progress')` only |
 | Payload Dumper | Progress/load via runtime events above; cancel tokens when using cancellable extract |
 | Scrcpy | Official Genymobile binaries in app data; detached native window; CLI flags only; `scrcpy:download-progress` |
-| Utilities | Grouped host / power / diagnostics / fastboot; typed server + version IPC; wipe types `WIPE` |
+| Utilities | Grouped host / power / diagnostics / fastboot; typed server + version IPC; wipe types `WIPE`; Windows-only Google platform-tools and USB driver as **separate** installs to `C:\Android\platform-tools` (system Path + `pnputil`) |
 | App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster |
 
 ## Tests
