@@ -85,10 +85,22 @@ describe('marketplaceStore', () => {
   it('summarizes active filters consistently', () => {
     const summary = getMarketplaceActiveFilterSummary({
       activeProviders: ['F-Droid', 'GitHub'],
+      installableOnly: false,
       sortBy: 'downloads',
       resultsPerProvider: 8,
     });
 
     expect(summary).toEqual(['2 sources', 'Sort: downloads', '8/provider']);
+  });
+
+  it('adds an installable-only chip to the filter summary', () => {
+    const summary = getMarketplaceActiveFilterSummary({
+      activeProviders: ['F-Droid', 'GitHub', 'Aptoide'],
+      installableOnly: true,
+      sortBy: 'relevance',
+      resultsPerProvider: 12,
+    });
+
+    expect(summary).toContain('Installable only');
   });
 });

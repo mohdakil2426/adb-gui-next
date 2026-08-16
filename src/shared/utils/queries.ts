@@ -19,6 +19,9 @@ export const queryKeys = {
     list: ['emulator', 'list'] as const,
     restorePlan: (avdName: string) => ['emulator', 'restorePlan', avdName] as const,
   },
+  scrcpy: {
+    status: ['scrcpy', 'status'] as const,
+  },
   marketplace: {
     search: (query: string, filters: object) => ['marketplace', 'search', query, filters] as const,
     trending: ['marketplace', 'trending'] as const,

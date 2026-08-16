@@ -23,6 +23,7 @@ export interface FileExplorerActions {
   handleGoForward: () => void;
   /** One level up the current path. Unrelated to history. */
   handleNavigateUp: () => void;
+  handleOpenInEditor: (file: FileEntry) => Promise<void>;
   handlePathClick: () => void;
   handlePathEditCommit: () => void;
   handlePull: () => Promise<void>;

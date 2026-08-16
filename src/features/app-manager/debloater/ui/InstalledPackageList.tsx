@@ -1,15 +1,15 @@
 /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
 
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Package, Package2, SearchX, Smartphone } from 'lucide-react';
+import { Package, SearchX, Smartphone } from 'lucide-react';
 import { type ReactNode, useMemo, useRef } from 'react';
 import type { backend } from '@/desktop/models';
-import { CheckboxItem } from '@/shared/components/CheckboxItem';
+import { useAppIcons } from '@/features/app-manager/hooks/useAppIcons';
 import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
-import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 import { INSTALLED_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
+import { InstalledPackageRow } from './InstalledPackageRow';
 import { InstalledPackageToolbar, type PackageFilter } from './InstalledPackageToolbar';
 import { PackageListEmpty, PackageListError, PackageListSkeleton } from './PackageListState';
 import { UninstallConfirmDialog } from './UninstallConfirmDialog';
@@ -166,6 +166,10 @@ export function InstalledPackageList({
     overscan: 8,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
+  const visiblePackageNames = virtualRows
+    .map((row) => filteredPackages[row.index]?.name)
+    .filter((name): name is string => Boolean(name));
+  const icons = useAppIcons(selectedSerial, visiblePackageNames);
 
   function togglePackage(name: string) {
     const next = new Set(selectedPackages);
@@ -225,45 +229,16 @@ export function InstalledPackageList({
               if (!pkg) {
                 return null;
               }
-              const isSelected = selectedPackages.has(pkg.name);
               return (
-                <div
-                  aria-selected={isSelected}
-                  className={cn(
-                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 outline-none transition-colors duration-90 ease-standard hover:bg-accent',
-                    isSelected && 'bg-primary-muted',
-                  )}
+                <InstalledPackageRow
+                  height={vRow.size}
+                  iconSrc={icons[pkg.name]}
+                  isSelected={selectedPackages.has(pkg.name)}
                   key={pkg.name}
-                  onClick={() => togglePackage(pkg.name)}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') {
-                      e.preventDefault();
-                      togglePackage(pkg.name);
-                    }
-                  }}
-                  role="option"
-                  style={{ height: `${vRow.size}px`, transform: `translateY(${vRow.start}px)` }}
-                  tabIndex={0}
-                >
-                  <CheckboxItem checked={isSelected} />
-                  {pkg.packageType === 'system' ? (
-                    <Package2 aria-hidden="true" className="size-4 shrink-0 text-info" />
-                  ) : (
-                    <Package aria-hidden="true" className="size-4 shrink-0 text-primary" />
-                  )}
-                  <span className="min-w-0 flex-1 truncate font-medium text-body text-foreground">
-                    {pkg.label || pkg.name}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate font-mono text-mono-sm text-muted-foreground">
-                    {pkg.name}
-                  </span>
-                  <Badge
-                    className="shrink-0"
-                    variant={pkg.packageType === 'user' ? 'secondary' : 'neutral'}
-                  >
-                    {pkg.packageType}
-                  </Badge>
-                </div>
+                  onToggle={togglePackage}
+                  pkg={pkg}
+                  start={vRow.start}
+                />
               );
             })}
           </div>

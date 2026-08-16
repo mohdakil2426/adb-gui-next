@@ -175,9 +175,16 @@ export namespace backend {
     buildId: string | null;
     codename: string | null;
     deviceName: string | null;
+    fingerprint: string | null;
+    hardware: string | null;
+    incremental: string | null;
+    locale: string | null;
+    manufacturer: string | null;
     model: string | null;
+    radio: string | null;
     sdkInt: number | null;
     serial: string | null;
+    timezone: string | null;
   }
 
   export interface BatteryInfo {
@@ -438,6 +445,7 @@ export namespace backend {
     name: string;
     packageName: string;
     rating: number | null;
+    readmeMarkdown: string | null;
     repoForks: number | null;
     repoStars: number | null;
     repoUrl: string | null;
@@ -549,5 +557,50 @@ export namespace backend {
     listStatus: DebloatListStatus;
     packages: DebloatPackageRow[];
     settings: PerDeviceSettings;
+  }
+
+  export interface AppIcon {
+    dataBase64: string | null;
+    mime: string | null;
+    packageName: string;
+  }
+
+  export interface ScrcpyLaunchOptions {
+    alwaysOnTop: boolean;
+    audioSource: string | null;
+    borderless: boolean;
+    fullscreen: boolean;
+    keyboard: string | null;
+    maxFps: number | null;
+    maxSize: number | null;
+    noAudio: boolean;
+    noControl: boolean;
+    recordFormat: string | null;
+    recordPath: string | null;
+    showTouches: boolean;
+    stayAwake: boolean;
+    turnScreenOff: boolean;
+    videoBitRate: string | null;
+    videoCodec: string | null;
+  }
+
+  export interface ScrcpyStatus {
+    binaryPath: string | null;
+    canInstallOfficial: boolean;
+    installedVersion: string | null;
+    latestVersion: string | null;
+    source: string;
+    unsupportedReason: string | null;
+  }
+
+  export interface ScrcpyDownloadProgress {
+    received: number;
+    stage: string;
+    total: number | null;
+  }
+
+  export interface HostToolVersions {
+    adb: string;
+    fastboot: string;
   }
 }

@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MarketplaceSearch } from '@/desktop/backend';
 import {
   getMarketplaceEffectiveGithubToken,
   useMarketplaceStore,
 } from '@/features/marketplace/model/marketplaceStore';
+import {
+  lastSearchMatches,
+  visibleMarketplaceApps,
+} from '@/features/marketplace/utils/browseFilters';
 import { handleError } from '@/shared/utils/errorHandler';
 
 const DEBOUNCE_MS = 450;
@@ -22,6 +26,9 @@ export function useMarketplaceSearch() {
   const setSearchError = useMarketplaceStore((state) => state.setSearchError);
   const setIsSearching = useMarketplaceStore((state) => state.setIsSearching);
   const addToSearchHistory = useMarketplaceStore((state) => state.addToSearchHistory);
+  const setLastSearch = useMarketplaceStore((state) => state.setLastSearch);
+  const lastSearch = useMarketplaceStore((state) => state.lastSearch);
+  const installableOnly = useMarketplaceStore((state) => state.installableOnly);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
@@ -52,6 +59,9 @@ export function useMarketplaceSearch() {
       setIsSearching(true);
       setQuery(trimmed);
       addToSearchHistory(trimmed);
+      if (lastSearchMatches(lastSearch, trimmed, activeProviders, sortBy, resultsPerProvider)) {
+        setResults(lastSearch.results);
+      }
 
       try {
         const apps = await MarketplaceSearch(trimmed, {
@@ -63,13 +73,22 @@ export function useMarketplaceSearch() {
 
         if (requestId === requestIdRef.current) {
           setResults(apps);
+          setLastSearch({
+            providers: activeProviders,
+            query: trimmed,
+            results: apps,
+            resultsPerProvider,
+            sortBy,
+          });
         }
       } catch (error) {
         if (requestId === requestIdRef.current) {
           handleError('Marketplace Search', error);
-          setResults([]);
-          // Without this the view falls through to "No apps matched that search",
-          // which blames the query for a request that never completed.
+          if (
+            !lastSearchMatches(lastSearch, trimmed, activeProviders, sortBy, resultsPerProvider)
+          ) {
+            setResults([]);
+          }
           setSearchError(error instanceof Error ? error.message : String(error));
         }
       } finally {
@@ -82,11 +101,13 @@ export function useMarketplaceSearch() {
       activeProviders,
       addToSearchHistory,
       githubToken,
+      lastSearch,
       resultsPerProvider,
       setIsSearching,
       setQuery,
       setResults,
       setSearchError,
+      setLastSearch,
       sortBy,
     ],
   );
@@ -151,11 +172,18 @@ export function useMarketplaceSearch() {
     void performSearch(localQuery);
   }, [localQuery, performSearch]);
 
+  const visibleResults = useMemo(
+    () => visibleMarketplaceApps(results, installableOnly),
+    [installableOnly, results],
+  );
+
   return {
     localQuery,
-    results,
+    results: visibleResults,
+    rawCount: results.length,
     isSearching,
     searchError,
+    fromCache: lastSearchMatches(lastSearch, query, activeProviders, sortBy, resultsPerProvider),
     hasQuery: localQuery.trim().length >= MIN_QUERY_LENGTH,
     handleInputChange,
     handleClear,

@@ -72,6 +72,7 @@ pub struct MarketplaceAppDetail {
     pub rating: Option<f64>,
     pub downloads_count: Option<u64>,
     pub updated_at: Option<String>,
+    pub readme_markdown: Option<String>,
 }
 
 // ─── Version entry ───────────────────────────────────────────────────────────

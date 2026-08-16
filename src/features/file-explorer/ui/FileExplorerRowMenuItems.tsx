@@ -1,9 +1,19 @@
-import { Copy, Download, FolderOpen, Pencil, SquareCheck, Trash2, Upload } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  FileText,
+  FolderOpen,
+  Pencil,
+  SquareCheck,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import path from 'path-browserify';
 import type {
   FileEntry,
   FileExplorerActions,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensions';
 import { ContextMenuItem, ContextMenuSeparator } from '@/shared/ui/context-menu';
 
 interface Props {
@@ -53,6 +63,12 @@ export function FileExplorerRowMenuItems({
           </ContextMenuItem>
           <ContextMenuSeparator />
         </>
+      ) : null}
+      {file.type === 'File' && isTextDeviceFile(file.name) ? (
+        <ContextMenuItem disabled={isBusy} onClick={() => void actions.handleOpenInEditor(file)}>
+          <FileText aria-hidden="true" className="size-4 shrink-0" />
+          Open in editor
+        </ContextMenuItem>
       ) : null}
       <ContextMenuItem
         disabled={(isSelected && selectedCount > 1) || (!isSelected && selectedCount > 0)}

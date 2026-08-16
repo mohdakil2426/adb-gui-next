@@ -246,23 +246,29 @@ pub async fn get_detail(
         value["body"].as_str().filter(|body| !body.is_empty()).map(|body| body.to_string())
     });
 
-    let versions: Vec<VersionInfo> = apk_assets
-        .iter()
-        .map(|asset| VersionInfo {
-            version_name: format!(
-                "{} ({})",
-                release.as_ref().and_then(|value| value["tag_name"].as_str()).unwrap_or("unknown"),
-                asset["name"].as_str().unwrap_or("asset")
-            ),
-            version_code: 0,
-            size: asset["size"].as_u64(),
-            download_url: asset["browser_download_url"].as_str().map(|value| value.to_string()),
-            published_at: release
-                .as_ref()
-                .and_then(|value| value["published_at"].as_str())
-                .map(|value| value.to_string()),
-        })
-        .collect();
+    let versions = list_releases(client, full_name, token).await.unwrap_or_else(|_| {
+        apk_assets
+            .iter()
+            .map(|asset| VersionInfo {
+                version_name: format!(
+                    "{} ({})",
+                    release
+                        .as_ref()
+                        .and_then(|value| value["tag_name"].as_str())
+                        .unwrap_or("unknown"),
+                    asset["name"].as_str().unwrap_or("asset")
+                ),
+                version_code: 0,
+                size: asset["size"].as_u64(),
+                download_url: asset["browser_download_url"].as_str().map(str::to_string),
+                published_at: release
+                    .as_ref()
+                    .and_then(|value| value["published_at"].as_str())
+                    .map(str::to_string),
+            })
+            .collect()
+    });
+    let readme_markdown = fetch_readme(client, full_name, token).await;
 
     Ok(MarketplaceAppDetail {
         name: repo["name"].as_str().unwrap_or(full_name).to_string(),
@@ -286,6 +292,7 @@ pub async fn get_detail(
         repo_stars: repo["stargazers_count"].as_u64(),
         repo_forks: repo["forks_count"].as_u64(),
         updated_at: repo["pushed_at"].as_str().map(|value| value.to_string()),
+        readme_markdown,
         ..Default::default()
     })
 }
@@ -295,35 +302,65 @@ pub async fn list_releases(
     full_name: &str,
     token: &Option<String>,
 ) -> CmdResult<Vec<VersionInfo>> {
-    let url = format!("https://api.github.com/repos/{full_name}/releases?per_page=20");
-
-    let response = auth_headers(client.get(&url), token).send().await.map_err(|e| e.to_string())?;
-
-    if !response.status().is_success() {
-        return Err(format!("GitHub releases lookup failed: HTTP {}", response.status()));
-    }
-
-    let releases: Vec<serde_json::Value> = response.json().await.map_err(|e| e.to_string())?;
-
-    let versions = releases
-        .iter()
-        .filter_map(|release| {
+    let mut versions = Vec::new();
+    for page in 1..=10 {
+        let url =
+            format!("https://api.github.com/repos/{full_name}/releases?per_page=100&page={page}");
+        let response =
+            auth_headers(client.get(&url), token).send().await.map_err(|e| e.to_string())?;
+        let status = response.status().as_u16();
+        if status == 403 || status == 429 {
+            return Err("GitHub rate limit reached while listing releases.".into());
+        }
+        if !response.status().is_success() {
+            return Err(format!("GitHub releases lookup failed: HTTP {}", response.status()));
+        }
+        let releases: Vec<serde_json::Value> = response.json().await.map_err(|e| e.to_string())?;
+        if releases.is_empty() {
+            break;
+        }
+        for release in &releases {
             let empty = vec![];
             let assets = release["assets"].as_array().unwrap_or(&empty);
-            let apk =
-                assets.iter().find(|asset| asset["name"].as_str().is_some_and(is_apk_asset))?;
-
-            Some(VersionInfo {
-                version_name: release["tag_name"].as_str().unwrap_or("unknown").to_string(),
-                version_code: 0,
-                size: apk["size"].as_u64(),
-                download_url: apk["browser_download_url"].as_str().map(|value| value.to_string()),
-                published_at: release["published_at"].as_str().map(|value| value.to_string()),
-            })
-        })
-        .collect();
-
+            let tag = release["tag_name"].as_str().unwrap_or("unknown");
+            let published = release["published_at"].as_str().map(str::to_string);
+            for asset in assets {
+                if !asset["name"].as_str().is_some_and(is_apk_asset) {
+                    continue;
+                }
+                let asset_name = asset["name"].as_str().unwrap_or("app.apk");
+                versions.push(VersionInfo {
+                    version_name: format!("{tag} / {asset_name}"),
+                    version_code: 0,
+                    size: asset["size"].as_u64(),
+                    download_url: asset["browser_download_url"].as_str().map(str::to_string),
+                    published_at: published.clone(),
+                });
+            }
+        }
+        if releases.len() < 100 {
+            break;
+        }
+    }
     Ok(versions)
+}
+
+pub async fn fetch_readme(
+    client: &Client,
+    full_name: &str,
+    token: &Option<String>,
+) -> Option<String> {
+    let url = format!("https://api.github.com/repos/{full_name}/readme");
+    let response = auth_headers(client.get(&url), token)
+        .header("Accept", "application/vnd.github.raw")
+        .send()
+        .await
+        .ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    let text = response.text().await.ok()?;
+    if text.trim().is_empty() { None } else { Some(text) }
 }
 
 #[cfg(test)]

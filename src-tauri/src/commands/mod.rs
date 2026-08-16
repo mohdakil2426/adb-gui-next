@@ -7,7 +7,9 @@ mod fastboot;
 mod files;
 mod marketplace;
 mod payload;
+mod scrcpy;
 mod system;
+mod utilities;
 
 pub use adb::*;
 pub use apps::*;
@@ -18,4 +20,6 @@ pub use fastboot::*;
 pub use files::*;
 pub use marketplace::*;
 pub use payload::*;
+pub use scrcpy::*;
 pub use system::*;
+pub use utilities::*;

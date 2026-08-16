@@ -33,7 +33,12 @@ commands.allow = [
   "scan_avd_root_readiness",
   "verify_avd_root",
   "verify_file_root_access",
-  "fetch_magisk_stable_release"
+  "fetch_magisk_stable_release",
+  "scrcpy_status",
+  "scrcpy_check_update",
+  "get_app_icons",
+  "get_logcat_snapshot",
+  "get_host_tool_versions"
 ]
 
 [[permission]]
@@ -83,7 +88,13 @@ commands.allow = [
   "debloat_packages",
   "create_debloat_backup",
   "restore_debloat_backup",
-  "save_debloat_device_settings"
+  "save_debloat_device_settings",
+  "scrcpy_install",
+  "scrcpy_launch",
+  "open_device_file_in_editor",
+  "save_screenshot",
+  "restart_adb_server",
+  "kill_adb_server"
 ]
 
 [[permission]]
@@ -163,5 +174,16 @@ commands.allow = [
   "list_debloat_backups",
   "restore_debloat_backup",
   "get_debloat_device_settings",
-  "save_debloat_device_settings"
+  "save_debloat_device_settings",
+  "scrcpy_status",
+  "scrcpy_check_update",
+  "scrcpy_install",
+  "scrcpy_launch",
+  "get_app_icons",
+  "open_device_file_in_editor",
+  "get_logcat_snapshot",
+  "save_screenshot",
+  "restart_adb_server",
+  "kill_adb_server",
+  "get_host_tool_versions"
 ]

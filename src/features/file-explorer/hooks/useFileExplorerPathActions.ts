@@ -1,9 +1,11 @@
 import path from 'path-browserify';
 import { useCallback, useEffect, useRef } from 'react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensions';
 
 interface UseFileExplorerPathActionsOptions {
   currentPath: string;
+  handleOpenInEditor: (file: FileEntry) => Promise<void>;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   openDeleteDialog: (names: string[]) => void;
   renamingName: string | null;
@@ -22,12 +24,16 @@ export function useFileExplorerPathActions(options: UseFileExplorerPathActionsOp
   });
 
   const handleRowDoubleClick = useCallback((file: FileEntry) => {
-    const { currentPath, loadFiles, renamingName } = optionsRef.current;
+    const { currentPath, handleOpenInEditor, loadFiles, renamingName } = optionsRef.current;
     if (renamingName) {
       return;
     }
     if (file.type === 'Directory' || file.type === 'Symlink') {
       void loadFiles(path.posix.join(currentPath, file.name) + '/');
+      return;
+    }
+    if (isTextDeviceFile(file.name)) {
+      void handleOpenInEditor(file);
     }
   }, []);
 

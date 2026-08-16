@@ -4,12 +4,15 @@
 #![allow(clippy::multiple_crate_versions)]
 
 pub mod adb;
+pub mod app_icons;
 mod commands;
 pub mod debloat;
 pub mod emulator;
 mod helpers;
 pub mod marketplace;
 pub mod payload;
+pub mod scrcpy;
+pub mod utilities;
 
 use tauri::Manager;
 
@@ -145,6 +148,17 @@ pub fn run() {
             commands::save_debloat_device_settings,
             commands::get_debloat_data,
             commands::refresh_debloat_data,
+            commands::scrcpy_status,
+            commands::scrcpy_check_update,
+            commands::scrcpy_install,
+            commands::scrcpy_launch,
+            commands::get_app_icons,
+            commands::open_device_file_in_editor,
+            commands::get_logcat_snapshot,
+            commands::save_screenshot,
+            commands::restart_adb_server,
+            commands::kill_adb_server,
+            commands::get_host_tool_versions,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

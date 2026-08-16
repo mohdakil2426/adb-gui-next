@@ -6,7 +6,9 @@ Fully functional Tauri 2 desktop app on `main` (v**0.2.5**). Core features shipp
 
 Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official version path, portable-only custom script, multi-device debloat serial, single-instance, ACL split, view persistence.
 
-**In flight (branch `feat/ui-ux-reimagine-v2`, not merged as of 2026-07-27):** the "Precision Instrument" UI/UX reimagine, ~259 files. See `memory-bank/activeContext.md` for the decision list.
+**In flight (worktree `adb-gui-next-scrcpy-overhaul`, branch `feat/scrcpy-and-ui-overhaul`, no commits):** Neutral true-black theme, official scrcpy manager, Rust app-icon cache, file open-in-editor, GitHub marketplace all-releases + README, marketplace browse redesign, utilities regroup + `utilities/` domain, logcat/screenshot, CI `persist-credentials: false`. See `memory-bank/activeContext.md`.
+
+**Previously in flight (already on this HEAD):** the "Precision Instrument" UI/UX reimagine, later retinted to Neutral.
 
 ## Quality / CI (current)
 
@@ -37,7 +39,7 @@ Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official versi
 
 - Design-token system in `global.css`: "Precision Instrument" oklch palette, four surface levels, 13px-base type scale (11px floor), motion + z-index tokens
 - Self-hosted Inter + JetBrains Mono; Google Fonts removed from `index.html` **and** CSP
-- All 9 views code-split (`React.lazy` + `VIEW_PRELOADERS`); entry chunk 192.87 kB (from 565.86 kB)
+- All 10 views code-split (`React.lazy` + `VIEW_PRELOADERS`), including Scrcpy
 - Shell: Header (`VIEW_META` title + breadcrumb) → `ViewContent` (fluid width) → `StatusBar` → bottom-panel dock spacer; `paddingBottom` hack removed
 - ⌘K command palette + `shared/commands/` registry + `SHORTCUT_HELP` keyboard reference
 - `operationStore` + `StatusBar` operation surface (App Manager wired)
@@ -65,4 +67,4 @@ Packaging/CI overhaul landed and pushed: tauri-action multi-arch, official versi
 
 No long session diaries here. Design → `docs/architecture.md`. Investigations → `docs/internal/reports/`. Status/gaps only in this file.
 
-**Last updated:** 2026-07-27
+**Last updated:** 2026-08-16

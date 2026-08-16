@@ -199,13 +199,12 @@
 }
 
 /* ==========================================================================
-   "Precision Instrument" palette
+   Neutral palette (shadcn classic black / white)
    --------------------------------------------------------------------------
-   Neutrals carry a trace of blue (hue 250, chroma 0.008–0.016) so the whole
-   surface reads as designed rather than default. One accent — electric cyan
-   (hue 210) — marks the primary action or the active state, nothing else.
-   Status colours (success / warning / danger / info) are an orthogonal
-   vocabulary: they describe device state, never UI emphasis.
+   Surfaces, text and primary actions are achromatic OKLCH (chroma 0). Light is
+   white; dark canvas is true black (`oklch(0 0 0)`) with raised greys from the
+   official Neutral ladder. Status colours (success / warning / danger / info)
+   remain chromatic and describe device state, never UI emphasis.
 
    Raw values are declared once per theme in `:root` / `.dark`. Everything
    derived (`var()` / `color-mix()`) is declared once in `:root` and resolves
@@ -243,9 +242,9 @@
     "Roboto Mono", "SFMono-Regular", Menlo, Consolas, monospace;
 
   /* ---- Surface ladder (light) ---- */
-  --canvas: oklch(0.985 0.003 250);
+  --canvas: oklch(1 0 0);
   --surface: oklch(1 0 0);
-  --surface-raised: oklch(0.975 0.004 250);
+  --surface-raised: oklch(0.97 0 0);
   --surface-overlay: oklch(1 0 0);
 
   /* ---- Line work (light) ----
@@ -254,26 +253,25 @@
      selects, textareas, checkboxes) and is held at >= 3:1 against every surface
      in the ladder, per WCAG 2.1 SC 1.4.11 — 3.36:1 on surface, 3.22:1 on
      canvas, 3.13:1 on surface-raised. Do not use it as a divider. */
-  --border: oklch(0.905 0.006 250);
-  --border-strong: oklch(0.845 0.008 250);
-  --border-control: oklch(0.64 0.012 250);
+  --border: oklch(0.922 0 0);
+  --border-strong: oklch(0.845 0 0);
+  --border-control: oklch(0.64 0 0);
 
   /* ---- Text (light) — three tiers, all ≥ 4.5:1 on canvas and surface ---- */
-  --foreground: oklch(0.205 0.014 250);
-  --muted-foreground: oklch(0.505 0.014 250);
-  --foreground-subtle: oklch(0.56 0.012 250);
+  --foreground: oklch(0.145 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --foreground-subtle: oklch(0.62 0 0);
 
-  /* ---- Accent (light) — hover/active go darker, so contrast against both
-     the white surface and the button's own label increases on interaction ---- */
-  --primary: oklch(0.51 0.165 210);
-  --primary-hover: oklch(0.46 0.165 210);
-  --primary-active: oklch(0.41 0.16 210);
-  --primary-foreground: oklch(0.99 0.005 210);
+  /* ---- Primary (light) — shadcn Neutral action scale ---- */
+  --primary: oklch(0.205 0 0);
+  --primary-hover: oklch(0.145 0 0);
+  --primary-active: oklch(0.1 0 0);
+  --primary-foreground: oklch(0.985 0 0);
 
   /* ---- Interactive tint (light): hover / pressed surface for ghost,
      outline and secondary controls. Contrast increases on press. ---- */
-  --accent: oklch(0.945 0.006 250);
-  --accent-active: oklch(0.905 0.007 250);
+  --accent: oklch(0.97 0 0);
+  --accent-active: oklch(0.93 0 0);
 
   /* ---- Status (light) ---- */
   --success: oklch(0.52 0.155 155);
@@ -302,9 +300,9 @@
   --chart-5: oklch(0.56 0.19 25);
 
   /* ---- Terminal (light) ---- */
-  --terminal-bg: oklch(0.975 0.004 250);
-  --terminal-fg: oklch(0.245 0.014 250);
-  --terminal-header-bg: oklch(0.955 0.005 250);
+  --terminal-bg: oklch(0.97 0 0);
+  --terminal-fg: oklch(0.205 0 0);
+  --terminal-header-bg: oklch(0.95 0 0);
 
   /* ---- Inset top highlight on solid controls ---- */
   --control-highlight: oklch(1 0 0 / 22%);
@@ -424,35 +422,31 @@
 }
 
 .dark {
-  /* ---- Surface ladder (dark) — ~+0.03 L per step, so four levels stack
-     without borders and never approach mid-grey ---- */
-  --canvas: oklch(0.145 0.012 250);
-  --surface: oklch(0.185 0.014 250);
-  --surface-raised: oklch(0.215 0.015 250);
-  --surface-overlay: oklch(0.235 0.016 250);
+  /* ---- Surface ladder (dark) — true-black canvas, Neutral greys above ---- */
+  --canvas: oklch(0 0 0);
+  --surface: oklch(0.145 0 0);
+  --surface-raised: oklch(0.205 0 0);
+  --surface-overlay: oklch(0.269 0 0);
 
-  /* ---- Line work (dark) ---- see the light block for the split. 3.39:1 on
-     surface, 3.60:1 on canvas, 3.18:1 on surface-raised, 3.03:1 on overlay. */
-  --border: oklch(0.285 0.014 250);
-  --border-strong: oklch(0.365 0.016 250);
-  --border-control: oklch(0.52 0.016 250);
+  /* ---- Line work (dark) ---- see the light block for the split. */
+  --border: oklch(0.269 0 0);
+  --border-strong: oklch(0.365 0 0);
+  --border-control: oklch(0.52 0 0);
 
   /* ---- Text (dark) ---- */
-  --foreground: oklch(0.965 0.004 250);
-  --muted-foreground: oklch(0.715 0.012 250);
-  --foreground-subtle: oklch(0.6 0.012 250);
+  --foreground: oklch(0.985 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --foreground-subtle: oklch(0.62 0 0);
 
-  /* ---- Accent (dark) — the fill carries a *dark* label, so brightening on
-     hover/active raises contrast both against the canvas and against the
-     label itself ---- */
-  --primary: oklch(0.72 0.155 210);
-  --primary-hover: oklch(0.78 0.15 210);
-  --primary-active: oklch(0.83 0.145 210);
-  --primary-foreground: oklch(0.145 0.02 250);
+  /* ---- Primary (dark) — inverted Neutral action scale ---- */
+  --primary: oklch(0.985 0 0);
+  --primary-hover: oklch(1 0 0);
+  --primary-active: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
 
   /* ---- Interactive tint (dark) ---- */
-  --accent: oklch(0.245 0.016 250);
-  --accent-active: oklch(0.29 0.017 250);
+  --accent: oklch(0.269 0 0);
+  --accent-active: oklch(0.32 0 0);
 
   /* ---- Status (dark) ---- */
   --success: oklch(0.72 0.17 155);
@@ -475,10 +469,10 @@
   --chart-4: oklch(0.65 0.19 300);
   --chart-5: oklch(0.7 0.18 25);
 
-  /* ---- Terminal (dark) — the deepest surface in the app ---- */
-  --terminal-bg: oklch(0.115 0.011 250);
-  --terminal-fg: oklch(0.925 0.006 250);
-  --terminal-header-bg: oklch(0.175 0.014 250);
+  /* ---- Terminal (dark) — sits on true black ---- */
+  --terminal-bg: oklch(0 0 0);
+  --terminal-fg: oklch(0.925 0 0);
+  --terminal-header-bg: oklch(0.145 0 0);
 
   --control-highlight: oklch(1 0 0 / 12%);
 

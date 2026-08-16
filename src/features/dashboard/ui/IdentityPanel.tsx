@@ -95,6 +95,20 @@ export function IdentityPanel({ device, isLoading, telemetry }: IdentityPanelPro
               {telemetry ? formatDuration(telemetry.uptimeSeconds) : EMPTY_VALUE}
             </span>
           </div>
+          <Fact label="Manufacturer" value={identity?.manufacturer ?? EMPTY_VALUE} />
+          <Fact label="Hardware" value={identity?.hardware ?? EMPTY_VALUE} />
+          <Fact label="Locale" value={identity?.locale ?? EMPTY_VALUE} />
+          <Fact label="Timezone" value={identity?.timezone ?? EMPTY_VALUE} />
+          <Fact label="Radio" value={identity?.radio ?? EMPTY_VALUE} />
+          <Fact label="Incremental" value={identity?.incremental ?? EMPTY_VALUE} />
+          <div className="@lg:col-span-2 flex min-w-0 flex-col gap-0.5">
+            <span className="text-caption text-muted-foreground uppercase tracking-wide">
+              Fingerprint
+            </span>
+            <span className="truncate font-mono text-mono-sm">
+              {identity?.fingerprint ?? EMPTY_VALUE}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

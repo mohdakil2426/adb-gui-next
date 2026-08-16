@@ -12,6 +12,7 @@ import { AppDetailSidebar } from '@/features/marketplace/ui/app-detail/AppDetail
 import { AppDetailSkeleton } from '@/features/marketplace/ui/app-detail/AppDetailSkeleton';
 import { AppDetailVersions } from '@/features/marketplace/ui/app-detail/AppDetailVersions';
 import { AppScreenshots } from '@/features/marketplace/ui/app-detail/AppScreenshots';
+import { ReadmeMarkdown } from '@/features/marketplace/ui/app-detail/ReadmeMarkdown';
 import {
   formatDownloadCount,
   installMarketplacePackage,
@@ -154,6 +155,17 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
                     'No description is available for this app yet.'}
                 </p>
               </section>
+
+              {detail?.readmeMarkdown ? (
+                <section className="flex flex-col gap-2">
+                  <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+                    README
+                  </h2>
+                  <div className="rounded-lg border border-border bg-surface-raised p-3">
+                    <ReadmeMarkdown markdown={detail.readmeMarkdown} />
+                  </div>
+                </section>
+              ) : null}
 
               {detail?.changelog ? (
                 <section className="flex flex-col gap-2">

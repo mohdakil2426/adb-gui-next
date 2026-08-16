@@ -2,10 +2,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
+  KillAdbServer,
   Reboot,
-  RunAdbHostCommand,
+  RestartAdbServer,
   RunFastbootHostCommand,
   SaveLog,
+  SetActiveSlot,
   WipeData,
 } from '@/desktop/backend';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
@@ -78,8 +80,7 @@ export function useUtilityActions() {
     setLoadingAction('restart_server');
     const toastId = toast.loading('Restarting ADB Server...');
     try {
-      await RunAdbHostCommand('kill-server');
-      await RunAdbHostCommand('start-server');
+      await RestartAdbServer();
       toast.success('ADB Server Restarted', { id: toastId });
       useLogStore.getState().addLog('ADB Server restarted', 'success');
       setSentAction('restart_server');
@@ -99,7 +100,7 @@ export function useUtilityActions() {
     setLoadingAction('kill_server');
     const toastId = toast.loading('Killing ADB Server...');
     try {
-      await RunAdbHostCommand('kill-server');
+      await KillAdbServer();
       toast.success('ADB Server Killed', { id: toastId });
       useLogStore.getState().addLog('ADB Server killed', 'warning');
       setSentAction('kill_server');
@@ -118,7 +119,7 @@ export function useUtilityActions() {
     setLoadingAction(`set_active_${slot}`);
     const toastId = toast.loading(`Setting active slot to ${slot.toUpperCase()}...`);
     try {
-      await RunFastbootHostCommand(`--set-active=${slot}`, deviceSerial);
+      await SetActiveSlot(slot, deviceSerial);
       toast.success(`Active slot set to ${slot.toUpperCase()}`, { id: toastId });
       useLogStore.getState().addLog(`Set active slot to ${slot}`, 'success');
       setSentAction(`set_active_${slot}`);
@@ -169,7 +170,7 @@ export function useUtilityActions() {
     setLoadingAction('wipe_data');
     const toastId = toast.loading('Wiping User Data (this may take a while)...');
     try {
-      await WipeData(deviceSerial);
+      await WipeData(deviceSerial, 'WIPE');
       toast.success('Device Wiped Successfully', { id: toastId });
       useLogStore.getState().addLog('Device user data wiped (fastboot -w)', 'success');
     } catch (error) {

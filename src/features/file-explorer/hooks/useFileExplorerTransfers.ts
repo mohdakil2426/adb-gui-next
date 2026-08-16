@@ -2,6 +2,7 @@ import path from 'path-browserify';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
+  OpenDeviceFileInEditor,
   PullFile,
   PushFile,
   SelectDirectoryForPull,
@@ -11,6 +12,7 @@ import {
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensions';
 import { useLogStore } from '@/shared/stores/logStore';
 import { debugLog } from '@/shared/utils/debug';
 import { handleError } from '@/shared/utils/errorHandler';
@@ -158,5 +160,35 @@ export function useFileExplorerTransfers(options: Options) {
     [executePush, selectedSerialRef],
   );
 
-  return { handlePull, handlePullItem, handlePushFile, handlePushFileToDir, handlePushFolder };
+  const handleOpenInEditor = useCallback(
+    async (file: FileEntry) => {
+      if (file.type !== 'File' || !isTextDeviceFile(file.name)) {
+        toast.error('This file type cannot be opened as text.');
+        return;
+      }
+      const serial = selectedSerialRef.current;
+      const remotePath = path.posix.join(currentPath, file.name);
+      try {
+        const message = await OpenDeviceFileInEditor(
+          remotePath,
+          serial,
+          getFileAccessMode(remotePath),
+        );
+        toast.success(message);
+        useLogStore.getState().addLog(message, 'success');
+      } catch (error) {
+        handleError('Open in editor', error);
+      }
+    },
+    [currentPath, getFileAccessMode, selectedSerialRef],
+  );
+
+  return {
+    handleOpenInEditor,
+    handlePull,
+    handlePullItem,
+    handlePushFile,
+    handlePushFileToDir,
+    handlePushFolder,
+  };
 }

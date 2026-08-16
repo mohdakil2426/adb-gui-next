@@ -1,7 +1,12 @@
 import { Clock3, Loader2, Search, Settings2, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/shared/ui/input-group';
 import { Kbd } from '@/shared/ui/kbd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
@@ -32,7 +37,7 @@ export function SearchBar({
   onSelectHistory,
   isSearching,
   searchHistory,
-  placeholder = 'Search apps, packages or GitHub repositories…',
+  placeholder = 'Search apps, packages, or GitHub repositories…',
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -52,15 +57,13 @@ export function SearchBar({
   }, []);
 
   return (
-    <div className="relative flex items-center gap-2">
-      <div className="relative min-w-0 flex-1">
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
+    <div className="flex items-center gap-2">
+      <InputGroup className="h-10 min-w-0 flex-1 bg-surface">
+        <InputGroupAddon>
+          <Search aria-hidden="true" />
+        </InputGroupAddon>
+        <InputGroupInput
           aria-label="Search marketplace apps, packages or GitHub repositories"
-          className="h-9 pr-24 pl-8 text-body"
           onChange={(event) => {
             onChange(event.target.value);
           }}
@@ -68,24 +71,17 @@ export function SearchBar({
           ref={inputRef}
           value={value}
         />
-        <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-1">
-          {isSearching ? (
-            <Loader2 aria-hidden="true" className="size-3.5 animate-spin text-muted-foreground" />
-          ) : null}
+        <InputGroupAddon align="inline-end">
+          {isSearching ? <Loader2 aria-hidden="true" className="animate-spin" /> : null}
 
-          {searchHistory.length > 0 && (
+          {searchHistory.length > 0 ? (
             <Popover>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
-                    <Button
-                      aria-label="Recent searches"
-                      size="icon-sm"
-                      type="button"
-                      variant="ghost"
-                    >
-                      <Clock3 aria-hidden="true" className="size-3.5" />
-                    </Button>
+                    <InputGroupButton aria-label="Recent searches" size="icon-xs">
+                      <Clock3 aria-hidden="true" />
+                    </InputGroupButton>
                   </PopoverTrigger>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Recent searches</TooltipContent>
@@ -111,41 +107,34 @@ export function SearchBar({
                 ))}
               </PopoverContent>
             </Popover>
-          )}
+          ) : null}
 
           {value ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  aria-label="Clear search"
-                  onClick={onClear}
-                  size="icon-sm"
-                  type="button"
-                  variant="ghost"
-                >
-                  <X aria-hidden="true" className="size-3.5" />
-                </Button>
+                <InputGroupButton aria-label="Clear search" onClick={onClear} size="icon-xs">
+                  <X aria-hidden="true" />
+                </InputGroupButton>
               </TooltipTrigger>
               <TooltipContent side="bottom">Clear search</TooltipContent>
             </Tooltip>
           ) : (
             <Kbd className="@sm:inline-flex hidden">{SEARCH_SHORTCUT}</Kbd>
           )}
-        </div>
-      </div>
+        </InputGroupAddon>
+      </InputGroup>
 
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             aria-label="Marketplace settings"
-            className="h-9 shrink-0"
+            className="h-10 shrink-0"
             onClick={onSettings}
-            size="sm"
             type="button"
             variant="outline"
           >
-            <Settings2 aria-hidden="true" />
-            <span className="@sm:inline hidden">Settings</span>
+            <Settings2 aria-hidden="true" data-icon="inline-start" />
+            <span className="@lg:inline hidden">Settings</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">Marketplace settings</TooltipContent>

@@ -2,8 +2,6 @@ import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { formatBytes, formatDisplayDate } from '@/shared/utils/format';
 
-const MAX_VERSIONS = 5;
-
 interface AppVersion {
   downloadUrl?: string | null;
   publishedAt?: string | null;
@@ -30,15 +28,15 @@ export function AppDetailVersions({
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
-        Recent versions
+        All APK releases
       </h2>
-      <div className="flex flex-col gap-1.5">
-        {versions.slice(0, MAX_VERSIONS).map((version) => {
+      <div className="flex max-h-80 min-h-0 flex-col gap-1.5 overflow-y-auto">
+        {versions.map((version) => {
           const isInstallingVersion = activeVersionName === version.versionName;
           return (
             <div
               className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-raised p-2.5"
-              key={version.versionName}
+              key={version.downloadUrl ?? version.versionName}
             >
               <div className="flex items-baseline justify-between gap-2">
                 <span className="min-w-0 truncate font-medium text-body text-foreground">

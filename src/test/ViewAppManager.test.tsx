@@ -29,6 +29,7 @@ vi.mock('@/desktop/backend', () => ({
   GetDebloatDeviceSettings: () => getDebloatDeviceSettingsMock(),
   GetDebloatPackages: () => getDebloatPackagesMock(),
   GetInstalledPackages: (serial?: string | null) => getInstalledPackagesMock(serial),
+  GetAppIcons: vi.fn().mockResolvedValue([]),
   InstallPackage: vi.fn(),
   ListDebloatBackups: () => listDebloatBackupsMock(),
   LoadDebloatLists: () => loadDebloatListsMock(),

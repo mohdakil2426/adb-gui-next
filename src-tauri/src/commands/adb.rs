@@ -1,6 +1,6 @@
 use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
-use crate::helpers::{default_if_empty, run_binary_command};
+use crate::helpers::{default_if_empty, extract_png_payload, run_adb_bytes, run_binary_command};
 use log::{error, info};
 use tauri::AppHandle;
 
@@ -108,6 +108,51 @@ pub async fn run_shell_command(
     info!("Running shell command: {}", command);
     tokio::task::spawn_blocking(move || {
         run_adb_for_serial(&app, serial.as_deref(), &["shell", &command])
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_logcat_snapshot(
+    app: AppHandle,
+    serial: Option<String>,
+    lines: Option<u32>,
+) -> CmdResult<String> {
+    let count = crate::utilities::clamp_logcat_lines(lines);
+    tokio::task::spawn_blocking(move || {
+        run_adb_for_serial(&app, serial.as_deref(), &["logcat", "-d", "-t", &count.to_string()])
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Capture `adb exec-out screencap -p` and write a PNG to a user-chosen path.
+#[tauri::command]
+pub async fn save_screenshot(
+    app: AppHandle,
+    dest_path: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
+    let dest = dest_path.trim().to_string();
+    if dest.is_empty() {
+        return Err("save path is empty".into());
+    }
+    tokio::task::spawn_blocking(move || {
+        let path = std::path::PathBuf::from(&dest);
+        let ext = path.extension().and_then(|value| value.to_str()).unwrap_or("");
+        if !ext.eq_ignore_ascii_case("png") {
+            return Err("screenshot must be saved as a .png file".into());
+        }
+        if let Some(parent) = path.parent().filter(|dir| !dir.as_os_str().is_empty())
+            && !parent.exists()
+        {
+            return Err(format!("directory does not exist: {}", parent.display()));
+        }
+        let bytes = run_adb_bytes(&app, serial.as_deref(), &["exec-out", "screencap", "-p"])?;
+        let png = extract_png_payload(&bytes)?;
+        std::fs::write(&path, png).map_err(|error| error.to_string())?;
+        Ok(crate::helpers::normalize_path(&path))
     })
     .await
     .map_err(|e| e.to_string())?

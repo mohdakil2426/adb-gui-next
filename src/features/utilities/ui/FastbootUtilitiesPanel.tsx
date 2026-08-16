@@ -8,7 +8,14 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 type RebootModeId = 'system' | 'recovery' | 'bootloader' | 'fastboot' | null;
-type FastbootConfirm = 'slotA' | 'slotB' | 'wipe' | 'toBootloader' | null;
+type FastbootConfirm =
+  | 'slotA'
+  | 'slotB'
+  | 'wipe'
+  | 'toBootloader'
+  | 'recovery'
+  | 'bootloader'
+  | null;
 
 export function FastbootUtilitiesPanel({
   deviceMode,
@@ -97,7 +104,7 @@ export function FastbootUtilitiesPanel({
               icon={Terminal}
               label="Reboot Bootloader"
               loadingAction={loadingAction}
-              onClick={() => handleReboot('bootloader', 'bootloader', 'fb_bootloader')}
+              onClick={() => setPending('bootloader')}
               sentAction={sentAction}
               variant="outline"
             />
@@ -107,7 +114,7 @@ export function FastbootUtilitiesPanel({
               icon={RotateCw}
               label="Reboot Recovery"
               loadingAction={loadingAction}
-              onClick={() => handleReboot('recovery', 'recovery', 'fb_recovery')}
+              onClick={() => setPending('recovery')}
               sentAction={sentAction}
               variant="outline"
               wrapperClassName="col-span-1 @lg:col-span-2"
@@ -216,7 +223,8 @@ export function FastbootUtilitiesPanel({
       />
 
       <ConfirmDialog
-        confirmLabel="Yes, Wipe Data"
+        confirmLabel="Erase user data"
+        confirmPhrase="WIPE"
         consequence={
           <p>
             All photos, files, accounts and settings are erased. There is no undo and no backup is
@@ -250,6 +258,36 @@ export function FastbootUtilitiesPanel({
         onOpenChange={closeConfirm}
         open={pending === 'toBootloader'}
         title="Reboot into the bootloader?"
+      />
+
+      <ConfirmDialog
+        confirmLabel="Reboot to recovery"
+        consequence={
+          <p>The device leaves fastboot and enters recovery. In-flight flashing stops.</p>
+        }
+        description={`${target} will restart into recovery.`}
+        onConfirm={() => {
+          setPending(null);
+          handleReboot('recovery', 'recovery', 'fb_recovery');
+        }}
+        onOpenChange={closeConfirm}
+        open={pending === 'recovery'}
+        title="Reboot into recovery?"
+      />
+
+      <ConfirmDialog
+        confirmLabel="Reboot bootloader"
+        consequence={
+          <p>The device restarts the bootloader. Any in-flight fastboot command is cut off.</p>
+        }
+        description={`${target} will reboot into the bootloader.`}
+        onConfirm={() => {
+          setPending(null);
+          handleReboot('bootloader', 'bootloader', 'fb_bootloader');
+        }}
+        onOpenChange={closeConfirm}
+        open={pending === 'bootloader'}
+        title="Reboot the bootloader?"
       />
     </Card>
   );

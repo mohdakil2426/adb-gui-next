@@ -303,6 +303,53 @@ pub fn run_command_capture(
     Ok(CommandOutput { success: output.status.success(), stderr, combined })
 }
 
+/// PNG signature (`89 50 4E 47 0D 0A 1A 0A`). Some `screencap` hosts prefix noise.
+pub fn extract_png_payload(bytes: &[u8]) -> CmdResult<&[u8]> {
+    const SIG: &[u8] = &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+    let Some(start) = bytes.windows(SIG.len()).position(|window| window == SIG) else {
+        return Err("screencap did not return a PNG image".into());
+    };
+    Ok(&bytes[start..])
+}
+
+pub fn run_command_capture_bytes(
+    app: &AppHandle,
+    binary: &str,
+    args: &[&str],
+) -> CmdResult<(bool, Vec<u8>, String)> {
+    debug!("Running command (bytes): {} {:?}", binary, args);
+    let binary_path = resolve_binary_path(app, binary)?;
+    let mut cmd = Command::new(&binary_path);
+    cmd.args(args);
+    cmd.current_dir(
+        binary_working_directory(Some(app))
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))),
+    );
+
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let output = cmd.output().map_err(|error| {
+        error!("Failed to execute {} {:?}: {}", binary, args, error);
+        error.to_string()
+    })?;
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    Ok((output.status.success(), output.stdout, stderr))
+}
+
+pub fn run_adb_bytes(app: &AppHandle, serial: Option<&str>, args: &[&str]) -> CmdResult<Vec<u8>> {
+    let owned = adb_argv(serial, args);
+    let refs: Vec<&str> = owned.iter().map(String::as_str).collect();
+    let (success, stdout, stderr) = run_command_capture_bytes(app, "adb", &refs)?;
+    if success {
+        Ok(stdout)
+    } else if !stderr.is_empty() {
+        Err(stderr)
+    } else {
+        Err(format!("adb {:?} failed (no output)", args))
+    }
+}
+
 pub fn run_binary_command(app: &AppHandle, binary: &str, args: &[&str]) -> CmdResult<String> {
     let command_output = run_command_capture(app, binary, args)?;
     if command_output.success {
@@ -350,6 +397,20 @@ pub fn run_binary_command_allow_output_on_failure(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn extract_png_payload_strips_leading_noise() {
+        let mut bytes = b"garbage".to_vec();
+        bytes.extend_from_slice(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3]);
+        let png = extract_png_payload(&bytes).expect("png");
+        assert_eq!(png[0], 0x89);
+        assert_eq!(png[png.len() - 1], 3);
+    }
+
+    #[test]
+    fn extract_png_payload_rejects_empty() {
+        assert!(extract_png_payload(b"not an image").is_err());
+    }
 
     #[test]
     fn split_args_keeps_double_quoted_segments_together() {

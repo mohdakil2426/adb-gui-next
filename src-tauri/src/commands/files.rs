@@ -3,6 +3,7 @@ use crate::commands::device::run_adb_for_serial;
 use crate::helpers::{validate_path_components, validate_safe_device_path};
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 
@@ -335,6 +336,112 @@ fn push_root_path(
     }
 }
 
+const TEXT_EXTENSIONS: &[&str] = &[
+    "sh",
+    "md",
+    "txt",
+    "toml",
+    "xml",
+    "bak",
+    "json",
+    "conf",
+    "prop",
+    "log",
+    "cfg",
+    "ini",
+    "yaml",
+    "yml",
+    "properties",
+    "rc",
+    "service",
+];
+
+fn is_text_extension(name: &str) -> bool {
+    Path::new(name)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| TEXT_EXTENSIONS.iter().any(|allowed| ext.eq_ignore_ascii_case(allowed)))
+}
+
+fn spawn_editor(path: &std::path::Path) -> CmdResult<()> {
+    #[cfg(target_os = "windows")]
+    {
+        if let Ok(code) = which::which("code") {
+            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+        std::process::Command::new("notepad").arg(path).spawn().map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(code) = which::which("code") {
+            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+        for editor in ["gedit", "kate"] {
+            if let Ok(bin) = which::which(editor) {
+                std::process::Command::new(bin).arg(path).spawn().map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+        }
+        std::process::Command::new("xdg-open").arg(path).spawn().map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(code) = which::which("code") {
+            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
+            return Ok(());
+        }
+        std::process::Command::new("open")
+            .args(["-t"])
+            .arg(path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+    {
+        let _ = path;
+        Err("opening files in an editor is not supported on this OS".into())
+    }
+}
+
+#[tauri::command]
+pub async fn open_device_file_in_editor(
+    app: AppHandle,
+    remote_path: String,
+    serial: Option<String>,
+    access_mode: Option<FileAccessMode>,
+) -> CmdResult<String> {
+    let remote = remote_path.trim().to_string();
+    let access_mode = access_mode.unwrap_or_default();
+    validate_path_components(&remote)?;
+    if !is_text_extension(&remote) {
+        return Err("This file type cannot be opened as text.".into());
+    }
+    let file_name = crate::helpers::sanitize_filename(remote_basename(&remote));
+    tokio::task::spawn_blocking(move || {
+        let dir = std::env::temp_dir().join("adb-gui-next-editors");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let local = dir.join(&file_name);
+        if access_mode == FileAccessMode::Root {
+            pull_root_path(&app, serial.as_deref(), &remote, &local.to_string_lossy())?;
+        } else {
+            run_adb_for_serial(
+                &app,
+                serial.as_deref(),
+                &["pull", "-a", &remote, &local.to_string_lossy()],
+            )?;
+        }
+        spawn_editor(&local)?;
+        Ok(format!("Opened {file_name} in a local editor"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 fn parse_file_entries(output: &str) -> Vec<FileEntry> {
     output
         .lines()
@@ -404,5 +511,27 @@ mod tests {
     #[test]
     fn root_transfer_dir_stays_under_adb_gui_temp_prefix() {
         assert!(root_transfer_dir().starts_with("/data/local/tmp/adb-gui-next-root-transfer/"));
+    }
+
+    #[test]
+    fn parser_keeps_hidden_dotfiles() {
+        let listing = "\
+total 8
+drwxr-xr-x 2 root root 4096 2026-01-01 12:00 .config
+-rw-r--r-- 1 root root    12 2026-01-01 12:00 .bashrc
+-rw-r--r-- 1 root root     4 2026-01-01 12:00 visible.txt
+";
+        let names: Vec<_> = parse_file_entries(listing).into_iter().map(|e| e.name).collect();
+        assert!(names.contains(&".config".into()));
+        assert!(names.contains(&".bashrc".into()));
+        assert!(names.contains(&"visible.txt".into()));
+    }
+
+    #[test]
+    fn text_extension_allowlist() {
+        assert!(is_text_extension("init.rc"));
+        assert!(is_text_extension("build.prop"));
+        assert!(!is_text_extension("boot.img"));
+        assert!(!is_text_extension("archive.zip"));
     }
 }

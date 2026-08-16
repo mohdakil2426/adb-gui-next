@@ -7,6 +7,7 @@ export const VIEWS = {
   MARKETPLACE: 'marketplace',
   FLASHER: 'flasher',
   UTILS: 'utils',
+  SCRCPY: 'scrcpy',
   PAYLOAD: 'payload',
   EMULATOR: 'emulator',
   ABOUT: 'about',
@@ -38,6 +39,9 @@ const ViewFlasher = lazy(() =>
 const ViewUtilities = lazy(() =>
   import('@/features/utilities/UtilitiesView').then((m) => ({ default: m.ViewUtilities })),
 );
+const ViewScrcpy = lazy(() =>
+  import('@/features/scrcpy/ScrcpyView').then((m) => ({ default: m.ViewScrcpy })),
+);
 const ViewPayloadDumper = lazy(() =>
   import('@/features/payload-dumper/PayloadDumperView').then((m) => ({
     default: m.ViewPayloadDumper,
@@ -61,6 +65,7 @@ export const VIEW_PRELOADERS: Record<ViewType, () => void> = {
   [VIEWS.MARKETPLACE]: () => void import('@/features/marketplace/MarketplaceView'),
   [VIEWS.FLASHER]: () => void import('@/features/flasher/FlasherView'),
   [VIEWS.UTILS]: () => void import('@/features/utilities/UtilitiesView'),
+  [VIEWS.SCRCPY]: () => void import('@/features/scrcpy/ScrcpyView'),
   [VIEWS.PAYLOAD]: () => void import('@/features/payload-dumper/PayloadDumperView'),
   [VIEWS.EMULATOR]: () => void import('@/features/emulator/EmulatorView'),
   [VIEWS.ABOUT]: () => void import('@/features/about/AboutView'),
@@ -73,6 +78,7 @@ export const VIEW_RENDERERS: Record<ViewType, (activeView: ViewType) => ReactNod
   [VIEWS.MARKETPLACE]: () => <ViewMarketplace />,
   [VIEWS.FLASHER]: () => <ViewFlasher />,
   [VIEWS.UTILS]: () => <ViewUtilities />,
+  [VIEWS.SCRCPY]: () => <ViewScrcpy />,
   [VIEWS.PAYLOAD]: () => <ViewPayloadDumper />,
   [VIEWS.EMULATOR]: () => <ViewEmulatorManager />,
   [VIEWS.ABOUT]: () => <ViewAbout />,

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Package,
   Settings,
+  Smartphone,
   Store,
   Zap,
 } from 'lucide-react';
@@ -68,6 +69,12 @@ export const VIEW_META: Record<ViewType, ViewMeta> = {
     keywords: ['utilities', 'tools', 'adb', 'fastboot', 'wireless', 'screenshot'],
     title: 'Utilities',
   },
+  [VIEWS.SCRCPY]: {
+    description: 'Mirror and control the selected device in a native scrcpy window',
+    icon: Smartphone,
+    keywords: ['scrcpy', 'mirror', 'screen', 'cast', 'control', 'record'],
+    title: 'Scrcpy',
+  },
   [VIEWS.EMULATOR]: {
     description: 'Manage, launch and root Android virtual devices',
     icon: Bot,
@@ -106,7 +113,7 @@ export const NAV_SECTIONS: NavSection[] = [
     risk: true,
   },
   {
-    items: [VIEWS.UTILS, VIEWS.EMULATOR],
+    items: [VIEWS.UTILS, VIEWS.SCRCPY, VIEWS.EMULATOR],
     label: 'Tools',
     risk: false,
   },

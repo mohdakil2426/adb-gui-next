@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { backend } from '@/desktop/models';
 import { ALL_PROVIDER_IDS } from '@/features/marketplace/model/providers';
+import type { MarketplaceLastSearch } from '@/features/marketplace/utils/browseFilters';
 
 type MarketplaceApp = backend.MarketplaceApp;
 type MarketplaceSortBy = backend.MarketplaceSortBy;
@@ -31,10 +32,12 @@ interface MarketplaceState {
   githubOauthClientId: string;
   githubPat: string;
   githubSession: GithubSessionState;
+  installableOnly: boolean;
   isDetailOpen: boolean;
   isGithubAuthenticating: boolean;
   isSearching: boolean;
   isSettingsOpen: boolean;
+  lastSearch: MarketplaceLastSearch | null;
   openDetail: (app: MarketplaceApp) => void;
   openSettings: () => void;
   query: string;
@@ -45,13 +48,16 @@ interface MarketplaceState {
   searchError: string | null;
   searchHistory: string[];
   selectedApp: MarketplaceApp | null;
+  setActiveProviders: (providers: ProviderSource[]) => void;
   setAllProviders: () => void;
   setGithubDeviceChallenge: (challenge: ActiveGithubDeviceChallenge | null) => void;
   setGithubOauthClientId: (clientId: string) => void;
   setGithubPat: (githubPat: string) => void;
   setGithubSession: (session: Partial<GithubSessionState>) => void;
+  setInstallableOnly: (installableOnly: boolean) => void;
   setIsGithubAuthenticating: (isGithubAuthenticating: boolean) => void;
   setIsSearching: (isSearching: boolean) => void;
+  setLastSearch: (lastSearch: MarketplaceLastSearch | null) => void;
   setQuery: (query: string) => void;
   setResults: (results: MarketplaceApp[]) => void;
   setResultsPerProvider: (resultsPerProvider: number) => void;
@@ -93,9 +99,15 @@ export function getMarketplaceEffectiveGithubToken(state: MarketplaceState): str
   return state.githubSession.accessToken ?? (state.githubPat || null);
 }
 export function getMarketplaceActiveFilterSummary(
-  state: Pick<MarketplaceState, 'activeProviders' | 'sortBy' | 'resultsPerProvider'>,
+  state: Pick<
+    MarketplaceState,
+    'activeProviders' | 'sortBy' | 'resultsPerProvider' | 'installableOnly'
+  >,
 ): string[] {
   const summaries = [`Sort: ${state.sortBy}`, `${state.resultsPerProvider}/provider`];
+  if (state.installableOnly) {
+    summaries.push('Installable only');
+  }
   if (state.activeProviders.length === ALL_PROVIDERS.length) {
     summaries.unshift('All sources');
   } else {
@@ -128,6 +140,8 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   },
   githubDeviceChallenge: null,
   isGithubAuthenticating: false,
+  installableOnly: loadFromStorage<boolean>('marketplace_installable_only', false),
+  lastSearch: loadFromStorage<MarketplaceLastSearch | null>('marketplace_last_search', null),
   setQuery: (query) => {
     set({ query });
   },
@@ -163,6 +177,12 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     saveToStorage('marketplace_providers', ALL_PROVIDERS);
     set({ activeProviders: [...ALL_PROVIDERS] });
   },
+  setActiveProviders: (providers) => {
+    const unique = ALL_PROVIDERS.filter((id) => providers.includes(id));
+    const next = unique.length === 0 ? get().activeProviders : unique;
+    saveToStorage('marketplace_providers', next);
+    set({ activeProviders: next });
+  },
   setSortBy: (sortBy) => {
     saveToStorage('marketplace_sort', sortBy);
     set({ sortBy });
@@ -170,6 +190,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   setViewMode: (viewMode) => {
     saveToStorage('marketplace_view', viewMode);
     set({ viewMode });
+  },
+  setInstallableOnly: (installableOnly) => {
+    saveToStorage('marketplace_installable_only', installableOnly);
+    set({ installableOnly });
+  },
+  setLastSearch: (lastSearch) => {
+    saveToStorage('marketplace_last_search', lastSearch);
+    set({ lastSearch });
   },
   addToSearchHistory: (query) => {
     const trimmed = query.trim();

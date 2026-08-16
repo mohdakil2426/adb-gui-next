@@ -372,6 +372,22 @@ export function useFileExplorerViewModel(activeView: string) {
     [startRenameByName],
   );
   const {
+    handleOpenInEditor,
+    handlePull,
+    handlePullItem,
+    handlePushFile,
+    handlePushFileToDir,
+    handlePushFolder,
+  } = useFileExplorerTransfers({
+    currentPath,
+    getFileAccessMode,
+    loadFiles,
+    selectedSerialRef,
+    setIsPulling,
+    setIsPushing,
+    singleSelected,
+  });
+  const {
     handleClearSearch,
     handleDeleteFromSelection,
     handleNavigateUp,
@@ -380,6 +396,7 @@ export function useFileExplorerViewModel(activeView: string) {
     handleRowDoubleClick,
   } = useFileExplorerPathActions({
     currentPath,
+    handleOpenInEditor,
     loadFiles,
     openDeleteDialog,
     renamingName,
@@ -388,17 +405,6 @@ export function useFileExplorerViewModel(activeView: string) {
     setIsEditingPath,
     setSearchQuery,
   });
-
-  const { handlePull, handlePullItem, handlePushFile, handlePushFileToDir, handlePushFolder } =
-    useFileExplorerTransfers({
-      currentPath,
-      getFileAccessMode,
-      loadFiles,
-      selectedSerialRef,
-      setIsPulling,
-      setIsPushing,
-      singleSelected,
-    });
 
   useFileExplorerKeyboardShortcuts({
     activeView,
@@ -460,6 +466,7 @@ export function useFileExplorerViewModel(activeView: string) {
       handleGoBack,
       handleGoForward,
       handleNavigateUp,
+      handleOpenInEditor,
       handlePathClick,
       handlePathEditCommit,
       handlePull,
@@ -500,6 +507,7 @@ export function useFileExplorerViewModel(activeView: string) {
       handleGoBack,
       handleGoForward,
       handleNavigateUp,
+      handleOpenInEditor,
       handlePathClick,
       handlePathEditCommit,
       handlePull,

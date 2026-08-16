@@ -144,6 +144,7 @@ describe('selected device routing', () => {
     });
     expect(invokeMock).toHaveBeenCalledWith('wipe_data', {
       serial: 'device-b',
+      confirm: null,
     });
   });
 

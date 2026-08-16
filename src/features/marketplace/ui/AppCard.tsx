@@ -52,9 +52,7 @@ export const AppCard = memo(function AppCard({ app, onSelect, target }: AppCardP
 
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <h3 className="min-w-0 truncate font-semibold text-body text-foreground">
-                {app.name}
-              </h3>
+              <h3 className="min-w-0 truncate text-foreground text-title">{app.name}</h3>
               <ProviderBadge source={app.source} />
             </div>
             <p className="truncate font-mono text-mono-sm text-muted-foreground">

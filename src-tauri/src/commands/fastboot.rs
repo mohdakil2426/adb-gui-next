@@ -105,11 +105,16 @@ pub async fn run_fastboot_host_command(
 }
 
 #[tauri::command]
-pub async fn set_active_slot(app: AppHandle, slot: String) -> CmdResult<()> {
-    let slot_str = slot.trim().to_string();
-    info!("Setting active slot to {}", slot_str);
+pub async fn set_active_slot(
+    app: AppHandle,
+    slot: String,
+    serial: Option<String>,
+) -> CmdResult<()> {
+    let slot_str = crate::utilities::parse_ab_slot(&slot)?.to_string();
+    info!("Setting active slot to {slot_str}");
     tokio::task::spawn_blocking(move || {
-        let _ = run_binary_command(&app, "fastboot", &[&format!("--set-active={slot_str}")])?;
+        let flag = format!("--set-active={slot_str}");
+        let _ = run_fastboot_for_serial(&app, serial.as_deref(), &[&flag])?;
         Ok(())
     })
     .await
@@ -118,9 +123,19 @@ pub async fn set_active_slot(app: AppHandle, slot: String) -> CmdResult<()> {
 
 /// Wipes all user data (factory reset) via `fastboot -w`.
 ///
+/// When `confirm` is present it must be the exact phrase `WIPE`. Callers that
+/// already gated the action in the UI (flasher) may omit it.
+///
 /// Runs on a blocking thread — this operation can take 30–60 seconds.
 #[tauri::command]
-pub async fn wipe_data(app: AppHandle, serial: Option<String>) -> CmdResult<()> {
+pub async fn wipe_data(
+    app: AppHandle,
+    serial: Option<String>,
+    confirm: Option<String>,
+) -> CmdResult<()> {
+    if let Some(phrase) = confirm.as_deref() {
+        crate::utilities::require_wipe_confirm(phrase)?;
+    }
     warn!("Wiping user data (factory reset)");
     tokio::task::spawn_blocking(move || {
         let _ = run_fastboot_for_serial(&app, serial.as_deref(), &["-w"])?;

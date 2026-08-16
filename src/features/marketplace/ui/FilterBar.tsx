@@ -10,16 +10,18 @@ import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
+import { Switch } from '@/shared/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
-import { cn } from '@/shared/utils/cn';
 
 type MarketplaceSortBy = backend.MarketplaceSortBy;
+type ProviderSource = backend.ProviderSource;
 
 const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
   { value: 'relevance', label: 'Best match' },
@@ -28,126 +30,127 @@ const SORT_OPTIONS: { value: MarketplaceSortBy; label: string }[] = [
   { value: 'name', label: 'Alphabetical' },
 ];
 
-function GroupLabel({ children }: { children: string }) {
-  return <h3 className="text-caption text-muted-foreground uppercase tracking-wide">{children}</h3>;
-}
-
 export function FilterBar({ resultCount }: { resultCount: number }) {
   const activeProviders = useMarketplaceStore((state) => state.activeProviders);
-  const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
+  const setActiveProviders = useMarketplaceStore((state) => state.setActiveProviders);
   const setAllProviders = useMarketplaceStore((state) => state.setAllProviders);
   const sortBy = useMarketplaceStore((state) => state.sortBy);
   const setSortBy = useMarketplaceStore((state) => state.setSortBy);
   const viewMode = useMarketplaceStore((state) => state.viewMode);
   const setViewMode = useMarketplaceStore((state) => state.setViewMode);
   const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
+  const installableOnly = useMarketplaceStore((state) => state.installableOnly);
+  const setInstallableOnly = useMarketplaceStore((state) => state.setInstallableOnly);
 
   const summaries = getMarketplaceActiveFilterSummary({
     activeProviders,
-    sortBy,
+    installableOnly,
     resultsPerProvider,
+    sortBy,
   });
   const allActive = activeProviders.length === MARKETPLACE_PROVIDERS.length;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1.5">
-        <GroupLabel>Sources</GroupLabel>
-        <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-3">
+      <div className="flex @xl:flex-row flex-col @xl:items-center @xl:justify-between gap-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="text-caption text-muted-foreground uppercase tracking-wide">Sources</p>
+          <ToggleGroup
+            className="flex flex-wrap justify-start"
+            onValueChange={(values) => {
+              setActiveProviders(values as ProviderSource[]);
+            }}
+            size="sm"
+            type="multiple"
+            value={activeProviders}
+            variant="outline"
+          >
+            {MARKETPLACE_PROVIDERS.map((provider) => (
+              <ToggleGroupItem key={provider.id} value={provider.id}>
+                {provider.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
           <Button
-            className="w-full justify-start"
             onClick={setAllProviders}
             size="sm"
             type="button"
             variant={allActive ? 'secondary' : 'ghost'}
           >
-            All sources
+            All
           </Button>
-          {MARKETPLACE_PROVIDERS.map((provider) => {
-            const isActive = activeProviders.includes(provider.id);
-            return (
-              <Button
-                className={cn('w-full justify-start', !isActive && 'text-muted-foreground')}
-                key={provider.id}
-                onClick={() => {
-                  toggleProvider(provider.id);
-                }}
-                size="sm"
-                type="button"
-                variant={isActive ? 'secondary' : 'ghost'}
-              >
-                {provider.label}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <label
+            className="flex items-center gap-2 text-caption text-muted-foreground"
+            htmlFor="marketplace-installable-only"
+          >
+            <Switch
+              checked={installableOnly}
+              id="marketplace-installable-only"
+              onCheckedChange={setInstallableOnly}
+            />
+            Installable only
+          </label>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" type="button" variant="outline">
+                <ArrowDownWideNarrow aria-hidden="true" data-icon="inline-start" />
+                {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
               </Button>
-            );
-          })}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Sort results</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup
+                  onValueChange={(value) => {
+                    setSortBy(value as MarketplaceSortBy);
+                  }}
+                  value={sortBy}
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <DropdownMenuRadioItem key={option.value} value={option.value}>
+                      {option.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <ToggleGroup
+            onValueChange={(value) => {
+              if (value === 'grid' || value === 'list') {
+                setViewMode(value);
+              }
+            }}
+            size="sm"
+            type="single"
+            value={viewMode}
+            variant="outline"
+          >
+            <ToggleGroupItem aria-label="Grid view" value="grid">
+              <LayoutGrid aria-hidden="true" />
+            </ToggleGroupItem>
+            <ToggleGroupItem aria-label="List view" value="list">
+              <List aria-hidden="true" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <GroupLabel>Layout</GroupLabel>
-        <ToggleGroup
-          className="grid w-full grid-cols-2"
-          onValueChange={(value) => {
-            if (value === 'grid' || value === 'list') {
-              setViewMode(value);
-            }
-          }}
-          size="sm"
-          type="single"
-          value={viewMode}
-          variant="outline"
-        >
-          <ToggleGroupItem aria-label="Grid view" className="gap-1.5" value="grid">
-            <LayoutGrid aria-hidden="true" />
-            Grid
-          </ToggleGroupItem>
-          <ToggleGroupItem aria-label="List view" className="gap-1.5" value="list">
-            <List aria-hidden="true" />
-            List
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <GroupLabel>Sort by</GroupLabel>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="w-full justify-start" size="sm" type="button" variant="outline">
-              <ArrowDownWideNarrow aria-hidden="true" />
-              {SORT_OPTIONS.find((option) => option.value === sortBy)?.label}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>Sort results</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup
-              onValueChange={(value) => {
-                setSortBy(value as MarketplaceSortBy);
-              }}
-              value={sortBy}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <DropdownMenuRadioItem key={option.value} value={option.value}>
-                  {option.label}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <GroupLabel>Active filters</GroupLabel>
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="numeric text-caption text-muted-foreground">
           {resultCount} result{resultCount === 1 ? '' : 's'}
         </span>
-        <div className="flex flex-wrap gap-1.5">
-          {summaries.map((summary) => (
-            <Badge key={summary} variant="neutral">
-              {summary}
-            </Badge>
-          ))}
-        </div>
+        {summaries.map((summary) => (
+          <Badge key={summary} variant="neutral">
+            {summary}
+          </Badge>
+        ))}
       </div>
     </div>
   );

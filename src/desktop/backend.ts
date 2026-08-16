@@ -220,6 +220,18 @@ export function Reboot(mode: string, serial?: string | null): Promise<void> {
   return call('reboot', { mode, serial });
 }
 
+export function RestartAdbServer(): Promise<string> {
+  return call('restart_adb_server');
+}
+
+export function KillAdbServer(): Promise<string> {
+  return call('kill_adb_server');
+}
+
+export function GetHostToolVersions(): Promise<backend.HostToolVersions> {
+  return call('get_host_tool_versions');
+}
+
 export function RestoreAvdBackups(avdName: string): Promise<string> {
   return call('restore_avd_backups', { avdName });
 }
@@ -238,6 +250,10 @@ export function RunShellCommand(command: string, serial?: string | null): Promis
 
 export function SaveLog(content: string, prefix: string): Promise<string> {
   return call('save_log', { content, prefix });
+}
+
+export function SaveScreenshot(destPath: string, serial?: string | null): Promise<string> {
+  return call('save_screenshot', { destPath, serial: serial ?? null });
 }
 
 export function SelectDirectoryForPull(): Promise<string> {
@@ -302,6 +318,13 @@ export function SelectSaveDirectory(defaultPath: string): Promise<string> {
   });
 }
 
+export function SelectScreenshotPng(): Promise<string> {
+  return selectSavePath({
+    defaultPath: 'screenshot.png',
+    filters: [{ name: 'PNG image', extensions: ['png'] }],
+  });
+}
+
 export function SelectZipFile(): Promise<string> {
   return selectFile({
     filters: [
@@ -313,8 +336,8 @@ export function SelectZipFile(): Promise<string> {
   });
 }
 
-export function SetActiveSlot(slot: string): Promise<void> {
-  return call('set_active_slot', { slot });
+export function SetActiveSlot(slot: string, serial?: string | null): Promise<void> {
+  return call('set_active_slot', { slot, serial: serial ?? null });
 }
 
 export function SideloadPackage(path: string, serial?: string | null): Promise<string> {
@@ -377,8 +400,8 @@ export function StopAvd(serial: string): Promise<string> {
   return call('stop_avd', { serial });
 }
 
-export function WipeData(serial?: string | null): Promise<void> {
-  return call('wipe_data', { serial });
+export function WipeData(serial?: string | null, confirm?: string | null): Promise<void> {
+  return call('wipe_data', { serial: serial ?? null, confirm: confirm ?? null });
 }
 
 // =============================================================================
@@ -543,4 +566,42 @@ export function GetDebloatData(serial?: string | null): Promise<backend.DebloatD
 /** Force refresh debloater data for the selected device. */
 export function RefreshDebloatData(serial?: string | null): Promise<backend.DebloatData> {
   return call('refresh_debloat_data', { serial: serial ?? null });
+}
+
+export function GetAppIcons(
+  packages: string[],
+  serial?: string | null,
+): Promise<backend.AppIcon[]> {
+  return call('get_app_icons', { packages, serial: serial ?? null });
+}
+
+export function OpenDeviceFileInEditor(
+  remotePath: string,
+  serial?: string | null,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<string> {
+  return call('open_device_file_in_editor', { remotePath, serial, accessMode });
+}
+
+export function GetLogcatSnapshot(serial?: string | null, lines?: number): Promise<string> {
+  return call('get_logcat_snapshot', { serial: serial ?? null, lines: lines ?? null });
+}
+
+export function ScrcpyStatus(): Promise<backend.ScrcpyStatus> {
+  return call('scrcpy_status');
+}
+
+export function ScrcpyCheckUpdate(): Promise<backend.ScrcpyStatus> {
+  return call('scrcpy_check_update');
+}
+
+export function ScrcpyInstall(): Promise<backend.ScrcpyStatus> {
+  return call('scrcpy_install');
+}
+
+export function ScrcpyLaunch(
+  options: backend.ScrcpyLaunchOptions,
+  serial?: string | null,
+): Promise<void> {
+  return call('scrcpy_launch', { options, serial: serial ?? null });
 }

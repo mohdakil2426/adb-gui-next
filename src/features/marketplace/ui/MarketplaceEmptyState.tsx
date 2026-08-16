@@ -77,6 +77,7 @@ export function MarketplaceEmptyState({
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const recentlyViewedApps = useMarketplaceStore((state) => state.recentlyViewedApps);
   const githubSession = useMarketplaceStore((state) => state.githubSession);
+  const lastSearch = useMarketplaceStore((state) => state.lastSearch);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
   const openSettings = useMarketplaceStore((state) => state.openSettings);
 
@@ -118,6 +119,17 @@ export function MarketplaceEmptyState({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="max-w-xl gap-3">
+          {lastSearch?.query ? (
+            <Button
+              onClick={() => {
+                onQuickSearch(lastSearch.query);
+              }}
+              size="sm"
+              type="button"
+            >
+              Resume “{lastSearch.query}”
+            </Button>
+          ) : null}
           <SectionHeading>Suggested searches</SectionHeading>
           <ChipRow entries={SUGGESTED_SEARCHES} onSelect={onQuickSearch} />
         </EmptyContent>

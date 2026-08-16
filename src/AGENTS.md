@@ -48,6 +48,7 @@ Defined in `src/app/shell/viewConfig.tsx`. Every view is a `React.lazy` dynamic 
 | `marketplace` | `features/marketplace/MarketplaceView.tsx` |
 | `flasher` | `features/flasher/FlasherView.tsx` |
 | `utils` | `features/utilities/UtilitiesView.tsx` |
+| `scrcpy` | `features/scrcpy/ScrcpyView.tsx` |
 | `payload` | `features/payload-dumper/PayloadDumperView.tsx` |
 | `emulator` | `features/emulator/EmulatorView.tsx` |
 | `about` | `features/about/AboutView.tsx` |
@@ -86,6 +87,7 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 | `payload:progress` | `features/payload-dumper/hooks/usePayloadEvents.ts` |
 | `payload:load-progress` | `features/payload-dumper/hooks/usePayloadLoadEvents.ts` |
 | `root:progress` | `features/emulator/ui/RootWizard.tsx` |
+| `scrcpy:download-progress` | `features/scrcpy/hooks/useScrcpyProgress.ts` |
 
 ### File drop
 
@@ -169,7 +171,7 @@ Check any layout change at: 1024×720 sidebar-expanded **with the bottom panel o
 - Prefer `@/` imports; `import type` for type-only imports.
 - shadcn primitives in `shared/ui/`; feature UI stays in `features/`.
 - Design tokens from `global.css` — no raw hex/rgb/oklch in components.
-- **Palette ("Precision Instrument"):** neutrals are chroma-tinted blue (hue 250); a single accent — electric cyan (hue 210) — marks the primary action or the active state and nothing else. `success` / `warning` / `destructive` / `info` describe **device** state, never UI emphasis.
+- **Palette ("Neutral"):** achromatic surfaces and inverted primary actions between light and dark. Dark canvas is true black (`oklch(0 0 0)`). `success` / `warning` / `destructive` / `info` describe **device** state, never UI emphasis.
 - **Surfaces:** `canvas` < `surface` < `surface-raised` < `surface-overlay`. Pick a level; do not invent one with an ad-hoc `bg-*`.
 - **Type scale** (each token carries its own line-height, tracking and weight — no companion `leading-*` / `font-*` needed):
 
@@ -230,12 +232,14 @@ Re-added **with real call sites** — each stays only while its call site exists
 | --- | --- |
 | Device targeting | Pass `selectedSerial` into device-scoped desktop APIs |
 | Dashboard | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers |
-| File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change |
+| File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor |
 | Debloat | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase) |
-| Marketplace | Install with selected serial; session-only PAT/OAuth (not localStorage); provider orchestration stays on Rust side |
+| Marketplace | Install with selected serial; session-only PAT/OAuth (not localStorage); provider orchestration stays on Rust side; FE only filters/caches last search results |
 | Emulator | AVD discovery is backend `~/.android/avd/*.ini`; root progress via `EventsOn('root:progress')` only |
 | Payload Dumper | Progress/load via runtime events above; cancel tokens when using cancellable extract |
-| App Manager list | Virtualized list uses Lucide placeholders for icons unless a future lazy fixed-slot icon path is reintroduced |
+| Scrcpy | Official Genymobile binaries in app data; detached native window; CLI flags only; `scrcpy:download-progress` |
+| Utilities | Grouped host / power / diagnostics / fastboot; typed server + version IPC; wipe types `WIPE` |
+| App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster |
 
 ## Tests
 

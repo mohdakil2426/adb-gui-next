@@ -39,6 +39,8 @@ jobs:
           fi
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
+        with:
+          persist-credentials: false
 
       - name: Install Linux dependencies
         run: |
@@ -183,6 +185,7 @@ jobs:
       # Platform-tools are Git LFS. Official: https://github.com/actions/checkout (lfs default false)
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
         with:
+          persist-credentials: false
           lfs: true
 
       - name: Install Linux dependencies
@@ -297,6 +300,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
         with:
+          persist-credentials: false
           lfs: true
 
       - name: Setup Bun
@@ -404,6 +408,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v5
+        with:
+          persist-credentials: false
 
       - name: Notes, checksums, draft polish
         env:

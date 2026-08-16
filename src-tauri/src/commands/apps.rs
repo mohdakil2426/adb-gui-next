@@ -137,6 +137,19 @@ pub async fn get_installed_packages(
 }
 
 #[tauri::command]
+pub async fn get_app_icons(
+    app: AppHandle,
+    serial: Option<String>,
+    packages: Vec<String>,
+) -> CmdResult<Vec<crate::app_icons::AppIcon>> {
+    tokio::task::spawn_blocking(move || {
+        crate::app_icons::get_icons(&app, serial.as_deref(), &packages)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 pub async fn install_package(
     app: AppHandle,
     path: String,

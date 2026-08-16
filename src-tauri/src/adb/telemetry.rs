@@ -25,6 +25,13 @@ pub struct DeviceIdentity {
     pub sdk_int: Option<u32>,
     pub build_id: Option<String>,
     pub arch: Option<String>,
+    pub manufacturer: Option<String>,
+    pub hardware: Option<String>,
+    pub fingerprint: Option<String>,
+    pub incremental: Option<String>,
+    pub locale: Option<String>,
+    pub timezone: Option<String>,
+    pub radio: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -185,6 +192,13 @@ fn build_identity(
             .and_then(|sdk| sdk.parse::<u32>().ok()),
         build_id: parse::first_prop(props, &["ro.build.id", "ro.build.display.id"]),
         arch: parse::first_prop(props, &["ro.product.cpu.abi", "ro.product.cpu.abilist"]),
+        manufacturer: parse::product_prop(props, "manufacturer"),
+        hardware: parse::first_prop(props, &["ro.hardware", "ro.boot.hardware"]),
+        fingerprint: parse::first_prop(props, &["ro.build.fingerprint"]),
+        incremental: parse::first_prop(props, &["ro.build.version.incremental"]),
+        locale: parse::first_prop(props, &["ro.product.locale", "persist.sys.locale"]),
+        timezone: parse::first_prop(props, &["persist.sys.timezone"]),
+        radio: parse::first_prop(props, &["gsm.version.baseband", "ro.baseband"]),
     }
 }
 

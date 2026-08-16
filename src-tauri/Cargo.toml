@@ -22,7 +22,7 @@ tauri-build = { version = "2.6.3", features = [] }
 [dependencies]
 anyhow = "1.0.104"
 apk-info-axml = "1.0.11"
-base64 = "0.23.0"
+base64 = "0.23.1"
 bzip2 = "0.6.1"
 hex = "0.4.3"
 log = "0.4.33"
@@ -43,9 +43,10 @@ url = "2.5.8"
 which = "8.0.5"
 # liblzma is the maintained fork of xz2 (API-compatible XzDecoder path).
 # Do not also depend on xz2 — dual native lzma links break the link step.
-liblzma = "0.4"
+liblzma = "0.4.8"
 zstd = "0.13.3"
 zip = "8.6.0"
+tar = "0.4.46"
 # HTTP range bodies / zero-copy reclaim into Vec when refcount == 1.
 bytes = "1.12.1"
 tauri-plugin-clipboard-manager = "2.3.2"
@@ -54,7 +55,7 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 
 
 # OPS/OFP firmware format support
-aes = "0.9.1"
+aes = "0.9.2"
 cfb-mode = "0.9.1"
 md-5 = "0.11.0"
 quick-xml = "0.41.0"
@@ -63,10 +64,10 @@ brotli = { version = "8.0.4", optional = true }
 # HTTP client for marketplace + payload
 reqwest = { version = "0.13.4", features = ["rustls", "stream", "http2", "blocking", "json"] }
 
-futures-util = "0.3.33"
+futures-util = "0.3.34"
 # zlib-rs: pure-Rust zlib backend (~1.5–2× inflate vs miniz_oxide on factory/ZIP deflate).
 flate2 = { version = "1.1.9", default-features = false, features = ["zlib-rs"] }
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = "2.4.3"
 
 [dev-dependencies]
 proptest = { version = "1.11.0", features = ["attr-macro"] }

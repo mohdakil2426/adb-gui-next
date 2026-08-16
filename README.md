@@ -19,27 +19,27 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 
 | Feature              | Description                                                                        |
 | -------------------- | ---------------------------------------------------------------------------------- |
-| **Dashboard**        | Real-time device info — model, battery, storage, IP, root status, wireless ADB     |
-| **App Manager**      | Install/uninstall APK/APKS packages with user/system filter and batch operations   |
-| **Debloater**        | Universal Android Debloater (UAD) integration — remove bloatware with safety tiers |
-| **File Explorer**    | Browse, push, pull, rename, delete files with breadcrumb navigation and drag-drop  |
-| **Flasher**          | Flash partitions, recovery sideload, wipe data, manage A/B slots with action queue |
-| **Utilities**        | ADB/Fastboot power menus, server control, bootloader variables, terminal launcher  |
-| **Payload Dumper**   | Extract partitions from OTA `payload.bin`, ZIP, OPS, and OFP files with progress   |
-| **Marketplace**      | Discover and install Android apps from F-Droid, GitHub, and Aptoide                |
-| **Emulator Manager** | List, launch, stop AVDs with one-click Magisk rooting wizard and pre-flight checks |
-| **Shell**            | Interactive ADB & Fastboot command terminal with history                           |
-| **Logs Panel**       | Filterable, searchable log viewer with auto-scroll and export                      |
+| **Dashboard**        | Live telemetry — identity, battery, memory, storage, network, extra build facts |
+| **App Manager**      | Install/uninstall APK/APKS; cached launcher icons for visible rows              |
+| **Debloater**        | Universal Android Debloater (UAD) — safety tiers, backups, restore              |
+| **File Explorer**    | Browse (including hidden names), push/pull, open text files in a host editor    |
+| **Flasher**          | Fastboot flash, recovery sideload, wipe, A/B slots                              |
+| **Utilities**        | Power menus, ADB server control, bootloader vars, logcat snapshot               |
+| **Scrcpy**           | Official binary download + native mirror window for the selected serial         |
+| **Payload Dumper**   | Extract partitions from OTA `payload.bin`, ZIP, OPS, and OFP files              |
+| **Marketplace**      | F-Droid, GitHub (all APK releases + README), Aptoide — install via Rust         |
+| **Emulator Manager** | List, launch, stop AVDs with Magisk root wizard                                 |
+| **Shell + Logs**     | Interactive adb/fastboot shell and a filterable log panel                       |
 
 ### Highlights
 
-- 🎨 Light / Dark / System theme with premium UI (OKLCH color system, Framer Motion animations)
-- ⚡ ~30 MB installer — Tauri 2 (no Electron bloat)
-- 🔒 Hardened CSP, least-privilege capabilities, `freezePrototype`
-- 📦 Bundled ADB & Fastboot — no system install required
-- 🖥️ Windows (x64 / x86 / ARM64) & Linux x64 first-class packaging; macOS builds paused
-- 🔧 70+ Rust-powered backend commands across 10 modules
-- ⚠️ Release builds are **not code-signed** (SmartScreen may warn on Windows)
+- Neutral light / true-black dark theme (shadcn tokens in `global.css` only)
+- ~30 MB installer — Tauri 2 (no Electron)
+- Hardened CSP, least-privilege capabilities, `freezePrototype`
+- Bundled ADB & Fastboot — no system install required
+- Windows (x64 / x86 / ARM64) & Linux x64 first-class; macOS builds paused
+- Domain logic in Rust; the UI talks only through `src/desktop/`
+- Release builds are **not code-signed** (SmartScreen may warn on Windows)
 
 ---
 
@@ -73,7 +73,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 The Dashboard is your home screen. It shows:
 
 - **Connected Devices** — lists all ADB-connected devices with serial number, status, and editable nicknames
-- **Device Info** — click **Refresh Info** to view model, brand, Android version, battery, RAM, storage, IP address, root status, and more. All values are copyable.
+- **Device Info** — telemetry loads automatically for the selected serial (model, manufacturer, Android version, battery, RAM, storage, network, fingerprint, and more). Values are copyable.
 - **Wireless ADB** — connect to devices over WiFi in two steps:
   1. **Step 1**: With the device connected via USB, click **Enable Wireless Mode** (runs `adb tcpip 5555`)
   2. **Step 2**: Disconnect the USB cable, enter the device IP (auto-filled if available), and click **Connect**
@@ -119,7 +119,9 @@ Browse and transfer files between your computer and device:
 - **Export Selected**: Select a file or folder (single click), then click **Export** to pull it to your computer
 - **Create**: Create new files and directories on the device
 - **Rename / Delete**: Right-click context menu for file operations
+- **Open in editor**: Double-click or right-click text files (`.sh`, `.md`, `.txt`, `.prop`, …). The file is pulled to a temp path and opened with VS Code, Notepad, TextEdit, or the desktop opener
 - Default starting directory: `/sdcard/`
+- Hidden names (`.config`, `.bashrc`, …) are listed; root mode still uses verified `su`
 
 #### ⚡ Flasher
 
@@ -154,7 +156,19 @@ Power controls and device management tools:
   - **Kill ADB Server** — stops the ADB daemon completely
 - **Slot Management** (A/B devices): Switch active slot between **Slot A** and **Slot B**
 - **Get Device Variables**: Runs `fastboot getvar all` and displays variables in a copyable/saveable dialog
+- **Logcat snapshot**: Bounded `logcat -d` dump from the selected device, with save
 - **Wipe User Data**: Factory reset via Fastboot (with confirmation)
+
+#### 📱 Scrcpy
+
+Mirror the selected device in a **separate native window** (not inside the app webview):
+
+1. Open **Tools → Scrcpy**
+2. On first run, download the official Genymobile build for your OS (SHA-256 checked against `SHA256SUMS.txt`)
+3. Set bitrate, max size, codec, audio, keyboard, stay-awake, record path, and other CLI flags
+4. Click **Launch** — scrcpy starts as its own process with `-s <serial>` and the bundled `adb`
+
+Updates compare the installed version to GitHub Releases. Official archives exist for Windows x64 and Linux x64; other hosts can still launch a `scrcpy` already on PATH.
 
 #### 🧩 Payload Dumper
 
@@ -184,8 +198,8 @@ Discover and install Android apps directly from your desktop:
 
 - **Search** across three providers: F-Droid, GitHub, and Aptoide
 - **Filter** by provider, sort by relevance, name, downloads, or recently updated
-- **App Details**: View description, screenshots, version history, repo stats
-- **Download & Install**: Download APKs and install directly to connected device via ADB
+- **App Details**: Description, screenshots, **all GitHub APK assets across paginated releases**, and a README renderer (no extra Markdown library)
+- **Download & Install**: Rust downloads the APK and installs it on the selected serial
 - **GitHub Authentication**: Optional device-flow OAuth for higher API rate limits and private repos
 
 #### 🤖 Emulator Manager

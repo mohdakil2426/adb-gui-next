@@ -43,6 +43,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | Utilities | Reboot modes, host tools, bootloader vars, terminal/device manager launch |
 | Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
 | Marketplace | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth) |
+| Scrcpy | Download official binaries, launch a native mirror window for the selected serial |
 | Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore |
 | Bottom panel | Logs + adb/fastboot shell (VS Code–style) |
 | Command palette | ⌘/Ctrl+K over navigation, device selection, shell/log actions, shortcut reference |
@@ -243,7 +244,7 @@ adb-gui-next/
 | shadcn primitives | `src/shared/ui/` | Hand-roll base controls |
 | Cross-feature stores | `src/shared/stores/` | App-wide state inside one feature |
 | Tauri commands | `src-tauri/src/commands/*.rs` | Fat handlers in domain |
-| Domain logic | `payload/`, `marketplace/`, `emulator/`, `debloat/` | Inline complex logic in commands |
+| Domain logic | `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `app_icons.rs` | Inline complex logic in commands |
 | `adb shell` invocation | `src-tauri/src/adb/` (`AdbClient`) | New `Command::new(adb)` / hand-rolled exit markers |
 | Shared process helpers | `helpers.rs` | Duplicate binary resolution / path sanitize |
 | FE tests | `src/test/` | Tests next to components |
@@ -448,6 +449,7 @@ export function ListFiles(
 | `payload:progress` | Extraction progress |
 | `payload:load-progress` | Remote metadata / list load |
 | `root:progress` | Emulator Magisk root pipeline |
+| `scrcpy:download-progress` | Official scrcpy archive download |
 
 ### Drag-and-drop
 
@@ -507,6 +509,8 @@ flowchart TB
   subgraph domains["Domains"]
     payload["payload/"]
     market["marketplace/"]
+    scrcpy["scrcpy/"]
+    utilities["utilities/"]
     emu["emulator/"]
     deb["debloat/"]
   end
@@ -529,6 +533,7 @@ flowchart TB
   helpers --> device
   payload --> net
   market --> net
+  scrcpy --> net
   emu --> sdk
   deb --> device
   deb --> net
@@ -541,13 +546,15 @@ flowchart TB
 | Module | Responsibility |
 | --- | --- |
 | `commands/device.rs` | Device list, info, telemetry, mode; serial helpers for other modules |
-| `commands/adb.rs` | Wireless ADB, host/shell runners |
+| `commands/adb.rs` | Wireless ADB, host/shell runners, logcat snapshot, screenshot |
 | `commands/fastboot.rs` | Flash, reboot, wipe, slots, fastboot host |
-| `commands/files.rs` | Explorer list/push/pull/mutate + root verify |
-| `commands/apps.rs` | Packages install/uninstall/sideload/list |
+| `commands/utilities.rs` | Typed ADB server restart/kill + host tool versions (thin over `utilities/`) |
+| `commands/files.rs` | Explorer list/push/pull/mutate + root verify + open-in-editor |
+| `commands/apps.rs` | Packages install/uninstall/sideload/list + icon batch |
 | `commands/system.rs` | Open folder, terminal, device manager, save log |
 | `commands/payload.rs` | List/extract/remote/cancel tokens (thin over `payload/`) |
 | `commands/marketplace.rs` | Search/detail/download/install/auth (thin over `marketplace/`) |
+| `commands/scrcpy.rs` | Status/install/launch (thin over `scrcpy/`) |
 | `commands/emulator.rs` | AVD lifecycle + root wizard IPC |
 | `commands/debloat.rs` | UAD data + actions + backups |
 
@@ -631,6 +638,10 @@ lists · sync · actions · backup · cache (device-serial keyed)
 
 SDK-aware action builder; refuse Disable when SDK unknown or API &lt; 23.
 
+#### Utilities (`src-tauri/src/utilities/`)
+
+Typed helpers for the Utilities view: A/B slot parse (`a`/`b` only), logcat line clamp, wipe confirmation phrase `WIPE`, and host-tool version line parse. Thin commands: `restart_adb_server`, `kill_adb_server`, `get_host_tool_versions`. Slot switch and wipe still use `set_active_slot` / `wipe_data` but validate through this module. Arbitrary `run_adb_host_command` stays for the bottom-panel shell, not this view.
+
 ### 8.5 Shared helpers (`helpers.rs`)
 
 | Helper | Why it exists |
@@ -673,7 +684,7 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
 | File Explorer | `features/file-explorer` | hooks + localStorage | list/push/pull/mutate/root | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/sideload/wipe + DnD | `fastboot`, `apps` |
-| Utilities | `features/utilities` | local | reboot, host cmds, wipe | `adb`, `fastboot`, `system` |
+| Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe | `utilities` domain + `adb`/`fastboot` |
 | Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
 | Marketplace | `features/marketplace` | `marketplaceStore` | search/download/install/auth | `marketplace` domain |
 | Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
@@ -971,15 +982,16 @@ Registered in `src-tauri/src/lib.rs` `generate_handler!` (authoritative list):
 Device / ADB / Fastboot
   get_devices, get_fastboot_devices, get_device_info, get_device_telemetry, get_device_mode
   connect_wireless_adb, disconnect_wireless_adb, enable_wireless_adb
-  run_adb_host_command, run_shell_command, run_fastboot_host_command
+  run_adb_host_command, run_shell_command, run_fastboot_host_command, get_logcat_snapshot, save_screenshot
+  save_screenshot, restart_adb_server, kill_adb_server, get_host_tool_versions
   flash_partition, get_bootloader_variables, reboot, set_active_slot, wipe_data
 
 Files
   list_files, push_file, pull_file, create_file, create_directory
-  delete_files, rename_file, verify_file_root_access
+  delete_files, rename_file, verify_file_root_access, open_device_file_in_editor
 
 Apps
-  get_installed_packages, install_package, uninstall_package, sideload_package
+  get_installed_packages, install_package, uninstall_package, sideload_package, get_app_icons
 
 System
   open_folder, launch_terminal, launch_device_manager, save_log
@@ -994,6 +1006,9 @@ Marketplace
   marketplace_search, marketplace_get_app_detail, marketplace_list_versions
   marketplace_clear_cache, marketplace_github_device_start, marketplace_github_device_poll
   marketplace_download_apk, marketplace_install_apk
+
+Scrcpy
+  scrcpy_status, scrcpy_check_update, scrcpy_install, scrcpy_launch
 
 Emulator
   list_avds, launch_avd, stop_avd, get_avd_restore_plan, restore_avd_backups

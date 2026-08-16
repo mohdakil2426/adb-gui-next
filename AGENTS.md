@@ -1,6 +1,6 @@
 # ADB GUI Next — Agent Guide
 
-ADB GUI Next is a **desktop-only Tauri 2** Android toolkit (ADB, fastboot, file explorer, flasher, debloat, marketplace, payload dumper, emulator). Stack: React 19 · TypeScript · Vite · Tailwind v4 · shadcn · Zustand · TanStack Query · Rust 2024 · Bun. **Windows and Linux x64 first-class.** macOS: **code may exist, builds paused** (not first-class until unpaused). Browser/Next.js/Electron out of scope. Platform policy: `docs/project_rules.md`.
+ADB GUI Next is a **desktop-only Tauri 2** Android toolkit (ADB, fastboot, file explorer, flasher, debloat, marketplace, payload dumper, emulator, scrcpy). Stack: React 19 · TypeScript · Vite · Tailwind v4 · shadcn · Zustand · TanStack Query · Rust 2024 · Bun. **Windows and Linux x64 first-class.** macOS: **code may exist, builds paused** (not first-class until unpaused). Browser/Next.js/Electron out of scope. Platform policy: `docs/project_rules.md`.
 
 This root guide is a **router** plus durable **cross-module** rules. Frontend implementation lives in `src/AGENTS.md`. Backend implementation lives in `src-tauri/AGENTS.md`.
 

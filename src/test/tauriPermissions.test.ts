@@ -18,4 +18,19 @@ describe('Tauri command permissions', () => {
 
     expect(permissions).toContain('"verify_avd_root"');
   });
+
+  it('allows scrcpy, app icon, editor, and logcat commands', () => {
+    const permissions = readFileSync(permissionFile, 'utf8');
+
+    expect(permissions).toContain('"scrcpy_status"');
+    expect(permissions).toContain('"scrcpy_install"');
+    expect(permissions).toContain('"scrcpy_launch"');
+    expect(permissions).toContain('"get_app_icons"');
+    expect(permissions).toContain('"open_device_file_in_editor"');
+    expect(permissions).toContain('"get_logcat_snapshot"');
+    expect(permissions).toContain('"save_screenshot"');
+    expect(permissions).toContain('"restart_adb_server"');
+    expect(permissions).toContain('"kill_adb_server"');
+    expect(permissions).toContain('"get_host_tool_versions"');
+  });
 });
