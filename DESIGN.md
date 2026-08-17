@@ -72,7 +72,7 @@ No device? Dashboard onboarding + header switcher — don’t invent a second em
 | --- | --- |
 | **Dashboard** | No device → `NoDeviceOnboarding`. Else `PanelCard` grid (`@lg` 2 / `@4xl` 3): identity, battery (`BatteryGauge`), memory (`UsageBar` + sparkline), storage, security, quick actions, wireless ADB. Reboot = confirm dialog |
 | **Applications** | Donut summary, then one card of **equal tabs**: Install / Installed / Debloat |
-| **File Explorer** | Split pane (`bg-surface` + border): tree + table. Breadcrumb path, toolbar, checkboxes, context menu, virtualized rows. Owns scroll. Delete = `AlertDialog` |
+| **File Explorer** | Nav band (back/forward/up/refresh + address + search). Command band: tree toggle first, then **New** + icon groups (no labels on rename/delete/root/transfer). Tooltips open below both bands. Split: Places, then Device tree (Root `/`, Storage `/storage/`). Details list: Name, Date modified, Type, Size — pixel columns, leftover after Size, drag header dividers. Checkbox in Name. Empty-area click clears selection; no selection summary bar. Owns scroll. Delete = `AlertDialog` |
 | **Marketplace** | Device banner + search (`InputGroup`/`Popover`) + `FilterBar` (chips, `Switch`, `ToggleGroup` grid/list) + results (`AppCard` / list) or `Empty`. Detail in-place. Settings = `Dialog`. Owns scroll |
 | **Flasher** | Fastboot `DeviceGate`. Cards: image drop + partition `Input`, sideload, danger wipe. Confirms before flash |
 | **Payload Dumper** | Empty: equal tabs Local / Remote (`DropZone` / `RemoteUrlPanel`). Loaded: partition table + `PartitionSizeChart` + extract progress cards |

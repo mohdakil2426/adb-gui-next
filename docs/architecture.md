@@ -38,7 +38,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | --- | --- |
 | Device control | Discover ADB/fastboot devices, select target, view info, wireless ADB |
 | App Manager | Install / uninstall packages; Universal Android Debloater (UAD) integration |
-| File Explorer | Dual-pane browse, push/pull, mutate, optional verified root mode |
+| File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, mutate, optional verified root mode |
 | Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
 | Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
 | Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
@@ -350,7 +350,7 @@ src/features/<feature>/
 | --- | --- | --- |
 | dashboard | `DashboardView.tsx` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` + `useDeviceTelemetry` |
 | app-manager | `AppManagerView.tsx` | `installationStore`, `debloatStore` (tabs) |
-| file-explorer | `FileExplorerView.tsx` | Local hooks + `localStorage` path prefs |
+| file-explorer | `FileExplorerView.tsx` | Local hooks + `localStorage` (path, tree collapsed, `fe.colWidths.v2`) |
 | marketplace | `MarketplaceView.tsx` | `marketplaceStore` + search/auth hooks |
 | flasher | `FlasherView.tsx` | Local hooks |
 | utilities | `UtilitiesView.tsx` | Local hooks |
@@ -689,7 +689,7 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Device / Dashboard | `features/dashboard` · `DeviceSwitcher` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` | `GetDevices`, `GetDeviceTelemetry`, wireless cmds | `commands/device`, `adb/`, `commands/adb` |
 | App Manager | `features/app-manager` | `installationStore` | package list/install/uninstall | `apps` |
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
-| File Explorer | `features/file-explorer` | hooks + localStorage | list/push/pull/mutate/root | `files` + helpers |
+| File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/sideload/wipe + DnD | `fastboot`, `apps` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
 | Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
