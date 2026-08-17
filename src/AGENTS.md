@@ -89,6 +89,7 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 | `root:progress` | `features/emulator/ui/RootWizard.tsx` |
 | `scrcpy:download-progress` | `features/scrcpy/hooks/useScrcpyProgress.ts` |
 | `host-setup:progress` | `features/utilities/hooks/useHostSetupProgress.ts` |
+| `files:edit-pushed` | `features/file-explorer/hooks/useFileExplorerClipboard.ts` |
 
 ### File drop
 
@@ -233,7 +234,7 @@ Re-added **with real call sites** — each stays only while its call site exists
 | --- | --- |
 | Device targeting | Pass `selectedSerial` into device-scoped desktop APIs |
 | Dashboard | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers |
-| File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor. Chrome is nav band then command band (tree toggle first). Places + Device tree roots Internal storage `/sdcard/`, Root `/`, and Storage `/storage/`. Details columns Name / Date modified / Type / Size; resize the column to the left of a divider; leftover width after Size (`fe.colWidths.v2`). No `SelectionSummaryBar`; empty-list click clears selection; checkbox lives in the Name cell |
+| File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor (VS Code / Notepad / show in folder). Copy/cut/paste and overwrite live in `transfer_device_files`; editor saves emit `files:edit-pushed`. Chrome is nav band then command band (tree toggle first). Places + Device tree roots Internal storage `/sdcard/`, Root `/`, and Storage `/storage/`. Details columns Name / Date modified / Type / Size; resize the column to the left of a divider; leftover width after Size (`fe.colWidths.v2`). No `SelectionSummaryBar`; empty-list click clears selection; checkbox lives in the Name cell |
 | Debloat | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase) |
 | Marketplace | Install with selected serial; session-only PAT/OAuth (not localStorage); provider orchestration stays on Rust side; FE only filters/caches last search results |
 | Emulator | AVD discovery is backend `~/.android/avd/*.ini`; root progress via `EventsOn('root:progress')` only |

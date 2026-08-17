@@ -52,7 +52,7 @@
 - Consumes: `getFileName` from `@/shared/utils/filePath`
 - Produces: `joinRemoteDir(dir: string, name: string): string`, `destinationPath(destDir: string, sourcePath: string): string`
 
-- [ ] **Step 1: Write the failing Vitest**
+- [x] **Step 1: Write the failing Vitest**
 
 Create `src/test/fileExplorerClipboard.test.ts`:
 
@@ -78,13 +78,13 @@ describe('destinationPath', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bun run test -- src/test/fileExplorerClipboard.test.ts`
 
 Expected: FAIL — `joinRemoteDir` is not exported.
 
-- [ ] **Step 3: Implement helpers**
+- [x] **Step 3: Implement helpers**
 
 Add to `fileExplorerPaths.ts`:
 
@@ -112,7 +112,7 @@ fn join_remote_dir_root_and_nested() {
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `bun run test -- src/test/fileExplorerClipboard.test.ts`
 
@@ -120,7 +120,7 @@ Run: `cargo test --manifest-path src-tauri/Cargo.toml join_remote_dir -- --nocap
 
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```
 git add src/features/file-explorer/utils/fileExplorerPaths.ts src/test/fileExplorerClipboard.test.ts src-tauri/src/commands/files.rs
@@ -159,15 +159,15 @@ export function plannedDestinations(clip: FileExplorerClipboard, destDir: string
 
 Same-folder = every source’s parent (POSIX dirname + `/`) equals `normalizeDirPath(destDir)` from `fileExplorerPlaces.ts`.
 
-- [ ] **Step 1: Write failing tests** in `fileExplorerClipboard.test.ts` for `canPasteHere` (empty, other serial, cut into same dir, copy into same dir, copy into other dir → `ok`).
+- [x] **Step 1: Write failing tests** in `fileExplorerClipboard.test.ts` for `canPasteHere` (empty, other serial, cut into same dir, copy into same dir, copy into other dir → `ok`).
 
-- [ ] **Step 2: Run** `bun run test -- src/test/fileExplorerClipboard.test.ts` — FAIL (not exported).
+- [x] **Step 2: Run** `bun run test -- src/test/fileExplorerClipboard.test.ts` — FAIL (not exported).
 
-- [ ] **Step 3: Implement** `fileExplorerClipboard.ts` as specified. `wrong-device` when `!destSerial` or `destSerial !== clip.serial`.
+- [x] **Step 3: Implement** `fileExplorerClipboard.ts` as specified. `wrong-device` when `!destSerial` or `destSerial !== clip.serial`.
 
-- [ ] **Step 4: Run tests** — PASS.
+- [x] **Step 4: Run tests** — PASS.
 
-- [ ] **Step 5: Commit** `feat(files): model in-app copy/cut clipboard rules`
+- [x] **Step 5: Commit** `feat(files): model in-app copy/cut clipboard rules`
 
 ---
 

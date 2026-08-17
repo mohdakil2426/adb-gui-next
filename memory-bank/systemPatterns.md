@@ -105,7 +105,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 - Mutations re-list with `loadFiles(path, false)`.
 - Snapshot serial before host dialogs; clear root grant on serial change.
 - Hidden entries: device listing is `ls -lA`.
-- Open allowlisted text (`.sh`, `.md`, `.txt`, `.toml`, `.xml`, `.bak`, … — not archives) by pulling to temp, then host editor (`code` / Notepad / Linux editors / macOS `open -t`).
+- Open allowlisted text (`.sh`, `.md`, `.txt`, `.toml`, `.xml`, `.bak`, … — not archives) by pulling to a unique temp name, then host editor (`code` / Notepad / Linux editors / macOS `open -t`). Saves are watched in Rust and pushed back (`files:edit-pushed`). Copy/cut/paste is same-device only via `transfer_device_files` (overwrite dialog in the UI).
 
 ### Bottom panel
 

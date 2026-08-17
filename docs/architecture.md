@@ -451,6 +451,7 @@ export function ListFiles(
 | `root:progress` | Emulator Magisk root pipeline |
 | `scrcpy:download-progress` | Official scrcpy archive download |
 | `host-setup:progress` | Official Google platform-tools / USB driver download |
+| `files:edit-pushed` | File Explorer editor save pushed back to the device |
 
 ### Drag-and-drop
 
@@ -997,6 +998,7 @@ Device / ADB / Fastboot
 Files
   list_files, push_file, pull_file, create_file, create_directory
   delete_files, rename_file, verify_file_root_access, open_device_file_in_editor
+  transfer_device_files
 
 Apps
   get_installed_packages, install_package, uninstall_package, sideload_package, get_app_icons
