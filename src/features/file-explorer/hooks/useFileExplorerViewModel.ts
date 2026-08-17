@@ -370,6 +370,7 @@ export function useFileExplorerViewModel(activeView: string) {
   );
   const {
     handleOpenInEditor,
+    handleShowInExplorer,
     handlePull,
     handlePullItem,
     handlePushFile,
@@ -495,6 +496,7 @@ export function useFileExplorerViewModel(activeView: string) {
       handleMoveToFolder,
       handleNavigateUp,
       handleOpenInEditor,
+      handleShowInExplorer,
       handlePaste,
       handlePathClick,
       handlePathEditCommit,
@@ -543,6 +545,7 @@ export function useFileExplorerViewModel(activeView: string) {
       handleMoveToFolder,
       handleNavigateUp,
       handleOpenInEditor,
+      handleShowInExplorer,
       handlePaste,
       handlePathClick,
       handlePathEditCommit,

@@ -59,7 +59,6 @@ pub enum DeviceEditorTarget {
     Default,
     Vscode,
     Notepad,
-    Folder,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -653,11 +652,6 @@ fn is_text_extension(name: &str) -> bool {
         .is_some_and(|ext| TEXT_EXTENSIONS.iter().any(|allowed| ext.eq_ignore_ascii_case(allowed)))
 }
 
-fn spawn_named(bin: &str, args: &[&str]) -> CmdResult<()> {
-    std::process::Command::new(bin).args(args).spawn().map_err(|error| error.to_string())?;
-    Ok(())
-}
-
 fn spawn_path(bin: impl AsRef<std::ffi::OsStr>, path: &Path) -> CmdResult<()> {
     std::process::Command::new(bin).arg(path).spawn().map_err(|error| error.to_string())?;
     Ok(())
@@ -708,33 +702,6 @@ fn spawn_notepad(path: &Path) -> CmdResult<()> {
     }
 }
 
-fn spawn_in_folder(path: &Path) -> CmdResult<()> {
-    #[cfg(target_os = "windows")]
-    {
-        let select = format!("/select,{}", path.display());
-        spawn_named("explorer", &[&select])
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let parent = path.parent().unwrap_or(path);
-        spawn_path("xdg-open", parent)
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .args(["-R"])
-            .arg(path)
-            .spawn()
-            .map_err(|error| error.to_string())?;
-        Ok(())
-    }
-    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
-    {
-        let _ = path;
-        Err("showing files in a folder is not supported on this OS".into())
-    }
-}
-
 fn spawn_editor(path: &Path) -> CmdResult<()> {
     if spawn_which("code", path)? {
         return Ok(());
@@ -747,7 +714,6 @@ fn spawn_editor_target(path: &Path, target: DeviceEditorTarget) -> CmdResult<()>
         DeviceEditorTarget::Default => spawn_editor(path),
         DeviceEditorTarget::Vscode => spawn_vscode(path),
         DeviceEditorTarget::Notepad => spawn_notepad(path),
-        DeviceEditorTarget::Folder => spawn_in_folder(path),
     }
 }
 
@@ -763,7 +729,7 @@ pub async fn open_device_file_in_editor(
     let access_mode = access_mode.unwrap_or_default();
     let target = target.unwrap_or_default();
     validate_path_components(&remote)?;
-    if target != DeviceEditorTarget::Folder && !is_text_extension(&remote) {
+    if !is_text_extension(&remote) {
         return Err("This file type cannot be opened as text.".into());
     }
     let file_name = unique_editor_basename(serial.as_deref(), &remote);
@@ -778,10 +744,23 @@ pub async fn open_device_file_in_editor(
             run_adb_for_serial(&app, serial.as_deref(), &["pull", "-a", &remote, &local_str])?;
         }
         spawn_editor_target(&local, target)?;
-        if target != DeviceEditorTarget::Folder {
-            start_editor_watch(app.clone(), serial.clone(), remote.clone(), local, access_mode);
-        }
+        start_editor_watch(app.clone(), serial.clone(), remote.clone(), local, access_mode);
         Ok(format!("Opened {file_name} in a local editor"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn reveal_device_path_in_explorer(
+    app: AppHandle,
+    remote_path: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
+    let remote = remote_path.trim().to_string();
+    validate_path_components(&remote)?;
+    tokio::task::spawn_blocking(move || {
+        crate::mtp::reveal_device_path(&app, serial.as_deref(), &remote)
     })
     .await
     .map_err(|e| e.to_string())?

@@ -15,6 +15,7 @@ import {
   PushFile,
   Reboot,
   RenameFile,
+  RevealDevicePathInExplorer,
   RunShellCommand,
   SideloadPackage,
   TransferDeviceFiles,
@@ -55,6 +56,7 @@ describe('selected device routing', () => {
       'device-b',
     );
     await OpenDeviceFileInEditor('/sdcard/a.txt', 'device-b', 'normal', 'vscode');
+    await RevealDevicePathInExplorer('/sdcard/Download/note.txt', 'device-b');
     await RenameFile('/sdcard/a.txt', '/sdcard/b.txt', 'device-b');
     await RenameFile('/system/a', '/system/b', 'device-b', 'root');
     await SideloadPackage('C:/ota.zip', 'device-b');
@@ -142,6 +144,10 @@ describe('selected device routing', () => {
       serial: 'device-b',
       accessMode: 'normal',
       target: 'vscode',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('reveal_device_path_in_explorer', {
+      remotePath: '/sdcard/Download/note.txt',
+      serial: 'device-b',
     });
     expect(invokeMock).toHaveBeenCalledWith('rename_file', {
       oldPath: '/sdcard/a.txt',

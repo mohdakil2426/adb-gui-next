@@ -48,6 +48,7 @@ export interface FileExplorerActions {
   handleRowDoubleClick: (file: FileEntry) => void;
   handleSelectAll: () => void;
   handleSelectFromMenu: (name: string) => void;
+  handleShowInExplorer: (file: FileEntry) => Promise<void>;
   handleSortColumn: (field: SortField) => void;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   openDeleteDialog: (names: string[]) => void;

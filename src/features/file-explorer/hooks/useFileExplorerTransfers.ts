@@ -5,6 +5,7 @@ import {
   OpenDeviceFileInEditor,
   PullFile,
   PushFile,
+  RevealDevicePathInExplorer,
   SelectDirectoryForPull,
   SelectDirectoryToPush,
   SelectFileToPush,
@@ -165,7 +166,7 @@ export function useFileExplorerTransfers(options: Options) {
       if (file.type !== 'File') {
         return;
       }
-      if (target !== 'folder' && !isTextDeviceFile(file.name)) {
+      if (!isTextDeviceFile(file.name)) {
         toast.error('This file type cannot be opened as text.');
         return;
       }
@@ -181,14 +182,32 @@ export function useFileExplorerTransfers(options: Options) {
         toast.success(message);
         useLogStore.getState().addLog(message, 'success');
       } catch (error) {
-        handleError('Open in editor', error);
+        handleError('Open with', error);
       }
     },
     [currentPath, getFileAccessMode, selectedSerialRef],
   );
 
+  const handleShowInExplorer = useCallback(
+    async (file: FileEntry) => {
+      const serial = selectedSerialRef.current;
+      const joined = path.posix.join(currentPath, file.name);
+      const remotePath =
+        file.type === 'Directory' || file.type === 'Symlink' ? `${joined}/` : joined;
+      try {
+        const message = await RevealDevicePathInExplorer(remotePath, serial);
+        toast.success(message);
+        useLogStore.getState().addLog(message, 'success');
+      } catch (error) {
+        handleError('Show in Explorer', error);
+      }
+    },
+    [currentPath, selectedSerialRef],
+  );
+
   return {
     handleOpenInEditor,
+    handleShowInExplorer,
     handlePull,
     handlePullItem,
     handlePushFile,

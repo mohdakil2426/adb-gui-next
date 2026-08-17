@@ -1,4 +1,4 @@
-import { Code, FileText, FolderOpen } from 'lucide-react';
+import { Code, FileText } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import {
   ContextMenuItem,
@@ -9,19 +9,10 @@ import {
 
 interface Props {
   disabled: boolean;
-  folderOnly?: boolean;
   onOpenWith: (target: backend.DeviceEditorTarget) => void;
 }
 
-export function FileExplorerOpenWithMenuItems({ disabled, folderOnly = false, onOpenWith }: Props) {
-  if (folderOnly) {
-    return (
-      <ContextMenuItem disabled={disabled} onClick={() => onOpenWith('folder')}>
-        <FolderOpen aria-hidden="true" className="size-4 shrink-0" />
-        Show in folder
-      </ContextMenuItem>
-    );
-  }
+export function FileExplorerOpenWithMenuItems({ disabled, onOpenWith }: Props) {
   return (
     <ContextMenuSub>
       <ContextMenuSubTrigger disabled={disabled}>
@@ -36,10 +27,6 @@ export function FileExplorerOpenWithMenuItems({ disabled, folderOnly = false, on
         <ContextMenuItem disabled={disabled} onClick={() => onOpenWith('notepad')}>
           <FileText aria-hidden="true" className="size-4 shrink-0" />
           Notepad
-        </ContextMenuItem>
-        <ContextMenuItem disabled={disabled} onClick={() => onOpenWith('folder')}>
-          <FolderOpen aria-hidden="true" className="size-4 shrink-0" />
-          Show in folder
         </ContextMenuItem>
       </ContextMenuSubContent>
     </ContextMenuSub>

@@ -299,7 +299,7 @@ export namespace backend {
 
   export type DeviceTransferMode = 'copy' | 'cut';
 
-  export type DeviceEditorTarget = 'default' | 'vscode' | 'notepad' | 'folder';
+  export type DeviceEditorTarget = 'default' | 'vscode' | 'notepad';
 
   export interface DeviceTransferResult {
     copied: number;

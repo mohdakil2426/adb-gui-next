@@ -31,6 +31,7 @@ vi.mock('@/desktop/backend', () => ({
   DeleteFiles: vi.fn(),
   ListFiles: (...args: unknown[]) => listFilesMock(...args),
   OpenDeviceFileInEditor: vi.fn(),
+  RevealDevicePathInExplorer: vi.fn(),
   PullFile: vi.fn(),
   PushFile: vi.fn(),
   RenameFile: vi.fn(),

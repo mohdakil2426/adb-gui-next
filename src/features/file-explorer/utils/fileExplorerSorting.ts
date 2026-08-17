@@ -28,7 +28,7 @@ export function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir
       return dir === 'asc' ? cmp : -cmp;
     }
     if (field === 'type') {
-      const cmp = fileTypeLabel(a.type).localeCompare(fileTypeLabel(b.type));
+      const cmp = fileTypeLabel(a).localeCompare(fileTypeLabel(b));
       return dir === 'asc' ? cmp : -cmp;
     }
     const cmp = (a.date + a.time).localeCompare(b.date + b.time);

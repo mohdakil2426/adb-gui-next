@@ -624,6 +624,13 @@ export function OpenDeviceFileInEditor(
   return call('open_device_file_in_editor', { remotePath, serial, accessMode, target });
 }
 
+export function RevealDevicePathInExplorer(
+  remotePath: string,
+  serial?: string | null,
+): Promise<string> {
+  return call('reveal_device_path_in_explorer', { remotePath, serial: serial ?? null });
+}
+
 export function GetLogcatSnapshot(serial?: string | null, lines?: number): Promise<string> {
   return call('get_logcat_snapshot', { serial: serial ?? null, lines: lines ?? null });
 }

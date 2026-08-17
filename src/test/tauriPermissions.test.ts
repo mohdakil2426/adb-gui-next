@@ -27,6 +27,7 @@ describe('Tauri command permissions', () => {
     expect(permissions).toContain('"scrcpy_launch"');
     expect(permissions).toContain('"get_app_icons"');
     expect(permissions).toContain('"open_device_file_in_editor"');
+    expect(permissions).toContain('"reveal_device_path_in_explorer"');
     expect(permissions).toContain('"transfer_device_files"');
     expect(permissions).toContain('"get_logcat_snapshot"');
     expect(permissions).toContain('"save_screenshot"');

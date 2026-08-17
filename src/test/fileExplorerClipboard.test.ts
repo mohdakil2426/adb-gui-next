@@ -5,6 +5,7 @@ import {
   plannedDestinations,
 } from '@/features/file-explorer/utils/fileExplorerClipboard';
 import { destinationPath, joinRemoteDir } from '@/features/file-explorer/utils/fileExplorerPaths';
+import { fileTypeLabel } from '@/features/file-explorer/utils/fileExplorerTypeLabel';
 
 describe('joinRemoteDir', () => {
   it('joins under root and under a trailing-slash folder', () => {
@@ -56,5 +57,18 @@ describe('PASTE_TOAST', () => {
     expect(PASTE_TOAST['wrong-device']).toBe('Clipboard is from another device');
     expect(PASTE_TOAST['same-folder-cut']).toBe('Cannot move items into the same folder');
     expect(PASTE_TOAST['same-folder-copy']).toBe('Items are already in this folder');
+  });
+});
+
+describe('fileTypeLabel', () => {
+  it('uses Folder for directories and extension names for files', () => {
+    expect(fileTypeLabel({ name: 'Download', type: 'Directory' })).toBe('Folder');
+    expect(fileTypeLabel({ name: 'agnnn.txt', type: 'File' })).toBe('Text Document');
+    expect(fileTypeLabel({ name: 'mod.zip', type: 'File' })).toBe('zip Archive');
+    expect(fileTypeLabel({ name: 'config.xml', type: 'File' })).toBe('XML File');
+    expect(fileTypeLabel({ name: 'build.prop', type: 'File' })).toBe('PROP File');
+    expect(fileTypeLabel({ name: 'app.apk', type: 'File' })).toBe('Android Package');
+    expect(fileTypeLabel({ name: 'hosts', type: 'File' })).toBe('File');
+    expect(fileTypeLabel({ name: 'weird.xyz', type: 'File' })).toBe('XYZ File');
   });
 });

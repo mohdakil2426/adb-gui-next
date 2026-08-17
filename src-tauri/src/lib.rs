@@ -11,6 +11,7 @@ pub mod emulator;
 mod helpers;
 pub mod host_setup;
 pub mod marketplace;
+pub mod mtp;
 pub mod payload;
 pub mod scrcpy;
 pub mod utilities;
@@ -156,6 +157,7 @@ pub fn run() {
             commands::scrcpy_launch,
             commands::get_app_icons,
             commands::open_device_file_in_editor,
+            commands::reveal_device_path_in_explorer,
             commands::get_logcat_snapshot,
             commands::save_screenshot,
             commands::restart_adb_server,

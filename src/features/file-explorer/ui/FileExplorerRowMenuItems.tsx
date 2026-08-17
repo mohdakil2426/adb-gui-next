@@ -1,13 +1,4 @@
-import {
-  Copy,
-  Download,
-  FileText,
-  FolderOpen,
-  Pencil,
-  SquareCheck,
-  Trash2,
-  Upload,
-} from 'lucide-react';
+import { Copy, Download, FolderOpen, Pencil, SquareCheck, Trash2, Upload } from 'lucide-react';
 import path from 'path-browserify';
 import type {
   FileEntry,
@@ -85,24 +76,15 @@ export function FileExplorerRowMenuItems({
         </>
       ) : null}
       {file.type === 'File' && isTextDeviceFile(file.name) ? (
-        <>
-          <ContextMenuItem disabled={isBusy} onClick={() => void actions.handleOpenInEditor(file)}>
-            <FileText aria-hidden="true" className="size-4 shrink-0" />
-            Open in editor
-          </ContextMenuItem>
-          <FileExplorerOpenWithMenuItems
-            disabled={isBusy}
-            onOpenWith={(target) => void actions.handleOpenInEditor(file, target)}
-          />
-        </>
-      ) : null}
-      {file.type === 'File' && !isTextDeviceFile(file.name) ? (
         <FileExplorerOpenWithMenuItems
           disabled={isBusy}
-          folderOnly
           onOpenWith={(target) => void actions.handleOpenInEditor(file, target)}
         />
       ) : null}
+      <ContextMenuItem disabled={isBusy} onClick={() => void actions.handleShowInExplorer(file)}>
+        <FolderOpen aria-hidden="true" className="size-4 shrink-0" />
+        Show in Explorer
+      </ContextMenuItem>
       <ContextMenuItem
         disabled={(isSelected && selectedCount > 1) || (!isSelected && selectedCount > 0)}
         onClick={() => {

@@ -205,7 +205,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
         {file.date} {file.time}
       </TableCell>
       <TableCell className="min-w-0 px-3 py-2 text-caption text-muted-foreground">
-        {fileTypeLabel(file.type)}
+        {fileTypeLabel(file)}
       </TableCell>
       <TableCell className="numeric min-w-0 px-3 py-2 text-caption text-muted-foreground">
         {file.type === 'Directory' ? EMPTY_VALUE : formatBytes(Number.parseInt(file.size, 10))}

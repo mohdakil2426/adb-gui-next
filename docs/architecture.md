@@ -998,7 +998,7 @@ Device / ADB / Fastboot
 Files
   list_files, push_file, pull_file, create_file, create_directory
   delete_files, rename_file, verify_file_root_access, open_device_file_in_editor
-  transfer_device_files
+  transfer_device_files, reveal_device_path_in_explorer
 
 Apps
   get_installed_packages, install_package, uninstall_package, sideload_package, get_app_icons
