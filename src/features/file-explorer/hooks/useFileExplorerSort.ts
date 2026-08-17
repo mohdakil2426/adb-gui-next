@@ -24,7 +24,9 @@ export function useFileExplorerSort(
   const { fileList, searchQuery } = options;
   const [sortField, setSortField] = useState<SortField>(() => {
     const saved = localStorage.getItem('fe.sortField');
-    return (saved as SortField) || 'name';
+    return saved === 'name' || saved === 'size' || saved === 'date' || saved === 'type'
+      ? saved
+      : 'name';
   });
   const [sortDir, setSortDir] = useState<SortDir>(() => {
     const saved = localStorage.getItem('fe.sortDir');

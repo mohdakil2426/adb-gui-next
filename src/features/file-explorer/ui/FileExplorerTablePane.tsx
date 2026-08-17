@@ -1,4 +1,5 @@
-import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useFileExplorerColumnWidths } from '@/features/file-explorer/hooks/useFileExplorerColumnWidths';
 import type {
   FileExplorerActions,
   FileExplorerEditing,
@@ -7,6 +8,7 @@ import type {
   FileExplorerStatus,
   SortField,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { FileExplorerColumnResizeHandle } from '@/features/file-explorer/ui/FileExplorerColumnResizeHandle';
 import { FileExplorerCreateMenuItems } from '@/features/file-explorer/ui/FileExplorerCreateMenuItems';
 import {
   EmptyDirectoryState,
@@ -31,23 +33,16 @@ interface Props {
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
-/** `date` already compares `date + time`, so one "Modified" column sorts both. */
+/** `date` already compares `date + time`, so one "Date modified" column sorts both. */
 const SORTABLE_COLUMNS: { field: SortField; label: string }[] = [
   { field: 'name', label: 'Name' },
+  { field: 'date', label: 'Date modified' },
+  { field: 'type', label: 'Type' },
   { field: 'size', label: 'Size' },
-  { field: 'date', label: 'Modified' },
 ];
 
 type PaneState = 'loading' | 'no-device' | 'permission-denied' | 'failed' | 'empty' | 'listing';
 
-/**
- * Which of the six mutually-exclusive pane states applies.
- *
- * Order matters: `no-device` is decided from the device store *before* any
- * error text is consulted, so it no longer depends on adb's wording. The
- * `no_device` error branch below is only the mid-request fallback — a cable
- * pulled between the call and the next device poll.
- */
 function resolvePaneState(
   listing: FileExplorerListing,
   editing: FileExplorerEditing,
@@ -71,6 +66,16 @@ function resolvePaneState(
   return 'listing';
 }
 
+function dismissTarget(target: EventTarget | null): boolean {
+  const element = target instanceof Element ? target : null;
+  if (!element) {
+    return false;
+  }
+  return !element.closest(
+    '[data-index], [data-slot=table-head], button, input, [role=checkbox], [role=separator]',
+  );
+}
+
 export function FileExplorerTablePane({
   actions,
   editing,
@@ -81,11 +86,24 @@ export function FileExplorerTablePane({
   tableScrollRef,
 }: Props) {
   const paneState = resolvePaneState(listing, editing, status);
+  const { fileTableColumns, resizeColumn } = useFileExplorerColumnWidths();
+  const showSelectAll = selection.selectedNames.size > 0;
 
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="min-h-0 flex-1 overflow-auto overscroll-contain" ref={tableScrollRef}>
+        <div
+          className="min-h-0 flex-1 overflow-auto overscroll-contain"
+          onClick={(event) => {
+            if (editing.renamingName || editing.creatingType) {
+              return;
+            }
+            if (dismissTarget(event.target)) {
+              actions.clearSelection();
+            }
+          }}
+          ref={tableScrollRef}
+        >
           {paneState === 'loading' ? <FileExplorerRowSkeleton /> : null}
           {paneState === 'no-device' ? <NoDeviceState /> : null}
           {paneState === 'permission-denied' ? (
@@ -100,30 +118,13 @@ export function FileExplorerTablePane({
             />
           ) : null}
           {paneState === 'listing' ? (
-            <div className="relative w-full">
+            <div className="relative min-h-full w-full">
               <Table className="min-w-0">
-                <TableHeader className="sticky top-0 z-10 block border-border border-b bg-surface-raised">
+                <TableHeader className="sticky top-0 z-10 block border-border border-b bg-surface">
                   <TableRow
-                    className="grid hover:bg-transparent"
-                    style={{ gridTemplateColumns: listing.fileTableColumns }}
+                    className="group/header grid hover:bg-transparent"
+                    style={{ gridTemplateColumns: fileTableColumns }}
                   >
-                    {selection.isMultiSelectMode ? (
-                      <TableHead className="min-w-0 pl-3">
-                        <Checkbox
-                          aria-label="Select all"
-                          checked={
-                            selection.allSelected
-                              ? true
-                              : selection.someSelected
-                                ? 'indeterminate'
-                                : false
-                          }
-                          disabled={status.isBusy}
-                          onCheckedChange={actions.handleSelectAll}
-                        />
-                      </TableHead>
-                    ) : null}
-                    <TableHead className="min-w-0" />
                     {SORTABLE_COLUMNS.map(({ field, label }) => (
                       <TableHead
                         aria-sort={
@@ -133,31 +134,83 @@ export function FileExplorerTablePane({
                               : 'descending'
                             : 'none'
                         }
-                        className={cn(
-                          'h-9 min-w-0 px-3 text-label text-muted-foreground',
-                          field !== 'name' && 'justify-self-end text-right',
-                        )}
+                        className="relative h-9 min-w-0 px-3 text-label text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                         key={field}
                         role="columnheader"
                       >
-                        <button
-                          className="inline-flex min-w-0 items-center gap-1 rounded-sm transition-colors duration-90 ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => {
-                            actions.handleSortColumn(field);
-                          }}
-                          type="button"
-                        >
-                          {label}
-                          {listing.sortField === field ? (
-                            listing.sortDir === 'asc' ? (
-                              <ChevronUp aria-hidden="true" className="size-3" />
-                            ) : (
-                              <ChevronDown aria-hidden="true" className="size-3" />
-                            )
-                          ) : (
-                            <ChevronsUpDown aria-hidden="true" className="size-3 opacity-40" />
-                          )}
-                        </button>
+                        <div className="flex h-full min-w-0 items-center gap-1 pr-2">
+                          {field === 'name' ? (
+                            <span
+                              className={cn(
+                                'flex size-4 shrink-0 items-center justify-center',
+                                showSelectAll
+                                  ? 'opacity-100'
+                                  : 'opacity-0 group-hover/header:opacity-100',
+                              )}
+                            >
+                              <Checkbox
+                                aria-label="Select all"
+                                checked={
+                                  selection.allSelected
+                                    ? true
+                                    : selection.someSelected
+                                      ? 'indeterminate'
+                                      : false
+                                }
+                                disabled={status.isBusy}
+                                onCheckedChange={actions.handleSelectAll}
+                              />
+                            </span>
+                          ) : null}
+                          <button
+                            className="inline-flex min-w-0 items-center gap-1"
+                            onClick={() => {
+                              actions.handleSortColumn(field);
+                            }}
+                            type="button"
+                          >
+                            {label}
+                            {listing.sortField === field ? (
+                              listing.sortDir === 'asc' ? (
+                                <ChevronUp aria-hidden="true" className="size-3.5" />
+                              ) : (
+                                <ChevronDown aria-hidden="true" className="size-3.5" />
+                              )
+                            ) : null}
+                          </button>
+                        </div>
+                        {field === 'name' ? (
+                          <FileExplorerColumnResizeHandle
+                            label="Resize name column"
+                            onDelta={(dx) => {
+                              resizeColumn('name', dx);
+                            }}
+                          />
+                        ) : null}
+                        {field === 'date' ? (
+                          <FileExplorerColumnResizeHandle
+                            label="Resize date modified column"
+                            onDelta={(dx) => {
+                              resizeColumn('date', dx);
+                            }}
+                          />
+                        ) : null}
+                        {field === 'type' ? (
+                          <FileExplorerColumnResizeHandle
+                            label="Resize type column"
+                            onDelta={(dx) => {
+                              resizeColumn('type', dx);
+                            }}
+                          />
+                        ) : null}
+                        {field === 'size' ? (
+                          <FileExplorerColumnResizeHandle
+                            label="Resize size column"
+                            onDelta={(dx) => {
+                              resizeColumn('size', dx);
+                            }}
+                          />
+                        ) : null}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -165,6 +218,7 @@ export function FileExplorerTablePane({
                 <FileExplorerVirtualBody
                   actions={actions}
                   editing={editing}
+                  fileTableColumns={fileTableColumns}
                   listing={listing}
                   selection={selection}
                   status={status}

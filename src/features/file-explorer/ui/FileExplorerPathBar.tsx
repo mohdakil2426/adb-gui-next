@@ -89,7 +89,7 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
 
   if (isEditingPath) {
     return (
-      <div className="relative flex min-w-0 flex-1 items-center">
+      <div className="relative flex h-8 min-w-0 flex-1 items-center rounded-md border border-border-control bg-background dark:bg-input/30">
         <HardDrive
           aria-hidden="true"
           className="pointer-events-none absolute left-2 size-3.5 shrink-0 text-muted-foreground"
@@ -97,7 +97,7 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
         <Input
           aria-label="Device path"
           autoFocus
-          className="h-8 min-w-0 flex-1 pr-2 pl-7 font-mono text-mono"
+          className="h-8 min-w-0 flex-1 border-0 bg-transparent pr-2 pl-7 font-mono text-mono shadow-none focus-visible:ring-0 dark:bg-transparent"
           onBlur={onPathEditingStop}
           onChange={(event) => onPathEditingChange(event.target.value)}
           onKeyDown={(event) => {
@@ -118,7 +118,15 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
   const lastIndex = visible.length - 1;
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-1">
+    <div
+      className="flex h-8 min-w-0 flex-1 items-center gap-1 rounded-md border border-border-control bg-background px-1 dark:bg-input/30"
+      onClick={(event) => {
+        if ((event.target as HTMLElement).closest('button')) {
+          return;
+        }
+        onPathClick();
+      }}
+    >
       <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
         <BreadcrumbList className="flex-nowrap font-mono text-mono">
           {visible.map((segment, index) => {

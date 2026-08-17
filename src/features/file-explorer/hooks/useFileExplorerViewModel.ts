@@ -11,11 +11,7 @@ import {
 import { useFileExplorerSelection } from '@/features/file-explorer/hooks/useFileExplorerSelection';
 import { useFileExplorerSort } from '@/features/file-explorer/hooks/useFileExplorerSort';
 import { useFileExplorerTransfers } from '@/features/file-explorer/hooks/useFileExplorerTransfers';
-import {
-  FILE_TABLE_COLUMNS,
-  FILE_TABLE_COLUMNS_WITH_SELECTION,
-  PHANTOM_ROW_HEIGHT,
-} from '@/features/file-explorer/model/fileExplorerConstants';
+import { PHANTOM_ROW_HEIGHT } from '@/features/file-explorer/model/fileExplorerConstants';
 import {
   fileReducer,
   initFileState,
@@ -276,9 +272,6 @@ export function useFileExplorerViewModel(activeView: string) {
     renamingName,
     visibleList,
   });
-  const fileTableColumns = isMultiSelectMode
-    ? FILE_TABLE_COLUMNS_WITH_SELECTION
-    : FILE_TABLE_COLUMNS;
   const isPullDisabled = isPulling || !singleSelected;
 
   const getFileAccessMode = usePathFileAccessMode(rootAccessGrantedRef);
@@ -459,6 +452,7 @@ export function useFileExplorerViewModel(activeView: string) {
       cancelCreate,
       clearSelection,
       handleClearSearch,
+      handleCollapseTree,
       handleCreateChange,
       handleCreateConfirm,
       handleDeleteFromSelection,
@@ -500,6 +494,7 @@ export function useFileExplorerViewModel(activeView: string) {
       cancelCreate,
       clearSelection,
       handleClearSearch,
+      handleCollapseTree,
       handleCreateChange,
       handleCreateConfirm,
       handleDeleteFromSelection,
@@ -543,7 +538,6 @@ export function useFileExplorerViewModel(activeView: string) {
     () => ({
       currentPath,
       fileList,
-      fileTableColumns,
       loadError,
       phantomOffset,
       searchQuery,
@@ -551,17 +545,7 @@ export function useFileExplorerViewModel(activeView: string) {
       sortField,
       visibleList,
     }),
-    [
-      currentPath,
-      fileList,
-      fileTableColumns,
-      loadError,
-      phantomOffset,
-      searchQuery,
-      sortDir,
-      sortField,
-      visibleList,
-    ],
+    [currentPath, fileList, loadError, phantomOffset, searchQuery, sortDir, sortField, visibleList],
   );
 
   const editing = useMemo<FileExplorerEditing>(
@@ -570,8 +554,8 @@ export function useFileExplorerViewModel(activeView: string) {
   );
 
   const selection = useMemo<FileExplorerSelection>(
-    () => ({ allSelected, isMultiSelectMode, selectedNames, someSelected }),
-    [allSelected, isMultiSelectMode, selectedNames, someSelected],
+    () => ({ allSelected, isMultiSelectMode, selectedNames, singleSelected, someSelected }),
+    [allSelected, isMultiSelectMode, selectedNames, singleSelected, someSelected],
   );
 
   const navigation = useMemo<FileExplorerNavigation>(
@@ -606,7 +590,6 @@ export function useFileExplorerViewModel(activeView: string) {
     () => ({
       currentPath,
       getFileAccessMode,
-      handleCollapseTree,
       handleResizeKeyDown,
       isResizing,
       isTreeCollapsed,
@@ -619,7 +602,6 @@ export function useFileExplorerViewModel(activeView: string) {
     [
       currentPath,
       getFileAccessMode,
-      handleCollapseTree,
       handleResizeKeyDown,
       isResizing,
       isTreeCollapsed,

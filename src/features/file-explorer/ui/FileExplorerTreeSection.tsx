@@ -6,7 +6,6 @@ import { FileExplorerTreeResizeHandle } from '@/features/file-explorer/ui/FileEx
 export interface FileExplorerTreeConfig {
   currentPath: string;
   getFileAccessMode: (path: string) => backend.FileAccessMode;
-  handleCollapseTree: () => void;
   handleResizeKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   isResizing: boolean;
   isTreeCollapsed: boolean;
@@ -33,7 +32,6 @@ export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
       <FileExplorerTreePane
         currentPath={tree.currentPath}
         getFileAccessMode={tree.getFileAccessMode}
-        handleCollapseTree={tree.handleCollapseTree}
         leftWidth={tree.leftWidth}
         loadFiles={tree.loadFiles}
         selectedSerial={tree.selectedSerial}

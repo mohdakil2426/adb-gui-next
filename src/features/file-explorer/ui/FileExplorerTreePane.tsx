@@ -1,23 +1,12 @@
-import { Layers, PanelLeftClose } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { Layers } from 'lucide-react';
 import type { backend } from '@/desktop/models';
+import { FileExplorerPlaces } from '@/features/file-explorer/ui/FileExplorerPlaces';
 import { DirectoryTree } from '@/shared/components/DirectoryTree';
-import { Button } from '@/shared/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
-
-function ToolbarTooltip({ label, children }: { label: string; children: ReactElement }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
+import { Separator } from '@/shared/ui/separator';
 
 interface Props {
   currentPath: string;
   getFileAccessMode: (path: string) => backend.FileAccessMode;
-  handleCollapseTree: () => void;
   leftWidth: number;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   selectedSerial: string | null;
@@ -25,36 +14,20 @@ interface Props {
 }
 
 export function FileExplorerTreePane(props: Props) {
-  const {
-    currentPath,
-    getFileAccessMode,
-    handleCollapseTree,
-    leftWidth,
-    loadFiles,
-    selectedSerial,
-    treeRefreshKey,
-  } = props;
+  const { currentPath, getFileAccessMode, leftWidth, loadFiles, selectedSerial, treeRefreshKey } =
+    props;
+  const noDevice = selectedSerial === null;
+
   return (
     <div
       className="flex min-h-0 shrink-0 flex-col overflow-hidden"
       style={{ width: `${leftWidth}px` }}
     >
-      <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-surface px-2">
+      <FileExplorerPlaces currentPath={currentPath} disabled={noDevice} onNavigate={loadFiles} />
+      <Separator className="mx-2 my-2 shrink-0" />
+      <div className="flex shrink-0 items-center gap-1.5 px-3.5 pb-1">
         <Layers aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="flex-1 text-caption text-muted-foreground uppercase tracking-wide">
-          Device
-        </span>
-        <ToolbarTooltip label="Collapse tree panel">
-          <Button
-            aria-label="Collapse tree panel"
-            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
-            onClick={handleCollapseTree}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <PanelLeftClose aria-hidden="true" className="size-4" />
-          </Button>
-        </ToolbarTooltip>
+        <p className="text-caption text-muted-foreground">Device</p>
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
         <DirectoryTree

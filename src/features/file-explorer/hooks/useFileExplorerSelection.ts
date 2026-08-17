@@ -79,7 +79,10 @@ function selectionReducer(state: SelectionState, action: SelectionAction): Selec
     case 'SET_NAMES': {
       const selectedNames =
         typeof action.payload === 'function' ? action.payload(state.selectedNames) : action.payload;
-      return selectedNames === state.selectedNames ? state : { ...state, selectedNames };
+      if (selectedNames === state.selectedNames) {
+        return state;
+      }
+      return { isMultiSelectMode: selectedNames.size > 0, selectedNames };
     }
     case 'SET_MODE': {
       const isMultiSelectMode =
@@ -153,6 +156,7 @@ export function useFileExplorerSelection(
       if (clickedIndex !== -1) {
         lastClickedIndexRef.current = clickedIndex;
       }
+      dispatch({ type: 'SET_NAMES', payload: new Set([file.name]) });
     },
     [],
   );

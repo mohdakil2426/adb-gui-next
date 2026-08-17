@@ -38,13 +38,13 @@ export function FileExplorerRowSkeleton() {
           key={index}
           style={{ gridTemplateColumns: FILE_TABLE_COLUMNS, height: FILE_ROW_HEIGHT }}
         >
-          <Skeleton className="size-4 rounded-sm" />
           <Skeleton
             className="h-3"
             style={{ width: SKELETON_NAME_WIDTHS[index % SKELETON_NAME_WIDTHS.length] }}
           />
-          <Skeleton className="h-3 w-12" />
           <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-3 w-12" />
+          <Skeleton className="h-3 w-10" />
         </div>
       ))}
     </output>
@@ -101,7 +101,7 @@ export function PermissionDeniedState({ rootAccessGranted }: { rootAccessGranted
       description={
         rootAccessGranted
           ? 'Root is enabled but this location is still blocked. It may be a restricted kernel mount — try a path under /sdcard.'
-          : 'This location needs elevated permissions. Enable root access with the shield button in the toolbar, then refresh.'
+          : 'This location needs elevated permissions. Enable root access with the shield button in the command bar, then refresh.'
       }
       icon={Lock}
       title="Access denied"

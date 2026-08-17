@@ -18,22 +18,15 @@ interface TreeNode {
 
 const INITIAL_NODES: TreeNode[] = [
   {
-    path: '/sdcard/',
-    name: 'sdcard',
+    path: '/',
+    name: 'Root',
     isExpanded: false,
     children: null,
     isLoading: false,
   },
   {
     path: '/storage/',
-    name: 'storage',
-    isExpanded: false,
-    children: null,
-    isLoading: false,
-  },
-  {
-    path: '/',
-    name: 'root',
+    name: 'Storage',
     isExpanded: false,
     children: null,
     isLoading: false,
@@ -120,12 +113,13 @@ type FlatRow =
 function flattenTree(nodes: TreeNode[], currentPath: string, depth: number, out: FlatRow[]): void {
   for (const node of nodes) {
     const isActive = currentPath === node.path || currentPath === `${node.path}/`;
+    const isAncestor = !isActive && node.path !== '/' && currentPath.startsWith(node.path);
     out.push({
       kind: 'node',
       node,
       depth,
       isActive,
-      isAncestor: !isActive && currentPath.startsWith(node.path),
+      isAncestor,
     });
     if (node.isExpanded && node.children !== null) {
       if (node.children.length === 0) {
@@ -160,7 +154,7 @@ const TreeRow = memo(function TreeRow({
       aria-level={depth + 1}
       aria-selected={isActive}
       className={cn(
-        'flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 text-body transition-colors',
+        'mx-1 flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-md py-1.5 text-body transition-colors',
         'hover:bg-accent hover:text-accent-foreground',
         isActive && 'bg-accent font-medium text-accent-foreground',
         isAncestor && 'text-foreground',
@@ -415,7 +409,7 @@ export function DirectoryTree({
 
   return (
     <ScrollArea className="h-full min-h-0 w-full">
-      <div aria-label="Device filesystem" className="min-w-0 py-1.5 pr-1.5" role="tree">
+      <div aria-label="Device filesystem" className="min-w-0 py-1 pr-1" role="tree">
         {rows.map((row) =>
           row.kind === 'empty' ? (
             <div

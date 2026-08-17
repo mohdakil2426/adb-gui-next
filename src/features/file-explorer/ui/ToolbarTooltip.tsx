@@ -5,7 +5,9 @@ export function ToolbarTooltip({ label, children }: { label: string; children: R
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent side="bottom" sideOffset={6}>
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 }

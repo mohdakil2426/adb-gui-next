@@ -37,7 +37,9 @@ export function FileExplorerRootAccessButton({ disabled, onToggle, rootAccessGra
           )}
         </Button>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent side="bottom" sideOffset={6}>
+        {label}
+      </TooltipContent>
     </Tooltip>
   );
 }

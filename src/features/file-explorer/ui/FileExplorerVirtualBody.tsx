@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useFileExplorerRowVirtualizer } from '@/features/file-explorer/hooks/useFileExplorerRowVirtualizer';
 import {
   FILE_TABLE_CELL_COUNT,
-  FILE_TABLE_CELL_COUNT_WITH_SELECTION,
   PHANTOM_ROW_HEIGHT,
 } from '@/features/file-explorer/model/fileExplorerConstants';
 import type {
@@ -25,6 +24,7 @@ import { cn } from '@/shared/utils/cn';
 interface Props {
   actions: FileExplorerActions;
   editing: FileExplorerEditing;
+  fileTableColumns: string;
   listing: FileExplorerListing;
   selection: FileExplorerSelection;
   status: FileExplorerStatus;
@@ -41,6 +41,7 @@ function resolveRowEntry(target: EventTarget | null, visibleList: FileEntry[]): 
 export function FileExplorerVirtualBody({
   actions,
   editing,
+  fileTableColumns,
   listing,
   selection,
   status,
@@ -80,19 +81,17 @@ export function FileExplorerVirtualBody({
                 left: 0,
                 width: '100%',
                 height: PHANTOM_ROW_HEIGHT,
-                gridTemplateColumns: listing.fileTableColumns,
+                gridTemplateColumns: fileTableColumns,
               }}
             >
-              {selection.isMultiSelectMode ? <TableCell className="min-w-0 pr-0 pl-3" /> : null}
-              <TableCell className="min-w-0 py-2 pr-0 pl-3">
-                {editing.creatingType === 'folder' ? (
-                  <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
-                ) : (
-                  <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
-                )}
-              </TableCell>
-              <TableCell className="col-span-3 min-w-0 py-2" colSpan={3}>
+              <TableCell className="min-w-0 px-2 py-0">
                 <div className="flex min-w-0 items-center gap-2">
+                  <span className="size-4 shrink-0" />
+                  {editing.creatingType === 'folder' ? (
+                    <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                  ) : (
+                    <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
+                  )}
                   <Input
                     aria-label={
                       editing.creatingType === 'folder' ? 'New folder name' : 'New file name'
@@ -134,6 +133,9 @@ export function FileExplorerVirtualBody({
                   ) : null}
                 </div>
               </TableCell>
+              <TableCell className="min-w-0" />
+              <TableCell className="min-w-0" />
+              <TableCell className="min-w-0" />
             </TableRow>
           )}
 
@@ -145,16 +147,12 @@ export function FileExplorerVirtualBody({
                 top: listing.phantomOffset,
                 left: 0,
                 width: '100%',
-                gridTemplateColumns: listing.fileTableColumns,
+                gridTemplateColumns: fileTableColumns,
               }}
             >
               <TableCell
                 className="col-span-full h-32 text-center text-body text-muted-foreground"
-                colSpan={
-                  selection.isMultiSelectMode
-                    ? FILE_TABLE_CELL_COUNT_WITH_SELECTION
-                    : FILE_TABLE_CELL_COUNT
-                }
+                colSpan={FILE_TABLE_CELL_COUNT}
               >
                 No files match &ldquo;{listing.searchQuery}&rdquo; — clear the filter to see all{' '}
                 {listing.fileList.length} entries.
@@ -172,10 +170,9 @@ export function FileExplorerVirtualBody({
               <FileExplorerRow
                 currentPath={listing.currentPath}
                 file={file}
-                fileTableColumns={listing.fileTableColumns}
+                fileTableColumns={fileTableColumns}
                 index={virtualRow.index}
                 isBeingRenamed={isBeingRenamed}
-                isMultiSelectMode={selection.isMultiSelectMode}
                 isNavigable={file.type === 'Directory' || file.type === 'Symlink'}
                 isSelected={selection.selectedNames.has(file.name)}
                 key={virtualRow.key}

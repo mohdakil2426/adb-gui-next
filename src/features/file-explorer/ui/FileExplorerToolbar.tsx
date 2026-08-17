@@ -1,4 +1,19 @@
-import { ArrowLeft, ArrowRight, ArrowUp, PanelLeft, Search, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ChevronDown,
+  FilePlus2,
+  FolderPlus,
+  PanelLeft,
+  PanelLeftClose,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react';
+import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
 import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
 import { FileExplorerPathBar } from '@/features/file-explorer/ui/FileExplorerPathBar';
 import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
@@ -6,7 +21,20 @@ import { FileExplorerTransferButton } from '@/features/file-explorer/ui/FileExpl
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
 import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
-import { Input } from '@/shared/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/shared/ui/dropdown-menu';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '@/shared/ui/input-group';
+import { Kbd, KbdGroup } from '@/shared/ui/kbd';
 import { Separator } from '@/shared/ui/separator';
 
 interface FileExplorerToolbarProps {
@@ -22,13 +50,13 @@ interface FileExplorerToolbarProps {
   isTreeCollapsed: boolean;
   onBack: () => void;
   onClearSearch: () => void;
+  onCollapseTree: () => void;
   onCreateFile: () => void;
   onCreateFolder: () => void;
+  onDeleteSelection: () => void;
   onExpandTree: () => void;
   onExport: () => void;
-  /** History forward — the mirror of `onBack`. */
   onForward: () => void;
-  /** One level up the current path. Unrelated to history. */
   onGoUp: () => void;
   onImportFile: () => void;
   onImportFolder: () => void;
@@ -38,20 +66,15 @@ interface FileExplorerToolbarProps {
   onPathEditingCommit: () => void;
   onPathEditingStop: () => void;
   onRefresh: () => void;
+  onRename: (entry: FileEntry) => void;
   onRootAccessToggle: () => Promise<void>;
   onSearchQueryChange: (value: string) => void;
   rootAccessGranted: boolean;
   searchQuery: string;
+  selectedCount: number;
+  singleSelected: FileEntry | null;
 }
 
-/**
- * Single 44px toolbar row on the unified control scale.
- *
- * Every control here was 44px square — the largest icon button in the app, in
- * the one view that needs the most of them — while the filter input was 28px
- * tall and 112px wide, the narrowest. Both now sit on the 32px / h-8 scale the
- * header and Dashboard use.
- */
 export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
   const {
     canGoBack,
@@ -66,8 +89,10 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     isTreeCollapsed,
     onBack,
     onClearSearch,
+    onCollapseTree,
     onCreateFile,
     onCreateFolder,
+    onDeleteSelection,
     onExpandTree,
     onExport,
     onForward,
@@ -80,140 +105,225 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onPathEditingCommit,
     onPathEditingStop,
     onRefresh,
+    onRename,
     onRootAccessToggle,
     onSearchQueryChange,
     rootAccessGranted,
     searchQuery,
+    selectedCount,
+    singleSelected,
   } = props;
 
   return (
-    <div className="flex h-11 shrink-0 items-center gap-1 overflow-hidden border-border border-b bg-surface px-2">
-      {isTreeCollapsed ? (
-        <>
-          <ToolbarTooltip label="Show tree panel">
+    <div className="flex shrink-0 flex-col border-border border-b">
+      <div className="flex h-10 items-center gap-1.5 px-2">
+        <div className="flex shrink-0 items-center gap-0.5">
+          <ToolbarTooltip label="Back (Alt+Left)">
             <Button
-              aria-label="Show tree panel"
-              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
-              onClick={onExpandTree}
+              aria-label="Navigate back"
+              className="size-8 shrink-0"
+              disabled={!canGoBack || isBusy}
+              onClick={onBack}
               size="icon-sm"
               variant="ghost"
             >
-              <PanelLeft aria-hidden="true" className="size-4" />
+              <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
             </Button>
           </ToolbarTooltip>
-          <Separator className="mx-0.5 h-4" orientation="vertical" />
-        </>
-      ) : null}
-
-      <div className="flex shrink-0 items-center gap-0.5">
-        <ToolbarTooltip label="Back (Alt+Left)">
-          <Button
-            aria-label="Navigate back"
-            className="size-8 shrink-0"
-            disabled={!canGoBack || isBusy}
-            onClick={onBack}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
-          </Button>
-        </ToolbarTooltip>
-        <ToolbarTooltip label="Forward (Alt+Right)">
-          <Button
-            aria-label="Navigate forward"
-            className="size-8 shrink-0"
-            disabled={!canGoForward || isBusy}
-            onClick={onForward}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
-          </Button>
-        </ToolbarTooltip>
-        <ToolbarTooltip label="Go up one directory">
-          <Button
-            aria-label="Go up one directory"
-            className="size-8 shrink-0"
-            disabled={currentPath === '/' || isBusy}
-            onClick={onGoUp}
-            size="icon-sm"
-            variant="ghost"
-          >
-            <ArrowUp aria-hidden="true" className="size-4 shrink-0" />
-          </Button>
-        </ToolbarTooltip>
-      </div>
-
-      <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
-
-      <FileExplorerPathBar
-        currentPath={currentPath}
-        editPathValue={editPathValue}
-        isEditingPath={isEditingPath}
-        onNavigate={onNavigate}
-        onPathClick={onPathClick}
-        onPathEditingChange={onPathEditingChange}
-        onPathEditingCommit={onPathEditingCommit}
-        onPathEditingStop={onPathEditingStop}
-      />
-
-      <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
-
-      <div className="flex min-w-0 shrink-0 items-center gap-0.5">
-        <RefreshButton
-          aria-label="Refresh directory"
-          isLoading={isLoading}
-          mode="icon"
-          onClick={onRefresh}
-          tooltip="Refresh (F5)"
-        />
-        <FileExplorerRootAccessButton
-          disabled={isBusy}
-          onToggle={onRootAccessToggle}
-          rootAccessGranted={rootAccessGranted}
-        />
-        <Separator className="mx-0.5 h-4 shrink-0" orientation="vertical" />
-        <div className="relative flex items-center">
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-2 size-3.5 shrink-0 text-muted-foreground"
+          <ToolbarTooltip label="Forward (Alt+Right)">
+            <Button
+              aria-label="Navigate forward"
+              className="size-8 shrink-0"
+              disabled={!canGoForward || isBusy}
+              onClick={onForward}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Go up one directory">
+            <Button
+              aria-label="Go up one directory"
+              className="size-8 shrink-0"
+              disabled={currentPath === '/' || isBusy}
+              onClick={onGoUp}
+              size="icon-sm"
+              variant="ghost"
+            >
+              <ArrowUp aria-hidden="true" className="size-4 shrink-0" />
+            </Button>
+          </ToolbarTooltip>
+          <RefreshButton
+            aria-label="Refresh directory"
+            isLoading={isLoading}
+            mode="icon"
+            onClick={onRefresh}
+            tooltip="Refresh (F5)"
           />
-          <Input
+        </div>
+
+        <FileExplorerPathBar
+          currentPath={currentPath}
+          editPathValue={editPathValue}
+          isEditingPath={isEditingPath}
+          onNavigate={onNavigate}
+          onPathClick={onPathClick}
+          onPathEditingChange={onPathEditingChange}
+          onPathEditingCommit={onPathEditingCommit}
+          onPathEditingStop={onPathEditingStop}
+        />
+
+        <InputGroup className="h-8 @2xl:w-52 w-40 shrink-0">
+          <InputGroupAddon>
+            <Search aria-hidden="true" />
+          </InputGroupAddon>
+          <InputGroupInput
             aria-label="Filter files"
-            className="h-8 @md:w-44 w-36 pr-7 pl-7 text-body transition-[width] duration-200 ease-standard @md:focus-visible:w-64 focus-visible:w-52"
             id="fe-search-input"
             onChange={(event) => onSearchQueryChange(event.target.value)}
-            placeholder="Filter…"
+            placeholder="Search this folder"
             value={searchQuery}
           />
           {searchQuery ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                aria-label="Clear filter"
+                onClick={onClearSearch}
+                size="icon-xs"
+                variant="ghost"
+              >
+                <X aria-hidden="true" />
+              </InputGroupButton>
+            </InputGroupAddon>
+          ) : null}
+        </InputGroup>
+      </div>
+
+      <div className="flex h-10 items-center gap-3 px-3">
+        <ToolbarTooltip label={isTreeCollapsed ? 'Show tree panel' : 'Collapse tree panel'}>
+          <Button
+            aria-label={isTreeCollapsed ? 'Show tree panel' : 'Collapse tree panel'}
+            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={isTreeCollapsed ? onExpandTree : onCollapseTree}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            {isTreeCollapsed ? (
+              <PanelLeft aria-hidden="true" className="size-4" />
+            ) : (
+              <PanelLeftClose aria-hidden="true" className="size-4" />
+            )}
+          </Button>
+        </ToolbarTooltip>
+
+        <Separator className="mx-0.5 h-5" orientation="vertical" />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
-              aria-label="Clear filter"
-              className="absolute right-1 size-6 text-muted-foreground hover:text-foreground"
-              onClick={onClearSearch}
+              className="h-8 shrink-0 gap-1 px-2.5"
+              disabled={isBusy}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              <Plus aria-hidden="true" />
+              New
+              <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={onCreateFolder}>
+                <FolderPlus aria-hidden="true" className="size-4 shrink-0" />
+                Folder
+                <KbdGroup className="ml-auto pl-4">
+                  <Kbd>Ctrl</Kbd>
+                  <Kbd>Shift</Kbd>
+                  <Kbd>N</Kbd>
+                </KbdGroup>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onCreateFile}>
+                <FilePlus2 aria-hidden="true" className="size-4 shrink-0" />
+                File
+                <KbdGroup className="ml-auto pl-4">
+                  <Kbd>Ctrl</Kbd>
+                  <Kbd>N</Kbd>
+                </KbdGroup>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Separator className="mx-1 h-5" orientation="vertical" />
+
+        <div className="flex items-center gap-1.5">
+          <ToolbarTooltip label="Rename">
+            <Button
+              aria-label="Rename"
+              className="size-8 shrink-0"
+              disabled={isBusy || !singleSelected}
+              onClick={() => {
+                if (singleSelected) {
+                  onRename(singleSelected);
+                }
+              }}
               size="icon-sm"
               type="button"
               variant="ghost"
             >
-              <X aria-hidden="true" className="size-3.5" />
+              <Pencil aria-hidden="true" className="size-4" />
             </Button>
-          ) : null}
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Delete">
+            <Button
+              aria-label="Delete"
+              className="size-8 shrink-0"
+              disabled={isBusy || selectedCount === 0}
+              onClick={onDeleteSelection}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </Button>
+          </ToolbarTooltip>
         </div>
-        <FileExplorerTransferButton
-          disabled={isBusy}
-          isPullDisabled={isPullDisabled}
-          isPushing={isPushing}
-          onExport={onExport}
-          onImportFile={onImportFile}
-          onImportFolder={onImportFolder}
-        />
-        <FileExplorerMoreActionsMenu
-          disabled={isBusy}
-          isPullDisabled={isPullDisabled}
-          onCreateFile={onCreateFile}
-          onCreateFolder={onCreateFolder}
-          onExport={onExport}
-        />
+
+        <Separator className="mx-1 h-5" orientation="vertical" />
+
+        <div className="flex items-center gap-1.5">
+          <FileExplorerRootAccessButton
+            disabled={isBusy}
+            onToggle={onRootAccessToggle}
+            rootAccessGranted={rootAccessGranted}
+          />
+          <ToolbarTooltip label="Transfer">
+            <span className="inline-flex">
+              <FileExplorerTransferButton
+                disabled={isBusy}
+                isPullDisabled={isPullDisabled}
+                isPushing={isPushing}
+                onExport={onExport}
+                onImportFile={onImportFile}
+                onImportFolder={onImportFolder}
+              />
+            </span>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="More">
+            <span className="inline-flex">
+              <FileExplorerMoreActionsMenu
+                disabled={isBusy}
+                isPullDisabled={isPullDisabled}
+                onCreateFile={onCreateFile}
+                onCreateFolder={onCreateFolder}
+                onExport={onExport}
+              />
+            </span>
+          </ToolbarTooltip>
+        </div>
       </div>
     </div>
   );

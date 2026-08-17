@@ -102,6 +102,32 @@ describe('ViewFileExplorer', () => {
     expect(scrollRegion).toHaveClass('flex-1');
     expect(scrollRegion).toHaveClass('overscroll-contain');
     expect(screen.getByRole('button', { name: 'More file actions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Collapse tree panel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^New/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Internal storage' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Download' })).toBeInTheDocument();
+    expect(screen.getByText('Root')).toBeInTheDocument();
+    expect(screen.getByText('Storage')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Date modified/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Type/ })).toBeInTheDocument();
+  });
+
+  it('clears a row selection on empty list click and never shows a selection summary bar', async () => {
+    const user = userEvent.setup();
+
+    render(<ViewFileExplorer activeView="files" />);
+
+    const row = await screen.findByText(longFileName);
+    await user.click(row);
+
+    expect(row.closest('[data-state="selected"]')).not.toBeNull();
+    expect(screen.queryByText(/items selected/)).not.toBeInTheDocument();
+
+    const scrollRegion = row.closest('.overflow-auto');
+    expect(scrollRegion).not.toBeNull();
+    fireEvent.click(scrollRegion as HTMLElement);
+
+    expect(row.closest('[data-state="selected"]')).toBeNull();
   });
 
   it('uses a wide accessible resize handle for the tree panel', async () => {
@@ -118,6 +144,18 @@ describe('ViewFileExplorer', () => {
     fireEvent.keyDown(resizeHandle, { key: 'ArrowRight' });
 
     expect(resizeHandle).toHaveAttribute('aria-valuenow', '296');
+  });
+
+  it('keeps the tree toggle on the command band after collapsing', async () => {
+    const user = userEvent.setup();
+
+    render(<ViewFileExplorer activeView="files" />);
+
+    await screen.findByText(longFileName);
+    await user.click(screen.getByRole('button', { name: 'Collapse tree panel' }));
+
+    expect(screen.getByRole('button', { name: 'Show tree panel' })).toBeInTheDocument();
+    expect(screen.queryByRole('separator', { name: 'Resize tree panel' })).not.toBeInTheDocument();
   });
 
   it('verifies root access without navigating the whole explorer into root', async () => {

@@ -3,6 +3,7 @@ import type {
   SortDir,
   SortField,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { fileTypeLabel } from '@/features/file-explorer/utils/fileExplorerTypeLabel';
 
 /** Sort a file list by field + direction, always keeping dirs before files. */
 export function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir): FileEntry[] {
@@ -24,6 +25,10 @@ export function sortEntries(entries: FileEntry[], field: SortField, dir: SortDir
       const aNum = Number.parseInt(a.size, 10);
       const bNum = Number.parseInt(b.size, 10);
       const cmp = isNaN(aNum) || isNaN(bNum) ? a.size.localeCompare(b.size) : aNum - bNum;
+      return dir === 'asc' ? cmp : -cmp;
+    }
+    if (field === 'type') {
+      const cmp = fileTypeLabel(a.type).localeCompare(fileTypeLabel(b.type));
       return dir === 'asc' ? cmp : -cmp;
     }
     const cmp = (a.date + a.time).localeCompare(b.date + b.time);

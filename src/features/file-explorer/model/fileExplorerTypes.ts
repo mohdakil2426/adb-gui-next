@@ -4,7 +4,7 @@ import type { backend } from '@/desktop/models';
 export type FileEntry = backend.FileEntry;
 export type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
 export type CreatingType = 'file' | 'folder' | null;
-export type SortField = 'name' | 'size' | 'date';
+export type SortField = 'name' | 'size' | 'date' | 'type';
 export type SortDir = 'asc' | 'desc';
 
 /** Every File Explorer callback. Identity-stable for the life of the view, so
@@ -13,6 +13,7 @@ export interface FileExplorerActions {
   cancelCreate: () => void;
   clearSelection: () => void;
   handleClearSearch: () => void;
+  handleCollapseTree: () => void;
   handleCreateChange: (value: string) => void;
   handleCreateConfirm: () => Promise<void>;
   handleDeleteFromSelection: () => void;
@@ -58,8 +59,8 @@ export interface FileExplorerActions {
 export interface FileExplorerListing {
   currentPath: string;
   fileList: FileEntry[];
-  fileTableColumns: string;
   loadError: LoadError;
+  phantomOffset: number;
   phantomOffset: number;
   searchQuery: string;
   sortDir: SortDir;
@@ -81,6 +82,7 @@ export interface FileExplorerSelection {
   allSelected: boolean;
   isMultiSelectMode: boolean;
   selectedNames: Set<string>;
+  singleSelected: FileEntry | null;
   someSelected: boolean;
 }
 

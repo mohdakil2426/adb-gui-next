@@ -2,6 +2,7 @@ import { File, Folder, Link } from 'lucide-react';
 import path from 'path-browserify';
 import { memo } from 'react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import { fileTypeLabel } from '@/features/file-explorer/utils/fileExplorerTypeLabel';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
 import { TableCell, TableRow } from '@/shared/ui/table';
@@ -14,7 +15,6 @@ interface Props {
   fileTableColumns: string;
   index: number;
   isBeingRenamed: boolean;
-  isMultiSelectMode: boolean;
   isNavigable: boolean;
   isSelected: boolean;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
@@ -33,19 +33,12 @@ interface Props {
   visibleCount: number;
 }
 
-/**
- * Memoized row. Every callback prop is identity-stable and every value prop is
- * a primitive or the row's own entry, so a selection or rename change re-renders
- * only the rows it actually touches. The context menu lives once on the table
- * body — mounting a Radix menu per row was the bulk of this list's render cost.
- */
 export const FileExplorerRow = memo(function FileExplorerRow({
   currentPath,
   file,
   fileTableColumns,
   index,
   isBeingRenamed,
-  isMultiSelectMode,
   isNavigable,
   isSelected,
   loadFiles,
@@ -67,7 +60,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
     <TableRow
       aria-posinset={index + 1}
       aria-setsize={visibleCount}
-      className="grid cursor-pointer items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className="grid cursor-pointer items-center border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       data-index={index}
       data-state={isSelected ? 'selected' : ''}
       onClick={(e) => onRowClick(file, e)}
@@ -97,31 +90,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
       }}
       tabIndex={0}
     >
-      {isMultiSelectMode ? (
-        <TableCell
-          className="min-w-0 py-2 pr-0 pl-3"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isBeingRenamed) {
-              toggleCheckbox(file.name);
-            }
-          }}
-        >
-          {isBeingRenamed ? null : (
-            <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
-          )}
-        </TableCell>
-      ) : null}
-      <TableCell className="min-w-0 py-2 pl-3">
-        {file.type === 'Directory' ? (
-          <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
-        ) : file.type === 'Symlink' ? (
-          <Link aria-hidden="true" className="size-4 shrink-0 text-info" />
-        ) : (
-          <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
-        )}
-      </TableCell>
-      <TableCell className="min-w-0 whitespace-normal break-words px-3 py-2 text-body">
+      <TableCell className="min-w-0 px-3 py-2 text-body">
         {isBeingRenamed ? (
           <div className="flex min-w-0 flex-col gap-0.5">
             <Input
@@ -151,24 +120,49 @@ export const FileExplorerRow = memo(function FileExplorerRow({
             ) : null}
           </div>
         ) : (
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="min-w-0 break-words leading-tight">{file.name}</span>
-            {file.type === 'Symlink' && file.linkTarget ? (
-              <span className="min-w-0 break-words font-mono text-mono-sm text-muted-foreground">
-                → {file.linkTarget}
-              </span>
-            ) : null}
+          <div className="flex min-w-0 items-center gap-2">
+            <span
+              className="flex size-4 shrink-0 items-center justify-center"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCheckbox(file.name);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleCheckbox(file.name);
+                }
+              }}
+            >
+              <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
+            </span>
+            {file.type === 'Directory' ? (
+              <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            ) : file.type === 'Symlink' ? (
+              <Link aria-hidden="true" className="size-4 shrink-0 text-info" />
+            ) : (
+              <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
+            )}
+            <div className="min-w-0 flex-1">
+              <span className="block min-w-0 break-words leading-tight">{file.name}</span>
+              {file.type === 'Symlink' && file.linkTarget ? (
+                <span className="block min-w-0 break-words font-mono text-mono-sm text-muted-foreground">
+                  → {file.linkTarget}
+                </span>
+              ) : null}
+            </div>
           </div>
         )}
       </TableCell>
-      <TableCell className="numeric min-w-0 px-3 py-2 text-right text-caption text-muted-foreground">
-        {/* `ls` reports size as text; parse once so the one numeric formatter applies. */}
-        {file.type === 'Directory' ? EMPTY_VALUE : formatBytes(Number.parseInt(file.size, 10))}
+      <TableCell className="numeric min-w-0 px-3 py-2 text-caption text-muted-foreground">
+        {file.date} {file.time}
       </TableCell>
-      <TableCell className="numeric min-w-0 px-3 py-2 text-right text-caption text-muted-foreground">
-        {file.date}
-        <span className="px-1 text-foreground-subtle">·</span>
-        {file.time}
+      <TableCell className="min-w-0 px-3 py-2 text-caption text-muted-foreground">
+        {fileTypeLabel(file.type)}
+      </TableCell>
+      <TableCell className="numeric min-w-0 px-3 py-2 text-caption text-muted-foreground">
+        {file.type === 'Directory' ? EMPTY_VALUE : formatBytes(Number.parseInt(file.size, 10))}
       </TableCell>
     </TableRow>
   );
