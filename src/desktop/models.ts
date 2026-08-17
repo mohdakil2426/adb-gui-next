@@ -297,6 +297,23 @@ export namespace backend {
 
   export type FileAccessMode = 'normal' | 'root';
 
+  export type DeviceTransferMode = 'copy' | 'cut';
+
+  export type DeviceEditorTarget = 'default' | 'vscode' | 'notepad' | 'folder';
+
+  export interface DeviceTransferResult {
+    copied: number;
+    message: string;
+    moved: number;
+    skippedExisting: string[];
+  }
+
+  export interface FileEditPushed {
+    message: string;
+    ok: boolean;
+    remotePath: string;
+  }
+
   export interface InstalledPackage {
     label: string;
     name: string;

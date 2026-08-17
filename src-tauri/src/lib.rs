@@ -80,6 +80,7 @@ pub fn run() {
             commands::create_directory,
             commands::create_file,
             commands::delete_files,
+            commands::transfer_device_files,
             commands::disconnect_wireless_adb,
             commands::enable_wireless_adb,
             commands::extract_payload,

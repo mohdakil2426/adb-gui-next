@@ -207,6 +207,26 @@ export function DeleteFiles(
   return call('delete_files', { paths, serial, accessMode });
 }
 
+export function TransferDeviceFiles(
+  mode: backend.DeviceTransferMode,
+  sources: string[],
+  destDir: string,
+  overwrite: boolean,
+  serial: string | null | undefined,
+  clipboardSerial: string,
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+): Promise<backend.DeviceTransferResult> {
+  return call('transfer_device_files', {
+    accessMode,
+    clipboardSerial,
+    destDir,
+    mode,
+    overwrite,
+    serial,
+    sources,
+  });
+}
+
 export function RenameFile(
   oldPath: string,
   newPath: string,
@@ -599,8 +619,9 @@ export function OpenDeviceFileInEditor(
   remotePath: string,
   serial?: string | null,
   accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
+  target: backend.DeviceEditorTarget = 'default',
 ): Promise<string> {
-  return call('open_device_file_in_editor', { remotePath, serial, accessMode });
+  return call('open_device_file_in_editor', { remotePath, serial, accessMode, target });
 }
 
 export function GetLogcatSnapshot(serial?: string | null, lines?: number): Promise<string> {

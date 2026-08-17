@@ -1,11 +1,18 @@
 use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
 use crate::helpers::{validate_path_components, validate_safe_device_path};
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::AppHandle;
+use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::{
+    Arc, Mutex, OnceLock,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
 #[serde(rename_all = "camelCase")]
@@ -27,6 +34,40 @@ pub struct FileEntry {
     /// For symlinks: the resolved target path (e.g. "/proc/self/fd").
     /// Empty string for regular files and directories.
     pub link_target: String,
+}
+
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum DeviceTransferMode {
+    Copy,
+    Cut,
+}
+
+#[derive(Debug, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceTransferResult {
+    pub copied: u32,
+    pub moved: u32,
+    pub skipped_existing: Vec<String>,
+    pub message: String,
+}
+
+#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+#[serde(rename_all = "camelCase")]
+pub enum DeviceEditorTarget {
+    #[default]
+    Default,
+    Vscode,
+    Notepad,
+    Folder,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct FileEditPushed {
+    remote_path: String,
+    ok: bool,
+    message: String,
 }
 
 fn quote_shell_arg(value: &str) -> String {
@@ -266,10 +307,259 @@ pub async fn create_directory(
     .map_err(|e| e.to_string())?
 }
 
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn transfer_device_files(
+    app: AppHandle,
+    mode: DeviceTransferMode,
+    sources: Vec<String>,
+    dest_dir: String,
+    overwrite: bool,
+    serial: Option<String>,
+    clipboard_serial: String,
+    access_mode: Option<FileAccessMode>,
+) -> CmdResult<DeviceTransferResult> {
+    let access_mode = access_mode.unwrap_or_default();
+    let dest_dir = dest_dir.trim().to_string();
+    let sources: Vec<String> =
+        sources.into_iter().map(|source| source.trim().to_string()).collect();
+    paste_guard(mode, &sources, &dest_dir, serial.as_deref(), &clipboard_serial)?;
+    validate_write_path_for_mode(&dest_dir, access_mode)?;
+    for source in &sources {
+        validate_write_path_for_mode(source, access_mode)?;
+        validate_write_path_for_mode(&destination_path(&dest_dir, source), access_mode)?;
+    }
+    info!("Transferring {} item(s) into {dest_dir} ({mode:?})", sources.len());
+    tokio::task::spawn_blocking(move || {
+        let planned: Vec<(String, String)> = sources
+            .iter()
+            .map(|source| (source.clone(), destination_path(&dest_dir, source)))
+            .collect();
+        if !overwrite {
+            let mut skipped_existing = Vec::new();
+            for (_, dest) in &planned {
+                if remote_exists(&app, serial.as_deref(), access_mode, dest)? {
+                    skipped_existing.push(dest.clone());
+                }
+            }
+            if !skipped_existing.is_empty() {
+                return Ok(DeviceTransferResult {
+                    skipped_existing,
+                    message: "Destination already exists".into(),
+                    ..DeviceTransferResult::default()
+                });
+            }
+        }
+
+        let copy_dir = dest_dir_for_cp(&dest_dir);
+        let mut copied = 0_u32;
+        let mut moved = 0_u32;
+        for (source, dest) in planned {
+            let cmd = match mode {
+                DeviceTransferMode::Copy => {
+                    format!("cp -a {} {}", quote_shell_arg(&source), quote_shell_arg(&copy_dir))
+                }
+                DeviceTransferMode::Cut => {
+                    format!("mv -f {} {}", quote_shell_arg(&source), quote_shell_arg(&dest))
+                }
+            };
+            run_shell_for_mode(&app, serial.as_deref(), access_mode, &cmd)?;
+            match mode {
+                DeviceTransferMode::Copy => copied += 1,
+                DeviceTransferMode::Cut => moved += 1,
+            }
+        }
+        let message = if copied > 0 {
+            format!("Copied {copied} item(s)")
+        } else {
+            format!("Moved {moved} item(s)")
+        };
+        Ok(DeviceTransferResult { copied, moved, skipped_existing: Vec::new(), message })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 fn remote_basename(remote: &str) -> &str {
     let trimmed = remote.trim_end_matches('/');
     let name = trimmed.rsplit('/').next().unwrap_or("");
     if name.is_empty() { "root-transfer" } else { name }
+}
+
+fn join_remote_dir(dir: &str, name: &str) -> String {
+    let trimmed = dir.trim();
+    let base = if trimmed == "/" { "" } else { trimmed.trim_end_matches('/') };
+    format!("{base}/{name}")
+}
+
+fn destination_path(dest_dir: &str, source: &str) -> String {
+    join_remote_dir(dest_dir, remote_basename(source))
+}
+
+fn normalize_dir(dir: &str) -> String {
+    let trimmed = dir.trim();
+    if trimmed.is_empty() || trimmed == "/" {
+        return "/".into();
+    }
+    format!("{}/", trimmed.trim_end_matches('/'))
+}
+
+fn parent_dir(path: &str) -> String {
+    let trimmed = path.trim().trim_end_matches('/');
+    match trimmed.rfind('/') {
+        None | Some(0) => "/".into(),
+        Some(index) => format!("{}/", &trimmed[..index]),
+    }
+}
+
+fn dest_dir_for_cp(dir: &str) -> String {
+    let trimmed = dir.trim();
+    if trimmed.is_empty() || trimmed == "/" {
+        "/".into()
+    } else {
+        format!("{}/", trimmed.trim_end_matches('/'))
+    }
+}
+
+fn paste_guard(
+    mode: DeviceTransferMode,
+    sources: &[String],
+    dest_dir: &str,
+    dest_serial: Option<&str>,
+    clipboard_serial: &str,
+) -> CmdResult<()> {
+    if sources.is_empty() {
+        return Err("Nothing to paste".into());
+    }
+    let dest_serial = dest_serial.map(str::trim).filter(|value| !value.is_empty()).unwrap_or("");
+    if dest_serial.is_empty() || dest_serial != clipboard_serial.trim() {
+        return Err("Clipboard is from another device".into());
+    }
+    let dest = normalize_dir(dest_dir);
+    if sources.iter().all(|source| parent_dir(source) == dest) {
+        return Err(match mode {
+            DeviceTransferMode::Cut => "Cannot move items into the same folder".into(),
+            DeviceTransferMode::Copy => "Items are already in this folder".into(),
+        });
+    }
+    Ok(())
+}
+
+fn remote_exists(
+    app: &AppHandle,
+    serial: Option<&str>,
+    access_mode: FileAccessMode,
+    path: &str,
+) -> CmdResult<bool> {
+    let quoted = quote_shell_arg(path);
+    let cmd = format!("test -e {quoted}; echo __EXISTS__:$?");
+    let output = run_shell_for_mode(app, serial, access_mode, &cmd)?;
+    Ok(output.contains("__EXISTS__:0"))
+}
+
+fn unique_editor_basename(serial: Option<&str>, remote: &str) -> String {
+    let serial = serial.unwrap_or("device");
+    let base = remote_basename(remote);
+    let ext = Path::new(base).extension().and_then(|value| value.to_str()).unwrap_or("");
+    let slug = format!("{serial}_{remote}").replace(['/', '\\', ':', ' '], "_");
+    let mut name = crate::helpers::sanitize_filename(&slug);
+    if name.is_empty() {
+        name = "device-file".into();
+    }
+    if ext.is_empty() { name } else { format!("{name}.{ext}") }
+}
+
+fn file_fingerprint(path: &Path) -> CmdResult<(u128, String)> {
+    let meta = std::fs::metadata(path).map_err(|error| error.to_string())?;
+    let mtime = meta
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map_or(0, |duration| duration.as_millis());
+    let bytes = std::fs::read(path).map_err(|error| error.to_string())?;
+    let digest = Sha256::digest(bytes);
+    let mut hash = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+        hash.push_str(&format!("{byte:02x}"));
+    }
+    Ok((mtime, hash))
+}
+
+fn editor_watches() -> &'static Mutex<HashMap<String, Arc<AtomicBool>>> {
+    static WATCHES: OnceLock<Mutex<HashMap<String, Arc<AtomicBool>>>> = OnceLock::new();
+    WATCHES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn cancel_editor_watch(remote: &str) {
+    if let Ok(mut watches) = editor_watches().lock()
+        && let Some(flag) = watches.remove(remote)
+    {
+        flag.store(true, Ordering::Relaxed);
+    }
+}
+
+fn start_editor_watch(
+    app: AppHandle,
+    serial: Option<String>,
+    remote: String,
+    local: PathBuf,
+    access_mode: FileAccessMode,
+) {
+    cancel_editor_watch(&remote);
+    let cancel = Arc::new(AtomicBool::new(false));
+    if let Ok(mut watches) = editor_watches().lock() {
+        watches.insert(remote.clone(), Arc::clone(&cancel));
+    }
+    thread::spawn(move || {
+        let Ok(mut last) = file_fingerprint(&local) else {
+            return;
+        };
+        loop {
+            thread::sleep(Duration::from_millis(500));
+            if cancel.load(Ordering::Relaxed) {
+                break;
+            }
+            let Ok(next) = file_fingerprint(&local) else {
+                break;
+            };
+            if next == last {
+                continue;
+            }
+            thread::sleep(Duration::from_millis(400));
+            if cancel.load(Ordering::Relaxed) {
+                break;
+            }
+            let Ok(stable) = file_fingerprint(&local) else {
+                break;
+            };
+            if stable == last {
+                continue;
+            }
+            let local_str = local.to_string_lossy().into_owned();
+            let result = if access_mode == FileAccessMode::Root {
+                push_root_path(&app, serial.as_deref(), &local_str, &remote)
+            } else {
+                run_adb_for_serial(&app, serial.as_deref(), &["push", &local_str, &remote])
+            };
+            let event = match result {
+                Ok(_) => FileEditPushed {
+                    remote_path: remote.clone(),
+                    ok: true,
+                    message: format!("Saved {remote} to the device"),
+                },
+                Err(error) => {
+                    FileEditPushed { remote_path: remote.clone(), ok: false, message: error }
+                }
+            };
+            if let Err(error) = app.emit("files:edit-pushed", &event) {
+                warn!("failed to emit files:edit-pushed: {error}");
+            }
+            last = stable;
+        }
+        if let Ok(mut watches) = editor_watches().lock() {
+            watches.remove(&remote);
+        }
+    });
 }
 
 fn local_basename(local: &str) -> String {
@@ -363,42 +653,52 @@ fn is_text_extension(name: &str) -> bool {
         .is_some_and(|ext| TEXT_EXTENSIONS.iter().any(|allowed| ext.eq_ignore_ascii_case(allowed)))
 }
 
-fn spawn_editor(path: &std::path::Path) -> CmdResult<()> {
+fn spawn_named(bin: &str, args: &[&str]) -> CmdResult<()> {
+    std::process::Command::new(bin).args(args).spawn().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn spawn_path(bin: impl AsRef<std::ffi::OsStr>, path: &Path) -> CmdResult<()> {
+    std::process::Command::new(bin).arg(path).spawn().map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+fn spawn_which(name: &str, path: &Path) -> CmdResult<bool> {
+    let Ok(bin) = which::which(name) else {
+        return Ok(false);
+    };
+    spawn_path(bin, path)?;
+    Ok(true)
+}
+
+fn spawn_vscode(path: &Path) -> CmdResult<()> {
+    if spawn_which("code", path)? {
+        return Ok(());
+    }
+    Err("VS Code was not found on this computer.".into())
+}
+
+fn spawn_notepad(path: &Path) -> CmdResult<()> {
     #[cfg(target_os = "windows")]
     {
-        if let Ok(code) = which::which("code") {
-            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
-            return Ok(());
-        }
-        std::process::Command::new("notepad").arg(path).spawn().map_err(|e| e.to_string())?;
-        Ok(())
+        spawn_path("notepad", path)
     }
     #[cfg(target_os = "linux")]
     {
-        if let Ok(code) = which::which("code") {
-            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
-            return Ok(());
-        }
         for editor in ["gedit", "kate"] {
-            if let Ok(bin) = which::which(editor) {
-                std::process::Command::new(bin).arg(path).spawn().map_err(|e| e.to_string())?;
+            if spawn_which(editor, path)? {
                 return Ok(());
             }
         }
-        std::process::Command::new("xdg-open").arg(path).spawn().map_err(|e| e.to_string())?;
-        Ok(())
+        spawn_path("xdg-open", path)
     }
     #[cfg(target_os = "macos")]
     {
-        if let Ok(code) = which::which("code") {
-            std::process::Command::new(code).arg(path).spawn().map_err(|e| e.to_string())?;
-            return Ok(());
-        }
         std::process::Command::new("open")
             .args(["-t"])
             .arg(path)
             .spawn()
-            .map_err(|e| e.to_string())?;
+            .map_err(|error| error.to_string())?;
         Ok(())
     }
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
@@ -408,34 +708,79 @@ fn spawn_editor(path: &std::path::Path) -> CmdResult<()> {
     }
 }
 
+fn spawn_in_folder(path: &Path) -> CmdResult<()> {
+    #[cfg(target_os = "windows")]
+    {
+        let select = format!("/select,{}", path.display());
+        spawn_named("explorer", &[&select])
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let parent = path.parent().unwrap_or(path);
+        spawn_path("xdg-open", parent)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .args(["-R"])
+            .arg(path)
+            .spawn()
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+    {
+        let _ = path;
+        Err("showing files in a folder is not supported on this OS".into())
+    }
+}
+
+fn spawn_editor(path: &Path) -> CmdResult<()> {
+    if spawn_which("code", path)? {
+        return Ok(());
+    }
+    spawn_notepad(path)
+}
+
+fn spawn_editor_target(path: &Path, target: DeviceEditorTarget) -> CmdResult<()> {
+    match target {
+        DeviceEditorTarget::Default => spawn_editor(path),
+        DeviceEditorTarget::Vscode => spawn_vscode(path),
+        DeviceEditorTarget::Notepad => spawn_notepad(path),
+        DeviceEditorTarget::Folder => spawn_in_folder(path),
+    }
+}
+
 #[tauri::command]
 pub async fn open_device_file_in_editor(
     app: AppHandle,
     remote_path: String,
     serial: Option<String>,
     access_mode: Option<FileAccessMode>,
+    target: Option<DeviceEditorTarget>,
 ) -> CmdResult<String> {
     let remote = remote_path.trim().to_string();
     let access_mode = access_mode.unwrap_or_default();
+    let target = target.unwrap_or_default();
     validate_path_components(&remote)?;
-    if !is_text_extension(&remote) {
+    if target != DeviceEditorTarget::Folder && !is_text_extension(&remote) {
         return Err("This file type cannot be opened as text.".into());
     }
-    let file_name = crate::helpers::sanitize_filename(remote_basename(&remote));
+    let file_name = unique_editor_basename(serial.as_deref(), &remote);
     tokio::task::spawn_blocking(move || {
         let dir = std::env::temp_dir().join("adb-gui-next-editors");
-        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        std::fs::create_dir_all(&dir).map_err(|error| error.to_string())?;
         let local = dir.join(&file_name);
+        let local_str = local.to_string_lossy().into_owned();
         if access_mode == FileAccessMode::Root {
-            pull_root_path(&app, serial.as_deref(), &remote, &local.to_string_lossy())?;
+            pull_root_path(&app, serial.as_deref(), &remote, &local_str)?;
         } else {
-            run_adb_for_serial(
-                &app,
-                serial.as_deref(),
-                &["pull", "-a", &remote, &local.to_string_lossy()],
-            )?;
+            run_adb_for_serial(&app, serial.as_deref(), &["pull", "-a", &remote, &local_str])?;
         }
-        spawn_editor(&local)?;
+        spawn_editor_target(&local, target)?;
+        if target != DeviceEditorTarget::Folder {
+            start_editor_watch(app.clone(), serial.clone(), remote.clone(), local, access_mode);
+        }
         Ok(format!("Opened {file_name} in a local editor"))
     })
     .await
@@ -490,6 +835,52 @@ fn parse_file_entries(output: &str) -> Vec<FileEntry> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn join_remote_dir_root_and_nested() {
+        assert_eq!(join_remote_dir("/", "hosts"), "/hosts");
+        assert_eq!(join_remote_dir("/sdcard/", "Download"), "/sdcard/Download");
+        assert_eq!(destination_path("/sdcard/Music/", "/sdcard/DCIM/a.mp3"), "/sdcard/Music/a.mp3");
+        assert_eq!(parent_dir("/sdcard/DCIM/a.mp3"), "/sdcard/DCIM/");
+        assert_eq!(normalize_dir("/sdcard/DCIM"), "/sdcard/DCIM/");
+    }
+
+    #[test]
+    fn paste_guard_blocks_empty_wrong_device_and_same_folder() {
+        let sources = vec!["/sdcard/DCIM/a.mp3".into()];
+        assert_eq!(
+            paste_guard(DeviceTransferMode::Copy, &[], "/sdcard/Music/", Some("a"), "a")
+                .unwrap_err(),
+            "Nothing to paste"
+        );
+        assert_eq!(
+            paste_guard(DeviceTransferMode::Copy, &sources, "/sdcard/Music/", Some("b"), "a")
+                .unwrap_err(),
+            "Clipboard is from another device"
+        );
+        assert_eq!(
+            paste_guard(DeviceTransferMode::Copy, &sources, "/sdcard/DCIM/", Some("a"), "a")
+                .unwrap_err(),
+            "Items are already in this folder"
+        );
+        assert_eq!(
+            paste_guard(DeviceTransferMode::Cut, &sources, "/sdcard/DCIM/", Some("a"), "a")
+                .unwrap_err(),
+            "Cannot move items into the same folder"
+        );
+        assert!(
+            paste_guard(DeviceTransferMode::Copy, &sources, "/sdcard/Music/", Some("a"), "a")
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn unique_editor_basename_includes_serial_and_remote() {
+        let name = unique_editor_basename(Some("pixel"), "/sdcard/Download/note.txt");
+        assert!(name.contains("pixel"));
+        assert!(name.ends_with(".txt"));
+        assert!(!name.contains('/'));
+    }
 
     #[test]
     fn root_mode_allows_system_write_paths() {

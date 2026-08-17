@@ -10,12 +10,14 @@ import {
   GetInstalledPackages,
   InstallPackage,
   ListFiles,
+  OpenDeviceFileInEditor,
   PullFile,
   PushFile,
   Reboot,
   RenameFile,
   RunShellCommand,
   SideloadPackage,
+  TransferDeviceFiles,
   UninstallPackage,
   WipeData,
 } from '@/desktop/backend';
@@ -44,6 +46,15 @@ describe('selected device routing', () => {
     await PushFile('C:/hosts', '/system/etc/hosts', 'device-b', 'root');
     await DeleteFiles(['/sdcard/old.txt'], 'device-b');
     await DeleteFiles(['/system/old'], 'device-b', 'root');
+    await TransferDeviceFiles(
+      'copy',
+      ['/sdcard/a.txt'],
+      '/sdcard/Download/',
+      false,
+      'device-b',
+      'device-b',
+    );
+    await OpenDeviceFileInEditor('/sdcard/a.txt', 'device-b', 'normal', 'vscode');
     await RenameFile('/sdcard/a.txt', '/sdcard/b.txt', 'device-b');
     await RenameFile('/system/a', '/system/b', 'device-b', 'root');
     await SideloadPackage('C:/ota.zip', 'device-b');
@@ -116,6 +127,21 @@ describe('selected device routing', () => {
       paths: ['/system/old'],
       serial: 'device-b',
       accessMode: 'root',
+    });
+    expect(invokeMock).toHaveBeenCalledWith('transfer_device_files', {
+      accessMode: 'normal',
+      clipboardSerial: 'device-b',
+      destDir: '/sdcard/Download/',
+      mode: 'copy',
+      overwrite: false,
+      serial: 'device-b',
+      sources: ['/sdcard/a.txt'],
+    });
+    expect(invokeMock).toHaveBeenCalledWith('open_device_file_in_editor', {
+      remotePath: '/sdcard/a.txt',
+      serial: 'device-b',
+      accessMode: 'normal',
+      target: 'vscode',
     });
     expect(invokeMock).toHaveBeenCalledWith('rename_file', {
       oldPath: '/sdcard/a.txt',
