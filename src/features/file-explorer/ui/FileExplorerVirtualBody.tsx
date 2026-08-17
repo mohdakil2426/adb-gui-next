@@ -71,6 +71,12 @@ export function FileExplorerVirtualBody({
       >
         <TableBody
           className="block"
+          onPointerDown={(event) => {
+            if (event.button !== 2) {
+              return;
+            }
+            setMenuFile(resolveRowEntry(event.target, listing.visibleList));
+          }}
           style={{
             position: 'relative',
             height: `${rowVirtualizer.getTotalSize() + listing.phantomOffset}px`,
@@ -202,7 +208,11 @@ export function FileExplorerVirtualBody({
           })}
         </TableBody>
       </ContextMenuTrigger>
-      <ContextMenuContent>
+      <ContextMenuContent
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+        }}
+      >
         {menuFile ? (
           <FileExplorerRowMenuItems
             actions={actions}

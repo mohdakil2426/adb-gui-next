@@ -11,6 +11,7 @@ interface UseFileExplorerSelectionOptions {
 interface UseFileExplorerSelectionResult {
   allSelected: boolean;
   clearSelection: () => void;
+  consumeGhostClick: () => boolean;
   handleRowClick: (file: FileEntry, e: React.MouseEvent | React.KeyboardEvent) => void;
   handleSelectAll: () => void;
   handleSelectFromMenu: (name: string) => void;
@@ -116,6 +117,7 @@ export function useFileExplorerSelection(
     INITIAL_SELECTION,
   );
   const lastClickedIndexRef = useRef<number | null>(null);
+  const ignorePlainClickRef = useRef(false);
 
   // Latest-value refs so the callbacks below never need these in their deps.
   const fileListRef = useRef(fileList);
@@ -138,6 +140,14 @@ export function useFileExplorerSelection(
   const clearSelection = useCallback(() => {
     lastClickedIndexRef.current = null;
     dispatch({ type: 'CLEAR' });
+  }, []);
+
+  const consumeGhostClick = useCallback(() => {
+    if (!ignorePlainClickRef.current) {
+      return false;
+    }
+    ignorePlainClickRef.current = false;
+    return true;
   }, []);
 
   const handleRowClick = useCallback(
@@ -163,13 +173,16 @@ export function useFileExplorerSelection(
         dispatch({ type: 'TOGGLE', name: file.name });
         return;
       }
+      if (consumeGhostClick()) {
+        return;
+      }
       const clickedIndex = visible.findIndex((entry) => entry.name === file.name);
       if (clickedIndex !== -1) {
         lastClickedIndexRef.current = clickedIndex;
       }
       dispatch({ type: 'SELECT_ONE', name: file.name });
     },
-    [],
+    [consumeGhostClick],
   );
 
   const toggleCheckbox = useCallback((name: string) => {
@@ -182,6 +195,7 @@ export function useFileExplorerSelection(
   }, []);
 
   const handleSelectFromMenu = useCallback((name: string) => {
+    ignorePlainClickRef.current = true;
     dispatch({ type: 'ADD_ONE', name });
   }, []);
 
@@ -196,6 +210,7 @@ export function useFileExplorerSelection(
   return {
     allSelected,
     clearSelection,
+    consumeGhostClick,
     handleRowClick,
     handleSelectAll,
     handleSelectFromMenu,

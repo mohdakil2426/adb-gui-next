@@ -12,6 +12,8 @@ export type SortDir = 'asc' | 'desc';
 export interface FileExplorerActions {
   cancelCreate: () => void;
   clearSelection: () => void;
+  /** True when the leftover click after closing the row menu should be ignored. */
+  consumeGhostClick: () => boolean;
   handleClearSearch: () => void;
   handleCollapseTree: () => void;
   handleCreateChange: (value: string) => void;
@@ -60,7 +62,6 @@ export interface FileExplorerListing {
   currentPath: string;
   fileList: FileEntry[];
   loadError: LoadError;
-  phantomOffset: number;
   phantomOffset: number;
   searchQuery: string;
   sortDir: SortDir;

@@ -257,6 +257,7 @@ export function useFileExplorerViewModel(activeView: string) {
   const {
     allSelected,
     clearSelection,
+    consumeGhostClick,
     handleRowClick,
     handleSelectAll,
     handleSelectFromMenu,
@@ -451,6 +452,7 @@ export function useFileExplorerViewModel(activeView: string) {
     () => ({
       cancelCreate,
       clearSelection,
+      consumeGhostClick,
       handleClearSearch,
       handleCollapseTree,
       handleCreateChange,
@@ -493,6 +495,7 @@ export function useFileExplorerViewModel(activeView: string) {
     [
       cancelCreate,
       clearSelection,
+      consumeGhostClick,
       handleClearSearch,
       handleCollapseTree,
       handleCreateChange,

@@ -39,7 +39,13 @@ export function FileExplorerRowMenuItems({
   return (
     <>
       <ContextMenuItem
-        onClick={() => {
+        onPointerDown={(event) => {
+          if (event.button !== 0) {
+            return;
+          }
+          actions.handleSelectFromMenu(file.name);
+        }}
+        onSelect={() => {
           actions.handleSelectFromMenu(file.name);
         }}
       >

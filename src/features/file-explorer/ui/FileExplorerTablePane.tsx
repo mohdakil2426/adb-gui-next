@@ -94,6 +94,9 @@ export function FileExplorerTablePane({
         <div
           className="min-h-0 flex-1 overflow-auto overscroll-contain"
           onClick={(event) => {
+            if (actions.consumeGhostClick()) {
+              return;
+            }
             if (editing.renamingName || editing.creatingType) {
               return;
             }
