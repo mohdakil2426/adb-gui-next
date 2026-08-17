@@ -194,6 +194,7 @@ Check any layout change at: 1024×720 sidebar-expanded **with the bottom panel o
 - `gap-*` not `space-x-*` / `space-y-*`; `size-*` when width === height.
 - Icon buttons: `aria-label`. Rows: keyboard accessible or real `<button>`.
 - Every non-submit `<button>` needs `type="button"`. Prefer semantic `<main>` over `role="main"`.
+- **Button hierarchy & consistency:** Operational panel action grids (Host, ADB, Fastboot, Power) use `variant="outline"` (`ActionButton` default) with border definition for unified card grids. Primary CTAs use `default`, destructive actions use `destructive`, and icon-only toolbars use `ghost`.
 - Errors: `try/catch` + `handleError` / toast + logs (`shared/utils/errorHandler.ts`).
 
 ## React correctness (keep doctor green)

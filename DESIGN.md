@@ -88,7 +88,7 @@ shadcn New York + Radix + Lucide. Edit here; don’t fork.
 | Kit | Rule |
 | --- | --- |
 | **tabs** | List `w-full`; triggers `flex-1`. Active: light `bg-background`+shadow; dark `bg-input/30`+`border-input`. No `variant="line"`, no `grid-cols-*`. Never `flex` on `TabsContent` (breaks hide). Icon helper: `TabsWithIcon` (`src/components/shadcn-studio/tabs/tabs-03.tsx`) |
-| **button** | `default`/`destructive`/`outline`/`secondary`/`ghost`/`link`. Depth = inset `--control-highlight`, not glow. Icon: `aria-label`. Non-submit: `type="button"` |
+| **button** | `default`/`destructive`/`outline`/`secondary`/`ghost`/`link`. Operational card action grids (Host, ADB, Fastboot, Power) standardize on `variant="outline"` (`ActionButton` default). Depth = inset `--control-highlight`, not glow. Icon: `aria-label`. Non-submit: `type="button"` |
 | **card** | `bg-card`/`bg-surface`, `border-border`, `rounded-lg`/`xl`. Dense views: `shadow-none` |
 | **input** / **textarea** / **select** / **checkbox** | `border-border-control`, `dark:bg-input/30`. Placeholder `text-muted-foreground` |
 | **input-group** | Compound search/path fields (Marketplace, shell) |

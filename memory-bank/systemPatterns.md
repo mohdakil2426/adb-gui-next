@@ -145,7 +145,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 | Theme first paint | Prefer `useSyncExternalStore` / lazy init — avoid `useEffect(() => setState(), [])` flash |
 | High-churn state | Isolate the subscriber in a leaf (`UnreadLogBadge`), never in `MainLayout` |
 | Lazy boundaries | No static value import from a view module into shell/shared |
-
+| Buttons | Operational panel action grids use `variant="outline"` (`ActionButton` default); primary CTAs `default`; toolbars `ghost` |
 Gate: `npx react-doctor@latest .` → expect 100 / 0 issues after FE changes that touch these areas.
 
 ## Anti-patterns
