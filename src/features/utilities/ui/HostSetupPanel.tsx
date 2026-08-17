@@ -41,13 +41,15 @@ export function HostSetupPanel() {
     queryKey: queryKeys.hostSetup.status,
   });
 
+  const invalidateStatus = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.hostSetup.status });
+  };
+
   const installTools = useMutation({
     mutationFn: HostSetupInstall,
-    onError: (error) => {
-      handleError('Platform-tools', error);
-    },
+    onError: (error) => handleError('Platform-tools', error),
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hostSetup.status });
+      invalidateStatus();
       handleSuccess(
         'Platform-tools',
         `Version ${result.platformToolsVersion} installed to ${result.installPath}.`,
@@ -57,11 +59,9 @@ export function HostSetupPanel() {
 
   const installDriver = useMutation({
     mutationFn: HostSetupInstallDriver,
-    onError: (error) => {
-      handleError('USB driver', error);
-    },
+    onError: (error) => handleError('USB driver', error),
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hostSetup.status });
+      invalidateStatus();
       handleSuccess(
         'USB driver',
         `Google USB Driver ${result.platformToolsVersion} was added with pnputil.`,
@@ -71,11 +71,9 @@ export function HostSetupPanel() {
 
   const repairPath = useMutation({
     mutationFn: HostSetupRepairPath,
-    onError: (error) => {
-      handleError('System PATH', error);
-    },
+    onError: (error) => handleError('System PATH', error),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.hostSetup.status });
+      invalidateStatus();
       handleSuccess(
         'System PATH',
         'C:\\Android\\platform-tools was added to the Windows system Path. Open a new terminal to use adb.',
@@ -117,48 +115,36 @@ export function HostSetupPanel() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <dl className="grid gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2.5">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">
-              Install path
-            </dt>
-            <dd className="font-mono text-foreground text-mono-sm">{status?.installPath ?? '…'}</dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">adb.exe</dt>
-            <dd className="text-body">{status?.adbPresent ? 'Present' : 'Not installed'}</dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">
-              USB driver
-            </dt>
-            <dd className="text-body">{status?.driverLabel ?? 'Checking…'}</dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">
-              System PATH
-            </dt>
-            <dd className="text-body">
-              {status?.onPath
+          {[
+            { label: 'Install path', mono: true, value: status?.installPath ?? '…' },
+            { label: 'adb.exe', value: status?.adbPresent ? 'Present' : 'Not installed' },
+            { label: 'USB driver', value: status?.driverLabel ?? 'Checking…' },
+            {
+              label: 'System PATH',
+              value: status?.onPath
                 ? 'Yes — C:\\Android\\platform-tools is on the system Path'
-                : 'No — not on the system Path yet'}
-            </dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">
-              Latest platform-tools
-            </dt>
-            <dd className="font-mono text-foreground text-mono-sm">
-              {status?.latestPlatformTools ?? 'Could not read catalog'}
-            </dd>
-          </div>
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-caption text-muted-foreground uppercase tracking-wide">
-              Latest USB driver
-            </dt>
-            <dd className="font-mono text-foreground text-mono-sm">
-              {status?.latestUsbDriver ?? 'Could not read catalog'}
-            </dd>
-          </div>
+                : 'No — not on the system Path yet',
+            },
+            {
+              label: 'Latest platform-tools',
+              mono: true,
+              value: status?.latestPlatformTools ?? 'Could not read catalog',
+            },
+            {
+              label: 'Latest USB driver',
+              mono: true,
+              value: status?.latestUsbDriver ?? 'Could not read catalog',
+            },
+          ].map((item) => (
+            <div className="flex min-w-0 flex-col gap-0.5" key={item.label}>
+              <dt className="text-caption text-muted-foreground uppercase tracking-wide">
+                {item.label}
+              </dt>
+              <dd className={item.mono ? 'font-mono text-foreground text-mono-sm' : 'text-body'}>
+                {item.value}
+              </dd>
+            </div>
+          ))}
         </dl>
 
         {busy ? (
@@ -171,32 +157,27 @@ export function HostSetupPanel() {
         <div className="grid @lg:grid-cols-2 grid-cols-1 gap-3">
           <Button
             disabled={busy}
-            onClick={() => {
-              setToolsConfirmOpen(true);
-            }}
+            onClick={() => setToolsConfirmOpen(true)}
             type="button"
+            variant="outline"
           >
             <Download />
             {status?.adbPresent ? 'Reinstall platform-tools' : 'Install platform-tools'}
           </Button>
           <Button
             disabled={busy}
-            onClick={() => {
-              setDriverConfirmOpen(true);
-            }}
+            onClick={() => setDriverConfirmOpen(true)}
             type="button"
-            variant="secondary"
+            variant="outline"
           >
             <Usb />
             {status?.driverInstalled ? 'Reinstall USB driver' : 'Install USB driver'}
           </Button>
           <Button
             disabled={!status?.adbPresent || Boolean(status?.onPath) || busy}
-            onClick={() => {
-              setPathConfirmOpen(true);
-            }}
+            onClick={() => setPathConfirmOpen(true)}
             type="button"
-            variant="secondary"
+            variant="outline"
           >
             <ListTree />
             Add to system PATH
@@ -209,7 +190,7 @@ export function HostSetupPanel() {
               });
             }}
             type="button"
-            variant="secondary"
+            variant="outline"
           >
             <FolderOpen />
             Open folder
@@ -222,7 +203,7 @@ export function HostSetupPanel() {
               });
             }}
             type="button"
-            variant="secondary"
+            variant="outline"
           >
             <SquareTerminal />
             Open terminal here
@@ -235,7 +216,7 @@ export function HostSetupPanel() {
               });
             }}
             type="button"
-            variant="secondary"
+            variant="outline"
           >
             <Cpu />
             Device Manager

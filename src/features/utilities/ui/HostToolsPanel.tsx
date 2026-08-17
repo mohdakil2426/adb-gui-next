@@ -77,7 +77,7 @@ export function HostToolsPanel({
               setPendingRestart(true);
             }}
             sentAction={sentAction}
-            variant="secondary"
+            variant="outline"
           />
           <ActionButton
             actionId="kill_server"
@@ -90,7 +90,7 @@ export function HostToolsPanel({
               setPendingKill(true);
             }}
             sentAction={sentAction}
-            variant="secondary"
+            variant="outline"
           />
         </div>
       </CardContent>
