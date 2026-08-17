@@ -21,7 +21,7 @@ tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 anyhow = "1.0.104"
-apk-info-axml = "1.0.11"
+apk-info-axml = "1.0.12"
 base64 = "0.23.1"
 bzip2 = "0.6.1"
 hex = "0.4.3"
