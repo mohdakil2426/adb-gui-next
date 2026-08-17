@@ -62,7 +62,11 @@ export function FileExplorerVirtualBody({
           // row bubbles up and opens *both* roots, and the pane's create-only menu
           // covers the row actions.
           event.stopPropagation();
-          setMenuFile(resolveRowEntry(event.target, listing.visibleList));
+          const entry = resolveRowEntry(event.target, listing.visibleList);
+          if (entry && (event.ctrlKey || event.metaKey)) {
+            actions.handleSelectFromMenu(entry.name);
+          }
+          setMenuFile(entry);
         }}
       >
         <TableBody
@@ -173,6 +177,7 @@ export function FileExplorerVirtualBody({
                 fileTableColumns={fileTableColumns}
                 index={virtualRow.index}
                 isBeingRenamed={isBeingRenamed}
+                isMultiSelectMode={selection.isMultiSelectMode}
                 isNavigable={file.type === 'Directory' || file.type === 'Symlink'}
                 isSelected={selection.selectedNames.has(file.name)}
                 key={virtualRow.key}

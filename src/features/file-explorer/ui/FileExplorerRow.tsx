@@ -15,6 +15,7 @@ interface Props {
   fileTableColumns: string;
   index: number;
   isBeingRenamed: boolean;
+  isMultiSelectMode: boolean;
   isNavigable: boolean;
   isSelected: boolean;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
@@ -39,6 +40,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   fileTableColumns,
   index,
   isBeingRenamed,
+  isMultiSelectMode,
   isNavigable,
   isSelected,
   loadFiles,
@@ -121,22 +123,24 @@ export const FileExplorerRow = memo(function FileExplorerRow({
           </div>
         ) : (
           <div className="flex min-w-0 items-center gap-2">
-            <span
-              className="flex size-4 shrink-0 items-center justify-center"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleCheckbox(file.name);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
+            {isMultiSelectMode ? (
+              <span
+                className="flex size-4 shrink-0 items-center justify-center"
+                onClick={(e) => {
                   e.stopPropagation();
                   toggleCheckbox(file.name);
-                }
-              }}
-            >
-              <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
-            </span>
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleCheckbox(file.name);
+                  }
+                }}
+              >
+                <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
+              </span>
+            ) : null}
             {file.type === 'Directory' ? (
               <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
             ) : file.type === 'Symlink' ? (

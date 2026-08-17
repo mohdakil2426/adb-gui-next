@@ -33,6 +33,7 @@ type SelectionAction =
   | { type: 'ADD_ONE'; name: string }
   | { type: 'ADD_RANGE'; names: string[] }
   | { type: 'CLEAR' }
+  | { type: 'SELECT_ONE'; name: string }
   | { type: 'SET_MODE'; payload: SetStateAction<boolean> }
   | { type: 'SET_NAMES'; payload: SetStateAction<Set<string>> }
   | { type: 'TOGGLE'; name: string }
@@ -70,6 +71,8 @@ function selectionReducer(state: SelectionState, action: SelectionAction): Selec
       selectedNames.add(action.name);
       return { isMultiSelectMode: true, selectedNames };
     }
+    case 'SELECT_ONE':
+      return { isMultiSelectMode: false, selectedNames: new Set([action.name]) };
     case 'TOGGLE_ALL': {
       if (action.names.length > 0 && state.selectedNames.size === action.names.length) {
         return INITIAL_SELECTION;
@@ -82,7 +85,15 @@ function selectionReducer(state: SelectionState, action: SelectionAction): Selec
       if (selectedNames === state.selectedNames) {
         return state;
       }
-      return { isMultiSelectMode: selectedNames.size > 0, selectedNames };
+      return {
+        isMultiSelectMode:
+          selectedNames.size === 0
+            ? false
+            : selectedNames.size > 1
+              ? true
+              : state.isMultiSelectMode,
+        selectedNames,
+      };
     }
     case 'SET_MODE': {
       const isMultiSelectMode =
@@ -156,7 +167,7 @@ export function useFileExplorerSelection(
       if (clickedIndex !== -1) {
         lastClickedIndexRef.current = clickedIndex;
       }
-      dispatch({ type: 'SET_NAMES', payload: new Set([file.name]) });
+      dispatch({ type: 'SELECT_ONE', name: file.name });
     },
     [],
   );

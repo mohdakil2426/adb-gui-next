@@ -121,6 +121,9 @@ describe('ViewFileExplorer', () => {
     await user.click(row);
 
     expect(row.closest('[data-state="selected"]')).not.toBeNull();
+    expect(
+      screen.queryByRole('checkbox', { name: `Select ${longFileName}` }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/items selected/)).not.toBeInTheDocument();
 
     const scrollRegion = row.closest('.overflow-auto');
@@ -128,6 +131,23 @@ describe('ViewFileExplorer', () => {
     fireEvent.click(scrollRegion as HTMLElement);
 
     expect(row.closest('[data-state="selected"]')).toBeNull();
+  });
+
+  it('shows row checkboxes after a modifier click, not a plain click', async () => {
+    const user = userEvent.setup();
+
+    render(<ViewFileExplorer activeView="files" />);
+
+    const row = await screen.findByText(longFileName);
+    expect(
+      screen.queryByRole('checkbox', { name: `Select ${longFileName}` }),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard('{Control>}');
+    await user.click(row);
+    await user.keyboard('{/Control}');
+
+    expect(screen.getByRole('checkbox', { name: `Select ${longFileName}` })).toBeChecked();
   });
 
   it('uses a wide accessible resize handle for the tree panel', async () => {

@@ -21,7 +21,6 @@ import { FileExplorerVirtualBody } from '@/features/file-explorer/ui/FileExplore
 import { Checkbox } from '@/shared/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/shared/ui/context-menu';
 import { Table, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
-import { cn } from '@/shared/utils/cn';
 
 interface Props {
   actions: FileExplorerActions;
@@ -87,7 +86,7 @@ export function FileExplorerTablePane({
 }: Props) {
   const paneState = resolvePaneState(listing, editing, status);
   const { fileTableColumns, resizeColumn } = useFileExplorerColumnWidths();
-  const showSelectAll = selection.selectedNames.size > 0;
+  const showSelectAll = selection.isMultiSelectMode;
 
   return (
     <ContextMenu>
@@ -139,15 +138,8 @@ export function FileExplorerTablePane({
                         role="columnheader"
                       >
                         <div className="flex h-full min-w-0 items-center gap-1 pr-2">
-                          {field === 'name' ? (
-                            <span
-                              className={cn(
-                                'flex size-4 shrink-0 items-center justify-center',
-                                showSelectAll
-                                  ? 'opacity-100'
-                                  : 'opacity-0 group-hover/header:opacity-100',
-                              )}
-                            >
+                          {field === 'name' && showSelectAll ? (
+                            <span className="flex size-4 shrink-0 items-center justify-center">
                               <Checkbox
                                 aria-label="Select all"
                                 checked={

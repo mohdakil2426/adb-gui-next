@@ -117,7 +117,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
   return (
     <div className="flex shrink-0 flex-col border-border border-b">
       <div className="flex h-10 items-center gap-1.5 px-2">
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-2">
           <ToolbarTooltip label="Back (Alt+Left)">
             <Button
               aria-label="Navigate back"
@@ -200,7 +200,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
         </InputGroup>
       </div>
 
-      <div className="flex h-10 items-center gap-3 px-3">
+      <div className="flex h-10 items-center gap-4 px-3">
         <ToolbarTooltip label={isTreeCollapsed ? 'Show tree panel' : 'Collapse tree panel'}>
           <Button
             aria-label={isTreeCollapsed ? 'Show tree panel' : 'Collapse tree panel'}
@@ -257,9 +257,9 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator className="mx-1 h-5" orientation="vertical" />
+        <Separator className="mx-2 h-5" orientation="vertical" />
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2.5">
           <ToolbarTooltip label="Rename">
             <Button
               aria-label="Rename"
@@ -292,9 +292,9 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           </ToolbarTooltip>
         </div>
 
-        <Separator className="mx-1 h-5" orientation="vertical" />
+        <Separator className="mx-2 h-5" orientation="vertical" />
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2.5">
           <FileExplorerRootAccessButton
             disabled={isBusy}
             onToggle={onRootAccessToggle}
