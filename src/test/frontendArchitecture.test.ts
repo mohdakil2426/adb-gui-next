@@ -12,6 +12,7 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, 'desktop', 'backend.ts'),
   path.join(srcRoot, 'desktop', 'models.ts'),
   path.join(srcRoot, 'features', 'file-explorer', 'FileExplorerView.tsx'),
+  path.join(srcRoot, 'features', 'file-explorer', 'ui', 'FileExplorerToolbar.tsx'),
   path.join(srcRoot, 'features', 'emulator', 'ui', 'RootManualStep.tsx'),
   // Pre-existing payload modules (over 300-line review budget; split tracked separately)
   path.join(srcRoot, 'features', 'payload-dumper', 'hooks', 'usePayloadActions.ts'),

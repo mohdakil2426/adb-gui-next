@@ -64,9 +64,9 @@ export function TabsWithIcon({
   return (
     <Tabs
       className={cn('gap-4', className)}
-      defaultValue={defaultValue}
-      onValueChange={onValueChange}
-      value={value}
+      {...(defaultValue === undefined ? {} : { defaultValue })}
+      {...(onValueChange === undefined ? {} : { onValueChange })}
+      {...(value === undefined ? {} : { value })}
     >
       <TabsList>
         {tabs.map(({ icon, name, value: tabValue }) => (

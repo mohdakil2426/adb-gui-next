@@ -51,7 +51,7 @@ function inlineNodes(text: string): ReactNode[] {
 
 /** Small subset of GitHub-flavoured Markdown — no extra libraries (freezePrototype). */
 export function ReadmeMarkdown({ markdown }: { markdown: string }) {
-  const blocks = markdown.replaceAll('\r\n', '\n').split('\n');
+  const blocks = markdown.replace(/\r\n/g, '\n').split('\n');
   const elements: ReactNode[] = [];
   let i = 0;
   let key = 0;

@@ -147,7 +147,7 @@ interface TreeRowProps {
   isActive: boolean;
   isAncestor: boolean;
   node: TreeNode;
-  onMoveToFolder?: (destDir: string, names: string[]) => void;
+  onMoveToFolder?: ((destDir: string, names: string[]) => void) | undefined;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
 }

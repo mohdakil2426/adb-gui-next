@@ -22,15 +22,22 @@ const GIB = 1024 ** 3;
 
 const telemetry: backend.DeviceTelemetry = {
   identity: {
+    androidVersion: '15',
+    arch: 'arm64-v8a',
     brand: 'Google',
-    model: 'Pixel 7',
+    buildId: 'UQ1A.240205.004',
     codename: 'panther',
     deviceName: 'Pixel 7',
-    serial: '1A2B3C4D',
-    androidVersion: '15',
+    fingerprint: null,
+    hardware: null,
+    incremental: null,
+    locale: null,
+    manufacturer: null,
+    model: 'Pixel 7',
+    radio: null,
     sdkInt: 34,
-    buildId: 'UQ1A.240205.004',
-    arch: 'arm64-v8a',
+    serial: '1A2B3C4D',
+    timezone: null,
   },
   battery: {
     levelPct: 87,

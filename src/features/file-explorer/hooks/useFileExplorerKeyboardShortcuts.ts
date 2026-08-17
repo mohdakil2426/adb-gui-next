@@ -194,7 +194,7 @@ export function useFileExplorerKeyboardShortcuts(options: Options) {
       }
       if (e.key === 'End') {
         e.preventDefault();
-        const last = visibleList.at(-1);
+        const last = visibleList[visibleList.length - 1];
         if (!last) {
           return;
         }

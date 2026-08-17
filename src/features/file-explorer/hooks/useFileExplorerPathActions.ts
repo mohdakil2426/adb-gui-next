@@ -1,5 +1,6 @@
 import path from 'path-browserify';
 import { useCallback, useEffect, useRef } from 'react';
+import type { backend } from '@/desktop/models';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
 import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensions';
 
