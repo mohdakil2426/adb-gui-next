@@ -12,7 +12,7 @@
 **Tech Stack:** React 19 · TypeScript · Vite 8 · Tauri 2 · Zustand · Framer Motion · Vitest · Ultracite · React Doctor (`npx react-doctor@latest`) · Orca CLI for live app smoke.
 
 **Source of truth (analysis):**  
-`docs/internal/reports/active/2026-07-18/2026-07-18-react-doctor-full-analysis-audit.md`  
+`docs/internal/reports/closed/2026-07-18/2026-07-18-react-doctor-full-analysis-audit.md`  
 **Latest measured score (after top-3 pass):** **61/100**, ~48 issues remaining (9 errors / 39 warnings).  
 **Already in working tree (may be uncommitted):** unused deps removed; BottomPanel/PanelHeader split; resize `tabIndex`; FileExplorer view-model extract. **Task 0 must re-baseline.**
 
@@ -115,7 +115,7 @@ ORCA snapshot --json
 
 **Files:**
 
-- Read: working tree + report `docs/internal/reports/active/2026-07-18/2026-07-18-react-doctor-full-analysis-audit.md`
+- Read: working tree + report `docs/internal/reports/closed/2026-07-18/2026-07-18-react-doctor-full-analysis-audit.md`
 - Write (optional): append “Execution baseline” section to that report
 
 - [ ] **Step 1: Fresh doctor run**

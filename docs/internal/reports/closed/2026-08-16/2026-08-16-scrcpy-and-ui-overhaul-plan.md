@@ -8,7 +8,7 @@
 
 **Tech Stack:** Tauri 2, Rust 2024, React 19, Tailwind v4, shadcn Neutral, Vitest, cargo test.
 
-**Spec:** `docs/internal/reports/2026-08-16-scrcpy-and-ui-overhaul-research.md`
+**Spec:** `docs/internal/reports/closed/2026-08-16/2026-08-16-scrcpy-and-ui-overhaul-research.md`
 
 ## Global Constraints
 

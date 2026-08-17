@@ -1,7 +1,7 @@
 # Implementation Plan — ADB GUI Next v2: "Precision Instrument"
 
 > **Date:** 2026-07-26 · **Branch:** `feat/ui-ux-reimagine-v2` · **Baseline:** `9494527`
-> **Evidence base:** `docs/internal/reports/active/2026-07-26/2026-07-26-full-stack-redesign-audit.md`
+> **Evidence base:** `docs/internal/reports/closed/2026-07-26/2026-07-26-full-stack-redesign-audit.md`
 > **Direction:** Precision Instrument — cool slate neutrals, one electric-cyan accent, dense desktop rhythm.
 > **Depth:** Foundation + showcase. Design system, shell, Dashboard, all critical safety/perf fixes land production-quality; remaining views migrate as far as time allows.
 

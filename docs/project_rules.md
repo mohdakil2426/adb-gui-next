@@ -24,7 +24,7 @@ Owns **workflow**, report layout, quality gates, and **hard stops**. Module impl
 
 **Win ARM tools strategy:** keep shipping Google’s Windows platform-tools (x86) until an official ARM64 tree is vendored. Document emulation requirement; do not ship mismatched ELF/PE silently.
 
-Full build matrix + portable RCA: `docs/internal/reports/active/2026-07-18/2026-07-18-ci-release-artifact-packaging-audit.md`.
+Full build matrix + portable RCA: `docs/internal/reports/closed/2026-07-18/2026-07-18-ci-release-artifact-packaging-audit.md`.
 
 ### App naming (canonical)
 

@@ -8,7 +8,7 @@ ADB GUI Next is a working Tauri 2 app, version **0.2.5**. Agent docs: root `AGEN
 
 Current product work: File Explorer chrome follows Windows Explorer (nav + command bands, Places, Details columns). Host files/folders drop in via `OnFileDrop` + `host_path_kinds` + `push_file`. In-app drag onto folders / Places / tree / crumbs moves with `transfer_device_files`. Drag-out to Explorer is not supported. Host setup on Utilities → Host is already on `main`: official Google platform-tools and USB driver are **separate** installs. Tools go to `C:\Android\platform-tools`; system Path is HKLM; USB uses `pnputil`. This app still uses bundled ADB.
 
-Research/plan (historical): `docs/internal/reports/2026-08-16-scrcpy-and-ui-overhaul-research.md`, `PLAN-scrcpy-and-ui-overhaul.md`.
+Research/plan (historical): `docs/internal/reports/closed/2026-08-16/2026-08-16-scrcpy-and-ui-overhaul-research.md`, `docs/internal/reports/closed/2026-08-16/2026-08-16-scrcpy-and-ui-overhaul-plan.md`.
 
 v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1).
 
