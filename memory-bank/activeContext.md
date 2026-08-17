@@ -6,7 +6,7 @@ ADB GUI Next is a working Tauri 2 app, version **0.2.5**. Agent docs: root `AGEN
 
 **Work here on local `main` only** (`C:\Users\akila\OneDrive\Desktop\OSS\WindowsApps\adb-gui-next`). HEAD includes the 2026-08-16 overhaul plus Utilities one-page layout. The worktree `adb-gui-next-scrcpy-overhaul` / branch `feat/scrcpy-and-ui-overhaul` is the same overhaul SHA; do not treat it as in-flight. **Overhaul commits are still unpushed** (`origin/main` behind).
 
-Current product work: **Windows host setup** on Utilities → Host. Official Google platform-tools and USB driver are **separate** installs. Tools go to `C:\Android\platform-tools`; system Path is HKLM; USB uses `pnputil`. This app still uses bundled ADB.
+Current product work: File Explorer chrome now follows Windows Explorer (nav + command bands, Places, Details columns, empty-area dismiss). Host setup on Utilities → Host is already on `main`: official Google platform-tools and USB driver are **separate** installs. Tools go to `C:\Android\platform-tools`; system Path is HKLM; USB uses `pnputil`. This app still uses bundled ADB.
 
 Research/plan (historical): `docs/internal/reports/2026-08-16-scrcpy-and-ui-overhaul-research.md`, `PLAN-scrcpy-and-ui-overhaul.md`.
 
