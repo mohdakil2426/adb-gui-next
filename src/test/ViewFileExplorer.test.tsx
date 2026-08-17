@@ -104,8 +104,11 @@ describe('ViewFileExplorer', () => {
     expect(screen.getByRole('button', { name: 'More file actions' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Collapse tree panel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^New/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Internal storage' })).toBeInTheDocument();
+    expect(screen.getByRole('treeitem', { name: /Internal storage/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Download' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'DCIM' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Movies' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Music' })).toBeInTheDocument();
     expect(screen.getByText('Root')).toBeInTheDocument();
     expect(screen.getByText('Storage')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Date modified/ })).toBeInTheDocument();

@@ -29,9 +29,9 @@ describe('DirectoryTree', () => {
     const rootItems = within(tree).getAllByRole('treeitem');
 
     expect(rootItems).toHaveLength(3);
-    expect(screen.getByText('sdcard')).toBeInTheDocument();
-    expect(screen.getByText('storage')).toBeInTheDocument();
-    expect(screen.getByText('root')).toBeInTheDocument();
+    expect(screen.getByText('Internal storage')).toBeInTheDocument();
+    expect(screen.getByText('Storage')).toBeInTheDocument();
+    expect(screen.getByText('Root')).toBeInTheDocument();
     expect(screen.queryByText('data')).not.toBeInTheDocument();
   });
 
@@ -47,8 +47,8 @@ describe('DirectoryTree', () => {
       />,
     );
 
-    await user.click(screen.getByText('root'));
-    const rootToggle = screen.getByRole('treeitem', { name: /root/i }).querySelector('button');
+    await user.click(screen.getByText('Root'));
+    const rootToggle = screen.getByRole('treeitem', { name: /^Root$/ }).querySelector('button');
     expect(rootToggle).toBeTruthy();
     await user.click(rootToggle as HTMLElement);
 
@@ -71,7 +71,9 @@ describe('DirectoryTree', () => {
       <DirectoryTree currentPath="/sdcard/" onNavigate={vi.fn()} serial="device-a" />,
     );
 
-    const sdcardToggle = screen.getByRole('treeitem', { name: /sdcard/i }).querySelector('button');
+    const sdcardToggle = screen
+      .getByRole('treeitem', { name: /Internal storage/ })
+      .querySelector('button');
     expect(sdcardToggle).toBeTruthy();
     await user.click(sdcardToggle as HTMLElement);
 

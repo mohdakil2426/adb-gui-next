@@ -18,6 +18,13 @@ interface TreeNode {
 
 const INITIAL_NODES: TreeNode[] = [
   {
+    path: '/sdcard/',
+    name: 'Internal storage',
+    isExpanded: false,
+    children: null,
+    isLoading: false,
+  },
+  {
     path: '/',
     name: 'Root',
     isExpanded: false,

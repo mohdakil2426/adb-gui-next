@@ -9,10 +9,12 @@ export interface FileExplorerPlace {
  * under Root / Storage stays the hierarchy.
  */
 export const FILE_EXPLORER_PLACES: FileExplorerPlace[] = [
-  { id: 'internal', label: 'Internal storage', path: '/sdcard/' },
   { id: 'download', label: 'Download', path: '/sdcard/Download/' },
   { id: 'documents', label: 'Documents', path: '/sdcard/Documents/' },
-  { id: 'pictures', label: 'Pictures', path: '/sdcard/DCIM/' },
+  { id: 'pictures', label: 'Pictures', path: '/sdcard/Pictures/' },
+  { id: 'dcim', label: 'DCIM', path: '/sdcard/DCIM/' },
+  { id: 'movies', label: 'Movies', path: '/sdcard/Movies/' },
+  { id: 'music', label: 'Music', path: '/sdcard/Music/' },
 ];
 
 export function normalizeDirPath(path: string): string {
@@ -22,7 +24,7 @@ export function normalizeDirPath(path: string): string {
   return path.endsWith('/') ? path : `${path}/`;
 }
 
-/** Longest matching pin, so Download wins over Internal storage. */
+/** Longest matching pin, so Download wins over a parent folder. */
 export function activePlaceId(currentPath: string): string | null {
   const current = normalizeDirPath(currentPath);
   let best: FileExplorerPlace | null = null;

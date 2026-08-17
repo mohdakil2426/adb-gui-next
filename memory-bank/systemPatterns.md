@@ -97,7 +97,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 
 - View is thin: `FileExplorerView` + `useFileExplorerViewModel` + specialized hooks + `model/fileExplorerReducers`.
 - Chrome: nav band then command band. Tree expand/collapse is the first command-band control. Band tooltips use `side="bottom"`.
-- Sidebar: Places pins (`/sdcard/` analogues) then Device tree roots Root `/` and Storage `/storage/` (`DirectoryTree` `INITIAL_NODES`).
+- Sidebar: Places pins (Download, Documents, Pictures, DCIM, Movies, Music) then Device tree roots Internal storage `/sdcard/`, Root `/`, and Storage `/storage/` (`DirectoryTree` `INITIAL_NODES`).
 - Details list: Name, Date modified, Type, Size. Pixel columns; leftover `1fr` after Size; each header divider resizes only the column to its left (`fe.colWidths.v2`).
 - No `SelectionSummaryBar` here (that bar stays App Manager / debloat). Empty list area click clears selection. Checkbox sits in the Name cell.
 - Stable `loadFiles` (refs; avoid historyIndex dep loops).
