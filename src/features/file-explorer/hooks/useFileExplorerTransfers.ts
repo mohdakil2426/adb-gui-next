@@ -161,8 +161,11 @@ export function useFileExplorerTransfers(options: Options) {
   );
 
   const handleOpenInEditor = useCallback(
-    async (file: FileEntry) => {
-      if (file.type !== 'File' || !isTextDeviceFile(file.name)) {
+    async (file: FileEntry, target: backend.DeviceEditorTarget = 'default') => {
+      if (file.type !== 'File') {
+        return;
+      }
+      if (target !== 'folder' && !isTextDeviceFile(file.name)) {
         toast.error('This file type cannot be opened as text.');
         return;
       }
@@ -173,6 +176,7 @@ export function useFileExplorerTransfers(options: Options) {
           remotePath,
           serial,
           getFileAccessMode(remotePath),
+          target,
         );
         toast.success(message);
         useLogStore.getState().addLog(message, 'success');

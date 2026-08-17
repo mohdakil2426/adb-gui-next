@@ -8,6 +8,7 @@ import type {
   FileExplorerStatus,
   SortField,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { FileExplorerClipboardMenuItems } from '@/features/file-explorer/ui/FileExplorerClipboardMenuItems';
 import { FileExplorerColumnResizeHandle } from '@/features/file-explorer/ui/FileExplorerColumnResizeHandle';
 import { FileExplorerCreateMenuItems } from '@/features/file-explorer/ui/FileExplorerCreateMenuItems';
 import {
@@ -225,6 +226,13 @@ export function FileExplorerTablePane({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
+        <FileExplorerClipboardMenuItems
+          disabled={status.isBusy}
+          onPaste={actions.handlePaste}
+          pasteEnabled={status.pasteEnabled}
+          showCopy={false}
+          showPaste
+        />
         <FileExplorerCreateMenuItems
           disabled={status.isBusy}
           onCreateFile={actions.startCreateFile}

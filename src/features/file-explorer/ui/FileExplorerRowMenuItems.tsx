@@ -13,6 +13,8 @@ import type {
   FileEntry,
   FileExplorerActions,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { FileExplorerClipboardMenuItems } from '@/features/file-explorer/ui/FileExplorerClipboardMenuItems';
+import { FileExplorerOpenWithMenuItems } from '@/features/file-explorer/ui/FileExplorerOpenWithMenuItems';
 import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensions';
 import { ContextMenuItem, ContextMenuSeparator } from '@/shared/ui/context-menu';
 
@@ -21,6 +23,7 @@ interface Props {
   currentPath: string;
   file: FileEntry;
   isBusy: boolean;
+  pasteEnabled: boolean;
   selectedNames: Set<string>;
 }
 
@@ -30,11 +33,13 @@ export function FileExplorerRowMenuItems({
   currentPath,
   file,
   isBusy,
+  pasteEnabled,
   selectedNames,
 }: Props) {
   const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
   const isSelected = selectedNames.has(file.name);
   const selectedCount = selectedNames.size;
+  const names = isSelected && selectedCount > 0 ? Array.from(selectedNames) : [file.name];
 
   return (
     <>
@@ -52,6 +57,15 @@ export function FileExplorerRowMenuItems({
         <SquareCheck aria-hidden="true" className="size-4 shrink-0" />
         Select
       </ContextMenuItem>
+      <FileExplorerClipboardMenuItems
+        disabled={isBusy}
+        onCopy={() => actions.handleCopy(names)}
+        onCut={() => actions.handleCut(names)}
+        onPaste={actions.handlePaste}
+        pasteEnabled={pasteEnabled}
+        showCopy
+        showPaste
+      />
       <ContextMenuItem
         onClick={() => void navigator.clipboard.writeText(path.posix.join(currentPath, file.name))}
       >
@@ -71,10 +85,23 @@ export function FileExplorerRowMenuItems({
         </>
       ) : null}
       {file.type === 'File' && isTextDeviceFile(file.name) ? (
-        <ContextMenuItem disabled={isBusy} onClick={() => void actions.handleOpenInEditor(file)}>
-          <FileText aria-hidden="true" className="size-4 shrink-0" />
-          Open in editor
-        </ContextMenuItem>
+        <>
+          <ContextMenuItem disabled={isBusy} onClick={() => void actions.handleOpenInEditor(file)}>
+            <FileText aria-hidden="true" className="size-4 shrink-0" />
+            Open in editor
+          </ContextMenuItem>
+          <FileExplorerOpenWithMenuItems
+            disabled={isBusy}
+            onOpenWith={(target) => void actions.handleOpenInEditor(file, target)}
+          />
+        </>
+      ) : null}
+      {file.type === 'File' && !isTextDeviceFile(file.name) ? (
+        <FileExplorerOpenWithMenuItems
+          disabled={isBusy}
+          folderOnly
+          onOpenWith={(target) => void actions.handleOpenInEditor(file, target)}
+        />
       ) : null}
       <ContextMenuItem
         disabled={(isSelected && selectedCount > 1) || (!isSelected && selectedCount > 0)}

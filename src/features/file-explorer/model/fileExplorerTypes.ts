@@ -16,17 +16,22 @@ export interface FileExplorerActions {
   consumeGhostClick: () => boolean;
   handleClearSearch: () => void;
   handleCollapseTree: () => void;
+  handleCopy: (names: Iterable<string>) => void;
+  handleCopyPath: (names: Iterable<string>) => void;
   handleCreateChange: (value: string) => void;
   handleCreateConfirm: () => Promise<void>;
+  handleCut: (names: Iterable<string>) => void;
   handleDeleteFromSelection: () => void;
   handleExpandTree: () => void;
   /** History back — the previously visited directory, not the parent. */
   handleGoBack: () => void;
   /** History forward — undoes a `handleGoBack`. */
   handleGoForward: () => void;
+  handleMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   /** One level up the current path. Unrelated to history. */
   handleNavigateUp: () => void;
-  handleOpenInEditor: (file: FileEntry) => Promise<void>;
+  handleOpenInEditor: (file: FileEntry, target?: backend.DeviceEditorTarget) => Promise<void>;
+  handlePaste: () => void;
   handlePathClick: () => void;
   handlePathEditCommit: () => void;
   handlePull: () => Promise<void>;
@@ -107,4 +112,5 @@ export interface FileExplorerStatus {
   isLoading: boolean;
   isPullDisabled: boolean;
   isPushing: boolean;
+  pasteEnabled: boolean;
 }

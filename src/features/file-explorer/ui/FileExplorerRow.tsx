@@ -20,6 +20,7 @@ interface Props {
   isSelected: boolean;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   measureElement: (node: Element | null) => void;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   onRenameCancel: () => void;
   onRenameChange: (value: string) => void;
   onRenameConfirm: () => Promise<void>;
@@ -29,6 +30,7 @@ interface Props {
   phantomOffset: number;
   renameError: string;
   renameValue: string;
+  selectedNames: Set<string>;
   start: number;
   toggleCheckbox: (name: string) => void;
   visibleCount: number;
@@ -50,6 +52,8 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   onRenameConfirm,
   onRowClick,
   onRowDoubleClick,
+  onMoveToFolder,
+  selectedNames,
   openDeleteDialog,
   phantomOffset,
   renameError,
@@ -65,10 +69,48 @@ export const FileExplorerRow = memo(function FileExplorerRow({
       className="grid cursor-pointer items-center border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       data-index={index}
       data-state={isSelected ? 'selected' : ''}
+      draggable={!isBeingRenamed}
       onClick={(e) => onRowClick(file, e)}
       onDoubleClick={() => onRowDoubleClick(file)}
+      onDragOver={(event) => {
+        if (!isNavigable) {
+          return;
+        }
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      }}
+      onDragStart={(event) => {
+        const names = isSelected ? Array.from(selectedNames) : [file.name];
+        event.dataTransfer.setData('application/x-adb-gui-files', JSON.stringify(names));
+        event.dataTransfer.effectAllowed = 'move';
+      }}
+      onDrop={(event) => {
+        if (!isNavigable) {
+          return;
+        }
+        event.preventDefault();
+        const raw = event.dataTransfer.getData('application/x-adb-gui-files');
+        if (!raw) {
+          return;
+        }
+        let names: string[] = [];
+        try {
+          names = JSON.parse(raw) as string[];
+        } catch {
+          return;
+        }
+        if (names.includes(file.name)) {
+          return;
+        }
+        void onMoveToFolder(path.posix.join(currentPath, file.name) + '/', names);
+      }}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onRowDoubleClick(file);
+          return;
+        }
+        if (e.key === ' ') {
           e.preventDefault();
           onRowClick(file, e);
         }

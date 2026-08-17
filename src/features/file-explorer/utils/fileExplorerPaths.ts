@@ -1,3 +1,5 @@
+import { getFileName } from '@/shared/utils/filePath';
+
 export function isValidDevicePath(path: string | null): path is string {
   if (!path || typeof path !== 'string') {
     return false;
@@ -41,4 +43,16 @@ export function toPathSegments(currentPath: string): PathSegment[] {
     segments.push({ label: part, path: `${walked}/` });
   }
   return segments;
+}
+
+/** Join a directory and a single path component on the device (always POSIX). */
+export function joinRemoteDir(dir: string, name: string): string {
+  const trimmed = dir.trim();
+  const base = trimmed === '/' ? '' : trimmed.replace(/\/+$/, '');
+  return `${base}/${name}`;
+}
+
+/** Destination path for copying `sourcePath` into `destDir`. */
+export function destinationPath(destDir: string, sourcePath: string): string {
+  return joinRemoteDir(destDir, getFileName(sourcePath.replace(/\/+$/, '')));
 }

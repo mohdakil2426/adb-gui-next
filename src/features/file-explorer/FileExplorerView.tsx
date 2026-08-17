@@ -1,6 +1,7 @@
 import { useFileExplorerViewModel } from '@/features/file-explorer/hooks/useFileExplorerViewModel';
 import { DeleteDialog } from '@/features/file-explorer/ui/DeleteDialog';
 import { FileExplorerMainPane } from '@/features/file-explorer/ui/FileExplorerMainPane';
+import { FileExplorerOverwriteDialog } from '@/features/file-explorer/ui/FileExplorerOverwriteDialog';
 import { FileExplorerToolbar } from '@/features/file-explorer/ui/FileExplorerToolbar';
 import { FileExplorerTreeSection } from '@/features/file-explorer/ui/FileExplorerTreeSection';
 
@@ -66,6 +67,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         />
       </div>
       <DeleteDialog {...vm.deleteDialog} />
+      <FileExplorerOverwriteDialog {...vm.overwriteDialog} />
     </div>
   );
 }

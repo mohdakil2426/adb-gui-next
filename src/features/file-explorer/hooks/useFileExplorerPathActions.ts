@@ -5,7 +5,7 @@ import { isTextDeviceFile } from '@/features/file-explorer/utils/textFileExtensi
 
 interface UseFileExplorerPathActionsOptions {
   currentPath: string;
-  handleOpenInEditor: (file: FileEntry) => Promise<void>;
+  handleOpenInEditor: (file: FileEntry, target?: backend.DeviceEditorTarget) => Promise<void>;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   openDeleteDialog: (names: string[]) => void;
   renamingName: string | null;

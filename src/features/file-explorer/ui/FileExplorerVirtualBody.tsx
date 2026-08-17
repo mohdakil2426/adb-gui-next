@@ -13,6 +13,7 @@ import type {
   FileExplorerSelection,
   FileExplorerStatus,
 } from '@/features/file-explorer/model/fileExplorerTypes';
+import { FileExplorerClipboardMenuItems } from '@/features/file-explorer/ui/FileExplorerClipboardMenuItems';
 import { FileExplorerCreateMenuItems } from '@/features/file-explorer/ui/FileExplorerCreateMenuItems';
 import { FileExplorerRow } from '@/features/file-explorer/ui/FileExplorerRow';
 import { FileExplorerRowMenuItems } from '@/features/file-explorer/ui/FileExplorerRowMenuItems';
@@ -189,6 +190,7 @@ export function FileExplorerVirtualBody({
                 key={virtualRow.key}
                 loadFiles={actions.loadFiles}
                 measureElement={rowVirtualizer.measureElement}
+                onMoveToFolder={actions.handleMoveToFolder}
                 onRenameCancel={actions.handleRenameCancel}
                 onRenameChange={actions.handleRenameChange}
                 onRenameConfirm={actions.handleRenameConfirm}
@@ -200,6 +202,7 @@ export function FileExplorerVirtualBody({
                 // keystroke there cannot invalidate every other row's memo.
                 renameError={isBeingRenamed ? editing.renameError : ''}
                 renameValue={isBeingRenamed ? editing.renameValue : ''}
+                selectedNames={selection.selectedNames}
                 start={virtualRow.start}
                 toggleCheckbox={actions.toggleCheckbox}
                 visibleCount={listing.visibleList.length}
@@ -219,14 +222,24 @@ export function FileExplorerVirtualBody({
             currentPath={listing.currentPath}
             file={menuFile}
             isBusy={status.isBusy}
+            pasteEnabled={status.pasteEnabled}
             selectedNames={selection.selectedNames}
           />
         ) : (
-          <FileExplorerCreateMenuItems
-            disabled={status.isBusy}
-            onCreateFile={actions.startCreateFile}
-            onCreateFolder={actions.startCreateFolder}
-          />
+          <>
+            <FileExplorerClipboardMenuItems
+              disabled={status.isBusy}
+              onPaste={actions.handlePaste}
+              pasteEnabled={status.pasteEnabled}
+              showCopy={false}
+              showPaste
+            />
+            <FileExplorerCreateMenuItems
+              disabled={status.isBusy}
+              onCreateFile={actions.startCreateFile}
+              onCreateFolder={actions.startCreateFolder}
+            />
+          </>
         )}
       </ContextMenuContent>
     </ContextMenu>

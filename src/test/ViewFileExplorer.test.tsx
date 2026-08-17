@@ -30,6 +30,7 @@ vi.mock('@/desktop/backend', () => ({
   CreateFile: vi.fn(),
   DeleteFiles: vi.fn(),
   ListFiles: (...args: unknown[]) => listFilesMock(...args),
+  OpenDeviceFileInEditor: vi.fn(),
   PullFile: vi.fn(),
   PushFile: vi.fn(),
   RenameFile: vi.fn(),
@@ -37,7 +38,12 @@ vi.mock('@/desktop/backend', () => ({
   SelectDirectoryToPush: vi.fn(),
   SelectFileToPush: vi.fn(),
   SelectSaveDirectory: vi.fn(),
+  TransferDeviceFiles: vi.fn(),
   VerifyFileRootAccess: (...args: unknown[]) => verifyFileRootAccessMock(...args),
+}));
+
+vi.mock('@/desktop/runtime', () => ({
+  EventsOn: vi.fn().mockReturnValue(vi.fn()),
 }));
 
 describe('ViewFileExplorer', () => {

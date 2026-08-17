@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useFileExplorerClipboard } from '@/features/file-explorer/hooks/useFileExplorerClipboard';
 import { useFileExplorerKeyboardShortcuts } from '@/features/file-explorer/hooks/useFileExplorerKeyboardShortcuts';
 import { useFileExplorerLayout } from '@/features/file-explorer/hooks/useFileExplorerLayout';
 import { useFileExplorerLoader } from '@/features/file-explorer/hooks/useFileExplorerLoader';
@@ -237,7 +238,9 @@ export function useFileExplorerViewModel(activeView: string) {
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < navHistory.length - 1;
   const phantomOffset = creatingType === null ? 0 : PHANTOM_ROW_HEIGHT;
-  const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
+  const [isPasting, setIsPasting] = useState(false);
+  const isBusy =
+    isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating || isPasting;
 
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
   // Proactive, not reactive: the no-device state is derived from the global
@@ -382,6 +385,23 @@ export function useFileExplorerViewModel(activeView: string) {
     singleSelected,
   });
   const {
+    handleCopy,
+    handleCopyPath,
+    handleCut,
+    handleMoveToFolder,
+    handleOverwriteConfirm,
+    handlePaste,
+    overwriteOpen,
+    pasteEnabled,
+    setOverwriteOpen,
+  } = useFileExplorerClipboard({
+    currentPath,
+    getFileAccessMode,
+    loadFiles,
+    selectedSerial,
+    setIsPasting,
+  });
+  const {
     handleClearSearch,
     handleDeleteFromSelection,
     handleNavigateUp,
@@ -407,9 +427,16 @@ export function useFileExplorerViewModel(activeView: string) {
     creatingType,
     currentPathRef,
     fileListRef,
+    handleCopy,
+    handleCopyPath,
+    handleCut,
     handleGoBack,
     handleGoForward,
+    handleNavigateUp,
+    handlePaste,
+    handlePathClick,
     handleRenameCancel,
+    handleRowDoubleClick,
     loadFiles,
     openDeleteDialog,
     renamingName,
@@ -420,6 +447,7 @@ export function useFileExplorerViewModel(activeView: string) {
     setSelectedNames,
     startCreate,
     startRename,
+    visibleList,
   });
 
   // ---------------------------------------------------------------------------
@@ -455,14 +483,19 @@ export function useFileExplorerViewModel(activeView: string) {
       consumeGhostClick,
       handleClearSearch,
       handleCollapseTree,
+      handleCopy,
+      handleCopyPath,
       handleCreateChange,
       handleCreateConfirm,
+      handleCut,
       handleDeleteFromSelection,
       handleExpandTree,
       handleGoBack,
       handleGoForward,
+      handleMoveToFolder,
       handleNavigateUp,
       handleOpenInEditor,
+      handlePaste,
       handlePathClick,
       handlePathEditCommit,
       handlePull,
@@ -498,14 +531,19 @@ export function useFileExplorerViewModel(activeView: string) {
       consumeGhostClick,
       handleClearSearch,
       handleCollapseTree,
+      handleCopy,
+      handleCopyPath,
       handleCreateChange,
       handleCreateConfirm,
+      handleCut,
       handleDeleteFromSelection,
       handleExpandTree,
       handleGoBack,
       handleGoForward,
+      handleMoveToFolder,
       handleNavigateUp,
       handleOpenInEditor,
+      handlePaste,
       handlePathClick,
       handlePathEditCommit,
       handlePull,
@@ -576,6 +614,7 @@ export function useFileExplorerViewModel(activeView: string) {
       isLoading,
       isPullDisabled,
       isPushing,
+      pasteEnabled,
     }),
     [
       editPathValue,
@@ -586,6 +625,7 @@ export function useFileExplorerViewModel(activeView: string) {
       isLoading,
       isPullDisabled,
       isPushing,
+      pasteEnabled,
     ],
   );
 
@@ -635,6 +675,16 @@ export function useFileExplorerViewModel(activeView: string) {
     ],
   );
 
+  const overwriteDialog = useMemo(
+    () => ({
+      isBusy: isPasting,
+      onConfirm: handleOverwriteConfirm,
+      onOpenChange: setOverwriteOpen,
+      open: overwriteOpen,
+    }),
+    [handleOverwriteConfirm, isPasting, overwriteOpen, setOverwriteOpen],
+  );
+
   return {
     actions,
     containerRef,
@@ -642,6 +692,7 @@ export function useFileExplorerViewModel(activeView: string) {
     editing,
     listing,
     navigation,
+    overwriteDialog,
     rootAccessGranted,
     selection,
     status,

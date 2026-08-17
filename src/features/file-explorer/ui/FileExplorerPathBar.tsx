@@ -98,6 +98,7 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
           aria-label="Device path"
           autoFocus
           className="h-8 min-w-0 flex-1 border-0 bg-transparent pr-2 pl-7 font-mono text-mono shadow-none focus-visible:ring-0 dark:bg-transparent"
+          id="fe-path-input"
           onBlur={onPathEditingStop}
           onChange={(event) => onPathEditingChange(event.target.value)}
           onKeyDown={(event) => {
