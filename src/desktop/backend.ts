@@ -183,6 +183,10 @@ export function PushFile(
   return call('push_file', { localPath, remotePath, serial, accessMode });
 }
 
+export function HostPathKinds(paths: string[]): Promise<backend.HostPathKind[]> {
+  return call('host_path_kinds', { paths });
+}
+
 export function CreateDirectory(
   path: string,
   serial?: string | null,

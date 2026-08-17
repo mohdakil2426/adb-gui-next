@@ -2,6 +2,7 @@ import path from 'path-browserify';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
+  HostPathKinds,
   OpenDeviceFileInEditor,
   PullFile,
   PushFile,
@@ -148,6 +149,52 @@ export function useFileExplorerTransfers(options: Options) {
     await executePull(singleSelected);
   }, [executePull, singleSelected]);
 
+  const handleImportDroppedPaths = useCallback(
+    async (localPaths: string[], destDir: string) => {
+      const serial = selectedSerialRef.current;
+      if (!serial) {
+        toast.error('No device selected');
+        return;
+      }
+      if (localPaths.length === 0) {
+        return;
+      }
+      const refreshPath = currentPath;
+      setIsPushing(true);
+      let toastId: string | number = '';
+      try {
+        const kinds = await HostPathKinds(localPaths);
+        const count = kinds.length;
+        toastId = toast.loading(`Importing ${count} item${count === 1 ? '' : 's'}…`, {
+          description: `To: ${destDir}`,
+        });
+        for (const item of kinds) {
+          if (item.isDir) {
+            await PushFile(item.path, destDir, serial, getFileAccessMode(destDir));
+          } else {
+            const fileName = item.path.replace(/\\/g, '/').split('/').pop() ?? '';
+            const remotePath = path.posix.join(destDir, fileName);
+            await PushFile(item.path, remotePath, serial, getFileAccessMode(remotePath));
+          }
+        }
+        toast.success('Import Complete', {
+          description: `${count} item${count === 1 ? '' : 's'} to ${destDir}`,
+          id: toastId,
+        });
+        useLogStore.getState().addLog(`Imported ${count} host path(s) to ${destDir}`, 'success');
+        void loadFiles(refreshPath, false);
+      } catch (error) {
+        if (toastId) {
+          toast.error('Import Failed', { id: toastId });
+        }
+        handleError('Import', error);
+      } finally {
+        setIsPushing(false);
+      }
+    },
+    [currentPath, getFileAccessMode, loadFiles, selectedSerialRef, setIsPushing],
+  );
+
   const handlePullItem = useCallback((file: FileEntry) => executePull(file), [executePull]);
   const handlePushFileToDir = useCallback(
     async (targetDir: string) => {
@@ -206,6 +253,7 @@ export function useFileExplorerTransfers(options: Options) {
   );
 
   return {
+    handleImportDroppedPaths,
     handleOpenInEditor,
     handleShowInExplorer,
     handlePull,

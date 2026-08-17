@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import type {
   FileEntry,
   SortDir,
@@ -41,16 +41,17 @@ export function useFileExplorerSort(
     localStorage.setItem('fe.sortDir', sortDir);
   }, [sortDir]);
 
+  const deferredQuery = useDeferredValue(searchQuery);
   const visibleList = useMemo(
     () =>
       sortEntries(
-        searchQuery
-          ? fileList.filter((file) => file.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        deferredQuery
+          ? fileList.filter((file) => file.name.toLowerCase().includes(deferredQuery.toLowerCase()))
           : fileList,
         sortField,
         sortDir,
       ),
-    [fileList, searchQuery, sortField, sortDir],
+    [fileList, deferredQuery, sortField, sortDir],
   );
 
   const handleSortColumn = useCallback(

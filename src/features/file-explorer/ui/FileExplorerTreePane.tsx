@@ -9,13 +9,21 @@ interface Props {
   getFileAccessMode: (path: string) => backend.FileAccessMode;
   leftWidth: number;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   selectedSerial: string | null;
   treeRefreshKey: number;
 }
 
 export function FileExplorerTreePane(props: Props) {
-  const { currentPath, getFileAccessMode, leftWidth, loadFiles, selectedSerial, treeRefreshKey } =
-    props;
+  const {
+    currentPath,
+    getFileAccessMode,
+    leftWidth,
+    loadFiles,
+    onMoveToFolder,
+    selectedSerial,
+    treeRefreshKey,
+  } = props;
   const noDevice = selectedSerial === null;
 
   return (
@@ -23,7 +31,12 @@ export function FileExplorerTreePane(props: Props) {
       className="flex min-h-0 shrink-0 flex-col overflow-hidden"
       style={{ width: `${leftWidth}px` }}
     >
-      <FileExplorerPlaces currentPath={currentPath} disabled={noDevice} onNavigate={loadFiles} />
+      <FileExplorerPlaces
+        currentPath={currentPath}
+        disabled={noDevice}
+        onMoveToFolder={onMoveToFolder}
+        onNavigate={loadFiles}
+      />
       <Separator className="mx-2 my-2 shrink-0" />
       <div className="flex shrink-0 items-center gap-1.5 px-3.5 pb-1">
         <Layers aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
@@ -34,6 +47,7 @@ export function FileExplorerTreePane(props: Props) {
           currentPath={currentPath}
           getFileAccessMode={getFileAccessMode}
           key={selectedSerial ?? 'no-device'}
+          onMoveToFolder={onMoveToFolder}
           onNavigate={loadFiles}
           refreshTrigger={treeRefreshKey}
           serial={selectedSerial}

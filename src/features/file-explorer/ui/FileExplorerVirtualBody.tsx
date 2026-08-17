@@ -182,6 +182,7 @@ export function FileExplorerVirtualBody({
                 currentPath={listing.currentPath}
                 file={file}
                 fileTableColumns={fileTableColumns}
+                getDragNames={actions.getDragNames}
                 index={virtualRow.index}
                 isBeingRenamed={isBeingRenamed}
                 isMultiSelectMode={selection.isMultiSelectMode}
@@ -202,7 +203,6 @@ export function FileExplorerVirtualBody({
                 // keystroke there cannot invalidate every other row's memo.
                 renameError={isBeingRenamed ? editing.renameError : ''}
                 renameValue={isBeingRenamed ? editing.renameValue : ''}
-                selectedNames={selection.selectedNames}
                 start={virtualRow.start}
                 toggleCheckbox={actions.toggleCheckbox}
                 visibleCount={listing.visibleList.length}

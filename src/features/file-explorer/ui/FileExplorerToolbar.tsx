@@ -60,6 +60,7 @@ interface FileExplorerToolbarProps {
   onGoUp: () => void;
   onImportFile: () => void;
   onImportFolder: () => void;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   onNavigate: (targetPath: string) => void;
   onPathClick: () => void;
   onPathEditingChange: (value: string) => void;
@@ -100,6 +101,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
     onImportFile,
     onImportFolder,
     onNavigate,
+    onMoveToFolder,
     onPathClick,
     onPathEditingChange,
     onPathEditingCommit,
@@ -167,6 +169,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
           currentPath={currentPath}
           editPathValue={editPathValue}
           isEditingPath={isEditingPath}
+          onMoveToFolder={onMoveToFolder}
           onNavigate={onNavigate}
           onPathClick={onPathClick}
           onPathEditingChange={onPathEditingChange}

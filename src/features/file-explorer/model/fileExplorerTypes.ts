@@ -14,6 +14,8 @@ export interface FileExplorerActions {
   clearSelection: () => void;
   /** True when the leftover click after closing the row menu should be ignored. */
   consumeGhostClick: () => boolean;
+  /** Names to drag: the current selection when `clickedName` is selected. */
+  getDragNames: (clickedName: string) => string[];
   handleClearSearch: () => void;
   handleCollapseTree: () => void;
   handleCopy: (names: Iterable<string>) => void;

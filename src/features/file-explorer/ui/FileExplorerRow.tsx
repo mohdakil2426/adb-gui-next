@@ -2,6 +2,11 @@ import { File, Folder, Link } from 'lucide-react';
 import path from 'path-browserify';
 import { memo } from 'react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import {
+  FE_DROP_OVER_CLASS,
+  folderInternalDropProps,
+  INTERNAL_FILES_MIME,
+} from '@/features/file-explorer/utils/fileExplorerDrop';
 import { fileTypeLabel } from '@/features/file-explorer/utils/fileExplorerTypeLabel';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Input } from '@/shared/ui/input';
@@ -13,6 +18,7 @@ interface Props {
   currentPath: string;
   file: FileEntry;
   fileTableColumns: string;
+  getDragNames: (clickedName: string) => string[];
   index: number;
   isBeingRenamed: boolean;
   isMultiSelectMode: boolean;
@@ -30,7 +36,6 @@ interface Props {
   phantomOffset: number;
   renameError: string;
   renameValue: string;
-  selectedNames: Set<string>;
   start: number;
   toggleCheckbox: (name: string) => void;
   visibleCount: number;
@@ -40,6 +45,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   currentPath,
   file,
   fileTableColumns,
+  getDragNames,
   index,
   isBeingRenamed,
   isMultiSelectMode,
@@ -53,7 +59,6 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   onRowClick,
   onRowDoubleClick,
   onMoveToFolder,
-  selectedNames,
   openDeleteDialog,
   phantomOffset,
   renameError,
@@ -62,48 +67,40 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   toggleCheckbox,
   visibleCount,
 }: Props) {
+  const destDir = isNavigable ? `${path.posix.join(currentPath, file.name)}/` : undefined;
+  const dropProps = destDir
+    ? folderInternalDropProps(
+        destDir,
+        (dir, names) => {
+          void onMoveToFolder(dir, names);
+        },
+        { rejectNames: [file.name] },
+      )
+    : null;
+
   return (
     <TableRow
       aria-posinset={index + 1}
       aria-setsize={visibleCount}
-      className="grid cursor-pointer items-center border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      className={cn(
+        'grid cursor-pointer items-center border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
+        isNavigable && FE_DROP_OVER_CLASS,
+      )}
+      data-fe-drop-dir={destDir}
       data-index={index}
       data-state={isSelected ? 'selected' : ''}
       draggable={!isBeingRenamed}
       onClick={(e) => onRowClick(file, e)}
       onDoubleClick={() => onRowDoubleClick(file)}
-      onDragOver={(event) => {
-        if (!isNavigable) {
-          return;
-        }
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-      }}
+      onDragEnter={dropProps?.onDragEnter}
+      onDragLeave={dropProps?.onDragLeave}
+      onDragOver={dropProps?.onDragOver}
       onDragStart={(event) => {
-        const names = isSelected ? Array.from(selectedNames) : [file.name];
-        event.dataTransfer.setData('application/x-adb-gui-files', JSON.stringify(names));
+        const names = getDragNames(file.name);
+        event.dataTransfer.setData(INTERNAL_FILES_MIME, JSON.stringify(names));
         event.dataTransfer.effectAllowed = 'move';
       }}
-      onDrop={(event) => {
-        if (!isNavigable) {
-          return;
-        }
-        event.preventDefault();
-        const raw = event.dataTransfer.getData('application/x-adb-gui-files');
-        if (!raw) {
-          return;
-        }
-        let names: string[] = [];
-        try {
-          names = JSON.parse(raw) as string[];
-        } catch {
-          return;
-        }
-        if (names.includes(file.name)) {
-          return;
-        }
-        void onMoveToFolder(path.posix.join(currentPath, file.name) + '/', names);
-      }}
+      onDrop={dropProps?.onDrop}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.preventDefault();

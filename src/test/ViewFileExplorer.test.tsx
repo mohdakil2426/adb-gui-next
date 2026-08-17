@@ -40,11 +40,14 @@ vi.mock('@/desktop/backend', () => ({
   SelectFileToPush: vi.fn(),
   SelectSaveDirectory: vi.fn(),
   TransferDeviceFiles: vi.fn(),
+  HostPathKinds: vi.fn(),
   VerifyFileRootAccess: (...args: unknown[]) => verifyFileRootAccessMock(...args),
 }));
 
 vi.mock('@/desktop/runtime', () => ({
   EventsOn: vi.fn().mockReturnValue(vi.fn()),
+  OnFileDrop: vi.fn(),
+  OnFileDropOff: vi.fn(),
 }));
 
 describe('ViewFileExplorer', () => {

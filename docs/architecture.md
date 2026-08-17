@@ -38,7 +38,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | --- | --- |
 | Device control | Discover ADB/fastboot devices, select target, view info, wireless ADB |
 | App Manager | Install / uninstall packages; Universal Android Debloater (UAD) integration |
-| File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, mutate, optional verified root mode |
+| File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, host drop-in, in-app move, mutate, optional verified root mode |
 | Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
 | Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
 | Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
@@ -458,8 +458,12 @@ export function ListFiles(
 Tauri drag/drop is **window-level**. Pattern:
 
 1. One `OnFileDrop()` registration per active page (re-registering replaces the handler).
-2. Hit-test cursor `(x, y)` against element `getBoundingClientRect()` on **hover and drop**.
-3. Multiple drop zones on one page → single handler + multiple refs.
+2. Hit-test cursor `(x, y)` against element `getBoundingClientRect()` / `elementFromPoint` on **hover and drop**.
+3. Multiple drop zones on one page → single handler + multiple refs or `data-*` targets.
+
+**File Explorer** registers while the files view is mounted. Host drops hit-test `[data-fe-drop-dir]` (folder row, Place, tree node, crumb) then `[data-fe-drop-pane]` (open directory). Hover highlight is a DOM `data-fe-drop-over` attribute — not React state. Classify host paths with `host_path_kinds` (`isDir`), then serial `push_file` (file → `dest/name`, folder → dest dir). In-app moves use HTML5 `application/x-adb-gui-files` + `transfer_device_files` (`cut`). Drag-out to the OS is not implemented (no WebView2 file drag-out API).
+
+**Flasher / DropZone** keep their own page-level `OnFileDrop` while those views are mounted. Do not register two owners at once.
 
 ---
 
@@ -690,7 +694,7 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Device / Dashboard | `features/dashboard` · `DeviceSwitcher` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` | `GetDevices`, `GetDeviceTelemetry`, wireless cmds | `commands/device`, `adb/`, `commands/adb` |
 | App Manager | `features/app-manager` | `installationStore` | package list/install/uninstall | `apps` |
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
-| File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root | `files` + helpers |
+| File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop` | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/sideload/wipe + DnD | `fastboot`, `apps` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
 | Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
@@ -996,7 +1000,7 @@ Device / ADB / Fastboot
   flash_partition, get_bootloader_variables, reboot, set_active_slot, wipe_data
 
 Files
-  list_files, push_file, pull_file, create_file, create_directory
+  list_files, host_path_kinds, push_file, pull_file, create_file, create_directory
   delete_files, rename_file, verify_file_root_access, open_device_file_in_editor
   transfer_device_files, reveal_device_path_in_explorer
 

@@ -3,15 +3,20 @@ import {
   activePlaceId,
   FILE_EXPLORER_PLACES,
 } from '@/features/file-explorer/model/fileExplorerPlaces';
+import {
+  FE_DROP_OVER_CLASS,
+  folderInternalDropProps,
+} from '@/features/file-explorer/utils/fileExplorerDrop';
 import { cn } from '@/shared/utils/cn';
 
 interface Props {
   currentPath: string;
   disabled: boolean;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   onNavigate: (path: string) => void;
 }
 
-export function FileExplorerPlaces({ currentPath, disabled, onNavigate }: Props) {
+export function FileExplorerPlaces({ currentPath, disabled, onMoveToFolder, onNavigate }: Props) {
   const activeId = activePlaceId(currentPath);
 
   return (
@@ -19,19 +24,28 @@ export function FileExplorerPlaces({ currentPath, disabled, onNavigate }: Props)
       <p className="px-2 py-1 text-caption text-muted-foreground">Places</p>
       {FILE_EXPLORER_PLACES.map((place) => {
         const isActive = place.id === activeId;
+        const dropProps = folderInternalDropProps(place.path, (destDir, names) => {
+          void onMoveToFolder(destDir, names);
+        });
         return (
           <button
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-body transition-colors duration-90 ease-standard',
               'hover:bg-accent hover:text-accent-foreground',
+              FE_DROP_OVER_CLASS,
               isActive ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground',
             )}
+            data-fe-drop-dir={place.path}
             disabled={disabled}
             key={place.id}
             onClick={() => {
               onNavigate(place.path);
             }}
+            onDragEnter={dropProps.onDragEnter}
+            onDragLeave={dropProps.onDragLeave}
+            onDragOver={dropProps.onDragOver}
+            onDrop={dropProps.onDrop}
             type="button"
           >
             <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />

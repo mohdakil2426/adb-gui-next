@@ -212,6 +212,27 @@ pub async fn push_file(
     .map_err(|e| e.to_string())?
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HostPathKind {
+    pub path: String,
+    pub is_dir: bool,
+}
+
+const MAX_HOST_PATH_KINDS: usize = 256;
+
+/// Classify host paths so File Explorer can `adb push` dropped folders vs files.
+#[tauri::command]
+pub fn host_path_kinds(paths: Vec<String>) -> CmdResult<Vec<HostPathKind>> {
+    if paths.len() > MAX_HOST_PATH_KINDS {
+        return Err(format!("too many paths (max {MAX_HOST_PATH_KINDS})"));
+    }
+    Ok(paths
+        .into_iter()
+        .map(|path| HostPathKind { is_dir: Path::new(&path).is_dir(), path })
+        .collect())
+}
+
 #[tauri::command]
 pub async fn delete_files(
     app: AppHandle,
@@ -903,5 +924,19 @@ drwxr-xr-x 2 root root 4096 2026-01-01 12:00 .config
         assert!(is_text_extension("build.prop"));
         assert!(!is_text_extension("boot.img"));
         assert!(!is_text_extension("archive.zip"));
+    }
+
+    #[test]
+    fn host_path_kinds_classifies_directories() {
+        let dir = std::env::temp_dir();
+        let kinds = host_path_kinds(vec![dir.to_string_lossy().into_owned()]).unwrap();
+        assert_eq!(kinds.len(), 1);
+        assert!(kinds[0].is_dir);
+    }
+
+    #[test]
+    fn host_path_kinds_rejects_oversized_batches() {
+        let paths = vec!["x".into(); MAX_HOST_PATH_KINDS + 1];
+        assert!(host_path_kinds(paths).is_err());
     }
 }

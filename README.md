@@ -22,7 +22,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 | **Dashboard**        | Live telemetry — identity, battery, memory, storage, network, extra build facts |
 | **App Manager**      | Install/uninstall APK/APKS; cached launcher icons for visible rows              |
 | **Debloater**        | Universal Android Debloater (UAD) — safety tiers, backups, restore              |
-| **File Explorer**    | Browse (including hidden names), push/pull, open text files in a host editor    |
+| **File Explorer**    | Browse (including hidden names), push/pull, host drop-in, in-app move, host editor |
 | **Flasher**          | Fastboot flash, recovery sideload, wipe, A/B slots                              |
 | **Utilities**        | Power menus, ADB server control, bootloader vars, logcat snapshot               |
 | **Scrcpy**           | Official binary download + native mirror window for the selected serial         |
@@ -114,12 +114,14 @@ Integrated Universal Android Debloater (UAD) for safe bloatware removal:
 Browse and transfer files between your computer and device:
 
 - **Navigation**: Double-click folders to open them. Use the **↑** button or breadcrumb path to go up
-- **Import File**: Push a single file from your computer to the current device directory
-- **Import Folder**: Push an entire folder to the current device directory
+- **Import File / Folder**: Toolbar push, or drag files and folders from Windows Explorer onto the open list, a folder row, Places, the device tree, or a path crumb
+- **Move on device**: Drag rows onto a folder, Place, tree node, or crumb (same-device cut). Dragging out to Windows Explorer is not supported — use **Export**
 - **Export Selected**: Select a file or folder (single click), then click **Export** to pull it to your computer
 - **Create**: Create new files and directories on the device
 - **Rename / Delete**: Right-click context menu for file operations
-- **Open in editor**: Double-click or right-click text files (`.sh`, `.md`, `.txt`, `.prop`, …). The file is pulled to a temp path and opened with VS Code, Notepad, TextEdit, or the desktop opener
+- **Copy / Cut / Paste**: Same-device clipboard; Replace when the destination already exists
+- **Open with**: Right-click text files for VS Code or Notepad. Saves push back to the device. **Show in Explorer** opens the path over MTP File transfer (Windows)
+- **Type column**: Extension labels plus known extensionless names (`hosts`, `.gitignore`, Makefile, …)
 - Default starting directory: `/sdcard/`
 - Hidden names (`.config`, `.bashrc`, …) are listed; root mode still uses verified `su`
 

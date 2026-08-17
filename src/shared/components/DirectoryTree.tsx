@@ -3,6 +3,10 @@ import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ListFiles } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import {
+  FE_DROP_OVER_CLASS,
+  folderInternalDropProps,
+} from '@/features/file-explorer/utils/fileExplorerDrop';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { cn } from '@/shared/utils/cn';
 
@@ -143,6 +147,7 @@ interface TreeRowProps {
   isActive: boolean;
   isAncestor: boolean;
   node: TreeNode;
+  onMoveToFolder?: (destDir: string, names: string[]) => void;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
 }
@@ -152,9 +157,11 @@ const TreeRow = memo(function TreeRow({
   depth,
   isActive,
   isAncestor,
+  onMoveToFolder,
   onSelect,
   onToggle,
 }: TreeRowProps) {
+  const dropProps = onMoveToFolder ? folderInternalDropProps(node.path, onMoveToFolder) : null;
   return (
     <div
       aria-expanded={node.isExpanded}
@@ -163,13 +170,19 @@ const TreeRow = memo(function TreeRow({
       className={cn(
         'mx-1 flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-md py-1.5 text-body transition-colors',
         'hover:bg-accent hover:text-accent-foreground',
+        FE_DROP_OVER_CLASS,
         isActive && 'bg-accent font-medium text-accent-foreground',
         isAncestor && 'text-foreground',
         !(isActive || isAncestor) && 'text-muted-foreground',
       )}
+      data-fe-drop-dir={node.path}
       onClick={() => {
         onSelect(node.path);
       }}
+      onDragEnter={dropProps?.onDragEnter}
+      onDragLeave={dropProps?.onDragLeave}
+      onDragOver={dropProps?.onDragOver}
+      onDrop={dropProps?.onDrop}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -226,6 +239,7 @@ const TreeRow = memo(function TreeRow({
 export interface DirectoryTreeProps {
   currentPath: string;
   getFileAccessMode?: (path: string) => backend.FileAccessMode;
+  onMoveToFolder?: (destDir: string, names: string[]) => void;
   onNavigate: (path: string) => void;
   /** Increment to force-refresh the tree node for currentPath. */
   refreshTrigger?: number;
@@ -238,6 +252,7 @@ export function DirectoryTree({
   currentPath,
   getFileAccessMode = defaultFileAccessMode,
   onNavigate,
+  onMoveToFolder,
   refreshTrigger,
   serial,
 }: DirectoryTreeProps) {
@@ -433,6 +448,7 @@ export function DirectoryTree({
               isAncestor={row.isAncestor}
               key={row.node.path}
               node={row.node}
+              onMoveToFolder={onMoveToFolder}
               onSelect={onNavigate}
               onToggle={handleToggle}
             />

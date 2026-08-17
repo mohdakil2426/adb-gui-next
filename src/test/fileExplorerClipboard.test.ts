@@ -68,7 +68,13 @@ describe('fileTypeLabel', () => {
     expect(fileTypeLabel({ name: 'config.xml', type: 'File' })).toBe('XML File');
     expect(fileTypeLabel({ name: 'build.prop', type: 'File' })).toBe('PROP File');
     expect(fileTypeLabel({ name: 'app.apk', type: 'File' })).toBe('Android Package');
-    expect(fileTypeLabel({ name: 'hosts', type: 'File' })).toBe('File');
+    expect(fileTypeLabel({ name: 'hosts', type: 'File' })).toBe('Hosts File');
+    expect(fileTypeLabel({ name: '.gitignore', type: 'File' })).toBe('Git Ignore File');
+    expect(fileTypeLabel({ name: 'Makefile', type: 'File' })).toBe('Makefile');
+    expect(fileTypeLabel({ name: 'boot.img', type: 'File' })).toBe('Disk Image');
+    expect(fileTypeLabel({ name: 'libfoo.so', type: 'File' })).toBe('Shared Library');
+    expect(fileTypeLabel({ name: 'classes.dex', type: 'File' })).toBe('Dalvik Executable');
+    expect(fileTypeLabel({ name: 'noext', type: 'File' })).toBe('File');
     expect(fileTypeLabel({ name: 'weird.xyz', type: 'File' })).toBe('XYZ File');
   });
 });

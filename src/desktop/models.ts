@@ -314,6 +314,11 @@ export namespace backend {
     remotePath: string;
   }
 
+  export interface HostPathKind {
+    isDir: boolean;
+    path: string;
+  }
+
   export interface InstalledPackage {
     label: string;
     name: string;

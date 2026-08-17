@@ -29,6 +29,7 @@ describe('Tauri command permissions', () => {
     expect(permissions).toContain('"open_device_file_in_editor"');
     expect(permissions).toContain('"reveal_device_path_in_explorer"');
     expect(permissions).toContain('"transfer_device_files"');
+    expect(permissions).toContain('"host_path_kinds"');
     expect(permissions).toContain('"get_logcat_snapshot"');
     expect(permissions).toContain('"save_screenshot"');
     expect(permissions).toContain('"restart_adb_server"');

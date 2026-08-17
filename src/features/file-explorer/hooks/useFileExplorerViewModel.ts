@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useFileExplorerClipboard } from '@/features/file-explorer/hooks/useFileExplorerClipboard';
+import { useFileExplorerHostDrop } from '@/features/file-explorer/hooks/useFileExplorerHostDrop';
 import { useFileExplorerKeyboardShortcuts } from '@/features/file-explorer/hooks/useFileExplorerKeyboardShortcuts';
 import { useFileExplorerLayout } from '@/features/file-explorer/hooks/useFileExplorerLayout';
 import { useFileExplorerLoader } from '@/features/file-explorer/hooks/useFileExplorerLoader';
@@ -369,6 +370,7 @@ export function useFileExplorerViewModel(activeView: string) {
     [startRenameByName],
   );
   const {
+    handleImportDroppedPaths,
     handleOpenInEditor,
     handleShowInExplorer,
     handlePull,
@@ -477,11 +479,29 @@ export function useFileExplorerViewModel(activeView: string) {
     setIsEditingPath(false);
   }, [loadFiles, setIsEditingPath]);
 
+  const selectedNamesRef = useRef(selectedNames);
+  selectedNamesRef.current = selectedNames;
+  const getDragNames = useCallback((clickedName: string) => {
+    const selected = selectedNamesRef.current;
+    if (selected.has(clickedName)) {
+      return Array.from(selected);
+    }
+    return [clickedName];
+  }, []);
+
+  useFileExplorerHostDrop({
+    currentPath,
+    enabled: activeView === 'files' && hasDevice,
+    isBusy,
+    onImport: handleImportDroppedPaths,
+  });
+
   const actions = useMemo<FileExplorerActions>(
     () => ({
       cancelCreate,
       clearSelection,
       consumeGhostClick,
+      getDragNames,
       handleClearSearch,
       handleCollapseTree,
       handleCopy,
@@ -531,6 +551,7 @@ export function useFileExplorerViewModel(activeView: string) {
       cancelCreate,
       clearSelection,
       consumeGhostClick,
+      getDragNames,
       handleClearSearch,
       handleCollapseTree,
       handleCopy,
@@ -644,10 +665,12 @@ export function useFileExplorerViewModel(activeView: string) {
       selectedSerial,
       startResizing,
       treeRefreshKey,
+      onMoveToFolder: handleMoveToFolder,
     }),
     [
       currentPath,
       getFileAccessMode,
+      handleMoveToFolder,
       handleResizeKeyDown,
       isResizing,
       isTreeCollapsed,

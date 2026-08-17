@@ -19,9 +19,11 @@ import {
   PermissionDeniedState,
 } from '@/features/file-explorer/ui/FileExplorerTableStates';
 import { FileExplorerVirtualBody } from '@/features/file-explorer/ui/FileExplorerVirtualBody';
+import { FE_DROP_OVER_CLASS } from '@/features/file-explorer/utils/fileExplorerDrop';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/shared/ui/context-menu';
 import { Table, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
+import { cn } from '@/shared/utils/cn';
 
 interface Props {
   actions: FileExplorerActions;
@@ -93,7 +95,8 @@ export function FileExplorerTablePane({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className="min-h-0 flex-1 overflow-auto overscroll-contain"
+          className={cn('min-h-0 flex-1 overflow-auto overscroll-contain', FE_DROP_OVER_CLASS)}
+          data-fe-drop-pane={listing.currentPath}
           onClick={(event) => {
             if (actions.consumeGhostClick()) {
               return;

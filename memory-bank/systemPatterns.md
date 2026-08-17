@@ -19,7 +19,8 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 ### Window drag-and-drop
 
 - One `OnFileDrop` registration per page (re-register replaces previous).
-- Hit-test cursor `(x,y)` on **hover and drop** with element rects.
+- Hit-test cursor `(x,y)` on **hover and drop** with element rects or `elementFromPoint`.
+- File Explorer: `[data-fe-drop-dir]` / `[data-fe-drop-pane]`; DOM highlight; `host_path_kinds` then `push_file`. In-app MIME drag for moves. No OS drag-out.
 
 ### Device selection
 
@@ -105,7 +106,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 - Mutations re-list with `loadFiles(path, false)`.
 - Snapshot serial before host dialogs; clear root grant on serial change.
 - Hidden entries: device listing is `ls -lA`.
-- Open allowlisted text (`.sh`, `.md`, `.txt`, `.toml`, `.xml`, `.bak`, … — not archives) by pulling to a unique temp name, then host editor (`code` / Notepad / Linux editors / macOS `open -t`). Saves are watched in Rust and pushed back (`files:edit-pushed`). **Show in Explorer** opens the matching MTP path in Windows Explorer when File transfer is on (not the temp editor folder). Copy/cut/paste is same-device only via `transfer_device_files` (overwrite dialog in the UI). Type column uses extension labels.
+- Open allowlisted text (`.sh`, `.md`, `.txt`, `.toml`, `.xml`, `.bak`, … — not archives) by pulling to a unique temp name, then host editor (`code` / Notepad / Linux editors / macOS `open -t`). Saves are watched in Rust and pushed back (`files:edit-pushed`). **Show in Explorer** opens the matching MTP path in Windows Explorer when File transfer is on (not the temp editor folder). Copy/cut/paste is same-device only via `transfer_device_files` (overwrite dialog in the UI). Host OS drop imports via `OnFileDrop` + `host_path_kinds` + `push_file`. In-app drag onto folders / Places / tree / crumbs moves files. Drag-out to the host OS is not supported. Type column uses extension labels plus known extensionless names (`hosts`, `.gitignore`).
 
 ### Bottom panel
 

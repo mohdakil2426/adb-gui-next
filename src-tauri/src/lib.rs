@@ -103,6 +103,7 @@ pub fn run() {
             commands::launch_avd,
             commands::launch_terminal,
             commands::list_avds,
+            commands::host_path_kinds,
             commands::list_files,
             commands::list_payload_partitions,
             commands::list_payload_partitions_with_details,

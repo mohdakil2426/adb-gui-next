@@ -37,6 +37,7 @@ export function ViewFileExplorer({ activeView }: { activeView: string }) {
         onGoUp={vm.actions.handleNavigateUp}
         onImportFile={vm.actions.handlePushFile}
         onImportFolder={vm.actions.handlePushFolder}
+        onMoveToFolder={vm.actions.handleMoveToFolder}
         onNavigate={vm.actions.loadFiles}
         onPathClick={vm.actions.handlePathClick}
         onPathEditingChange={vm.actions.setEditPathValue}

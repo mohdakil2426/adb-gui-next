@@ -11,6 +11,7 @@ export interface FileExplorerTreeConfig {
   isTreeCollapsed: boolean;
   leftWidth: number;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   selectedSerial: string | null;
   startResizing: (e: React.PointerEvent<HTMLElement>) => void;
   treeRefreshKey: number;
@@ -34,6 +35,7 @@ export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
         getFileAccessMode={tree.getFileAccessMode}
         leftWidth={tree.leftWidth}
         loadFiles={tree.loadFiles}
+        onMoveToFolder={tree.onMoveToFolder}
         selectedSerial={tree.selectedSerial}
         treeRefreshKey={tree.treeRefreshKey}
       />

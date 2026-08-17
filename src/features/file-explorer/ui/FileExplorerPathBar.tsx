@@ -1,6 +1,10 @@
 import { HardDrive, TextCursorInput } from 'lucide-react';
 import { Fragment, memo, useMemo } from 'react';
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
+import {
+  FE_DROP_OVER_CLASS,
+  folderInternalDropProps,
+} from '@/features/file-explorer/utils/fileExplorerDrop';
 import { type PathSegment, toPathSegments } from '@/features/file-explorer/utils/fileExplorerPaths';
 import {
   Breadcrumb,
@@ -19,11 +23,13 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Input } from '@/shared/ui/input';
+import { cn } from '@/shared/utils/cn';
 
 interface Props {
   currentPath: string;
   editPathValue: string;
   isEditingPath: boolean;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
   onNavigate: (targetPath: string) => void;
   onPathClick: () => void;
   onPathEditingChange: (value: string) => void;
@@ -54,7 +60,7 @@ function collapse(segments: PathSegment[]): CollapsedPath {
   };
 }
 
-function CrumbLabel({ segment, isRoot }: { isRoot: boolean; segment: PathSegment }) {
+function CrumbLabel({ isRoot, segment }: { isRoot: boolean; segment: PathSegment }) {
   if (isRoot) {
     return (
       <>
@@ -64,6 +70,64 @@ function CrumbLabel({ segment, isRoot }: { isRoot: boolean; segment: PathSegment
     );
   }
   return <span className="max-w-40 truncate">{segment.label}</span>;
+}
+
+function crumbDest(path: string): string {
+  return path === '/' || path.endsWith('/') ? path : `${path}/`;
+}
+
+function PathCrumb({
+  isLast,
+  isRoot,
+  onMoveToFolder,
+  onNavigate,
+  segment,
+}: {
+  isLast: boolean;
+  isRoot: boolean;
+  onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
+  onNavigate: (targetPath: string) => void;
+  segment: PathSegment;
+}) {
+  const destDir = crumbDest(segment.path);
+  const dropProps = folderInternalDropProps(destDir, (dir, names) => {
+    void onMoveToFolder(dir, names);
+  });
+  const className = cn(
+    'flex min-w-0 items-center gap-1 rounded-sm px-0.5 py-0.5',
+    FE_DROP_OVER_CLASS,
+  );
+  if (isLast) {
+    return (
+      <BreadcrumbPage
+        className={className}
+        data-fe-drop-dir={destDir}
+        onDragEnter={dropProps.onDragEnter}
+        onDragLeave={dropProps.onDragLeave}
+        onDragOver={dropProps.onDragOver}
+        onDrop={dropProps.onDrop}
+      >
+        <CrumbLabel isRoot={isRoot} segment={segment} />
+      </BreadcrumbPage>
+    );
+  }
+  return (
+    <BreadcrumbLink asChild>
+      <button
+        className={className}
+        data-fe-drop-dir={destDir}
+        onClick={() => onNavigate(segment.path)}
+        onDragEnter={dropProps.onDragEnter}
+        onDragLeave={dropProps.onDragLeave}
+        onDragOver={dropProps.onDragOver}
+        onDrop={dropProps.onDrop}
+        title={segment.path}
+        type="button"
+      >
+        <CrumbLabel isRoot={isRoot} segment={segment} />
+      </button>
+    </BreadcrumbLink>
+  );
 }
 
 /**
@@ -80,6 +144,7 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
   editPathValue,
   isEditingPath,
   onNavigate,
+  onMoveToFolder,
   onPathClick,
   onPathEditingChange,
   onPathEditingCommit,
@@ -136,22 +201,13 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
             return (
               <Fragment key={segment.path}>
                 <BreadcrumbItem className="min-w-0 shrink-0">
-                  {isLast ? (
-                    <BreadcrumbPage className="flex min-w-0 items-center gap-1">
-                      <CrumbLabel isRoot={isRoot} segment={segment} />
-                    </BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <button
-                        className="flex min-w-0 items-center gap-1 px-0.5 py-0.5"
-                        onClick={() => onNavigate(segment.path)}
-                        title={segment.path}
-                        type="button"
-                      >
-                        <CrumbLabel isRoot={isRoot} segment={segment} />
-                      </button>
-                    </BreadcrumbLink>
-                  )}
+                  <PathCrumb
+                    isLast={isLast}
+                    isRoot={isRoot}
+                    onMoveToFolder={onMoveToFolder}
+                    onNavigate={onNavigate}
+                    segment={segment}
+                  />
                 </BreadcrumbItem>
                 {isLast ? null : <BreadcrumbSeparator className="shrink-0" />}
                 {index === 0 && hidden.length > 0 ? (

@@ -31,7 +31,7 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 - App icons: Rust `get_app_icons` + disk/memory cache; Installed apps tab via `useAppIcons`
 - Emulator root: preflight, autopilot + FAKEBOOTIMG, `su -c id -u == 0` verify
 - Bottom panel + shell history stable ids
-- File Explorer: thin view + hook composition; Explorer-style nav/command bands, Places + Root/Storage tree, resizable Details columns; open allowlisted text in host editor; `ls -lA`
+- File Explorer: thin view + hook composition; Explorer-style nav/command bands, Places + Root/Storage tree, resizable Details columns; host drop-in + in-app move; open allowlisted text in host editor; `ls -lA`
 - Scrcpy: download/install/update/launch native process; CLI options only
 - Utilities: typed host ADB restart/kill/versions; logcat snapshot; PNG screenshot; wipe phrase `WIPE`
 - Windows host setup: official Google platform-tools + USB driver (separate UAC); `C:\Android\platform-tools`; HKLM system Path; `pnputil`; status from registry + driver enum
