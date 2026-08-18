@@ -32,7 +32,7 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 - Emulator root: preflight, autopilot + FAKEBOOTIMG, `su -c id -u == 0` verify
 - Bottom panel + shell history stable ids
 - File Explorer: thin view + hook composition; Explorer-style nav/command bands, Places + Root/Storage tree, resizable Details columns; host drop-in + in-app move; open allowlisted text in host editor; `ls -lA`
-- Scrcpy: download/install/update/launch native process; CLI options only
+- Scrcpy: download/install/update/launch native process; CLI options only; Android Studio-style companion floating pill toolbar with Freeform and Lock (magnetic Win32/Linux process window docking + vertical offset sliding) modes, keyevent dispatchers, statusbar toggles, and rotation
 - Utilities: typed host ADB restart/kill/versions; logcat snapshot; PNG screenshot; wipe phrase `WIPE`
 - Windows host setup: official Google platform-tools + USB driver (separate UAC); `C:\Android\platform-tools`; HKLM system Path; `pnputil`; status from registry + driver enum
 - Marketplace: Rust search/install; GitHub all-releases + README; browse toolbar filters
@@ -76,4 +76,4 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 
 No long session diaries here. Design → `docs/architecture.md`. Investigations → `docs/internal/reports/`. Status/gaps only in this file.
 
-**Last updated:** 2026-08-17
+**Last updated:** 2026-08-18

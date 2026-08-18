@@ -1,6 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { MainLayout } from '@/app/shell/MainLayout';
+import { ScrcpyFloatingToolbar } from '@/features/scrcpy/toolbar/ScrcpyFloatingToolbar';
+import { Toaster } from '@/shared/ui/sonner';
 import { STALE_TIME } from '@/shared/utils/queries';
+
+const isToolbarWindow =
+  typeof window !== 'undefined' &&
+  (window.location.search.includes('window=scrcpy-toolbar') ||
+    window.location.hash.includes('scrcpy-toolbar'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +29,19 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
+  if (isToolbarWindow) {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <div className="flex h-screen w-screen items-start justify-center overflow-hidden bg-transparent p-1">
+            <ScrcpyFloatingToolbar />
+            <Toaster position="bottom-right" richColors />
+          </div>
+        </QueryClientProvider>
+      </ThemeProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <MainLayout />

@@ -1,4 +1,5 @@
-import { Rocket, Square } from 'lucide-react';
+import { PanelRight, Rocket, Square } from 'lucide-react';
+import { ScrcpyOpenToolbar } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import {
   AUDIO_SOURCES,
@@ -252,18 +253,36 @@ export function ScrcpySessionCard({
         />
         {selectedSerials.size > 0 &&
         Array.from(selectedSerials).every((s) => activeSerials.has(s) || activeSerials.has('*')) ? (
-          <Button
-            className="w-full hover:bg-destructive/10 hover:text-destructive"
-            disabled={isStopping || selectedSerials.size === 0}
-            onClick={onStop}
-            type="button"
-            variant="outline"
-          >
-            <Square aria-hidden="true" className="size-4" />
-            {selectedSerials.size > 1
-              ? `Stop Mirror (${selectedSerials.size} devices)`
-              : 'Stop Mirror'}
-          </Button>
+          <div className="flex flex-col gap-2">
+            {selectedSerials.size === 1 ? (
+              <Button
+                className="w-full"
+                onClick={() => {
+                  const target = Array.from(selectedSerials)[0];
+                  if (target) {
+                    ScrcpyOpenToolbar(target).catch(() => {});
+                  }
+                }}
+                type="button"
+                variant="outline"
+              >
+                <PanelRight aria-hidden="true" className="size-4" />
+                Open Floating Toolbar
+              </Button>
+            ) : null}
+            <Button
+              className="w-full hover:bg-destructive/10 hover:text-destructive"
+              disabled={isStopping || selectedSerials.size === 0}
+              onClick={onStop}
+              type="button"
+              variant="outline"
+            >
+              <Square aria-hidden="true" className="size-4" />
+              {selectedSerials.size > 1
+                ? `Stop Mirror (${selectedSerials.size} devices)`
+                : 'Stop Mirror'}
+            </Button>
+          </div>
         ) : (
           <Button
             className="w-full"
