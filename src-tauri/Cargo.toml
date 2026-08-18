@@ -2,7 +2,7 @@
 name = "adb-gui-next"
 version = "0.2.5"
 description = "ADB GUI Next for Android device workflows"
-authors = ["akila"]
+authors = ["Astrixforge (mohdakil2426)"]
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/mohdakil2426/adb-gui-next"

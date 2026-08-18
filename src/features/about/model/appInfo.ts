@@ -5,7 +5,7 @@ import { version } from '../../../../package.json';
 export const APP_VERSION: string = version;
 export const APP_NAME = 'ADB GUI Next';
 export const APP_LICENSE = 'MIT';
-export const APP_COPYRIGHT = '© 2026 akila';
+export const APP_COPYRIGHT = '© 2026 Astrixforge (mohdakil2426)';
 export const REPOSITORY_URL = 'https://github.com/mohdakil2426/adb-gui-next';
 export const ISSUES_URL = `${REPOSITORY_URL}/issues`;
 export const LICENSE_URL = `${REPOSITORY_URL}/blob/main/LICENSE`;
