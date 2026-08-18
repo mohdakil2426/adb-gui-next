@@ -31,6 +31,7 @@ const telemetry: backend.DeviceTelemetry = {
     fingerprint: null,
     hardware: null,
     incremental: null,
+    kernelVersion: '5.10.198-android12-9-00048',
     locale: null,
     manufacturer: null,
     model: 'Pixel 7',

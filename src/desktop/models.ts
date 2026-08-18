@@ -178,6 +178,7 @@ export namespace backend {
     fingerprint: string | null;
     hardware: string | null;
     incremental: string | null;
+    kernelVersion: string | null;
     locale: string | null;
     manufacturer: string | null;
     model: string | null;

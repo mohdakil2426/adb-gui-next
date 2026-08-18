@@ -1,5 +1,5 @@
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
-import { CircleAlert, Radar } from 'lucide-react';
+import { CircleAlert } from 'lucide-react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { useDeviceTelemetry } from '@/features/dashboard/hooks/useDeviceTelemetry';
 import { useRebootActions } from '@/features/dashboard/hooks/useRebootActions';
@@ -22,13 +22,10 @@ import { SecurityPanel } from '@/features/dashboard/ui/SecurityPanel';
 import { StoragePanel } from '@/features/dashboard/ui/StoragePanel';
 import { WirelessAdbPanel } from '@/features/dashboard/ui/WirelessAdbPanel';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
-import { RefreshButton } from '@/shared/components/RefreshButton';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { Button } from '@/shared/ui/button';
 import { invalidateDevices, queryKeys } from '@/shared/utils/queries';
-
-const updatedAtFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
 /**
  * Shared shape for the two "row of three" groups below (vitals; security +
@@ -159,37 +156,20 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   return (
     <div className="@container flex w-full max-w-[90rem] flex-col gap-4">
       <h1 className="sr-only">Dashboard</h1>
-
-      <div className="flex items-center justify-end gap-2">
-        <span className="numeric text-caption text-muted-foreground">
-          {updatedAt > 0 ? `Updated ${updatedAtFormatter.format(updatedAt)}` : null}
-        </span>
-        <RefreshButton
-          aria-label="Refresh device telemetry"
-          disabled={!canReadTelemetry}
-          isLoading={isFetching}
-          mode="icon"
-          onClick={refresh}
-          tooltip="Refresh telemetry"
-        />
-        <Button
-          disabled={isScanningDevices}
-          onClick={scanAgain}
-          size="sm"
-          type="button"
-          variant="outline"
-        >
-          <Radar aria-hidden="true" />
-          Scan devices
-        </Button>
-      </div>
-
-      {/* Hero Banner: Identity, status pulses, specs, serial, and uptime */}
+      {/* Hero Banner: Identity, status pulses, specs, serial, uptime, and consolidated sync */}
       <DeviceHeroBanner
         device={selectedDevice}
         isLoading={isLoading}
+        isRefreshing={isFetching || isScanningDevices}
         onEditNickname={() => setShowNicknameDialog(true)}
+        onRefresh={() => {
+          scanAgain();
+          if (canReadTelemetry) {
+            refresh();
+          }
+        }}
         telemetry={telemetry}
+        updatedAt={updatedAt}
       />
       {/* Vitals: battery / memory / storage are the same kind of thing —
           "resource X of Y with a percentage" — so sharing a row is honest. */}

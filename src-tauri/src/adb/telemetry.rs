@@ -32,6 +32,7 @@ pub struct DeviceIdentity {
     pub locale: Option<String>,
     pub timezone: Option<String>,
     pub radio: Option<String>,
+    pub kernel_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -115,7 +116,7 @@ const CMD_UPTIME: usize = 7;
 const CMD_ROOT: usize = 8;
 const CMD_SELINUX: usize = 9;
 const CMD_WIFI: usize = 10;
-
+const CMD_KERNEL: usize = 11;
 /// One `adb shell` process covers every source below.
 ///
 /// `getprop` with no argument dumps the whole property table, so all nine identity and
@@ -138,6 +139,7 @@ const TELEMETRY_COMMANDS: &[&str] = &[
     "su -c id -u 2>/dev/null",
     "getenforce 2>/dev/null",
     "cmd wifi status 2>/dev/null || dumpsys wifi 2>/dev/null | grep -m 1 'SSID:'",
+    "cat /proc/version 2>/dev/null || uname -a 2>/dev/null",
 ];
 
 fn slot(outputs: &[CmdOutput], index: usize) -> Option<&str> {
@@ -164,7 +166,7 @@ pub fn collect(client: &AdbClient, fallback_serial: Option<&str>) -> CmdResult<D
     ];
 
     Ok(DeviceTelemetry {
-        identity: build_identity(&props, fallback_serial),
+        identity: build_identity(&props, &outputs, fallback_serial),
         battery: parse::parse_battery(slot(&outputs, CMD_BATTERY).unwrap_or_default()),
         memory: parse::parse_meminfo(slot(&outputs, CMD_MEMINFO).unwrap_or_default()),
         storage: parse::parse_df(&storage_queries),
@@ -178,6 +180,7 @@ pub fn collect(client: &AdbClient, fallback_serial: Option<&str>) -> CmdResult<D
 
 fn build_identity(
     props: &HashMap<String, String>,
+    outputs: &[CmdOutput],
     fallback_serial: Option<&str>,
 ) -> DeviceIdentity {
     DeviceIdentity {
@@ -199,6 +202,7 @@ fn build_identity(
         locale: parse::first_prop(props, &["ro.product.locale", "persist.sys.locale"]),
         timezone: parse::first_prop(props, &["persist.sys.timezone"]),
         radio: parse::first_prop(props, &["gsm.version.baseband", "ro.baseband"]),
+        kernel_version: slot(outputs, CMD_KERNEL).and_then(parse::parse_kernel_version),
     }
 }
 
@@ -268,16 +272,16 @@ mod tests {
     fn build_identity_prefers_device_serial_then_falls_back() {
         let props = parse::parse_getprop("[ro.serialno]: [1A2B3C4D]\n");
         assert_eq!(
-            build_identity(&props, Some("emulator-5554")).serial.as_deref(),
+            build_identity(&props, &[], Some("emulator-5554")).serial.as_deref(),
             Some("1A2B3C4D")
         );
 
         let empty = parse::parse_getprop("");
         assert_eq!(
-            build_identity(&empty, Some("emulator-5554")).serial.as_deref(),
+            build_identity(&empty, &[], Some("emulator-5554")).serial.as_deref(),
             Some("emulator-5554")
         );
-        assert_eq!(build_identity(&empty, None).serial, None);
+        assert_eq!(build_identity(&empty, &[], None).serial, None);
     }
 
     #[test]
@@ -285,7 +289,7 @@ mod tests {
         let props = parse::parse_getprop(
             "[ro.build.version.sdk]: [34]\n[ro.build.version.release]: [15]\n[ro.product.cpu.abi]: [arm64-v8a]\n",
         );
-        let identity = build_identity(&props, None);
+        let identity = build_identity(&props, &[], None);
 
         assert_eq!(identity.sdk_int, Some(34));
         assert_eq!(identity.android_version.as_deref(), Some("15"));

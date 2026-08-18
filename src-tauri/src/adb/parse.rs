@@ -323,6 +323,15 @@ pub(super) fn parse_wifi_ssid(output: &str) -> Option<String> {
     None
 }
 
+/// `cat /proc/version` or `uname -a` — extract the complete kernel version string.
+pub(super) fn parse_kernel_version(output: &str) -> Option<String> {
+    let trimmed = output.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+    trimmed.lines().find(|l| !l.trim().is_empty()).map(|l| l.trim().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
