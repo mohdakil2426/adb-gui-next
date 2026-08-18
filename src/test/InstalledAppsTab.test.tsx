@@ -140,12 +140,13 @@ describe('InstalledAppsTab', () => {
 
     const stopBtn = screen.getByTitle('Force Stop');
     await user.click(stopBtn);
+    const confirmBtn = screen.getByRole('button', { name: 'Force Stop' });
+    await user.click(confirmBtn);
     expect(packageLifecycleOpMock).toHaveBeenCalledWith(
       'com.example.camera',
       'force_stop',
       'device-test-1',
     );
-
     const inspectBtn = screen.getByTitle('Inspect Package Details');
     await user.click(inspectBtn);
     expect(onInspectMock).toHaveBeenCalledWith('com.example.camera');
@@ -188,6 +189,8 @@ describe('InstalledAppsTab', () => {
     expect(batchForceStop).toBeDefined();
     if (batchForceStop) {
       await user.click(batchForceStop);
+      const confirmBatchBtn = screen.getByRole('button', { name: 'Force Stop All' });
+      await user.click(confirmBatchBtn);
     }
     expect(packageLifecycleOpMock).toHaveBeenCalledWith(
       'com.example.camera',

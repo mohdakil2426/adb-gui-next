@@ -14,18 +14,35 @@ export function TopStorageConsumersChart({
   const maxBytes = Math.max(...consumers.map((c) => c.totalSize), 1);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HardDrive className="size-4 text-primary" />
           <h3 className="font-medium text-foreground text-label">Top Space Consumers</h3>
         </div>
-        <span className="text-caption text-muted-foreground">App + Data + Cache</span>
+        <div className="flex items-center gap-3 text-caption text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />
+            <span>App</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary/60" />
+            <span>Data</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary/30" />
+            <span>Cache</span>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-2.5">
         {consumers.map((app, index) => {
           const ratio = (app.totalSize / maxBytes) * 100;
+          const appPct = app.totalSize > 0 ? (app.appSize / app.totalSize) * 100 : 40;
+          const dataPct = app.totalSize > 0 ? (app.dataSize / app.totalSize) * 100 : 50;
+          const cachePct = app.totalSize > 0 ? (app.cacheSize / app.totalSize) * 100 : 10;
+
           return (
             <button
               className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
@@ -47,12 +64,28 @@ export function TopStorageConsumersChart({
                 </span>
               </div>
 
-              {/* Sparkline horizontal bar */}
+              {/* Segmented multi-tone bar */}
               <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-300 group-hover:bg-primary/80"
+                  className="flex h-full overflow-hidden rounded-full transition-all duration-300"
                   style={{ width: `${Math.max(4, ratio)}%` }}
-                />
+                >
+                  <div
+                    className="h-full bg-primary transition-colors group-hover:bg-primary/90"
+                    style={{ width: `${appPct}%` }}
+                    title={`App: ${formatBytes(app.appSize)}`}
+                  />
+                  <div
+                    className="h-full bg-primary/60 transition-colors group-hover:bg-primary/70"
+                    style={{ width: `${dataPct}%` }}
+                    title={`Data: ${formatBytes(app.dataSize)}`}
+                  />
+                  <div
+                    className="h-full bg-primary/30 transition-colors group-hover:bg-primary/40"
+                    style={{ width: `${cachePct}%` }}
+                    title={`Cache: ${formatBytes(app.cacheSize)}`}
+                  />
+                </div>
               </div>
             </button>
           );

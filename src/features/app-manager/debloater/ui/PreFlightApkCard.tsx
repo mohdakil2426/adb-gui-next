@@ -84,7 +84,7 @@ export function PreFlightApkCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-2.5 rounded-lg border p-3 transition-all',
+        'group relative flex flex-col gap-2 rounded-lg border p-2.5 transition-all',
         status === 'installing' && 'border-primary/50 bg-primary/5 ring-1 ring-primary/30',
         status === 'completed' && 'border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10',
         status === 'failed' && 'border-destructive/40 bg-destructive/5 dark:bg-destructive/10',
@@ -93,10 +93,10 @@ export function PreFlightApkCard({
       )}
     >
       {/* Top row: Icon, Name/Label, and Remove / Status indicator */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="flex items-start justify-between gap-2.5">
+        <div className="flex min-w-0 flex-1 items-start gap-2.5">
           {/* App Icon / File Format glyph */}
-          <div className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
+          <div className="relative flex size-8.5 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-raised">
             {inspection?.iconBase64 ? (
               <img
                 alt={inspection.label || fileName}
@@ -185,9 +185,9 @@ export function PreFlightApkCard({
       </div>
 
       {/* Metadata spec pills grid */}
-      <div className="grid @lg:grid-cols-4 grid-cols-2 gap-1.5 pt-1">
+      <div className="grid @lg:grid-cols-4 grid-cols-2 gap-1.5 pt-0.5">
         {/* Version Name & Code */}
-        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1.5">
+        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
           <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
             Version
           </span>
@@ -201,7 +201,7 @@ export function PreFlightApkCard({
         </div>
 
         {/* Target SDK */}
-        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1.5">
+        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
           <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
             Target SDK
           </span>
@@ -222,7 +222,7 @@ export function PreFlightApkCard({
         </div>
 
         {/* Native ABIs */}
-        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1.5">
+        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
           <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
             Architecture / ABI
           </span>
@@ -239,7 +239,7 @@ export function PreFlightApkCard({
         </div>
 
         {/* File Size & Bundle info */}
-        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1.5">
+        <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
           <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
             File Size
           </span>

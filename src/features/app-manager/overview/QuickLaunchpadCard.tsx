@@ -1,4 +1,4 @@
-import { Camera, Code2, Folder, LayoutGrid, Play, Settings } from 'lucide-react';
+import { BatteryCharging, Camera, Code2, Folder, LayoutGrid, Play, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { RunShellCommand } from '@/desktop/backend';
 import { Button } from '@/shared/ui/button';
@@ -38,17 +38,21 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
       label: 'Files & Media',
     },
     {
-      cmd: 'am start -a android.media.action.IMAGE_CAPTURE',
-      icon: Camera,
-      label: 'Camera',
-    },
-    {
       cmd: 'am start -a android.settings.MANAGE_ALL_APPLICATIONS_SETTINGS',
       icon: LayoutGrid,
       label: 'Manage All Apps',
     },
+    {
+      cmd: 'am start -a android.intent.action.POWER_USAGE_SUMMARY',
+      icon: BatteryCharging,
+      label: 'Battery & Power',
+    },
+    {
+      cmd: 'am start -a android.media.action.IMAGE_CAPTURE',
+      icon: Camera,
+      label: 'Camera',
+    },
   ];
-
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
@@ -59,18 +63,18 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
         <span className="text-caption text-muted-foreground">Direct ADB Intents</span>
       </div>
 
-      <div className="grid @lg:grid-cols-3 grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {actions.map((act) => {
           const Icon = act.icon;
           return (
             <Button
-              className="h-9 justify-start gap-2 border-border/80 bg-surface-raised/60 text-body text-foreground hover:bg-surface-raised"
+              className="h-8 justify-start gap-2 border-border/80 bg-surface-raised/60 px-2.5 text-body text-foreground hover:bg-surface-raised"
               key={act.label}
               onClick={() => launchIntent(act.label, act.cmd)}
               size="sm"
               variant="outline"
             >
-              <Icon className="size-4 text-muted-foreground" />
+              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
               <span className="truncate">{act.label}</span>
             </Button>
           );

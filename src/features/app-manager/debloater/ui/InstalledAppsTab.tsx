@@ -12,6 +12,7 @@ import { InstalledBatchBar } from '@/features/app-manager/debloater/ui/Installed
 import { InstalledPackageList } from '@/features/app-manager/debloater/ui/InstalledPackageList';
 import { mapSerial } from '@/features/app-manager/debloater/ui/mapSerial';
 import { UninstallConfirmDialog } from '@/features/app-manager/debloater/ui/UninstallConfirmDialog';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
@@ -48,10 +49,10 @@ export function InstalledAppsTab({
   const setSortOrder = useInstallationStore((s) => s.setSortOrder);
 
   const [isConfirmUninstallOpen, setIsConfirmUninstallOpen] = useState(false);
-
+  const [isConfirmBatchForceStopOpen, setIsConfirmBatchForceStopOpen] = useState(false);
+  const [forceStopTargetPkg, setForceStopTargetPkg] = useState<string | null>(null);
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
   const queryClient = useQueryClient();
-
   const handleLaunch = async (pkgName: string) => {
     if (!selectedSerial) {
       return;
@@ -76,7 +77,7 @@ export function InstalledAppsTab({
     }
   };
 
-  const handleBatchForceStop = async () => {
+  const executeBatchForceStop = async () => {
     if (!selectedSerial || selectedPackages.size === 0) {
       return;
     }
@@ -173,7 +174,7 @@ export function InstalledAppsTab({
         isLoadingPackages={isLoadingPackages}
         isUninstalling={isUninstalling}
         loadError={loadError}
-        onForceStop={handleForceStop}
+        onForceStop={(name) => setForceStopTargetPkg(name)}
         onInspect={onInspect}
         onLaunch={handleLaunch}
         onPackageFilterChange={setPackageFilter}
@@ -197,7 +198,7 @@ export function InstalledAppsTab({
         isUninstalling={isUninstalling}
         onBatchClearCache={handleBatchClearCache}
         onBatchExportApk={handleBatchExportApks}
-        onBatchForceStop={handleBatchForceStop}
+        onBatchForceStop={() => setIsConfirmBatchForceStopOpen(true)}
         onBatchUninstall={() => setIsConfirmUninstallOpen(true)}
         onClearSelection={() => setSelectedPackages(new Set())}
         selectedCount={selectedPackages.size}
@@ -211,6 +212,41 @@ export function InstalledAppsTab({
         packages={packages}
         selectedPackages={selectedPackages}
         selectedSerial={selectedSerial}
+      />
+
+      {/* Batch Force Stop Confirmation */}
+      <ConfirmDialog
+        confirmLabel="Force Stop All"
+        description={`Are you sure you want to force stop ${selectedPackages.size} selected application(s)? Active background processes will be terminated immediately.`}
+        destructive
+        onConfirm={() => {
+          setIsConfirmBatchForceStopOpen(false);
+          void executeBatchForceStop();
+        }}
+        onOpenChange={setIsConfirmBatchForceStopOpen}
+        open={isConfirmBatchForceStopOpen}
+        title={`Force stop ${selectedPackages.size} applications?`}
+      />
+
+      {/* Single Row Force Stop Confirmation */}
+      <ConfirmDialog
+        confirmLabel="Force Stop"
+        description={`Are you sure you want to force stop ${forceStopTargetPkg}? Any unsaved work or background operations will be terminated.`}
+        destructive
+        onConfirm={() => {
+          const pkg = forceStopTargetPkg;
+          setForceStopTargetPkg(null);
+          if (pkg) {
+            void handleForceStop(pkg);
+          }
+        }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setForceStopTargetPkg(null);
+          }
+        }}
+        open={Boolean(forceStopTargetPkg)}
+        title={`Force stop ${forceStopTargetPkg}?`}
       />
     </div>
   );

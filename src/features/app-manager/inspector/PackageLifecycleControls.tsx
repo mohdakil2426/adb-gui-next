@@ -8,6 +8,7 @@ import {
   SelectSaveDirectory,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { Button } from '@/shared/ui/button';
 
 interface PackageLifecycleControlsProps {
@@ -22,6 +23,9 @@ export function PackageLifecycleControls({
   selectedSerial,
 }: PackageLifecycleControlsProps) {
   const [isActing, setIsActing] = useState(false);
+  const [isConfirmForceStopOpen, setIsConfirmForceStopOpen] = useState(false);
+  const [isConfirmClearDataOpen, setIsConfirmClearDataOpen] = useState(false);
+  const [isConfirmDisableOpen, setIsConfirmDisableOpen] = useState(false);
 
   const runOp = async (op: string, label: string) => {
     if (!selectedSerial) {
@@ -99,14 +103,13 @@ export function PackageLifecycleControls({
         <Button
           className="h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
-          onClick={() => runOp('force_stop', 'Force Stop')}
+          onClick={() => setIsConfirmForceStopOpen(true)}
           size="sm"
           variant="outline"
         >
           <Square className="size-3.5 text-amber-500" />
           <span>Force Stop</span>
         </Button>
-
         <Button
           className="h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
@@ -121,14 +124,13 @@ export function PackageLifecycleControls({
         <Button
           className="h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
-          onClick={() => runOp('clear_data', 'Clear Data')}
+          onClick={() => setIsConfirmClearDataOpen(true)}
           size="sm"
           variant="outline"
         >
           <Trash2 className="size-3.5 text-rose-500" />
           <span>Clear Data</span>
         </Button>
-
         <Button
           className="h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
@@ -143,9 +145,13 @@ export function PackageLifecycleControls({
         <Button
           className="h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
-          onClick={() =>
-            runOp(info.isEnabled ? 'disable' : 'enable', info.isEnabled ? 'Disable' : 'Enable')
-          }
+          onClick={() => {
+            if (info.isEnabled) {
+              setIsConfirmDisableOpen(true);
+            } else {
+              void runOp('enable', 'Enable');
+            }
+          }}
           size="sm"
           variant="outline"
         >
@@ -161,7 +167,6 @@ export function PackageLifecycleControls({
             </>
           )}
         </Button>
-
         <Button
           className="col-span-2 h-8 justify-start gap-1.5 text-caption"
           disabled={isActing}
@@ -173,6 +178,48 @@ export function PackageLifecycleControls({
           <span>Open App Settings on Device</span>
         </Button>
       </div>
+
+      {/* Force Stop Confirmation */}
+      <ConfirmDialog
+        confirmLabel="Force Stop"
+        description={`Are you sure you want to force stop ${info.label || info.name}? Any unsaved work or background operations will be terminated.`}
+        destructive
+        onConfirm={() => {
+          setIsConfirmForceStopOpen(false);
+          void runOp('force_stop', 'Force Stop');
+        }}
+        onOpenChange={setIsConfirmForceStopOpen}
+        open={isConfirmForceStopOpen}
+        title={`Force stop ${info.label || info.name}?`}
+      />
+
+      {/* Clear Data Confirmation */}
+      <ConfirmDialog
+        confirmLabel="Clear Data"
+        description={`This will permanently delete all app data, databases, logins, accounts, and cache for ${info.label || info.name}. The application will be reset to its clean state.`}
+        destructive
+        onConfirm={() => {
+          setIsConfirmClearDataOpen(false);
+          void runOp('clear_data', 'Clear Data');
+        }}
+        onOpenChange={setIsConfirmClearDataOpen}
+        open={isConfirmClearDataOpen}
+        title={`Clear all data for ${info.label || info.name}?`}
+      />
+
+      {/* Disable Package Confirmation */}
+      <ConfirmDialog
+        confirmLabel="Disable Package"
+        description={`Disabling ${info.label || info.name} will hide it from the launcher and prevent background execution. Some system services or dependent apps may be affected.`}
+        destructive
+        onConfirm={() => {
+          setIsConfirmDisableOpen(false);
+          void runOp('disable', 'Disable');
+        }}
+        onOpenChange={setIsConfirmDisableOpen}
+        open={isConfirmDisableOpen}
+        title={`Disable ${info.label || info.name}?`}
+      />
     </div>
   );
 }

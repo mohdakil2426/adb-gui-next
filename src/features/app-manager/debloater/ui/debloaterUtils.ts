@@ -15,11 +15,11 @@ type PkgState = backend.PkgState;
  * (~331px at the 720px floor, capped at 448px so it does not take over the
  * page on a 1440p+ display) instead of guessing one constant for every size.
  */
-export const PACKAGE_LIST_VIEWPORT = 'h-[calc(100vh-270px)] min-h-[480px]';
+export const PACKAGE_LIST_VIEWPORT = 'h-[calc(100vh-330px)] min-h-[350px] max-h-[640px]';
 
-/** 4px grid: two-line installed rows with generous breathing room (56px), rich debloat rows (56px). */
-export const INSTALLED_ROW_HEIGHT = 56;
-export const DEBLOAT_ROW_HEIGHT = 56;
+/** 4px grid: two-line installed rows with compact breathing room (52px), rich debloat rows (54px). */
+export const INSTALLED_ROW_HEIGHT = 52;
+export const DEBLOAT_ROW_HEIGHT = 54;
 // ── Safety tier helpers ────────────────────────────────────────────────────────
 
 export const REMOVAL_TIER_LABELS: Record<RemovalTier, string> = {

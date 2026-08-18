@@ -1,4 +1,4 @@
-import { Camera, Eye, MapPin, Mic, Phone, Shield } from 'lucide-react';
+import { Camera, Eye, MapPin, Mic, Phone } from 'lucide-react';
 
 interface PermissionDensityMatrixProps {
   userAppCount: number;
@@ -63,11 +63,6 @@ export function PermissionDensityMatrix({ userAppCount }: PermissionDensityMatri
             </div>
           );
         })}
-      </div>
-
-      <div className="flex items-center gap-1.5 pt-0.5 text-caption text-muted-foreground">
-        <Shield className="size-3.5 text-emerald-500" />
-        <span>AppOps live isolation available in Package Inspector</span>
       </div>
     </div>
   );

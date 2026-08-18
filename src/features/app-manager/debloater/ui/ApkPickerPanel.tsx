@@ -76,10 +76,10 @@ export function ApkPickerPanel({
   }, [apkPaths, inspections]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* State 1: Empty Queue */}
       {apkPaths.length === 0 ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <InstallDropZone
             disabled={isInstalling}
             onBrowse={onAddMore}
@@ -90,9 +90,8 @@ export function ApkPickerPanel({
         </div>
       ) : (
         /* State 2: Active Queue with Pre-Flight Inspection & Controls */
-        <div className="flex flex-col gap-4">
-          {/* Queue Top Stats Header Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-none">
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border bg-surface px-3.5 py-2.5 shadow-none">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground">
                 <Package aria-hidden="true" className="size-4.5 text-primary" />
@@ -171,7 +170,7 @@ export function ApkPickerPanel({
               </span>
             </div>
 
-            <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto pr-1">
+            <div className="flex max-h-[396px] flex-col gap-2 overflow-y-auto pr-1">
               {apkPaths.map((path) => (
                 <PreFlightApkCard
                   disabled={isInstalling || !selectedSerial}
@@ -186,9 +185,9 @@ export function ApkPickerPanel({
           </div>
 
           {/* Primary Installation Action Trigger */}
-          <div className="flex flex-col gap-2 pt-1">
+          <div className="flex flex-col gap-1.5 pt-0.5">
             <Button
-              className="h-11 w-full gap-2 font-semibold text-body shadow-xs"
+              className="h-10 w-full gap-2 font-semibold text-body shadow-xs"
               disabled={isInstalling || !selectedSerial}
               onClick={onInstall}
               size="lg"

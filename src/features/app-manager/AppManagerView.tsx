@@ -23,13 +23,7 @@ export function AppManagerView({ activeView }: { activeView: string }) {
 
   const [inspectedPackage, setInspectedPackage] = useState<string | null>(null);
 
-  const {
-    error: packagesError,
-    hasLoaded,
-    isLoading,
-    refresh,
-    selectedSerial,
-  } = useInstalledPackages();
+  const { error: packagesError, hasLoaded, refresh, selectedSerial } = useInstalledPackages();
 
   void activeView;
 
@@ -63,13 +57,6 @@ export function AppManagerView({ activeView }: { activeView: string }) {
               <TabsTrigger value="installed">
                 <Package aria-hidden="true" />
                 Installed apps
-                {isLoading ? (
-                  <Loader2 aria-hidden="true" className="size-3 animate-spin" />
-                ) : (
-                  <span className="numeric text-caption text-muted-foreground">
-                    {installedPackages.length}
-                  </span>
-                )}
               </TabsTrigger>
 
               <TabsTrigger value="installation">
