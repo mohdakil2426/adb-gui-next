@@ -1,172 +1,206 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Monitor, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { ScrcpyCheckUpdate, ScrcpyInstall, ScrcpyLaunch, ScrcpyStatus } from '@/desktop/backend';
+import {
+  ScrcpyActiveSessions,
+  ScrcpyCheckUpdate,
+  ScrcpyInstall,
+  ScrcpyLaunch,
+  ScrcpyStatus,
+  ScrcpyStop,
+} from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { useScrcpyProgress } from '@/features/scrcpy/hooks/useScrcpyProgress';
 import { DEFAULT_SCRCPY_OPTIONS } from '@/features/scrcpy/model/defaults';
 import { ScrcpySessionCard } from '@/features/scrcpy/ui/ScrcpySessionCard';
+import { ScrcpyStatusCard } from '@/features/scrcpy/ui/ScrcpyStatusCard';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
-import { Button } from '@/shared/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Progress } from '@/shared/ui/progress';
+import { useNicknameStore } from '@/shared/stores/nicknameStore';
 import { handleError } from '@/shared/utils/errorHandler';
 import { queryKeys } from '@/shared/utils/queries';
 
 export function ViewScrcpy() {
   const queryClient = useQueryClient();
+  const devices = useDeviceStore((state) => state.devices);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
+  const nicknames = useNicknameStore((state) => state.nicknames);
   const progress = useScrcpyProgress();
   const [options, setOptions] = useState<backend.ScrcpyLaunchOptions>(DEFAULT_SCRCPY_OPTIONS);
+  const [selectedSerials, setSelectedSerials] = useState<Set<string>>(() =>
+    selectedSerial ? new Set([selectedSerial]) : new Set(),
+  );
+
+  useEffect(() => {
+    const adbSerials = new Set(devices.filter((d) => d.status === 'device').map((d) => d.serial));
+    setSelectedSerials((prev) => {
+      const valid = new Set([...prev].filter((s) => adbSerials.has(s)));
+      if (valid.size > 0) {
+        return valid;
+      }
+      if (selectedSerial && adbSerials.has(selectedSerial)) {
+        return new Set([selectedSerial]);
+      }
+      const first = adbSerials.values().next().value;
+      return first ? new Set([first]) : new Set();
+    });
+  }, [devices, selectedSerial]);
+  const handleToggleSerial = (serial: string) => {
+    setSelectedSerials((prev) => {
+      const next = new Set(prev);
+      if (next.has(serial)) {
+        next.delete(serial);
+      } else {
+        next.add(serial);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const adbSerials = devices.filter((d) => d.status === 'device').map((d) => d.serial);
+    setSelectedSerials(new Set(adbSerials));
+  };
+
+  const handleClearAll = () => {
+    setSelectedSerials(new Set());
+  };
 
   const statusQuery = useQuery({
     queryFn: ScrcpyStatus,
     queryKey: queryKeys.scrcpy.status,
   });
 
+  const activeSessionsQuery = useQuery({
+    queryFn: ScrcpyActiveSessions,
+    queryKey: queryKeys.scrcpy.activeSessions,
+    refetchInterval: 2500,
+    staleTime: 1000,
+  });
+
+  const activeSerials = new Set(activeSessionsQuery.data?.serials ?? []);
+
   const install = useMutation({
     mutationFn: ScrcpyInstall,
-    onError: (error) => {
-      handleError('Scrcpy download', error);
-    },
-    onSuccess: (status) => {
-      queryClient.setQueryData(queryKeys.scrcpy.status, status);
-      toast.success(`scrcpy ${status.installedVersion ?? ''} is ready`);
+    onError: (error) => handleError('Scrcpy download', error),
+    onSuccess: (st) => {
+      queryClient.setQueryData(queryKeys.scrcpy.status, st);
+      toast.success(`scrcpy ${st.installedVersion ?? ''} is ready`);
     },
   });
 
   const checkUpdate = useMutation({
     mutationFn: ScrcpyCheckUpdate,
-    onError: (error) => {
-      handleError('Scrcpy update check', error);
-    },
-    onSuccess: (status) => {
-      queryClient.setQueryData(queryKeys.scrcpy.status, status);
-      if (status.latestVersion && status.latestVersion !== status.installedVersion) {
-        toast.message(`Update available: ${status.latestVersion}`);
+    onError: (error) => handleError('Scrcpy update check', error),
+    onSuccess: (st) => {
+      queryClient.setQueryData(queryKeys.scrcpy.status, st);
+      if (st.latestVersion && st.latestVersion !== st.installedVersion) {
+        toast.message(`Update available: ${st.latestVersion}`);
       } else {
         toast.success('scrcpy is up to date');
       }
     },
   });
 
+  const updateActiveSerials = (updater: (prev: string[]) => string[]) => {
+    queryClient.setQueryData(
+      queryKeys.scrcpy.activeSessions,
+      (prev: backend.ScrcpyActiveSessions | undefined) => {
+        const next = updater(prev?.serials ?? []);
+        return { serials: next, sessions: next.map((s) => ({ pid: 0, serial: s })) };
+      },
+    );
+  };
+
   const launch = useMutation({
-    mutationFn: () => ScrcpyLaunch(options, selectedSerial),
-    onError: (error) => {
-      handleError('Scrcpy launch', error);
+    mutationFn: async (serials: string[]) => {
+      if (serials.length === 0) {
+        throw new Error('No device selected');
+      }
+      const results = await Promise.allSettled(serials.map((s) => ScrcpyLaunch(options, s)));
+      const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (failures.length === serials.length && serials.length > 0) {
+        const firstReason = failures[0]?.reason;
+        throw firstReason instanceof Error ? firstReason : new Error(String(firstReason));
+      }
+      if (failures.length > 0) {
+        toast.error(`Failed to launch scrcpy for ${failures.length} device(s)`);
+      }
     },
-    onSuccess: () => {
-      toast.success('Opened a native scrcpy window');
+    onError: (error) => handleError('Scrcpy launch', error),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
+    },
+    onSuccess: (_, serials) => {
+      updateActiveSerials((existing) => Array.from(new Set([...existing, ...serials])));
+      toast.success(
+        serials.length > 1
+          ? `Opened ${serials.length} scrcpy mirror windows`
+          : 'Opened a native scrcpy window',
+      );
     },
   });
 
-  const status = statusQuery.data;
-  const installed = Boolean(status?.binaryPath);
-  const updateAvailable =
-    Boolean(status?.latestVersion) && status?.latestVersion !== status?.installedVersion;
-  const percent =
-    progress?.total && progress.total > 0
-      ? Math.min(100, Math.round((progress.received / progress.total) * 100))
-      : null;
+  const stop = useMutation({
+    mutationFn: () => ScrcpyStop(),
+    onError: (error) => handleError('Stop scrcpy', error),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
+    },
+    onSuccess: () => {
+      updateActiveSerials(() => []);
+      toast.success('Closed running scrcpy window(s)');
+    },
+  });
+
+  const stopDevice = useMutation({
+    mutationFn: (serial: string) => ScrcpyStop(serial),
+    onError: (error) => handleError('Stop scrcpy', error),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
+    },
+    onSuccess: (_, serial) => {
+      updateActiveSerials((existing) => existing.filter((s) => s !== serial && s !== '*'));
+      const name = nicknames[serial] ?? serial;
+      toast.success(`Closed scrcpy window for ${name}`);
+    },
+  });
 
   return (
     <div className="@container flex flex-col gap-4">
       <h1 className="sr-only">Scrcpy</h1>
 
-      <Card className="border-border bg-surface shadow-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-title">
-            <Monitor aria-hidden="true" className="size-5" />
-            Scrcpy
-          </CardTitle>
-          <CardDescription>
-            Mirror and control the selected device in a separate native window. Official Genymobile
-            binaries are downloaded into app data — this app never embeds scrcpy in the webview.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {statusQuery.isError ? (
-            <p className="text-body text-destructive">Could not read the local scrcpy install.</p>
-          ) : null}
-
-          {status?.unsupportedReason ? (
-            <p className="rounded-lg border border-border bg-surface-raised p-3 text-body text-muted-foreground">
-              {status.unsupportedReason} You can still launch a copy of scrcpy that is already on
-              PATH.
-            </p>
-          ) : null}
-
-          <div className="grid @lg:grid-cols-3 grid-cols-1 gap-3">
-            <div className="rounded-lg border border-border bg-surface-raised p-3">
-              <p className="text-caption text-muted-foreground uppercase tracking-wide">
-                Installed
-              </p>
-              <p className="numeric font-medium text-body">
-                {status?.installedVersion ?? (installed ? 'detected' : 'not installed')}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-raised p-3">
-              <p className="text-caption text-muted-foreground uppercase tracking-wide">Latest</p>
-              <p className="numeric font-medium text-body">{status?.latestVersion ?? '—'}</p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface-raised p-3">
-              <p className="text-caption text-muted-foreground uppercase tracking-wide">Source</p>
-              <p className="font-medium text-body">{status?.source ?? '—'}</p>
-            </div>
-          </div>
-
-          {install.isPending && progress ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-caption text-muted-foreground">{progress.stage}</span>
-                <span className="numeric text-caption text-muted-foreground">
-                  {percent == null ? '…' : `${percent}%`}
-                </span>
-              </div>
-              <Progress value={percent ?? 15} />
-            </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-2">
-            {status?.canInstallOfficial ? (
-              <Button disabled={install.isPending} onClick={() => install.mutate()} type="button">
-                <Download aria-hidden="true" />
-                {installed ? 'Redownload official build' : 'Download scrcpy'}
-              </Button>
-            ) : null}
-            <Button
-              disabled={checkUpdate.isPending || install.isPending}
-              onClick={() => checkUpdate.mutate()}
-              type="button"
-              variant="outline"
-            >
-              <RefreshCw aria-hidden="true" />
-              Check for update
-            </Button>
-            {updateAvailable && status?.canInstallOfficial ? (
-              <Button
-                disabled={install.isPending}
-                onClick={() => install.mutate()}
-                type="button"
-                variant="secondary"
-              >
-                Update to {status.latestVersion}
-              </Button>
-            ) : null}
-          </div>
-        </CardContent>
-      </Card>
+      <ScrcpyStatusCard
+        isCheckingUpdate={checkUpdate.isPending}
+        isError={statusQuery.isError}
+        isInstalling={install.isPending}
+        onCheckUpdate={() => checkUpdate.mutate()}
+        onInstall={() => install.mutate()}
+        progress={progress}
+        status={statusQuery.data}
+      />
 
       <ScrcpySessionCard
-        canLaunch={installed || status?.source === 'path'}
+        activeSerials={activeSerials}
+        canLaunch={Boolean(statusQuery.data?.binaryPath) || statusQuery.data?.source === 'path'}
         isLaunching={launch.isPending}
-        onLaunch={() => launch.mutate()}
+        isStopping={stop.isPending || stopDevice.isPending}
+        onClearAll={handleClearAll}
+        onLaunch={() => launch.mutate(Array.from(selectedSerials))}
         onOptionsChange={(partial) => {
           setOptions((current) => ({ ...current, ...partial }));
         }}
+        onSelectAll={handleSelectAll}
+        onStop={() => {
+          if (selectedSerials.size > 0 && selectedSerials.size < activeSerials.size) {
+            void Promise.all(Array.from(selectedSerials).map((s) => stopDevice.mutateAsync(s)));
+          } else {
+            stop.mutate();
+          }
+        }}
+        onStopDevice={(serial) => stopDevice.mutate(serial)}
+        onToggleSerial={handleToggleSerial}
         options={options}
-        serial={selectedSerial}
+        selectedSerials={selectedSerials}
       />
     </div>
   );

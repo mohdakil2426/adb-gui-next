@@ -1,7 +1,16 @@
-import { Rocket } from 'lucide-react';
+import { Rocket, Square } from 'lucide-react';
 import { SelectSaveDirectory } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
-import { AUDIO_SOURCES, KEYBOARDS, VIDEO_CODECS } from '@/features/scrcpy/model/defaults';
+import {
+  AUDIO_SOURCES,
+  BITRATE_PRESETS,
+  FPS_PRESETS,
+  KEYBOARDS,
+  MAX_SIZE_PRESETS,
+  VIDEO_CODECS,
+} from '@/features/scrcpy/model/defaults';
+import { ScrcpyDeviceSelector } from '@/features/scrcpy/ui/ScrcpyDeviceSelector';
+import { ScrcpyPresetField } from '@/features/scrcpy/ui/ScrcpyPresetField';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -34,19 +43,33 @@ function FlagRow({
 }
 
 export function ScrcpySessionCard({
+  activeSerials,
   canLaunch,
   isLaunching,
+  isStopping,
+  onClearAll,
   onLaunch,
   onOptionsChange,
+  onSelectAll,
+  onStop,
+  onStopDevice,
+  onToggleSerial,
   options,
-  serial,
+  selectedSerials,
 }: {
+  activeSerials: Set<string>;
   canLaunch: boolean;
   isLaunching: boolean;
+  isStopping: boolean;
+  onClearAll: () => void;
   onLaunch: () => void;
   onOptionsChange: (partial: Partial<backend.ScrcpyLaunchOptions>) => void;
+  onSelectAll: () => void;
+  onStop: () => void;
+  onStopDevice?: ((serial: string) => void) | undefined;
+  onToggleSerial: (serial: string) => void;
   options: backend.ScrcpyLaunchOptions;
-  serial: string | null;
+  selectedSerials: Set<string>;
 }) {
   const pickRecordPath = async () => {
     const path = await SelectSaveDirectory('scrcpy-recording.mp4');
@@ -60,45 +83,46 @@ export function ScrcpySessionCard({
       <CardHeader>
         <CardTitle className="text-title">Session</CardTitle>
         <CardDescription>
-          Flags map 1:1 to the official scrcpy CLI. Target serial:{' '}
-          <span className="font-mono text-mono">{serial ?? 'none selected'}</span>
+          Flags map 1:1 to the official scrcpy CLI. Configure display, audio, and controls.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <ScrcpyDeviceSelector
+          activeSerials={activeSerials}
+          disabled={isLaunching || isStopping}
+          onClearAll={onClearAll}
+          onSelectAll={onSelectAll}
+          onStopDevice={onStopDevice}
+          onToggleSerial={onToggleSerial}
+          selectedSerials={selectedSerials}
+        />
         <div className="grid @xl:grid-cols-2 grid-cols-1 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="scrcpy-max-size">Max size (px)</Label>
-            <Input
-              id="scrcpy-max-size"
-              inputMode="numeric"
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                onOptionsChange({ maxSize: Number.isFinite(value) && value > 0 ? value : null });
-              }}
-              value={options.maxSize ?? ''}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="scrcpy-bitrate">Video bit rate</Label>
-            <Input
-              id="scrcpy-bitrate"
-              onChange={(event) => onOptionsChange({ videoBitRate: event.target.value || null })}
-              placeholder="8M"
-              value={options.videoBitRate ?? ''}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="scrcpy-fps">Max FPS</Label>
-            <Input
-              id="scrcpy-fps"
-              inputMode="numeric"
-              onChange={(event) => {
-                const value = Number(event.target.value);
-                onOptionsChange({ maxFps: Number.isFinite(value) && value > 0 ? value : null });
-              }}
-              value={options.maxFps ?? ''}
-            />
-          </div>
+          <ScrcpyPresetField
+            id="scrcpy-max-size"
+            isNumeric
+            label="Max size (px)"
+            onChange={(maxSize) => onOptionsChange({ maxSize })}
+            placeholder="e.g. 1920"
+            presets={MAX_SIZE_PRESETS}
+            value={options.maxSize}
+          />
+          <ScrcpyPresetField
+            id="scrcpy-bitrate"
+            label="Video bit rate"
+            onChange={(videoBitRate) => onOptionsChange({ videoBitRate })}
+            placeholder="e.g. 8M or 12M"
+            presets={BITRATE_PRESETS}
+            value={options.videoBitRate}
+          />
+          <ScrcpyPresetField
+            id="scrcpy-fps"
+            isNumeric
+            label="Max FPS"
+            onChange={(maxFps) => onOptionsChange({ maxFps })}
+            placeholder="e.g. 60 or 120"
+            presets={FPS_PRESETS}
+            value={options.maxFps}
+          />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="scrcpy-codec">Video codec</Label>
             <Select
@@ -232,11 +256,35 @@ export function ScrcpySessionCard({
             </Button>
           </div>
         </div>
-
-        <Button disabled={isLaunching || !canLaunch} onClick={onLaunch} type="button">
-          <Rocket aria-hidden="true" />
-          Launch
-        </Button>
+        {selectedSerials.size > 0 &&
+        Array.from(selectedSerials).every((s) => activeSerials.has(s) || activeSerials.has('*')) ? (
+          <Button
+            className="w-full hover:bg-destructive/10 hover:text-destructive"
+            disabled={isStopping || selectedSerials.size === 0}
+            onClick={onStop}
+            type="button"
+            variant="outline"
+          >
+            <Square aria-hidden="true" className="size-4" />
+            {selectedSerials.size > 1
+              ? `Stop Mirror (${selectedSerials.size} devices)`
+              : 'Stop Mirror'}
+          </Button>
+        ) : (
+          <Button
+            className="w-full"
+            disabled={isLaunching || isStopping || !canLaunch || selectedSerials.size === 0}
+            onClick={onLaunch}
+            type="button"
+          >
+            <Rocket aria-hidden="true" />
+            {selectedSerials.size > 1
+              ? `Launch Mirror (${selectedSerials.size} devices)`
+              : selectedSerials.size === 1
+                ? 'Launch Mirror'
+                : 'Select a device to launch'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
