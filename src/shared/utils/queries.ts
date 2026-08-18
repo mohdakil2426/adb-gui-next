@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { GetDevices, GetFastbootDevices, GetInstalledPackages, ListAvds } from '@/desktop/backend';
+import { GetAllDevices, GetInstalledPackages, ListAvds } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 
 type Device = backend.Device;
@@ -62,35 +62,17 @@ export const STALE_TIME = {
 // for query usage. Views that need mutations still import backend directly.
 // ---------------------------------------------------------------------------
 
-/** Fetches ADB + fastboot devices, merges and deduplicates by serial. */
+/** Fetches all connected ADB & Fastboot devices from unified backend registry. */
 export const fetchAllDevices = async (): Promise<Device[]> => {
-  const [adbDevices, fastbootDevices] = await Promise.all([GetDevices(), GetFastbootDevices()]);
-
-  const merged: Device[] = [];
-  const seen = new Set<string>();
-
-  // Fastboot first, then ADB (skip serials already present).
-  if (Array.isArray(fastbootDevices)) {
-    for (const d of fastbootDevices) {
-      if (!d || typeof d.serial !== 'string' || seen.has(d.serial)) {
-        continue;
-      }
-      seen.add(d.serial);
-      merged.push({ serial: d.serial, status: d.status ?? 'fastboot' });
-    }
+  const devices = await GetAllDevices();
+  if (!Array.isArray(devices)) {
+    return [];
   }
-
-  if (Array.isArray(adbDevices)) {
-    for (const d of adbDevices) {
-      if (!d || typeof d.serial !== 'string' || seen.has(d.serial)) {
-        continue;
-      }
-      seen.add(d.serial);
-      merged.push({ serial: d.serial, status: d.status });
-    }
-  }
-
-  return merged;
+  return devices.map((d) => ({
+    serial: d.serial,
+    status: d.status || 'device',
+    connectionType: d.connectionType ?? 'adb',
+  }));
 };
 
 export const fetchPackages = () => GetInstalledPackages();

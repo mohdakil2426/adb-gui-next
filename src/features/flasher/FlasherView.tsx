@@ -38,6 +38,7 @@ export function ViewFlasher({ initialTab = 'overview' }: { initialTab?: FlasherT
   } = useFlasherActions();
 
   const {
+    diagnostics,
     vitals,
     isProbing,
     lastUpdated,
@@ -47,7 +48,6 @@ export function ViewFlasher({ initialTab = 'overview' }: { initialTab?: FlasherT
     isFastbootMode,
     selectedDevice,
   } = useFlasherTelemetry();
-
   const {
     queue,
     isBatchFlashing,
@@ -130,6 +130,7 @@ export function ViewFlasher({ initialTab = 'overview' }: { initialTab?: FlasherT
         {/* Tab 1: Overview & Diagnostics */}
         <TabsContent className="m-0 focus-visible:outline-none" value="overview">
           <FlasherOverviewTab
+            diagnostics={diagnostics}
             isFastbootMode={isFastbootMode}
             isProbing={isProbing}
             onRebootBootloader={handleRebootBootloader}

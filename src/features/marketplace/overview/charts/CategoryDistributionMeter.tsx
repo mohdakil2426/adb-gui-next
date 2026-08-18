@@ -1,4 +1,7 @@
 import { Code2, Cpu, FileCode2, Play, Shield, Wrench } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MarketplaceGetOverviewStats } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import { formatPercent, usageRatio } from '@/shared/utils/format';
 
 interface CategoryDistributionMeterProps {
@@ -9,13 +12,28 @@ interface CategoryDistributionMeterProps {
   toolsCount?: number;
 }
 
-export function CategoryDistributionMeter({
-  systemCount = 3120,
-  privacyCount = 2840,
-  devCount = 4210,
-  mediaCount = 2190,
-  toolsCount = 1840,
-}: CategoryDistributionMeterProps) {
+export function CategoryDistributionMeter(props: CategoryDistributionMeterProps) {
+  const [stats, setStats] = useState<backend.MarketplaceOverviewStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    MarketplaceGetOverviewStats()
+      .then((data) => {
+        if (!cancelled && data) {
+          setStats(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const systemCount = props.systemCount ?? stats?.systemCount ?? 3120;
+  const privacyCount = props.privacyCount ?? stats?.privacyCount ?? 2840;
+  const devCount = props.devCount ?? stats?.devCount ?? 4210;
+  const mediaCount = props.mediaCount ?? stats?.mediaCount ?? 2190;
+  const toolsCount = props.toolsCount ?? stats?.toolsCount ?? 1840;
   const categories = [
     {
       key: 'dev',

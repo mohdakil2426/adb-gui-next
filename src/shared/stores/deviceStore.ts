@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { backend } from '@/desktop/models';
+import { useMemoryHistoryStore } from '@/features/dashboard/model/memoryHistoryStore';
 
 type Device = backend.Device;
 type DeviceInfo = backend.DeviceInfo;
@@ -36,6 +37,7 @@ export const useDeviceStore = create<DeviceState>()(
       editingDeviceSerial: null,
 
       setDevices: (devices) => {
+        useMemoryHistoryStore.getState().pruneDisconnected(devices.map((d) => d.serial));
         set((state) => {
           // Skip update when serials + statuses are unchanged (poll thrash)
           const unchanged =

@@ -1,4 +1,7 @@
 import { CheckCircle2, FileCheck, Loader2, Radio } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { backend } from '@/desktop/models';
+import { EventsOn } from '@/desktop/runtime';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
@@ -14,6 +17,32 @@ export function SideloadProgressCard({
   fileName,
   packagePath,
 }: SideloadProgressCardProps) {
+  const [streamProgress, setStreamProgress] = useState<{
+    percentage: number;
+    stage: string;
+    message: string;
+  }>({
+    percentage: 0,
+    stage: 'idle',
+    message: '',
+  });
+
+  useEffect(() => {
+    if (!isSideloading) {
+      return;
+    }
+
+    const unlisten = EventsOn<backend.SideloadProgress>('flasher:sideload-progress', (payload) => {
+      const percentage = payload.percentage ?? payload.percent ?? 0;
+      const stage = payload.stage ?? payload.phase ?? 'sideloading';
+      const message = payload.message ?? '';
+      setStreamProgress({ percentage, stage, message });
+    });
+
+    return () => {
+      unlisten();
+    };
+  }, [isSideloading]);
   const steps = [
     {
       id: 'verify',
@@ -24,23 +53,37 @@ export function SideloadProgressCard({
     {
       id: 'stream',
       label: '2. ADB Sideload Stream',
-      description: 'Streams raw payload bytes to device recovery daemon',
-      status: isSideloading ? 'active' : 'pending',
+      description:
+        streamProgress.percentage > 0
+          ? `Transferred ${streamProgress.percentage}% to device`
+          : 'Streams raw payload bytes to device recovery daemon',
+      status:
+        streamProgress.percentage >= 100 ||
+        streamProgress.stage === 'verifying' ||
+        streamProgress.stage === 'success'
+          ? 'complete'
+          : isSideloading
+            ? 'active'
+            : 'pending',
     },
     {
       id: 'install',
       label: '3. Device Processing',
       description: 'Recovery updater executes delta patches and updates target slot',
-      status: isSideloading ? 'active' : 'pending',
+      status:
+        streamProgress.stage === 'verifying'
+          ? 'active'
+          : streamProgress.stage === 'success'
+            ? 'complete'
+            : 'pending',
     },
     {
       id: 'finalize',
       label: '4. Slot Handover',
       description: 'Bootloader marks new slot active and clean boot target',
-      status: 'pending',
+      status: streamProgress.stage === 'success' ? 'complete' : 'pending',
     },
   ];
-
   return (
     <Card className="flex flex-col justify-between rounded-xl border-border bg-surface shadow-none">
       <CardHeader className="pb-3">
@@ -59,17 +102,23 @@ export function SideloadProgressCard({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-3.5">
-        {/* Animated Progress Bar during execution */}
+        {/* Streamed Progress Bar during execution */}
         {isSideloading ? (
           <div className="flex flex-col gap-2 rounded-lg border border-info/30 bg-info/5 p-3">
             <div className="flex items-center justify-between text-caption">
               <span className="font-semibold text-foreground">
-                Streaming {fileName || 'Package'} to Recovery...
+                Streaming {fileName || 'Package'} to Recovery... ({streamProgress.percentage}%)
               </span>
-              <span className="animate-pulse font-mono text-info">Live Transfer</span>
+              <span className="font-mono text-info">
+                {streamProgress.message ||
+                  (streamProgress.percentage >= 100 ? 'Processing' : 'Live Transfer')}
+              </span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div className="h-full w-2/3 animate-pulse rounded-full bg-info" />
+              <div
+                className="h-full rounded-full bg-info transition-all duration-300 ease-out"
+                style={{ width: `${Math.max(2, Math.min(100, streamProgress.percentage))}%` }}
+              />
             </div>
           </div>
         ) : null}

@@ -1,4 +1,7 @@
 import { GitBranch, Layers, Package, Store } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { MarketplaceGetOverviewStats } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
 import { formatPercent, usageRatio } from '@/shared/utils/format';
 
 interface SourceCompositionDonutProps {
@@ -14,12 +17,27 @@ const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const GAP = 2;
 
-export function SourceCompositionDonut({
-  fdroidCount = 4820,
-  githubCount = 6140,
-  communityCount = 3240,
-  totalCatalogCount,
-}: SourceCompositionDonutProps) {
+export function SourceCompositionDonut(props: SourceCompositionDonutProps) {
+  const [stats, setStats] = useState<backend.MarketplaceOverviewStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    MarketplaceGetOverviewStats()
+      .then((data) => {
+        if (!cancelled && data) {
+          setStats(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const fdroidCount = props.fdroidCount ?? stats?.fdroidCount ?? 4820;
+  const githubCount = props.githubCount ?? stats?.githubCount ?? 6140;
+  const communityCount = props.communityCount ?? stats?.communityCount ?? 3240;
+  const totalCatalogCount = props.totalCatalogCount ?? stats?.totalApps ?? stats?.totalAppsCount;
   const slices = [
     {
       key: 'github',

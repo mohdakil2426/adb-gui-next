@@ -7,8 +7,10 @@ import { ViewPayloadDumper } from '@/features/payload-dumper/PayloadDumperView';
 
 vi.mock('@/desktop/backend', () => ({
   CleanupPayloadCache: vi.fn(),
+  ComputePartitionFileSha256: vi.fn().mockResolvedValue('mocksha256'),
   CreateCancellationToken: vi.fn(),
   ExtractPayload: vi.fn(),
+  GetExtractionPresets: vi.fn().mockResolvedValue([]),
   OpenFolder: vi.fn(),
   SelectOutputDirectory: vi.fn(),
   SelectPayloadFile: vi.fn(),

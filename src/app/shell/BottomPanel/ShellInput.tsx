@@ -1,7 +1,7 @@
 import type React from 'react';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { RunAdbHostCommand, RunFastbootHostCommand, RunShellCommand } from '@/desktop/backend';
+import { ExecuteCliCommand } from '@/desktop/backend';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useShellStore } from '@/shared/stores/shellStore';
 import {
@@ -13,31 +13,6 @@ import {
 import { debugLog } from '@/shared/utils/debug';
 import { handleError } from '@/shared/utils/errorHandler';
 import { shellCommandSchema } from '@/shared/utils/schemas';
-
-async function runShellCommand(trimmedCommand: string, selectedSerial: string | null) {
-  if (trimmedCommand.startsWith('adb shell ')) {
-    const shellCmd = trimmedCommand.substring(10).trim();
-    if (!shellCmd) {
-      throw new Error('Usage: adb shell <command...>');
-    }
-    return await RunShellCommand(shellCmd, selectedSerial);
-  }
-  if (trimmedCommand.startsWith('adb ')) {
-    const hostCmd = trimmedCommand.substring(4).trim();
-    if (!hostCmd) {
-      throw new Error('Usage: adb <command...>');
-    }
-    return await RunAdbHostCommand(hostCmd);
-  }
-  if (trimmedCommand.startsWith('fastboot ')) {
-    const fastbootCmd = trimmedCommand.substring(9).trim();
-    if (!fastbootCmd) {
-      throw new Error('Usage: fastboot <command...>');
-    }
-    return await RunFastbootHostCommand(fastbootCmd, selectedSerial);
-  }
-  throw new Error(`Unknown command: "${trimmedCommand}".`);
-}
 
 /**
  * Owns the command draft and in-flight state so that keystrokes never re-render
@@ -116,8 +91,13 @@ export const ShellInput = memo(function ShellInput() {
 
     try {
       debugLog(`Executing shell command: ${trimmedCommand}`);
-      const result = await runShellCommand(trimmedCommand, selectedSerial);
-      addHistoryEntry({ type: 'result', text: result.trim() || '(No output)' });
+      const res = await ExecuteCliCommand(trimmedCommand, selectedSerial);
+      const text = (res.stdout || res.output || res.stderr || '').trim() || '(No output)';
+      if (res.exitCode !== 0 && !res.success && res.stderr) {
+        addHistoryEntry({ type: 'error', text: res.stderr.trim() });
+      } else {
+        addHistoryEntry({ type: 'result', text });
+      }
     } catch (err) {
       const error = err as Error;
       handleError('Shell Command', error);

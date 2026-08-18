@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { HardDrive } from 'lucide-react';
 import { useState } from 'react';
+import { EmulatorGetDiskBreakdown } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
@@ -20,18 +22,25 @@ interface PartitionSegment {
 export function DiskUsageBreakdownChart({ avd }: DiskUsageBreakdownChartProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const sysGb = (avd?.apiLevel ?? 30) >= 33 ? 3.4 : 2.6;
-  const dataGb = 6.0;
-  const snapGb = avd?.bootMode === 'normal' ? 1.8 : 0.6;
-  const sdGb = 0.5;
-  const totalGb = sysGb + dataGb + snapGb + sdGb;
+  const { data: breakdown } = useQuery({
+    queryKey: ['emulator', 'diskBreakdown', avd?.name],
+    queryFn: () => (avd?.name ? EmulatorGetDiskBreakdown(avd.name) : Promise.reject('No AVD')),
+    enabled: Boolean(avd?.name),
+    staleTime: 30_000,
+  });
+
+  const sysGb = breakdown?.systemSizeGb ?? ((avd?.apiLevel ?? 30) >= 33 ? 3.4 : 2.6);
+  const dataGb = breakdown?.dataSizeGb ?? 6.0;
+  const snapGb = breakdown?.snapshotsSizeGb ?? (avd?.bootMode === 'normal' ? 1.8 : 0.6);
+  const sdGb = breakdown?.sdcardSizeGb ?? 0.5;
+  const totalGb = breakdown?.totalSizeGb ?? sysGb + dataGb + snapGb + sdGb;
 
   const partitions: PartitionSegment[] = [
     {
       id: 'system',
       label: 'System Image',
       sizeGb: sysGb,
-      percentage: (sysGb / totalGb) * 100,
+      percentage: totalGb > 0 ? (sysGb / totalGb) * 100 : 25,
       color: 'var(--chart-1)',
       description: 'system.img + vendor.img + ramdisk.img',
     },
@@ -39,7 +48,7 @@ export function DiskUsageBreakdownChart({ avd }: DiskUsageBreakdownChartProps) {
       id: 'userdata',
       label: 'Userdata & Apps',
       sizeGb: dataGb,
-      percentage: (dataGb / totalGb) * 100,
+      percentage: totalGb > 0 ? (dataGb / totalGb) * 100 : 25,
       color: 'var(--chart-2)',
       description: 'userdata.img (/data partition & app storage)',
     },
@@ -47,7 +56,7 @@ export function DiskUsageBreakdownChart({ avd }: DiskUsageBreakdownChartProps) {
       id: 'snapshots',
       label: 'Snapshots & Overlays',
       sizeGb: snapGb,
-      percentage: (snapGb / totalGb) * 100,
+      percentage: totalGb > 0 ? (snapGb / totalGb) * 100 : 25,
       color: 'var(--chart-3)',
       description: 'Quick boot memory dumps & writable overlayfs',
     },
@@ -55,7 +64,7 @@ export function DiskUsageBreakdownChart({ avd }: DiskUsageBreakdownChartProps) {
       id: 'sdcard',
       label: 'Virtual SD Card',
       sizeGb: sdGb,
-      percentage: (sdGb / totalGb) * 100,
+      percentage: totalGb > 0 ? (sdGb / totalGb) * 100 : 25,
       color: 'var(--chart-4)',
       description: 'sdcard.img (FAT32 emulated external storage)',
     },

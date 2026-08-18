@@ -1,12 +1,10 @@
 import { ArrowRight, CheckCircle2, Download, Loader2 } from 'lucide-react';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
-import type { CuratedAppDef } from '@/features/marketplace/overview/CuratedPowerToolsGrid';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 
 export interface AppUpdateItem {
-  catalogApp: CuratedAppDef;
   changelogSnippet: string;
   currentVersion: string;
   downloadUrl?: string | null | undefined;
@@ -15,6 +13,7 @@ export interface AppUpdateItem {
   latestVersion: string;
   name: string;
   packageName: string;
+  source: string;
   status: 'idle' | 'updating' | 'updated' | 'error';
 }
 
@@ -38,7 +37,7 @@ export function AppUpdateRow({ item, onUpdate, target }: AppUpdateRowProps) {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-body text-foreground">{item.name}</span>
-              <ProviderBadge source={item.catalogApp.source} />
+              <ProviderBadge source={item.source} />
               {item.hasUpdate ? (
                 <Badge className="text-[10px]" variant="default">
                   Update Available

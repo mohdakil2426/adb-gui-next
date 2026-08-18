@@ -1,10 +1,11 @@
-import type { FastbootVitals } from '@/features/flasher/model/flasherTypes';
+import type { DiagnosticItem, FastbootVitals } from '@/features/flasher/model/flasherTypes';
 import { FlashAuditLogCard } from '@/features/flasher/overview/FlashAuditLogCard';
 import { FlasherKnowledgeBase } from '@/features/flasher/overview/FlasherKnowledgeBase';
 import { PartitionHierarchyDiagram } from '@/features/flasher/overview/PartitionHierarchyDiagram';
 import { PreFlightDiagnosticMatrix } from '@/features/flasher/overview/PreFlightDiagnosticMatrix';
 
 interface FlasherOverviewTabProps {
+  diagnostics?: DiagnosticItem[];
   isFastbootMode: boolean;
   isProbing: boolean;
   onRebootBootloader?: () => void;
@@ -14,6 +15,7 @@ interface FlasherOverviewTabProps {
 
 export function FlasherOverviewTab({
   vitals,
+  diagnostics,
   isProbing,
   onRefresh,
   onRebootBootloader,
@@ -28,6 +30,7 @@ export function FlasherOverviewTab({
         </div>
         <div className="flex">
           <PreFlightDiagnosticMatrix
+            diagnostics={diagnostics ?? []}
             isFastbootMode={isFastbootMode}
             isProbing={isProbing}
             onRebootBootloader={onRebootBootloader}

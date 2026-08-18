@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { RunFastbootHostCommand } from '@/desktop/backend';
-import { isHighRiskPartition, parseGetVar } from '@/features/flasher/utils/flasherRisk';
+import { GetFlasherVitals } from '@/desktop/backend';
+import { isHighRiskPartition } from '@/features/flasher/utils/flasherRisk';
 import { type ConfirmDetail, ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { getFileName } from '@/shared/utils/filePath';
 
@@ -40,16 +40,15 @@ export function FlashConfirmDialog({
     setActiveSlot(null);
     setCodename(null);
 
-    Promise.all([
-      RunFastbootHostCommand('getvar current-slot', serial).catch(() => ''),
-      RunFastbootHostCommand('getvar product', serial).catch(() => ''),
-    ])
-      .then(([slotOutput, productOutput]) => {
+    GetFlasherVitals(serial)
+      .then((res) => {
         if (cancelled) {
           return;
         }
-        setActiveSlot(parseGetVar(slotOutput, 'current-slot'));
-        setCodename(parseGetVar(productOutput, 'product'));
+        if (res?.vitals) {
+          setActiveSlot(res.vitals.rawSlot ?? res.vitals.activeSlot ?? null);
+          setCodename(res.vitals.productBoard ?? null);
+        }
       })
       .catch(() => {
         /* probe failure just leaves the fields unknown */

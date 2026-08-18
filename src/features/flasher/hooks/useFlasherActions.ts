@@ -4,7 +4,7 @@ import {
   FlashPartition,
   SelectImageFile,
   SelectZipFile,
-  SideloadPackage,
+  SideloadPackageStream,
   WipeData,
 } from '@/desktop/backend';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
@@ -103,10 +103,12 @@ export function useFlasherActions() {
     setLoadingAction('sideload');
     const toastId = toast.loading(`Sideloading ${fileName}...`);
     try {
-      const output = await SideloadPackage(zipPath, serial);
-      const description = output || `${fileName} sideloaded successfully.`;
-      toast.success('Sideload Complete', { description, id: toastId });
-      useLogStore.getState().addLog(`Sideloaded ${fileName}: ${description}`, 'success');
+      await SideloadPackageStream(zipPath, serial);
+      toast.success('Sideload Complete', {
+        description: `${fileName} streamed and installed successfully.`,
+        id: toastId,
+      });
+      useLogStore.getState().addLog(`Sideloaded ${fileName}: Success`, 'success');
     } catch (error) {
       toast.dismiss(toastId);
       handleError('Recovery Sideload', error);

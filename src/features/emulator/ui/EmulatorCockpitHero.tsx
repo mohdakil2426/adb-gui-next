@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   Bot,
@@ -13,6 +14,7 @@ import {
   TriangleAlert,
   Zap,
 } from 'lucide-react';
+import { EmulatorGetAvdSpecs } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { deriveAvdHardwareDetails } from '@/features/emulator/model/avdSpecs';
 import { AvdSwitcher } from '@/features/emulator/ui/AvdSwitcher';
@@ -51,7 +53,15 @@ export function EmulatorCockpitHero({
   pendingAction: _pendingAction,
   selectedAvd,
 }: EmulatorCockpitHeroProps) {
-  const specs = deriveAvdHardwareDetails(selectedAvd);
+  const { data: realSpecs } = useQuery({
+    queryKey: ['emulator', 'avdSpecs', selectedAvd?.name],
+    queryFn: () =>
+      selectedAvd?.name ? EmulatorGetAvdSpecs(selectedAvd.name) : Promise.reject('No AVD'),
+    enabled: Boolean(selectedAvd?.name),
+    staleTime: 30_000,
+  });
+  const fallback = deriveAvdHardwareDetails(selectedAvd);
+  const specs = realSpecs ?? fallback;
   const isRunning = selectedAvd?.isRunning ?? false;
   const isColdBootRequired = selectedAvd?.rootState === 'modified' && !isRunning;
 

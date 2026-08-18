@@ -6,15 +6,12 @@ import { toast } from 'sonner';
 import {
   ScrcpyCloseToolbar,
   ScrcpyGetToolbarState,
-  ScrcpyRotateDevice,
-  ScrcpySendKeyevent,
-  ScrcpySendStatusbar,
   ScrcpySetToolbarMode,
   ScrcpySetToolbarOffset,
   ScrcpySetToolbarSide,
   ScrcpySetToolbarSize,
   ScrcpyStop,
-  ScrcpyTakeScreenshot,
+  ScrcpyToolbarAction,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { ToolbarButton } from '@/features/scrcpy/toolbar/ToolbarButton';
@@ -56,70 +53,11 @@ export function ScrcpyFloatingToolbar() {
     setTimeout(() => setActiveAction(null), 200);
 
     try {
-      switch (actionId) {
-        case 'power':
-          // KEYCODE_POWER = 26
-          await ScrcpySendKeyevent(serial, 26);
-          break;
-        case 'vol-up':
-          // KEYCODE_VOLUME_UP = 24
-          await ScrcpySendKeyevent(serial, 24);
-          break;
-        case 'vol-down':
-          // KEYCODE_VOLUME_DOWN = 25
-          await ScrcpySendKeyevent(serial, 25);
-          break;
-        case 'camera': {
-          const path = await ScrcpyTakeScreenshot(serial);
-          toast.success('Screenshot saved', { description: path });
-          break;
-        }
-        case 'zoom':
-          // Window resize / fit / toggle 1:1
-          await ScrcpySendKeyevent(serial, 0); // Trigger resize check in backend
-          toast.info('Adjusted Scrcpy Window Size');
-          break;
-        case 'rotate-ccw':
-          await ScrcpyRotateDevice(serial, 'counter-clockwise');
-          break;
-        case 'rotate-cw':
-          await ScrcpyRotateDevice(serial, 'clockwise');
-          break;
-        case 'back':
-          // KEYCODE_BACK = 4
-          await ScrcpySendKeyevent(serial, 4);
-          break;
-        case 'home':
-          // KEYCODE_HOME = 3
-          await ScrcpySendKeyevent(serial, 3);
-          break;
-        case 'recents':
-          // KEYCODE_APP_SWITCH = 187
-          await ScrcpySendKeyevent(serial, 187);
-          break;
-        case 'notifications':
-          await ScrcpySendStatusbar(serial, 'expand-notifications');
-          break;
-        case 'quick-settings':
-          await ScrcpySendStatusbar(serial, 'expand-settings');
-          break;
-        case 'collapse-panels':
-          await ScrcpySendStatusbar(serial, 'collapse');
-          break;
-        case 'turn-off-screen':
-          // KEYCODE_SLEEP = 223
-          await ScrcpySendKeyevent(serial, 223);
-          break;
-        case 'wake-up':
-          // KEYCODE_WAKEUP = 224
-          await ScrcpySendKeyevent(serial, 224);
-          break;
-        case 'stop-session':
-          await ScrcpyStop(serial);
-          await ScrcpyCloseToolbar(serial);
-          break;
-        default:
-          break;
+      if (actionId === 'stop-session') {
+        await ScrcpyStop(serial);
+        await ScrcpyCloseToolbar(serial);
+      } else {
+        await ScrcpyToolbarAction(serial, actionId);
       }
     } catch (err) {
       toast.error('Action failed', {

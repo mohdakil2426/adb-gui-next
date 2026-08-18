@@ -1,8 +1,11 @@
 import { ArrowRight, CheckCircle2, Layers, PackageCheck, Radio, Sparkles, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { GetExtractionPresets } from '@/desktop/backend';
 import {
   EXTRACTION_PRESETS,
   type ExtractionPreset,
+  getPartitionCategory,
 } from '@/features/payload-dumper/utils/partitionCategories';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -21,13 +24,62 @@ interface PayloadPresetsCardProps {
   partitions: PartitionItem[];
 }
 
+function buildPresetMatcher(preset: {
+  id: string;
+  category?: string;
+  partitions?: string[];
+}): (name: string) => boolean {
+  if (preset.id === 'full-flash' || preset.category === 'all') {
+    return () => true;
+  }
+  if (preset.category && preset.category !== 'other') {
+    return (name: string) => getPartitionCategory(name) === preset.category;
+  }
+  if (preset.id === 'root-kit') {
+    return (name: string) => getPartitionCategory(name) === 'boot';
+  }
+  if (preset.id === 'system-vendor') {
+    return (name: string) => getPartitionCategory(name) === 'system';
+  }
+  if (preset.id === 'modem-radio') {
+    return (name: string) => getPartitionCategory(name) === 'modem';
+  }
+  if (preset.partitions && preset.partitions.length > 0) {
+    const parts = preset.partitions;
+    return (name: string) => parts.includes(name) || parts.some((p) => name.startsWith(p));
+  }
+  return () => true;
+}
+
 export function PayloadPresetsCard({
   partitions,
   onApplyPreset,
   onNavigateToExtractor,
 }: PayloadPresetsCardProps) {
+  const [presets, setPresets] = useState<ExtractionPreset[]>(EXTRACTION_PRESETS);
   const hasPayload = partitions.length > 0;
 
+  useEffect(() => {
+    let cancelled = false;
+    GetExtractionPresets()
+      .then((raw) => {
+        if (!cancelled && raw && raw.length > 0) {
+          setPresets(
+            raw.map((p) => ({
+              id: p.id,
+              name: p.name,
+              badge: p.badge,
+              description: p.description,
+              matcher: buildPresetMatcher(p),
+            })),
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const handleSelectPreset = (preset: ExtractionPreset) => {
     onApplyPreset(preset.matcher);
     const matched = partitions.filter((p) => preset.matcher(p.name));
@@ -78,7 +130,7 @@ export function PayloadPresetsCard({
       </div>
 
       <CardContent className="grid @lg:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-3 p-0 pt-2">
-        {EXTRACTION_PRESETS.map((preset) => {
+        {presets.map((preset) => {
           const Icon = getPresetIcon(preset.id);
           const matchedPartitions = hasPayload
             ? partitions.filter((p) => preset.matcher(p.name))

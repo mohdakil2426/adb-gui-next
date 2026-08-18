@@ -15,6 +15,7 @@ const NO_SAMPLES: MemorySample[] = [];
 
 interface MemoryHistoryState {
   clear: (serial: string) => void;
+  pruneDisconnected: (activeSerials: string[]) => void;
   record: (serial: string, sample: MemorySample) => void;
   samplesBySerial: Record<string, MemorySample[]>;
 }
@@ -58,6 +59,22 @@ export const useMemoryHistoryStore = create<MemoryHistoryState>()((set) => ({
         }
       }
       return { samplesBySerial: next };
+    });
+  },
+
+  pruneDisconnected: (activeSerials) => {
+    set((state) => {
+      const activeSet = new Set(activeSerials);
+      let changed = false;
+      const next: Record<string, MemorySample[]> = {};
+      for (const [key, value] of Object.entries(state.samplesBySerial)) {
+        if (activeSet.has(key)) {
+          next[key] = value;
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? { samplesBySerial: next } : {};
     });
   },
 }));

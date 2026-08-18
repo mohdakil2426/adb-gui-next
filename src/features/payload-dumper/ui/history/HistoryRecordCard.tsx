@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { OpenFolder } from '@/desktop/backend';
+import { ComputePartitionFileSha256, OpenFolder } from '@/desktop/backend';
 import type { ExtractionRecord } from '@/features/payload-dumper/model/payloadDumperStore';
 import { CopyButton } from '@/shared/components/CopyButton';
 import { Badge } from '@/shared/ui/badge';
@@ -46,17 +46,15 @@ export function HistoryRecordCard({ record, onFlashToDevice }: HistoryRecordCard
 
   const handleComputeChecksum = async (partName: string) => {
     setComputingHash(partName);
-    // Generate deterministic simulated SHA-256 / integrity signature based on partition & payload
+    const outDir = record.outputDir.trim();
+    const sep = outDir.endsWith('/') || outDir.endsWith('\\') ? '' : '/';
+    const filePath = `${outDir}${sep}${partName}.img`;
     try {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(`${record.id}:${partName}:${record.totalBytes}`);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+      const hashHex = await ComputePartitionFileSha256(filePath);
       setChecksums((prev) => ({ ...prev, [partName]: hashHex }));
       toast.success(`Calculated SHA-256 for ${partName}.img`);
     } catch {
-      toast.error('Failed to compute checksum');
+      toast.error(`Failed to compute checksum for ${partName}.img`);
     } finally {
       setComputingHash(null);
     }

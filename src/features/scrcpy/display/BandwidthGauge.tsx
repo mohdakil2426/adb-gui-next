@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ScrcpyCalculateBandwidthMetrics } from '@/desktop/backend';
 import { cn } from '@/shared/utils/cn';
 
 interface BandwidthGaugeProps {
@@ -6,23 +7,13 @@ interface BandwidthGaugeProps {
 }
 
 export function BandwidthGauge({ bitrateStr }: BandwidthGaugeProps) {
-  // Parse bitrate number in Mbps
-  const bitrateMbps = useMemo(() => {
-    if (!bitrateStr) {
-      return 8; // default 8M
-    }
-    const trimmed = bitrateStr.trim().toUpperCase();
-    if (trimmed.endsWith('M')) {
-      const num = Number.parseFloat(trimmed.slice(0, -1));
-      return Number.isNaN(num) ? 8 : num;
-    }
-    if (trimmed.endsWith('K')) {
-      const num = Number.parseFloat(trimmed.slice(0, -1));
-      return Number.isNaN(num) ? 8 : num / 1000;
-    }
-    const num = Number.parseFloat(trimmed);
-    return Number.isNaN(num) ? 8 : num;
-  }, [bitrateStr]);
+  const { data: metrics } = useQuery({
+    queryKey: ['scrcpy', 'bandwidthMetrics', bitrateStr],
+    queryFn: () => ScrcpyCalculateBandwidthMetrics(bitrateStr),
+    staleTime: 60_000,
+  });
+
+  const bitrateMbps = metrics?.bitrateMbps ?? 8;
 
   // Max scale is 64 Mbps
   const maxScale = 64;
@@ -62,25 +53,18 @@ export function BandwidthGauge({ bitrateStr }: BandwidthGaugeProps) {
   const activeSweep = Math.max(2, fraction * totalSweep);
   const activeArc = describeArc(cx, cy, r, startAngle, activeSweep);
 
-  // Bandwidth rating text
-  let rating = 'Balanced HD';
+  const rating = metrics?.rating ?? 'Balanced HD';
   let ratingColor = 'text-foreground';
-  if (bitrateMbps <= 4) {
-    rating = 'Low Bandwidth';
+  if (metrics?.ratingColor === 'emerald' || bitrateMbps <= 4) {
     ratingColor = 'text-muted-foreground';
-  } else if (bitrateMbps <= 12) {
-    rating = 'Balanced HD';
-    ratingColor = 'text-foreground';
-  } else if (bitrateMbps <= 24) {
-    rating = 'High Quality';
-    ratingColor = 'text-foreground';
   } else {
-    rating = 'Lossless Tier';
     ratingColor = 'text-foreground';
   }
 
-  // Estimated MB per minute: Mbps / 8 * 60
-  const mbPerMin = ((bitrateMbps / 8) * 60).toFixed(0);
+  const mbPerMin =
+    metrics?.mbPerMin == null
+      ? ((bitrateMbps / 8) * 60).toFixed(0)
+      : Math.round(metrics.mbPerMin).toString();
 
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-border/80 bg-surface-raised/40 p-3">

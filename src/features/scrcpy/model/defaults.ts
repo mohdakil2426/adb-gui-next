@@ -1,6 +1,5 @@
 import type { backend } from '@/desktop/models';
 
-export { explainScrcpyFlags, generateScrcpyCliCommand } from '@/features/scrcpy/model/cli';
 export { SCRCPY_SHORTCUTS, type ShortcutItem } from '@/features/scrcpy/model/shortcuts';
 
 export const DEFAULT_SCRCPY_OPTIONS: backend.ScrcpyLaunchOptions = {

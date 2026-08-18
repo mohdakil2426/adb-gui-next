@@ -1,4 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { BatteryCharging, Briefcase, Check, Sparkles, Video, Zap } from 'lucide-react';
+import { ScrcpyProfiles } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { QUALITY_PRESETS, type QualityPreset } from '@/features/scrcpy/model/defaults';
 import { Badge } from '@/shared/ui/badge';
@@ -11,16 +13,24 @@ interface QualityPresetsCardProps {
   options: backend.ScrcpyLaunchOptions;
 }
 
-const PRESET_ICONS = {
-  gaming: Zap,
-  productivity: Briefcase,
+const PRESET_ICONS: Record<string, typeof Zap> = {
   battery: BatteryCharging,
   creator: Video,
+  gaming: Zap,
+  productivity: Briefcase,
 };
 
 export function QualityPresetsCard({ onApplyPreset, options }: QualityPresetsCardProps) {
+  const { data: profiles } = useQuery({
+    queryKey: ['scrcpy', 'profiles'],
+    queryFn: ScrcpyProfiles,
+    staleTime: 60_000,
+  });
+
+  const activePresets = profiles && profiles.length > 0 ? profiles : QUALITY_PRESETS;
+
   // Check if current options match a preset
-  const matchesPreset = (preset: QualityPreset) => {
+  const matchesPreset = (preset: backend.ScrcpyQualityProfile | QualityPreset) => {
     const keys = Object.keys(preset.options) as (keyof backend.ScrcpyLaunchOptions)[];
     return keys.every((key) => options[key] === preset.options[key]);
   };
@@ -44,8 +54,8 @@ export function QualityPresetsCard({ onApplyPreset, options }: QualityPresetsCar
 
       <CardContent>
         <div className="grid @2xl:grid-cols-4 @lg:grid-cols-2 grid-cols-1 gap-3">
-          {QUALITY_PRESETS.map((preset) => {
-            const Icon = PRESET_ICONS[preset.id];
+          {activePresets.map((preset) => {
+            const Icon = PRESET_ICONS[preset.id] ?? Sparkles;
             const isCurrent = matchesPreset(preset);
 
             return (

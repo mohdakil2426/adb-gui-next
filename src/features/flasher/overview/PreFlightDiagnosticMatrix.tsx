@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { cn } from '@/shared/utils/cn';
 
 interface PreFlightDiagnosticMatrixProps {
+  diagnostics?: DiagnosticItem[];
   isFastbootMode: boolean;
   isProbing: boolean;
   onRebootBootloader?: (() => void) | undefined;
@@ -22,6 +23,7 @@ interface PreFlightDiagnosticMatrixProps {
 
 export function PreFlightDiagnosticMatrix({
   vitals,
+  diagnostics: backendDiagnostics,
   isProbing,
   onRefresh,
   onRebootBootloader,
@@ -31,110 +33,125 @@ export function PreFlightDiagnosticMatrix({
   const isUnlocked = vitals.lockState === 'UNLOCKED';
   const isBatterySafe = vitals.isBatterySafe;
 
-  const diagnostics: DiagnosticItem[] = [
-    {
-      id: 'device-state',
-      label: 'Device Connection & State',
-      description: 'Verifies active hardware connectivity over USB in Fastboot or Sideload mode.',
-      status: hasDevice
-        ? isFastbootMode || vitals.connectionMode === 'SIDELOAD'
-          ? 'pass'
-          : 'warn'
-        : 'fail',
-      value: vitals.connectionMode,
-      tip: hasDevice
-        ? isFastbootMode
-          ? 'Fastboot connection established and ready for partition operations.'
-          : vitals.connectionMode === 'SIDELOAD'
-            ? 'Recovery Sideload transport detected and ready for update packages.'
-            : 'Device is in ADB mode. Reboot to bootloader for raw partition flashing.'
-        : 'No Android device detected. Connect via USB and put into bootloader mode.',
-      fixLabel:
-        !isFastbootMode && hasDevice && onRebootBootloader ? 'Reboot Bootloader' : undefined,
-      fixAction: onRebootBootloader,
-    },
-    {
-      id: 'bootloader-lock',
-      label: 'Bootloader Lock Authorization',
-      description: 'Checks if OEM bootloader is unlocked to allow flashing unsigned images.',
-      status: hasDevice
-        ? isUnlocked
-          ? 'pass'
-          : vitals.lockState === 'LOCKED'
-            ? 'fail'
-            : 'warn'
-        : 'idle',
-      value: vitals.lockState,
-      tip: isUnlocked
-        ? 'Bootloader unlocked. Custom kernel, recovery, and dynamic partitions can be flashed.'
-        : vitals.lockState === 'LOCKED'
-          ? 'Bootloader is LOCKED. Fastboot flash commands will be rejected by bootloader.'
-          : 'Bootloader lock state could not be queried.',
-    },
-    {
-      id: 'battery-guard',
-      label: 'Battery Level Safety Guard',
-      description: 'Validates that device battery is ≥50% to prevent bricking from power failure.',
-      status: hasDevice
-        ? vitals.batteryLevel === null
-          ? isFastbootMode
-            ? 'pass'
-            : 'idle'
-          : isBatterySafe
-            ? 'pass'
-            : 'warn'
-        : 'idle',
-      value:
-        vitals.batteryLevel === null
-          ? isFastbootMode
-            ? 'Safe (Assumed)'
-            : 'N/A'
-          : `${vitals.batteryLevel}%`,
-      tip: isBatterySafe
-        ? 'Battery level is sufficient for safe partition flashing operations.'
-        : `Battery level is at ${vitals.batteryLevel}%. Recommended to charge above 50% before flashing.`,
-    },
-    {
-      id: 'usb-transport',
-      label: 'USB Link & Protocol Stability',
-      description: 'Checks host-to-device transport link stability and Fastboot USB descriptor.',
-      status: hasDevice ? 'pass' : 'idle',
-      value: hasDevice ? 'Direct USB OK' : 'No Link',
-      tip: hasDevice
-        ? 'Direct USB host transport validated with no command timeout drops.'
-        : 'Connect high-quality USB-C / USB-A cable directly to host motherboard.',
-    },
-    {
-      id: 'driver-handshake',
-      label: 'Platform-Tools Driver Handshake',
-      description: 'Verifies fastboot binary protocol v0.5 response latency and getvar handshake.',
-      status: hasDevice ? (isFastbootMode ? 'pass' : 'idle') : 'idle',
-      value: isFastbootMode ? 'Protocol 0.5' : 'N/A',
-      tip: isFastbootMode
-        ? 'Fastboot command responder verified and returning valid variable mappings.'
-        : 'Fastboot handshake inactive while device is in other modes.',
-    },
-    {
-      id: 'slot-consistency',
-      label: 'Partition Slot Consistency',
-      description: 'Verifies dual A/B partition configuration and active boot slot parity.',
-      status: hasDevice
-        ? vitals.activeSlot === 'a' || vitals.activeSlot === 'b'
-          ? 'pass'
-          : vitals.activeSlot === 'single'
-            ? 'pass'
-            : 'warn'
-        : 'idle',
-      value:
-        vitals.activeSlot === 'unknown' ? 'Unknown' : `Slot _${vitals.activeSlot.toUpperCase()}`,
-      tip:
-        vitals.activeSlot === 'a' || vitals.activeSlot === 'b'
-          ? `Dual A/B partition layout detected. Active slot set to _${vitals.activeSlot.toUpperCase()}.`
-          : vitals.activeSlot === 'single'
-            ? 'Legacy single-slot partition layout detected (A-only).'
-            : 'Could not resolve active partition slot.',
-    },
-  ];
+  const diagnostics: DiagnosticItem[] =
+    backendDiagnostics && backendDiagnostics.length > 0
+      ? backendDiagnostics.map((d) => ({
+          ...d,
+          fixAction:
+            d.fixLabel === 'Reboot Bootloader' || d.id === 'device-state'
+              ? onRebootBootloader
+              : undefined,
+        }))
+      : [
+          {
+            id: 'device-state',
+            label: 'Device Connection & State',
+            description:
+              'Verifies active hardware connectivity over USB in Fastboot or Sideload mode.',
+            status: hasDevice
+              ? isFastbootMode || vitals.connectionMode === 'SIDELOAD'
+                ? 'pass'
+                : 'warn'
+              : 'fail',
+            value: vitals.connectionMode,
+            tip: hasDevice
+              ? isFastbootMode
+                ? 'Fastboot connection established and ready for partition operations.'
+                : vitals.connectionMode === 'SIDELOAD'
+                  ? 'Recovery Sideload transport detected and ready for update packages.'
+                  : 'Device is in ADB mode. Reboot to bootloader for raw partition flashing.'
+              : 'No Android device detected. Connect via USB and put into bootloader mode.',
+            fixLabel:
+              !isFastbootMode && hasDevice && onRebootBootloader ? 'Reboot Bootloader' : undefined,
+            fixAction: onRebootBootloader,
+          },
+          {
+            id: 'bootloader-lock',
+            label: 'Bootloader Lock Authorization',
+            description: 'Checks if OEM bootloader is unlocked to allow flashing unsigned images.',
+            status: hasDevice
+              ? isUnlocked
+                ? 'pass'
+                : vitals.lockState === 'LOCKED'
+                  ? 'fail'
+                  : 'warn'
+              : 'idle',
+            value: vitals.lockState,
+            tip: isUnlocked
+              ? 'Bootloader unlocked. Custom kernel, recovery, and dynamic partitions can be flashed.'
+              : vitals.lockState === 'LOCKED'
+                ? 'Bootloader is LOCKED. Fastboot flash commands will be rejected by bootloader.'
+                : 'Bootloader lock state could not be queried.',
+          },
+          {
+            id: 'battery-guard',
+            label: 'Battery Level Safety Guard',
+            description:
+              'Validates that device battery is ≥50% to prevent bricking from power failure.',
+            status: hasDevice
+              ? vitals.batteryLevel === null
+                ? isFastbootMode
+                  ? 'pass'
+                  : 'idle'
+                : isBatterySafe
+                  ? 'pass'
+                  : 'warn'
+              : 'idle',
+            value:
+              vitals.batteryLevel === null
+                ? isFastbootMode
+                  ? 'Safe (Assumed)'
+                  : 'N/A'
+                : `${vitals.batteryLevel}%`,
+            tip: isBatterySafe
+              ? 'Battery level is sufficient for safe partition flashing operations.'
+              : `Battery level is at ${vitals.batteryLevel}%. Recommended to charge above 50% before flashing.`,
+          },
+          {
+            id: 'usb-transport',
+            label: 'USB Link & Protocol Stability',
+            description:
+              'Checks host-to-device transport link stability and Fastboot USB descriptor.',
+            status: hasDevice ? 'pass' : 'idle',
+            value: hasDevice ? 'Direct USB OK' : 'No Link',
+            tip: hasDevice
+              ? 'Direct USB host transport validated with no command timeout drops.'
+              : 'Connect high-quality USB-C / USB-A cable directly to host motherboard.',
+          },
+          {
+            id: 'driver-handshake',
+            label: 'Platform-Tools Driver Handshake',
+            description:
+              'Verifies fastboot binary protocol v0.5 response latency and getvar handshake.',
+            status: hasDevice ? (isFastbootMode ? 'pass' : 'idle') : 'idle',
+            value: isFastbootMode ? 'Protocol 0.5' : 'N/A',
+            tip: isFastbootMode
+              ? 'Fastboot command responder verified and returning valid variable mappings.'
+              : 'Fastboot handshake inactive while device is in other modes.',
+          },
+          {
+            id: 'slot-consistency',
+            label: 'Partition Slot Consistency',
+            description: 'Verifies dual A/B partition configuration and active boot slot parity.',
+            status: hasDevice
+              ? vitals.activeSlot === 'a' || vitals.activeSlot === 'b'
+                ? 'pass'
+                : vitals.activeSlot === 'single'
+                  ? 'pass'
+                  : 'warn'
+              : 'idle',
+            value:
+              vitals.activeSlot === 'unknown'
+                ? 'Unknown'
+                : `Slot _${vitals.activeSlot.toUpperCase()}`,
+            tip:
+              vitals.activeSlot === 'a' || vitals.activeSlot === 'b'
+                ? `Dual A/B partition layout detected. Active slot set to _${vitals.activeSlot.toUpperCase()}.`
+                : vitals.activeSlot === 'single'
+                  ? 'Legacy single-slot partition layout detected (A-only).'
+                  : 'Could not resolve active partition slot.',
+          },
+        ];
 
   return (
     <Card className="flex h-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">

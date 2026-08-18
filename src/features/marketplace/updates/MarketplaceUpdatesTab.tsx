@@ -2,64 +2,21 @@ import { PackageCheck, RefreshCw, Search } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
-  GetInstalledPackages,
+  MarketplaceCheckUpdates,
   MarketplaceDownloadApk,
   MarketplaceInstallApk,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
-import { CURATED_POWER_TOOLS } from '@/features/marketplace/overview/CuratedPowerToolsGrid';
 import { type AppUpdateItem, AppUpdateRow } from '@/features/marketplace/updates/AppUpdateRow';
 import { UpdatesSummaryBanner } from '@/features/marketplace/updates/UpdatesSummaryBanner';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 
-const CATALOG_KNOWN_UPDATES: Record<
-  string,
-  { changelog: string; current: string; latest: string }
-> = {
-  'app.revanced.manager.flutter': {
-    changelog:
-      'Added automated GmsCore dependency resolver, multi-APK patch splitting support, UI refinements.',
-    current: '1.20.1',
-    latest: 'v1.21.0',
-  },
-  'ch.deletescape.lawnchair.plah': {
-    changelog:
-      'SmartSpacer widget support, Android 14 gesture navigation bar integration, fluid app launch animations.',
-    current: '14-beta1',
-    latest: 'v14-beta2',
-  },
-  'com.termux': {
-    changelog:
-      'Added terminal bell vibration toggle, improved termux-tools integration, updated bootstrap binaries.',
-    current: '0.118.0',
-    latest: 'v0.118.1',
-  },
-  'com.topjohnwu.magisk': {
-    changelog:
-      'New Magic Mount engine, fix Zygisk unloading on 64-bit only targets, improved KernelSU coexistence.',
-    current: '26.4',
-    latest: 'v27.0',
-  },
-  'moe.shizuku.privileged.api': {
-    changelog:
-      'Fix binder death callback crash on Android 14 QPR3, improved wireless debugging pairing resilience.',
-    current: '13.5.0',
-    latest: 'v13.5.4',
-  },
-  'piped.pipepipe': {
-    changelog:
-      'Fast stream extractor updates, SponsorBlock chapter markers, 1080p60 DASH video playback fix.',
-    current: '3.6.2',
-    latest: 'v3.7.0',
-  },
-};
-
 export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
-  const [installedPackages, setInstalledPackages] = useState<backend.InstalledPackage[]>([]);
+  const [candidates, setCandidates] = useState<backend.AppUpdateCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [updateStates, setUpdateStates] = useState<
@@ -68,48 +25,39 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
 
-  const fetchPackages = useCallback(async () => {
-    if (!selectedSerial) {
-      setInstalledPackages([]);
-      return;
-    }
+  const fetchUpdates = useCallback(async () => {
     setIsLoading(true);
     try {
-      const list = await GetInstalledPackages(selectedSerial);
-      setInstalledPackages(list ?? []);
+      const list = await MarketplaceCheckUpdates(selectedSerial);
+      setCandidates(list ?? []);
     } catch {
-      setInstalledPackages([]);
+      setCandidates([]);
     } finally {
       setIsLoading(false);
     }
   }, [selectedSerial]);
 
   useEffect(() => {
-    void fetchPackages();
-  }, [fetchPackages]);
+    void fetchUpdates();
+  }, [fetchUpdates]);
 
-  const updateItems: AppUpdateItem[] = useMemo(() => {
-    const installedSet = new Set(installedPackages.map((p) => p.name));
-
-    return CURATED_POWER_TOOLS.map((tool) => {
-      const isInstalled = installedSet.has(tool.packageName) || installedPackages.length === 0;
-      const knownUpdate = CATALOG_KNOWN_UPDATES[tool.packageName];
-      const hasUpdate = Boolean(knownUpdate);
-
-      return {
-        catalogApp: tool,
-        changelogSnippet: knownUpdate?.changelog ?? 'General performance and stability updates.',
-        currentVersion: knownUpdate?.current ?? '1.0.0',
-        downloadUrl: tool.downloadUrl,
-        hasUpdate,
-        isInstalled,
-        latestVersion: knownUpdate?.latest ?? 'Latest',
-        name: tool.name,
-        packageName: tool.packageName,
-        status: updateStates[tool.packageName] ?? 'idle',
-      };
-    });
-  }, [installedPackages, updateStates]);
+  const updateItems: AppUpdateItem[] = useMemo(
+    () =>
+      candidates.map((cand) => ({
+        name: cand.appName,
+        packageName: cand.packageName,
+        currentVersion: cand.currentVersion,
+        latestVersion: cand.latestVersion,
+        source: cand.source,
+        downloadUrl: cand.downloadUrl,
+        changelogSnippet:
+          cand.changelog || cand.changelogSnippet || 'General performance and stability updates.',
+        hasUpdate: cand.hasUpdate,
+        isInstalled: true,
+        status: updateStates[cand.packageName] ?? 'idle',
+      })),
+    [candidates, updateStates],
+  );
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) {
@@ -202,7 +150,7 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
         <Button
           className="h-9 gap-1.5 px-3 text-caption"
           disabled={isLoading}
-          onClick={() => void fetchPackages()}
+          onClick={() => void fetchUpdates()}
           size="sm"
           type="button"
           variant="outline"

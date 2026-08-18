@@ -79,7 +79,7 @@ export function useEmulatorActions({
     await runAction(
       'stop',
       async () => {
-        const message = await StopAvd(selectedAvd.name);
+        const message = await StopAvd(selectedAvd.serial ?? selectedAvd.name);
         handleSuccess('Emulator', message);
         invalidateAvds(queryClient);
         await refreshAvds();

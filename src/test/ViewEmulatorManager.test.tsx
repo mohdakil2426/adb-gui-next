@@ -15,8 +15,16 @@ vi.mock('@/shared/utils/queries', () => ({
 }));
 
 vi.mock('@/desktop/backend', () => ({
+  EmulatorGetAvdSpecs: vi.fn().mockResolvedValue(null),
+  EmulatorGetDiskBreakdown: vi.fn().mockResolvedValue(null),
   FinalizeAvdRoot: vi.fn(),
   GetAvdRestorePlan: (...args: unknown[]) => getAvdRestorePlanMock(...args),
+  GetHostHardwareCapacity: vi.fn().mockResolvedValue({
+    availableRamMb: 8192,
+    logicalCores: 8,
+    physicalCores: 4,
+    totalRamMb: 16_384,
+  }),
   LaunchAvd: vi.fn(),
   OpenFolder: vi.fn(),
   PrepareAvdRoot: vi.fn(),

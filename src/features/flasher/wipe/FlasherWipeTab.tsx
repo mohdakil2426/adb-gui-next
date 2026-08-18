@@ -1,7 +1,7 @@
 import { FolderLock, HardDrive, Loader2, ShieldAlert, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { RunFastbootHostCommand } from '@/desktop/backend';
+import { ErasePartition } from '@/desktop/backend';
 import { DeviceGate } from '@/features/flasher/ui/DeviceGate';
 import { WipeSafetyGate } from '@/features/flasher/wipe/WipeSafetyGate';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
@@ -32,7 +32,7 @@ export function FlasherWipeTab({ serial, disabled, isLoading, onWipeData }: Flas
     setIsActionLoading(true);
     const toastId = toast.loading(`Erasing ${partitionName} partition...`);
     try {
-      await RunFastbootHostCommand(`erase ${partitionName}`, serial);
+      await ErasePartition(partitionName, 'WIPE', serial);
       toast.success(`Erased ${partitionName}`, {
         description: `${partitionName} partition successfully formatted.`,
         id: toastId,

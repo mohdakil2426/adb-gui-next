@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import type { LucideIcon } from 'lucide-react';
 import { Camera, Cpu, HardDrive, Maximize2, Monitor, Wifi, Zap } from 'lucide-react';
+import { EmulatorGetAvdSpecs } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { deriveAvdHardwareDetails } from '@/features/emulator/model/avdSpecs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -36,7 +38,15 @@ function SpecRow({
 }
 
 export function AvdHardwareSpecCard({ avd }: AvdHardwareSpecCardProps) {
-  const specs = deriveAvdHardwareDetails(avd);
+  const { data: realSpecs } = useQuery({
+    queryKey: ['emulator', 'avdSpecs', avd?.name],
+    queryFn: () => (avd?.name ? EmulatorGetAvdSpecs(avd.name) : Promise.reject('No AVD')),
+    enabled: Boolean(avd?.name),
+    staleTime: 30_000,
+  });
+
+  const fallback = deriveAvdHardwareDetails(avd);
+  const specs = realSpecs ?? fallback;
 
   return (
     <Card className="@container flex h-full flex-col justify-between rounded-xl border-border bg-surface py-4 shadow-none">

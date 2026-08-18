@@ -1,4 +1,6 @@
+import { useQuery } from '@tanstack/react-query';
 import { Cpu, Layers, MemoryStick, Server } from 'lucide-react';
+import { EmulatorGetAvdSpecs, GetHostHardwareCapacity } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { deriveAvdHardwareDetails } from '@/features/emulator/model/avdSpecs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -84,17 +86,33 @@ function RadialMeter({
 }
 
 export function AvdResourceAllocationMeter({ avd }: AvdResourceAllocationMeterProps) {
-  const specs = deriveAvdHardwareDetails(avd);
+  const fallbackSpecs = deriveAvdHardwareDetails(avd);
+
+  const { data: realSpecs } = useQuery({
+    queryKey: ['emulator', 'avdSpecs', avd?.name],
+    queryFn: () => (avd?.name ? EmulatorGetAvdSpecs(avd.name) : Promise.reject('No AVD')),
+    enabled: Boolean(avd?.name),
+    staleTime: 30_000,
+  });
+
+  const { data: hostCapacity } = useQuery({
+    queryKey: ['system', 'hostHardwareCapacity'],
+    queryFn: GetHostHardwareCapacity,
+    staleTime: 60_000,
+  });
+
+  const specs = realSpecs ?? fallbackSpecs;
 
   // Virtual Specs Telemetry
   const ramMb = specs.ramAllocationMb;
-  const hostRamMb = 16_384;
+  const hostRamMb =
+    hostCapacity?.totalRamMb && hostCapacity.totalRamMb > 0 ? hostCapacity.totalRamMb : 16_384;
   const ramPercentage = (ramMb / hostRamMb) * 100;
 
   const vCpus = specs.vCpuCores;
-  const hostCores = 8;
+  const hostCores =
+    hostCapacity?.logicalCores && hostCapacity.logicalCores > 0 ? hostCapacity.logicalCores : 8;
   const cpuPercentage = (vCpus / hostCores) * 100;
-
   return (
     <Card className="@container flex h-full flex-col justify-between rounded-xl border-border bg-surface py-4 shadow-none">
       <CardHeader className="gap-0 px-4.5 pb-2">

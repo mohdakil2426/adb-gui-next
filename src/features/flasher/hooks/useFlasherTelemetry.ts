@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { Reboot, RunFastbootHostCommand, SetActiveSlot } from '@/desktop/backend';
+import { GetFlasherVitals, Reboot, RunFastbootHostCommand, SetActiveSlot } from '@/desktop/backend';
 import type {
   ActiveSlot,
   BootloaderLockState,
+  DiagnosticItem,
+  DiagnosticStatus,
   FastbootVitals,
   FlasherConnectionMode,
 } from '@/features/flasher/model/flasherTypes';
-import { parseGetVar } from '@/features/flasher/utils/flasherRisk';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { handleError } from '@/shared/utils/errorHandler';
 
-function normalizeSlot(raw: string | null): ActiveSlot {
+function normalizeSlot(raw?: string | null): ActiveSlot {
   if (!raw) {
     return 'unknown';
   }
@@ -34,14 +35,30 @@ function parseLockState(raw: string | null): BootloaderLockState {
     return 'UNKNOWN';
   }
   const clean = raw.toLowerCase().trim();
-  if (clean === 'yes' || clean === 'true' || clean === '1') {
+  if (clean === 'yes' || clean === 'true' || clean === '1' || clean === 'unlocked') {
     return 'UNLOCKED';
   }
-  if (clean === 'no' || clean === 'false' || clean === '0') {
+  if (clean === 'no' || clean === 'false' || clean === '0' || clean === 'locked') {
     return 'LOCKED';
   }
   return 'UNKNOWN';
 }
+
+const DEFAULT_VITALS: FastbootVitals = {
+  activeSlot: 'unknown',
+  batteryLevel: null,
+  batteryVoltage: null,
+  bootloaderVersion: null,
+  connectionMode: 'NO_DEVICE',
+  isBatterySafe: true,
+  isUserspace: false,
+  lockState: 'UNKNOWN',
+  productBoard: null,
+  rawSlot: null,
+  secureBoot: null,
+  serial: null,
+  slotCount: 0,
+};
 
 export function useFlasherTelemetry() {
   const devices = useDeviceStore((state) => state.devices);
@@ -53,157 +70,72 @@ export function useFlasherTelemetry() {
 
   const [isProbing, setIsProbing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [fastbootVars, setFastbootVars] = useState<{
-    batterySoc: string | null;
-    batteryVoltage: string | null;
-    bootloaderVersion: string | null;
-    currentSlot: string | null;
-    isUserspace: string | null;
-    product: string | null;
-    secure: string | null;
-    slotCount: string | null;
-    unlocked: string | null;
-  }>({
-    batterySoc: null,
-    batteryVoltage: null,
-    bootloaderVersion: null,
-    currentSlot: null,
-    isUserspace: null,
-    product: null,
-    secure: null,
-    slotCount: null,
-    unlocked: null,
-  });
+  const [vitals, setVitals] = useState<FastbootVitals>(DEFAULT_VITALS);
+  const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([]);
 
   const isFastbootMode =
-    selectedDevice?.status === 'fastboot' || selectedDevice?.status === 'bootloader';
+    selectedDevice?.status === 'fastboot' ||
+    selectedDevice?.status === 'bootloader' ||
+    vitals.connectionMode === 'FASTBOOT' ||
+    vitals.connectionMode === 'FASTBOOTD';
 
-  const probeFastboot = useCallback(async (serial: string) => {
+  const probeFastboot = useCallback(async (serial?: string | null) => {
     setIsProbing(true);
     try {
-      const [
-        productOut,
-        slotOut,
-        unlockedOut,
-        userspaceOut,
-        blVerOut,
-        socOut,
-        voltOut,
-        slotCountOut,
-        secureOut,
-      ] = await Promise.all([
-        RunFastbootHostCommand('getvar product', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar current-slot', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar unlocked', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar is-userspace', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar version-bootloader', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar battery-soc', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar battery-voltage', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar slot-count', serial).catch(() => ''),
-        RunFastbootHostCommand('getvar secure', serial).catch(() => ''),
-      ]);
-
-      setFastbootVars({
-        batterySoc: parseGetVar(socOut, 'battery-soc'),
-        batteryVoltage: parseGetVar(voltOut, 'battery-voltage'),
-        bootloaderVersion: parseGetVar(blVerOut, 'version-bootloader'),
-        currentSlot: parseGetVar(slotOut, 'current-slot'),
-        isUserspace: parseGetVar(userspaceOut, 'is-userspace'),
-        product: parseGetVar(productOut, 'product'),
-        secure: parseGetVar(secureOut, 'secure'),
-        slotCount: parseGetVar(slotCountOut, 'slot-count'),
-        unlocked: parseGetVar(unlockedOut, 'unlocked'),
-      });
+      const result = await GetFlasherVitals(serial ?? null);
+      if (result && result.vitals) {
+        const v = result.vitals;
+        setVitals({
+          activeSlot: normalizeSlot(v.activeSlot || v.rawSlot),
+          batteryLevel: v.batteryLevel ?? null,
+          batteryVoltage: v.batteryVoltage ?? null,
+          bootloaderVersion: v.bootloaderVersion ?? null,
+          connectionMode: (v.connectionMode as FlasherConnectionMode) || 'NO_DEVICE',
+          isBatterySafe: v.isBatterySafe ?? true,
+          isUserspace: !!v.isUserspace,
+          lockState: parseLockState(v.lockState),
+          productBoard: v.productBoard ?? null,
+          rawSlot: v.rawSlot ?? null,
+          secureBoot: v.secureBoot ?? null,
+          serial: v.serial ?? serial ?? null,
+          slotCount: v.slotCount ?? 0,
+        });
+      }
+      if (result && Array.isArray(result.diagnostics)) {
+        setDiagnostics(
+          result.diagnostics.map((d) => ({
+            id: d.id,
+            label: d.label,
+            description: d.description,
+            status: (d.status as DiagnosticStatus) || 'idle',
+            value: d.value ?? undefined,
+            tip: d.tip ?? undefined,
+            fixLabel: d.fixLabel ?? undefined,
+            fixAction: undefined,
+          })),
+        );
+      }
       setLastUpdated(Date.now());
+    } catch (error) {
+      handleError('Get Flasher Vitals', error);
     } finally {
       setIsProbing(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!(selectedDevice && isFastbootMode)) {
-      setFastbootVars({
-        batterySoc: null,
-        batteryVoltage: null,
-        bootloaderVersion: null,
-        currentSlot: null,
-        isUserspace: null,
-        product: null,
-        secure: null,
-        slotCount: null,
-        unlocked: null,
-      });
+    if (!selectedDevice) {
+      setVitals(DEFAULT_VITALS);
+      setDiagnostics([]);
       return;
     }
 
     void probeFastboot(selectedDevice.serial);
-  }, [isFastbootMode, probeFastboot, selectedDevice]);
+  }, [probeFastboot, selectedDevice]);
 
   const refresh = useCallback(() => {
-    if (selectedDevice && isFastbootMode) {
-      void probeFastboot(selectedDevice.serial);
-    }
-  }, [isFastbootMode, probeFastboot, selectedDevice]);
-
-  const vitals: FastbootVitals = useMemo(() => {
-    if (!selectedDevice) {
-      return {
-        activeSlot: 'unknown',
-        batteryLevel: null,
-        batteryVoltage: null,
-        bootloaderVersion: null,
-        connectionMode: 'NO_DEVICE',
-        isBatterySafe: true,
-        isUserspace: false,
-        lockState: 'UNKNOWN',
-        productBoard: null,
-        rawSlot: null,
-        secureBoot: null,
-        serial: null,
-        slotCount: 0,
-      };
-    }
-
-    let connectionMode: FlasherConnectionMode = 'NO_DEVICE';
-    if (isFastbootMode) {
-      connectionMode = fastbootVars.isUserspace === 'yes' ? 'FASTBOOTD' : 'FASTBOOT';
-    } else if (selectedDevice.status === 'sideload') {
-      connectionMode = 'SIDELOAD';
-    } else if (selectedDevice.status === 'recovery') {
-      connectionMode = 'RECOVERY';
-    } else if (selectedDevice.status === 'device') {
-      connectionMode = 'ADB';
-    } else if (selectedDevice.status === 'offline') {
-      connectionMode = 'OFFLINE';
-    } else if (selectedDevice.status === 'unauthorized') {
-      connectionMode = 'UNAUTHORIZED';
-    }
-
-    const rawSoc = fastbootVars.batterySoc;
-    const parsedSoc = rawSoc ? Number.parseInt(rawSoc, 10) : null;
-    const batteryLevel = parsedSoc !== null && !Number.isNaN(parsedSoc) ? parsedSoc : null;
-    const isBatterySafe = batteryLevel === null || batteryLevel >= 50;
-
-    const parsedSlotCount = fastbootVars.slotCount
-      ? Number.parseInt(fastbootVars.slotCount, 10)
-      : 0;
-
-    return {
-      activeSlot: normalizeSlot(fastbootVars.currentSlot),
-      batteryLevel,
-      batteryVoltage: fastbootVars.batteryVoltage,
-      bootloaderVersion: fastbootVars.bootloaderVersion,
-      connectionMode,
-      isBatterySafe,
-      isUserspace: fastbootVars.isUserspace === 'yes',
-      lockState: parseLockState(fastbootVars.unlocked),
-      productBoard: fastbootVars.product,
-      rawSlot: fastbootVars.currentSlot,
-      secureBoot: fastbootVars.secure === 'yes',
-      serial: selectedDevice.serial,
-      slotCount: Number.isNaN(parsedSlotCount) ? 0 : parsedSlotCount,
-    };
-  }, [fastbootVars, isFastbootMode, selectedDevice]);
+    void probeFastboot(selectedDevice?.serial ?? null);
+  }, [probeFastboot, selectedDevice]);
 
   const switchSlot = useCallback(
     async (targetSlot: 'a' | 'b') => {
@@ -254,6 +186,7 @@ export function useFlasherTelemetry() {
   );
 
   return {
+    diagnostics,
     isFastbootMode,
     isProbing,
     lastUpdated,

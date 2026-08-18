@@ -1,7 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { Terminal } from 'lucide-react';
-import { useMemo } from 'react';
+import { ScrcpyPreviewCommand } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
-import { explainScrcpyFlags, generateScrcpyCliCommand } from '@/features/scrcpy/model/defaults';
 import { CopyButton } from '@/shared/components/CopyButton';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -15,16 +15,14 @@ export function CliCommandPreview({ options, selectedSerials }: CliCommandPrevie
   const serials = Array.from(selectedSerials);
   const primarySerial = serials[0] ?? null;
 
-  const cliCommand = useMemo(
-    () => generateScrcpyCliCommand(options, primarySerial),
-    [options, primarySerial],
-  );
+  const { data: preview } = useQuery({
+    queryKey: ['scrcpy', 'previewCommand', options, primarySerial],
+    queryFn: () => ScrcpyPreviewCommand(options, primarySerial),
+    staleTime: 5000,
+  });
 
-  const flagsExplanation = useMemo(
-    () => explainScrcpyFlags(options, primarySerial),
-    [options, primarySerial],
-  );
-
+  const cliCommand = preview?.command ?? 'scrcpy';
+  const flagsExplanation = preview?.explanations ?? [];
   return (
     <Card className="border-border bg-surface shadow-none">
       <CardHeader className="pb-3">

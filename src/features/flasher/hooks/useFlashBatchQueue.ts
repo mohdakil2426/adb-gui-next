@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { FlashPartition } from '@/desktop/backend';
+import { FlashPartitionBatch } from '@/desktop/backend';
+import type { backend } from '@/desktop/models';
+import { EventsOn } from '@/desktop/runtime';
 import type { BatchPartitionItem } from '@/features/flasher/model/flasherTypes';
 import { useLogStore } from '@/shared/stores/logStore';
 import { handleError } from '@/shared/utils/errorHandler';
@@ -88,48 +90,70 @@ export function useFlashBatchQueue() {
       }
 
       setIsBatchFlashing(true);
-      let successCount = 0;
-      let failureCount = 0;
+      const toastId = toast.loading(`Starting batch flash for ${queue.length} partition(s)...`);
 
-      for (let i = 0; i < queue.length; i++) {
-        const item = queue[i];
-        if (!item) {
-          continue;
-        }
+      const unlisten = EventsOn<backend.BatchFlashProgress>(
+        'flasher:batch-progress',
+        (progress) => {
+          const idx = progress.currentIndex ?? progress.index ?? 0;
+          const part = progress.currentPartition ?? progress.partition;
+          const stage = progress.stage ?? progress.status;
+          setCurrentIndex(idx);
 
-        setCurrentIndex(i);
-        setQueue((prev) => prev.map((q, idx) => (idx === i ? { ...q, status: 'flashing' } : q)));
+          if (stage === 'flashing') {
+            toast.loading(`[${idx + 1}/${queue.length}] Flashing ${part ?? 'partition'}...`, {
+              id: toastId,
+            });
+          }
 
-        const toastId = toast.loading(`[${i + 1}/${queue.length}] Flashing ${item.partition}...`);
-
-        try {
-          await FlashPartition(item.partition, item.filePath, serial);
-          setQueue((prev) => prev.map((q, idx) => (idx === i ? { ...q, status: 'success' } : q)));
-          successCount++;
-          toast.success(`Flashed ${item.partition}`, { id: toastId });
-          useLogStore
-            .getState()
-            .addLog(`Batch Flash: ${item.partition} flashed successfully`, 'success');
-        } catch (error) {
-          failureCount++;
-          const errorMsg = error instanceof Error ? error.message : String(error);
           setQueue((prev) =>
-            prev.map((q, idx) => (idx === i ? { ...q, status: 'failed', error: errorMsg } : q)),
+            prev.map((q, i) => {
+              if (i === idx || (part && q.partition === part)) {
+                let status: BatchPartitionItem['status'] = q.status;
+                if (stage === 'flashing') {
+                  status = 'flashing';
+                } else if (stage === 'success' || stage === 'done') {
+                  status = 'success';
+                } else if (stage === 'failed') {
+                  status = 'failed';
+                }
+                return {
+                  ...q,
+                  status,
+                  ...(progress.error ? { error: progress.error } : {}),
+                };
+              }
+              return q;
+            }),
           );
-          toast.dismiss(toastId);
-          handleError(`Batch Flash ${item.partition}`, error);
-          // Stop on first failure to prevent bricking
-          break;
-        }
-      }
+        },
+      );
 
-      setIsBatchFlashing(false);
-      setCurrentIndex(null);
+      try {
+        const batchItems: backend.BatchFlashItem[] = queue.map((item) => ({
+          id: item.id,
+          partition: item.partition,
+          imagePath: item.filePath,
+          filePath: item.filePath,
+          fileName: item.fileName,
+          fileSize: item.size ?? null,
+        }));
 
-      if (failureCount === 0 && successCount > 0) {
+        await FlashPartitionBatch(batchItems, serial);
         toast.success('Batch Flashing Complete', {
-          description: `All ${successCount} partitions flashed successfully in order.`,
+          description: `All ${queue.length} partition(s) processed successfully.`,
+          id: toastId,
         });
+        useLogStore
+          .getState()
+          .addLog(`Batch Flash: ${queue.length} partition(s) flashed successfully`, 'success');
+      } catch (error) {
+        toast.dismiss(toastId);
+        handleError('Batch Flash', error);
+      } finally {
+        unlisten();
+        setIsBatchFlashing(false);
+        setCurrentIndex(null);
       }
     },
     [queue],
