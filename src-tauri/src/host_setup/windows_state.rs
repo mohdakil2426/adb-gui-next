@@ -1,3 +1,5 @@
+#![cfg_attr(not(windows), allow(dead_code))]
+
 //! Read Machine PATH and Google USB driver presence without elevation.
 
 use std::process::Command;

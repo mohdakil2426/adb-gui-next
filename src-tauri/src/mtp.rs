@@ -88,10 +88,10 @@ pub fn reveal_device_path(
     #[cfg(not(windows))]
     {
         let _ = (app, serial, plan);
-        return Err(
+        Err(
             "Show in Explorer is available on Windows when the device is in File transfer (MTP) mode."
                 .into(),
-        );
+        )
     }
     #[cfg(windows)]
     {

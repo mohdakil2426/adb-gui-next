@@ -11,7 +11,9 @@ use std::time::Duration;
 
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, PhysicalPosition, Position, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+#[cfg(windows)]
+use tauri::{PhysicalPosition, Position};
 
 use crate::CmdResult;
 use crate::adb::AdbClient;
@@ -391,7 +393,7 @@ pub fn spawn_toolbar_tracker(app: AppHandle, serial: String, pid: u32) {
             }
 
             // 2. Check if the toolbar window is still open
-            let Some(window) = app.get_webview_window(&window_label) else {
+            let Some(_window) = app.get_webview_window(&window_label) else {
                 debug!("Toolbar window '{}' closed by user. Stopping tracker.", window_label);
                 if let Ok(mut sessions) = TOOLBAR_SESSIONS.lock() {
                     sessions.remove(&serial);
@@ -412,12 +414,12 @@ pub fn spawn_toolbar_tracker(app: AppHandle, serial: String, pid: u32) {
                     let is_minimized = unsafe { win32::IsIconic(hwnd) != win32::FALSE };
                     if is_minimized {
                         if last_visible != Some(false) {
-                            let _ = window.hide();
+                            let _ = _window.hide();
                             last_visible = Some(false);
                         }
                     } else {
                         if last_visible != Some(true) {
-                            let _ = window.show();
+                            let _ = _window.show();
                             last_visible = Some(true);
                         }
 
@@ -430,7 +432,7 @@ pub fn spawn_toolbar_tracker(app: AppHandle, serial: String, pid: u32) {
                             let y = rect.top + session.y_offset;
 
                             if last_pos != Some((x, y)) {
-                                let _ = window
+                                let _ = _window
                                     .set_position(Position::Physical(PhysicalPosition::new(x, y)));
                                 last_pos = Some((x, y));
                             }
