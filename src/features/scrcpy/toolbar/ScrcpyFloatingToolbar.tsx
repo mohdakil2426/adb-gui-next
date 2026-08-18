@@ -279,12 +279,14 @@ export function ScrcpyFloatingToolbar() {
           isOpen={isMoreOpen}
           mode={mode}
           onAction={(actionId) => {
-            setIsMoreOpen(false);
-            try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
-            } catch {}
-            if (serial) {
-              ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+            if (actionId === 'stop-session') {
+              setIsMoreOpen(false);
+              try {
+                getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
+              } catch {}
+              if (serial) {
+                ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+              }
             }
             handleAction(actionId);
           }}
