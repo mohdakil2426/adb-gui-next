@@ -1,16 +1,18 @@
-import { FileUp, Loader2, Package, Trash2 } from 'lucide-react';
-import { useCallback } from 'react';
+import { FilePlus2, Loader2, Package, Trash2 } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
-import type { InstallProgress } from '@/features/app-manager/debloater/model/installationStore';
+import {
+  buildAdbInstallFlags,
+  type InstallProgress,
+  useInstallationStore,
+} from '@/features/app-manager/debloater/model/installationStore';
+import { InstallDropZone } from '@/features/app-manager/debloater/ui/InstallDropZone';
+import { InstallFlagsCockpit } from '@/features/app-manager/debloater/ui/InstallFlagsCockpit';
 import { InstallProgressCard } from '@/features/app-manager/debloater/ui/InstallProgressCard';
-import { DropZone } from '@/shared/components/DropZone';
-import { SelectionSummaryBar } from '@/shared/components/SelectionSummaryBar';
+import { PreFlightApkCard } from '@/features/app-manager/debloater/ui/PreFlightApkCard';
+import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
-import { getFileName } from '@/shared/utils/filePath';
-
-/** Module constant: a fresh array literal here re-registered the window-level
- *  drag-drop handler on every render. */
-const APK_EXTENSIONS = ['.apk', '.apks'];
+import { formatBytes } from '@/shared/utils/format';
 
 interface ApkPickerPanelProps {
   apkPaths: string[];
@@ -33,103 +35,190 @@ export function ApkPickerPanel({
   onPathsChange,
   selectedSerial,
 }: ApkPickerPanelProps) {
+  const inspections = useInstallationStore((s) => s.inspections);
+  const itemStatuses = useInstallationStore((s) => s.itemStatuses);
+  const installFlags = useInstallationStore((s) => s.installFlags);
+
+  const activeFlagArgs = useMemo(() => buildAdbInstallFlags(installFlags), [installFlags]);
+
   const handleFilesDropped = useCallback(
     (paths: string[]) => {
-      onPathsChange([...apkPaths, ...paths]);
-      toast.info(`${paths.length} file(s) added`);
+      // De-duplicate newly dropped paths
+      const existing = new Set(apkPaths);
+      const uniqueNew = paths.filter((p) => !existing.has(p));
+      if (uniqueNew.length === 0) {
+        toast.info('File(s) already in queue');
+        return;
+      }
+      onPathsChange([...apkPaths, ...uniqueNew]);
+      toast.success(`Added ${uniqueNew.length} file(s) to install queue`);
     },
     [apkPaths, onPathsChange],
   );
 
+  const handleRemoveFile = useCallback(
+    (pathToRemove: string) => {
+      onPathsChange(apkPaths.filter((p) => p !== pathToRemove));
+    },
+    [apkPaths, onPathsChange],
+  );
+
+  // Compute total inspected file size
+  const totalSizeBytes = useMemo(() => {
+    let total = 0;
+    for (const path of apkPaths) {
+      const insp = inspections[path];
+      if (insp?.fileSize) {
+        total += insp.fileSize;
+      }
+    }
+    return total;
+  }, [apkPaths, inspections]);
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* State 1: Empty Queue */}
       {apkPaths.length === 0 ? (
-        <DropZone
-          acceptExtensions={APK_EXTENSIONS}
-          browseLabel="Select APK files"
-          disabled={isInstalling || !selectedSerial}
-          icon={FileUp}
-          label="Drop APK files here"
-          onBrowse={onAddMore}
-          onFilesDropped={handleFilesDropped}
-          rejectMessage="Only .apk and .apks files are accepted"
-          sublabel="Accepts .apk and .apks files"
-        />
+        <div className="flex flex-col gap-4">
+          <InstallDropZone
+            disabled={isInstalling}
+            onBrowse={onAddMore}
+            onFilesDropped={handleFilesDropped}
+            selectedSerial={selectedSerial}
+          />
+          <InstallFlagsCockpit disabled={isInstalling} />
+        </div>
       ) : (
-        <>
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-label text-muted-foreground">Queued for install</span>
-            <Button
-              disabled={isInstalling || !selectedSerial}
-              onClick={onAddMore}
-              size="sm"
-              type="button"
-              variant="ghost"
-            >
-              <FileUp aria-hidden="true" />
-              Add more
-            </Button>
+        /* State 2: Active Queue with Pre-Flight Inspection & Controls */
+        <div className="flex flex-col gap-4">
+          {/* Queue Top Stats Header Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface px-4 py-3 shadow-none">
+            <div className="flex items-center gap-3">
+              <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground">
+                <Package aria-hidden="true" className="size-4.5 text-primary" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-body text-foreground">
+                    Installation Queue
+                  </span>
+                  <Badge className="h-5 px-2 font-mono text-[11px]" variant="secondary">
+                    {apkPaths.length} file{apkPaths.length === 1 ? '' : 's'}
+                  </Badge>
+                  {totalSizeBytes > 0 ? (
+                    <Badge className="h-5 px-2 font-mono text-[11px]" variant="outline">
+                      {formatBytes(totalSizeBytes)} total
+                    </Badge>
+                  ) : null}
+                </div>
+                <span className="text-caption text-muted-foreground">
+                  Ready for sideloading onto selected Android hardware
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                className="h-8 gap-1.5 px-3 font-medium text-caption"
+                disabled={isInstalling}
+                onClick={onAddMore}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <FilePlus2 aria-hidden="true" className="size-3.5" />
+                Add More Files
+              </Button>
+              <Button
+                className="h-8 gap-1.5 px-2.5 text-caption text-muted-foreground hover:text-destructive"
+                disabled={isInstalling}
+                onClick={onClearAll}
+                size="sm"
+                type="button"
+                variant="ghost"
+              >
+                <Trash2 aria-hidden="true" className="size-3.5" />
+                Clear Queue
+              </Button>
+            </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-border bg-surface">
-            <div className="custom-scroll max-h-64 min-h-24 overflow-y-auto p-1">
+          {/* ADB Install Flags Switchboard Cockpit */}
+          <InstallFlagsCockpit disabled={isInstalling} />
+
+          {/* Active Installation Live Progress Telemetry (when in-flight) */}
+          {isInstalling && installProgress ? (
+            <InstallProgressCard flagsCount={activeFlagArgs.length} progress={installProgress} />
+          ) : null}
+
+          {/* Persistent Compact Drag & Drop Zone for Continuous Adding */}
+          <InstallDropZone
+            compact
+            disabled={isInstalling}
+            onBrowse={onAddMore}
+            onFilesDropped={handleFilesDropped}
+            selectedSerial={selectedSerial}
+          />
+
+          {/* Pre-Flight APK Cards List (Scrollable, Fixed Max-Height) */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between px-1">
+              <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
+                Pre-Flight Binary Inspection ({apkPaths.length})
+              </span>
+              <span className="text-caption text-muted-foreground">
+                Validated attributes parsed from package manifests
+              </span>
+            </div>
+
+            <div className="flex max-h-[460px] flex-col gap-2 overflow-y-auto pr-1">
               {apkPaths.map((path) => (
-                <div
-                  className="group flex h-8 items-center justify-between gap-2 rounded-md px-2 hover:bg-accent"
+                <PreFlightApkCard
+                  disabled={isInstalling || !selectedSerial}
+                  filePath={path}
+                  installStatus={itemStatuses[path]}
+                  isInstalling={isInstalling}
                   key={path}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <Package
-                      aria-hidden="true"
-                      className="size-3.5 shrink-0 text-muted-foreground"
-                    />
-                    <span className="truncate font-mono text-foreground text-mono">
-                      {getFileName(path)}
-                    </span>
-                  </div>
-                  <Button
-                    aria-label={`Remove ${getFileName(path)}`}
-                    className="opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                    disabled={isInstalling}
-                    onClick={() => {
-                      onPathsChange(apkPaths.filter((p) => p !== path));
-                    }}
-                    size="icon-sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <Trash2 aria-hidden="true" className="size-3.5" />
-                  </Button>
-                </div>
+                  onRemove={handleRemoveFile}
+                />
               ))}
             </div>
           </div>
 
-          <SelectionSummaryBar
-            count={apkPaths.length}
-            disabled={isInstalling}
-            label="file(s)"
-            onClear={onClearAll}
-          />
+          {/* Primary Installation Action Trigger */}
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              className="h-11 w-full gap-2 font-semibold text-body shadow-xs"
+              disabled={isInstalling || !selectedSerial}
+              onClick={onInstall}
+              size="lg"
+              type="button"
+            >
+              {isInstalling ? (
+                <>
+                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  <span>
+                    Installing Queue ({installProgress ? installProgress.completed + 1 : 1} of{' '}
+                    {apkPaths.length})…
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Package aria-hidden="true" className="size-4" />
+                  <span>
+                    Install {apkPaths.length} Package{apkPaths.length === 1 ? '' : 's'} onto Device
+                  </span>
+                </>
+              )}
+            </Button>
 
-          {isInstalling && installProgress ? (
-            <InstallProgressCard progress={installProgress} />
-          ) : null}
-
-          <Button
-            className="w-full"
-            disabled={isInstalling || !selectedSerial}
-            onClick={onInstall}
-            type="button"
-          >
-            {isInstalling ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
-            ) : (
-              <Package aria-hidden="true" />
+            {selectedSerial ? null : (
+              <span className="text-center text-caption text-muted-foreground">
+                Connect and pick a target device in the sidebar to begin installation.
+              </span>
             )}
-            {isInstalling ? 'Installing…' : `Install ${apkPaths.length} file(s)`}
-          </Button>
-        </>
+          </div>
+        </div>
       )}
     </div>
   );

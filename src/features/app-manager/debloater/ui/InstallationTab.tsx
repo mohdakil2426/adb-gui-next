@@ -3,7 +3,10 @@ import { Info } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { InstallPackage, SelectMultipleApkFiles } from '@/desktop/backend';
-import { useInstallationStore } from '@/features/app-manager/debloater/model/installationStore';
+import {
+  buildAdbInstallFlags,
+  useInstallationStore,
+} from '@/features/app-manager/debloater/model/installationStore';
 import { ApkPickerPanel } from '@/features/app-manager/debloater/ui/ApkPickerPanel';
 import { mapSerial } from '@/features/app-manager/debloater/ui/mapSerial';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
@@ -28,7 +31,9 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
   const setApkPaths = useInstallationStore((s) => s.setApkPaths);
   const setIsInstalling = useInstallationStore((s) => s.setIsInstalling);
   const setInstallProgress = useInstallationStore((s) => s.setInstallProgress);
-
+  const installFlags = useInstallationStore((s) => s.installFlags);
+  const setItemStatus = useInstallationStore((s) => s.setItemStatus);
+  const clearItemStatuses = useInstallationStore((s) => s.clearItemStatuses);
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
   const queryClient = useQueryClient();
 
@@ -37,18 +42,27 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
       try {
         const paths = await SelectMultipleApkFiles();
         if (paths?.length) {
-          setApkPaths(paths);
-          toast.info(`${paths.length} file(s) selected`);
+          // De-duplicate newly picked paths against existing queue
+          const current = useInstallationStore.getState().apkPaths;
+          const currentSet = new Set(current);
+          const unique = paths.filter((p) => !currentSet.has(p));
+          if (unique.length === 0) {
+            toast.info('Selected file(s) already in queue');
+            return;
+          }
+          setApkPaths([...current, ...unique]);
+          toast.success(`Added ${unique.length} package file(s)`);
         }
       } catch (error) {
-        handleError('Select APK Files', error);
+        handleError('Select Package Files', error);
       }
     })();
   }, [setApkPaths]);
 
   const handleClearAll = useCallback(() => {
     setApkPaths([]);
-  }, [setApkPaths]);
+    clearItemStatuses();
+  }, [clearItemStatuses, setApkPaths]);
 
   async function handleInstall() {
     if (!selectedSerial || apkPaths.length === 0) {
@@ -57,6 +71,7 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
     const serial = selectedSerial;
     const total = apkPaths.length;
     const startedAt = Date.now();
+    const flags = buildAdbInstallFlags(installFlags);
 
     setIsInstalling(true);
     setInstallProgress({
@@ -66,33 +81,50 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
       total,
     });
 
+    // Initialize all items as queued
+    for (const path of apkPaths) {
+      setItemStatus(path, { status: 'queued' });
+    }
+
     const operationId = startOperation({
       detail: `0 of ${total}`,
-      label: `Installing ${total} APK${total === 1 ? '' : 's'}`,
+      label: `Installing ${total} Package${total === 1 ? '' : 's'}`,
       progress: 0,
       view: 'apps',
     });
     const toastId = toast.loading(`Installing 0 of ${total}…`);
 
+    const successfulPaths: string[] = [];
     const outcomes = await mapSerial(apkPaths, async (path, index) => {
       if (!path) {
         return false;
       }
       const name = getFileName(path);
+      const fileStartTime = Date.now();
+      setItemStatus(path, { status: 'installing' });
       setInstallProgress({ completed: index, currentFile: name, startedAt, total });
       updateOperation(operationId, {
         detail: `${index} of ${total} · ${name}`,
         progress: Math.round((index / total) * PERCENT),
       });
       toast.loading(`Installing ${index + 1} of ${total}: ${name}`, { id: toastId });
-      // Yield a macrotask so the progress card paints before the blocking install.
+
+      // Macrotask yield so state updates paint to UI
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
       try {
-        await InstallPackage(path, serial);
-        useLogStore.getState().addLog(`Installed APK: ${name}`, 'success');
+        await InstallPackage(path, serial, flags);
+        const durationMs = Date.now() - fileStartTime;
+        setItemStatus(path, { durationMs, status: 'completed' });
+        successfulPaths.push(path);
+        useLogStore
+          .getState()
+          .addLog(`Installed ${name} in ${(durationMs / 1000).toFixed(1)}s`, 'success');
         return true;
       } catch (error) {
-        useLogStore.getState().addLog(`Failed to install ${name}: ${error}`, 'error');
+        const durationMs = Date.now() - fileStartTime;
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        setItemStatus(path, { durationMs, error: errorMsg, status: 'failed' });
+        useLogStore.getState().addLog(`Failed to install ${name}: ${errorMsg}`, 'error');
         return false;
       }
     });
@@ -100,18 +132,24 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
     const ok = outcomes.filter(Boolean).length;
     const failed = outcomes.length - ok;
     if (failed === 0) {
-      toast.success(`Installed ${ok} APK${ok === 1 ? '' : 's'}`, { id: toastId });
+      toast.success(`Installed ${ok} package${ok === 1 ? '' : 's'} successfully`, { id: toastId });
+      setApkPaths([]);
+      clearItemStatuses();
     } else {
-      toast.warning(`Installed ${ok}, ${failed} failed — open the Logs panel for the reason`, {
+      toast.warning(`Installed ${ok}, ${failed} failed — review errors below or in Logs`, {
         id: toastId,
       });
+      // Retain failed paths in queue so user can adjust flags and retry
+      const remaining = apkPaths.filter((p) => !successfulPaths.includes(p));
+      setApkPaths(remaining);
     }
+
     if (ok > 0) {
       invalidatePackages(queryClient);
       onInstalled();
     }
+
     finishOperation(operationId);
-    setApkPaths([]);
     setIsInstalling(false);
     setInstallProgress(null);
   }
