@@ -9,6 +9,7 @@ type ProviderSource = backend.ProviderSource;
 type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
+export type MarketplaceTab = 'overview' | 'browse' | 'updates' | 'sources';
 const ALL_PROVIDERS: ProviderSource[] = ALL_PROVIDER_IDS;
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
@@ -23,6 +24,7 @@ interface ActiveGithubDeviceChallenge {
 }
 interface MarketplaceState {
   activeProviders: ProviderSource[];
+  activeTab: MarketplaceTab;
   addToSearchHistory: (query: string) => void;
   clearGithubSession: () => void;
   clearSearchHistory: () => void;
@@ -49,6 +51,7 @@ interface MarketplaceState {
   searchHistory: string[];
   selectedApp: MarketplaceApp | null;
   setActiveProviders: (providers: ProviderSource[]) => void;
+  setActiveTab: (activeTab: MarketplaceTab) => void;
   setAllProviders: () => void;
   setGithubDeviceChallenge: (challenge: ActiveGithubDeviceChallenge | null) => void;
   setGithubOauthClientId: (clientId: string) => void;
@@ -118,6 +121,7 @@ export function getMarketplaceActiveFilterSummary(
   return summaries;
 }
 export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
+  activeTab: loadFromStorage<MarketplaceTab>('marketplace_tab', 'overview'),
   query: '',
   results: [],
   isSearching: false,
@@ -142,6 +146,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   isGithubAuthenticating: false,
   installableOnly: loadFromStorage<boolean>('marketplace_installable_only', false),
   lastSearch: loadFromStorage<MarketplaceLastSearch | null>('marketplace_last_search', null),
+  setActiveTab: (activeTab) => {
+    saveToStorage('marketplace_tab', activeTab);
+    set({ activeTab });
+  },
   setQuery: (query) => {
     set({ query });
   },

@@ -1,28 +1,25 @@
-import { CircleAlert, UserRound } from 'lucide-react';
+import { ArrowUpCircle, Database, Search, Sparkles } from 'lucide-react';
+import { MarketplaceBrowseTab } from '@/features/marketplace/browse/MarketplaceBrowseTab';
 import { useInstallTarget } from '@/features/marketplace/hooks/useInstallTarget';
 import { useMarketplaceSearch } from '@/features/marketplace/hooks/useMarketplaceSearch';
-import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
-import { AppDetailView } from '@/features/marketplace/ui/AppDetailView';
-import { AttributionFooter } from '@/features/marketplace/ui/AttributionFooter';
-import { FilterBar } from '@/features/marketplace/ui/FilterBar';
-import { MarketplaceDeviceBanner } from '@/features/marketplace/ui/MarketplaceDeviceBanner';
-import { MarketplaceEmptyState } from '@/features/marketplace/ui/MarketplaceEmptyState';
-import { MarketplaceResultsBody } from '@/features/marketplace/ui/MarketplaceResults';
+import {
+  type MarketplaceTab,
+  useMarketplaceStore,
+} from '@/features/marketplace/model/marketplaceStore';
+import { MarketplaceOverviewTab } from '@/features/marketplace/overview/MarketplaceOverviewTab';
+import { MarketplaceSourcesTab } from '@/features/marketplace/sources/MarketplaceSourcesTab';
+import { MarketplaceHeroBanner } from '@/features/marketplace/ui/MarketplaceHeroBanner';
 import { MarketplaceSettings } from '@/features/marketplace/ui/MarketplaceSettings';
-import { SearchBar } from '@/features/marketplace/ui/SearchBar';
-import { EmptyState } from '@/shared/components/EmptyState';
+import { MarketplaceUpdatesTab } from '@/features/marketplace/updates/MarketplaceUpdatesTab';
 import { Badge } from '@/shared/ui/badge';
-import { Button } from '@/shared/ui/button';
-import { Separator } from '@/shared/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
-export function ViewMarketplace() {
+export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } = {}) {
+  const activeTab = useMarketplaceStore((state) => state.activeTab);
+  const setActiveTab = useMarketplaceStore((state) => state.setActiveTab);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
   const openSettings = useMarketplaceStore((state) => state.openSettings);
-  const viewMode = useMarketplaceStore((state) => state.viewMode);
-  const searchHistory = useMarketplaceStore((state) => state.searchHistory);
-  const githubSession = useMarketplaceStore((state) => state.githubSession);
-  const selectedApp = useMarketplaceStore((state) => state.selectedApp);
-  const isDetailOpen = useMarketplaceStore((state) => state.isDetailOpen);
+
   const {
     localQuery,
     results,
@@ -38,93 +35,94 @@ export function ViewMarketplace() {
   } = useMarketplaceSearch();
 
   const target = useInstallTarget();
-  const hasResults = results.length > 0;
-  const showSkeleton = isSearching && rawCount === 0;
-
+  const currentTab: MarketplaceTab =
+    initialTab ?? (activeTab || (hasQuery ? 'browse' : 'overview'));
   return (
     <div className="@container relative flex h-full w-full flex-col gap-4">
-      <h1 className="sr-only">Marketplace</h1>
+      <h1 className="sr-only">Open-Source App Marketplace</h1>
 
-      <div className="flex shrink-0 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <MarketplaceDeviceBanner target={target} />
-          <Badge variant="neutral">
-            {githubSession.user ? (
-              <>
-                <UserRound aria-hidden="true" />
-                {githubSession.user.login}
-              </>
-            ) : (
-              'Anonymous GitHub'
+      {/* Top Precision Hero Banner */}
+      <MarketplaceHeroBanner />
+
+      {/* Segmented Hardware Tabs Navigation */}
+      <Tabs
+        className="flex min-h-0 flex-1 flex-col gap-4"
+        onValueChange={(val) => setActiveTab(val as MarketplaceTab)}
+        value={currentTab}
+      >
+        <TabsList className="w-full justify-start overflow-x-auto border-border border-b bg-transparent p-0">
+          <TabsTrigger
+            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+            value="overview"
+          >
+            <Sparkles className="size-4 text-primary" />
+            <span>Overview & Curated</span>
+          </TabsTrigger>
+
+          <TabsTrigger
+            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+            value="browse"
+          >
+            <Search className="size-4" />
+            <span>Browse & Search</span>
+            {results.length > 0 && (
+              <Badge className="ml-1 px-1.5 py-0 font-mono text-caption" variant="neutral">
+                {results.length}
+              </Badge>
             )}
-          </Badge>
-        </div>
+          </TabsTrigger>
 
-        <SearchBar
-          isSearching={isSearching}
-          onChange={handleInputChange}
-          onClear={handleClear}
-          onSelectHistory={handleQuickSearch}
-          onSettings={openSettings}
-          searchHistory={searchHistory}
-          value={localQuery}
-        />
+          <TabsTrigger
+            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+            value="updates"
+          >
+            <ArrowUpCircle className="size-4" />
+            <span>Installed & Updates</span>
+          </TabsTrigger>
 
-        {selectedApp && isDetailOpen ? null : <FilterBar resultCount={results.length} />}
-      </div>
+          <TabsTrigger
+            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
+            value="sources"
+          >
+            <Database className="size-4" />
+            <span>Sources & Repos</span>
+          </TabsTrigger>
+        </TabsList>
 
-      <Separator />
+        <TabsContent className="mt-0 flex-1 outline-none" value="overview">
+          <MarketplaceOverviewTab
+            onQuickSearch={handleQuickSearch}
+            onSelectApp={openDetail}
+            target={target}
+          />
+        </TabsContent>
 
-      <div className="custom-scroll min-h-0 flex-1 overflow-y-auto pb-6">
-        {selectedApp && isDetailOpen ? (
-          <AppDetailView target={target} />
-        ) : (
-          <div className="flex flex-col gap-3">
-            <MarketplaceResultsBody
-              fromCache={fromCache}
-              hasResults={hasResults}
-              isSearching={isSearching}
-              onSelect={openDetail}
-              rawCount={rawCount}
-              results={results}
-              showSkeleton={showSkeleton}
-              target={target}
-              viewMode={viewMode}
-            />
+        <TabsContent className="mt-0 flex-1 outline-none" value="browse">
+          <MarketplaceBrowseTab
+            fromCache={fromCache}
+            handleClear={handleClear}
+            handleInputChange={handleInputChange}
+            handleQuickSearch={handleQuickSearch}
+            handleRetry={handleRetry}
+            hasQuery={hasQuery}
+            isSearching={isSearching}
+            localQuery={localQuery}
+            onOpenSettings={openSettings}
+            rawCount={rawCount}
+            results={results}
+            searchError={searchError}
+            target={target}
+          />
+        </TabsContent>
 
-            {searchError && !(hasResults || showSkeleton) ? (
-              <EmptyState
-                action={
-                  <Button
-                    disabled={isSearching}
-                    onClick={handleRetry}
-                    size="sm"
-                    type="button"
-                    variant="outline"
-                  >
-                    Retry search
-                  </Button>
-                }
-                className="rounded-lg border border-border border-dashed bg-surface"
-                description={searchError}
-                icon={CircleAlert}
-                title="Search failed"
-                tone="danger"
-              />
-            ) : null}
+        <TabsContent className="mt-0 flex-1 outline-none" value="updates">
+          <MarketplaceUpdatesTab target={target} />
+        </TabsContent>
 
-            {hasResults || showSkeleton || searchError ? null : (
-              <MarketplaceEmptyState
-                hasQuery={hasQuery}
-                onQuickSearch={handleQuickSearch}
-                target={target}
-              />
-            )}
-
-            <AttributionFooter />
-          </div>
-        )}
-      </div>
+        <TabsContent className="mt-0 flex-1 outline-none" value="sources">
+          <MarketplaceSourcesTab />
+        </TabsContent>
+      </Tabs>
 
       <MarketplaceSettings />
     </div>

@@ -1,9 +1,10 @@
-import { Package, Star } from 'lucide-react';
+import { CheckCircle2, Package, Star } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
+import { Badge } from '@/shared/ui/badge';
 import { formatRating } from '@/shared/utils/format';
 import { ProviderBadge } from './ProviderBadge';
 
@@ -54,6 +55,15 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
               {app.name}
             </span>
             <ProviderBadge source={app.source} />
+            {app.downloadUrl && (
+              <Badge
+                className="gap-0.5 border-success/30 bg-success/5 px-1 py-0 font-mono text-[10px] text-success"
+                variant="outline"
+              >
+                <CheckCircle2 className="size-2.5" />
+                APK
+              </Badge>
+            )}
           </div>
           <p className="truncate text-body text-muted-foreground">
             {app.summary || 'No description available yet.'}

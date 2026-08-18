@@ -1,9 +1,10 @@
-import { ExternalLink, Package, Star } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Package, Star } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
+import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/shared/ui/card';
 import { formatDisplayDate, formatRating } from '@/shared/utils/format';
 import { ProviderBadge } from './ProviderBadge';
@@ -91,8 +92,25 @@ export const AppCard = memo(function AppCard({ app, onSelect, target }: AppCardP
           </div>
         </CardContent>
       </button>
-
-      <CardFooter className="justify-end px-3 py-3">
+      <CardFooter className="flex items-center justify-between border-border/40 border-t bg-surface-raised/20 px-3 py-2.5">
+        <div className="flex items-center gap-1">
+          {app.downloadUrl ? (
+            <Badge
+              className="gap-0.5 border-success/30 bg-success/5 px-1.5 py-0 font-mono text-[10px] text-success"
+              variant="outline"
+            >
+              <CheckCircle2 className="size-2.5" />
+              Compatible APK
+            </Badge>
+          ) : (
+            <Badge
+              className="px-1.5 py-0 font-mono text-[10px] text-muted-foreground"
+              variant="outline"
+            >
+              Universal
+            </Badge>
+          )}
+        </div>
         <AppInstallButton app={app} onSelect={onSelect} target={target} />
       </CardFooter>
     </Card>
