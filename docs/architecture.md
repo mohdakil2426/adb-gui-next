@@ -452,7 +452,8 @@ export function ListFiles(
 | `scrcpy:download-progress` | Official scrcpy archive download |
 | `host-setup:progress` | Official Google platform-tools / USB driver download |
 | `files:edit-pushed` | File Explorer editor save pushed back to the device |
-
+| `flasher:batch-progress` | Multi-partition flashing progress and status |
+| `flasher:sideload-progress` | Recovery ZIP streaming sideload percentage |
 ### Drag-and-drop
 
 Tauri drag/drop is **window-level**. Pattern:
@@ -520,8 +521,8 @@ flowchart TB
     utilities["utilities/"]
     emu["emulator/"]
     deb["debloat/"]
-  end
-
+    apps["apps/"]
+    flasher["flasher/"]
   subgraph ext["External"]
     res["resources/{os}/"]
     device["adb/fastboot device"]
@@ -552,20 +553,21 @@ flowchart TB
 
 | Module | Responsibility |
 | --- | --- |
-| `commands/device.rs` | Device list, info, telemetry, mode; serial helpers for other modules |
+| `commands/device.rs` | Device list, info, telemetry, mode; unified `get_all_devices` |
 | `commands/adb.rs` | Wireless ADB, host/shell runners, logcat snapshot, screenshot |
-| `commands/fastboot.rs` | Flash, reboot, wipe, slots, fastboot host |
+| `commands/fastboot.rs` | Fastboot host runner, get bootloader vars |
+| `commands/flasher.rs` | Vitals, partition inspection, batch flashing, streaming sideload, wipe (thin over `flasher/`) |
 | `commands/utilities.rs` | Typed ADB server restart/kill + host tool versions (thin over `utilities/`) |
 | `commands/host_setup.rs` | Windows Google platform-tools + USB driver install (thin over `host_setup/`) |
 | `commands/files.rs` | Explorer list/push/pull/mutate + root verify + open-in-editor |
-| `commands/apps.rs` | Packages install/uninstall/sideload/list + icon batch |
-| `commands/system.rs` | Open folder, terminal, device manager, save log |
-| `commands/payload.rs` | List/extract/remote/cancel tokens (thin over `payload/`) |
-| `commands/marketplace.rs` | Search/detail/download/install/auth (thin over `marketplace/`) |
-| `commands/scrcpy.rs` | Status/install/launch (thin over `scrcpy/`) |
-| `commands/emulator.rs` | AVD lifecycle + root wizard IPC |
+| `commands/apps.rs` | Overview telemetry, batch install, packages lifecycle, icon batch (thin over `apps/`) |
+| `commands/apk_inspector.rs` | Binary AXML manifest parsing, batch parallel inspection via Rayon |
+| `commands/system.rs` | Open folder, terminal, device manager, host resources, unified CLI command executor |
+| `commands/payload.rs` | List/extract/remote/cancel tokens/SHA-256/presets (thin over `payload/`) |
+| `commands/marketplace.rs` | Search/detail/download/install/auth/dynamic updates/curated tools (thin over `marketplace/`) |
+| `commands/scrcpy.rs` | Status/install/launch/command preview/profiles/bandwidth metrics/toolbar actions |
+| `commands/emulator.rs` | AVD lifecycle + root wizard IPC + real config.ini specs + virtual disk breakdown |
 | `commands/debloat.rs` | UAD data + actions + backups |
-
 Commands are **thin**. Blocking work uses `tokio::task::spawn_blocking` or `block_in_place` as appropriate.
 
 ### 8.3.1 ADB access layer (`src-tauri/src/adb/`)

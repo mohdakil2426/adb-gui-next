@@ -51,9 +51,13 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 - About: modernized `AboutHero` banner with badge metadata, equal-height stretched `Build` and `Licence` cards, and interactive `Built with` open-source tech grid with direct URL exploration
 - Rust `src/adb/` — `AdbClient`, `shell_batch`, telemetry parsers; `release` profile `opt-level = 3`
 - Confirmation gates on flash + sideload; charts hand-rolled SVG/CSS (no charting library)
+### UI to Rust Backend Logic Migration (Done)
 
-## Known issues / gaps
-
+- **App Manager domain (`src-tauri/src/apps/`)**: Real `get_app_overview_telemetry` calculating storage breakdown, composition, SDK distribution, and permission counts from device diskstats/dumpsys; real `targetSdk`, `minSdk`, and `apkSizeBytes` on `InstalledPackage`; parallel `batch_inspect_package_files` (Rayon); atomic `batch_install_packages` with progress events; removed frontend hash faker `getPackageMetrics` and `mapSerial`.
+- **Flasher domain (`src-tauri/src/flasher/`)**: Single `fastboot getvar all` parser returning `FastbootVitals` and 6-point diagnostics; image magic header sniffer (`ANDROID!`, `0x3AFF26ED`, `AVB0`, `0xD00DFEED`); background `flash_partition_batch` with topological sorting and `flasher:batch-progress` events; streaming `sideload_package_stream` with stdout percentage parser; authorized `erase_partition`.
+- **Scrcpy & Emulator domains**: Server-side `scrcpy_preview_command`, quality profiles catalog (`scrcpy_profiles`), bandwidth calculations (`scrcpy_calculate_bandwidth_metrics`), typed `scrcpy_toolbar_action` dispatcher; real `config.ini` / `hardware-qemu.ini` AVD specs parser (`emulator_get_avd_specs`), real virtual disk breakdown (`emulator_get_disk_breakdown`), host memory & CPU capacity query via standard system APIs (`system_host_resources`), and AVD name-to-serial resolution fix on `stop_avd`.
+- **Marketplace, Payload, Shell & Device domains**: Real dynamic update inspector (`marketplace_check_updates`), CPU ABI compatibility asset matching, dynamic `marketplace_get_overview_stats`, authentic on-disk SHA-256 partition hashing (`compute_partition_file_sha256`), unified `get_all_devices` (ADB + Fastboot concurrent query), unified `execute_cli_command`, async `tokio::fs` downloads with `ProgressThrottle`, and disconnected device RAM sample pruning.
+- **Quality & Verification**: 46/46 Vitest test files passing (265 tests), zero Ultracite/Biome lint errors across 493 files, zero Cargo Clippy warnings with `-D warnings`, zero TypeScript type errors.
 | Item | Note |
 | --- | --- |
 | Windows `cargo test` | Prefer `--no-run` locally; Linux CI runs tests |

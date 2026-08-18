@@ -74,14 +74,14 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 
 ### Domain (Rust)
 
-- Thin `commands/*`; logic in `adb/`, `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `host_setup/`, `app_icons.rs`, `helpers.rs`.
+- Thin `commands/*`; logic in `adb/`, `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `host_setup/`, `apps/`, `flasher/`, `app_icons.rs`, `helpers.rs`.
 - **All `adb` invocation goes through `adb::AdbClient`** — binary path resolved once per process (`OnceLock`), one exit-marker implementation, per-batch nonce markers.
 - Critical shell: `AdbClient::shell_checked` (host OK ≠ shell OK); `helpers::adb_shell_checked` is a forwarder.
 - Multiple device reads ⇒ `AdbClient::shell_batch` (N commands, 1 process, per-command exit codes). `get_device_telemetry` = 9 commands in 1 process.
 - Rust returns **typed numbers**, not display strings; formatting is a frontend concern.
 - `[profile.release]` is the speed profile (`opt-level = 3`, lto, 1 CGU). No `release-fast`, no `opt-level = "s"`.
 - Payload: mmap/streaming; cancel tokens; `TransactionGuard` file-only cleanup; ZIP64 CD extras for remote factory ZIP.
-- Events FE must use via runtime: `payload:progress`, `payload:load-progress`, `root:progress`, `scrcpy:download-progress`, `host-setup:progress`.
+- Events FE must use via runtime: `payload:progress`, `payload:load-progress`, `root:progress`, `scrcpy:download-progress`, `host-setup:progress`, `flasher:batch-progress`, `flasher:sideload-progress`.
 
 ### Precision Hardware Cockpits across feature views
 

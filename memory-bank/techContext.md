@@ -50,7 +50,7 @@ src-tauri/
   commands/     thin IPC
   adb/          AdbClient (single adb spawn point) + telemetry + parse
   helpers.rs    binary, path safety, adb serial helpers (adb_shell_checked forwards to adb/)
-  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ host_setup/ app_icons.rs
+  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ host_setup/ apps/ flasher/ app_icons.rs
   resources/{windows,linux,darwin}/
   permissions/ + capabilities/
 scripts/

@@ -2,17 +2,16 @@
 
 ## Current Focus
 
-**Precision Hardware Cockpit Transformation for All Views**: Redesigning and elevating the remaining 6 views (`marketplace`, `flasher`, `payload-dumper`, `utilities`, `scrcpy`, `emulator`) to full design parity with Dashboard and Applications.
+**UI-to-Rust Backend Logic Migration & Code Quality Optimization**: Migrating all heavy business logic, hardware telemetry calculations, data parsers, batch execution loops, dynamic update inspections, and cryptographic hashing into the Rust backend (`src-tauri/src/`) while keeping UI and presentation purely in React.
 
 ### Key Objectives
-1. **Precision Hero Banners**: Elevated hardware cockpit banners with status badges, device telemetry indicators, and quick-action controls.
-2. **Segmented Tab Hardware Navigation**: Clean, structured top-level tabbed navigation across all 6 views with dedicated Overview & Telemetry tabs.
-3. **Hand-Rolled Pure SVG Telemetry & Visualizations**: Zero external charting dependencies (`freezePrototype: true` compliant) — custom donuts, distribution meters, sparklines, and horizontal bars using `--chart-1`..`--chart-5` tokens.
-4. **Interactive Architecture Guides & ASCII Subsystem Flowcharts**: Embedded technical guides explaining partition layouts, payload structures, ADB transports, video encoding pipelines, and emulator rooting mechanics.
-5. **Symmetrical Equal-Height Card Grids**: `@container` queries, `items-stretch`, `PanelCard`, and robust baselines with zero text truncation.
+1. **App Manager Domain (`src-tauri/src/apps/`)**: Real `get_app_overview_telemetry` from `dumpsys diskstats` / packages, real `targetSdk` / `apkSizeBytes` on `InstalledPackage`, batch APK inspection, and atomic sideloading.
+2. **Flasher Domain (`src-tauri/src/flasher/`)**: Single `fastboot getvar all` parser for `get_flasher_vitals`, binary magic byte sniffer for images, background transactional `flash_partition_batch`, and streaming `sideload_package_stream`.
+3. **Scrcpy & Emulator Domains**: Server-side `scrcpy_preview_command`, quality profiles catalog, typed `scrcpy_toolbar_action` dispatcher, real `config.ini` hardware specs parser, real disk breakdown inspection, and host resource telemetry via `sysinfo`.
+4. **Marketplace & Payload Domains**: Real dynamic update inspector, device ABI matching, `marketplace_get_overview_stats`, authentic on-disk SHA-256 partition hashing, and unified `get_all_devices`.
+5. **Desktop IPC & Models**: Complete TypeScript DTOs in `src/desktop/models.ts` with strict literal unions and typed backend invoke wrappers.
 
-See full specification in `docs/internal/reports/precision_cockpit_views_redesign_blueprint.md`.
-### Durable decisions (verify in code)
+See full audit and plan in `docs/internal/reports/full_ui_and_backend_logic_migration_audit.md` and `docs/internal/reports/ui_to_rust_migration_implementation_plan.md`.
 
 | Area | Decision |
 | --- | --- |
