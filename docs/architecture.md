@@ -37,7 +37,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | Capability | Summary |
 | --- | --- |
 | Device control | Discover ADB/fastboot devices, select target, view info, wireless ADB |
-| App Manager | Install / uninstall packages; Universal Android Debloater (UAD) integration |
+| App Manager | 4-tab Hardware Cockpit: Telemetry Overview (SVG donut, Target SDK meter, storage sparklines, privacy matrix, launchpad), Virtualized Installed Apps (8-way sort, live chips, inline hover actions, floating batch bar), Sideload Studio (.apk/.apks/.xapk/.apkm pre-flight inspection + ADB flags cockpit), and UAD Debloater (safety chips, vendor filters, 1-click toggles, snapshots) + slide-out Deep Package Inspector Drawer |
 | File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, host drop-in, in-app move, mutate, optional verified root mode |
 | Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
 | Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
@@ -692,8 +692,8 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Area | Frontend | Store / state | Desktop | Rust |
 | --- | --- | --- | --- | --- |
 | Device / Dashboard | `features/dashboard` · `DeviceSwitcher` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` | `GetDevices`, `GetDeviceTelemetry`, wireless cmds | `commands/device`, `adb/`, `commands/adb` |
-| App Manager | `features/app-manager` | `installationStore` | package list/install/uninstall | `apps` |
-| Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
+| App Manager | `features/app-manager` | `installationStore`, `debloatStore` | `GetInstalledPackages`, `GetPackageDetails`, `PackageLifecycleOp`, `PullPackageApk`, `InstallPackage`, `InspectPackageFile`, `UninstallPackage` | `commands/apps`, `commands/apk_inspector` |
+| Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, `DebloatPackages`, `CreateDebloatBackup`, `RestoreDebloatBackup`, `SaveDebloatDeviceSettings` | `debloat` domain |
 | File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop` | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/boot/sideload/wipe | `flasher` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |

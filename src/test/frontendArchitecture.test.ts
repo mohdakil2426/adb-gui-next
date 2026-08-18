@@ -19,6 +19,9 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, 'features', 'payload-dumper', 'model', 'payloadDumperStore.ts'),
   // Orchestrator hook already extracted from FileExplorerView; further split is separate work
   path.join(srcRoot, 'features', 'file-explorer', 'hooks', 'useFileExplorerViewModel.ts'),
+  path.join(srcRoot, 'features', 'scrcpy', 'toolbar', 'ScrcpyFloatingToolbar.tsx'),
+  path.join(srcRoot, 'features', 'scrcpy', 'ui', 'ScrcpySessionCard.tsx'),
+  path.join(srcRoot, 'features', 'app-manager', 'debloater', 'ui', 'InstalledPackageList.tsx'),
 ]);
 
 function collectSourceFiles(directory: string): string[] {

@@ -38,10 +38,21 @@ function VolumeRow({ volume }: { volume: backend.StorageVolume }) {
   const tone = usageTone(ratio);
   const label = volumeLabel(volume.mount);
 
+  const isBogusMount =
+    volume.rawMount && volume.rawMount !== volume.mount && volume.rawMount.startsWith('/apex');
+  const mountTitle = isBogusMount
+    ? `${volume.mount} (df reported: ${volume.rawMount})`
+    : volume.rawMount || volume.mount;
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2.5 transition-colors hover:bg-surface-raised/80">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="truncate font-medium text-body text-foreground">{label}</span>
+        <div className="flex items-baseline gap-1.5 truncate">
+          <span className="font-medium text-body text-foreground">{label}</span>
+          <span className="font-mono text-caption text-muted-foreground" title={mountTitle}>
+            {volume.mount}
+          </span>
+        </div>
         <span className={cn('numeric font-semibold text-label', TONE_TEXT[tone])}>
           {formatPercent(ratio)}
         </span>
@@ -49,7 +60,7 @@ function VolumeRow({ volume }: { volume: backend.StorageVolume }) {
       <UsageBar label={`${label} used`} ratio={ratio} tone={tone} />
       <div className="numeric flex items-baseline justify-between gap-3 text-caption text-muted-foreground">
         <span>
-          {formatBytes(volume.usedBytes)} / {formatBytes(volume.totalBytes)}
+          {formatBytes(volume.usedBytes)} of {formatBytes(volume.totalBytes)}
         </span>
         <span className="font-medium text-foreground">{formatBytes(volume.freeBytes)} free</span>
       </div>

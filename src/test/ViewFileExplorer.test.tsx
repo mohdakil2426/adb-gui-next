@@ -111,7 +111,7 @@ describe('ViewFileExplorer', () => {
     expect(scrollRegion).toHaveClass('min-h-0');
     expect(scrollRegion).toHaveClass('flex-1');
     expect(scrollRegion).toHaveClass('overscroll-contain');
-    expect(screen.getByRole('button', { name: 'More file actions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Import file' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Collapse tree panel' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^New/ })).toBeInTheDocument();
     expect(screen.getByRole('treeitem', { name: /Internal storage/ })).toBeInTheDocument();
