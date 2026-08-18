@@ -49,13 +49,16 @@ describe('ViewEmulatorManager', () => {
     useEmulatorManagerStore.getState().reset();
   });
 
-  it('renders the page heading', async () => {
+  it('renders the page heading and empty state when no AVDs are present', async () => {
     fetchAvdsMock.mockResolvedValue([]);
 
     renderWithQueryClient();
 
-    expect(await screen.findByText('Emulator Manager')).toBeInTheDocument();
-    expect(await screen.findByText('No AVD selected')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Emulator Manager', hidden: true }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('No Virtual Device Selected')).toBeInTheDocument();
+    expect(await screen.findByText('No Android Virtual Devices Found')).toBeInTheDocument();
   });
 
   it('renders the selected avd when discovery returns data', async () => {
@@ -64,7 +67,7 @@ describe('ViewEmulatorManager', () => {
         name: 'Pixel_8_API_34',
         iniPath: 'C:/Users/test/.android/avd/Pixel_8_API_34.ini',
         avdPath: 'C:/Users/test/.android/avd/Pixel_8_API_34.avd',
-        target: 'Google Play',
+        target: 'Google Play API 34',
         apiLevel: 34,
         abi: 'x86_64',
         deviceName: 'pixel_8',
@@ -84,11 +87,8 @@ describe('ViewEmulatorManager', () => {
 
     renderWithQueryClient();
 
-    expect(await screen.findByText('Pixel_8_API_34')).toBeInTheDocument();
-    expect(await screen.findByText(/API 34/)).toBeInTheDocument();
-    expect(await screen.findByText('Stopped')).toBeInTheDocument();
-    expect(
-      await screen.findByRole('button', { name: /launch with these options/i }),
-    ).toBeInTheDocument();
+    expect((await screen.findAllByText('Pixel_8_API_34')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('STOPPED')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /launch avd/i })).toBeInTheDocument();
   });
 });

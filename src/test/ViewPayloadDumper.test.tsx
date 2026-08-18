@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePayloadDumperStore } from '@/features/payload-dumper/model/payloadDumperStore';
 import { usePayloadProgressStore } from '@/features/payload-dumper/model/payloadProgressStore';
@@ -39,12 +40,19 @@ describe('ViewPayloadDumper', () => {
     });
   });
 
-  it('renders the source state', () => {
+  it('renders precision hero banner and 4 tab triggers in empty state', () => {
     render(<ViewPayloadDumper />);
-    expect(screen.getByRole('tab', { name: /local file/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Payload Dumper', hidden: true }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /overview & telemetry/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /extractor & partitions/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /source & remote loader/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /extracted outputs & history/i })).toBeInTheDocument();
   });
 
-  it('renders the loaded state with a promoted output directory', () => {
+  it('renders the loaded state with precision hero banner, telemetry, and extractor controls', async () => {
+    const user = userEvent.setup();
     usePayloadDumperStore.setState({
       partitions: [
         { name: 'boot', selected: true, size: 4096 },
@@ -54,12 +62,22 @@ describe('ViewPayloadDumper', () => {
       status: 'ready',
     });
     render(<ViewPayloadDumper />);
+
+    // Hero banner displays partition count and payload path
+    expect(screen.getAllByText('payload.bin').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Standard payload.bin').length).toBeGreaterThan(0);
+
+    // Overview tab telemetry & presets
+    expect(screen.getByText('Payload Partition Breakdown')).toBeInTheDocument();
+    expect(screen.getByText('Top 10 Largest Partitions')).toBeInTheDocument();
+    expect(screen.getByText('Quick Extraction Presets')).toBeInTheDocument();
+    // Navigate to Extractor tab
+    await user.click(screen.getByRole('tab', { name: /extractor & partitions/i }));
     expect(screen.getByText('Output directory')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Choose…' })).toBeInTheDocument();
-    expect(screen.getByText('Progress')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^extract 1/i })).toBeInTheDocument();
   });
 
-  it('surfaces a failure that wrote zero files', () => {
+  it('surfaces a failure that wrote zero files in terminal error state', () => {
     usePayloadDumperStore.setState({
       errorMessage: 'payload: unexpected EOF',
       extractedFiles: [],

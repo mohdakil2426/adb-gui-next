@@ -37,6 +37,7 @@ vi.mock('@/desktop/runtime', () => ({
 }));
 
 vi.mock('@/desktop/backend', () => ({
+  GetDeviceTelemetry: vi.fn().mockResolvedValue(null),
   GetHostToolVersions: vi.fn().mockResolvedValue({
     adb: 'Android Debug Bridge version 1.0.41',
     fastboot: 'fastboot version 36.0.0',
@@ -57,6 +58,8 @@ vi.mock('@/desktop/backend', () => ({
   LaunchDeviceManager: vi.fn(),
   LaunchHostSetupTerminal: vi.fn(),
   OpenFolder: vi.fn(),
+  RunAdbHostCommand: vi.fn(),
+  RunShellCommand: vi.fn(),
   SaveLog: vi.fn(),
   SaveScreenshot: vi.fn(),
   SelectScreenshotPng: vi.fn(),
@@ -68,29 +71,32 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 describe('ViewUtilities', () => {
-  it('groups host, ADB, and fastboot into tabs', async () => {
+  it('renders precision hero banner and 5 tab triggers', async () => {
     const user = userEvent.setup();
     render(<ViewUtilities />, { wrapper });
 
     expect(screen.getByRole('heading', { name: 'Utilities', hidden: true })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Host' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'ADB' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Fastboot' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'ADB', selected: true })).toBeInTheDocument();
-    expect(screen.getByText('Device power')).toBeVisible();
-    expect(screen.getByText('Diagnostics')).toBeVisible();
-    expect(screen.queryByText('Host ADB')).not.toBeInTheDocument();
-    expect(screen.queryByText('Fastboot Utilities')).not.toBeInTheDocument();
-    expect(screen.getByText('SERIAL123')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /overview/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /power & tweaks/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /diagnostics/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /fastboot/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /host setup/i })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'Host' }));
-    expect(await screen.findByText('Host ADB')).toBeVisible();
-    expect(screen.queryByText('Device power')).not.toBeInTheDocument();
-    expect(screen.queryByText('Fastboot Utilities')).not.toBeInTheDocument();
+    // Default active tab is Overview
+    expect(screen.getByRole('tab', { name: /overview/i, selected: true })).toBeInTheDocument();
+    expect(screen.getByText('Instant Action Command Cockpit')).toBeInTheDocument();
+    expect(screen.getByText('Device Vitals & Diagnostic Matrix')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'Fastboot' }));
-    expect(screen.getByText('Fastboot Utilities')).toBeVisible();
-    expect(screen.queryByText('Device power')).not.toBeInTheDocument();
-    expect(screen.queryByText('Host ADB')).not.toBeInTheDocument();
+    // Navigate to Power tab
+    await user.click(screen.getByRole('tab', { name: /power & tweaks/i }));
+    expect(screen.getByText('Target Reboot Actions')).toBeInTheDocument();
+    expect(screen.getByText('Android System Tweaks')).toBeInTheDocument();
+
+    // Navigate to Fastboot tab
+    await user.click(screen.getByRole('tab', { name: /fastboot/i }));
+    expect(screen.getByText(/Bootloader Slot Controls/i)).toBeInTheDocument();
+    // Navigate to Host Setup tab
+    await user.click(screen.getByRole('tab', { name: /host setup/i }));
+    expect(screen.getByText('Host ADB Server Controls')).toBeInTheDocument();
   });
 });
