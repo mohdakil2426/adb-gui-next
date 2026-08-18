@@ -45,7 +45,22 @@ commands.allow = [
   "get_logcat_snapshot",
   "get_host_tool_versions",
   "host_setup_status",
-  "get_package_details"
+  "get_package_details",
+  "get_all_devices",
+  "get_app_overview_telemetry",
+  "get_flasher_vitals",
+  "inspect_partition_image",
+  "scrcpy_preview_command",
+  "scrcpy_profiles",
+  "scrcpy_calculate_bandwidth_metrics",
+  "emulator_get_avd_specs",
+  "emulator_get_disk_breakdown",
+  "system_host_resources",
+  "marketplace_check_updates",
+  "marketplace_get_overview_stats",
+  "marketplace_get_curated_tools",
+  "compute_partition_file_sha256",
+  "get_extraction_presets"
 ]
 
 [[permission]]
@@ -121,7 +136,14 @@ commands.allow = [
   "host_setup_install",
   "host_setup_install_driver",
   "launch_host_setup_terminal",
-  "host_setup_repair_path"
+  "host_setup_repair_path",
+  "batch_install_packages",
+  "batch_inspect_package_files",
+  "flash_partition_batch",
+  "sideload_package_stream",
+  "erase_partition",
+  "scrcpy_toolbar_action",
+  "execute_cli_command"
 ]
 
 [[permission]]
@@ -239,5 +261,27 @@ commands.allow = [
   "host_setup_install",
   "host_setup_install_driver",
   "launch_host_setup_terminal",
-  "host_setup_repair_path"
+  "host_setup_repair_path",
+  "get_all_devices",
+  "get_app_overview_telemetry",
+  "get_flasher_vitals",
+  "inspect_partition_image",
+  "scrcpy_preview_command",
+  "scrcpy_profiles",
+  "scrcpy_calculate_bandwidth_metrics",
+  "emulator_get_avd_specs",
+  "emulator_get_disk_breakdown",
+  "system_host_resources",
+  "marketplace_check_updates",
+  "marketplace_get_overview_stats",
+  "marketplace_get_curated_tools",
+  "compute_partition_file_sha256",
+  "get_extraction_presets",
+  "batch_install_packages",
+  "batch_inspect_package_files",
+  "flash_partition_batch",
+  "sideload_package_stream",
+  "erase_partition",
+  "scrcpy_toolbar_action",
+  "execute_cli_command"
 ]
