@@ -1,20 +1,30 @@
 use crate::CmdResult;
-use crate::adb::{
-    AdbClient,
-    telemetry::{self, DeviceTelemetry},
-};
-use crate::helpers::*;
+use crate::adb::AdbClient;
+use crate::adb::telemetry::{self, DeviceTelemetry};
+use crate::helpers::run_binary_command;
 use log::{debug, info};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
 
 const VALUE_NOT_AVAILABLE: &str = "N/A";
 
-#[derive(Debug, Serialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
     pub serial: String,
     pub status: String,
+    pub connection_type: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceEntry {
+    pub serial: String,
+    #[serde(alias = "state")]
+    pub status: String,
+    pub connection_type: String,
+    pub model: Option<String>,
+    pub product: Option<String>,
 }
 
 #[derive(Debug, Serialize, Default)]
@@ -79,9 +89,17 @@ pub async fn get_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
         let output = run_binary_command(&app, "adb", &["devices"])?;
         let mut devices = Vec::new();
         for line in output.lines().skip(1) {
-            let parts: Vec<_> = line.split_whitespace().collect();
-            if parts.len() == 2 {
-                devices.push(Device { serial: parts[0].to_string(), status: parts[1].to_string() });
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('*') {
+                continue;
+            }
+            let parts: Vec<_> = trimmed.split_whitespace().collect();
+            if parts.len() >= 2 {
+                devices.push(Device {
+                    serial: parts[0].to_string(),
+                    status: parts[1].to_string(),
+                    connection_type: Some("adb".to_string()),
+                });
             }
         }
         debug!("Found {} ADB device(s)", devices.len());
@@ -103,7 +121,11 @@ pub async fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
         for line in output.lines() {
             let parts: Vec<_> = line.split_whitespace().collect();
             if parts.len() >= 2 && matches!(parts[1], "fastboot" | "bootloader") {
-                devices.push(Device { serial: parts[0].to_string(), status: parts[1].to_string() });
+                devices.push(Device {
+                    serial: parts[0].to_string(),
+                    status: parts[1].to_string(),
+                    connection_type: Some("fastboot".to_string()),
+                });
             }
         }
         debug!("Found {} fastboot device(s)", devices.len());
@@ -111,6 +133,43 @@ pub async fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Lists all connected devices across both ADB and Fastboot protocols concurrently.
+#[tauri::command]
+pub async fn get_all_devices(app: AppHandle) -> CmdResult<Vec<DeviceEntry>> {
+    let (adb_res, fastboot_res) =
+        tokio::join!(get_devices(app.clone()), get_fastboot_devices(app.clone()));
+
+    let mut entries = Vec::new();
+
+    if let Ok(adb_devs) = adb_res {
+        for d in adb_devs {
+            entries.push(DeviceEntry {
+                serial: d.serial,
+                status: d.status,
+                connection_type: d.connection_type.unwrap_or_else(|| "adb".to_string()),
+                model: None,
+                product: None,
+            });
+        }
+    }
+
+    if let Ok(fb_devs) = fastboot_res {
+        for d in fb_devs {
+            if !entries.iter().any(|e| e.serial == d.serial) {
+                entries.push(DeviceEntry {
+                    serial: d.serial,
+                    status: d.status,
+                    connection_type: "fastboot".to_string(),
+                    model: None,
+                    product: None,
+                });
+            }
+        }
+    }
+
+    Ok(entries)
 }
 
 /// Collects device info via 11+ sequential `adb shell getprop` calls.

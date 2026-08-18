@@ -6,9 +6,11 @@ pub mod github;
 pub mod ranking;
 pub mod service;
 pub mod types;
+pub mod updates;
 
 pub use cache::ManagedMarketplaceCache;
 pub use types::*;
+pub use updates::marketplace_check_updates;
 
 use reqwest::Client;
 

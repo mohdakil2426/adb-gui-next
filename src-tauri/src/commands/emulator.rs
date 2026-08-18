@@ -3,9 +3,10 @@ use crate::{
     emulator::{
         avd, backup, magisk_download,
         models::{
-            AvdSummary, EmulatorLaunchOptions, MagiskStableRelease, RestorePlan, RootAvdRequest,
-            RootAvdResult, RootFinalizeRequest, RootFinalizeResult, RootPreparationRequest,
-            RootPreparationResult, RootReadinessScan, RootVerificationResult,
+            AvdDiskBreakdown, AvdHardwareDetails, AvdSummary, EmulatorLaunchOptions,
+            MagiskStableRelease, RestorePlan, RootAvdRequest, RootAvdResult, RootFinalizeRequest,
+            RootFinalizeResult, RootPreparationRequest, RootPreparationResult, RootReadinessScan,
+            RootVerificationResult,
         },
         root, runtime,
     },
@@ -36,6 +37,26 @@ pub async fn launch_avd(
 #[tauri::command]
 pub async fn stop_avd(app: AppHandle, serial: String) -> CmdResult<String> {
     tokio::task::spawn_blocking(move || runtime::stop_avd(&app, &serial))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn emulator_get_avd_specs(
+    app: AppHandle,
+    avd_name: String,
+) -> CmdResult<AvdHardwareDetails> {
+    tokio::task::spawn_blocking(move || avd::emulator_get_avd_specs(&app, &avd_name))
+        .await
+        .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn emulator_get_disk_breakdown(
+    app: AppHandle,
+    avd_name: String,
+) -> CmdResult<AvdDiskBreakdown> {
+    tokio::task::spawn_blocking(move || avd::emulator_get_disk_breakdown(&app, &avd_name))
         .await
         .map_err(|error| error.to_string())?
 }

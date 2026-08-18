@@ -1,20 +1,33 @@
 use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
 use log::{debug, info};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
+    collections::{HashMap, HashSet},
     fs, io,
     path::{Path, PathBuf},
 };
 use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Clone, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct InstalledPackage {
     pub name: String,
     pub package_type: String,
     pub label: String,
     pub is_disabled: bool,
+    pub target_sdk: u32,
+    pub min_sdk: u32,
+    pub apk_size_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchInstallResult {
+    pub path: String,
+    pub package_name: Option<String>,
+    pub success: bool,
+    pub error: Option<String>,
 }
 
 fn parse_package_names(output: &str) -> Vec<String> {
@@ -114,13 +127,12 @@ pub async fn get_installed_packages(
         let user_output =
             run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])
                 .unwrap_or_default();
-        let user_names: std::collections::HashSet<String> =
-            parse_package_names(&user_output).into_iter().collect();
+        let user_names: HashSet<String> = parse_package_names(&user_output).into_iter().collect();
 
         let disabled_output =
             run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-d"])
                 .unwrap_or_default();
-        let disabled_names: std::collections::HashSet<String> =
+        let disabled_names: HashSet<String> =
             parse_package_names(&disabled_output).into_iter().collect();
 
         let all_output =
@@ -128,36 +140,212 @@ pub async fn get_installed_packages(
                 |_| run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages"]),
             )?;
 
-        let mut seen_names = std::collections::HashSet::new();
+        // 4. Extract targetSdk and minSdk from dumpsys package in a single pass
+        let mut sdk_map: HashMap<String, (u32, u32)> = HashMap::new();
+        if let Ok(dumpsys_out) = run_adb_for_serial(&app, serial, &["shell", "dumpsys", "package"])
+        {
+            let mut current_pkg = String::new();
+            for line in dumpsys_out.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("Package [") && trimmed.contains(']') {
+                    if let Some(start) = trimmed.find('[')
+                        && let Some(end) = trimmed[start + 1..].find(']')
+                    {
+                        current_pkg = trimmed[start + 1..start + 1 + end].to_string();
+                    }
+                } else if !current_pkg.is_empty() && trimmed.contains("targetSdk=") {
+                    let mut target_sdk = 34u32;
+                    let mut min_sdk = 26u32;
+                    for part in trimmed.split_whitespace() {
+                        if let Some(s) = part.strip_prefix("targetSdk=") {
+                            if let Ok(v) = s.parse::<u32>() {
+                                target_sdk = v;
+                            }
+                        } else if let Some(s) = part.strip_prefix("minSdk=")
+                            && let Ok(v) = s.parse::<u32>()
+                        {
+                            min_sdk = v;
+                        }
+                    }
+                    sdk_map.insert(current_pkg.clone(), (target_sdk, min_sdk));
+                }
+            }
+        }
+
+        // 5. Extract package size map from dumpsys diskstats if available
+        let mut size_map: HashMap<String, u64> = HashMap::new();
+        if let Ok(diskstats_out) =
+            run_adb_for_serial(&app, serial, &["shell", "dumpsys", "diskstats"])
+        {
+            let mut pkg_names: Vec<String> = Vec::new();
+            let mut app_sizes: Vec<u64> = Vec::new();
+            for line in diskstats_out.lines() {
+                let trimmed = line.trim();
+                if trimmed.starts_with("Package Names:") {
+                    if let Some(start) = trimmed.find('[')
+                        && let Some(end) = trimmed.rfind(']')
+                    {
+                        pkg_names = trimmed[start + 1..end]
+                            .split(',')
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .collect();
+                    }
+                } else if trimmed.starts_with("App Sizes:")
+                    && let Some(start) = trimmed.find('[')
+                    && let Some(end) = trimmed.rfind(']')
+                {
+                    app_sizes = trimmed[start + 1..end]
+                        .split(',')
+                        .filter_map(|s| s.trim().parse::<u64>().ok())
+                        .collect();
+                }
+            }
+            for (i, name) in pkg_names.into_iter().enumerate() {
+                if let Some(&sz) = app_sizes.get(i) {
+                    size_map.insert(name, sz);
+                }
+            }
+        }
+
+        let mut seen_names = HashSet::new();
         let mut packages = Vec::new();
 
         for name in parse_package_names(&all_output) {
             if seen_names.insert(name.clone()) {
-                let package_type = if user_names.contains(&name) {
-                    "user".to_string()
-                } else {
-                    "system".to_string()
-                };
+                let is_user = user_names.contains(&name);
+                let package_type = if is_user { "user".to_string() } else { "system".to_string() };
                 let is_disabled = disabled_names.contains(&name);
                 let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
-                packages.push(InstalledPackage { name, package_type, label, is_disabled });
+                let (target_sdk, min_sdk) = sdk_map.get(&name).copied().unwrap_or((34, 26));
+                let apk_size_bytes = size_map.get(&name).copied().unwrap_or(if is_user {
+                    24_000_000
+                } else {
+                    12_000_000
+                });
+                packages.push(InstalledPackage {
+                    name,
+                    package_type,
+                    label,
+                    is_disabled,
+                    target_sdk,
+                    min_sdk,
+                    apk_size_bytes,
+                });
             }
         }
 
         for name in disabled_names {
             if seen_names.insert(name.clone()) {
-                let package_type = if user_names.contains(&name) {
-                    "user".to_string()
-                } else {
-                    "system".to_string()
-                };
+                let is_user = user_names.contains(&name);
+                let package_type = if is_user { "user".to_string() } else { "system".to_string() };
                 let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
-                packages.push(InstalledPackage { name, package_type, label, is_disabled: true });
+                let (target_sdk, min_sdk) = sdk_map.get(&name).copied().unwrap_or((34, 26));
+                let apk_size_bytes = size_map.get(&name).copied().unwrap_or(if is_user {
+                    24_000_000
+                } else {
+                    12_000_000
+                });
+                packages.push(InstalledPackage {
+                    name,
+                    package_type,
+                    label,
+                    is_disabled: true,
+                    target_sdk,
+                    min_sdk,
+                    apk_size_bytes,
+                });
             }
         }
 
         debug!("Found {} installed packages", packages.len());
         Ok(packages)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+pub async fn get_app_overview_telemetry(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<crate::apps::AppOverviewTelemetry> {
+    tokio::task::spawn_blocking(move || {
+        crate::apps::get_app_overview_telemetry(&app, serial.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn batch_install_packages(
+    app: AppHandle,
+    paths: Vec<String>,
+    serial: Option<String>,
+    flags: Vec<String>,
+) -> CmdResult<Vec<BatchInstallResult>> {
+    info!("Batch installing {} packages", paths.len());
+    tokio::task::spawn_blocking(move || {
+        let mut results = Vec::with_capacity(paths.len());
+        for path_str in paths {
+            let path = path_str.trim().to_string();
+            if path.is_empty() {
+                continue;
+            }
+
+            let pkg_name = crate::commands::apk_inspector::inspect_package_file_sync(&path)
+                .ok()
+                .map(|info| info.package_name)
+                .filter(|n| !n.is_empty());
+
+            let is_archive = Path::new(&path).extension().is_some_and(|e| {
+                e.eq_ignore_ascii_case("apks")
+                    || e.eq_ignore_ascii_case("xapk")
+                    || e.eq_ignore_ascii_case("apkm")
+            });
+
+            let install_res = if is_archive {
+                install_apks(&app, &path, serial.as_deref(), Some(flags.clone()))
+            } else {
+                let mut args = vec!["install".to_string()];
+                if !flags.is_empty() {
+                    args.extend(flags.clone());
+                } else {
+                    args.push("-r".to_string());
+                }
+                args.push(path.clone());
+                let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+                run_adb_for_serial(&app, serial.as_deref(), &arg_refs)
+            };
+
+            match install_res {
+                Ok(output) => {
+                    if output.contains("Failure [") || output.contains("INSTALL_FAILED_") {
+                        results.push(BatchInstallResult {
+                            path,
+                            package_name: pkg_name,
+                            success: false,
+                            error: Some(output.trim().to_string()),
+                        });
+                    } else {
+                        results.push(BatchInstallResult {
+                            path,
+                            package_name: pkg_name,
+                            success: true,
+                            error: None,
+                        });
+                    }
+                }
+                Err(err) => {
+                    results.push(BatchInstallResult {
+                        path,
+                        package_name: pkg_name,
+                        success: false,
+                        error: Some(err),
+                    });
+                }
+            }
+        }
+        Ok(results)
     })
     .await
     .map_err(|e| e.to_string())?

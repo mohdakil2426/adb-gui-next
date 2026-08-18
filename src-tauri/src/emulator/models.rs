@@ -121,6 +121,45 @@ pub struct AvdSummary {
     pub warnings: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AvdHardwareDetails {
+    pub android_version: String,
+    pub api_label: String,
+    pub architecture: String,
+    pub boot_mode_label: String,
+    pub camera_info: String,
+    pub density_dpi: u32,
+    pub density_label: String,
+    pub disk_data_size: String,
+    pub disk_sdcard_size: String,
+    pub disk_snapshot_size: String,
+    pub disk_system_size: String,
+    pub graphics_engine: String,
+    pub hypervisor: String,
+    pub network_profile: String,
+    pub ram_allocation_mb: u64,
+    pub resolution: String,
+    pub root_status_label: String,
+    pub v_cpu_cores: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct AvdDiskBreakdown {
+    pub avd_name: String,
+    pub system_size_bytes: u64,
+    pub system_size_gb: f64,
+    pub data_size_bytes: u64,
+    pub data_size_gb: f64,
+    pub sdcard_size_bytes: u64,
+    pub sdcard_size_gb: f64,
+    pub snapshots_size_bytes: u64,
+    pub snapshots_size_gb: f64,
+    pub total_size_bytes: u64,
+    pub total_size_gb: f64,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct EmulatorLaunchOptions {

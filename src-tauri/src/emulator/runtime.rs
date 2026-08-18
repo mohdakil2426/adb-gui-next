@@ -174,8 +174,22 @@ pub fn launch_avd(
     Ok(format!("Launched emulator for AVD: {avd_name}"))
 }
 
-pub fn stop_avd(app: &AppHandle, serial: &str) -> CmdResult<String> {
-    run_binary_command_allow_output_on_failure(app, "adb", &["-s", serial, "emu", "kill"])?;
+pub fn stop_avd(app: &AppHandle, target: &str) -> CmdResult<String> {
+    let target = target.trim();
+    let serial = if target.starts_with("emulator-") {
+        target.to_string()
+    } else {
+        let names = runtime_avd_names(app).unwrap_or_default();
+        if let Some(s) = names.get(target) {
+            s.clone()
+        } else if is_serial_online(app, target) {
+            target.to_string()
+        } else {
+            return Err(format!("No running emulator instance found for '{target}'"));
+        }
+    };
+
+    run_binary_command_allow_output_on_failure(app, "adb", &["-s", &serial, "emu", "kill"])?;
     Ok(format!("Stopped {serial}"))
 }
 

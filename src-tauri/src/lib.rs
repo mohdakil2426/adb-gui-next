@@ -5,9 +5,11 @@
 
 pub mod adb;
 pub mod app_icons;
+pub mod apps;
 mod commands;
 pub mod debloat;
 pub mod emulator;
+pub mod flasher;
 mod helpers;
 pub mod host_setup;
 pub mod marketplace;
@@ -89,6 +91,11 @@ pub fn run() {
             commands::fetch_magisk_stable_release,
             commands::finalize_avd_root,
             commands::flash_partition,
+            commands::flash_partition_batch,
+            commands::get_flasher_vitals,
+            commands::inspect_partition_image,
+            commands::sideload_package_stream,
+            commands::erase_partition,
             commands::get_bootloader_variables,
             commands::get_device_info,
             commands::get_device_mode,
@@ -97,9 +104,13 @@ pub fn run() {
             commands::get_devices,
             commands::get_fastboot_devices,
             commands::get_installed_packages,
+            commands::get_all_devices,
             commands::get_avd_restore_plan,
             commands::install_package,
             commands::inspect_package_file,
+            commands::get_app_overview_telemetry,
+            commands::batch_install_packages,
+            commands::batch_inspect_package_files,
             commands::package_lifecycle_op,
             commands::pull_package_apk,
             commands::get_package_details,
@@ -108,6 +119,8 @@ pub fn run() {
             commands::launch_terminal,
             commands::list_avds,
             commands::host_path_kinds,
+            commands::emulator_get_avd_specs,
+            commands::emulator_get_disk_breakdown,
             commands::list_files,
             commands::list_payload_partitions,
             commands::list_payload_partitions_with_details,
@@ -146,6 +159,9 @@ pub fn run() {
             commands::marketplace_download_apk,
             commands::marketplace_install_apk,
             // Debloater
+            commands::marketplace_check_updates,
+            commands::marketplace_get_overview_stats,
+            commands::marketplace_get_curated_tools,
             commands::load_debloat_lists,
             commands::get_debloat_packages,
             commands::debloat_packages,
@@ -176,6 +192,14 @@ pub fn run() {
             commands::scrcpy_rotate_device,
             commands::scrcpy_take_screenshot,
             commands::get_app_icons,
+            commands::scrcpy_preview_command,
+            commands::scrcpy_profiles,
+            commands::scrcpy_calculate_bandwidth_metrics,
+            commands::scrcpy_toolbar_action,
+            commands::system_host_resources,
+            commands::execute_cli_command,
+            commands::compute_partition_file_sha256,
+            commands::get_extraction_presets,
             commands::open_device_file_in_editor,
             commands::reveal_device_path_in_explorer,
             commands::get_logcat_snapshot,

@@ -1,8 +1,6 @@
-//! Maps a validated launch DTO onto official scrcpy CLI flags. No custom protocol.
-
+use crate::CmdResult;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-
 const CODECS: &[&str] = &["h264", "h265", "av1", "vp8", "vp9"];
 const KEYBOARDS: &[&str] = &["sdk", "uhid", "aoa", "disabled"];
 const AUDIO_SOURCES: &[&str] = &[
@@ -37,6 +35,43 @@ pub struct ScrcpyPresetsCatalog {
     pub record_formats: Vec<String>,
     pub video_bit_rate: Vec<ScrcpyPresetOption<String>>,
     pub video_codecs: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScrcpyFlagExplanation {
+    pub flag: String,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScrcpyCommandPreview {
+    pub command: String,
+    pub args: Vec<String>,
+    pub flags: Vec<ScrcpyFlagExplanation>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScrcpyQualityProfile {
+    pub id: String,
+    pub label: String,
+    pub description: String,
+    pub badge: String,
+    pub specs: Vec<String>,
+    pub options: ScrcpyLaunchOptions,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct BandwidthMetrics {
+    pub bitrate_mbps: f64,
+    pub mb_per_min: f64,
+    pub rating: String,
+    pub rating_color: String,
+    pub fraction: f64,
+    pub max_scale_mbps: f64,
 }
 
 pub fn get_presets_catalog() -> ScrcpyPresetsCatalog {
@@ -221,6 +256,289 @@ pub fn build_args(
     Ok(args)
 }
 
+pub fn scrcpy_preview_command(
+    options: ScrcpyLaunchOptions,
+    serial: Option<String>,
+) -> CmdResult<ScrcpyCommandPreview> {
+    let args = build_args(&options, serial.as_deref())?;
+    let mut flags = Vec::new();
+
+    if let Some(s) = serial.as_deref().filter(|s| !s.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("-s {s}"),
+            description: format!("Target device serial: {s}"),
+        });
+    }
+    if let Some(max_size) = options.max_size.filter(|v| *v > 0) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("-m {max_size}"),
+            description: format!("Scale display to maximum dimension of {max_size}px"),
+        });
+    }
+    if let Some(bit_rate) = options.video_bit_rate.as_deref().filter(|v| !v.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("-b {bit_rate}"),
+            description: format!("Video stream target bit rate: {bit_rate}"),
+        });
+    }
+    if let Some(fps) = options.max_fps.filter(|v| *v > 0) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--max-fps={fps}"),
+            description: format!("Cap maximum frame rate to {fps} fps"),
+        });
+    }
+    if let Some(codec) = options.video_codec.as_deref().filter(|v| !v.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--video-codec={codec}"),
+            description: format!("Encode video stream using {codec} codec"),
+        });
+    }
+    if options.no_audio {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--no-audio".into(),
+            description: "Disable audio forwarding from device".into(),
+        });
+    }
+    if let Some(source) = options.audio_source.as_deref().filter(|v| !v.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--audio-source={source}"),
+            description: format!("Forward audio from {source} output"),
+        });
+    }
+    if options.stay_awake {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--stay-awake".into(),
+            description: "Keep device display awake while connected".into(),
+        });
+    }
+    if options.turn_screen_off {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--turn-screen-off".into(),
+            description: "Blank physical device screen while mirroring".into(),
+        });
+    }
+    if options.show_touches {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--show-touches".into(),
+            description: "Show physical touch point visual circles on screen".into(),
+        });
+    }
+    if options.fullscreen {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--fullscreen".into(),
+            description: "Launch scrcpy directly in fullscreen mode".into(),
+        });
+    }
+    if options.always_on_top {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--always-on-top".into(),
+            description: "Keep window floating above other windows".into(),
+        });
+    }
+    if options.borderless {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--window-borderless".into(),
+            description: "Disable native window title bar and border decorations".into(),
+        });
+    }
+    if let Some(path) = options.record_path.as_deref().filter(|v| !v.trim().is_empty()) {
+        let resolved = resolve_device_record_path(path, serial.as_deref());
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--record \"{}\"", resolved.display()),
+            description: format!("Record screen mirroring stream to {}", resolved.display()),
+        });
+    }
+    if let Some(format) = options.record_format.as_deref().filter(|v| !v.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--record-format={format}"),
+            description: format!("Save recording using {format} container"),
+        });
+    }
+    if let Some(keyboard) = options.keyboard.as_deref().filter(|v| !v.trim().is_empty()) {
+        flags.push(ScrcpyFlagExplanation {
+            flag: format!("--keyboard={keyboard}"),
+            description: format!("Simulate keyboard input via {keyboard} mode"),
+        });
+    }
+    if options.no_control {
+        flags.push(ScrcpyFlagExplanation {
+            flag: "--no-control".into(),
+            description: "Read-only mode: do not forward mouse and keyboard events".into(),
+        });
+    }
+
+    let mut cmd_parts = vec!["scrcpy".to_string()];
+    for arg in &args {
+        if arg.contains(' ') && !arg.starts_with('"') {
+            cmd_parts.push(format!("\"{arg}\""));
+        } else {
+            cmd_parts.push(arg.clone());
+        }
+    }
+    let command = cmd_parts.join(" ");
+
+    Ok(ScrcpyCommandPreview { command, args, flags })
+}
+
+pub fn scrcpy_profiles() -> Vec<ScrcpyQualityProfile> {
+    vec![
+        ScrcpyQualityProfile {
+            id: "gaming".into(),
+            label: "Ultra Low Latency (Gaming)".into(),
+            badge: "60 FPS · 16M".into(),
+            description: "Optimized for high-framerate, ultra-low input latency mobile gaming with direct UHID inputs.".into(),
+            specs: vec![
+                "1080p FHD Max Resolution".into(),
+                "60 FPS Fluid Refresh".into(),
+                "16 Mbps High Bitrate".into(),
+                "UHID Direct Keyboard & Mouse".into(),
+            ],
+            options: ScrcpyLaunchOptions {
+                max_size: Some(1920),
+                video_bit_rate: Some("16M".into()),
+                max_fps: Some(60),
+                video_codec: Some("h264".into()),
+                keyboard: Some("uhid".into()),
+                stay_awake: true,
+                turn_screen_off: false,
+                show_touches: false,
+                fullscreen: false,
+                always_on_top: false,
+                borderless: false,
+                no_audio: false,
+                no_control: false,
+                audio_source: None,
+                record_path: None,
+                record_format: None,
+            },
+        },
+        ScrcpyQualityProfile {
+            id: "productivity".into(),
+            label: "Productivity & Office".into(),
+            badge: "Balanced · 8M".into(),
+            description: "Balanced display profile for document review, typing, and notifications with physical screen turned off.".into(),
+            specs: vec![
+                "Native Display Resolution".into(),
+                "Standard Framerate".into(),
+                "8 Mbps Balanced Stream".into(),
+                "Physical Device Display Off".into(),
+            ],
+            options: ScrcpyLaunchOptions {
+                max_size: None,
+                video_bit_rate: Some("8M".into()),
+                max_fps: None,
+                video_codec: Some("h264".into()),
+                keyboard: Some("uhid".into()),
+                stay_awake: true,
+                turn_screen_off: true,
+                show_touches: false,
+                fullscreen: false,
+                always_on_top: false,
+                borderless: false,
+                no_audio: false,
+                no_control: false,
+                audio_source: None,
+                record_path: None,
+                record_format: None,
+            },
+        },
+        ScrcpyQualityProfile {
+            id: "battery".into(),
+            label: "Battery Saver / Low Bandwidth".into(),
+            badge: "720p · 2M · 30FPS".into(),
+            description: "Conserves device battery, CPU power, and USB bandwidth with reduced bitrate and framerate caps.".into(),
+            specs: vec![
+                "720p Scaled Down".into(),
+                "30 FPS Energy Efficient Cap".into(),
+                "2 Mbps Low Bandwidth".into(),
+                "Physical Device Display Off".into(),
+            ],
+            options: ScrcpyLaunchOptions {
+                max_size: Some(1280),
+                video_bit_rate: Some("2M".into()),
+                max_fps: Some(30),
+                video_codec: Some("h264".into()),
+                keyboard: Some("uhid".into()),
+                stay_awake: false,
+                turn_screen_off: true,
+                show_touches: false,
+                fullscreen: false,
+                always_on_top: false,
+                borderless: false,
+                no_audio: false,
+                no_control: false,
+                audio_source: None,
+                record_path: None,
+                record_format: None,
+            },
+        },
+        ScrcpyQualityProfile {
+            id: "creator".into(),
+            label: "Content Creator / High Quality".into(),
+            badge: "2K · 24M · H.265".into(),
+            description: "Maximum visual fidelity with modern H.265 encoding and touch point visualization for tutorials and captures.".into(),
+            specs: vec![
+                "Original 2K+ High Resolution".into(),
+                "60 FPS Recording Standard".into(),
+                "24 Mbps High Bitrate".into(),
+                "H.265 / HEVC Next-Gen Codec".into(),
+            ],
+            options: ScrcpyLaunchOptions {
+                max_size: None,
+                video_bit_rate: Some("24M".into()),
+                max_fps: Some(60),
+                video_codec: Some("h265".into()),
+                keyboard: Some("uhid".into()),
+                stay_awake: true,
+                turn_screen_off: false,
+                show_touches: true,
+                fullscreen: false,
+                always_on_top: false,
+                borderless: false,
+                no_audio: false,
+                no_control: false,
+                audio_source: None,
+                record_path: None,
+                record_format: None,
+            },
+        },
+    ]
+}
+
+pub fn scrcpy_calculate_bandwidth_metrics(bitrate: Option<String>) -> BandwidthMetrics {
+    let raw = bitrate.as_deref().unwrap_or("8M").trim();
+    let bitrate_mbps = if let Some(stripped) = raw.strip_suffix(['m', 'M']) {
+        stripped.parse::<f64>().unwrap_or(8.0)
+    } else if let Some(stripped) = raw.strip_suffix(['k', 'K']) {
+        stripped.parse::<f64>().unwrap_or(8000.0) / 1000.0
+    } else {
+        raw.parse::<f64>().unwrap_or(8.0)
+    };
+
+    let mb_per_min = (bitrate_mbps / 8.0) * 60.0;
+    let max_scale_mbps = 64.0;
+    let fraction = (bitrate_mbps / max_scale_mbps).clamp(0.0, 1.0);
+
+    let (rating, rating_color) = if bitrate_mbps <= 4.0 {
+        ("Low Bandwidth / Battery Saver", "emerald")
+    } else if bitrate_mbps <= 12.0 {
+        ("Balanced HD", "blue")
+    } else if bitrate_mbps <= 24.0 {
+        ("High Quality Pro", "purple")
+    } else {
+        ("Ultra Quality / Lossless", "rose")
+    };
+
+    BandwidthMetrics {
+        bitrate_mbps,
+        mb_per_min,
+        rating: rating.to_string(),
+        rating_color: rating_color.to_string(),
+        fraction,
+        max_scale_mbps,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,5 +601,48 @@ mod tests {
         let base = if cfg!(windows) { "C:\\Videos\\session.mp4" } else { "/tmp/session.mp4" };
         let resolved = resolve_device_record_path(base, None);
         assert_eq!(resolved, PathBuf::from(base));
+    }
+
+    #[test]
+    fn test_scrcpy_preview_command() {
+        let options = ScrcpyLaunchOptions {
+            max_size: Some(1080),
+            video_bit_rate: Some("16M".into()),
+            stay_awake: true,
+            fullscreen: true,
+            ..ScrcpyLaunchOptions::default()
+        };
+        let preview = scrcpy_preview_command(options, Some("serial123".into())).expect("preview");
+        assert!(preview.command.starts_with("scrcpy -s serial123 -m 1080 -b 16M"));
+        assert!(preview.flags.iter().any(|f| f.flag == "-s serial123"));
+        assert!(preview.flags.iter().any(|f| f.flag == "--stay-awake"));
+        assert!(preview.flags.iter().any(|f| f.flag == "--fullscreen"));
+    }
+
+    #[test]
+    fn test_scrcpy_profiles() {
+        let profiles = scrcpy_profiles();
+        assert_eq!(profiles.len(), 4);
+        let ids: Vec<_> = profiles.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(ids, vec!["gaming", "productivity", "battery", "creator"]);
+    }
+
+    #[test]
+    fn test_scrcpy_calculate_bandwidth_metrics() {
+        let m1 = scrcpy_calculate_bandwidth_metrics(Some("2M".into()));
+        assert_eq!(m1.bitrate_mbps, 2.0);
+        assert_eq!(m1.rating_color, "emerald");
+
+        let m2 = scrcpy_calculate_bandwidth_metrics(Some("8M".into()));
+        assert_eq!(m2.bitrate_mbps, 8.0);
+        assert_eq!(m2.rating_color, "blue");
+
+        let m3 = scrcpy_calculate_bandwidth_metrics(Some("16M".into()));
+        assert_eq!(m3.bitrate_mbps, 16.0);
+        assert_eq!(m3.rating_color, "purple");
+
+        let m4 = scrcpy_calculate_bandwidth_metrics(Some("32M".into()));
+        assert_eq!(m4.bitrate_mbps, 32.0);
+        assert_eq!(m4.rating_color, "rose");
     }
 }

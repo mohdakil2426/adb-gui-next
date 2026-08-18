@@ -1,16 +1,16 @@
 use crate::CmdResult;
 use base64::Engine;
 use log::debug;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     fs,
     io::{Cursor, Read},
     path::Path,
 };
+use tauri::AppHandle;
 use zip::ZipArchive;
 
-#[derive(Debug, Serialize, Clone, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct ApkInspectionResult {
     pub file_path: String,
     pub file_name: String,
@@ -299,6 +299,42 @@ pub async fn inspect_package_file(path: String) -> CmdResult<ApkInspectionResult
     tokio::task::spawn_blocking(move || inspect_package_file_sync(&path))
         .await
         .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn batch_inspect_package_files(
+    _app: AppHandle,
+    paths: Vec<String>,
+) -> CmdResult<Vec<ApkInspectionResult>> {
+    tokio::task::spawn_blocking(move || {
+        use rayon::prelude::*;
+        let results: Vec<ApkInspectionResult> = paths
+            .par_iter()
+            .map(|p| {
+                inspect_package_file_sync(p).unwrap_or_else(|_err| {
+                    let path_obj = Path::new(p);
+                    let file_name =
+                        path_obj.file_name().and_then(|v| v.to_str()).unwrap_or(p).to_string();
+                    let file_size = fs::metadata(p).map_or(0, |m| m.len());
+                    ApkInspectionResult {
+                        file_path: p.clone(),
+                        file_name: file_name.clone(),
+                        file_size,
+                        format: path_obj
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .unwrap_or("apk")
+                            .to_lowercase(),
+                        label: file_name,
+                        ..Default::default()
+                    }
+                })
+            })
+            .collect();
+        Ok(results)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 pub fn inspect_package_file_sync(file_path: &str) -> CmdResult<ApkInspectionResult> {

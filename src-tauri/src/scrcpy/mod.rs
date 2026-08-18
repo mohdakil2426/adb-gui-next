@@ -7,7 +7,9 @@ pub mod install;
 pub mod launch;
 pub mod toolbar;
 pub use flags::{
-    ScrcpyLaunchOptions, ScrcpyPresetOption, ScrcpyPresetsCatalog, get_presets_catalog,
+    BandwidthMetrics, ScrcpyCommandPreview, ScrcpyFlagExplanation, ScrcpyLaunchOptions,
+    ScrcpyPresetOption, ScrcpyPresetsCatalog, ScrcpyQualityProfile, get_presets_catalog,
+    scrcpy_calculate_bandwidth_metrics, scrcpy_preview_command, scrcpy_profiles,
 };
 pub use install::{
     ScrcpyStatus, fetch_latest_tag, install_latest, local_status, uninstall_managed,
@@ -15,6 +17,6 @@ pub use install::{
 pub use launch::{ScrcpyActiveSessions, ScrcpySessionInfo, active_sessions, launch, stop};
 pub use toolbar::{
     ToolbarMode, ToolbarSession, ToolbarSide, close_toolbar, create_toolbar_window,
-    get_toolbar_session, rotate_device, send_keyevent, send_statusbar, set_toolbar_mode,
-    set_toolbar_offset, set_toolbar_side, set_toolbar_size, take_screenshot,
+    get_toolbar_session, rotate_device, scrcpy_toolbar_action, send_keyevent, send_statusbar,
+    set_toolbar_mode, set_toolbar_offset, set_toolbar_side, set_toolbar_size, take_screenshot,
 };

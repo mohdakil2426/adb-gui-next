@@ -149,3 +149,49 @@ pub struct GithubDeviceFlowPollResult {
     pub user: Option<GithubUserSummary>,
     pub rate_limit: Option<GithubRateLimitSummary>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppUpdateCandidate {
+    pub package_name: String,
+    pub app_name: String,
+    pub current_version: String,
+    pub latest_version: String,
+    pub current_version_code: Option<i64>,
+    pub latest_version_code: Option<i64>,
+    pub source: String,
+    pub download_url: Option<String>,
+    pub changelog: Option<String>,
+    pub has_update: bool,
+    pub icon_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketplaceOverviewStats {
+    pub total_apps: u32,
+    pub github_count: u32,
+    pub fdroid_count: u32,
+    pub aptoide_count: u32,
+    pub system_count: u32,
+    pub privacy_count: u32,
+    pub dev_count: u32,
+    pub media_count: u32,
+    pub tools_count: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CuratedTool {
+    pub name: String,
+    pub package_name: String,
+    pub summary: String,
+    pub description: String,
+    pub source: String,
+    pub version: String,
+    pub repo_stars: Option<u32>,
+    pub rating: Option<f64>,
+    pub categories: Vec<String>,
+    pub download_url: Option<String>,
+    pub icon_url: Option<String>,
+}

@@ -8,9 +8,10 @@ use crate::commands::device::run_adb_for_serial;
 use crate::marketplace::cache::ManagedMarketplaceCache;
 use crate::marketplace::service;
 use crate::marketplace::{
-    GithubDeviceFlowChallenge, GithubDeviceFlowPollResult, ManagedHttpClient,
+    AppUpdateCandidate, CuratedTool, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult,
+    ManagedHttpClient, MarketplaceApp, MarketplaceAppDetail, MarketplaceOverviewStats,
+    SearchFilters, VersionInfo, marketplace_check_updates as check_updates,
 };
-use crate::marketplace::{MarketplaceApp, MarketplaceAppDetail, SearchFilters, VersionInfo};
 use crate::payload::remote::{resolve_redirect_url, validate_outbound_url};
 
 const MARKETPLACE_DOWNLOAD_DIR: &str = "adb-gui-next-marketplace";
@@ -242,4 +243,24 @@ pub async fn marketplace_install_apk(
 
     let _ = tokio::fs::remove_file(apk_path_ref).await;
     result
+}
+
+#[tauri::command]
+pub async fn marketplace_check_updates(
+    app: AppHandle,
+    serial: Option<String>,
+) -> CmdResult<Vec<AppUpdateCandidate>> {
+    tokio::task::spawn_blocking(move || check_updates(app, serial))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn marketplace_get_overview_stats() -> MarketplaceOverviewStats {
+    service::marketplace_get_overview_stats()
+}
+
+#[tauri::command]
+pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
+    service::marketplace_get_curated_tools()
 }

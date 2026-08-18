@@ -1,7 +1,5 @@
-//! HTTPS download with hop-by-hop URL validation (no automatic redirects).
-
-use std::fs::File;
-use std::io::{BufReader, Read, Write};
+use std::fs::File as StdFile;
+use std::io::{BufReader, Read};
 use std::path::Path;
 use std::time::Duration;
 
@@ -10,8 +8,11 @@ use reqwest::Client;
 use reqwest::redirect::Policy;
 use sha1::Digest;
 use tauri::{AppHandle, Emitter};
+use tokio::fs::File as TokioFile;
+use tokio::io::AsyncWriteExt;
 
 use crate::CmdResult;
+use crate::payload::remote::progress::ProgressThrottle;
 use crate::payload::remote::{resolve_redirect_url, validate_outbound_url};
 
 use super::catalog::{ChecksumAlgo, SdkPackage};
@@ -46,23 +47,32 @@ pub async fn download_package(
     stage: &str,
 ) -> CmdResult<()> {
     if dest.exists() {
-        let _ = std::fs::remove_file(dest);
+        let _ = tokio::fs::remove_file(dest).await;
     }
     let response = get_validated(client, &package.url).await?;
     if !response.status().is_success() {
         return Err(format!("download failed: HTTP {}", response.status()));
     }
     let total = response.content_length();
-    let mut file = File::create(dest).map_err(|e| e.to_string())?;
+    let mut file = TokioFile::create(dest).await.map_err(|e| e.to_string())?;
     let mut received = 0_u64;
     let mut stream = response.bytes_stream();
+    let throttle = ProgressThrottle::new();
+
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| e.to_string())?;
-        file.write_all(&chunk).map_err(|e| e.to_string())?;
+        file.write_all(&chunk).await.map_err(|e| e.to_string())?;
         received += chunk.len() as u64;
-        emit_progress(app, stage, received, total);
+        if throttle.should_emit(false) {
+            emit_progress(app, stage, received, total);
+        }
     }
+    file.flush().await.map_err(|e| e.to_string())?;
     drop(file);
+
+    // Terminal emission
+    emit_progress(app, stage, received, total);
+
     verify_checksum(dest, package)?;
     Ok(())
 }
@@ -113,7 +123,7 @@ fn verify_checksum(path: &Path, package: &SdkPackage) -> CmdResult<()> {
 }
 
 fn sha1_file(path: &Path) -> CmdResult<String> {
-    let file = File::open(path).map_err(|e| e.to_string())?;
+    let file = StdFile::open(path).map_err(|e| e.to_string())?;
     let mut reader = BufReader::new(file);
     let mut hasher = sha1::Sha1::new();
     let mut buf = [0_u8; 64 * 1024];

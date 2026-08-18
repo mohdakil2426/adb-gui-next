@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{LazyLock, Mutex};
 use tauri::{AppHandle, State};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Information about a remote payload file obtained via HEAD request.
 #[derive(Debug, Serialize)]
@@ -24,6 +24,16 @@ pub struct RemotePayloadInfo {
     pub last_modified: Option<String>,
     pub server: Option<String>,
     pub etag: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PayloadExtractionPreset {
+    pub id: String,
+    pub name: String,
+    pub badge: String,
+    pub description: String,
+    pub category: String,
 }
 
 #[tauri::command]
@@ -587,4 +597,53 @@ pub fn cancel_extraction(token_id: String) -> Result<(), String> {
     } else {
         Err("Token not found".to_string())
     }
+}
+
+#[tauri::command]
+pub async fn compute_partition_file_sha256(file_path: String) -> CmdResult<String> {
+    tokio::task::spawn_blocking(move || {
+        let path = std::path::Path::new(&file_path);
+        if !path.exists() {
+            return Err(format!("Partition file does not exist: {file_path}"));
+        }
+        let digest = crate::payload::verify::compute_file_sha256(path)
+            .map_err(|e| format!("Failed to compute SHA-256 for {file_path}: {e}"))?;
+        Ok(hex::encode(digest))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn get_extraction_presets() -> Vec<PayloadExtractionPreset> {
+    vec![
+        PayloadExtractionPreset {
+            id: "root-kit".into(),
+            name: "Root Kit".into(),
+            badge: "Root & Recovery".into(),
+            description: "Kernel, ramdisk & Android Verified Boot metadata (boot, init_boot, recovery, vbmeta)".into(),
+            category: "boot".into(),
+        },
+        PayloadExtractionPreset {
+            id: "system-vendor".into(),
+            name: "System & Vendor".into(),
+            badge: "Dynamic OS".into(),
+            description: "Core Android OS, vendor drivers & product overlays (system, vendor, product, system_ext)".into(),
+            category: "system".into(),
+        },
+        PayloadExtractionPreset {
+            id: "modem-radio".into(),
+            name: "Modem & Radio".into(),
+            badge: "Baseband".into(),
+            description: "Baseband radio, cellular modem, DSP & bootloaders (modem, radio, dsp, bluetooth)".into(),
+            category: "modem".into(),
+        },
+        PayloadExtractionPreset {
+            id: "full-flash".into(),
+            name: "Full Flash Image".into(),
+            badge: "Full Image".into(),
+            description: "All partitions inside payload archive for complete device restoration".into(),
+            category: "all".into(),
+        },
+    ]
 }

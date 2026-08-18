@@ -280,7 +280,7 @@ mod win32 {
     pub const TRUE: BOOL = 1;
     pub const PROCESS_QUERY_LIMITED_INFORMATION: DWORD = 0x1000;
     pub const STILL_ACTIVE: DWORD = 259;
-
+    pub const SW_RESTORE: i32 = 9;
     pub type WNDENUMPROC = unsafe extern "system" fn(hwnd: HWND, lparam: isize) -> BOOL;
 
     unsafe extern "system" {
@@ -296,6 +296,7 @@ mod win32 {
         pub fn IsWindowVisible(hwnd: HWND) -> BOOL;
         pub fn IsIconic(hwnd: HWND) -> BOOL;
         pub fn GetWindowRect(hwnd: HWND, rect: *mut RECT) -> BOOL;
+        pub fn ShowWindow(hwnd: HWND, cmd_show: i32) -> BOOL;
     }
 }
 
@@ -535,6 +536,53 @@ pub fn take_screenshot(app: &AppHandle, serial: Option<&str>) -> CmdResult<Strin
     std::fs::write(&dest_path, png).map_err(|e| format!("Failed to write screenshot file: {e}"))?;
 
     Ok(crate::helpers::normalize_path(&dest_path))
+}
+
+/// Execute a typed toolbar action (power, volume, screenshot, 1:1 zoom, rotate, navigation, statusbar).
+pub fn scrcpy_toolbar_action(app: AppHandle, serial: String, action: String) -> CmdResult<()> {
+    match action.trim().to_lowercase().as_str() {
+        "power" => send_keyevent(&app, Some(&serial), 26),
+        "vol-up" | "vol_up" | "volume-up" | "volume_up" => send_keyevent(&app, Some(&serial), 24),
+        "vol-down" | "vol_down" | "volume-down" | "volume_down" => {
+            send_keyevent(&app, Some(&serial), 25)
+        }
+        "camera" | "screenshot" => {
+            take_screenshot(&app, Some(&serial))?;
+            Ok(())
+        }
+        "zoom" | "resize" | "toggle-resize" | "toggle_resize" => {
+            // Resize scrcpy native window to 1:1 if on Windows and PID available
+            #[cfg(windows)]
+            {
+                if let Some(session) = get_toolbar_session(&serial)
+                    && let Some(pid) = session.pid
+                    && let Some(hwnd) = find_scrcpy_hwnd(pid)
+                {
+                    unsafe {
+                        win32::ShowWindow(hwnd, win32::SW_RESTORE);
+                    }
+                }
+            }
+            Ok(())
+        }
+        "rotate-ccw" | "rotate_ccw" | "rotate-left" | "rotate_left" => {
+            rotate_device(&app, Some(&serial), "counter-clockwise")
+        }
+        "rotate-cw" | "rotate_cw" | "rotate-right" | "rotate_right" => {
+            rotate_device(&app, Some(&serial), "clockwise")
+        }
+        "back" => send_keyevent(&app, Some(&serial), 4),
+        "home" => send_keyevent(&app, Some(&serial), 3),
+        "recents" | "app-switch" | "app_switch" => send_keyevent(&app, Some(&serial), 187),
+        "notifications" => send_statusbar(&app, Some(&serial), "expand-notifications"),
+        "settings" | "quick-settings" | "quick_settings" => {
+            send_statusbar(&app, Some(&serial), "expand-settings")
+        }
+        "collapse" => send_statusbar(&app, Some(&serial), "collapse"),
+        "wake" => send_keyevent(&app, Some(&serial), 224),
+        "lock" => send_keyevent(&app, Some(&serial), 26),
+        other => Err(format!("unsupported toolbar action: {other}")),
+    }
 }
 
 #[cfg(test)]

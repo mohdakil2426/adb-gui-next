@@ -6,11 +6,15 @@ use tauri::AppHandle;
 use crate::CmdResult;
 use crate::scrcpy::flags::ScrcpyLaunchOptions;
 use crate::scrcpy::{
-    ScrcpyActiveSessions, ScrcpyPresetsCatalog, ScrcpyStatus, ToolbarMode, ToolbarSession,
-    ToolbarSide, active_sessions, close_toolbar, create_toolbar_window, fetch_latest_tag,
-    get_presets_catalog, get_toolbar_session, install_latest, launch, local_status, rotate_device,
-    send_keyevent, send_statusbar, set_toolbar_mode, set_toolbar_offset, set_toolbar_side,
-    set_toolbar_size, stop, take_screenshot, uninstall_managed,
+    BandwidthMetrics, ScrcpyActiveSessions, ScrcpyCommandPreview, ScrcpyPresetsCatalog,
+    ScrcpyQualityProfile, ScrcpyStatus, ToolbarMode, ToolbarSession, ToolbarSide, active_sessions,
+    close_toolbar, create_toolbar_window, fetch_latest_tag, get_presets_catalog,
+    get_toolbar_session, install_latest, launch, local_status, rotate_device,
+    scrcpy_calculate_bandwidth_metrics as calculate_bandwidth,
+    scrcpy_preview_command as preview_command, scrcpy_profiles as profiles,
+    scrcpy_toolbar_action as toolbar_action, send_keyevent, send_statusbar, set_toolbar_mode,
+    set_toolbar_offset, set_toolbar_side, set_toolbar_size, stop, take_screenshot,
+    uninstall_managed,
 };
 
 fn scrcpy_http_client() -> CmdResult<Client> {
@@ -70,6 +74,35 @@ pub async fn scrcpy_active_sessions() -> CmdResult<ScrcpyActiveSessions> {
 #[tauri::command]
 pub fn scrcpy_presets() -> ScrcpyPresetsCatalog {
     get_presets_catalog()
+}
+
+#[tauri::command]
+pub fn scrcpy_preview_command(
+    options: ScrcpyLaunchOptions,
+    serial: Option<String>,
+) -> CmdResult<ScrcpyCommandPreview> {
+    preview_command(options, serial)
+}
+
+#[tauri::command]
+pub fn scrcpy_profiles() -> Vec<ScrcpyQualityProfile> {
+    profiles()
+}
+
+#[tauri::command]
+pub fn scrcpy_calculate_bandwidth_metrics(bitrate: Option<String>) -> BandwidthMetrics {
+    calculate_bandwidth(bitrate)
+}
+
+#[tauri::command]
+pub async fn scrcpy_toolbar_action(
+    app: AppHandle,
+    serial: String,
+    action: String,
+) -> CmdResult<()> {
+    tokio::task::spawn_blocking(move || toolbar_action(app, serial, action))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
