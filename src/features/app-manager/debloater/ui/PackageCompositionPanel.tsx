@@ -12,7 +12,7 @@ import { formatPercent, usageRatio } from '@/shared/utils/format';
  * to draw.
  */
 const PackageCompositionDonut = lazy(() =>
-  import('@/features/app-manager/debloater/ui/PackageCompositionDonut').then((module) => ({
+  import('@/features/app-manager/overview/charts/PackageCompositionDonut').then((module) => ({
     default: module.PackageCompositionDonut,
   })),
 );
@@ -108,7 +108,7 @@ export function PackageCompositionPanel({
               </div>
             ) : (
               <Suspense fallback={<Skeleton className="size-28 shrink-0 rounded-full" />}>
-                <PackageCompositionDonut composition={composition} />
+                <PackageCompositionDonut composition={composition} standalone />
               </Suspense>
             )}
 

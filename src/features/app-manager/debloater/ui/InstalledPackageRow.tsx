@@ -7,7 +7,7 @@ import { cn } from '@/shared/utils/cn';
 import { formatBytes } from '@/shared/utils/format';
 
 export interface InstalledPackageRowProps {
-  apkSizeBytes: number;
+  apkSizeBytes?: number | undefined;
   height: number;
   iconSrc: string | undefined;
   isDisabled?: boolean;
@@ -19,11 +19,10 @@ export interface InstalledPackageRowProps {
   onToggleEnable?: ((name: string, enable: boolean) => void) | undefined;
   pkg: backend.InstalledPackage;
   start: number;
-  targetSdk: number;
+  targetSdk?: number | undefined;
 }
 
 export function InstalledPackageRow({
-  apkSizeBytes,
   height,
   iconSrc,
   isDisabled = false,
@@ -35,7 +34,8 @@ export function InstalledPackageRow({
   onToggleEnable,
   pkg,
   start,
-  targetSdk,
+  apkSizeBytes = pkg.apkSizeBytes ?? 0,
+  targetSdk = pkg.targetSdk ?? 0,
 }: InstalledPackageRowProps) {
   return (
     <div
@@ -109,21 +109,24 @@ export function InstalledPackageRow({
 
       {/* Target SDK Badge Column */}
       <div className="@md:flex hidden w-20 shrink-0 justify-center">
-        <Badge
-          className="border-border/60 font-mono text-[10px] text-muted-foreground"
-          variant="neutral"
-        >
-          API {targetSdk}
-        </Badge>
+        {targetSdk > 0 ? (
+          <Badge
+            className="border-border/60 font-mono text-[10px] text-muted-foreground"
+            variant="neutral"
+          >
+            API {targetSdk}
+          </Badge>
+        ) : (
+          <span className="font-mono text-[10px] text-muted-foreground/60">—</span>
+        )}
       </div>
 
       {/* APK Storage Size Footprint Column */}
       <div className="@sm:flex hidden w-24 shrink-0 justify-end">
         <span className="numeric font-mono text-caption text-muted-foreground tabular-nums">
-          {formatBytes(apkSizeBytes)}
+          {apkSizeBytes > 0 ? formatBytes(apkSizeBytes) : '—'}
         </span>
       </div>
-
       {/* Package Type Badge Column */}
       <div className="flex w-20 shrink-0 justify-center">
         {isDisabled ? (

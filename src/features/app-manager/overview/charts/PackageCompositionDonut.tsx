@@ -1,10 +1,13 @@
+import type { PackageComposition } from '@/features/app-manager/debloater/model/packageComposition';
 import { formatPercent, usageRatio } from '@/shared/utils/format';
 
-interface PackageCompositionDonutProps {
-  disabledCount: number;
-  systemCount: number;
-  totalCount: number;
-  userCount: number;
+export interface PackageCompositionDonutProps {
+  composition?: PackageComposition | undefined;
+  disabledCount?: number | undefined;
+  standalone?: boolean | undefined;
+  systemCount?: number | undefined;
+  totalCount?: number | undefined;
+  userCount?: number | undefined;
 }
 
 const SIZE = 120;
@@ -14,10 +17,12 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const GAP = 2;
 
 export function PackageCompositionDonut({
-  disabledCount,
-  systemCount,
+  composition,
+  disabledCount = composition?.disabled ?? 0,
+  standalone = false,
+  systemCount = composition?.system ?? 0,
   totalCount,
-  userCount,
+  userCount = composition?.user ?? 0,
 }: PackageCompositionDonutProps) {
   const slices = [
     {
@@ -47,6 +52,41 @@ export function PackageCompositionDonut({
   const showGap = slices.length > 1;
   let offset = 0;
 
+  if (standalone) {
+    if (slices.length === 0) {
+      return null;
+    }
+    return (
+      <svg
+        aria-label={slices.map((slice) => `${slice.label}: ${slice.count}`).join(', ')}
+        className="size-28 shrink-0 rotate-[-90deg]"
+        role="img"
+        viewBox={`0 0 ${SIZE} ${SIZE}`}
+      >
+        {slices.map((slice) => {
+          const length = (slice.count / total) * CIRCUMFERENCE;
+          const dash = showGap ? Math.max(0, length - GAP) : length;
+          const circle = (
+            <circle
+              cx={SIZE / 2}
+              cy={SIZE / 2}
+              fill="none"
+              key={slice.key}
+              r={RADIUS}
+              stroke={slice.color}
+              strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
+              strokeDashoffset={-offset}
+              strokeWidth={STROKE}
+            >
+              <title>{`${slice.label}: ${slice.count}`}</title>
+            </circle>
+          );
+          offset += length;
+          return circle;
+        })}
+      </svg>
+    );
+  }
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">

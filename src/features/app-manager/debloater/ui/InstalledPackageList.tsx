@@ -13,7 +13,7 @@ import type {
 import { useAppIcons } from '@/features/app-manager/hooks/useAppIcons';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
-import { getPackageMetrics, INSTALLED_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
+import { INSTALLED_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
 import { InstalledPackageRow } from './InstalledPackageRow';
 import { InstalledPackageToolbar } from './InstalledPackageToolbar';
 import { PackageListEmpty, PackageListError, PackageListSkeleton } from './PackageListState';
@@ -157,14 +157,6 @@ export function InstalledPackageList({
     return set;
   }, [packages, debloatPackages]);
 
-  const metricsMap = useMemo(() => {
-    const map = new Map<string, { apkSizeBytes: number; targetSdk: number }>();
-    for (const pkg of packages) {
-      map.set(pkg.name, getPackageMetrics(pkg.name, pkg.packageType));
-    }
-    return map;
-  }, [packages]);
-
   const userCount = useMemo(
     () =>
       packages.filter((p) => p.packageType === 'user' && !disabledPackageNames.has(p.name)).length,
@@ -219,12 +211,12 @@ export function InstalledPackageList({
         } else if (sortBy === 'package') {
           cmp = a.name.localeCompare(b.name);
         } else if (sortBy === 'size') {
-          const aSize = metricsMap.get(a.name)?.apkSizeBytes ?? 0;
-          const bSize = metricsMap.get(b.name)?.apkSizeBytes ?? 0;
+          const aSize = a.apkSizeBytes ?? 0;
+          const bSize = b.apkSizeBytes ?? 0;
           cmp = aSize - bSize;
         } else if (sortBy === 'targetSdk') {
-          const aSdk = metricsMap.get(a.name)?.targetSdk ?? 0;
-          const bSdk = metricsMap.get(b.name)?.targetSdk ?? 0;
+          const aSdk = a.targetSdk ?? 0;
+          const bSdk = b.targetSdk ?? 0;
           cmp = aSdk - bSdk;
         }
 
@@ -232,7 +224,6 @@ export function InstalledPackageList({
       });
   }, [
     disabledPackageNames,
-    metricsMap,
     packageFilter,
     packages,
     searchQuery,
@@ -240,7 +231,6 @@ export function InstalledPackageList({
     sortBy,
     sortOrder,
   ]);
-
   const listRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredPackages.length,
@@ -350,13 +340,9 @@ export function InstalledPackageList({
                 if (!pkg) {
                   return null;
                 }
-                const metrics = metricsMap.get(pkg.name) ?? {
-                  apkSizeBytes: 0,
-                  targetSdk: 34,
-                };
                 return (
                   <InstalledPackageRow
-                    apkSizeBytes={metrics.apkSizeBytes}
+                    apkSizeBytes={pkg.apkSizeBytes}
                     height={vRow.size}
                     iconSrc={icons[pkg.name]}
                     isDisabled={disabledPackageNames.has(pkg.name)}
@@ -369,7 +355,7 @@ export function InstalledPackageList({
                     onToggleEnable={onToggleEnable}
                     pkg={pkg}
                     start={vRow.start}
-                    targetSdk={metrics.targetSdk}
+                    targetSdk={pkg.targetSdk}
                   />
                 );
               })}

@@ -1,5 +1,6 @@
 import { HardDrive, Package, ShieldCheck, User, Users } from 'lucide-react';
 import type { PackageOverviewStats } from '@/features/app-manager/model/packageStats';
+import { formatBytes } from '@/shared/utils/format';
 
 interface AppMetricsHeroBannerProps {
   stats: PackageOverviewStats;
@@ -35,7 +36,7 @@ export function AppMetricsHeroBanner({ stats }: AppMetricsHeroBannerProps) {
       icon: HardDrive,
       label: 'Storage Footprint',
       subtext: 'Combined App + Data',
-      value: '~42.8 GB',
+      value: stats.totalStorageBytes > 0 ? formatBytes(stats.totalStorageBytes) : '—',
     },
   ];
 

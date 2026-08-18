@@ -10,7 +10,6 @@ import {
 import { useInstallationStore } from '@/features/app-manager/debloater/model/installationStore';
 import { InstalledBatchBar } from '@/features/app-manager/debloater/ui/InstalledBatchBar';
 import { InstalledPackageList } from '@/features/app-manager/debloater/ui/InstalledPackageList';
-import { mapSerial } from '@/features/app-manager/debloater/ui/mapSerial';
 import { UninstallConfirmDialog } from '@/features/app-manager/debloater/ui/UninstallConfirmDialog';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
@@ -150,8 +149,13 @@ export function InstalledAppsTab({
       view: 'apps',
     });
     const toastId = toast.loading(`Uninstalling 0 of ${total}…`);
-
-    const outcomes = await mapSerial(list, async (pkg, index) => {
+    let ok = 0;
+    let failed = 0;
+    for (let index = 0; index < total; index++) {
+      const pkg = list[index];
+      if (!pkg) {
+        continue;
+      }
       toast.loading(`Uninstalling ${index + 1} of ${total}: ${pkg}`, { id: toastId });
       updateOperation(operationId, {
         detail: `${index} of ${total}`,
@@ -160,15 +164,12 @@ export function InstalledAppsTab({
       try {
         const output = await UninstallPackage(pkg, serial);
         useLogStore.getState().addLog(`Uninstalled: ${pkg}: ${output}`, 'success');
-        return true;
+        ok++;
       } catch (error) {
         useLogStore.getState().addLog(`Failed to uninstall ${pkg}: ${error}`, 'error');
-        return false;
+        failed++;
       }
-    });
-
-    const ok = outcomes.filter(Boolean).length;
-    const failed = outcomes.length - ok;
+    }
     if (failed === 0) {
       toast.success(`Uninstalled ${ok} package${ok === 1 ? '' : 's'}`, { id: toastId });
     } else {

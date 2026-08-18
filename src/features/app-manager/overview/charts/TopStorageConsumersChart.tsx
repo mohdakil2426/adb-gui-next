@@ -1,9 +1,9 @@
 import { HardDrive } from 'lucide-react';
-import type { StorageConsumer } from '@/features/app-manager/model/packageTypes';
+import type { backend } from '@/desktop/models';
 import { formatBytes } from '@/shared/utils/format';
 
 interface TopStorageConsumersChartProps {
-  consumers: StorageConsumer[];
+  consumers: backend.StorageConsumerItem[];
   onSelectApp?: ((packageName: string) => void) | undefined;
 }
 
@@ -37,59 +37,66 @@ export function TopStorageConsumersChart({
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {consumers.map((app, index) => {
-          const ratio = (app.totalSize / maxBytes) * 100;
-          const appPct = app.totalSize > 0 ? (app.appSize / app.totalSize) * 100 : 40;
-          const dataPct = app.totalSize > 0 ? (app.dataSize / app.totalSize) * 100 : 50;
-          const cachePct = app.totalSize > 0 ? (app.cacheSize / app.totalSize) * 100 : 10;
+        {consumers.length === 0 ? (
+          <div className="flex h-32 items-center justify-center rounded-md border border-border border-dashed text-caption text-muted-foreground">
+            No storage telemetry available
+          </div>
+        ) : (
+          consumers.map((app, index) => {
+            const pkgName = app.name;
+            const ratio = (app.totalSize / maxBytes) * 100;
+            const appPct = app.totalSize > 0 ? (app.appSize / app.totalSize) * 100 : 40;
+            const dataPct = app.totalSize > 0 ? (app.dataSize / app.totalSize) * 100 : 50;
+            const cachePct = app.totalSize > 0 ? (app.cacheSize / app.totalSize) * 100 : 10;
 
-          return (
-            <button
-              className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
-              key={app.packageName}
-              onClick={() => onSelectApp?.(app.packageName)}
-              type="button"
-            >
-              <div className="flex items-center justify-between text-body">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="numeric font-semibold text-caption text-muted-foreground">
-                    #{index + 1}
-                  </span>
-                  <span className="truncate font-medium text-foreground group-hover:text-primary">
-                    {app.label || app.packageName}
+            return (
+              <button
+                className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
+                key={pkgName}
+                onClick={() => onSelectApp?.(pkgName)}
+                type="button"
+              >
+                <div className="flex items-center justify-between text-body">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="numeric font-semibold text-caption text-muted-foreground">
+                      #{index + 1}
+                    </span>
+                    <span className="truncate font-medium text-foreground group-hover:text-primary">
+                      {app.label || pkgName}
+                    </span>
+                  </div>
+                  <span className="numeric font-semibold text-caption text-foreground">
+                    {formatBytes(app.totalSize)}
                   </span>
                 </div>
-                <span className="numeric font-semibold text-caption text-foreground">
-                  {formatBytes(app.totalSize)}
-                </span>
-              </div>
 
-              {/* Segmented multi-tone bar */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
-                <div
-                  className="flex h-full overflow-hidden rounded-full transition-all duration-300"
-                  style={{ width: `${Math.max(4, ratio)}%` }}
-                >
+                {/* Segmented multi-tone bar */}
+                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
                   <div
-                    className="h-full bg-primary transition-colors group-hover:bg-primary/90"
-                    style={{ width: `${appPct}%` }}
-                    title={`App: ${formatBytes(app.appSize)}`}
-                  />
-                  <div
-                    className="h-full bg-primary/60 transition-colors group-hover:bg-primary/70"
-                    style={{ width: `${dataPct}%` }}
-                    title={`Data: ${formatBytes(app.dataSize)}`}
-                  />
-                  <div
-                    className="h-full bg-primary/30 transition-colors group-hover:bg-primary/40"
-                    style={{ width: `${cachePct}%` }}
-                    title={`Cache: ${formatBytes(app.cacheSize)}`}
-                  />
+                    className="flex h-full overflow-hidden rounded-full transition-all duration-300"
+                    style={{ width: `${Math.max(4, ratio)}%` }}
+                  >
+                    <div
+                      className="h-full bg-primary transition-colors group-hover:bg-primary/90"
+                      style={{ width: `${appPct}%` }}
+                      title={`App: ${formatBytes(app.appSize)}`}
+                    />
+                    <div
+                      className="h-full bg-primary/60 transition-colors group-hover:bg-primary/70"
+                      style={{ width: `${dataPct}%` }}
+                      title={`Data: ${formatBytes(app.dataSize)}`}
+                    />
+                    <div
+                      className="h-full bg-primary/30 transition-colors group-hover:bg-primary/40"
+                      style={{ width: `${cachePct}%` }}
+                      title={`Cache: ${formatBytes(app.cacheSize)}`}
+                    />
+                  </div>
                 </div>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })
+        )}
       </div>
     </div>
   );

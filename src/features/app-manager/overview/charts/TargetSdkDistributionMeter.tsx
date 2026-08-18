@@ -6,6 +6,8 @@ interface TargetSdkDistributionMeterProps {
     legacy: number; // <= API 29
     modern: number; // API 34+
     standard: number; // API 30-33
+    maxApi?: number | undefined;
+    minApi?: number | undefined;
   };
   totalCount: number;
 }

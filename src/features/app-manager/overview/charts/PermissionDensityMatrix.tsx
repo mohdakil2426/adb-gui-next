@@ -1,37 +1,49 @@
-import { Camera, Eye, MapPin, Mic, Phone } from 'lucide-react';
+import { Camera, Eye, HardDrive, MapPin, Mic, Phone, Shield } from 'lucide-react';
+import type { backend } from '@/desktop/models';
 
 interface PermissionDensityMatrixProps {
-  userAppCount: number;
+  items?: backend.PermissionDensityItem[];
+  userAppCount?: number;
 }
 
-export function PermissionDensityMatrix({ userAppCount }: PermissionDensityMatrixProps) {
-  const densityItems = [
-    {
-      count: Math.round(userAppCount * 0.42),
-      icon: Camera,
-      label: 'Camera',
-      risk: 'Moderate',
-    },
-    {
-      count: Math.round(userAppCount * 0.35),
-      icon: Mic,
-      label: 'Microphone',
-      risk: 'High',
-    },
-    {
-      count: Math.round(userAppCount * 0.28),
-      icon: MapPin,
-      label: 'Location',
-      risk: 'High',
-    },
-    {
-      count: Math.round(userAppCount * 0.18),
-      icon: Phone,
-      label: 'Call & SMS',
-      risk: 'Critical',
-    },
-  ];
+function getPermissionIcon(permission: string, label: string) {
+  const text = `${permission} ${label}`.toLowerCase();
+  if (text.includes('camera')) {
+    return Camera;
+  }
+  if (text.includes('audio') || text.includes('record') || text.includes('mic')) {
+    return Mic;
+  }
+  if (text.includes('location') || text.includes('gps')) {
+    return MapPin;
+  }
+  if (
+    text.includes('phone') ||
+    text.includes('call') ||
+    text.includes('sms') ||
+    text.includes('contact')
+  ) {
+    return Phone;
+  }
+  if (text.includes('storage') || text.includes('media') || text.includes('files')) {
+    return HardDrive;
+  }
+  return Shield;
+}
 
+function getRiskLabel(risk: string) {
+  switch (risk.toLowerCase()) {
+    case 'critical':
+      return { label: 'Critical', color: 'text-rose-500' };
+    case 'elevated':
+    case 'high':
+      return { label: 'High', color: 'text-amber-500' };
+    default:
+      return { label: 'Standard', color: 'text-muted-foreground' };
+  }
+}
+
+export function PermissionDensityMatrix({ items = [] }: PermissionDensityMatrixProps) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
@@ -42,28 +54,37 @@ export function PermissionDensityMatrix({ userAppCount }: PermissionDensityMatri
         <span className="text-caption text-muted-foreground">User App Exposure</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {densityItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div
-              className="flex items-center justify-between rounded-md border border-border bg-surface-raised p-2"
-              key={item.label}
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="size-4 text-muted-foreground" />
-                <div className="flex flex-col">
-                  <span className="font-medium text-body text-foreground">{item.label}</span>
-                  <span className="text-caption text-muted-foreground">{item.risk}</span>
+      {items.length === 0 ? (
+        <div className="flex h-28 items-center justify-center rounded-md border border-border border-dashed text-caption text-muted-foreground">
+          No permission telemetry available
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {items.map((item) => {
+            const Icon = getPermissionIcon(item.permission, item.label);
+            const riskInfo = getRiskLabel(item.riskLevel);
+            return (
+              <div
+                className="flex items-center justify-between rounded-md border border-border bg-surface-raised p-2"
+                key={item.permission || item.label}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="size-4 text-muted-foreground" />
+                  <div className="flex flex-col">
+                    <span className="font-medium text-body text-foreground">
+                      {item.label || item.permission}
+                    </span>
+                    <span className={`text-caption ${riskInfo.color}`}>{riskInfo.label}</span>
+                  </div>
                 </div>
+                <span className="numeric font-semibold text-body text-foreground">
+                  {item.count} apps
+                </span>
               </div>
-              <span className="numeric font-semibold text-body text-foreground">
-                {item.count} apps
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

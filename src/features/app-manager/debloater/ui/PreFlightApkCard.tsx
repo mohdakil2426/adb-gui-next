@@ -10,7 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { InspectPackageFile } from '@/desktop/backend';
+import { BatchInspectPackages } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import type { ItemInstallStatus } from '@/features/app-manager/debloater/model/installationStore';
 import { useInstallationStore } from '@/features/app-manager/debloater/model/installationStore';
@@ -59,10 +59,13 @@ export function PreFlightApkCard({
     }
 
     setIsLoadingInspection(true);
-    InspectPackageFile(filePath)
-      .then((res) => {
+    BatchInspectPackages([filePath])
+      .then((results) => {
         if (!isCancelled) {
-          setInspection(filePath, res);
+          const res = results[0];
+          if (res) {
+            setInspection(filePath, res);
+          }
           setIsLoadingInspection(false);
         }
       })
@@ -72,7 +75,6 @@ export function PreFlightApkCard({
           setIsLoadingInspection(false);
         }
       });
-
     return () => {
       isCancelled = true;
     };

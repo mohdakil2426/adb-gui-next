@@ -95,10 +95,15 @@ describe('InstalledAppsTab', () => {
   });
 
   it('renders Target SDK and size metrics on rows', () => {
-    useInstallationStore
-      .getState()
-      .setPackages([{ label: 'Camera Pro', name: 'com.example.camera', packageType: 'user' }]);
-
+    useInstallationStore.getState().setPackages([
+      {
+        apkSizeBytes: 35 * 1024 * 1024,
+        label: 'Camera Pro',
+        name: 'com.example.camera',
+        packageType: 'user',
+        targetSdk: 34,
+      },
+    ]);
     render(
       <InstalledAppsTab
         hasLoaded={true}

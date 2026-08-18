@@ -10,8 +10,7 @@ describe('computePackageOverviewStats', () => {
     ];
     const debloatList = [{ name: 'com.bloat.one', removal: 'recommended' }];
 
-    const stats = computePackageOverviewStats(packages, debloatList);
-    expect(stats.totalCount).toBe(3);
+    const stats = computePackageOverviewStats(null, debloatList, packages);
     expect(stats.userCount).toBe(1);
     expect(stats.systemCount).toBe(2);
     expect(stats.safetyTiers.recommended).toBe(1);

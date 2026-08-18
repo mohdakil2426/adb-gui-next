@@ -1,6 +1,7 @@
 import { FilePlus2, Loader2, Package, Trash2 } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import { BatchInspectPackages } from '@/desktop/backend';
 import {
   buildAdbInstallFlags,
   type InstallProgress,
@@ -36,8 +37,34 @@ export function ApkPickerPanel({
   selectedSerial,
 }: ApkPickerPanelProps) {
   const inspections = useInstallationStore((s) => s.inspections);
+  const setInspection = useInstallationStore((s) => s.setInspection);
   const itemStatuses = useInstallationStore((s) => s.itemStatuses);
   const installFlags = useInstallationStore((s) => s.installFlags);
+
+  // Eagerly batch inspect any newly added APK paths
+  useEffect(() => {
+    const uninspected = apkPaths.filter((p) => !inspections[p]);
+    if (uninspected.length === 0) {
+      return;
+    }
+    let isCancelled = false;
+    BatchInspectPackages(uninspected)
+      .then((results) => {
+        if (!isCancelled) {
+          for (const res of results) {
+            if (res.filePath) {
+              setInspection(res.filePath, res);
+            }
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback per-card inspection catches individual errors
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, [apkPaths, inspections, setInspection]);
 
   const activeFlagArgs = useMemo(() => buildAdbInstallFlags(installFlags), [installFlags]);
 

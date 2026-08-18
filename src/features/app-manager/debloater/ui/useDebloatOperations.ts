@@ -6,7 +6,6 @@ import { useDebloatStore } from '@/features/app-manager/debloater/model/debloatS
 import { useLogStore } from '@/shared/stores/logStore';
 import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
 import { handleError } from '@/shared/utils/errorHandler';
-import { applyInChunks } from './debloatApply';
 
 interface UseDebloatOperationsProps {
   disableMode: boolean;
@@ -81,17 +80,10 @@ export function useDebloatOperations({
     });
     const toastId = toast.loading(`${verb} 0 of ${total}…`);
     try {
-      const results = await applyInChunks({
-        action,
-        onProgress: (processed) => {
-          updateOperation(operationId, {
-            detail: `${processed} of ${total}`,
-            progress: Math.round((processed / total) * 100),
-          });
-          toast.loading(`${verb} ${processed} of ${total}…`, { id: toastId });
-        },
-        packages: pkgNames,
-        serial: selectedSerial,
+      const results = await DebloatPackages(pkgNames, action, 0, selectedSerial);
+      updateOperation(operationId, {
+        detail: `${total} of ${total}`,
+        progress: 100,
       });
       applyResults(results);
       const succeeded = results.filter((r) => r.success).length;

@@ -2,21 +2,18 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { InstallPackage, SelectMultipleApkFiles } from '@/desktop/backend';
+import { BatchInstallPackages, SelectMultipleApkFiles } from '@/desktop/backend';
 import {
   buildAdbInstallFlags,
   useInstallationStore,
 } from '@/features/app-manager/debloater/model/installationStore';
 import { ApkPickerPanel } from '@/features/app-manager/debloater/ui/ApkPickerPanel';
-import { mapSerial } from '@/features/app-manager/debloater/ui/mapSerial';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
-import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
+import { finishOperation, startOperation } from '@/shared/stores/operationStore';
 import { handleError } from '@/shared/utils/errorHandler';
 import { getFileName } from '@/shared/utils/filePath';
 import { invalidatePackages } from '@/shared/utils/queries';
-
-const PERCENT = 100;
 
 /**
  * Putting APKs **on** the device. Removing them lives in the Installed apps tab
@@ -94,64 +91,56 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
     });
     const toastId = toast.loading(`Installing 0 of ${total}…`);
 
-    const successfulPaths: string[] = [];
-    const outcomes = await mapSerial(apkPaths, async (path, index) => {
-      if (!path) {
-        return false;
+    try {
+      const results = await BatchInstallPackages(apkPaths, serial, flags);
+      let ok = 0;
+      let failed = 0;
+      const successfulPaths: string[] = [];
+
+      for (const res of results) {
+        const name = getFileName(res.path);
+        if (res.success) {
+          ok++;
+          successfulPaths.push(res.path);
+          setItemStatus(res.path, { status: 'completed' });
+          useLogStore.getState().addLog(`Installed ${name} successfully`, 'success');
+        } else {
+          failed++;
+          const errorMsg = res.error || 'Installation failed';
+          setItemStatus(res.path, { error: errorMsg, status: 'failed' });
+          useLogStore.getState().addLog(`Failed to install ${name}: ${errorMsg}`, 'error');
+        }
       }
-      const name = getFileName(path);
-      const fileStartTime = Date.now();
-      setItemStatus(path, { status: 'installing' });
-      setInstallProgress({ completed: index, currentFile: name, startedAt, total });
-      updateOperation(operationId, {
-        detail: `${index} of ${total} · ${name}`,
-        progress: Math.round((index / total) * PERCENT),
-      });
-      toast.loading(`Installing ${index + 1} of ${total}: ${name}`, { id: toastId });
 
-      // Macrotask yield so state updates paint to UI
-      await new Promise<void>((resolve) => setTimeout(resolve, 0));
-      try {
-        await InstallPackage(path, serial, flags);
-        const durationMs = Date.now() - fileStartTime;
-        setItemStatus(path, { durationMs, status: 'completed' });
-        successfulPaths.push(path);
-        useLogStore
-          .getState()
-          .addLog(`Installed ${name} in ${(durationMs / 1000).toFixed(1)}s`, 'success');
-        return true;
-      } catch (error) {
-        const durationMs = Date.now() - fileStartTime;
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        setItemStatus(path, { durationMs, error: errorMsg, status: 'failed' });
-        useLogStore.getState().addLog(`Failed to install ${name}: ${errorMsg}`, 'error');
-        return false;
+      if (failed === 0) {
+        toast.success(`Installed ${ok} package${ok === 1 ? '' : 's'} successfully`, {
+          id: toastId,
+        });
+        setApkPaths([]);
+        clearItemStatuses();
+      } else {
+        toast.warning(`Installed ${ok}, ${failed} failed — review errors below or in Logs`, {
+          id: toastId,
+        });
+        const remaining = apkPaths.filter((p) => !successfulPaths.includes(p));
+        setApkPaths(remaining);
       }
-    });
 
-    const ok = outcomes.filter(Boolean).length;
-    const failed = outcomes.length - ok;
-    if (failed === 0) {
-      toast.success(`Installed ${ok} package${ok === 1 ? '' : 's'} successfully`, { id: toastId });
-      setApkPaths([]);
-      clearItemStatuses();
-    } else {
-      toast.warning(`Installed ${ok}, ${failed} failed — review errors below or in Logs`, {
-        id: toastId,
-      });
-      // Retain failed paths in queue so user can adjust flags and retry
-      const remaining = apkPaths.filter((p) => !successfulPaths.includes(p));
-      setApkPaths(remaining);
+      if (ok > 0) {
+        invalidatePackages(queryClient);
+        onInstalled();
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      toast.error(`Installation failed: ${errorMsg}`, { id: toastId });
+      for (const path of apkPaths) {
+        setItemStatus(path, { error: errorMsg, status: 'failed' });
+      }
+    } finally {
+      finishOperation(operationId);
+      setIsInstalling(false);
+      setInstallProgress(null);
     }
-
-    if (ok > 0) {
-      invalidatePackages(queryClient);
-      onInstalled();
-    }
-
-    finishOperation(operationId);
-    setIsInstalling(false);
-    setInstallProgress(null);
   }
 
   return (
