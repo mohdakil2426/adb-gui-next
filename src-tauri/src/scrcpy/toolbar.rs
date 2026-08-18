@@ -208,7 +208,7 @@ pub fn create_toolbar_window(
         .skip_taskbar(true)
         .shadow(false);
 
-    let window = builder.build().map_err(|e| format!("Failed to create toolbar window: {e}"))?;
+    let _window = builder.build().map_err(|e| format!("Failed to create toolbar window: {e}"))?;
 
     if let Some(p) = effective_pid {
         spawn_toolbar_tracker(app.clone(), trimmed_serial.to_string(), p);

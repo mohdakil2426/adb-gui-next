@@ -300,3 +300,4 @@ export function ScrcpyFloatingToolbar() {
       ) : null}
     </div>
   );
+}
