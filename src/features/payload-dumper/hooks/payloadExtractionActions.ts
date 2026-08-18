@@ -138,6 +138,25 @@ export async function runExtractPayload({
       }
     }
 
+    if (newFiles.length > 0) {
+      const parts = newFiles.map(partitionNameFromExtractedFile);
+      const totalBytes = result.stats?.totalBytes ?? 0;
+      const duration = result.stats?.durationMs ?? 0;
+      usePayloadDumperStore.getState().addToHistory({
+        duration,
+        id: `extract-${Date.now()}`,
+        outputDir: result.outputDir || outputDir || outputPath,
+        partitions: parts,
+        payloadPath,
+        status: result.success
+          ? 'success'
+          : isCancelledMessage(result.error)
+            ? 'cancelled'
+            : 'error',
+        timestamp: Date.now(),
+        totalBytes,
+      });
+    }
     if (result.success) {
       setStatus('success');
       setExtractingPartitions(new Set());
