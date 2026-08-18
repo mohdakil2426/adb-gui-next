@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import {
+  OpenFolder,
   ScrcpyActiveSessions,
   ScrcpyCheckUpdate,
   ScrcpyInstall,
   ScrcpyLaunch,
   ScrcpyStatus,
   ScrcpyStop,
+  ScrcpyUninstall,
 } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import { useScrcpyProgress } from '@/features/scrcpy/hooks/useScrcpyProgress';
@@ -165,6 +167,26 @@ export function ViewScrcpy() {
     },
   });
 
+  const uninstall = useMutation({
+    mutationFn: ScrcpyUninstall,
+    onError: (error) => handleError('Scrcpy uninstall', error),
+    onSuccess: (st) => {
+      queryClient.setQueryData(queryKeys.scrcpy.status, st);
+      toast.success('Uninstalled scrcpy');
+    },
+  });
+
+  const handleOpenInstalledFolder = () => {
+    const binary = statusQuery.data?.binaryPath;
+    if (!binary) {
+      return;
+    }
+    const folder = binary.replace(/[/\\][^/\\]+$/, '');
+    void OpenFolder(folder).catch((error: unknown) => {
+      handleError('Open installed folder', error);
+    });
+  };
+
   return (
     <div className="@container flex flex-col gap-4">
       <h1 className="sr-only">Scrcpy</h1>
@@ -173,12 +195,14 @@ export function ViewScrcpy() {
         isCheckingUpdate={checkUpdate.isPending}
         isError={statusQuery.isError}
         isInstalling={install.isPending}
+        isUninstalling={uninstall.isPending}
         onCheckUpdate={() => checkUpdate.mutate()}
         onInstall={() => install.mutate()}
+        onOpenFolder={handleOpenInstalledFolder}
+        onUninstall={() => uninstall.mutate()}
         progress={progress}
         status={statusQuery.data}
       />
-
       <ScrcpySessionCard
         activeSerials={activeSerials}
         canLaunch={Boolean(statusQuery.data?.binaryPath) || statusQuery.data?.source === 'path'}

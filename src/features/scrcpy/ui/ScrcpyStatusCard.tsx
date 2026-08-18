@@ -1,28 +1,37 @@
-import { Download, Monitor, RefreshCw } from 'lucide-react';
+import { Download, FolderOpen, Monitor, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import type { backend } from '@/desktop/models';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Progress } from '@/shared/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 
 interface ScrcpyStatusCardProps {
   isCheckingUpdate: boolean;
   isError: boolean;
   isInstalling: boolean;
+  isUninstalling?: boolean | undefined;
   onCheckUpdate: () => void;
   onInstall: () => void;
+  onOpenFolder?: (() => void) | undefined;
+  onUninstall?: (() => void) | undefined;
   progress: backend.ScrcpyDownloadProgress | null;
   status: backend.ScrcpyStatus | undefined;
 }
-
 export function ScrcpyStatusCard({
   isCheckingUpdate,
   isError,
   isInstalling,
+  isUninstalling = false,
   onCheckUpdate,
   onInstall,
+  onOpenFolder,
+  onUninstall,
   progress,
   status,
 }: ScrcpyStatusCardProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const installed = Boolean(status?.binaryPath);
   const updateAvailable =
     Boolean(status?.latestVersion) && status?.latestVersion !== status?.installedVersion;
@@ -33,15 +42,58 @@ export function ScrcpyStatusCard({
 
   return (
     <Card className="border-border bg-surface shadow-none">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-title">
-          <Monitor aria-hidden="true" className="size-5" />
-          Scrcpy
-        </CardTitle>
-        <CardDescription>
-          Mirror and control the selected device in a separate native window. Official Genymobile
-          binaries are downloaded into app data — this app never embeds scrcpy in the webview.
-        </CardDescription>
+      <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <CardTitle className="flex items-center gap-2 text-title">
+            <Monitor aria-hidden="true" className="size-5" />
+            Scrcpy
+          </CardTitle>
+          <CardDescription>
+            Mirror and control the selected device in a separate native window. Official Genymobile
+            binaries are downloaded into app data — this app never embeds scrcpy in the webview.
+          </CardDescription>
+        </div>
+        {status?.source === 'managed' && installed ? (
+          <div className="flex items-center gap-1">
+            {onOpenFolder ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    aria-label="Open installed folder"
+                    className="size-7"
+                    disabled={isInstalling || isUninstalling}
+                    onClick={onOpenFolder}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <FolderOpen aria-hidden="true" className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Open installed folder</TooltipContent>
+              </Tooltip>
+            ) : null}
+
+            {onUninstall ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    aria-label="Uninstall scrcpy"
+                    className="size-7 hover:bg-destructive/10 hover:text-destructive"
+                    disabled={isInstalling || isUninstalling}
+                    onClick={() => setConfirmOpen(true)}
+                    size="icon-sm"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Trash2 aria-hidden="true" className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Uninstall scrcpy</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {isError ? (
@@ -88,7 +140,12 @@ export function ScrcpyStatusCard({
 
         <div className="grid @lg:grid-cols-2 grid-cols-1 gap-3">
           {status?.canInstallOfficial ? (
-            <Button disabled={isInstalling} onClick={onInstall} type="button" variant="outline">
+            <Button
+              disabled={isInstalling}
+              onClick={onInstall}
+              type="button"
+              variant={installed ? 'outline' : 'default'}
+            >
               <Download aria-hidden="true" />
               {installed ? 'Redownload official build' : 'Download scrcpy'}
             </Button>
@@ -115,6 +172,29 @@ export function ScrcpyStatusCard({
           ) : null}
         </div>
       </CardContent>
+
+      <ConfirmDialog
+        confirmLabel="Uninstall"
+        consequence={
+          <p>
+            Official scrcpy binaries will be removed from app data. You will need to download scrcpy
+            again to mirror devices.
+          </p>
+        }
+        description="Deletes downloaded scrcpy binaries and stops any active mirroring sessions."
+        destructive
+        details={[
+          { label: 'Package', value: 'Genymobile scrcpy' },
+          { label: 'Installed version', value: status?.installedVersion ?? 'Managed build' },
+        ]}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onUninstall?.();
+        }}
+        onOpenChange={setConfirmOpen}
+        open={confirmOpen}
+        title="Uninstall scrcpy?"
+      />
     </Card>
   );
 }
