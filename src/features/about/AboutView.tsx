@@ -1,5 +1,6 @@
-import { Cpu, Heart, Package, Scale } from 'lucide-react';
+import { Cpu, ExternalLink, Heart, Package, Scale } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { BrowserOpenURL } from '@/desktop/runtime';
 import { usePlatformToolVersions } from '@/features/about/hooks/usePlatformToolVersions';
 import {
   APP_COPYRIGHT,
@@ -20,7 +21,7 @@ import { Skeleton } from '@/shared/ui/skeleton';
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 py-1">
+    <div className="flex items-baseline justify-between gap-4 py-1.5 text-body">
       <dt className="shrink-0 text-label text-muted-foreground">{label}</dt>
       <dd className="numeric min-w-0 truncate text-right font-mono text-foreground text-mono">
         {value}
@@ -44,43 +45,49 @@ export function ViewAbout() {
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">About {APP_NAME}</h1>
 
-      <section className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface p-4">
-        <img
-          alt=""
-          className="size-14 shrink-0 object-contain"
-          height={56}
-          src="/logo.png"
-          width={56}
-        />
-        <div className="min-w-0 flex-1">
-          <p className="text-display text-foreground">{APP_NAME}</p>
-          <p className="mt-0.5 max-w-prose text-body text-muted-foreground">
-            A desktop front end for adb and fastboot: inspect a device, move files, manage apps,
-            flash partitions and unpack firmware — without memorising command lines.
-          </p>
+      {/* Hero Header Section */}
+      <section className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4 rounded-lg border border-border bg-surface p-4 shadow-none">
+        <div className="flex items-center gap-3.5">
+          <img
+            alt={`${APP_NAME} logo`}
+            className="size-12 shrink-0 object-contain"
+            height={48}
+            src="/logo.png"
+            width={48}
+          />
+          <div className="flex flex-col gap-0.5">
+            <span className="font-semibold text-foreground text-title">{APP_NAME}</span>
+            <p className="max-w-xl text-body text-muted-foreground">
+              A desktop front end for adb and fastboot: inspect a device, move files, manage apps,
+              flash partitions and unpack firmware — without memorising command lines.
+            </p>
+          </div>
         </div>
+
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Badge className="numeric" variant="info">
+          <Badge className="numeric font-mono text-[11px]" variant="secondary">
             v{APP_VERSION}
           </Badge>
           {target.isDebug ? <Badge variant="warning">Development build</Badge> : null}
         </div>
       </section>
 
-      <div className="grid @3xl:grid-cols-2 grid-cols-1 items-start gap-4">
+      {/* Top Grid: Build + Licence (Equal Stretched Height) */}
+      <div className="grid @3xl:grid-cols-2 grid-cols-1 items-stretch gap-4">
+        {/* Build Card */}
         <AboutCard icon={Cpu} title="Build">
           <dl className="flex flex-col divide-y divide-border">
-            <DetailRow label="Version" value={APP_VERSION} />
+            <DetailRow label="Version" value={`v${APP_VERSION}`} />
             <DetailRow label="Platform" value={`${target.platform} · ${target.arch}`} />
             {target.triple ? <DetailRow label="Target triple" value={target.triple} /> : null}
             <DetailRow label="Bundled adb" value={toolValue(tools?.adb)} />
             <DetailRow label="Bundled fastboot" value={toolValue(tools?.fastboot)} />
           </dl>
-          <p className="mt-2 text-caption text-muted-foreground">
+          <p className="text-caption text-muted-foreground">
             adb and fastboot ship inside the app, so nothing has to be installed separately or put
             on PATH.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-auto flex flex-wrap gap-2 pt-2">
             <ExternalLinkButton url={RELEASES_URL}>Release notes</ExternalLinkButton>
             <ExternalLinkButton url={ISSUES_URL} variant="ghost">
               Report a problem
@@ -88,17 +95,18 @@ export function ViewAbout() {
           </div>
         </AboutCard>
 
+        {/* Licence Card */}
         <AboutCard icon={Scale} title="Licence">
           <dl className="flex flex-col divide-y divide-border">
-            <DetailRow label="Licence" value={APP_LICENSE} />
+            <DetailRow label="Licence" value={<Badge variant="secondary">{APP_LICENSE}</Badge>} />
             <DetailRow label="Copyright" value={APP_COPYRIGHT} />
           </dl>
-          <p className="mt-2 text-body text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Released under the MIT licence: use it, modify it and redistribute it, including
             commercially, as long as the copyright notice travels with it. It comes with no
             warranty.
           </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-auto flex flex-wrap gap-2 pt-2">
             <ExternalLinkButton url={REPOSITORY_URL}>Source code</ExternalLinkButton>
             <ExternalLinkButton url={LICENSE_URL} variant="ghost">
               Full licence text
@@ -106,26 +114,32 @@ export function ViewAbout() {
           </div>
         </AboutCard>
 
+        {/* Full-Width Built With Grid */}
         <AboutCard className="@3xl:col-span-2" icon={Package} title="Built with">
-          <ul className="grid @lg:grid-cols-2 grid-cols-1 gap-x-6">
+          <div className="grid @4xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2.5">
             {CREDITS.map((credit) => (
-              <li
-                className="flex items-baseline justify-between gap-3 border-border border-b py-1.5 last:border-b-0"
+              <button
+                className="group flex cursor-pointer flex-col justify-between gap-2 rounded-lg border border-border bg-surface-raised/40 p-3 text-left transition-all duration-150 hover:border-border hover:bg-surface-raised"
                 key={credit.name}
+                onClick={() => BrowserOpenURL(credit.url)}
+                type="button"
               >
-                <span className="min-w-0">
-                  <span className="block truncate text-body text-foreground">{credit.name}</span>
-                  <span className="block truncate text-caption text-muted-foreground">
-                    {credit.role}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-body text-foreground transition-colors group-hover:text-foreground">
+                    {credit.name}
                   </span>
-                </span>
-                <span className="shrink-0 text-caption text-muted-foreground">
-                  {credit.license}
-                </span>
-              </li>
+                  <ExternalLink className="size-3 text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100" />
+                </div>
+                <span className="text-caption text-muted-foreground">{credit.role}</span>
+                <div className="pt-0.5">
+                  <span className="inline-block rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    {credit.license}
+                  </span>
+                </div>
+              </button>
             ))}
-          </ul>
-          <p className="mt-3 flex items-center gap-1.5 text-caption text-muted-foreground">
+          </div>
+          <p className="mt-2 flex items-center gap-1.5 text-caption text-muted-foreground">
             <Heart aria-hidden="true" className="size-3.5 text-destructive" />
             Each project keeps its own licence; the full texts ship with the application.
           </p>
