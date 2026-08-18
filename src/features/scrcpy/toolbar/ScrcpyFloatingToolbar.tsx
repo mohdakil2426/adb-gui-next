@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getCurrentWebviewWindow, LogicalSize } from '@tauri-apps/api/webviewWindow';
 import {
   Maximize2,
   Minus,
@@ -160,15 +161,40 @@ export function ScrcpyFloatingToolbar() {
     }
   };
 
+  const handleToggleMore = async () => {
+    const next = !isMoreOpen;
+    setIsMoreOpen(next);
+    try {
+      const win = getCurrentWebviewWindow();
+      if (next) {
+        await win.setSize(new LogicalSize(340, 520));
+      } else {
+        await win.setSize(new LogicalSize(44, 490));
+      }
+    } catch {}
+  };
+
+  const handleToggleMinimize = async (min: boolean) => {
+    setIsMinimized(min);
+    try {
+      const win = getCurrentWebviewWindow();
+      if (min) {
+        await win.setSize(new LogicalSize(38, 38));
+      } else {
+        await win.setSize(new LogicalSize(44, 490));
+      }
+    } catch {}
+  };
+
   if (isMinimized) {
     return (
       <div
         data-tauri-drag-region
-        className="flex size-9 cursor-move items-center justify-center rounded-lg border border-border/80 bg-surface/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised"
+        className="flex size-9 cursor-move items-center justify-center rounded-lg border border-border/80 bg-[#f3f4f6]/95 dark:bg-[#1e1f22]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised"
       >
         <button
           type="button"
-          onClick={() => setIsMinimized(false)}
+          onClick={() => handleToggleMinimize(false)}
           title="Expand Toolbar"
           className="flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
         >
@@ -179,86 +205,98 @@ export function ScrcpyFloatingToolbar() {
   }
 
   return (
-    <div className="relative flex select-none flex-col items-center gap-0.5 rounded-lg border border-border/80 bg-[#f3f4f6]/95 dark:bg-[#1e1f22]/95 p-1 shadow-2xl backdrop-blur-lg">
-      {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
-      <div
-        data-tauri-drag-region
-        className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-0.5 pb-1 text-muted-foreground"
-      >
-        <button
-          type="button"
-          onClick={() => setIsMinimized(true)}
-          title="Minimize"
-          className="flex size-4 items-center justify-center rounded hover:bg-muted hover:text-foreground"
-        >
-          <Minus className="size-3" />
-        </button>
-
-        <button
-          type="button"
-          onClick={handleModeToggle}
-          title={mode === 'locked' ? 'Locked to phone (Click to unlock)' : 'Freeform (Click to lock to phone)'}
-          className={`flex size-4 items-center justify-center rounded transition-colors ${
-            mode === 'locked'
-              ? 'text-primary hover:bg-primary/10'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          }`}
-        >
-          {mode === 'locked' ? (
-            <Pin className="size-2.5 fill-current" />
-          ) : (
-            <PinOff className="size-2.5" />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleClose}
-          title="Close Toolbar"
-          className="flex size-4 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
-        >
-          <X className="size-3" />
-        </button>
-      </div>
-
+    <div className="relative flex select-none items-start gap-2 bg-transparent p-0">
       {/* Main Action Strip */}
-      <div className="flex flex-col items-center gap-0.5 pt-0.5">
-        {MAIN_TOOLBAR_ACTIONS.map((action) => (
-          <ToolbarButton
-            key={action.id}
-            icon={action.icon}
-            label={action.label}
-            shortcut={action.shortcut}
-            description={action.description}
-            isActive={activeAction === action.id}
-            onClick={() => handleAction(action.id)}
-          />
-        ))}
+      <div className="flex w-10 flex-col items-center gap-0.5 rounded-lg border border-border/80 bg-[#f3f4f6]/95 dark:bg-[#1e1f22]/95 p-1 shadow-2xl backdrop-blur-lg">
+        {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
+        <div
+          data-tauri-drag-region
+          className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-0.5 pb-1 text-muted-foreground"
+        >
+          <button
+            type="button"
+            onClick={() => handleToggleMinimize(true)}
+            title="Minimize"
+            className="flex size-4 items-center justify-center rounded hover:bg-muted hover:text-foreground"
+          >
+            <Minus className="size-3" />
+          </button>
 
-        {/* More / Extended Controls Menu Trigger */}
-        <ToolbarButton
-          icon="more"
-          label="Extended Controls"
-          isActive={isMoreOpen}
-          onClick={() => setIsMoreOpen((prev) => !prev)}
-        />
+          <button
+            type="button"
+            onClick={handleModeToggle}
+            title={mode === 'locked' ? 'Locked to phone (Click to unlock)' : 'Freeform (Click to lock to phone)'}
+            className={`flex size-4 items-center justify-center rounded transition-colors ${
+              mode === 'locked'
+                ? 'text-primary hover:bg-primary/10'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            }`}
+          >
+            {mode === 'locked' ? (
+              <Pin className="size-2.5 fill-current" />
+            ) : (
+              <PinOff className="size-2.5" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            title="Close Toolbar"
+            className="flex size-4 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
+          >
+            <X className="size-3" />
+          </button>
+        </div>
+
+        {/* Main Action Buttons */}
+        <div className="flex flex-col items-center gap-0.5 pt-0.5">
+          {MAIN_TOOLBAR_ACTIONS.map((action) => (
+            <ToolbarButton
+              key={action.id}
+              icon={action.icon}
+              label={action.label}
+              shortcut={action.shortcut}
+              description={action.description}
+              isActive={activeAction === action.id}
+              onClick={() => handleAction(action.id)}
+            />
+          ))}
+
+          {/* More / Extended Controls Menu Trigger */}
+          <ToolbarButton
+            icon="more"
+            label="Extended Controls"
+            isActive={isMoreOpen}
+            onClick={handleToggleMore}
+          />
+        </div>
       </div>
 
       {/* Extended Controls Popover */}
-      <ToolbarMoreMenu
-        isOpen={isMoreOpen}
-        onClose={() => setIsMoreOpen(false)}
-        mode={mode}
-        side={side}
-        yOffset={yOffset}
-        onModeChange={handleModeToggle}
-        onSideChange={handleSideChange}
-        onOffsetChange={handleOffsetChange}
-        onAction={(actionId) => {
-          setIsMoreOpen(false);
-          handleAction(actionId);
-        }}
-      />
+      {isMoreOpen ? (
+        <ToolbarMoreMenu
+          isOpen={isMoreOpen}
+          onClose={() => {
+            setIsMoreOpen(false);
+            try {
+              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
+            } catch {}
+          }}
+          mode={mode}
+          side={side}
+          yOffset={yOffset}
+          onModeChange={handleModeToggle}
+          onSideChange={handleSideChange}
+          onOffsetChange={handleOffsetChange}
+          onAction={(actionId) => {
+            setIsMoreOpen(false);
+            try {
+              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
+            } catch {}
+            handleAction(actionId);
+          }}
+        />
+      ) : null}
     </div>
   );
-}

@@ -203,14 +203,12 @@ pub fn create_toolbar_window(
         .inner_size(44.0, 480.0)
         .decorations(false)
         .transparent(true)
-        .always_on_top(true)
+        .always_on_top(false)
         .resizable(false)
         .skip_taskbar(true)
         .shadow(false);
 
     let window = builder.build().map_err(|e| format!("Failed to create toolbar window: {e}"))?;
-
-    let _ = window.set_always_on_top(true);
 
     if let Some(p) = effective_pid {
         spawn_toolbar_tracker(app.clone(), trimmed_serial.to_string(), p);

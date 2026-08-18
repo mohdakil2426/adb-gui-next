@@ -550,3 +550,11 @@ body::-webkit-scrollbar-track,
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Scrcpy Floating Toolbar Window Transparency */
+html.toolbar-window,
+html.toolbar-window body,
+html.toolbar-window #root {
+  background: transparent !important;
+  background-color: transparent !important;
+}

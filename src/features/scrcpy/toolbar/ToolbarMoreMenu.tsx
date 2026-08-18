@@ -39,7 +39,6 @@ export function ToolbarMoreMenu({
   yOffset,
 }: ToolbarMoreMenuProps) {
   const [localOffset, setLocalOffset] = useState(yOffset);
-
   if (!isOpen) return null;
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,7 +54,7 @@ export function ToolbarMoreMenu({
   };
 
   return (
-    <div className="absolute right-12 bottom-0 z-50 flex w-68 flex-col gap-3 rounded-xl border border-border/90 bg-surface-raised/95 p-3.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
+    <div className="flex w-68 shrink-0 flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 dark:bg-[#1e1f22]/98 p-3 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
       <div className="flex items-center justify-between border-border/60 border-b pb-2">
         <span className="font-semibold text-foreground text-xs">
           Extended Controls

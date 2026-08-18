@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { MainLayout } from '@/app/shell/MainLayout';
@@ -28,18 +29,29 @@ const queryClient = new QueryClient({
   },
 });
 
+function ToolbarWindowContainer() {
+  useEffect(() => {
+    document.documentElement.classList.add('toolbar-window');
+    document.body.classList.add('toolbar-window');
+    document.body.style.background = 'transparent';
+    document.documentElement.style.background = 'transparent';
+  }, []);
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <QueryClientProvider client={queryClient}>
+        <div className="flex h-screen w-screen items-start justify-start overflow-visible bg-transparent p-0">
+          <ScrcpyFloatingToolbar />
+          <Toaster position="bottom-right" richColors />
+        </div>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
+}
+
 export default function App() {
   if (isToolbarWindow) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        <QueryClientProvider client={queryClient}>
-          <div className="flex h-screen w-screen items-start justify-center overflow-hidden bg-transparent p-1">
-            <ScrcpyFloatingToolbar />
-            <Toaster position="bottom-right" richColors />
-          </div>
-        </QueryClientProvider>
-      </ThemeProvider>
-    );
+    return <ToolbarWindowContainer />;
   }
 
   return (

@@ -145,6 +145,8 @@ export function ToolbarButton({
     }
   };
 
+  const tooltipText = shortcut ? `${label} (${shortcut})` : label;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -153,6 +155,7 @@ export function ToolbarButton({
           disabled={disabled}
           onClick={onClick}
           aria-label={label}
+          title={tooltipText}
           className={`group flex size-8.5 items-center justify-center rounded-md transition-all duration-150 active:scale-90 ${
             isActive
               ? 'bg-accent text-accent-foreground shadow-xs'
