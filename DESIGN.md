@@ -77,7 +77,7 @@ No device? Dashboard onboarding + header switcher — don’t invent a second em
 | **Flasher** | Fastboot `DeviceGate`. Cards: image drop + partition `Input`, sideload, danger wipe. Confirms before flash |
 | **Payload Dumper** | Empty: equal tabs Local / Remote (`DropZone` / `RemoteUrlPanel`). Loaded: partition table + `PartitionSizeChart` + extract progress cards |
 | **Utilities** | `TabsWithIcon` Host / ADB / Fastboot. Host = server + Windows setup. ADB = power + logcat/screenshot. Fastboot = slots/wipe. Default tab follows device mode |
-| **Scrcpy** | Cards: install/update + `Progress`; session options; launch opens a **native** window (not in-webview) |
+| **Scrcpy** | Cards: status (`ScrcpyStatusCard` with version stats, download/redownload with filled/outline state, update check, open folder, uninstall with `ConfirmDialog` + `Progress`) + session options (`ScrcpySessionCard` with `ScrcpyDeviceSelector` multi-device selection, live mirroring pulse badges, per-device stop, presets dropdowns + custom manual inputs for max size (Original default), bitrate, FPS, codecs, audio, flags, and single dynamic Launch ↔ Stop Mirror CTA). Launch opens a **native** window (not in-webview) |
 | **Emulator** | Toolbar + AVD list. Card tabs: Launch / Root / Restore. Root wizard has its own equal tabs. Restore = confirm |
 | **About** | Identity strip + `AboutCard` rows (version, tools, licence, links). No bottom panel |
 

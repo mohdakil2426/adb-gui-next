@@ -90,7 +90,7 @@ UI → feature/hook/store → desktop/backend|runtime → Tauri IPC
 | Marketplace | Thin commands → service/providers/ranking/cache; session tokens only; install owned temp + serial; GitHub releases paginated + README fetch in Rust |
 | Emulator | AVD via `~/.android/avd/*.ini`; root proof `verify_avd_root` / `su -c id -u == 0` |
 | Debloat | Device-keyed cache; **explicit serial** from FE; SDK-aware actions; no Disable when SDK unknown / API &lt; 23 |
-| Scrcpy | Official Genymobile archives + SHA256; `app_data_dir()/scrcpy/`; detached spawn; CLI flags only; no scrcpy source in-tree |
+| Scrcpy | Official Genymobile archives + SHA256; `app_data_dir()/scrcpy/`; detached spawn; multi-device targeting; live process session detection & targeted stop; presets catalog; CLI flags only; no scrcpy source in-tree |
 | Utilities | Domain validates slot/wipe/logcat; dedicated restart/kill/version commands (not arbitrary host shell) |
 | Host setup | Windows-only; official Google XML catalog; tools copy + HKLM Path vs USB `pnputil` are separate elevations; status from registry + `pnputil /enum-drivers`; bundled ADB unchanged |
 

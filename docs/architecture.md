@@ -43,7 +43,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
 | Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
 | Marketplace | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth) |
-| Scrcpy | Download official binaries, launch a native mirror window for the selected serial |
+| Scrcpy | Download/manage official binaries, multi-device selection, presets catalog, live session detection, launch native mirror windows |
 | Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore |
 | Bottom panel | Logs + adb/fastboot shell (VS Code–style) |
 | Command palette | ⌘/Ctrl+K over navigation, device selection, shell/log actions, shortcut reference |

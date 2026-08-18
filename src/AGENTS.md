@@ -240,7 +240,7 @@ Re-added **with real call sites** — each stays only while its call site exists
 | Marketplace | Install with selected serial; session-only PAT/OAuth (not localStorage); provider orchestration stays on Rust side; FE only filters/caches last search results |
 | Emulator | AVD discovery is backend `~/.android/avd/*.ini`; root progress via `EventsOn('root:progress')` only |
 | Payload Dumper | Progress/load via runtime events above; cancel tokens when using cancellable extract |
-| Scrcpy | Official Genymobile binaries in app data; detached native window; CLI flags only; `scrcpy:download-progress` |
+| Scrcpy | Official Genymobile binaries in app data; detached native window; CLI flags only; multi-device targeting; live session detection & targeted stop; presets catalog; `scrcpy:download-progress` |
 | Utilities | Grouped host / power / diagnostics / fastboot; typed server + version IPC; wipe types `WIPE`; Windows-only Google platform-tools and USB driver as **separate** installs to `C:\Android\platform-tools` (system Path + `pnputil`) |
 | App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster |
 
