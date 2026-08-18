@@ -762,3 +762,122 @@ export function ScrcpyRotateDevice(
 export function ScrcpyTakeScreenshot(serial: string): Promise<string> {
   return call('scrcpy_take_screenshot', { serial });
 }
+
+// --- App Manager & Debloater Backend APIs ---
+export function GetAppOverviewTelemetry(
+  serial?: string | null,
+): Promise<backend.AppOverviewTelemetry> {
+  return call('get_app_overview_telemetry', { serial: serial ?? null });
+}
+
+export function BatchInspectPackages(paths: string[]): Promise<backend.ApkInspectionResult[]> {
+  return call('batch_inspect_package_files', { paths });
+}
+
+export function BatchInstallPackages(
+  paths: string[],
+  serial?: string | null,
+  flags?: string[],
+): Promise<backend.BatchInstallResult[]> {
+  return call('batch_install_packages', {
+    paths,
+    serial: serial ?? null,
+    flags: flags ?? [],
+  });
+}
+
+// --- Flasher Backend APIs ---
+export function GetFlasherVitals(serial?: string | null): Promise<backend.FlasherVitalsResult> {
+  return call('get_flasher_vitals', { serial: serial ?? null });
+}
+
+export function InspectPartitionImage(filePath: string): Promise<backend.PartitionTargetInfo> {
+  return call('inspect_partition_image', { filePath });
+}
+
+export function FlashPartitionBatch(
+  items: backend.BatchFlashItem[],
+  serial?: string | null,
+): Promise<void> {
+  return call('flash_partition_batch', { items, serial: serial ?? null });
+}
+
+export function SideloadPackageStream(zipPath: string, serial?: string | null): Promise<void> {
+  return call('sideload_package_stream', { zipPath, serial: serial ?? null });
+}
+
+export function ErasePartition(
+  partition: string,
+  confirmPhrase: string,
+  serial?: string | null,
+): Promise<void> {
+  return call('erase_partition', { partition, confirmPhrase, serial: serial ?? null });
+}
+
+// --- Scrcpy & Emulator Backend APIs ---
+export function ScrcpyPreviewCommand(
+  options: backend.ScrcpyLaunchOptions,
+  serial?: string | null,
+): Promise<backend.ScrcpyCommandPreview> {
+  return call('scrcpy_preview_command', { options, serial: serial ?? null });
+}
+
+export function ScrcpyProfiles(): Promise<backend.ScrcpyQualityProfile[]> {
+  return call('scrcpy_profiles');
+}
+
+export function ScrcpyCalculateBandwidthMetrics(
+  bitrate?: string | null,
+): Promise<backend.BandwidthMetrics> {
+  return call('scrcpy_calculate_bandwidth_metrics', { bitrate: bitrate ?? null });
+}
+
+export function ScrcpyToolbarAction(serial: string, action: string): Promise<void> {
+  return call('scrcpy_toolbar_action', { serial, action });
+}
+
+export function EmulatorGetAvdSpecs(avdName: string): Promise<backend.AvdHardwareDetails> {
+  return call('emulator_get_avd_specs', { avdName });
+}
+
+export function EmulatorGetDiskBreakdown(avdName: string): Promise<backend.AvdDiskBreakdown> {
+  return call('emulator_get_disk_breakdown', { avdName });
+}
+
+export function GetHostHardwareCapacity(): Promise<backend.HostHardwareCapacity> {
+  return call('system_host_resources');
+}
+
+// --- Marketplace, Payload, System & Device Backend APIs ---
+export function MarketplaceCheckUpdates(
+  serial?: string | null,
+): Promise<backend.AppUpdateCandidate[]> {
+  return call('marketplace_check_updates', { serial: serial ?? null });
+}
+
+export function MarketplaceGetOverviewStats(): Promise<backend.MarketplaceOverviewStats> {
+  return call('marketplace_get_overview_stats');
+}
+
+export function MarketplaceGetCuratedTools(): Promise<backend.MarketplaceApp[]> {
+  return call('marketplace_get_curated_tools');
+}
+
+export function ComputePartitionFileSha256(filePath: string): Promise<string> {
+  return call('compute_partition_file_sha256', { filePath });
+}
+
+export function GetExtractionPresets(): Promise<backend.PayloadExtractionPreset[]> {
+  return call('get_extraction_presets');
+}
+
+export function GetAllDevices(): Promise<backend.DeviceEntry[]> {
+  return call('get_all_devices');
+}
+
+export function ExecuteCliCommand(
+  command: string,
+  serial?: string | null,
+): Promise<backend.CliExecutionResult> {
+  return call('execute_cli_command', { command, serial: serial ?? null });
+}

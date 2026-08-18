@@ -321,10 +321,13 @@ export namespace backend {
   }
 
   export interface InstalledPackage {
+    apkSizeBytes?: number;
     isDisabled?: boolean;
     label: string;
+    minSdk?: number;
     name: string;
     packageType: string;
+    targetSdk?: number;
   }
 
   export interface DetailedPackageInfo {
@@ -734,5 +737,267 @@ export namespace backend {
     received: number;
     stage: string;
     total: number | null;
+  }
+
+  // --- App Manager Telemetry & Batch Installs ---
+  export interface StorageConsumerItem {
+    appSize: number;
+    cacheSize: number;
+    dataSize: number;
+    label: string;
+    name: string;
+    totalSize: number;
+  }
+
+  export interface TargetSdkDistribution {
+    legacy: number;
+    maxApi: number;
+    minApi: number;
+    modern: number;
+    standard: number;
+  }
+
+  export interface PermissionDensityItem {
+    count: number;
+    label: string;
+    permission: string;
+    riskLevel: 'critical' | 'elevated' | 'standard';
+  }
+
+  export interface AppOverviewTelemetry {
+    disabledAppsCount: number;
+    permissionDensity: PermissionDensityItem[];
+    storageBreakdown: StorageConsumerItem[];
+    systemAppsCount: number;
+    targetSdkDistribution: TargetSdkDistribution;
+    totalStorageBytes: number;
+    userAppsCount: number;
+  }
+
+  export interface BatchInstallResult {
+    error?: string | null;
+    packageName?: string | null;
+    path: string;
+    success: boolean;
+  }
+
+  // --- Flasher Subsystem ---
+  export interface FastbootVitals {
+    activeSlot: string;
+    batteryLevel?: number | null;
+    batteryVoltage?: string | null;
+    bootloaderVersion?: string | null;
+    connectionMode: string;
+    isBatterySafe: boolean;
+    isUserspace: boolean;
+    lockState: string;
+    productBoard?: string | null;
+    rawSlot?: string | null;
+    secureBoot?: boolean | null;
+    serial?: string | null;
+    slotCount: number;
+  }
+
+  export interface DiagnosticItem {
+    description: string;
+    fixAction?: string | null;
+    fixActionMode?: string | null;
+    fixLabel?: string | null;
+    id: string;
+    label: string;
+    status: 'pass' | 'warn' | 'fail' | 'idle' | string;
+    tip?: string | null;
+    value?: string | null;
+  }
+
+  export interface FlasherVitalsResult {
+    diagnostics: DiagnosticItem[];
+    vitals: FastbootVitals;
+  }
+
+  export interface PartitionTargetInfo {
+    category?: string;
+    confidence?: string;
+    description?: string;
+    detectedPartition?: string | null;
+    fileName?: string;
+    filePath?: string;
+    fileSize: number;
+    format?: string;
+    isAvb?: boolean;
+    isBootImage?: boolean;
+    isDtbo?: boolean;
+    isSlotted?: boolean;
+    isSparse?: boolean;
+    magicHeader?: string | null;
+    recommendedSlotAware?: boolean;
+    requiredMode?: 'bootloader' | 'fastbootd' | string;
+    riskLevel: 'standard' | 'elevated' | 'critical' | string;
+  }
+
+  export interface BatchFlashItem {
+    fileName?: string | null;
+    filePath?: string;
+    fileSize?: number | null;
+    id?: string | null;
+    imagePath?: string;
+    partition: string;
+  }
+
+  export interface BatchFlashProgress {
+    currentFile?: string;
+    currentIndex?: number;
+    currentPartition?: string;
+    error?: string | null;
+    index?: number;
+    message?: string;
+    partition?: string;
+    progressPercent?: number;
+    stage?: 'queued' | 'flashing' | 'success' | 'failed' | 'done' | string;
+    status?: 'flashing' | 'success' | 'failed' | string;
+    total?: number;
+    totalItems?: number;
+  }
+
+  export interface SideloadProgress {
+    message?: string;
+    percent?: number;
+    percentage?: number;
+    phase?: string;
+    rawLine?: string | null;
+    stage?: string;
+  }
+  // --- Scrcpy & Emulator Subsystems ---
+  export interface ScrcpyFlagExplanation {
+    description: string;
+    flag: string;
+  }
+
+  export interface ScrcpyCommandPreview {
+    args: string[];
+    command: string;
+    explanations: ScrcpyFlagExplanation[];
+  }
+
+  export interface ScrcpyQualityProfile {
+    badge: string;
+    description: string;
+    id: string;
+    label: string;
+    options: ScrcpyLaunchOptions;
+    specs: string[];
+  }
+
+  export interface BandwidthMetrics {
+    bitrateMbps: number;
+    fraction: number;
+    maxScaleMbps: number;
+    mbPerMin: number;
+    rating: string;
+    ratingColor: string;
+  }
+
+  export interface AvdHardwareDetails {
+    androidVersion: string;
+    apiLabel: string;
+    architecture: string;
+    bootModeLabel: string;
+    cameraInfo: string;
+    densityDpi: number;
+    densityLabel: string;
+    diskDataSize: string;
+    diskSdcardSize: string;
+    diskSnapshotSize: string;
+    diskSystemSize: string;
+    graphicsEngine: string;
+    hypervisor: string;
+    networkProfile: string;
+    ramAllocationMb: number;
+    resolution: string;
+    rootStatusLabel: string;
+    vCpuCores: number;
+  }
+
+  export interface AvdDiskBreakdown {
+    avdName: string;
+    dataSizeBytes: number;
+    dataSizeGb: number;
+    sdcardSizeBytes: number;
+    sdcardSizeGb: number;
+    snapshotsSizeBytes: number;
+    snapshotsSizeGb: number;
+    systemSizeBytes: number;
+    systemSizeGb: number;
+    totalSizeBytes: number;
+    totalSizeGb: number;
+  }
+
+  export interface HostHardwareCapacity {
+    availableRamMb: number;
+    logicalCores: number;
+    physicalCores: number;
+    totalRamMb: number;
+  }
+
+  // --- Marketplace & Device & System & Payload Subsystems ---
+  export interface AppUpdateCandidate {
+    appName: string;
+    changelog?: string | null;
+    changelogSnippet?: string | null;
+    currentVersion: string;
+    currentVersionCode?: number | null;
+    downloadUrl?: string | null;
+    hasUpdate: boolean;
+    iconUrl?: string | null;
+    latestVersion: string;
+    latestVersionCode?: number | null;
+    packageName: string;
+    size?: number | null;
+    source: string;
+  }
+
+  export interface MarketplaceOverviewStats {
+    aptoideCount?: number;
+    categoriesCount?: Record<string, number>;
+    communityCount?: number;
+    devCount?: number;
+    fdroidCount: number;
+    githubCount: number;
+    lastSyncTimestamp?: string;
+    mediaCount?: number;
+    privacyCount?: number;
+    systemCount?: number;
+    toolsCount?: number;
+    totalApps?: number;
+    totalAppsCount?: number;
+  }
+
+  export interface PayloadExtractionPreset {
+    badge: string;
+    category?: string;
+    description: string;
+    icon?: string;
+    id: string;
+    isRecommended?: boolean;
+    name: string;
+    partitions?: string[];
+  }
+
+  export interface DeviceEntry {
+    connectionType: 'Usb' | 'Wireless' | 'Fastboot';
+    isWireless: boolean;
+    mode: 'Adb' | 'Fastboot' | 'Recovery' | 'Unauthorized' | 'Offline';
+    serial: string;
+    status: string;
+  }
+
+  export interface CliExecutionResult {
+    durationMs?: number;
+    exit_code?: number;
+    exitCode?: number;
+    output?: string;
+    stderr?: string;
+    stdout?: string;
+    success?: boolean;
   }
 }
