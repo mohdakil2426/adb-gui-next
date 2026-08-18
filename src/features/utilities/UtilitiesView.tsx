@@ -1,17 +1,21 @@
-import { Server, Smartphone, Zap } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Activity, Camera, Power, Server, Zap } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { TabsWithIcon } from '@/components/shadcn-studio/tabs/tabs-03';
+import { GetHostToolVersions } from '@/desktop/backend';
+import { UtilitiesDiagnosticsTab } from '@/features/utilities/diagnostics/UtilitiesDiagnosticsTab';
+import { UtilitiesFastbootTab } from '@/features/utilities/fastboot/UtilitiesFastbootTab';
+import { useHostSetupProgress } from '@/features/utilities/hooks/useHostSetupProgress';
 import { useUtilityActions } from '@/features/utilities/hooks/useUtilityActions';
-import { AdbUtilitiesPanel } from '@/features/utilities/ui/AdbUtilitiesPanel';
-import { DiagnosticsPanel } from '@/features/utilities/ui/DiagnosticsPanel';
-import { FastbootUtilitiesPanel } from '@/features/utilities/ui/FastbootUtilitiesPanel';
+import { UtilitiesHostTab } from '@/features/utilities/host/UtilitiesHostTab';
+import { UtilitiesOverviewTab } from '@/features/utilities/overview/UtilitiesOverviewTab';
+import { UtilitiesPowerTab } from '@/features/utilities/power/UtilitiesPowerTab';
 import { GetVarDialog } from '@/features/utilities/ui/GetVarDialog';
-import { HostSetupPanel } from '@/features/utilities/ui/HostSetupPanel';
-import { HostToolsPanel } from '@/features/utilities/ui/HostToolsPanel';
+import { UtilitiesCockpitHero } from '@/features/utilities/ui/UtilitiesCockpitHero';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
-import { Badge } from '@/shared/ui/badge';
+import { queryKeys } from '@/shared/utils/queries';
 
-type UtilitiesTab = 'host' | 'adb' | 'fastboot';
+export type UtilitiesTab = 'overview' | 'power' | 'diagnostics' | 'fastboot' | 'host';
 
 export function ViewUtilities() {
   const {
@@ -35,105 +39,157 @@ export function ViewUtilities() {
     showGetVarDialog,
   } = useUtilityActions();
 
-  const [tab, setTab] = useState<UtilitiesTab>(deviceMode === 'fastboot' ? 'fastboot' : 'adb');
+  // Host setup progress hook
+  useHostSetupProgress();
+
+  const queryClient = useQueryClient();
+
+  // Host tool versions query for Cockpit Hero
+  const {
+    data: hostVersions,
+    isFetching: isFetchingVersions,
+    refetch: refetchVersions,
+  } = useQuery({
+    queryKey: ['hostToolVersions', sentAction],
+    queryFn: GetHostToolVersions,
+    staleTime: 30_000,
+  });
+
+  // Active Tab state — default to 'fastboot' if device is in fastboot mode, otherwise 'overview'
+  const [tab, setTab] = useState<UtilitiesTab>(deviceMode === 'fastboot' ? 'fastboot' : 'overview');
+
+  // Sync tab with device mode changes if user hasn't explicitly navigated
+  useEffect(() => {
+    if (deviceMode === 'fastboot') {
+      setTab('fastboot');
+    }
+  }, [deviceMode]);
 
   const handleCloseGetVarDialog = useCallback(
     () => setShowGetVarDialog(false),
     [setShowGetVarDialog],
   );
 
-  const handleRescan = () => {
+  const handleRescan = useCallback(() => {
     void refetchDevices();
-  };
+    void refetchVersions();
+    void queryClient.invalidateQueries({ queryKey: queryKeys.hostSetup.status });
+  }, [refetchDevices, refetchVersions, queryClient]);
 
-  const modeLabel =
-    deviceMode === 'adb' ? 'ADB' : deviceMode === 'fastboot' ? 'Fastboot' : 'No device';
+  const handleNavigateTab = useCallback(
+    (targetTab: 'power' | 'diagnostics' | 'fastboot' | 'host') => {
+      setTab(targetTab);
+    },
+    [],
+  );
 
-  const utilityTabs = [
-    {
-      content: (
-        <div className="flex flex-col gap-4">
-          <HostToolsPanel
+  const utilityTabs = useMemo(
+    () => [
+      {
+        content: (
+          <UtilitiesOverviewTab
+            deviceMode={deviceMode}
+            deviceSerial={deviceSerial}
+            onNavigateTab={handleNavigateTab}
+          />
+        ),
+        icon: <Activity aria-hidden="true" className="size-4" />,
+        name: 'Overview',
+        value: 'overview',
+      },
+      {
+        content: (
+          <UtilitiesPowerTab
+            deviceMode={deviceMode}
+            deviceSerial={deviceSerial}
+            handleReboot={handleReboot}
+            loadingAction={loadingAction}
+            sentAction={sentAction}
+          />
+        ),
+        icon: <Power aria-hidden="true" className="size-4" />,
+        name: 'Power & Tweaks',
+        value: 'power',
+      },
+      {
+        content: <UtilitiesDiagnosticsTab deviceMode={deviceMode} deviceSerial={deviceSerial} />,
+        icon: <Camera aria-hidden="true" className="size-4" />,
+        name: 'Diagnostics',
+        value: 'diagnostics',
+      },
+      {
+        content: (
+          <UtilitiesFastbootTab
+            deviceMode={deviceMode}
+            deviceSerial={deviceSerial}
+            handleFastbootGetVars={handleFastbootGetVars}
+            handleReboot={handleReboot}
+            handleSetActiveSlot={handleSetActiveSlot}
+            handleWipeData={handleWipeData}
+            isGlobalLoading={isGlobalLoading}
+            loadingAction={loadingAction}
+            onRescan={handleRescan}
+            sentAction={sentAction}
+          />
+        ),
+        icon: <Zap aria-hidden="true" className="size-4" />,
+        name: 'Fastboot',
+        value: 'fastboot',
+      },
+      {
+        content: (
+          <UtilitiesHostTab
             handleKillServer={handleKillServer}
             handleRestartServer={handleRestartServer}
             loadingAction={loadingAction}
             sentAction={sentAction}
           />
-          <HostSetupPanel />
-        </div>
-      ),
-      icon: <Server aria-hidden="true" />,
-      name: 'Host',
-      value: 'host',
-    },
-    {
-      content: (
-        <div className="flex flex-col gap-4">
-          <AdbUtilitiesPanel
-            deviceMode={deviceMode}
-            deviceSerial={deviceSerial}
-            handleReboot={handleReboot}
-            loadingAction={loadingAction}
-            onRescan={handleRescan}
-            sentAction={sentAction}
-          />
-          <DiagnosticsPanel
-            disabled={deviceMode !== 'adb'}
-            loadingAction={loadingAction}
-            serial={deviceSerial}
-          />
-        </div>
-      ),
-      icon: <Smartphone aria-hidden="true" />,
-      name: 'ADB',
-      value: 'adb',
-    },
-    {
-      content: (
-        <FastbootUtilitiesPanel
-          deviceMode={deviceMode}
-          deviceSerial={deviceSerial}
-          handleFastbootGetVars={handleFastbootGetVars}
-          handleReboot={handleReboot}
-          handleSetActiveSlot={handleSetActiveSlot}
-          handleWipeData={handleWipeData}
-          isGlobalLoading={isGlobalLoading}
-          loadingAction={loadingAction}
-          onRescan={handleRescan}
-          sentAction={sentAction}
-        />
-      ),
-      icon: <Zap aria-hidden="true" />,
-      name: 'Fastboot',
-      value: 'fastboot',
-    },
-  ];
+        ),
+        icon: <Server aria-hidden="true" className="size-4" />,
+        name: 'Host Setup',
+        value: 'host',
+      },
+    ],
+    [
+      deviceMode,
+      deviceSerial,
+      handleNavigateTab,
+      handleReboot,
+      loadingAction,
+      sentAction,
+      handleFastbootGetVars,
+      handleSetActiveSlot,
+      handleWipeData,
+      isGlobalLoading,
+      handleRescan,
+      handleKillServer,
+      handleRestartServer,
+    ],
+  );
 
   return (
     <div className="@container flex flex-col gap-4">
       <h1 className="sr-only">Utilities</h1>
+
+      {/* Device Nickname Dialog */}
       <EditNicknameDialog
         isOpen={isEditing}
         onOpenChange={setIsEditing}
-        onSaved={() => void refetchDevices()}
+        onSaved={handleRescan}
         serial={deviceSerial}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-body text-muted-foreground">
-          Host ADB and Windows setup, device power and diagnostics, then fastboot. Destructive
-          actions confirm first; wipe requires typing WIPE.
-        </p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant="neutral">{modeLabel}</Badge>
-          {deviceSerial ? (
-            <Badge className="font-mono" variant="neutral">
-              {deviceSerial}
-            </Badge>
-          ) : null}
-        </div>
-      </div>
+      {/* Top Precision Hardware Cockpit Hero Header */}
+      <UtilitiesCockpitHero
+        deviceMode={deviceMode}
+        deviceSerial={deviceSerial}
+        hostVersions={hostVersions ?? null}
+        isLoading={isFetchingVersions}
+        onEditNickname={() => setIsEditing(true)}
+        onRefresh={handleRescan}
+      />
 
+      {/* 5-Tab Navigation System */}
       <TabsWithIcon
         className="w-full"
         onValueChange={(value) => {
@@ -143,6 +199,7 @@ export function ViewUtilities() {
         value={tab}
       />
 
+      {/* Fastboot Variables Dialog */}
       <GetVarDialog
         getVarContent={getVarContent}
         onClose={handleCloseGetVarDialog}
