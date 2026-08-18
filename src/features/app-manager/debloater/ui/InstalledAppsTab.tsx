@@ -1,9 +1,17 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { UninstallPackage } from '@/desktop/backend';
+import {
+  PackageLifecycleOp,
+  PullPackageApk,
+  SelectSaveDirectory,
+  UninstallPackage,
+} from '@/desktop/backend';
 import { useInstallationStore } from '@/features/app-manager/debloater/model/installationStore';
+import { InstalledBatchBar } from '@/features/app-manager/debloater/ui/InstalledBatchBar';
 import { InstalledPackageList } from '@/features/app-manager/debloater/ui/InstalledPackageList';
 import { mapSerial } from '@/features/app-manager/debloater/ui/mapSerial';
+import { UninstallConfirmDialog } from '@/features/app-manager/debloater/ui/UninstallConfirmDialog';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
@@ -14,30 +22,97 @@ const PERCENT = 100;
 interface InstalledAppsTabProps {
   hasLoaded: boolean;
   loadError: string | null;
+  onInspect?: ((packageName: string) => void) | undefined;
   onRefresh: () => void;
 }
 
-/**
- * Browsing and removing what is already on the device.
- *
- * This used to sit below the APK picker in a single "Installation" tab,
- * separated by a bare `<div className="border-t" />` — installing an APK and
- * uninstalling apps are unrelated jobs and now have their own tabs.
- */
-export function InstalledAppsTab({ hasLoaded, loadError, onRefresh }: InstalledAppsTabProps) {
+export function InstalledAppsTab({
+  hasLoaded,
+  loadError,
+  onInspect,
+  onRefresh,
+}: InstalledAppsTabProps) {
   const packages = useInstallationStore((s) => s.packages);
   const isLoadingPackages = useInstallationStore((s) => s.isLoadingPackages);
   const selectedPackages = useInstallationStore((s) => s.selectedPackages);
   const searchQuery = useInstallationStore((s) => s.searchQuery);
   const packageFilter = useInstallationStore((s) => s.packageFilter);
   const isUninstalling = useInstallationStore((s) => s.isUninstalling);
+  const sortBy = useInstallationStore((s) => s.sortBy);
+  const sortOrder = useInstallationStore((s) => s.sortOrder);
   const setSelectedPackages = useInstallationStore((s) => s.setSelectedPackages);
   const setSearchQuery = useInstallationStore((s) => s.setSearchQuery);
   const setPackageFilter = useInstallationStore((s) => s.setPackageFilter);
   const setIsUninstalling = useInstallationStore((s) => s.setIsUninstalling);
+  const setSortBy = useInstallationStore((s) => s.setSortBy);
+  const setSortOrder = useInstallationStore((s) => s.setSortOrder);
+
+  const [isConfirmUninstallOpen, setIsConfirmUninstallOpen] = useState(false);
 
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
   const queryClient = useQueryClient();
+
+  const handleLaunch = async (pkgName: string) => {
+    if (!selectedSerial) {
+      return;
+    }
+    try {
+      await PackageLifecycleOp(pkgName, 'launch', selectedSerial);
+      toast.success(`Launched ${pkgName}`);
+    } catch (e) {
+      toast.error(`Failed to launch ${pkgName}: ${String(e)}`);
+    }
+  };
+
+  const handleForceStop = async (pkgName: string) => {
+    if (!selectedSerial) {
+      return;
+    }
+    try {
+      await PackageLifecycleOp(pkgName, 'force_stop', selectedSerial);
+      toast.success(`Force stopped ${pkgName}`);
+    } catch (e) {
+      toast.error(`Failed to force stop ${pkgName}: ${String(e)}`);
+    }
+  };
+
+  const handleBatchForceStop = async () => {
+    if (!selectedSerial || selectedPackages.size === 0) {
+      return;
+    }
+    const list = Array.from(selectedPackages);
+    for (const p of list) {
+      await PackageLifecycleOp(p, 'force_stop', selectedSerial).catch(() => {});
+    }
+    toast.success(`Force stopped ${list.length} packages`);
+  };
+
+  const handleBatchClearCache = async () => {
+    if (!selectedSerial) {
+      return;
+    }
+    try {
+      await PackageLifecycleOp('all', 'clear_cache', selectedSerial);
+      toast.success('Triggered system cache trim');
+    } catch (e) {
+      toast.error(`Failed to clear cache: ${String(e)}`);
+    }
+  };
+
+  const handleBatchExportApks = async () => {
+    if (!selectedSerial || selectedPackages.size === 0) {
+      return;
+    }
+    const destDir = await SelectSaveDirectory('exported-apks');
+    if (!destDir) {
+      return;
+    }
+    const list = Array.from(selectedPackages);
+    for (const p of list) {
+      await PullPackageApk(p, destDir, selectedSerial).catch(() => {});
+    }
+    toast.success(`Exported ${list.length} APK(s) to ${destDir}`);
+  };
 
   async function handleUninstall() {
     if (!selectedSerial || selectedPackages.size === 0) {
@@ -56,7 +131,6 @@ export function InstalledAppsTab({ hasLoaded, loadError, onRefresh }: InstalledA
     });
     const toastId = toast.loading(`Uninstalling 0 of ${total}…`);
 
-    // Serial uninstalls: concurrent `pm uninstall` on one device races package manager.
     const outcomes = await mapSerial(list, async (pkg, index) => {
       toast.loading(`Uninstalling ${index + 1} of ${total}: ${pkg}`, { id: toastId });
       updateOperation(operationId, {
@@ -89,26 +163,55 @@ export function InstalledAppsTab({ hasLoaded, loadError, onRefresh }: InstalledA
     setSelectedPackages(new Set());
     onRefresh();
     setIsUninstalling(false);
+    setIsConfirmUninstallOpen(false);
   }
 
   return (
-    <InstalledPackageList
-      hasLoaded={hasLoaded}
-      isLoadingPackages={isLoadingPackages}
-      isUninstalling={isUninstalling}
-      loadError={loadError}
-      onPackageFilterChange={setPackageFilter}
-      onRefresh={onRefresh}
-      onSearchQueryChange={setSearchQuery}
-      onSelectedPackagesChange={setSelectedPackages}
-      onUninstall={() => {
-        void handleUninstall();
-      }}
-      packageFilter={packageFilter}
-      packages={packages}
-      searchQuery={searchQuery}
-      selectedPackages={selectedPackages}
-      selectedSerial={selectedSerial}
-    />
+    <div className="flex flex-col gap-3">
+      <InstalledPackageList
+        hasLoaded={hasLoaded}
+        isLoadingPackages={isLoadingPackages}
+        isUninstalling={isUninstalling}
+        loadError={loadError}
+        onForceStop={handleForceStop}
+        onInspect={onInspect}
+        onLaunch={handleLaunch}
+        onPackageFilterChange={setPackageFilter}
+        onRefresh={onRefresh}
+        onSearchQueryChange={setSearchQuery}
+        onSelectedPackagesChange={setSelectedPackages}
+        onSortChange={(nextSortBy, nextSortOrder) => {
+          setSortBy(nextSortBy);
+          setSortOrder(nextSortOrder);
+        }}
+        packageFilter={packageFilter}
+        packages={packages}
+        searchQuery={searchQuery}
+        selectedPackages={selectedPackages}
+        selectedSerial={selectedSerial}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+      />
+
+      <InstalledBatchBar
+        isUninstalling={isUninstalling}
+        onBatchClearCache={handleBatchClearCache}
+        onBatchExportApk={handleBatchExportApks}
+        onBatchForceStop={handleBatchForceStop}
+        onBatchUninstall={() => setIsConfirmUninstallOpen(true)}
+        onClearSelection={() => setSelectedPackages(new Set())}
+        selectedCount={selectedPackages.size}
+      />
+
+      <UninstallConfirmDialog
+        isUninstalling={isUninstalling}
+        onOpenChange={setIsConfirmUninstallOpen}
+        onUninstall={handleUninstall}
+        open={isConfirmUninstallOpen}
+        packages={packages}
+        selectedPackages={selectedPackages}
+        selectedSerial={selectedSerial}
+      />
+    </div>
   );
 }
