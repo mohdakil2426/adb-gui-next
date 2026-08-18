@@ -24,10 +24,12 @@ export function computePackageOverviewStats(
 ): PackageOverviewStats {
   let userCount = 0;
   let systemCount = 0;
-  const disabledCount = 0;
+  let disabledCount = 0;
 
   for (const pkg of installed) {
-    if (pkg.packageType === 'user') {
+    if (pkg.isDisabled) {
+      disabledCount++;
+    } else if (pkg.packageType === 'user') {
       userCount++;
     } else {
       systemCount++;

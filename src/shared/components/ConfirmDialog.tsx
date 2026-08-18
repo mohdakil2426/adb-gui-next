@@ -77,9 +77,8 @@ export function ConfirmDialog({
     if (!next) {
       setTyped('');
     }
-    onOpenChange(next);
+    onOpenChange?.(next);
   };
-
   return (
     <AlertDialog onOpenChange={handleOpenChange} open={open}>
       <AlertDialogContent>

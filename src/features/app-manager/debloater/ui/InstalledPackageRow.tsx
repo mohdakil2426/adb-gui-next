@@ -1,4 +1,4 @@
-import { Package, Package2, Play, Settings, Square } from 'lucide-react';
+import { Package, Package2, Play, Settings, Square, Zap, ZapOff } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { CheckboxItem } from '@/shared/components/CheckboxItem';
 import { Badge } from '@/shared/ui/badge';
@@ -16,6 +16,7 @@ export interface InstalledPackageRowProps {
   onInspect?: ((name: string) => void) | undefined;
   onLaunch?: ((name: string) => void) | undefined;
   onToggle: (name: string) => void;
+  onToggleEnable?: ((name: string, enable: boolean) => void) | undefined;
   pkg: backend.InstalledPackage;
   start: number;
   targetSdk: number;
@@ -31,6 +32,7 @@ export function InstalledPackageRow({
   onInspect,
   onLaunch,
   onToggle,
+  onToggleEnable,
   pkg,
   start,
   targetSdk,
@@ -139,38 +141,74 @@ export function InstalledPackageRow({
       </div>
 
       {/* Inline Hover Action Buttons Column */}
-      <div className="flex w-24 shrink-0 items-center justify-end gap-1 opacity-0 transition-opacity duration-90 group-focus-within:opacity-100 group-hover:opacity-100">
-        {onLaunch ? (
-          <Button
-            className="size-7 p-0 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
-            onClick={(e) => {
-              e.stopPropagation();
-              onLaunch(pkg.name);
-            }}
-            size="icon"
-            title="Launch App"
-            type="button"
-            variant="ghost"
-          >
-            <Play className="size-3.5 fill-current" />
-          </Button>
-        ) : null}
+      <div className="flex w-28 shrink-0 items-center justify-end gap-1 opacity-0 transition-opacity duration-90 group-focus-within:opacity-100 group-hover:opacity-100">
+        {isDisabled ? (
+          onToggleEnable ? (
+            <Button
+              className="size-7 p-0 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleEnable(pkg.name, true);
+              }}
+              size="icon"
+              title="Enable App"
+              type="button"
+              variant="ghost"
+            >
+              <Zap className="size-3.5 fill-current" />
+            </Button>
+          ) : null
+        ) : (
+          <>
+            {onLaunch ? (
+              <Button
+                className="size-7 p-0 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLaunch(pkg.name);
+                }}
+                size="icon"
+                title="Launch App"
+                type="button"
+                variant="ghost"
+              >
+                <Play className="size-3.5 fill-current" />
+              </Button>
+            ) : null}
 
-        {onForceStop ? (
-          <Button
-            className="size-7 p-0 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500"
-            onClick={(e) => {
-              e.stopPropagation();
-              onForceStop(pkg.name);
-            }}
-            size="icon"
-            title="Force Stop"
-            type="button"
-            variant="ghost"
-          >
-            <Square className="size-3.5 fill-current" />
-          </Button>
-        ) : null}
+            {onForceStop ? (
+              <Button
+                className="size-7 p-0 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onForceStop(pkg.name);
+                }}
+                size="icon"
+                title="Force Stop"
+                type="button"
+                variant="ghost"
+              >
+                <Square className="size-3.5 fill-current" />
+              </Button>
+            ) : null}
+
+            {onToggleEnable ? (
+              <Button
+                className="size-7 p-0 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleEnable(pkg.name, false);
+                }}
+                size="icon"
+                title="Disable App"
+                type="button"
+                variant="ghost"
+              >
+                <ZapOff className="size-3.5" />
+              </Button>
+            ) : null}
+          </>
+        )}
 
         {onInspect ? (
           <Button

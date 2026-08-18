@@ -147,11 +147,50 @@ describe('InstalledAppsTab', () => {
       'force_stop',
       'device-test-1',
     );
+    const disableBtn = screen.getByTitle('Disable App');
+    await user.click(disableBtn);
+    expect(packageLifecycleOpMock).toHaveBeenCalledWith(
+      'com.example.camera',
+      'disable',
+      'device-test-1',
+    );
+
     const inspectBtn = screen.getByTitle('Inspect Package Details');
     await user.click(inspectBtn);
     expect(onInspectMock).toHaveBeenCalledWith('com.example.camera');
   });
 
+  it('renders Enable App action for disabled packages and triggers enable op', async () => {
+    const user = userEvent.setup();
+    packageLifecycleOpMock.mockResolvedValue('ok');
+
+    useInstallationStore.getState().setPackages([
+      {
+        isDisabled: true,
+        label: 'Disabled Tool',
+        name: 'com.example.disabled',
+        packageType: 'user',
+      },
+    ]);
+
+    render(
+      <InstalledAppsTab
+        hasLoaded={true}
+        loadError={null}
+        onInspect={vi.fn()}
+        onRefresh={vi.fn()}
+      />,
+    );
+    expect(screen.getAllByText('Disabled').length).toBeGreaterThan(0);
+    const enableBtn = screen.getByTitle('Enable App');
+    expect(enableBtn).toBeInTheDocument();
+    await user.click(enableBtn);
+    expect(packageLifecycleOpMock).toHaveBeenCalledWith(
+      'com.example.disabled',
+      'enable',
+      'device-test-1',
+    );
+  });
   it('displays floating batch bar when packages are selected and triggers batch actions', async () => {
     const user = userEvent.setup();
     packageLifecycleOpMock.mockResolvedValue('ok');

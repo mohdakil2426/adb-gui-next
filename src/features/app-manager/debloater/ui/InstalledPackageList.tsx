@@ -31,6 +31,7 @@ interface InstalledPackageListProps {
   onSearchQueryChange: (query: string) => void;
   onSelectedPackagesChange: (selected: Set<string>) => void;
   onSortChange: (sortBy: InstalledSortBy, sortOrder: SortOrder) => void;
+  onToggleEnable?: ((name: string, enable: boolean) => void) | undefined;
   packageFilter: InstalledPackageFilter;
   packages: backend.InstalledPackage[];
   searchQuery: string;
@@ -40,7 +41,7 @@ interface InstalledPackageListProps {
   sortOrder: SortOrder;
 }
 
-function resolveListState({
+function renderListState({
   filteredCount,
   hasLoaded,
   isLoadingPackages,
@@ -130,6 +131,7 @@ export function InstalledPackageList({
   onSearchQueryChange,
   onSelectedPackagesChange,
   onSortChange,
+  onToggleEnable,
   packageFilter,
   packages,
   searchQuery,
@@ -142,13 +144,18 @@ export function InstalledPackageList({
 
   const disabledPackageNames = useMemo(() => {
     const set = new Set<string>();
+    for (const p of packages) {
+      if (p.isDisabled) {
+        set.add(p.name);
+      }
+    }
     for (const p of debloatPackages) {
       if (p.state === 'Disabled') {
         set.add(p.name);
       }
     }
     return set;
-  }, [debloatPackages]);
+  }, [packages, debloatPackages]);
 
   const metricsMap = useMemo(() => {
     const map = new Map<string, { apkSizeBytes: number; targetSdk: number }>();
@@ -275,7 +282,7 @@ export function InstalledPackageList({
     onSelectedPackagesChange(next);
   }
 
-  const listState = resolveListState({
+  const listState = renderListState({
     filteredCount: filteredPackages.length,
     hasLoaded,
     isLoadingPackages,
@@ -359,6 +366,7 @@ export function InstalledPackageList({
                     onInspect={onInspect}
                     onLaunch={onLaunch}
                     onToggle={togglePackage}
+                    onToggleEnable={onToggleEnable}
                     pkg={pkg}
                     start={vRow.start}
                     targetSdk={metrics.targetSdk}

@@ -25,12 +25,16 @@ export function computePackageComposition(
   debloatRows: readonly backend.DebloatPackageRow[],
 ): PackageComposition {
   const disabledNames = new Set<string>();
+  for (const pkg of installed) {
+    if (pkg.isDisabled) {
+      disabledNames.add(pkg.name);
+    }
+  }
   for (const row of debloatRows) {
     if (row.state === 'Disabled') {
       disabledNames.add(row.name);
     }
   }
-
   let disabled = 0;
   let system = 0;
   let user = 0;

@@ -321,6 +321,7 @@ export namespace backend {
   }
 
   export interface InstalledPackage {
+    isDisabled?: boolean;
     label: string;
     name: string;
     packageType: string;

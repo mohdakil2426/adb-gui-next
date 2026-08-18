@@ -1,10 +1,12 @@
-import { Download, Loader2, RotateCcw, Square, Trash2, X } from 'lucide-react';
+import { Download, Loader2, RotateCcw, Square, Trash2, X, Zap, ZapOff } from 'lucide-react';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 
 interface InstalledBatchBarProps {
   isUninstalling?: boolean;
   onBatchClearCache?: () => void;
+  onBatchDisable?: () => void;
+  onBatchEnable?: () => void;
   onBatchExportApk?: () => void;
   onBatchForceStop?: () => void;
   onBatchUninstall: () => void;
@@ -16,6 +18,8 @@ interface InstalledBatchBarProps {
 export function InstalledBatchBar({
   isUninstalling = false,
   onBatchClearCache,
+  onBatchDisable,
+  onBatchEnable,
   onBatchExportApk,
   onBatchForceStop,
   onBatchUninstall,
@@ -50,6 +54,34 @@ export function InstalledBatchBar({
 
       {/* 1-Click Hardware Batch Actions */}
       <div className="flex flex-wrap items-center gap-2">
+        {onBatchEnable ? (
+          <Button
+            className="h-8 gap-1.5 border-border/80 font-medium text-caption text-emerald-600 hover:bg-accent dark:text-emerald-400"
+            disabled={isUninstalling}
+            onClick={onBatchEnable}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <Zap className="size-3.5 fill-current" />
+            <span>Enable Selected</span>
+          </Button>
+        ) : null}
+
+        {onBatchDisable ? (
+          <Button
+            className="h-8 gap-1.5 border-border/80 font-medium text-amber-600 text-caption hover:bg-accent dark:text-amber-400"
+            disabled={isUninstalling}
+            onClick={onBatchDisable}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <ZapOff className="size-3.5" />
+            <span>Disable Selected</span>
+          </Button>
+        ) : null}
+
         {onBatchExportApk ? (
           <Button
             className="h-8 gap-1.5 border-border/80 font-medium text-caption hover:bg-accent"

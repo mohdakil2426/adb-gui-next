@@ -77,15 +77,35 @@ export function InstalledAppsTab({
     }
   };
 
-  const executeBatchForceStop = async () => {
+  const handleToggleEnable = async (pkgName: string, enable: boolean) => {
+    if (!selectedSerial) {
+      return;
+    }
+    const op = enable ? 'enable' : 'disable';
+    try {
+      await PackageLifecycleOp(pkgName, op, selectedSerial);
+      toast.success(`${enable ? 'Enabled' : 'Disabled'} ${pkgName}`);
+      onRefresh();
+    } catch (e) {
+      toast.error(`Failed to ${enable ? 'enable' : 'disable'} ${pkgName}: ${String(e)}`);
+    }
+  };
+
+  const runBatchLifecycle = async (op: 'enable' | 'disable' | 'force_stop', label: string) => {
     if (!selectedSerial || selectedPackages.size === 0) {
       return;
     }
     const list = Array.from(selectedPackages);
+    let count = 0;
     for (const p of list) {
-      await PackageLifecycleOp(p, 'force_stop', selectedSerial).catch(() => {});
+      try {
+        await PackageLifecycleOp(p, op, selectedSerial);
+        count++;
+      } catch {}
     }
-    toast.success(`Force stopped ${list.length} packages`);
+    toast.success(`${label} ${count} packages`);
+    setSelectedPackages(new Set());
+    onRefresh();
   };
 
   const handleBatchClearCache = async () => {
@@ -114,7 +134,6 @@ export function InstalledAppsTab({
     }
     toast.success(`Exported ${list.length} APK(s) to ${destDir}`);
   };
-
   async function handleUninstall() {
     if (!selectedSerial || selectedPackages.size === 0) {
       return;
@@ -185,6 +204,7 @@ export function InstalledAppsTab({
           setSortBy(nextSortBy);
           setSortOrder(nextSortOrder);
         }}
+        onToggleEnable={handleToggleEnable}
         packageFilter={packageFilter}
         packages={packages}
         searchQuery={searchQuery}
@@ -197,6 +217,8 @@ export function InstalledAppsTab({
       <InstalledBatchBar
         isUninstalling={isUninstalling}
         onBatchClearCache={handleBatchClearCache}
+        onBatchDisable={() => void runBatchLifecycle('disable', 'Disabled')}
+        onBatchEnable={() => void runBatchLifecycle('enable', 'Enabled')}
         onBatchExportApk={handleBatchExportApks}
         onBatchForceStop={() => setIsConfirmBatchForceStopOpen(true)}
         onBatchUninstall={() => setIsConfirmUninstallOpen(true)}
@@ -221,7 +243,7 @@ export function InstalledAppsTab({
         destructive
         onConfirm={() => {
           setIsConfirmBatchForceStopOpen(false);
-          void executeBatchForceStop();
+          void runBatchLifecycle('force_stop', 'Force stopped');
         }}
         onOpenChange={setIsConfirmBatchForceStopOpen}
         open={isConfirmBatchForceStopOpen}

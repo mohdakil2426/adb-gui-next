@@ -8,12 +8,13 @@ use std::{
 };
 use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Serialize, Default)]
+#[derive(Debug, Clone, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct InstalledPackage {
     pub name: String,
     pub package_type: String,
     pub label: String,
+    pub is_disabled: bool,
 }
 
 fn parse_package_names(output: &str) -> Vec<String> {
@@ -109,25 +110,51 @@ pub async fn get_installed_packages(
             log::warn!("Failed to resolve label_reader.jar local path");
         }
 
-        // 3. Fetch package lists as before
+        // 3. Fetch package lists: user packages (-3), disabled packages (-d), and all packages (-u)
         let user_output =
-            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])?;
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])
+                .unwrap_or_default();
         let user_names: std::collections::HashSet<String> =
             parse_package_names(&user_output).into_iter().collect();
 
-        let all_output = run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages"])?;
-        let packages: Vec<InstalledPackage> = parse_package_names(&all_output)
-            .into_iter()
-            .map(|name| {
+        let disabled_output =
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-d"])
+                .unwrap_or_default();
+        let disabled_names: std::collections::HashSet<String> =
+            parse_package_names(&disabled_output).into_iter().collect();
+
+        let all_output =
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-u"]).or_else(
+                |_| run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages"]),
+            )?;
+
+        let mut seen_names = std::collections::HashSet::new();
+        let mut packages = Vec::new();
+
+        for name in parse_package_names(&all_output) {
+            if seen_names.insert(name.clone()) {
+                let package_type = if user_names.contains(&name) {
+                    "user".to_string()
+                } else {
+                    "system".to_string()
+                };
+                let is_disabled = disabled_names.contains(&name);
+                let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
+                packages.push(InstalledPackage { name, package_type, label, is_disabled });
+            }
+        }
+
+        for name in disabled_names {
+            if seen_names.insert(name.clone()) {
                 let package_type = if user_names.contains(&name) {
                     "user".to_string()
                 } else {
                     "system".to_string()
                 };
                 let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
-                InstalledPackage { name, package_type, label }
-            })
-            .collect();
+                packages.push(InstalledPackage { name, package_type, label, is_disabled: true });
+            }
+        }
 
         debug!("Found {} installed packages", packages.len());
         Ok(packages)
@@ -345,8 +372,25 @@ pub async fn package_lifecycle_op(
                 &app,
                 serial,
                 &["shell", "pm", "disable-user", "--user", "0", &package_name],
-            ),
-            "enable" => run_adb_for_serial(&app, serial, &["shell", "pm", "enable", &package_name]),
+            )
+            .or_else(|_| {
+                run_adb_for_serial(&app, serial, &["shell", "pm", "disable", &package_name])
+            }),
+            "enable" => {
+                let res =
+                    run_adb_for_serial(&app, serial, &["shell", "pm", "enable", &package_name]);
+                let _ = run_adb_for_serial(
+                    &app,
+                    serial,
+                    &["shell", "pm", "unhide", "--user", "0", &package_name],
+                );
+                let _ = run_adb_for_serial(
+                    &app,
+                    serial,
+                    &["shell", "pm", "default-state", "--user", "0", &package_name],
+                );
+                res
+            }
             _ => Err(format!("Unknown lifecycle operation: {op}")),
         }
     })
@@ -403,6 +447,31 @@ pub async fn get_package_details(
             run_adb_for_serial(&app, serial, &["shell", "dumpsys", "package", &package_name])
                 .unwrap_or_default();
 
+        let is_disabled_in_dumpsys = dumpsys_out.lines().any(|l| {
+            let t = l.trim();
+            (t.starts_with("User ")
+                && (t.contains("enabled=2") || t.contains("enabled=3") || t.contains("enabled=4")))
+                || t.contains("enabledSetting=COMPONENT_ENABLED_STATE_DISABLED")
+                || t.contains("enabledSetting=COMPONENT_ENABLED_STATE_DISABLED_USER")
+                || t.contains("disabled=true")
+        });
+
+        let is_disabled = is_disabled_in_dumpsys || {
+            if let Ok(disabled_out) =
+                run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-d"])
+            {
+                disabled_out.lines().any(|line| {
+                    if let Some(pkg) = line.trim().strip_prefix("package:") {
+                        pkg.trim() == package_name
+                    } else {
+                        false
+                    }
+                })
+            } else {
+                false
+            }
+        };
+
         let mut info = DetailedPackageInfo {
             name: package_name.clone(),
             label: package_name.clone(),
@@ -415,12 +484,11 @@ pub async fn get_package_details(
             split_paths: Vec::new(),
             data_dir: format!("/data/data/{package_name}"),
             is_system: false,
-            is_enabled: true,
+            is_enabled: !is_disabled,
             granted_permissions: Vec::new(),
             denied_permissions: Vec::new(),
             signatures: Vec::new(),
         };
-
         for line in dumpsys_out.lines() {
             let trimmed = line.trim();
             if trimmed.starts_with("versionName=") {
