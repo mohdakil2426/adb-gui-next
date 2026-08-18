@@ -3,8 +3,11 @@ import {
   ArrowRight,
   ArrowUp,
   ChevronDown,
+  Download,
   FilePlus2,
+  FileUp,
   FolderPlus,
+  FolderUp,
   PanelLeft,
   PanelLeftClose,
   Pencil,
@@ -14,10 +17,8 @@ import {
   X,
 } from 'lucide-react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
-import { FileExplorerMoreActionsMenu } from '@/features/file-explorer/ui/FileExplorerMoreActionsMenu';
 import { FileExplorerPathBar } from '@/features/file-explorer/ui/FileExplorerPathBar';
 import { FileExplorerRootAccessButton } from '@/features/file-explorer/ui/FileExplorerRootAccessButton';
-import { FileExplorerTransferButton } from '@/features/file-explorer/ui/FileExplorerTransferButton';
 import { ToolbarTooltip } from '@/features/file-explorer/ui/ToolbarTooltip';
 import { RefreshButton } from '@/shared/components/RefreshButton';
 import { Button } from '@/shared/ui/button';
@@ -297,34 +298,50 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
 
         <Separator className="mx-2 h-5" orientation="vertical" />
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5">
           <FileExplorerRootAccessButton
             disabled={isBusy}
             onToggle={onRootAccessToggle}
             rootAccessGranted={rootAccessGranted}
           />
-          <ToolbarTooltip label="Transfer">
-            <span className="inline-flex">
-              <FileExplorerTransferButton
-                disabled={isBusy}
-                isPullDisabled={isPullDisabled}
-                isPushing={isPushing}
-                onExport={onExport}
-                onImportFile={onImportFile}
-                onImportFolder={onImportFolder}
-              />
-            </span>
+          <ToolbarTooltip label="Import file">
+            <Button
+              aria-label="Import file"
+              className="size-8 shrink-0"
+              disabled={isBusy}
+              onClick={onImportFile}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <FileUp aria-hidden="true" className="size-4" />
+            </Button>
           </ToolbarTooltip>
-          <ToolbarTooltip label="More">
-            <span className="inline-flex">
-              <FileExplorerMoreActionsMenu
-                disabled={isBusy}
-                isPullDisabled={isPullDisabled}
-                onCreateFile={onCreateFile}
-                onCreateFolder={onCreateFolder}
-                onExport={onExport}
-              />
-            </span>
+          <ToolbarTooltip label="Import folder">
+            <Button
+              aria-label="Import folder"
+              className="size-8 shrink-0"
+              disabled={isBusy}
+              onClick={onImportFolder}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <FolderUp aria-hidden="true" className="size-4" />
+            </Button>
+          </ToolbarTooltip>
+          <ToolbarTooltip label="Export selected">
+            <Button
+              aria-label="Export selected"
+              className="size-8 shrink-0"
+              disabled={isBusy || isPullDisabled || isPushing}
+              onClick={onExport}
+              size="icon-sm"
+              type="button"
+              variant="ghost"
+            >
+              <Download aria-hidden="true" className="size-4" />
+            </Button>
           </ToolbarTooltip>
         </div>
       </div>

@@ -819,6 +819,14 @@ fn parse_file_entries(output: &str) -> Vec<FileEntry> {
                 (full_name.trim().to_string(), String::new())
             };
 
+            if name.is_empty()
+                || name == "?"
+                || name.starts_with("->")
+                || name == "."
+                || name == ".."
+            {
+                return None;
+            }
             Some(FileEntry {
                 name,
                 r#type: file_type.into(),

@@ -1,5 +1,4 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen, Loader2 } from 'lucide-react';
-import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ListFiles } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
@@ -10,10 +9,10 @@ import {
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { cn } from '@/shared/utils/cn';
 
-/** A directory in the tree. Files are never loaded here — this pane navigates
- *  directories only, and a folder like /sdcard/DCIM can hold thousands of files. */
+/** A directory in the tree with a globally unique node ID. */
 interface TreeNode {
-  children: TreeNode[] | null; // null = not yet loaded
+  children: TreeNode[] | null;
+  id: string;
   isExpanded: boolean;
   isLoading: boolean;
   name: string;
@@ -22,6 +21,7 @@ interface TreeNode {
 
 const INITIAL_NODES: TreeNode[] = [
   {
+    id: 'top:sdcard',
     path: '/sdcard/',
     name: 'Internal storage',
     isExpanded: false,
@@ -29,6 +29,7 @@ const INITIAL_NODES: TreeNode[] = [
     isLoading: false,
   },
   {
+    id: 'top:root',
     path: '/',
     name: 'Root',
     isExpanded: false,
@@ -36,6 +37,7 @@ const INITIAL_NODES: TreeNode[] = [
     isLoading: false,
   },
   {
+    id: 'top:storage',
     path: '/storage/',
     name: 'Storage',
     isExpanded: false,
@@ -44,8 +46,9 @@ const INITIAL_NODES: TreeNode[] = [
   },
 ];
 
-function makeNode(path: string, name: string): TreeNode {
+function makeNode(id: string, path: string, name: string): TreeNode {
   return {
+    id,
     path,
     name,
     isExpanded: false,
@@ -54,21 +57,20 @@ function makeNode(path: string, name: string): TreeNode {
   };
 }
 
-/** Returns the original array when nothing below `targetPath` changed, so
- *  untouched subtrees keep their identity and their memoized rows. */
-function applyToNode(
+/** Immutable node updater matching strictly by unique node ID. */
+function applyToNodeById(
   nodes: TreeNode[],
-  targetPath: string,
+  targetId: string,
   updater: (n: TreeNode) => TreeNode,
 ): TreeNode[] {
   let changed = false;
   const next = nodes.map((node) => {
-    if (node.path === targetPath) {
+    if (node.id === targetId) {
       changed = true;
       return updater(node);
     }
     if (node.children) {
-      const children = applyToNode(node.children, targetPath, updater);
+      const children = applyToNodeById(node.children, targetId, updater);
       if (children !== node.children) {
         changed = true;
         return { ...node, children };
@@ -79,13 +81,13 @@ function applyToNode(
   return changed ? next : nodes;
 }
 
-function findNode(nodes: TreeNode[], path: string): TreeNode | null {
+function findNodeById(nodes: TreeNode[], id: string): TreeNode | null {
   for (const node of nodes) {
-    if (node.path === path) {
+    if (node.id === id) {
       return node;
     }
     if (node.children) {
-      const found = findNode(node.children, path);
+      const found = findNodeById(node.children, id);
       if (found) {
         return found;
       }
@@ -94,24 +96,37 @@ function findNode(nodes: TreeNode[], path: string): TreeNode | null {
   return null;
 }
 
-/** Ancestor directory paths for a given path (excluding self).
- *  /storage/emulated/0/ → ['/storage/', '/storage/emulated/'] */
-function getAncestorPaths(path: string): string[] {
-  const segments = path.split('/').filter(Boolean);
-  return segments.slice(0, -1).map((_, i) => '/' + segments.slice(0, i + 1).join('/') + '/');
+function joinTreePath(parentPath: string, entryName: string): string {
+  const cleanName = entryName.replace(/^\/+|\/+$/g, '');
+  if (parentPath === '/' || parentPath === '') {
+    return `/${cleanName}/`;
+  }
+  const cleanParent = parentPath.endsWith('/') ? parentPath : `${parentPath}/`;
+  return `${cleanParent}${cleanName}/`;
 }
 
-/** Load the sub-directories of a path (files are intentionally dropped). */
+/** Load the sub-directories of a path with unique child IDs. */
 function loadDirEntries(
+  parentId: string,
   path: string,
   serial?: string | null,
   getFileAccessMode: (path: string) => backend.FileAccessMode = () => 'normal',
 ): Promise<TreeNode[]> {
   return ListFiles(path, serial, getFileAccessMode(path)).then((entries) =>
     entries
-      .filter((entry) => entry.type === 'Directory' || entry.type === 'Symlink')
+      .filter(
+        (entry) =>
+          (entry.type === 'Directory' || entry.type === 'Symlink') &&
+          entry.name &&
+          !entry.name.startsWith('->') &&
+          entry.name !== '?' &&
+          entry.name !== '.' &&
+          entry.name !== '..',
+      )
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map((entry) => makeNode(`${path}${entry.name}/`, entry.name)),
+      .map((entry) =>
+        makeNode(`${parentId}/${entry.name}`, joinTreePath(path, entry.name), entry.name),
+      ),
   );
 }
 
@@ -119,8 +134,7 @@ type FlatRow =
   | { depth: number; isActive: boolean; isAncestor: boolean; kind: 'node'; node: TreeNode }
   | { depth: number; key: string; kind: 'empty' };
 
-/** Flatten the visible tree once per render and resolve active/ancestor state
- *  here, so `currentPath` is not threaded through every node. */
+/** Flatten visible nodes into flat render list. Subtrees are rendered ONLY if parent isExpanded. */
 function flattenTree(nodes: TreeNode[], currentPath: string, depth: number, out: FlatRow[]): void {
   for (const node of nodes) {
     const isActive = currentPath === node.path || currentPath === `${node.path}/`;
@@ -132,9 +146,10 @@ function flattenTree(nodes: TreeNode[], currentPath: string, depth: number, out:
       isActive,
       isAncestor,
     });
+    // Subtree is flattened ONLY when parent node isExpanded is strictly true
     if (node.isExpanded && node.children !== null) {
       if (node.children.length === 0) {
-        out.push({ kind: 'empty', depth: depth + 1, key: `${node.path}:empty` });
+        out.push({ kind: 'empty', depth: depth + 1, key: `${node.id}:empty` });
       } else {
         flattenTree(node.children, currentPath, depth + 1, out);
       }
@@ -149,14 +164,14 @@ interface TreeRowProps {
   node: TreeNode;
   onMoveToFolder?: ((destDir: string, names: string[]) => void) | undefined;
   onSelect: (path: string) => void;
-  onToggle: (path: string) => void;
+  onToggle: (id: string, path: string) => void;
 }
 
 const TreeRow = memo(function TreeRow({
-  node,
   depth,
   isActive,
   isAncestor,
+  node,
   onMoveToFolder,
   onSelect,
   onToggle,
@@ -190,11 +205,11 @@ const TreeRow = memo(function TreeRow({
         }
         if (e.key === 'ArrowRight') {
           e.preventDefault();
-          onToggle(node.path);
+          onToggle(node.id, node.path);
         }
         if (e.key === 'ArrowLeft' && node.isExpanded) {
           e.preventDefault();
-          onToggle(node.path);
+          onToggle(node.id, node.path);
         }
       }}
       role="treeitem"
@@ -206,7 +221,7 @@ const TreeRow = memo(function TreeRow({
         className="flex size-4 shrink-0 items-center justify-center"
         onClick={(e: React.MouseEvent) => {
           e.stopPropagation();
-          onToggle(node.path);
+          onToggle(node.id, node.path);
         }}
         tabIndex={-1}
         type="button"
@@ -241,7 +256,6 @@ export interface DirectoryTreeProps {
   getFileAccessMode?: (path: string) => backend.FileAccessMode;
   onMoveToFolder?: (destDir: string, names: string[]) => void;
   onNavigate: (path: string) => void;
-  /** Increment to force-refresh the tree node for currentPath. */
   refreshTrigger?: number;
   serial?: string | null;
 }
@@ -264,85 +278,18 @@ export function DirectoryTree({
     nodesRef.current = nodes;
   }, [nodes]);
 
-  // Keep latest access-mode resolver without rebuilding callbacks every render
-  // (default prop / unstable parent callback would otherwise thrash deps).
+  const updateNodes = useCallback((updater: (prev: TreeNode[]) => TreeNode[]) => {
+    setNodesRaw((prev) => {
+      const next = updater(prev);
+      nodesRef.current = next;
+      return next;
+    });
+  }, []);
+
   const getFileAccessModeRef = useRef(getFileAccessMode);
   useEffect(() => {
     getFileAccessModeRef.current = getFileAccessMode;
   }, [getFileAccessMode]);
-
-  // Ref to hold the latest expandToPath (avoids circular useCallback dep)
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  const expandToPathRef = useRef<(targetPath: string) => void>(() => {});
-
-  const expandToPath = useCallback(
-    (targetPath: string) => {
-      const ancestors = getAncestorPaths(targetPath);
-      const current = nodesRef.current;
-      let firstToLoad: string | null = null;
-      let result = current;
-
-      for (const ancestor of ancestors) {
-        const node = findNode(result, ancestor);
-        if (!node || node.isLoading) {
-          break;
-        }
-        if (!node.isExpanded) {
-          if (node.children === null) {
-            firstToLoad = ancestor;
-            result = applyToNode(result, ancestor, (n) => ({
-              ...n,
-              isLoading: true,
-            }));
-            break;
-          }
-          result = applyToNode(result, ancestor, (n) => ({
-            ...n,
-            isExpanded: true,
-          }));
-        }
-      }
-
-      if (result !== current) {
-        nodesRef.current = result;
-        setNodesRaw(result);
-      }
-
-      if (firstToLoad) {
-        const loadPath = firstToLoad;
-        loadDirEntries(loadPath, serial, (path) => getFileAccessModeRef.current(path))
-          .then((entries) => {
-            const next = applyToNode(nodesRef.current, loadPath, (n) => ({
-              ...n,
-              isLoading: false,
-              isExpanded: true,
-              children: entries,
-            }));
-            nodesRef.current = next;
-            setNodesRaw(next);
-            expandToPathRef.current(targetPath);
-          })
-          .catch(() => {
-            const next = applyToNode(nodesRef.current, loadPath, (n) => ({
-              ...n,
-              isLoading: false,
-            }));
-            nodesRef.current = next;
-            setNodesRaw(next);
-          });
-      }
-    },
-    [serial],
-  );
-
-  useEffect(() => {
-    expandToPathRef.current = expandToPath;
-  }, [expandToPath]);
-
-  // Auto-reveal currentPath in tree when it changes
-  useEffect(() => {
-    expandToPath(currentPath);
-  }, [currentPath, expandToPath]);
 
   useEffect(() => {
     const next = INITIAL_NODES;
@@ -358,17 +305,33 @@ export function DirectoryTree({
     }
     prevRefreshTriggerRef.current = refreshTrigger;
 
-    const node = findNode(nodesRef.current, currentPath);
-    if (!node) {
+    const findTargetInNodes = (list: TreeNode[]): TreeNode | null => {
+      for (const n of list) {
+        if (n.path === currentPath || n.path === `${currentPath}/`) {
+          return n;
+        }
+        if (n.children) {
+          const found = findTargetInNodes(n.children);
+          if (found) {
+            return found;
+          }
+        }
+      }
+      return null;
+    };
+
+    const targetNode = findTargetInNodes(nodesRef.current);
+    if (!targetNode) {
       return;
     }
 
-    if (node.isExpanded) {
-      setNodesRaw((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: true })));
-      loadDirEntries(currentPath, serial, (path) => getFileAccessModeRef.current(path))
+    const targetId = targetNode.id;
+    if (targetNode.isExpanded) {
+      updateNodes((prev) => applyToNodeById(prev, targetId, (n) => ({ ...n, isLoading: true })));
+      loadDirEntries(targetId, currentPath, serial, (path) => getFileAccessModeRef.current(path))
         .then((entries) => {
-          setNodesRaw((prev) =>
-            applyToNode(prev, currentPath, (n) => ({
+          updateNodes((prev) =>
+            applyToNodeById(prev, targetId, (n) => ({
               ...n,
               isLoading: false,
               children: entries,
@@ -376,39 +339,42 @@ export function DirectoryTree({
           );
         })
         .catch(() => {
-          setNodesRaw((prev) =>
-            applyToNode(prev, currentPath, (n) => ({ ...n, isLoading: false })),
+          updateNodes((prev) =>
+            applyToNodeById(prev, targetId, (n) => ({ ...n, isLoading: false })),
           );
         });
     } else {
-      // Invalidate cache so it refetches on next expand
-      setNodesRaw((prev) => applyToNode(prev, currentPath, (n) => ({ ...n, children: null })));
+      updateNodes((prev) => applyToNodeById(prev, targetId, (n) => ({ ...n, children: null })));
     }
-  }, [refreshTrigger, currentPath, serial]);
+  }, [refreshTrigger, currentPath, serial, updateNodes]);
 
-  // Toggle expand/collapse with lazy loading
+  // Toggle expand/collapse with lazy loading by unique node ID
   const handleToggle = useCallback(
-    (path: string) => {
-      const node = findNode(nodesRef.current, path);
+    (id: string, path: string) => {
+      const node = findNodeById(nodesRef.current, id);
       if (!node || node.isLoading) {
         return;
       }
 
+      // If currently expanded -> collapse it cleanly
       if (node.isExpanded) {
-        setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isExpanded: false })));
+        updateNodes((prev) => applyToNodeById(prev, id, (n) => ({ ...n, isExpanded: false })));
         return;
       }
+
+      // If already loaded -> expand immediately
       if (node.children !== null) {
-        setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isExpanded: true })));
+        updateNodes((prev) => applyToNodeById(prev, id, (n) => ({ ...n, isExpanded: true })));
         return;
       }
 
-      setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: true })));
+      // Lazy load children
+      updateNodes((prev) => applyToNodeById(prev, id, (n) => ({ ...n, isLoading: true })));
 
-      loadDirEntries(path, serial, (p) => getFileAccessModeRef.current(p))
+      loadDirEntries(id, path, serial, (p) => getFileAccessModeRef.current(p))
         .then((entries) => {
-          setNodesRaw((prev) =>
-            applyToNode(prev, path, (n) => ({
+          updateNodes((prev) =>
+            applyToNodeById(prev, id, (n) => ({
               ...n,
               isLoading: false,
               isExpanded: true,
@@ -417,10 +383,10 @@ export function DirectoryTree({
           );
         })
         .catch(() => {
-          setNodesRaw((prev) => applyToNode(prev, path, (n) => ({ ...n, isLoading: false })));
+          updateNodes((prev) => applyToNodeById(prev, id, (n) => ({ ...n, isLoading: false })));
         });
     },
-    [serial],
+    [serial, updateNodes],
   );
 
   const rows = useMemo(() => {
@@ -446,7 +412,7 @@ export function DirectoryTree({
               depth={row.depth}
               isActive={row.isActive}
               isAncestor={row.isAncestor}
-              key={row.node.path}
+              key={row.node.id}
               node={row.node}
               onMoveToFolder={onMoveToFolder}
               onSelect={onNavigate}
