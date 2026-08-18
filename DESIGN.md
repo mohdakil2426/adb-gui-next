@@ -7,10 +7,10 @@ Tokens: `src/styles/global.css`. Primitives: `src/shared/ui/`. Composites: `src/
 ## Taste
 
 - Achromatic chrome. Primary **inverts** (near-black light / near-white dark).
-- One language: same tabs, cards, type, radius, gaps (`gap-4`).
+- One language: same tabs, cards, type, radius, gaps (`gap-4` / `gap-5`).
 - 13px body. No gradients, no chart libs, no second UI kit.
 - If it isn’t a token class, it doesn’t ship.
-
+- **Precision Hardware Cockpit**: Dense, quiet, dark/light achromatic surfaces with device-state-driven illumination. High data density, zero text truncation, and hover-activated utilities.
 ## Theme
 
 `components.json`: New York, `baseColor: "neutral"`. Dark is **gray**, not OLED black. `next-themes` puts `class="dark"` on `<html>`. Shell: `bg-background text-foreground`.
@@ -115,10 +115,37 @@ Dead — do not re-add: `avatar`, `radio-group`, `slider`, `toggle` (keep `toggl
 
 ## Charts
 
-Hand-rolled only (`chart-1..5`): `BatteryGauge`, `UsageBar`, `MemorySparkline`, `PackageCompositionDonut`, `PartitionSizeChart`. No Recharts — `freezePrototype`.
+Hand-rolled only (`chart-1..5`): `BatteryGauge` (dual-arc radial with charging aura), `UsageBar`, `MemorySparkline` (SVG gradient area waveform with interactive scrubber), `PackageCompositionDonut`, `PartitionSizeChart`. No Recharts — `freezePrototype: true` invariant.
+
+## Precision Hardware Cockpit UI Patterns
+
+### 1. Hero Header Pattern (`DeviceHeroBanner`, `AboutHero`)
+- **Container**: Elevated card (`rounded-xl border border-border bg-surface p-4.5 shadow-none`).
+- **Branding Box**: Leading avatar container (`size-12 rounded-2xl border border-border/80 bg-surface-raised`) with live pulsating connection badge (`animate-ping bg-success`).
+- **Metadata & Inline Actions**: Primary title (`text-title font-semibold`), inline nickname edit button, and status pills (`Badge`).
+- **Consolidated Top-Right Sync**: Subtle timestamp + single multi-action sync button (`RefreshCw` with `animate-spin`). Never place floating action rows above the card.
+- **8-Spec Hardware Grid**: Multi-column responsive grid (`grid @3xl:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-2.5 border-border/50 border-t pt-3`):
+  - **Row 1 (Software Stack)**: Platform (OS/API) ➔ Build Number ➔ Security Patch ➔ Kernel Version.
+  - **Row 2 (Hardware & Environment)**: Serial Number ➔ Architecture/SOC ➔ Device Uptime ➔ Locale/Timezone.
+  - **Hover-Only Copy Utility**: All copyable values carry a copy button that fades in on hover (`opacity-0 group-hover:opacity-100 transition-opacity`) to keep the interface clean and quiet.
+
+### 2. Equal-Height Stretched Grid System (`TRIO_GRID_CLASS` + `PanelCard`)
+- Multi-column rows use `items-stretch` and panels use `PanelCard` with `h-full flex flex-col justify-between`.
+- `<CardContent>` uses `flex-1 flex flex-col justify-between` to guarantee equal top and bottom baselines across all cards in the row with zero jaggedness.
+
+### 3. Full-Width Diagnostic Vertical Lists vs Squeezed Grids
+- When cards sit in a 3-column macro row (~300px local width), **never** use inner multi-column grids that squeeze cells into <150px and cause `...` ellipsis truncation.
+- Instead, use full-width vertical rows with `flex flex-1 flex-col justify-between gap-1.5` where metric label is on the left and semantic icon + status value is on the right.
+
+### 4. Symmetrical 3×2 Action Grids
+- Operational action panels pair actions symmetrically (e.g. Row 1: Primary tools `Screen Mirror` + `Open Shell`; Rows 2-3: Target reboots).
+
+### 5. Toast Color Interpolation Invariant (`sonner`)
+- All color-mixing in `sonner.tsx` MUST use `in oklab` (never `in oklch` over achromatic neutral surfaces) to eliminate reddish-brown hue interpolation artifacts.
+- Toast background is locked to `var(--surface-raised)`, text to `var(--foreground)`, and status icons to semantic tokens (`text-success`, `text-destructive`, `text-warning`, `text-info`).
 
 ## Do not
 
-True-black canvas. Viewport breakpoints. Next.js / extra kits. Status colour as decoration. Dead unused primitives. Static value-imports across lazy view boundaries.
+True-black canvas. Viewport breakpoints. Next.js / extra kits. Status colour as decoration. Dead unused primitives. Static value-imports across lazy view boundaries. Squeezed multi-column inner grids that truncate telemetry text.
 
 Code wins; then update this file.

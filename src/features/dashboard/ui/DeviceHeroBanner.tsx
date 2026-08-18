@@ -183,13 +183,8 @@ export function DeviceHeroBanner({
         </div>
 
         {/* Expanded 8-Spec Grid */}
-        <div className="grid @lg:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-2.5 border-border/50 border-t pt-3">
-          <SpecBadge
-            copyValue={device.serial}
-            icon={Hash}
-            label="Serial Number"
-            value={device.serial}
-          />
+        <div className="grid @3xl:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-2.5 border-border/50 border-t pt-3">
+          {/* Row 1: Software & OS Stack */}
           <SpecBadge
             copyValue={identity?.androidVersion ? `Android ${identity.androidVersion}` : undefined}
             icon={Smartphone}
@@ -197,13 +192,10 @@ export function DeviceHeroBanner({
             value={androidLabel}
           />
           <SpecBadge
-            icon={Cpu}
-            label="Architecture"
-            value={
-              identity?.arch
-                ? `${identity.arch} (${identity.hardware ?? 'SOC'})`
-                : (identity?.hardware ?? EMPTY_VALUE)
-            }
+            copyValue={identity?.buildId ?? undefined}
+            icon={Fingerprint}
+            label="Build Number"
+            value={identity?.buildId ?? EMPTY_VALUE}
           />
           <SpecBadge
             copyValue={security?.securityPatch ?? undefined}
@@ -218,11 +210,22 @@ export function DeviceHeroBanner({
             tooltip={identity?.kernelVersion ?? undefined}
             value={formatKernelRelease(identity?.kernelVersion)}
           />
+
+          {/* Row 2: Hardware & Runtime Environment */}
           <SpecBadge
-            copyValue={identity?.buildId ?? undefined}
-            icon={Fingerprint}
-            label="Build Number"
-            value={identity?.buildId ?? EMPTY_VALUE}
+            copyValue={device.serial}
+            icon={Hash}
+            label="Serial Number"
+            value={device.serial}
+          />
+          <SpecBadge
+            icon={Cpu}
+            label="Architecture"
+            value={
+              identity?.arch
+                ? `${identity.arch} (${identity.hardware ?? 'SOC'})`
+                : (identity?.hardware ?? EMPTY_VALUE)
+            }
           />
           <SpecBadge
             icon={Clock}

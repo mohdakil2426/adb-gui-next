@@ -52,11 +52,11 @@ export function QuickActionsPanel({
   };
   return (
     <PanelCard icon={Zap} title="Quick actions">
-      <div className="grid @xs:grid-cols-2 grid-cols-1 gap-2">
+      <div className="flex flex-1 flex-col justify-between gap-1.5">
         {mode === 'adb' ? (
           <>
             <Button
-              className="justify-start"
+              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
               disabled={isDisabled || !serial}
               onClick={handleMirror}
               size="sm"
@@ -64,18 +64,18 @@ export function QuickActionsPanel({
               variant="outline"
             >
               <Tv aria-hidden="true" className="size-3.5" />
-              Screen Mirror
+              <span>Screen Mirror (Scrcpy)</span>
             </Button>
 
             <Button
-              className="justify-start"
+              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
               onClick={onOpenShell}
               size="sm"
               type="button"
               variant="outline"
             >
               <Terminal aria-hidden="true" className="size-3.5" />
-              Open Shell
+              <span>Open Interactive Shell</span>
             </Button>
           </>
         ) : null}
@@ -84,7 +84,7 @@ export function QuickActionsPanel({
           const Icon = REBOOT_ICON[target];
           return (
             <Button
-              className="justify-start"
+              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
               disabled={isDisabled || runningTarget !== null}
               key={target}
               onClick={() => {
@@ -95,7 +95,7 @@ export function QuickActionsPanel({
               variant="outline"
             >
               <Icon aria-hidden="true" className="size-3.5" />
-              {REBOOT_LABEL[target]}
+              <span>{REBOOT_LABEL[target]}</span>
             </Button>
           );
         })}

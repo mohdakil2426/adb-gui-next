@@ -77,7 +77,7 @@ export function StoragePanel({ isLoading, volumes }: StoragePanelProps) {
           restricted on this build, or every mount it returned was system storage.
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-1 flex-col justify-center gap-2.5">
           {volumes.map((volume) => (
             <VolumeRow key={volume.mount} volume={volume} />
           ))}
