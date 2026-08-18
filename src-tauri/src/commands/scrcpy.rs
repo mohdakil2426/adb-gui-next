@@ -7,7 +7,7 @@ use crate::CmdResult;
 use crate::scrcpy::flags::ScrcpyLaunchOptions;
 use crate::scrcpy::{
     ScrcpyActiveSessions, ScrcpyPresetsCatalog, ScrcpyStatus, active_sessions, fetch_latest_tag,
-    get_presets_catalog, install_latest, launch, local_status, stop,
+    get_presets_catalog, install_latest, launch, local_status, stop, uninstall_managed,
 };
 
 fn scrcpy_http_client() -> CmdResult<Client> {
@@ -39,6 +39,10 @@ pub async fn scrcpy_install(app: AppHandle) -> CmdResult<ScrcpyStatus> {
     install_latest(app, client).await
 }
 
+#[tauri::command]
+pub async fn scrcpy_uninstall(app: AppHandle) -> CmdResult<ScrcpyStatus> {
+    tokio::task::spawn_blocking(move || uninstall_managed(&app)).await.map_err(|e| e.to_string())?
+}
 #[tauri::command]
 pub async fn scrcpy_launch(
     app: AppHandle,

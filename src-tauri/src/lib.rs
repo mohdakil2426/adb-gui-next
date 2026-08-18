@@ -155,6 +155,7 @@ pub fn run() {
             commands::scrcpy_status,
             commands::scrcpy_check_update,
             commands::scrcpy_install,
+            commands::scrcpy_uninstall,
             commands::scrcpy_launch,
             commands::scrcpy_stop,
             commands::scrcpy_active_sessions,

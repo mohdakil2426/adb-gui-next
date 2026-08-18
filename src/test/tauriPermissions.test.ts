@@ -25,6 +25,7 @@ describe('Tauri command permissions', () => {
     expect(permissions).toContain('"scrcpy_status"');
     expect(permissions).toContain('"scrcpy_check_update"');
     expect(permissions).toContain('"scrcpy_install"');
+    expect(permissions).toContain('"scrcpy_uninstall"');
     expect(permissions).toContain('"scrcpy_launch"');
     expect(permissions).toContain('"scrcpy_stop"');
     expect(permissions).toContain('"scrcpy_active_sessions"');

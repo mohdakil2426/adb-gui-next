@@ -651,6 +651,9 @@ export function ScrcpyInstall(): Promise<backend.ScrcpyStatus> {
   return call('scrcpy_install');
 }
 
+export function ScrcpyUninstall(): Promise<backend.ScrcpyStatus> {
+  return call('scrcpy_uninstall');
+}
 export function ScrcpyLaunch(
   options: backend.ScrcpyLaunchOptions,
   serial?: string | null,

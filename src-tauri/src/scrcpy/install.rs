@@ -44,6 +44,15 @@ pub fn scrcpy_root(app: &AppHandle) -> CmdResult<PathBuf> {
     Ok(dir)
 }
 
+pub fn uninstall_managed(app: &AppHandle) -> CmdResult<ScrcpyStatus> {
+    let _ = super::launch::stop(None);
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("scrcpy");
+    if dir.exists() {
+        let _ = fs::remove_dir_all(&dir);
+    }
+    Ok(local_status(app, None))
+}
+
 pub fn current_dir(root: &Path) -> PathBuf {
     root.join("current")
 }
