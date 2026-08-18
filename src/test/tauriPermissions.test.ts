@@ -23,8 +23,12 @@ describe('Tauri command permissions', () => {
     const permissions = readFileSync(permissionFile, 'utf8');
 
     expect(permissions).toContain('"scrcpy_status"');
+    expect(permissions).toContain('"scrcpy_check_update"');
     expect(permissions).toContain('"scrcpy_install"');
     expect(permissions).toContain('"scrcpy_launch"');
+    expect(permissions).toContain('"scrcpy_stop"');
+    expect(permissions).toContain('"scrcpy_active_sessions"');
+    expect(permissions).toContain('"scrcpy_presets"');
     expect(permissions).toContain('"get_app_icons"');
     expect(permissions).toContain('"open_device_file_in_editor"');
     expect(permissions).toContain('"reveal_device_path_in_explorer"');

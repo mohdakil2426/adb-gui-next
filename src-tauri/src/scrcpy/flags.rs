@@ -1,6 +1,6 @@
 //! Maps a validated launch DTO onto official scrcpy CLI flags. No custom protocol.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 const CODECS: &[&str] = &["h264", "h265", "av1", "vp8", "vp9"];
 const KEYBOARDS: &[&str] = &["sdk", "uhid", "aoa", "disabled"];
@@ -19,7 +19,70 @@ const AUDIO_SOURCES: &[&str] = &[
 ];
 const RECORD_FORMATS: &[&str] = &["mp4", "mkv", "m4a", "mka", "opus", "aac", "flac", "wav"];
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScrcpyPresetOption<T> {
+    pub label: String,
+    pub value: Option<T>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScrcpyPresetsCatalog {
+    pub audio_sources: Vec<String>,
+    pub keyboards: Vec<String>,
+    pub max_fps: Vec<ScrcpyPresetOption<u32>>,
+    pub max_size: Vec<ScrcpyPresetOption<u32>>,
+    pub video_bit_rate: Vec<ScrcpyPresetOption<String>>,
+    pub video_codecs: Vec<String>,
+}
+
+pub fn get_presets_catalog() -> ScrcpyPresetsCatalog {
+    ScrcpyPresetsCatalog {
+        max_size: vec![
+            ScrcpyPresetOption { label: "Original (Device default)".into(), value: None },
+            ScrcpyPresetOption { label: "720p HD (720)".into(), value: Some(720) },
+            ScrcpyPresetOption { label: "1080p FHD (1080)".into(), value: Some(1080) },
+            ScrcpyPresetOption { label: "1440p QHD (1440)".into(), value: Some(1440) },
+            ScrcpyPresetOption { label: "1920 (FHD Max)".into(), value: Some(1920) },
+            ScrcpyPresetOption { label: "2560 2K (2560)".into(), value: Some(2560) },
+            ScrcpyPresetOption { label: "3840 4K (3840)".into(), value: Some(3840) },
+        ],
+        video_bit_rate: vec![
+            ScrcpyPresetOption {
+                label: "2 Mbps (2M - Low bandwidth)".into(),
+                value: Some("2M".into()),
+            },
+            ScrcpyPresetOption { label: "4 Mbps (4M - Balanced)".into(), value: Some("4M".into()) },
+            ScrcpyPresetOption { label: "8 Mbps (8M - Default)".into(), value: Some("8M".into()) },
+            ScrcpyPresetOption {
+                label: "16 Mbps (16M - High quality)".into(),
+                value: Some("16M".into()),
+            },
+            ScrcpyPresetOption {
+                label: "32 Mbps (32M - Ultra quality)".into(),
+                value: Some("32M".into()),
+            },
+            ScrcpyPresetOption {
+                label: "64 Mbps (64M - Lossless/Local)".into(),
+                value: Some("64M".into()),
+            },
+        ],
+        max_fps: vec![
+            ScrcpyPresetOption { label: "Max / Native (Default)".into(), value: None },
+            ScrcpyPresetOption { label: "30 FPS".into(), value: Some(30) },
+            ScrcpyPresetOption { label: "60 FPS".into(), value: Some(60) },
+            ScrcpyPresetOption { label: "90 FPS".into(), value: Some(90) },
+            ScrcpyPresetOption { label: "120 FPS".into(), value: Some(120) },
+            ScrcpyPresetOption { label: "144 FPS".into(), value: Some(144) },
+        ],
+        video_codecs: CODECS.iter().map(|&s| s.to_string()).collect(),
+        keyboards: KEYBOARDS.iter().map(|&s| s.to_string()).collect(),
+        audio_sources: AUDIO_SOURCES.iter().map(|&s| s.to_string()).collect(),
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScrcpyLaunchOptions {
     pub always_on_top: bool,
@@ -51,15 +114,16 @@ fn allowlisted<'a>(value: &'a str, allowed: &[&str], field: &str) -> Result<&'a 
 
 fn bit_rate_ok(value: &str) -> bool {
     let trimmed = value.trim();
-    let (digits, suffix) = match trimmed.chars().last() {
-        Some('K' | 'k' | 'M' | 'm') => (&trimmed[..trimmed.len() - 1], true),
+    if trimmed.is_empty() {
+        return false;
+    }
+    let (digits, _suffix) = match trimmed.chars().last() {
+        Some('K' | 'k' | 'M' | 'm' | 'G' | 'g') => (&trimmed[..trimmed.len() - 1], true),
         Some(ch) if ch.is_ascii_digit() => (trimmed, false),
         _ => return false,
     };
-    let _ = suffix;
     !digits.is_empty() && digits.chars().all(|ch| ch.is_ascii_digit())
 }
-
 /// Build argv **after** the executable. Serial is optional (single-device hosts).
 pub fn build_args(
     options: &ScrcpyLaunchOptions,

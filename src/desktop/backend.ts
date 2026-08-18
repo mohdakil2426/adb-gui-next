@@ -657,3 +657,14 @@ export function ScrcpyLaunch(
 ): Promise<void> {
   return call('scrcpy_launch', { options, serial: serial ?? null });
 }
+export function ScrcpyStop(serial?: string | null): Promise<void> {
+  return call('scrcpy_stop', { serial: serial ?? null });
+}
+
+export function ScrcpyActiveSessions(): Promise<backend.ScrcpyActiveSessions> {
+  return call('scrcpy_active_sessions');
+}
+
+export function ScrcpyPresets(): Promise<backend.ScrcpyPresetsCatalog> {
+  return call('scrcpy_presets');
+}

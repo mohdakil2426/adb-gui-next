@@ -21,6 +21,8 @@ export const queryKeys = {
   },
   scrcpy: {
     status: ['scrcpy', 'status'] as const,
+    activeSessions: ['scrcpy', 'activeSessions'] as const,
+    presets: ['scrcpy', 'presets'] as const,
   },
   hostSetup: {
     status: ['hostSetup', 'status'] as const,

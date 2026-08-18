@@ -5,7 +5,10 @@ use tauri::AppHandle;
 
 use crate::CmdResult;
 use crate::scrcpy::flags::ScrcpyLaunchOptions;
-use crate::scrcpy::{ScrcpyStatus, fetch_latest_tag, install_latest, launch, local_status};
+use crate::scrcpy::{
+    ScrcpyActiveSessions, ScrcpyPresetsCatalog, ScrcpyStatus, active_sessions, fetch_latest_tag,
+    get_presets_catalog, install_latest, launch, local_status, stop,
+};
 
 fn scrcpy_http_client() -> CmdResult<Client> {
     Client::builder()
@@ -45,4 +48,19 @@ pub async fn scrcpy_launch(
     tokio::task::spawn_blocking(move || launch(&app, serial.as_deref(), &options))
         .await
         .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn scrcpy_stop(serial: Option<String>) -> CmdResult<()> {
+    tokio::task::spawn_blocking(move || stop(serial.as_deref())).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn scrcpy_active_sessions() -> CmdResult<ScrcpyActiveSessions> {
+    tokio::task::spawn_blocking(active_sessions).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn scrcpy_presets() -> ScrcpyPresetsCatalog {
+    get_presets_catalog()
 }

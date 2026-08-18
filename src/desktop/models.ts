@@ -615,6 +615,29 @@ export namespace backend {
     unsupportedReason: string | null;
   }
 
+  export interface ScrcpySessionInfo {
+    pid: number;
+    serial: string | null;
+  }
+
+  export interface ScrcpyActiveSessions {
+    serials: string[];
+    sessions: ScrcpySessionInfo[];
+  }
+  export interface ScrcpyPresetOption<T> {
+    label: string;
+    value: T | null;
+  }
+
+  export interface ScrcpyPresetsCatalog {
+    audioSources: string[];
+    keyboards: string[];
+    maxFps: ScrcpyPresetOption<number>[];
+    maxSize: ScrcpyPresetOption<number>[];
+    videoBitRate: ScrcpyPresetOption<string>[];
+    videoCodecs: string[];
+  }
+
   export interface ScrcpyDownloadProgress {
     received: number;
     stage: string;

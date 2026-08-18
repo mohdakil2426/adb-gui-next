@@ -6,6 +6,8 @@ pub mod flags;
 pub mod install;
 pub mod launch;
 
-pub use flags::ScrcpyLaunchOptions;
+pub use flags::{
+    ScrcpyLaunchOptions, ScrcpyPresetOption, ScrcpyPresetsCatalog, get_presets_catalog,
+};
 pub use install::{ScrcpyStatus, fetch_latest_tag, install_latest, local_status};
-pub use launch::launch;
+pub use launch::{ScrcpyActiveSessions, ScrcpySessionInfo, active_sessions, launch, stop};
