@@ -251,7 +251,7 @@ mod tests {
 
     #[test]
     fn telemetry_commands_indices_match_their_slots() {
-        assert_eq!(TELEMETRY_COMMANDS.len(), CMD_WIFI + 1);
+        assert_eq!(TELEMETRY_COMMANDS.len(), CMD_KERNEL + 1);
         assert_eq!(TELEMETRY_COMMANDS[CMD_GETPROP], "getprop");
         assert!(TELEMETRY_COMMANDS[CMD_BATTERY].starts_with("dumpsys battery"));
         assert!(TELEMETRY_COMMANDS[CMD_ROOT].starts_with("su -c id -u"));
@@ -266,6 +266,7 @@ mod tests {
         assert!(TELEMETRY_COMMANDS[CMD_DF_STORAGE_EMULATED].ends_with("|| true"));
         assert!(TELEMETRY_COMMANDS[CMD_DF_SDCARD].starts_with("df -k /sdcard "));
         assert!(TELEMETRY_COMMANDS[CMD_DF_SDCARD].ends_with("|| true"));
+        assert!(TELEMETRY_COMMANDS[CMD_KERNEL].starts_with("cat /proc/version"));
     }
 
     #[test]
