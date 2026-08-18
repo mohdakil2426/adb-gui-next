@@ -1,6 +1,7 @@
 //! Maps a validated launch DTO onto official scrcpy CLI flags. No custom protocol.
 
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 const CODECS: &[&str] = &["h264", "h265", "av1", "vp8", "vp9"];
 const KEYBOARDS: &[&str] = &["sdk", "uhid", "aoa", "disabled"];
@@ -33,6 +34,7 @@ pub struct ScrcpyPresetsCatalog {
     pub keyboards: Vec<String>,
     pub max_fps: Vec<ScrcpyPresetOption<u32>>,
     pub max_size: Vec<ScrcpyPresetOption<u32>>,
+    pub record_formats: Vec<String>,
     pub video_bit_rate: Vec<ScrcpyPresetOption<String>>,
     pub video_codecs: Vec<String>,
 }
@@ -76,12 +78,31 @@ pub fn get_presets_catalog() -> ScrcpyPresetsCatalog {
             ScrcpyPresetOption { label: "120 FPS".into(), value: Some(120) },
             ScrcpyPresetOption { label: "144 FPS".into(), value: Some(144) },
         ],
+        record_formats: RECORD_FORMATS.iter().map(|&s| s.to_string()).collect(),
         video_codecs: CODECS.iter().map(|&s| s.to_string()).collect(),
         keyboards: KEYBOARDS.iter().map(|&s| s.to_string()).collect(),
         audio_sources: AUDIO_SOURCES.iter().map(|&s| s.to_string()).collect(),
     }
 }
 
+pub fn resolve_device_record_path(base_path: &str, serial: Option<&str>) -> PathBuf {
+    let path = PathBuf::from(base_path.trim());
+    let Some(serial) = serial.map(str::trim).filter(|s| !s.is_empty()) else {
+        return path;
+    };
+
+    if let (Some(parent), Some(stem), Some(ext)) = (
+        path.parent(),
+        path.file_stem().and_then(|s| s.to_str()),
+        path.extension().and_then(|e| e.to_str()),
+    ) {
+        let clean_serial = serial.replace([':', '/', '\\', '*', '?', '"', '<', '>', '|'], "_");
+        let new_filename = format!("{stem}-{clean_serial}.{ext}");
+        parent.join(new_filename)
+    } else {
+        path
+    }
+}
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScrcpyLaunchOptions {
@@ -181,8 +202,9 @@ pub fn build_args(
         args.push("--window-borderless".into());
     }
     if let Some(path) = options.record_path.as_deref().map(str::trim).filter(|v| !v.is_empty()) {
+        let resolved = resolve_device_record_path(path, serial);
         args.push("--record".into());
-        args.push(path.to_string());
+        args.push(resolved.to_string_lossy().into_owned());
     }
     if let Some(format) = options.record_format.as_deref().map(str::trim).filter(|v| !v.is_empty())
     {
@@ -246,5 +268,20 @@ mod tests {
             ..ScrcpyLaunchOptions::default()
         };
         assert!(build_args(&options, None).is_err());
+    }
+
+    #[test]
+    fn resolves_per_device_record_path() {
+        let base = if cfg!(windows) { "C:\\Videos\\session.mp4" } else { "/tmp/session.mp4" };
+        let resolved = resolve_device_record_path(base, Some("DEVICE123"));
+        let path_str = resolved.to_string_lossy();
+        assert!(path_str.contains("session-DEVICE123.mp4"));
+    }
+
+    #[test]
+    fn resolves_unmodified_path_when_serial_absent() {
+        let base = if cfg!(windows) { "C:\\Videos\\session.mp4" } else { "/tmp/session.mp4" };
+        let resolved = resolve_device_record_path(base, None);
+        assert_eq!(resolved, PathBuf::from(base));
     }
 }

@@ -634,6 +634,7 @@ export namespace backend {
     keyboards: string[];
     maxFps: ScrcpyPresetOption<number>[];
     maxSize: ScrcpyPresetOption<number>[];
+    recordFormats: string[];
     videoBitRate: ScrcpyPresetOption<string>[];
     videoCodecs: string[];
   }

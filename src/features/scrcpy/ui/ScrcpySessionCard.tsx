@@ -1,5 +1,4 @@
 import { Rocket, Square } from 'lucide-react';
-import { SelectSaveDirectory } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import {
   AUDIO_SOURCES,
@@ -11,9 +10,9 @@ import {
 } from '@/features/scrcpy/model/defaults';
 import { ScrcpyDeviceSelector } from '@/features/scrcpy/ui/ScrcpyDeviceSelector';
 import { ScrcpyPresetField } from '@/features/scrcpy/ui/ScrcpyPresetField';
+import { ScrcpyRecordSection } from '@/features/scrcpy/ui/ScrcpyRecordSection';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
 import { Switch } from '@/shared/ui/switch';
@@ -71,13 +70,6 @@ export function ScrcpySessionCard({
   options: backend.ScrcpyLaunchOptions;
   selectedSerials: Set<string>;
 }) {
-  const pickRecordPath = async () => {
-    const path = await SelectSaveDirectory('scrcpy-recording.mp4');
-    if (path) {
-      onOptionsChange({ recordPath: path });
-    }
-  };
-
   return (
     <Card className="border-border bg-surface shadow-none">
       <CardHeader>
@@ -183,79 +175,81 @@ export function ScrcpySessionCard({
         </div>
 
         <div className="grid @xl:grid-cols-2 grid-cols-1 gap-2">
-          <FlagRow
-            checked={options.stayAwake}
-            description="Keep the device awake while mirroring."
-            id="scrcpy-stay-awake"
-            label="Stay awake"
-            onCheckedChange={(checked) => onOptionsChange({ stayAwake: checked })}
-          />
-          <FlagRow
-            checked={options.turnScreenOff}
-            description="Turn the physical display off during the session."
-            id="scrcpy-screen-off"
-            label="Turn screen off"
-            onCheckedChange={(checked) => onOptionsChange({ turnScreenOff: checked })}
-          />
-          <FlagRow
-            checked={options.showTouches}
-            description="Show physical touches on the device."
-            id="scrcpy-touches"
-            label="Show touches"
-            onCheckedChange={(checked) => onOptionsChange({ showTouches: checked })}
-          />
-          <FlagRow
-            checked={options.fullscreen}
-            description="Start the scrcpy window fullscreen."
-            id="scrcpy-fullscreen"
-            label="Fullscreen"
-            onCheckedChange={(checked) => onOptionsChange({ fullscreen: checked })}
-          />
-          <FlagRow
-            checked={options.alwaysOnTop}
-            description="Keep the scrcpy window above other windows."
-            id="scrcpy-aot"
-            label="Always on top"
-            onCheckedChange={(checked) => onOptionsChange({ alwaysOnTop: checked })}
-          />
-          <FlagRow
-            checked={options.borderless}
-            description="Hide the native window border."
-            id="scrcpy-borderless"
-            label="Borderless"
-            onCheckedChange={(checked) => onOptionsChange({ borderless: checked })}
-          />
-          <FlagRow
-            checked={options.noAudio}
-            description="Do not forward device audio."
-            id="scrcpy-no-audio"
-            label="No audio"
-            onCheckedChange={(checked) => onOptionsChange({ noAudio: checked })}
-          />
-          <FlagRow
-            checked={options.noControl}
-            description="Mirror only — do not send input."
-            id="scrcpy-no-control"
-            label="No control"
-            onCheckedChange={(checked) => onOptionsChange({ noControl: checked })}
-          />
+          {[
+            {
+              id: 'scrcpy-stay-awake',
+              label: 'Stay awake',
+              description: 'Keep the device awake while mirroring.',
+              checked: options.stayAwake,
+              key: 'stayAwake' as const,
+            },
+            {
+              id: 'scrcpy-screen-off',
+              label: 'Turn screen off',
+              description: 'Turn the physical display off during the session.',
+              checked: options.turnScreenOff,
+              key: 'turnScreenOff' as const,
+            },
+            {
+              id: 'scrcpy-touches',
+              label: 'Show touches',
+              description: 'Show physical touches on the device.',
+              checked: options.showTouches,
+              key: 'showTouches' as const,
+            },
+            {
+              id: 'scrcpy-fullscreen',
+              label: 'Fullscreen',
+              description: 'Start the scrcpy window fullscreen.',
+              checked: options.fullscreen,
+              key: 'fullscreen' as const,
+            },
+            {
+              id: 'scrcpy-aot',
+              label: 'Always on top',
+              description: 'Keep the scrcpy window above other windows.',
+              checked: options.alwaysOnTop,
+              key: 'alwaysOnTop' as const,
+            },
+            {
+              id: 'scrcpy-borderless',
+              label: 'Borderless',
+              description: 'Hide the native window border.',
+              checked: options.borderless,
+              key: 'borderless' as const,
+            },
+            {
+              id: 'scrcpy-no-audio',
+              label: 'No audio',
+              description: 'Do not forward device audio.',
+              checked: options.noAudio,
+              key: 'noAudio' as const,
+            },
+            {
+              id: 'scrcpy-no-control',
+              label: 'No control',
+              description: 'Mirror only — do not send input.',
+              checked: options.noControl,
+              key: 'noControl' as const,
+            },
+          ].map((flag) => (
+            <FlagRow
+              checked={flag.checked}
+              description={flag.description}
+              id={flag.id}
+              key={flag.id}
+              label={flag.label}
+              onCheckedChange={(checked) => onOptionsChange({ [flag.key]: checked })}
+            />
+          ))}
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="scrcpy-record">Record to file (optional)</Label>
-          <div className="flex flex-wrap gap-2">
-            <Input
-              className="min-w-0 flex-1"
-              id="scrcpy-record"
-              onChange={(event) => onOptionsChange({ recordPath: event.target.value || null })}
-              placeholder="No recording"
-              value={options.recordPath ?? ''}
-            />
-            <Button onClick={() => void pickRecordPath()} type="button" variant="outline">
-              Browse
-            </Button>
-          </div>
-        </div>
+        <ScrcpyRecordSection
+          disabled={isLaunching}
+          onChange={(updates) => onOptionsChange(updates)}
+          recordFormat={options.recordFormat ?? null}
+          recordPath={options.recordPath ?? null}
+        />
         {selectedSerials.size > 0 &&
         Array.from(selectedSerials).every((s) => activeSerials.has(s) || activeSerials.has('*')) ? (
           <Button

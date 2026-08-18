@@ -47,6 +47,17 @@ export const FPS_PRESETS: { label: string; value: number | null }[] = [
   { label: '144 FPS', value: 144 },
 ];
 
+export const RECORD_FORMAT_PRESETS = [
+  { label: 'Auto (from filename)', value: null },
+  { label: 'MP4 (Default - Video + Audio)', value: 'mp4' },
+  { label: 'MKV (Matroska - Crash resilient)', value: 'mkv' },
+  { label: 'M4A (Audio only)', value: 'm4a' },
+  { label: 'AAC (Audio only)', value: 'aac' },
+  { label: 'Opus (Audio only)', value: 'opus' },
+  { label: 'FLAC (Lossless audio)', value: 'flac' },
+  { label: 'WAV (Uncompressed audio)', value: 'wav' },
+];
+
 export const VIDEO_CODECS = ['h264', 'h265', 'av1', 'vp8', 'vp9'] as const;
 export const KEYBOARDS = ['sdk', 'uhid', 'aoa', 'disabled'] as const;
 export const AUDIO_SOURCES = [
