@@ -162,9 +162,9 @@ export function ScrcpyFloatingToolbar() {
     try {
       const win = getCurrentWebviewWindow();
       if (next) {
-        await win.setSize(new LogicalSize(340, 520));
+        await win.setSize(new LogicalSize(370, 560));
       } else {
-        await win.setSize(new LogicalSize(44, 490));
+        await win.setSize(new LogicalSize(56, 540));
       }
     } catch {}
   };
@@ -174,17 +174,16 @@ export function ScrcpyFloatingToolbar() {
     try {
       const win = getCurrentWebviewWindow();
       if (min) {
-        await win.setSize(new LogicalSize(38, 38));
+        await win.setSize(new LogicalSize(42, 42));
       } else {
-        await win.setSize(new LogicalSize(44, 490));
+        await win.setSize(new LogicalSize(56, 540));
       }
     } catch {}
   };
-
   if (isMinimized) {
     return (
       <div
-        className="flex size-9 cursor-move items-center justify-center rounded-lg border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised dark:bg-[#1e1f22]/95"
+        className="flex size-10 cursor-move items-center justify-center rounded-xl border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised dark:bg-[#1e1f22]/95"
         data-tauri-drag-region
       >
         <button
@@ -193,7 +192,7 @@ export function ScrcpyFloatingToolbar() {
           title="Expand Toolbar"
           type="button"
         >
-          <Maximize2 className="size-3.5" />
+          <Maximize2 className="size-4" />
         </button>
       </div>
     );
@@ -202,23 +201,23 @@ export function ScrcpyFloatingToolbar() {
   return (
     <div className="relative flex select-none items-start gap-2 bg-transparent p-0">
       {/* Main Action Strip */}
-      <div className="flex w-10 flex-col items-center gap-0.5 rounded-lg border border-border/80 bg-[#f3f4f6]/95 p-1 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
+      <div className="flex w-[52px] flex-col items-center gap-1 rounded-xl border border-border/80 bg-[#f3f4f6]/95 p-1.5 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
         {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
         <div
-          className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-0.5 pb-1 text-muted-foreground"
+          className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-1 pb-1.5 text-muted-foreground"
           data-tauri-drag-region
         >
           <button
-            className="flex size-4 items-center justify-center rounded hover:bg-muted hover:text-foreground"
+            className="flex size-5 items-center justify-center rounded hover:bg-muted hover:text-foreground"
             onClick={() => handleToggleMinimize(true)}
             title="Minimize"
             type="button"
           >
-            <Minus className="size-3" />
+            <Minus className="size-3.5" />
           </button>
 
           <button
-            className={`flex size-4 items-center justify-center rounded transition-colors ${
+            className={`flex size-5 items-center justify-center rounded transition-colors ${
               mode === 'locked'
                 ? 'text-primary hover:bg-primary/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -232,24 +231,24 @@ export function ScrcpyFloatingToolbar() {
             type="button"
           >
             {mode === 'locked' ? (
-              <Pin className="size-2.5 fill-current" />
+              <Pin className="size-3 fill-current" />
             ) : (
-              <PinOff className="size-2.5" />
+              <PinOff className="size-3" />
             )}
           </button>
 
           <button
-            className="flex size-4 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
+            className="flex size-5 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
             onClick={handleClose}
             title="Close Toolbar"
             type="button"
           >
-            <X className="size-3" />
+            <X className="size-3.5" />
           </button>
         </div>
 
         {/* Main Action Buttons */}
-        <div className="flex flex-col items-center gap-0.5 pt-0.5">
+        <div className="flex flex-col items-center gap-1 pt-1">
           {MAIN_TOOLBAR_ACTIONS.map((action) => (
             <ToolbarButton
               description={action.description}
@@ -280,14 +279,14 @@ export function ScrcpyFloatingToolbar() {
           onAction={(actionId) => {
             setIsMoreOpen(false);
             try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
+              getCurrentWebviewWindow().setSize(new LogicalSize(56, 540));
             } catch {}
             handleAction(actionId);
           }}
           onClose={() => {
             setIsMoreOpen(false);
             try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
+              getCurrentWebviewWindow().setSize(new LogicalSize(56, 540));
             } catch {}
           }}
           onModeChange={handleModeToggle}

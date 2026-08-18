@@ -56,7 +56,7 @@ export function ToolbarMoreMenu({
   };
 
   return (
-    <div className="fade-in zoom-in-95 flex w-68 shrink-0 animate-in flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 p-3 shadow-2xl backdrop-blur-xl duration-150 dark:bg-[#1e1f22]/98">
+    <div className="fade-in zoom-in-95 flex w-[285px] max-w-[285px] shrink-0 animate-in flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl duration-150 dark:bg-[#1e1f22]/98">
       <div className="flex items-center justify-between border-border/60 border-b pb-2">
         <span className="font-semibold text-foreground text-xs">Extended Controls</span>
         <button

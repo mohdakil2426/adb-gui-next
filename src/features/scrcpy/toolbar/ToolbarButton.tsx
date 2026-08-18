@@ -116,7 +116,7 @@ export function ToolbarButton({
 }: ToolbarButtonProps) {
   const renderIcon = () => {
     const iconClass =
-      'size-4.5 text-foreground/80 transition-colors group-hover:text-foreground group-active:text-foreground';
+      'size-5 text-foreground/85 transition-colors group-hover:text-foreground group-active:text-foreground';
     switch (icon) {
       case 'power':
         return <Power className={iconClass} strokeWidth={2.2} />;
@@ -152,10 +152,10 @@ export function ToolbarButton({
       <TooltipTrigger asChild>
         <button
           aria-label={label}
-          className={`group flex size-8.5 items-center justify-center rounded-md transition-all duration-150 active:scale-90 ${
+          className={`group flex size-10 items-center justify-center rounded-lg transition-all duration-150 active:scale-92 ${
             isActive
               ? 'bg-accent text-accent-foreground shadow-xs'
-              : 'text-muted-foreground hover:bg-muted/70 hover:text-foreground'
+              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'
           } ${disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'}`}
           disabled={disabled}
           onClick={onClick}

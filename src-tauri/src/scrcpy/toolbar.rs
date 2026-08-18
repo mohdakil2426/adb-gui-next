@@ -200,7 +200,7 @@ pub fn create_toolbar_window(
 
     let builder = WebviewWindowBuilder::new(app, &window_label, webview_url)
         .title("Scrcpy Toolbar")
-        .inner_size(44.0, 480.0)
+        .inner_size(56.0, 540.0)
         .decorations(false)
         .transparent(true)
         .always_on_top(false)
@@ -412,7 +412,7 @@ pub fn spawn_toolbar_tracker(app: AppHandle, serial: String, pid: u32) {
                         let mut rect = win32::RECT::default();
                         if unsafe { win32::GetWindowRect(hwnd, &mut rect) != win32::FALSE } {
                             let x = match session.side {
-                                ToolbarSide::Left => rect.left - 48,
+                                ToolbarSide::Left => rect.left - 62,
                                 ToolbarSide::Right => rect.right + 4,
                             };
                             let y = rect.top + session.y_offset;
