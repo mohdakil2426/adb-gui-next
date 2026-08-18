@@ -1,30 +1,26 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   GetDebloatData,
   GetDebloatDeviceSettings,
   SaveDebloatDeviceSettings,
 } from '@/desktop/backend';
-import type { backend } from '@/desktop/models';
 import { applyFilters, useDebloatStore } from '@/features/app-manager/debloater/model/debloatStore';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
-import { useLogStore } from '@/shared/stores/logStore';
-import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
 import { handleError } from '@/shared/utils/errorHandler';
 import { BackupRestorePanel } from './BackupRestorePanel';
 import { DebloaterPackageList } from './DebloaterPackageList';
 import { DebloaterToolbar } from './DebloaterToolbar';
 import { DescriptionPanel } from './DescriptionPanel';
-import { applyInChunks } from './debloatApply';
 import { ReviewSelectionDialog } from './ReviewSelectionDialog';
 import { SafetyTierLegend } from './SafetyTierLegend';
+import { useDebloatOperations } from './useDebloatOperations';
 
 export function DebloaterTab() {
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
   const packages = useDebloatStore((s) => s.packages);
   const listStatus = useDebloatStore((s) => s.listStatus);
   const isLoadingPackages = useDebloatStore((s) => s.isLoadingPackages);
-  const isApplying = useDebloatStore((s) => s.isApplying);
   const searchQuery = useDebloatStore((s) => s.searchQuery);
   const listFilter = useDebloatStore((s) => s.listFilter);
   const removalFilter = useDebloatStore((s) => s.removalFilter);
@@ -37,7 +33,6 @@ export function DebloaterTab() {
   const setPackages = useDebloatStore((s) => s.setPackages);
   const setListStatus = useDebloatStore((s) => s.setListStatus);
   const setIsLoadingPackages = useDebloatStore((s) => s.setIsLoadingPackages);
-  const setIsApplying = useDebloatStore((s) => s.setIsApplying);
   const setSearchQuery = useDebloatStore((s) => s.setSearchQuery);
   const setListFilter = useDebloatStore((s) => s.setListFilter);
   const setRemovalFilter = useDebloatStore((s) => s.setRemovalFilter);
@@ -48,13 +43,18 @@ export function DebloaterTab() {
   const setCurrentPackageName = useDebloatStore((s) => s.setCurrentPackageName);
   const setExpertMode = useDebloatStore((s) => s.setExpertMode);
   const setDisableMode = useDebloatStore((s) => s.setDisableMode);
-  const applyResults = useDebloatStore((s) => s.applyResults);
   const setBackups = useDebloatStore((s) => s.setBackups);
   const resetFilters = useDebloatStore((s) => s.resetFilters);
 
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const {
+    handleBatchApply,
+    handleSinglePackageAction,
+    isApplying,
+    pendingPackageNames,
+    reviewOpen,
+    setReviewOpen,
+  } = useDebloatOperations({ disableMode, selectedPackages, selectedSerial });
 
-  // Load settings + packages; reload when selected device changes
   const loadAll = useCallback(async () => {
     if (!selectedSerial) {
       setPackages([]);
@@ -89,7 +89,6 @@ export function DebloaterTab() {
     void loadAll();
   }, [loadAll, selectedSerial]);
 
-  // Persist settings changes
   async function handleDisableModeChange(value: boolean) {
     setDisableMode(value);
     try {
@@ -110,15 +109,8 @@ export function DebloaterTab() {
     }
   }
 
-  // Filtered list (client-side)
   const filteredPackages = useMemo(
-    () =>
-      applyFilters(packages, {
-        listFilter,
-        removalFilter,
-        stateFilter,
-        searchQuery,
-      }),
+    () => applyFilters(packages, { listFilter, removalFilter, stateFilter, searchQuery }),
     [packages, listFilter, removalFilter, stateFilter, searchQuery],
   );
 
@@ -127,64 +119,19 @@ export function DebloaterTab() {
     [packages, currentPackageName],
   );
 
-  async function handleApply() {
-    const pkgNames = Array.from(selectedPackages);
-    const action: backend.DebloatAction = disableMode ? 'disable' : 'uninstall';
-    const verb = action === 'disable' ? 'Disabling' : 'Uninstalling';
-    const total = pkgNames.length;
-
-    // Close first: the batch reports itself through the status bar and a
-    // determinate toast, so there is no reason to trap the user behind a modal.
-    setReviewOpen(false);
-    setIsApplying(true);
-
-    const operationId = startOperation({
-      detail: `0 of ${total}`,
-      label: `${verb} ${total} package${total === 1 ? '' : 's'}`,
-      progress: 0,
-      view: 'apps',
-    });
-    const toastId = toast.loading(`${verb} 0 of ${total}…`);
-
-    try {
-      const results = await applyInChunks({
-        action,
-        onProgress: (processed) => {
-          updateOperation(operationId, {
-            detail: `${processed} of ${total}`,
-            progress: Math.round((processed / total) * 100),
-          });
-          toast.loading(`${verb} ${processed} of ${total}…`, { id: toastId });
-        },
-        packages: pkgNames,
-        serial: selectedSerial,
-      });
-      applyResults(results);
-
-      const succeeded = results.filter((r) => r.success).length;
-      const failed = results.filter((r) => !r.success).length;
-
-      if (failed === 0) {
-        toast.success(
-          `${action === 'disable' ? 'Disabled' : 'Uninstalled'} ${succeeded} package${succeeded === 1 ? '' : 's'}`,
-          { id: toastId },
-        );
-        useLogStore.getState().addLog(`Debloat: ${action} ${succeeded} packages`, 'success');
-      } else {
-        toast.warning(`Done: ${succeeded} succeeded, ${failed} failed`, { id: toastId });
-        useLogStore.getState().addLog(`Debloat: ${failed} failures`, 'error');
+  const handleSelectAllRecommended = useCallback(() => {
+    const recommendedNames = new Set(selectedPackages);
+    for (const p of filteredPackages) {
+      if (p.removal === 'Recommended' && p.state === 'Enabled') {
+        recommendedNames.add(p.name);
       }
-    } catch (error) {
-      toast.dismiss(toastId);
-      handleError('Debloat', error);
-    } finally {
-      finishOperation(operationId);
-      setIsApplying(false);
     }
-  }
+    useDebloatStore.setState({ selectedPackages: recommendedNames });
+    toast.info(`Selected ${recommendedNames.size} packages`);
+  }, [filteredPackages, selectedPackages]);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       <DebloaterToolbar
         disableMode={disableMode}
         expertMode={expertMode}
@@ -196,11 +143,11 @@ export function DebloaterTab() {
             ? `UAD ${listStatus.source === 'remote' ? '✓' : '○'} ${listStatus.lastUpdated}`
             : null
         }
-        onDisableModeChange={(value) => {
-          void handleDisableModeChange(value);
+        onDisableModeChange={(v) => {
+          void handleDisableModeChange(v);
         }}
-        onExpertModeChange={(value) => {
-          void handleExpertModeChange(value);
+        onExpertModeChange={(v) => {
+          void handleExpertModeChange(v);
         }}
         onListFilterChange={setListFilter}
         onRefresh={() => {
@@ -209,17 +156,18 @@ export function DebloaterTab() {
         onRemovalFilterChange={setRemovalFilter}
         onSearchQueryChange={setSearchQuery}
         onStateFilterChange={setStateFilter}
+        packages={packages}
         packagesCount={packages.length}
         removalFilter={removalFilter}
         searchQuery={searchQuery}
+        selectedCount={selectedPackages.size}
         selectedSerial={selectedSerial}
         stateFilter={stateFilter}
       />
-
       <SafetyTierLegend expertMode={expertMode} />
-
       <DebloaterPackageList
         currentPackageName={currentPackageName}
+        disableMode={disableMode}
         expertMode={expertMode}
         filteredPackages={filteredPackages}
         hasPackages={packages.length > 0}
@@ -227,9 +175,8 @@ export function DebloaterTab() {
         isLoadingPackages={isLoadingPackages}
         onClearFilters={resetFilters}
         onCurrentPackageNameChange={setCurrentPackageName}
-        onReview={() => {
-          setReviewOpen(true);
-        }}
+        onReview={() => setReviewOpen(true)}
+        onSelectAllRecommended={handleSelectAllRecommended}
         onSelectToggle={togglePackage}
         onSelectUnselectAll={() => {
           if (selectedPackages.size > 0) {
@@ -238,21 +185,27 @@ export function DebloaterTab() {
             selectAll();
           }
         }}
+        onSingleAction={handleSinglePackageAction}
+        pendingPackageNames={pendingPackageNames}
         selectedPackages={selectedPackages}
         selectedSerial={selectedSerial}
       />
-
-      {/* Rendered only when a row is highlighted — this used to be a permanently
-          reserved empty box holding "Select a package to see details." */}
-      {currentPackage ? <DescriptionPanel pkg={currentPackage} /> : null}
-
-      {/* ── Undo path ───────────────────────────────────────────────────────── */}
+      {currentPackage ? (
+        <DescriptionPanel
+          disableMode={disableMode}
+          expertMode={expertMode}
+          isPending={pendingPackageNames.has(currentPackage.name)}
+          onClose={() => setCurrentPackageName(null)}
+          onSingleAction={handleSinglePackageAction}
+          pkg={currentPackage}
+          selectedSerial={selectedSerial}
+        />
+      ) : null}
       <BackupRestorePanel />
-
       <ReviewSelectionDialog
         disableMode={disableMode}
         isApplying={isApplying}
-        onConfirm={handleApply}
+        onConfirm={handleBatchApply}
         onOpenChange={setReviewOpen}
         open={reviewOpen}
         packages={packages}

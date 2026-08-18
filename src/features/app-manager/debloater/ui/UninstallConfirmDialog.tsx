@@ -1,4 +1,5 @@
 import { Loader2, Trash2 } from 'lucide-react';
+import type { ReactNode } from 'react';
 import type { backend } from '@/desktop/models';
 // biome-ignore format: keep single line to preserve architectural line count limits
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/shared/ui/alert-dialog';
@@ -7,10 +8,13 @@ import { buttonVariants } from '@/shared/ui/button-variants';
 
 interface UninstallConfirmDialogProps {
   isUninstalling: boolean;
+  onOpenChange?: (open: boolean) => void;
   onUninstall: () => void;
+  open?: boolean;
   packages: backend.InstalledPackage[];
   selectedPackages: Set<string>;
   selectedSerial: string | null;
+  trigger?: ReactNode;
 }
 
 /**
@@ -19,26 +23,35 @@ interface UninstallConfirmDialogProps {
  */
 export function UninstallConfirmDialog({
   isUninstalling,
+  onOpenChange,
   onUninstall,
+  open,
   packages,
   selectedPackages,
   selectedSerial,
+  trigger,
 }: UninstallConfirmDialogProps) {
   const count = selectedPackages.size;
+  const dialogProps =
+    open === undefined ? {} : onOpenChange === undefined ? { open } : { onOpenChange, open };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          className="w-full"
-          disabled={isUninstalling || count === 0 || !selectedSerial}
-          type="button"
-          variant="destructive"
-        >
-          <Trash2 aria-hidden="true" />
-          Uninstall {count > 0 ? `(${count})` : ''}
-        </Button>
-      </AlertDialogTrigger>
+    <AlertDialog {...dialogProps}>
+      {trigger ? (
+        <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+      ) : open === undefined ? (
+        <AlertDialogTrigger asChild>
+          <Button
+            className="w-full"
+            disabled={isUninstalling || count === 0 || !selectedSerial}
+            type="button"
+            variant="destructive"
+          >
+            <Trash2 aria-hidden="true" />
+            Uninstall {count > 0 ? `(${count})` : ''}
+          </Button>
+        </AlertDialogTrigger>
+      ) : null}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>

@@ -1,23 +1,25 @@
 /* eslint-disable react-hooks/incompatible-library -- TanStack Virtual intentionally returns non-memoizable helpers; this virtualizer stays local to the list and is not passed across memoized boundaries. */
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { CheckSquare2, Loader2, SearchX, ShieldCheck, Smartphone, Square } from 'lucide-react';
+import {
+  CheckSquare2,
+  Loader2,
+  SearchX,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Square,
+} from 'lucide-react';
 import { type ReactNode, useRef } from 'react';
 import type { backend } from '@/desktop/models';
-import { CheckboxItem } from '@/shared/components/CheckboxItem';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
-import {
-  DEBLOAT_ROW_HEIGHT,
-  PACKAGE_LIST_VIEWPORT,
-  PKG_STATE_CLASSES,
-  PKG_STATE_LABELS,
-  REMOVAL_TIER_CLASSES,
-  REMOVAL_TIER_LABELS,
-} from './debloaterUtils';
+import { DebloaterPackageRow } from './DebloaterPackageRow';
+import { DEBLOAT_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
 import { PackageListEmpty, PackageListSkeleton } from './PackageListState';
 
 interface DebloaterPackageListProps {
   currentPackageName: string | null;
+  disableMode: boolean;
   expertMode: boolean;
   filteredPackages: backend.DebloatPackageRow[];
   hasPackages: boolean;
@@ -26,8 +28,11 @@ interface DebloaterPackageListProps {
   onClearFilters: () => void;
   onCurrentPackageNameChange: (name: string) => void;
   onReview: () => void;
+  onSelectAllRecommended?: () => void;
   onSelectToggle: (name: string) => void;
   onSelectUnselectAll: () => void;
+  onSingleAction?: (pkg: backend.DebloatPackageRow, action: backend.DebloatAction) => void;
+  pendingPackageNames?: Set<string>;
   selectedPackages: Set<string>;
   selectedSerial: string | null;
 }
@@ -86,6 +91,7 @@ function resolveListState({
 
 export function DebloaterPackageList({
   currentPackageName,
+  disableMode,
   expertMode,
   filteredPackages,
   hasPackages,
@@ -94,8 +100,11 @@ export function DebloaterPackageList({
   onClearFilters,
   onCurrentPackageNameChange,
   onReview,
+  onSelectAllRecommended,
   onSelectToggle,
   onSelectUnselectAll,
+  onSingleAction,
+  pendingPackageNames = new Set(),
   selectedPackages,
   selectedSerial,
 }: DebloaterPackageListProps) {
@@ -105,7 +114,7 @@ export function DebloaterPackageList({
     estimateSize: () => DEBLOAT_ROW_HEIGHT,
     getItemKey: (i) => filteredPackages[i]?.name ?? i,
     getScrollElement: () => listRef.current,
-    overscan: 10,
+    overscan: 8,
   });
   const virtualRows = rowVirtualizer.getVirtualItems();
   const listState = resolveListState({
@@ -117,13 +126,13 @@ export function DebloaterPackageList({
   });
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       <div
         aria-label="System packages"
         aria-multiselectable="true"
         className={cn(
           PACKAGE_LIST_VIEWPORT,
-          'overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-surface',
+          'select-none overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-surface',
         )}
         ref={listRef}
         role="listbox"
@@ -141,98 +150,90 @@ export function DebloaterPackageList({
               if (!pkg) {
                 return null;
               }
-              const isSelected = selectedPackages.has(pkg.name);
-              const isCurrent = currentPackageName === pkg.name;
-              const isUnsafeBlocked = pkg.removal === 'Unsafe' && !expertMode;
 
               return (
-                <div
-                  aria-selected={isSelected}
-                  className={cn(
-                    'absolute left-0 flex w-full cursor-pointer select-none items-center gap-2 px-3 outline-none transition-colors duration-90 ease-standard hover:bg-accent',
-                    isSelected && 'bg-primary-muted',
-                    isCurrent && !isSelected && 'bg-accent',
-                    isUnsafeBlocked && 'cursor-not-allowed opacity-50',
-                  )}
+                <DebloaterPackageRow
+                  currentPackageName={currentPackageName}
+                  disableMode={disableMode}
+                  expertMode={expertMode}
+                  isPending={pendingPackageNames.has(pkg.name)}
+                  isSelected={selectedPackages.has(pkg.name)}
                   key={pkg.name}
-                  onClick={() => {
-                    onCurrentPackageNameChange(pkg.name);
-                    if (!isUnsafeBlocked) {
-                      onSelectToggle(pkg.name);
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === ' ' || e.key === 'Enter') {
-                      e.preventDefault();
-                      onCurrentPackageNameChange(pkg.name);
-                      if (!isUnsafeBlocked) {
-                        onSelectToggle(pkg.name);
-                      }
-                    }
-                  }}
-                  role="option"
-                  style={{ height: `${vRow.size}px`, transform: `translateY(${vRow.start}px)` }}
-                  tabIndex={0}
-                >
-                  <CheckboxItem checked={isSelected} disabled={isUnsafeBlocked} />
-                  <span
-                    aria-label={PKG_STATE_LABELS[pkg.state]}
-                    className={cn('size-2 shrink-0 rounded-full', PKG_STATE_CLASSES[pkg.state])}
-                    role="img"
-                    title={PKG_STATE_LABELS[pkg.state]}
-                  />
-                  <span className="min-w-0 flex-1 truncate font-mono text-foreground text-mono">
-                    {pkg.name}
-                  </span>
-                  <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-caption text-muted-foreground">
-                    {pkg.list}
-                  </span>
-                  <span
-                    className={cn(
-                      'shrink-0 rounded-full px-2 py-0.5 font-medium text-caption',
-                      REMOVAL_TIER_CLASSES[pkg.removal].badge,
-                    )}
-                  >
-                    {REMOVAL_TIER_LABELS[pkg.removal]}
-                  </span>
-                </div>
+                  onCurrentPackageNameChange={onCurrentPackageNameChange}
+                  onSelectToggle={onSelectToggle}
+                  onSingleAction={onSingleAction}
+                  pkg={pkg}
+                  selectedSerial={selectedSerial}
+                  size={vRow.size}
+                  start={vRow.start}
+                />
               );
             })}
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          disabled={filteredPackages.length === 0}
-          onClick={onSelectUnselectAll}
-          size="sm"
-          type="button"
-          variant="ghost"
-        >
+      {/* ── Bottom Action Band ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            disabled={filteredPackages.length === 0}
+            onClick={onSelectUnselectAll}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            {selectedPackages.size > 0 ? (
+              <>
+                <CheckSquare2 aria-hidden="true" />
+                Unselect all
+              </>
+            ) : (
+              <>
+                <Square aria-hidden="true" />
+                Select all ({filteredPackages.length})
+              </>
+            )}
+          </Button>
+
+          {onSelectAllRecommended ? (
+            <Button
+              className="gap-1.5 border-success/30 text-caption text-success hover:bg-success-muted hover:text-success"
+              disabled={filteredPackages.length === 0}
+              onClick={onSelectAllRecommended}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Sparkles aria-hidden="true" className="size-3.5" />
+              Select Recommended
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-2.5">
           {selectedPackages.size > 0 ? (
-            <>
-              <CheckSquare2 aria-hidden="true" />
-              Unselect all
-            </>
-          ) : (
-            <>
-              <Square aria-hidden="true" />
-              Select all
-            </>
-          )}
-        </Button>
-        <Button
-          disabled={selectedPackages.size === 0 || isApplying}
-          onClick={onReview}
-          size="sm"
-          type="button"
-          variant="default"
-        >
-          {isApplying ? <Loader2 aria-hidden="true" className="animate-spin" /> : null}
-          Review ({selectedPackages.size})
-        </Button>
+            <span className="numeric text-caption text-muted-foreground">
+              {selectedPackages.size} package{selectedPackages.size === 1 ? '' : 's'} queued
+            </span>
+          ) : null}
+
+          <Button
+            disabled={selectedPackages.size === 0 || isApplying || !selectedSerial}
+            onClick={onReview}
+            size="sm"
+            type="button"
+            variant="default"
+          >
+            {isApplying ? (
+              <Loader2 aria-hidden="true" className="animate-spin" />
+            ) : (
+              <ShieldCheck aria-hidden="true" />
+            )}
+            Review & Debloat ({selectedPackages.size})
+          </Button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import type { backend } from '@/desktop/models';
  * (browse / uninstall what is on the device) used to share one tab separated by
  * a bare rule; `installation` keeps its old value so a persisted tab still resolves.
  */
-export type AppManagerTab = 'debloater' | 'installation' | 'installed';
+export type AppManagerTab = 'overview' | 'installed' | 'installation' | 'debloater';
 export type DebloatListFilter = backend.DebloatList | 'All';
 export type RemovalFilter = backend.RemovalTier | 'All';
 export type StateFilter = backend.PkgState | 'All';
