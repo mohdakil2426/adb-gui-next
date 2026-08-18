@@ -1,17 +1,17 @@
 # Active Context
 
-## Current state
+## Current Focus
 
-ADB GUI Next is a working Tauri 2 app, version **0.2.5**. Agent docs: root `AGENTS.md` router + `src/AGENTS.md` / `src-tauri/AGENTS.md`, `docs/project_rules.md`, `docs/architecture.md`.
+**Precision Hardware Cockpit Transformation for All Views**: Redesigning and elevating the remaining 6 views (`marketplace`, `flasher`, `payload-dumper`, `utilities`, `scrcpy`, `emulator`) to full design parity with Dashboard and Applications.
 
-**Work here on local `main` only** (`C:\Users\akila\OneDrive\Desktop\OSS\WindowsApps\adb-gui-next`). HEAD includes the 2026-08-16 overhaul plus Utilities one-page layout. The worktree `adb-gui-next-scrcpy-overhaul` / branch `feat/scrcpy-and-ui-overhaul` is the same overhaul SHA; do not treat it as in-flight. **Overhaul commits are still unpushed** (`origin/main` behind).
+### Key Objectives
+1. **Precision Hero Banners**: Elevated hardware cockpit banners with status badges, device telemetry indicators, and quick-action controls.
+2. **Segmented Tab Hardware Navigation**: Clean, structured top-level tabbed navigation across all 6 views with dedicated Overview & Telemetry tabs.
+3. **Hand-Rolled Pure SVG Telemetry & Visualizations**: Zero external charting dependencies (`freezePrototype: true` compliant) — custom donuts, distribution meters, sparklines, and horizontal bars using `--chart-1`..`--chart-5` tokens.
+4. **Interactive Architecture Guides & ASCII Subsystem Flowcharts**: Embedded technical guides explaining partition layouts, payload structures, ADB transports, video encoding pipelines, and emulator rooting mechanics.
+5. **Symmetrical Equal-Height Card Grids**: `@container` queries, `items-stretch`, `PanelCard`, and robust baselines with zero text truncation.
 
-Current product work: File Explorer chrome follows Windows Explorer (nav + command bands, Places, Details columns). Host files/folders drop in via `OnFileDrop` + `host_path_kinds` + `push_file`. In-app drag onto folders / Places / tree / crumbs moves with `transfer_device_files`. Drag-out to Explorer is not supported. Host setup on Utilities → Host is already on `main`: official Google platform-tools and USB driver are **separate** installs. Tools go to `C:\Android\platform-tools`; system Path is HKLM; USB uses `pnputil`. This app still uses bundled ADB.
-
-Research/plan (historical): `docs/internal/reports/closed/2026-08-16/2026-08-16-scrcpy-and-ui-overhaul-research.md`, `docs/internal/reports/closed/2026-08-16/2026-08-16-scrcpy-and-ui-overhaul-plan.md`.
-
-v2 UI/UX (`feat/ui-ux-reimagine-v2`) is already on `main` (merged as PR #1).
-
+See full specification in `docs/internal/reports/precision_cockpit_views_redesign_blueprint.md`.
 ### Durable decisions (verify in code)
 
 | Area | Decision |
