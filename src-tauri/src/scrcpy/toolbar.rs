@@ -204,7 +204,7 @@ pub fn create_toolbar_window(
         .decorations(false)
         .transparent(true)
         .always_on_top(false)
-        .resizable(false)
+        .resizable(true)
         .skip_taskbar(true)
         .shadow(false);
 
@@ -239,6 +239,23 @@ pub fn close_toolbar(app: &AppHandle, serial: &str) -> CmdResult<()> {
 
     if let Some(window) = app.get_webview_window(&label) {
         let _ = window.close();
+    }
+    Ok(())
+}
+
+/// Dynamically resize the toolbar window (e.g. expanding for extended controls or collapsing).
+pub fn set_toolbar_size(
+    app: &AppHandle,
+    serial: &str,
+    width: f64,
+    height: f64,
+) -> CmdResult<()> {
+    let clean_serial = sanitize_label_serial(serial.trim());
+    let window_label = format!("scrcpy-toolbar-{clean_serial}");
+    if let Some(window) = app.get_webview_window(&window_label) {
+        window
+            .set_size(tauri::Size::Logical(tauri::LogicalSize::new(width, height)))
+            .map_err(|e| format!("Failed to resize toolbar window: {e}"))?;
     }
     Ok(())
 }

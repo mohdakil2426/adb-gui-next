@@ -12,6 +12,7 @@ import {
   ScrcpySetToolbarMode,
   ScrcpySetToolbarOffset,
   ScrcpySetToolbarSide,
+  ScrcpySetToolbarSize,
   ScrcpyStop,
   ScrcpyTakeScreenshot,
 } from '@/desktop/backend';
@@ -159,27 +160,28 @@ export function ScrcpyFloatingToolbar() {
   const handleToggleMore = async () => {
     const next = !isMoreOpen;
     setIsMoreOpen(next);
+    const targetW = next ? 390 : 58;
+    const targetH = next ? 580 : 540;
     try {
-      const win = getCurrentWebviewWindow();
-      if (next) {
-        await win.setSize(new LogicalSize(370, 560));
-      } else {
-        await win.setSize(new LogicalSize(56, 540));
-      }
+      await getCurrentWebviewWindow().setSize(new LogicalSize(targetW, targetH));
     } catch {}
+    if (serial) {
+      await ScrcpySetToolbarSize(serial, targetW, targetH).catch(() => {});
+    }
   };
 
   const handleToggleMinimize = async (min: boolean) => {
     setIsMinimized(min);
+    const targetW = min ? 42 : 58;
+    const targetH = min ? 42 : 540;
     try {
-      const win = getCurrentWebviewWindow();
-      if (min) {
-        await win.setSize(new LogicalSize(42, 42));
-      } else {
-        await win.setSize(new LogicalSize(56, 540));
-      }
+      await getCurrentWebviewWindow().setSize(new LogicalSize(targetW, targetH));
     } catch {}
+    if (serial) {
+      await ScrcpySetToolbarSize(serial, targetW, targetH).catch(() => {});
+    }
   };
+
   if (isMinimized) {
     return (
       <div
@@ -279,15 +281,21 @@ export function ScrcpyFloatingToolbar() {
           onAction={(actionId) => {
             setIsMoreOpen(false);
             try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(56, 540));
+              getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
             } catch {}
+            if (serial) {
+              ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+            }
             handleAction(actionId);
           }}
           onClose={() => {
             setIsMoreOpen(false);
             try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(56, 540));
+              getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
             } catch {}
+            if (serial) {
+              ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+            }
           }}
           onModeChange={handleModeToggle}
           onOffsetChange={handleOffsetChange}

@@ -16,5 +16,5 @@ pub use launch::{ScrcpyActiveSessions, ScrcpySessionInfo, active_sessions, launc
 pub use toolbar::{
     ToolbarMode, ToolbarSession, ToolbarSide, close_toolbar, create_toolbar_window,
     get_toolbar_session, rotate_device, send_keyevent, send_statusbar, set_toolbar_mode,
-    set_toolbar_offset, set_toolbar_side, take_screenshot,
+    set_toolbar_offset, set_toolbar_side, set_toolbar_size, take_screenshot,
 };

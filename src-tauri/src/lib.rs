@@ -166,6 +166,7 @@ pub fn run() {
             commands::scrcpy_set_toolbar_mode,
             commands::scrcpy_set_toolbar_offset,
             commands::scrcpy_set_toolbar_side,
+            commands::scrcpy_set_toolbar_size,
             commands::scrcpy_send_keyevent,
             commands::scrcpy_send_statusbar,
             commands::scrcpy_rotate_device,

@@ -9,8 +9,8 @@ use crate::scrcpy::{
     ScrcpyActiveSessions, ScrcpyPresetsCatalog, ScrcpyStatus, ToolbarMode, ToolbarSession,
     ToolbarSide, active_sessions, close_toolbar, create_toolbar_window, fetch_latest_tag,
     get_presets_catalog, get_toolbar_session, install_latest, launch, local_status, rotate_device,
-    send_keyevent, send_statusbar, set_toolbar_mode, set_toolbar_offset, set_toolbar_side, stop,
-    take_screenshot, uninstall_managed,
+    send_keyevent, send_statusbar, set_toolbar_mode, set_toolbar_offset, set_toolbar_side,
+    set_toolbar_size, stop, take_screenshot, uninstall_managed,
 };
 
 fn scrcpy_http_client() -> CmdResult<Client> {
@@ -110,6 +110,18 @@ pub fn scrcpy_set_toolbar_offset(serial: String, offset: i32) -> CmdResult<()> {
 #[tauri::command]
 pub fn scrcpy_set_toolbar_side(serial: String, side: String) -> CmdResult<()> {
     set_toolbar_side(&serial, ToolbarSide::from_str_lenient(&side))
+}
+
+#[tauri::command]
+pub async fn scrcpy_set_toolbar_size(
+    app: AppHandle,
+    serial: String,
+    width: f64,
+    height: f64,
+) -> CmdResult<()> {
+    tokio::task::spawn_blocking(move || set_toolbar_size(&app, &serial, width, height))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

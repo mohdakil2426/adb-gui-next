@@ -706,6 +706,10 @@ export function ScrcpySetToolbarSide(serial: string, side: backend.ToolbarSide):
   return call('scrcpy_set_toolbar_side', { serial, side });
 }
 
+export function ScrcpySetToolbarSize(serial: string, width: number, height: number): Promise<void> {
+  return call('scrcpy_set_toolbar_size', { height, serial, width });
+}
+
 export function ScrcpySendKeyevent(serial: string, keycode: number): Promise<void> {
   return call('scrcpy_send_keyevent', { keycode, serial });
 }
