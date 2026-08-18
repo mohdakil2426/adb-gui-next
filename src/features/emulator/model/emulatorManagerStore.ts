@@ -6,7 +6,7 @@ import {
   type LaunchOptionKey,
 } from '@/features/emulator/model/launchOptions';
 
-export type EmulatorManagerTab = 'launch' | 'root' | 'restore';
+export type EmulatorManagerTab = 'overview' | 'launch' | 'root' | 'restore';
 export type EmulatorPendingAction = 'launch' | 'stop' | 'restore' | 'refreshPlan' | null;
 
 /** Wizard step for the root flow. */
@@ -98,7 +98,7 @@ interface EmulatorManagerState {
 
 const INITIAL_STATE = {
   selectedAvdName: null,
-  activeTab: 'launch' as EmulatorManagerTab,
+  activeTab: 'overview' as EmulatorManagerTab,
   rootWizard: INITIAL_ROOT_WIZARD,
   restorePlan: null as backend.RestorePlan | null,
   pendingAction: null as EmulatorPendingAction,
