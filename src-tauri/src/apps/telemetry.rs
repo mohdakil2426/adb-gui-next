@@ -27,9 +27,11 @@ pub struct TargetSdkDistribution {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionDensityItem {
+    pub permission: Option<String>,
     pub label: String,
     pub count: usize,
     pub risk: String,
+    pub risk_level: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -269,47 +271,63 @@ pub fn get_app_overview_telemetry(
     {
         vec![
             PermissionDensityItem {
+                permission: Some("android.permission.CAMERA".to_string()),
                 label: "Camera".to_string(),
                 count: camera_apps.len(),
                 risk: "Moderate".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.RECORD_AUDIO".to_string()),
                 label: "Microphone".to_string(),
                 count: mic_apps.len(),
                 risk: "High".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.ACCESS_FINE_LOCATION".to_string()),
                 label: "Location".to_string(),
                 count: loc_apps.len(),
                 risk: "High".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.SEND_SMS".to_string()),
                 label: "Call & SMS".to_string(),
                 count: call_sms_apps.len(),
                 risk: "Critical".to_string(),
+                risk_level: "critical".to_string(),
             },
         ]
     } else {
         vec![
             PermissionDensityItem {
+                permission: Some("android.permission.CAMERA".to_string()),
                 label: "Camera".to_string(),
                 count: (user_apps_count * 42) / 100,
                 risk: "Moderate".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.RECORD_AUDIO".to_string()),
                 label: "Microphone".to_string(),
                 count: (user_apps_count * 35) / 100,
                 risk: "High".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.ACCESS_FINE_LOCATION".to_string()),
                 label: "Location".to_string(),
                 count: (user_apps_count * 28) / 100,
                 risk: "High".to_string(),
+                risk_level: "elevated".to_string(),
             },
             PermissionDensityItem {
+                permission: Some("android.permission.SEND_SMS".to_string()),
                 label: "Call & SMS".to_string(),
                 count: (user_apps_count * 18) / 100,
                 risk: "Critical".to_string(),
+                risk_level: "critical".to_string(),
             },
         ]
     };
@@ -357,9 +375,11 @@ mod tests {
             }],
             target_sdk_distribution: TargetSdkDistribution { legacy: 4, standard: 15, modern: 23 },
             permission_density: vec![PermissionDensityItem {
+                permission: Some("android.permission.CAMERA".to_string()),
                 label: "Camera".to_string(),
                 count: 18,
                 risk: "Moderate".to_string(),
+                risk_level: "elevated".to_string(),
             }],
         };
 

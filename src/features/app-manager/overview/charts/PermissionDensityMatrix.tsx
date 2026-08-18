@@ -6,8 +6,8 @@ interface PermissionDensityMatrixProps {
   userAppCount?: number;
 }
 
-function getPermissionIcon(permission: string, label: string) {
-  const text = `${permission} ${label}`.toLowerCase();
+function getPermissionIcon(permission?: string | null, label?: string | null) {
+  const text = `${permission ?? ''} ${label ?? ''}`.toLowerCase();
   if (text.includes('camera')) {
     return Camera;
   }
@@ -31,7 +31,10 @@ function getPermissionIcon(permission: string, label: string) {
   return Shield;
 }
 
-function getRiskLabel(risk: string) {
+function getRiskLabel(risk?: string | null) {
+  if (!risk) {
+    return { label: 'Standard', color: 'text-muted-foreground' };
+  }
   switch (risk.toLowerCase()) {
     case 'critical':
       return { label: 'Critical', color: 'text-rose-500' };
@@ -62,7 +65,7 @@ export function PermissionDensityMatrix({ items = [] }: PermissionDensityMatrixP
         <div className="grid grid-cols-2 gap-2">
           {items.map((item) => {
             const Icon = getPermissionIcon(item.permission, item.label);
-            const riskInfo = getRiskLabel(item.riskLevel);
+            const riskInfo = getRiskLabel(item.riskLevel ?? item.risk);
             return (
               <div
                 className="flex items-center justify-between rounded-md border border-border bg-surface-raised p-2"

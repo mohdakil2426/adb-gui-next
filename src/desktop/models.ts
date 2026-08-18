@@ -760,8 +760,9 @@ export namespace backend {
   export interface PermissionDensityItem {
     count: number;
     label: string;
-    permission: string;
-    riskLevel: 'critical' | 'elevated' | 'standard';
+    permission?: string;
+    risk?: string;
+    riskLevel?: 'critical' | 'elevated' | 'standard' | string;
   }
 
   export interface AppOverviewTelemetry {

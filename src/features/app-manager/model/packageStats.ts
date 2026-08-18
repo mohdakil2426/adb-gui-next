@@ -34,7 +34,7 @@ export function computePackageOverviewStats(
   let unsafe = 0;
 
   for (const item of debloatList) {
-    const tier = item.removal.toLowerCase();
+    const tier = item.removal?.toLowerCase() || '';
     if (tier === 'recommended') {
       recommended++;
     } else if (tier === 'advanced') {

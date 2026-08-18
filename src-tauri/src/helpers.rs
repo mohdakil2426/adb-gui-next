@@ -166,7 +166,11 @@ pub fn binary_name(name: &str) -> String {
 }
 
 pub fn repo_resource_directory(repo_root: &Path, os_dir: &str) -> PathBuf {
-    repo_root.join("src-tauri").join("resources").join(os_dir)
+    if repo_root.ends_with("src-tauri") {
+        repo_root.join("resources").join(os_dir)
+    } else {
+        repo_root.join("src-tauri").join("resources").join(os_dir)
+    }
 }
 
 pub fn repo_resource_binary_path(repo_root: &Path, os_dir: &str, file_name: &str) -> PathBuf {
@@ -217,11 +221,16 @@ pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     }
 
     if let Ok(repo_root) = std::env::current_dir() {
-        let candidate = repo_resource_binary_path(&repo_root, os_dir, &file_name);
-        if candidate.exists() {
-            debug!("Binary found at repo resource: {:?}", candidate);
-            ensure_executable_if_needed(&candidate)?;
-            return Ok(candidate);
+        for candidate in [
+            repo_resource_binary_path(&repo_root, os_dir, &file_name),
+            repo_root.join("resources").join(os_dir).join(&file_name),
+            repo_root.join("src-tauri").join("resources").join(os_dir).join(&file_name),
+        ] {
+            if candidate.exists() {
+                debug!("Binary found at repo resource: {:?}", candidate);
+                ensure_executable_if_needed(&candidate)?;
+                return Ok(candidate);
+            }
         }
     }
 
@@ -254,8 +263,13 @@ pub fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
     }
 
     std::env::current_dir().ok().and_then(|repo_root| {
-        let candidate = repo_resource_directory(&repo_root, os_dir);
-        candidate.exists().then_some(candidate)
+        [
+            repo_resource_directory(&repo_root, os_dir),
+            repo_root.join("resources").join(os_dir),
+            repo_root.join("src-tauri").join("resources").join(os_dir),
+        ]
+        .into_iter()
+        .find(|candidate| candidate.exists())
     })
 }
 

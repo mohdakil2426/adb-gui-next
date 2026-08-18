@@ -81,25 +81,35 @@ pub fn run_fastboot_for_serial(
 /// Lists connected ADB devices.
 ///
 /// Runs on a blocking thread to avoid freezing the WebView during device
-/// enumeration, which can stall when ADB is starting its server.
 #[tauri::command]
 pub async fn get_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
     info!("Getting ADB devices");
     tokio::task::spawn_blocking(move || {
         let output = run_binary_command(&app, "adb", &["devices"])?;
         let mut devices = Vec::new();
-        for line in output.lines().skip(1) {
+        let mut past_header = false;
+        for line in output.lines() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with('*') {
                 continue;
             }
+            if !past_header {
+                if trimmed.starts_with("List of devices attached") {
+                    past_header = true;
+                }
+                continue;
+            }
             let parts: Vec<_> = trimmed.split_whitespace().collect();
             if parts.len() >= 2 {
-                devices.push(Device {
-                    serial: parts[0].to_string(),
-                    status: parts[1].to_string(),
-                    connection_type: Some("adb".to_string()),
-                });
+                let serial = parts[0].to_string();
+                let status = parts[1].to_string();
+                if !serial.is_empty() && !status.is_empty() {
+                    devices.push(Device {
+                        serial,
+                        status,
+                        connection_type: Some("adb".to_string()),
+                    });
+                }
             }
         }
         debug!("Found {} ADB device(s)", devices.len());
@@ -119,7 +129,11 @@ pub async fn get_fastboot_devices(app: AppHandle) -> CmdResult<Vec<Device>> {
         let output = run_binary_command(&app, "fastboot", &["devices"])?;
         let mut devices = Vec::new();
         for line in output.lines() {
-            let parts: Vec<_> = line.split_whitespace().collect();
+            let trimmed = line.trim();
+            if trimmed.is_empty() || trimmed.starts_with('*') || trimmed.starts_with("List of") {
+                continue;
+            }
+            let parts: Vec<_> = trimmed.split_whitespace().collect();
             if parts.len() >= 2 && matches!(parts[1], "fastboot" | "bootloader") {
                 devices.push(Device {
                     serial: parts[0].to_string(),
