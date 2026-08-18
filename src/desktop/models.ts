@@ -639,6 +639,18 @@ export namespace backend {
     videoCodecs: string[];
   }
 
+  export type ToolbarMode = 'locked' | 'freeform';
+  export type ToolbarSide = 'left' | 'right';
+
+  export interface ToolbarSession {
+    mode: ToolbarMode;
+    pid: number | null;
+    serial: string;
+    side: ToolbarSide;
+    windowLabel: string;
+    yOffset: number;
+  }
+
   export interface ScrcpyDownloadProgress {
     received: number;
     stage: string;
