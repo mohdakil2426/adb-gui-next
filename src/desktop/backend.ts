@@ -690,37 +690,23 @@ export function ScrcpyCloseToolbar(serial: string): Promise<void> {
   return call('scrcpy_close_toolbar', { serial });
 }
 
-export function ScrcpyGetToolbarState(
-  serial: string,
-): Promise<backend.ToolbarSession | null> {
+export function ScrcpyGetToolbarState(serial: string): Promise<backend.ToolbarSession | null> {
   return call('scrcpy_get_toolbar_state', { serial });
 }
 
-export function ScrcpySetToolbarMode(
-  serial: string,
-  mode: backend.ToolbarMode,
-): Promise<void> {
+export function ScrcpySetToolbarMode(serial: string, mode: backend.ToolbarMode): Promise<void> {
   return call('scrcpy_set_toolbar_mode', { mode, serial });
 }
 
-export function ScrcpySetToolbarOffset(
-  serial: string,
-  offset: number,
-): Promise<void> {
+export function ScrcpySetToolbarOffset(serial: string, offset: number): Promise<void> {
   return call('scrcpy_set_toolbar_offset', { offset, serial });
 }
 
-export function ScrcpySetToolbarSide(
-  serial: string,
-  side: backend.ToolbarSide,
-): Promise<void> {
+export function ScrcpySetToolbarSide(serial: string, side: backend.ToolbarSide): Promise<void> {
   return call('scrcpy_set_toolbar_side', { serial, side });
 }
 
-export function ScrcpySendKeyevent(
-  serial: string,
-  keycode: number,
-): Promise<void> {
+export function ScrcpySendKeyevent(serial: string, keycode: number): Promise<void> {
   return call('scrcpy_send_keyevent', { keycode, serial });
 }
 

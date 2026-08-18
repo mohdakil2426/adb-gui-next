@@ -1,12 +1,7 @@
+import { LogicalSize } from '@tauri-apps/api/dpi';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { Maximize2, Minus, Pin, PinOff, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getCurrentWebviewWindow, LogicalSize } from '@tauri-apps/api/webviewWindow';
-import {
-  Maximize2,
-  Minus,
-  Pin,
-  PinOff,
-  X,
-} from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ScrcpyCloseToolbar,
@@ -189,14 +184,14 @@ export function ScrcpyFloatingToolbar() {
   if (isMinimized) {
     return (
       <div
+        className="flex size-9 cursor-move items-center justify-center rounded-lg border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised dark:bg-[#1e1f22]/95"
         data-tauri-drag-region
-        className="flex size-9 cursor-move items-center justify-center rounded-lg border border-border/80 bg-[#f3f4f6]/95 dark:bg-[#1e1f22]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised"
       >
         <button
-          type="button"
+          className="flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
           onClick={() => handleToggleMinimize(false)}
           title="Expand Toolbar"
-          className="flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+          type="button"
         >
           <Maximize2 className="size-3.5" />
         </button>
@@ -207,30 +202,34 @@ export function ScrcpyFloatingToolbar() {
   return (
     <div className="relative flex select-none items-start gap-2 bg-transparent p-0">
       {/* Main Action Strip */}
-      <div className="flex w-10 flex-col items-center gap-0.5 rounded-lg border border-border/80 bg-[#f3f4f6]/95 dark:bg-[#1e1f22]/95 p-1 shadow-2xl backdrop-blur-lg">
+      <div className="flex w-10 flex-col items-center gap-0.5 rounded-lg border border-border/80 bg-[#f3f4f6]/95 p-1 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
         {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
         <div
-          data-tauri-drag-region
           className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-0.5 pb-1 text-muted-foreground"
+          data-tauri-drag-region
         >
           <button
-            type="button"
+            className="flex size-4 items-center justify-center rounded hover:bg-muted hover:text-foreground"
             onClick={() => handleToggleMinimize(true)}
             title="Minimize"
-            className="flex size-4 items-center justify-center rounded hover:bg-muted hover:text-foreground"
+            type="button"
           >
             <Minus className="size-3" />
           </button>
 
           <button
-            type="button"
-            onClick={handleModeToggle}
-            title={mode === 'locked' ? 'Locked to phone (Click to unlock)' : 'Freeform (Click to lock to phone)'}
             className={`flex size-4 items-center justify-center rounded transition-colors ${
               mode === 'locked'
                 ? 'text-primary hover:bg-primary/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
+            onClick={handleModeToggle}
+            title={
+              mode === 'locked'
+                ? 'Locked to phone (Click to unlock)'
+                : 'Freeform (Click to lock to phone)'
+            }
+            type="button"
           >
             {mode === 'locked' ? (
               <Pin className="size-2.5 fill-current" />
@@ -240,10 +239,10 @@ export function ScrcpyFloatingToolbar() {
           </button>
 
           <button
-            type="button"
+            className="flex size-4 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
             onClick={handleClose}
             title="Close Toolbar"
-            className="flex size-4 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
+            type="button"
           >
             <X className="size-3" />
           </button>
@@ -253,21 +252,21 @@ export function ScrcpyFloatingToolbar() {
         <div className="flex flex-col items-center gap-0.5 pt-0.5">
           {MAIN_TOOLBAR_ACTIONS.map((action) => (
             <ToolbarButton
-              key={action.id}
-              icon={action.icon}
-              label={action.label}
-              shortcut={action.shortcut}
               description={action.description}
+              icon={action.icon}
               isActive={activeAction === action.id}
+              key={action.id}
+              label={action.label}
               onClick={() => handleAction(action.id)}
+              shortcut={action.shortcut}
             />
           ))}
 
           {/* More / Extended Controls Menu Trigger */}
           <ToolbarButton
             icon="more"
-            label="Extended Controls"
             isActive={isMoreOpen}
+            label="Extended Controls"
             onClick={handleToggleMore}
           />
         </div>
@@ -277,18 +276,7 @@ export function ScrcpyFloatingToolbar() {
       {isMoreOpen ? (
         <ToolbarMoreMenu
           isOpen={isMoreOpen}
-          onClose={() => {
-            setIsMoreOpen(false);
-            try {
-              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
-            } catch {}
-          }}
           mode={mode}
-          side={side}
-          yOffset={yOffset}
-          onModeChange={handleModeToggle}
-          onSideChange={handleSideChange}
-          onOffsetChange={handleOffsetChange}
           onAction={(actionId) => {
             setIsMoreOpen(false);
             try {
@@ -296,6 +284,17 @@ export function ScrcpyFloatingToolbar() {
             } catch {}
             handleAction(actionId);
           }}
+          onClose={() => {
+            setIsMoreOpen(false);
+            try {
+              getCurrentWebviewWindow().setSize(new LogicalSize(44, 490));
+            } catch {}
+          }}
+          onModeChange={handleModeToggle}
+          onOffsetChange={handleOffsetChange}
+          onSideChange={handleSideChange}
+          side={side}
+          yOffset={yOffset}
         />
       ) : null}
     </div>

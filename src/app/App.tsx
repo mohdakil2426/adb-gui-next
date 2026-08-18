@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
+import { useEffect } from 'react';
 import { MainLayout } from '@/app/shell/MainLayout';
 import { ScrcpyFloatingToolbar } from '@/features/scrcpy/toolbar/ScrcpyFloatingToolbar';
 import { Toaster } from '@/shared/ui/sonner';

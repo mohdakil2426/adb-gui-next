@@ -1,9 +1,20 @@
 export interface ToolbarActionItem {
+  description?: string;
+  icon:
+    | 'power'
+    | 'vol-up'
+    | 'vol-down'
+    | 'camera'
+    | 'zoom'
+    | 'rotate-ccw'
+    | 'rotate-cw'
+    | 'back'
+    | 'home'
+    | 'recents'
+    | 'more';
   id: string;
   label: string;
   shortcut?: string;
-  icon: 'power' | 'vol-up' | 'vol-down' | 'camera' | 'zoom' | 'rotate-ccw' | 'rotate-cw' | 'back' | 'home' | 'recents' | 'more';
-  description?: string;
 }
 
 export const MAIN_TOOLBAR_ACTIONS: ToolbarActionItem[] = [
