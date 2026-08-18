@@ -1,36 +1,33 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { Keyboard, Monitor, Package, Tv, Volume2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import {
-  OpenFolder,
-  ScrcpyActiveSessions,
-  ScrcpyCheckUpdate,
-  ScrcpyInstall,
-  ScrcpyLaunch,
-  ScrcpyStatus,
-  ScrcpyStop,
-  ScrcpyUninstall,
-} from '@/desktop/backend';
+import { ScrcpyActiveSessions, ScrcpyStatus } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
+import { ScrcpyAudioTab } from '@/features/scrcpy/audio/ScrcpyAudioTab';
+import { ScrcpyBinaryTab } from '@/features/scrcpy/binary/ScrcpyBinaryTab';
+import { ScrcpyDisplayTab } from '@/features/scrcpy/display/ScrcpyDisplayTab';
+import { useScrcpyMutations } from '@/features/scrcpy/hooks/useScrcpyMutations';
 import { useScrcpyProgress } from '@/features/scrcpy/hooks/useScrcpyProgress';
+import { ScrcpyInputTab } from '@/features/scrcpy/input/ScrcpyInputTab';
 import { DEFAULT_SCRCPY_OPTIONS } from '@/features/scrcpy/model/defaults';
-import { ScrcpySessionCard } from '@/features/scrcpy/ui/ScrcpySessionCard';
-import { ScrcpyStatusCard } from '@/features/scrcpy/ui/ScrcpyStatusCard';
+import { ScrcpyOverviewTab } from '@/features/scrcpy/overview/ScrcpyOverviewTab';
+import { ScrcpyCockpitHero } from '@/features/scrcpy/ScrcpyCockpitHero';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
-import { useNicknameStore } from '@/shared/stores/nicknameStore';
-import { handleError } from '@/shared/utils/errorHandler';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { queryKeys } from '@/shared/utils/queries';
 
 export function ViewScrcpy() {
-  const queryClient = useQueryClient();
   const devices = useDeviceStore((state) => state.devices);
   const selectedSerial = useDeviceStore((state) => state.selectedSerial);
-  const nicknames = useNicknameStore((state) => state.nicknames);
   const progress = useScrcpyProgress();
+
+  const [activeTab, setActiveTab] = useState<string>('overview');
   const [options, setOptions] = useState<backend.ScrcpyLaunchOptions>(DEFAULT_SCRCPY_OPTIONS);
   const [selectedSerials, setSelectedSerials] = useState<Set<string>>(() =>
     selectedSerial ? new Set([selectedSerial]) : new Set(),
   );
+
+  const adbDevices = devices.filter((d) => d.status === 'device');
 
   useEffect(() => {
     const adbSerials = new Set(devices.filter((d) => d.status === 'device').map((d) => d.serial));
@@ -46,6 +43,7 @@ export function ViewScrcpy() {
       return first ? new Set([first]) : new Set();
     });
   }, [devices, selectedSerial]);
+
   const handleToggleSerial = (serial: string) => {
     setSelectedSerials((prev) => {
       const next = new Set(prev);
@@ -56,15 +54,6 @@ export function ViewScrcpy() {
       }
       return next;
     });
-  };
-
-  const handleSelectAll = () => {
-    const adbSerials = devices.filter((d) => d.status === 'device').map((d) => d.serial);
-    setSelectedSerials(new Set(adbSerials));
-  };
-
-  const handleClearAll = () => {
-    setSelectedSerials(new Set());
   };
 
   const statusQuery = useQuery({
@@ -81,151 +70,120 @@ export function ViewScrcpy() {
 
   const activeSerials = new Set(activeSessionsQuery.data?.serials ?? []);
 
-  const install = useMutation({
-    mutationFn: ScrcpyInstall,
-    onError: (error) => handleError('Scrcpy download', error),
-    onSuccess: (st) => {
-      queryClient.setQueryData(queryKeys.scrcpy.status, st);
-      toast.success(`scrcpy ${st.installedVersion ?? ''} is ready`);
-    },
-  });
+  const { checkUpdate, handleOpenInstalledFolder, install, launch, stop, stopDevice, uninstall } =
+    useScrcpyMutations(options);
 
-  const checkUpdate = useMutation({
-    mutationFn: ScrcpyCheckUpdate,
-    onError: (error) => handleError('Scrcpy update check', error),
-    onSuccess: (st) => {
-      queryClient.setQueryData(queryKeys.scrcpy.status, st);
-      if (st.latestVersion && st.latestVersion !== st.installedVersion) {
-        toast.message(`Update available: ${st.latestVersion}`);
-      } else {
-        toast.success('scrcpy is up to date');
-      }
-    },
-  });
-
-  const updateActiveSerials = (updater: (prev: string[]) => string[]) => {
-    queryClient.setQueryData(
-      queryKeys.scrcpy.activeSessions,
-      (prev: backend.ScrcpyActiveSessions | undefined) => {
-        const next = updater(prev?.serials ?? []);
-        return { serials: next, sessions: next.map((s) => ({ pid: 0, serial: s })) };
-      },
-    );
-  };
-
-  const launch = useMutation({
-    mutationFn: async (serials: string[]) => {
-      if (serials.length === 0) {
-        throw new Error('No device selected');
-      }
-      const results = await Promise.allSettled(serials.map((s) => ScrcpyLaunch(options, s)));
-      const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
-      if (failures.length === serials.length && serials.length > 0) {
-        const firstReason = failures[0]?.reason;
-        throw firstReason instanceof Error ? firstReason : new Error(String(firstReason));
-      }
-      if (failures.length > 0) {
-        toast.error(`Failed to launch scrcpy for ${failures.length} device(s)`);
-      }
-    },
-    onError: (error) => handleError('Scrcpy launch', error),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
-    },
-    onSuccess: (_, serials) => {
-      updateActiveSerials((existing) => Array.from(new Set([...existing, ...serials])));
-      toast.success(
-        serials.length > 1
-          ? `Opened ${serials.length} scrcpy mirror windows`
-          : 'Opened a native scrcpy window',
-      );
-    },
-  });
-
-  const stop = useMutation({
-    mutationFn: () => ScrcpyStop(),
-    onError: (error) => handleError('Stop scrcpy', error),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
-    },
-    onSuccess: () => {
-      updateActiveSerials(() => []);
-      toast.success('Closed running scrcpy window(s)');
-    },
-  });
-
-  const stopDevice = useMutation({
-    mutationFn: (serial: string) => ScrcpyStop(serial),
-    onError: (error) => handleError('Stop scrcpy', error),
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.scrcpy.activeSessions });
-    },
-    onSuccess: (_, serial) => {
-      updateActiveSerials((existing) => existing.filter((s) => s !== serial && s !== '*'));
-      const name = nicknames[serial] ?? serial;
-      toast.success(`Closed scrcpy window for ${name}`);
-    },
-  });
-
-  const uninstall = useMutation({
-    mutationFn: ScrcpyUninstall,
-    onError: (error) => handleError('Scrcpy uninstall', error),
-    onSuccess: (st) => {
-      queryClient.setQueryData(queryKeys.scrcpy.status, st);
-      toast.success('Uninstalled scrcpy');
-    },
-  });
-
-  const handleOpenInstalledFolder = () => {
-    const binary = statusQuery.data?.binaryPath;
-    if (!binary) {
-      return;
-    }
-    const folder = binary.replace(/[/\\][^/\\]+$/, '');
-    void OpenFolder(folder).catch((error: unknown) => {
-      handleError('Open installed folder', error);
-    });
+  const handleOptionsChange = (partial: Partial<backend.ScrcpyLaunchOptions>) => {
+    setOptions((current) => ({ ...current, ...partial }));
   };
 
   return (
     <div className="@container flex flex-col gap-4">
-      <h1 className="sr-only">Scrcpy</h1>
+      <h1 className="sr-only">Scrcpy Mirroring Cockpit</h1>
 
-      <ScrcpyStatusCard
-        isCheckingUpdate={checkUpdate.isPending}
-        isError={statusQuery.isError}
-        isInstalling={install.isPending}
-        isUninstalling={uninstall.isPending}
-        onCheckUpdate={() => checkUpdate.mutate()}
-        onInstall={() => install.mutate()}
-        onOpenFolder={handleOpenInstalledFolder}
-        onUninstall={() => uninstall.mutate()}
-        progress={progress}
-        status={statusQuery.data}
-      />
-      <ScrcpySessionCard
+      {/* Top Precision Cockpit Hero Banner */}
+      <ScrcpyCockpitHero
         activeSerials={activeSerials}
         canLaunch={Boolean(statusQuery.data?.binaryPath) || statusQuery.data?.source === 'path'}
+        isCheckingUpdate={checkUpdate.isPending}
+        isInstalling={install.isPending}
         isLaunching={launch.isPending}
         isStopping={stop.isPending || stopDevice.isPending}
-        onClearAll={handleClearAll}
+        onCheckUpdate={() => checkUpdate.mutate()}
+        onInstall={() => install.mutate()}
         onLaunch={() => launch.mutate(Array.from(selectedSerials))}
-        onOptionsChange={(partial) => {
-          setOptions((current) => ({ ...current, ...partial }));
-        }}
-        onSelectAll={handleSelectAll}
-        onStop={() => {
+        onStopAll={() => {
           if (selectedSerials.size > 0 && selectedSerials.size < activeSerials.size) {
             void Promise.all(Array.from(selectedSerials).map((s) => stopDevice.mutateAsync(s)));
           } else {
             stop.mutate();
           }
         }}
-        onStopDevice={(serial) => stopDevice.mutate(serial)}
-        onToggleSerial={handleToggleSerial}
-        options={options}
+        progress={progress}
         selectedSerials={selectedSerials}
+        status={statusQuery.data}
+        totalDevicesCount={adbDevices.length}
       />
+
+      {/* 5-Tab Precision Cockpit Navigation */}
+      <Tabs className="w-full gap-4" onValueChange={setActiveTab} value={activeTab}>
+        <TabsList className="grid h-auto w-full @xl:grid-cols-5 grid-cols-2 gap-1 p-1">
+          <TabsTrigger className="gap-1.5" value="overview">
+            <Monitor aria-hidden="true" className="size-4" />
+            <span>Overview & Mirror</span>
+          </TabsTrigger>
+
+          <TabsTrigger className="gap-1.5" value="display">
+            <Tv aria-hidden="true" className="size-4" />
+            <span>Display & Video</span>
+          </TabsTrigger>
+
+          <TabsTrigger className="gap-1.5" value="audio">
+            <Volume2 aria-hidden="true" className="size-4" />
+            <span>Audio & Record</span>
+          </TabsTrigger>
+
+          <TabsTrigger className="gap-1.5" value="input">
+            <Keyboard aria-hidden="true" className="size-4" />
+            <span>Input & Controls</span>
+          </TabsTrigger>
+
+          <TabsTrigger className="gap-1.5" value="binary">
+            <Package aria-hidden="true" className="size-4" />
+            <span>Binary & CLI</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Tab 1: Overview */}
+        <TabsContent value="overview">
+          <ScrcpyOverviewTab
+            activeSerials={activeSerials}
+            activeSessions={activeSessionsQuery.data?.sessions}
+            disabled={launch.isPending || stop.isPending}
+            isStopping={stop.isPending || stopDevice.isPending}
+            onClearAll={() => setSelectedSerials(new Set())}
+            onOptionsChange={handleOptionsChange}
+            onSelectAll={() => setSelectedSerials(new Set(adbDevices.map((d) => d.serial)))}
+            onStopDevice={(serial) => stopDevice.mutate(serial)}
+            onToggleSerial={handleToggleSerial}
+            options={options}
+            selectedSerials={selectedSerials}
+          />
+        </TabsContent>
+
+        {/* Tab 2: Display & Video Engine */}
+        <TabsContent value="display">
+          <ScrcpyDisplayTab onOptionsChange={handleOptionsChange} options={options} />
+        </TabsContent>
+
+        {/* Tab 3: Audio & Recording Studio */}
+        <TabsContent value="audio">
+          <ScrcpyAudioTab onOptionsChange={handleOptionsChange} options={options} />
+        </TabsContent>
+
+        {/* Tab 4: Input, Controls & Automation */}
+        <TabsContent value="input">
+          <ScrcpyInputTab onOptionsChange={handleOptionsChange} options={options} />
+        </TabsContent>
+
+        {/* Tab 5: Binary Management & Diagnostics */}
+        <TabsContent value="binary">
+          <ScrcpyBinaryTab
+            isCheckingUpdate={checkUpdate.isPending}
+            isError={statusQuery.isError}
+            isInstalling={install.isPending}
+            isUninstalling={uninstall.isPending}
+            onCheckUpdate={() => checkUpdate.mutate()}
+            onInstall={() => install.mutate()}
+            onOpenFolder={() => handleOpenInstalledFolder(statusQuery.data?.binaryPath)}
+            onUninstall={() => uninstall.mutate()}
+            options={options}
+            progress={progress}
+            selectedSerials={selectedSerials}
+            status={statusQuery.data}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
