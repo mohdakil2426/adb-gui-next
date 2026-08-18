@@ -1,4 +1,5 @@
 mod adb;
+mod apk_inspector;
 mod apps;
 mod debloat;
 mod device;
@@ -13,6 +14,7 @@ mod system;
 mod utilities;
 
 pub use adb::*;
+pub use apk_inspector::*;
 pub use apps::*;
 pub use debloat::*;
 pub use device::*;

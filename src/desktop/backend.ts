@@ -114,8 +114,39 @@ export function GetInstalledPackages(serial?: string | null): Promise<backend.In
   return call('get_installed_packages', { serial });
 }
 
-export function InstallPackage(path: string, serial?: string | null): Promise<string> {
-  return call('install_package', { path, serial });
+export function InstallPackage(
+  path: string,
+  serial?: string | null,
+  flags?: string[],
+): Promise<string> {
+  return call('install_package', { path, serial, flags });
+}
+
+export function InspectPackageFile(path: string): Promise<backend.ApkInspectionResult> {
+  return call('inspect_package_file', { path });
+}
+
+export function PackageLifecycleOp(
+  packageName: string,
+  op: string,
+  serial?: string | null,
+): Promise<string> {
+  return call('package_lifecycle_op', { packageName, op, serial });
+}
+
+export function PullPackageApk(
+  packageName: string,
+  destinationPath: string,
+  serial?: string | null,
+): Promise<string> {
+  return call('pull_package_apk', { packageName, destinationPath, serial });
+}
+
+export function GetPackageDetails(
+  packageName: string,
+  serial?: string | null,
+): Promise<backend.DetailedPackageInfo> {
+  return call('get_package_details', { packageName, serial });
 }
 
 export function LaunchAvd(
@@ -332,8 +363,8 @@ export function SelectMultipleApkFiles(): Promise<string[]> {
     multiple: true,
     filters: [
       {
-        name: 'APK files',
-        extensions: ['apk', 'apks'],
+        name: 'Android Package files',
+        extensions: ['apk', 'apks', 'xapk', 'apkm'],
       },
     ],
   });

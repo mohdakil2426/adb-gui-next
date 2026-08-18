@@ -154,23 +154,44 @@ pub async fn install_package(
     app: AppHandle,
     path: String,
     serial: Option<String>,
+    flags: Option<Vec<String>>,
 ) -> CmdResult<String> {
     let path = path.trim().to_string();
     if path.is_empty() {
         return Err("Package path is required.".into());
     }
 
-    if Path::new(&path).extension().is_some_and(|e| e.eq_ignore_ascii_case("apks")) {
+    let is_archive = Path::new(&path).extension().is_some_and(|e| {
+        e.eq_ignore_ascii_case("apks")
+            || e.eq_ignore_ascii_case("xapk")
+            || e.eq_ignore_ascii_case("apkm")
+    });
+
+    if is_archive {
         // install_apks is blocking (zip extraction + adb) — offload entirely
-        return tokio::task::spawn_blocking(move || install_apks(&app, &path, serial.as_deref()))
-            .await
-            .map_err(|e| e.to_string())?;
+        return tokio::task::spawn_blocking(move || {
+            install_apks(&app, &path, serial.as_deref(), flags)
+        })
+        .await
+        .map_err(|e| e.to_string())?;
     }
 
     info!("Installing package from {}", path);
     // adb install blocks for 10–60s per APK — run off the Tokio/main thread
     tokio::task::spawn_blocking(move || {
-        run_adb_for_serial(&app, serial.as_deref(), &["install", "-r", &path])
+        let mut args = vec!["install".to_string()];
+        if let Some(user_flags) = flags {
+            if !user_flags.is_empty() {
+                args.extend(user_flags);
+            } else {
+                args.push("-r".to_string());
+            }
+        } else {
+            args.push("-r".to_string());
+        }
+        args.push(path);
+        let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        run_adb_for_serial(&app, serial.as_deref(), &arg_refs)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -206,7 +227,12 @@ pub async fn sideload_package(
     .map_err(|e| e.to_string())?
 }
 
-fn install_apks(app: &AppHandle, apks_path: &str, serial: Option<&str>) -> CmdResult<String> {
+fn install_apks(
+    app: &AppHandle,
+    apks_path: &str,
+    serial: Option<&str>,
+    flags: Option<Vec<String>>,
+) -> CmdResult<String> {
     let file = fs::File::open(apks_path).map_err(|e| e.to_string())?;
     let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
 
@@ -233,10 +259,19 @@ fn install_apks(app: &AppHandle, apks_path: &str, serial: Option<&str>) -> CmdRe
     }
 
     if extracted.is_empty() {
-        return Err("No APK files found in the APKS archive.".into());
+        return Err("No APK files found in the archive.".into());
     }
 
-    let mut args = vec!["install-multiple".to_string(), "-r".to_string()];
+    let mut args = vec!["install-multiple".to_string()];
+    if let Some(user_flags) = flags {
+        if !user_flags.is_empty() {
+            args.extend(user_flags);
+        } else {
+            args.push("-r".to_string());
+        }
+    } else {
+        args.push("-r".to_string());
+    }
     args.extend(extracted.iter().map(|p| p.to_string_lossy().to_string()));
     let arg_refs: Vec<&str> = args.iter().map(String::as_str).collect();
 
@@ -244,4 +279,192 @@ fn install_apks(app: &AppHandle, apks_path: &str, serial: Option<&str>) -> CmdRe
     // TempDir auto-cleans on drop (when temp_dir goes out of scope)
     drop(temp_dir);
     result
+}
+
+#[derive(Debug, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct DetailedPackageInfo {
+    pub name: String,
+    pub label: String,
+    pub version_name: String,
+    pub version_code: String,
+    pub min_sdk: u32,
+    pub target_sdk: u32,
+    pub installer: Option<String>,
+    pub apk_path: String,
+    pub split_paths: Vec<String>,
+    pub data_dir: String,
+    pub is_system: bool,
+    pub is_enabled: bool,
+    pub granted_permissions: Vec<String>,
+    pub denied_permissions: Vec<String>,
+    pub signatures: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn package_lifecycle_op(
+    app: AppHandle,
+    package_name: String,
+    op: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
+    let package_name = package_name.trim().to_string();
+    if package_name.is_empty() {
+        return Err("Package name is required".into());
+    }
+    info!("Running package lifecycle op '{}' on {}", op, package_name);
+    tokio::task::spawn_blocking(move || {
+        let serial = serial.as_deref();
+        match op.as_str() {
+            "launch" => {
+                // Launch launcher activity via monkey intent or am start
+                run_adb_for_serial(
+                    &app,
+                    serial,
+                    &[
+                        "shell",
+                        "monkey",
+                        "-p",
+                        &package_name,
+                        "-c",
+                        "android.intent.category.LAUNCHER",
+                        "1",
+                    ],
+                )
+            }
+            "force_stop" => {
+                run_adb_for_serial(&app, serial, &["shell", "am", "force-stop", &package_name])
+            }
+            "clear_data" => {
+                run_adb_for_serial(&app, serial, &["shell", "pm", "clear", &package_name])
+            }
+            "clear_cache" => {
+                run_adb_for_serial(&app, serial, &["shell", "pm", "trim-caches", "999999999999"])
+            }
+            "disable" => run_adb_for_serial(
+                &app,
+                serial,
+                &["shell", "pm", "disable-user", "--user", "0", &package_name],
+            ),
+            "enable" => run_adb_for_serial(&app, serial, &["shell", "pm", "enable", &package_name]),
+            _ => Err(format!("Unknown lifecycle operation: {op}")),
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn pull_package_apk(
+    app: AppHandle,
+    package_name: String,
+    destination_path: String,
+    serial: Option<String>,
+) -> CmdResult<String> {
+    let package_name = package_name.trim().to_string();
+    let dest = destination_path.trim().to_string();
+    if package_name.is_empty() || dest.is_empty() {
+        return Err("Package name and destination path are required".into());
+    }
+    info!("Pulling APK for {} to {}", package_name, dest);
+    tokio::task::spawn_blocking(move || {
+        let serial = serial.as_deref();
+        let output = run_adb_for_serial(&app, serial, &["shell", "pm", "path", &package_name])?;
+        let mut apk_remote_path = String::new();
+        for line in output.lines() {
+            if let Some(p) = line.trim().strip_prefix("package:") {
+                apk_remote_path = p.trim().to_string();
+                break;
+            }
+        }
+        if apk_remote_path.is_empty() {
+            return Err(format!("Could not locate APK path for {package_name}"));
+        }
+        run_adb_for_serial(&app, serial, &["pull", &apk_remote_path, &dest])
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn get_package_details(
+    app: AppHandle,
+    package_name: String,
+    serial: Option<String>,
+) -> CmdResult<DetailedPackageInfo> {
+    let package_name = package_name.trim().to_string();
+    if package_name.is_empty() {
+        return Err("Package name is required".into());
+    }
+    info!("Fetching detailed package info for {}", package_name);
+    tokio::task::spawn_blocking(move || {
+        let serial = serial.as_deref();
+        let dumpsys_out =
+            run_adb_for_serial(&app, serial, &["shell", "dumpsys", "package", &package_name])
+                .unwrap_or_default();
+
+        let mut info = DetailedPackageInfo {
+            name: package_name.clone(),
+            label: package_name.clone(),
+            version_name: "1.0".to_string(),
+            version_code: "1".to_string(),
+            min_sdk: 26,
+            target_sdk: 34,
+            installer: None,
+            apk_path: String::new(),
+            split_paths: Vec::new(),
+            data_dir: format!("/data/data/{package_name}"),
+            is_system: false,
+            is_enabled: true,
+            granted_permissions: Vec::new(),
+            denied_permissions: Vec::new(),
+            signatures: Vec::new(),
+        };
+
+        for line in dumpsys_out.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("versionName=") {
+                info.version_name = trimmed.trim_start_matches("versionName=").to_string();
+            } else if trimmed.starts_with("versionCode=") {
+                let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                if let Some(first) = parts.first() {
+                    info.version_code = first.trim_start_matches("versionCode=").to_string();
+                }
+            } else if trimmed.starts_with("targetSdk=") {
+                if let Ok(val) = trimmed.trim_start_matches("targetSdk=").parse::<u32>() {
+                    info.target_sdk = val;
+                }
+            } else if trimmed.starts_with("minSdk=") {
+                if let Ok(val) = trimmed.trim_start_matches("minSdk=").parse::<u32>() {
+                    info.min_sdk = val;
+                }
+            } else if trimmed.starts_with("codePath=") {
+                info.apk_path = trimmed.trim_start_matches("codePath=").to_string();
+            } else if trimmed.starts_with("installerPackageName=") {
+                let installer = trimmed.trim_start_matches("installerPackageName=").to_string();
+                if !installer.is_empty() && installer != "null" {
+                    info.installer = Some(installer);
+                }
+            } else if trimmed.contains("granted=true") {
+                let perm = trimmed.split(':').next().unwrap_or(trimmed);
+                info.granted_permissions.push(perm.trim().to_string());
+            }
+        }
+
+        if info.apk_path.is_empty()
+            && let Ok(path_out) =
+                run_adb_for_serial(&app, serial, &["shell", "pm", "path", &package_name])
+        {
+            for line in path_out.lines() {
+                if let Some(p) = line.trim().strip_prefix("package:") {
+                    info.apk_path = p.trim().to_string();
+                    break;
+                }
+            }
+        }
+
+        Ok(info)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

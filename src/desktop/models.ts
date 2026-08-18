@@ -326,6 +326,51 @@ export namespace backend {
     packageType: string;
   }
 
+  export interface DetailedPackageInfo {
+    apkPath: string;
+    dataDir: string;
+    deniedPermissions: string[];
+    grantedPermissions: string[];
+    installer: string | null;
+    isEnabled: boolean;
+    isSystem: boolean;
+    label: string;
+    minSdk: number;
+    name: string;
+    signatures: string[];
+    splitPaths: string[];
+    targetSdk: number;
+    versionCode: string;
+    versionName: string;
+  }
+
+  export interface ApkInspectionResult {
+    abis: string[];
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    format: string; // "apk" | "apks" | "xapk" | "apkm"
+    iconBase64: string | null;
+    isTestOnly: boolean;
+    label: string;
+    minSdk: number;
+    packageName: string;
+    permissionsCount: number;
+    splitNames: string[];
+    targetSdk: number;
+    versionCode: string;
+    versionName: string;
+  }
+
+  export interface InstallFlagsConfig {
+    allowDowngrade: boolean; // -d
+    allowTestPackages: boolean; // -t
+    bypassLowTargetSdk: boolean; // --bypass-low-target-sdk-block
+    grantPermissions: boolean; // -g
+    reinstall: boolean; // -r
+    userId: string; // --user <id> e.g. "0"
+  }
+
   export interface PartitionDetail {
     /** Estimated network bytes for remote extract (op data_length sum / compressed size). */
     downloadSize?: number;

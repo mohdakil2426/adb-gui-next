@@ -44,7 +44,8 @@ commands.allow = [
   "get_app_icons",
   "get_logcat_snapshot",
   "get_host_tool_versions",
-  "host_setup_status"
+  "host_setup_status",
+  "get_package_details"
 ]
 
 [[permission]]
@@ -63,7 +64,10 @@ commands.allow = [
   "extract_delta_payload",
   "finalize_avd_root",
   "flash_partition",
+  "package_lifecycle_op",
+  "pull_package_apk",
   "install_package",
+  "inspect_package_file",
   "launch_device_manager",
   "launch_avd",
   "launch_terminal",
@@ -145,6 +149,10 @@ commands.allow = [
   "get_installed_packages",
   "get_avd_restore_plan",
   "install_package",
+  "inspect_package_file",
+  "package_lifecycle_op",
+  "pull_package_apk",
+  "get_package_details",
   "launch_device_manager",
   "launch_avd",
   "launch_terminal",
