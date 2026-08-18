@@ -46,21 +46,22 @@ export function MemoryPanel({ isLoading, memory, samples }: MemoryPanelProps) {
           <Skeleton className="h-16 w-full" />
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           {hasMemory && memory ? (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <span className="numeric text-body text-muted-foreground">
-                  {formatBytes(memory.usedBytes)} of {formatBytes(memory.totalBytes)} used
+                <span className="numeric font-medium text-body text-muted-foreground">
+                  {formatBytes(memory.usedBytes)} of {formatBytes(memory.totalBytes)}
                 </span>
-                <span className={cn('numeric font-medium text-label', TONE_TEXT[tone])}>
+                <span className={cn('numeric font-semibold text-label', TONE_TEXT[tone])}>
                   {formatPercent(ratio)}
                 </span>
               </div>
               <UsageBar label="Memory used" ratio={ratio} tone={tone} />
-              <span className="numeric text-caption text-muted-foreground">
-                {formatBytes(memory.availableBytes)} available
-              </span>
+              <div className="flex items-center justify-between pt-0.5 text-caption text-muted-foreground">
+                <span>{formatBytes(memory.availableBytes)} available</span>
+                <span>{formatBytes(memory.totalBytes - memory.usedBytes)} free</span>
+              </div>
             </div>
           ) : (
             <p className="text-body text-muted-foreground">
@@ -68,9 +69,9 @@ export function MemoryPanel({ isLoading, memory, samples }: MemoryPanelProps) {
             </p>
           )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-caption text-muted-foreground uppercase tracking-wide">
-              This session
+          <div className="flex flex-col gap-1.5 border-border/50 border-t pt-1">
+            <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+              Memory History
             </span>
             {samples.length >= MIN_SPARKLINE_SAMPLES ? (
               <Suspense fallback={<Skeleton className="h-16 w-full" />}>
@@ -78,7 +79,7 @@ export function MemoryPanel({ isLoading, memory, samples }: MemoryPanelProps) {
               </Suspense>
             ) : (
               <p className="flex h-16 items-center text-caption text-muted-foreground">
-                Collecting samples — the trend appears after a few more refreshes.
+                Collecting telemetry samples across refreshes…
               </p>
             )}
           </div>

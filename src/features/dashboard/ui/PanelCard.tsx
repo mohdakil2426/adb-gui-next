@@ -17,10 +17,6 @@ interface PanelCardProps {
  * One dashboard panel: hairline border and a surface step, never a shadow —
  * shadow is invisible on a near-black canvas. The title is caption-sized
  * metadata, so the numbers inside stay the loudest thing on the card.
- *
- * `@container`: every panel queries its *own* column width, not the viewport —
- * the dashboard grid's column count changes with the sidebar collapse state,
- * so a fixed `sm:`/`md:` breakpoint would be wrong at the exact same window size.
  */
 export function PanelCard({
   action,
@@ -33,21 +29,25 @@ export function PanelCard({
   return (
     <Card
       className={cn(
-        '@container gap-3 rounded-lg border-border bg-surface py-4 shadow-none',
+        '@container flex h-full flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-all duration-150',
         className,
       )}
     >
-      <CardHeader className="gap-0 px-4">
+      <CardHeader className="gap-0 px-4.5 pb-0.5">
         <CardTitle
           as="h2"
-          className="flex items-center gap-1.5 text-caption text-muted-foreground uppercase tracking-wide"
+          className="flex items-center gap-1.5 font-medium text-caption text-muted-foreground uppercase tracking-wider"
         >
           {Icon ? <Icon aria-hidden="true" className="size-3.5" /> : null}
           {title}
         </CardTitle>
         {action ? <CardAction>{action}</CardAction> : null}
       </CardHeader>
-      <CardContent className={cn('px-4', contentClassName)}>{children}</CardContent>
+      <CardContent
+        className={cn('flex flex-1 flex-col justify-between gap-3 px-4.5 pt-1', contentClassName)}
+      >
+        {children}
+      </CardContent>
     </Card>
   );
 }

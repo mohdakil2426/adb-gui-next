@@ -12,7 +12,7 @@ import {
 } from '@/features/dashboard/model/deviceMode';
 import { useMemorySamples } from '@/features/dashboard/model/memoryHistoryStore';
 import { BatteryPanel } from '@/features/dashboard/ui/BatteryPanel';
-import { IdentityPanel } from '@/features/dashboard/ui/IdentityPanel';
+import { DeviceHeroBanner } from '@/features/dashboard/ui/DeviceHeroBanner';
 import { MemoryPanel } from '@/features/dashboard/ui/MemoryPanel';
 import { NoDeviceOnboarding } from '@/features/dashboard/ui/NoDeviceOnboarding';
 import { PanelCard } from '@/features/dashboard/ui/PanelCard';
@@ -21,6 +21,7 @@ import { RebootConfirmDialog } from '@/features/dashboard/ui/RebootConfirmDialog
 import { SecurityPanel } from '@/features/dashboard/ui/SecurityPanel';
 import { StoragePanel } from '@/features/dashboard/ui/StoragePanel';
 import { WirelessAdbPanel } from '@/features/dashboard/ui/WirelessAdbPanel';
+import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
 import { RefreshButton } from '@/shared/components/RefreshButton';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
@@ -60,7 +61,7 @@ const updatedAtFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'medi
  * blocked hides Security), where the row is already balanced.
  */
 const TRIO_GRID_CLASS = [
-  'grid grid-cols-1 items-start gap-4',
+  'grid grid-cols-1 items-stretch gap-4',
   '@lg:grid-cols-2 @4xl:grid-cols-3',
   '@lg:[&>*:nth-child(odd):last-child]:col-span-2',
   '@4xl:[&>*:nth-child(odd):last-child]:col-span-1',
@@ -92,6 +93,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const setPanelOpen = useLogStore((state) => state.setPanelOpen);
   const queryClient = useQueryClient();
   const [showWirelessPairing, setShowWirelessPairing] = useState(false);
+  const [showNicknameDialog, setShowNicknameDialog] = useState(false);
 
   const selectedDevice = devices.find((device) => device.serial === selectedSerial) ?? null;
   const mode = getDeviceMode(selectedDevice);
@@ -143,6 +145,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
       onOpenShell={openShell}
       onReboot={reboot.request}
       runningTarget={reboot.runningTarget}
+      serial={selectedDevice.serial}
     />
   );
   const wirelessPanel = (
@@ -181,10 +184,13 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
         </Button>
       </div>
 
-      {/* Identity is metadata about the device, not a metric — a full-width
-          band sized to its own content, never forced to match a neighbour. */}
-      <IdentityPanel device={selectedDevice} isLoading={isLoading} telemetry={telemetry} />
-
+      {/* Hero Banner: Identity, status pulses, specs, serial, and uptime */}
+      <DeviceHeroBanner
+        device={selectedDevice}
+        isLoading={isLoading}
+        onEditNickname={() => setShowNicknameDialog(true)}
+        telemetry={telemetry}
+      />
       {/* Vitals: battery / memory / storage are the same kind of thing —
           "resource X of Y with a percentage" — so sharing a row is honest. */}
       {canReadTelemetry ? (
@@ -220,12 +226,18 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
         {quickActions}
         {wirelessPanel}
       </div>
-
       <RebootConfirmDialog
         deviceLabel={deviceLabel}
         onCancel={reboot.dismiss}
         onConfirm={reboot.confirm}
         target={reboot.pendingConfirmation}
+      />
+
+      <EditNicknameDialog
+        isOpen={showNicknameDialog}
+        onOpenChange={setShowNicknameDialog}
+        onSaved={() => setShowNicknameDialog(false)}
+        serial={selectedDevice.serial}
       />
     </div>
   );

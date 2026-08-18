@@ -46,7 +46,8 @@ Packaging/CI: tauri-action multi-arch, official version path, portable-only cust
 - Shell: Header (`VIEW_META` title + breadcrumb) → `ViewContent` (fluid width) → `StatusBar` → bottom-panel dock spacer
 - ⌘K command palette + `shared/commands/` registry + `SHORTCUT_HELP`
 - `operationStore` + `StatusBar` (App Manager wired)
-- Dashboard on `get_device_telemetry`: identity / battery gauge / memory sparkline / storage / security / wireless
+- Dashboard: precision hardware cockpit with `DeviceHeroBanner` (specs chips, status pulse, live uptime), dual-arc radial `BatteryGauge` + 4-chip electrical/thermal grid, `MemoryPanel` + area waveform sparkline, `StoragePanel` partition cards, `SecurityPanel` zero-truncation diagnostic list, symmetric 3×2 `QuickActionsPanel` (Screen Mirror, Open Shell, reboot targets), and `WirelessAdbPanel`
+- About: modernized `AboutHero` banner with badge metadata, equal-height stretched `Build` and `Licence` cards, and interactive `Built with` open-source tech grid with direct URL exploration
 - Rust `src/adb/` — `AdbClient`, `shell_batch`, telemetry parsers; `release` profile `opt-level = 3`
 - Confirmation gates on flash + sideload; charts hand-rolled SVG/CSS (no charting library)
 

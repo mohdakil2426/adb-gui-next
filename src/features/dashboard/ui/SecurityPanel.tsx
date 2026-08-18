@@ -3,7 +3,6 @@ import type { ComponentType } from 'react';
 import type { backend } from '@/desktop/models';
 import { TONE_TEXT, type Tone } from '@/features/dashboard/model/tone';
 import { PanelCard } from '@/features/dashboard/ui/PanelCard';
-import { StatRow } from '@/features/dashboard/ui/StatRow';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { cn } from '@/shared/utils/cn';
 import { daysSince, EMPTY_VALUE, formatRelativeDate } from '@/shared/utils/format';
@@ -119,10 +118,11 @@ export function SecurityPanel({ isLoading, security }: SecurityPanelProps) {
   if (isLoading && !security) {
     return (
       <PanelCard icon={ShieldCheck} title="Security & boot">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-5 w-full" />
+        <div className="grid grid-cols-2 gap-2">
+          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-14 w-full rounded-lg" />
+          <Skeleton className="h-14 w-full rounded-lg" />
         </div>
       </PanelCard>
     );
@@ -136,20 +136,28 @@ export function SecurityPanel({ isLoading, security }: SecurityPanelProps) {
     );
   }
 
+  const rows = buildRows(security);
+
   return (
     <PanelCard icon={ShieldCheck} title="Security & boot">
-      <div className="flex flex-col divide-y divide-border">
-        {buildRows(security).map((row) => {
+      <div className="flex flex-1 flex-col justify-between gap-1.5">
+        {rows.map((row) => {
           const Icon = TONE_ICON[row.tone];
           return (
-            <StatRow
-              hint={row.hint}
-              icon={<Icon aria-hidden="true" className={cn('size-3.5', TONE_TEXT[row.tone])} />}
+            <div
+              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
               key={row.label}
-              label={row.label}
-              value={row.value}
-              valueClassName={TONE_TEXT[row.tone]}
-            />
+            >
+              <span className="truncate font-medium text-[12px] text-body text-foreground">
+                {row.label}
+              </span>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Icon aria-hidden="true" className={cn('size-3.5 shrink-0', TONE_TEXT[row.tone])} />
+                <span className={cn('numeric font-medium text-[12px]', TONE_TEXT[row.tone])}>
+                  {row.value}
+                </span>
+              </div>
+            </div>
           );
         })}
       </div>

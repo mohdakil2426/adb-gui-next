@@ -695,14 +695,14 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | App Manager | `features/app-manager` | `installationStore` | package list/install/uninstall | `apps` |
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, actions, backups | `debloat` domain |
 | File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop` | `files` + helpers |
-| Flasher | `features/flasher` | local | flash/sideload/wipe + DnD | `fastboot`, `apps` |
+| Flasher | `features/flasher` | local | flash/boot/sideload/wipe | `flasher` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
+| Scrcpy | `features/scrcpy` | local + presets | `ScrcpyLaunch`, `ScrcpyStop`, `ScrcpyInstall`, `ScrcpyUninstall`, `ScrcpyStatus`, `ScrcpyCheckUpdate`, `ScrcpyPresets`, `ScrcpyActiveSessions`, `ScrcpyOpenToolbar`, `ScrcpyCloseToolbar`, `ScrcpySetToolbarMode`, `ScrcpySetToolbarSize`, `ScrcpySendKeyevent`, `ScrcpySendStatusbar`, `ScrcpyRotateDevice` | `scrcpy` domain + `scrcpy/toolbar` |
 | Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
 | Marketplace | `features/marketplace` | `marketplaceStore` | search/download/install/auth | `marketplace` domain |
 | Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
 | Logs / Shell | `app/shell/BottomPanel` (`LogsPanel`/`LogRow`, `ShellPanel`/`ShellInput`/`ShellTranscript`) | `logStore`, `shellStore` | shell/host cmds, `SaveLog` | `adb`, `fastboot`, `system` |
 | Palette / status | `app/shell/CommandPalette`, `StatusBar` | `shared/commands/*`, `operationStore` | none (delegates to existing wrappers) | — |
-
 ---
 
 ## 10. Cross-cutting data flows

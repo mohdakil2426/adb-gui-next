@@ -10,47 +10,47 @@ interface BatteryGaugeProps {
   tone: Tone;
 }
 
-const SIZE = 132;
-const STROKE = 9;
+const SIZE = 120;
+const STROKE = 7.5;
 const CENTER = SIZE / 2;
 const RADIUS = (SIZE - STROKE) / 2;
+const INNER_RADIUS = RADIUS - 8;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const INNER_CIRCUMFERENCE = 2 * Math.PI * INNER_RADIUS;
 const PERCENT_SCALE = 100;
 
-/**
- * Hand-drawn radial gauge.
- *
- * A charge level is the one number on this screen that must be readable from
- * across a desk, so it gets a dedicated arc rather than a chart library's
- * generic radial bar: an arc, a colour, and one large tabular figure.
- */
+/** Hand-drawn dual-arc radial gauge with charging aura. */
 export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) {
   const ratio = levelPct === null ? 0 : usageRatio(levelPct, PERCENT_SCALE);
   const filled = CIRCUMFERENCE * ratio;
+  const innerFilled = isCharging ? INNER_CIRCUMFERENCE * 0.75 : 0;
   const label =
     levelPct === null
       ? 'Battery level unavailable'
       : `Battery ${levelPct}%${isCharging ? ', charging' : ''}`;
 
   return (
-    <div className="relative flex size-33 shrink-0 items-center justify-center">
+    <div className="relative flex size-30 shrink-0 items-center justify-center">
       <svg
         aria-label={label}
-        className="size-33 -rotate-90"
+        className="size-30 -rotate-90"
         role="img"
         viewBox={`0 0 ${SIZE} ${SIZE}`}
       >
+        {/* Background Outer Track */}
         <circle
-          className="stroke-border"
+          className="stroke-border/40"
           cx={CENTER}
           cy={CENTER}
           fill="none"
           r={RADIUS}
           strokeWidth={STROKE}
         />
+
+        {/* Main Level Arc */}
         {levelPct === null ? null : (
           <circle
-            className={cn(TONE_STROKE[tone])}
+            className={cn(TONE_STROKE[tone], 'transition-all duration-500 ease-out')}
             cx={CENTER}
             cy={CENTER}
             fill="none"
@@ -60,15 +60,35 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             strokeWidth={STROKE}
           />
         )}
+
+        {/* Inner Charging Aura Ring */}
+        {isCharging ? (
+          <circle
+            className={cn(TONE_STROKE[tone], 'animate-pulse opacity-40')}
+            cx={CENTER}
+            cy={CENTER}
+            fill="none"
+            r={INNER_RADIUS}
+            strokeDasharray={`${innerFilled} ${INNER_CIRCUMFERENCE - innerFilled}`}
+            strokeDashoffset={-INNER_CIRCUMFERENCE * 0.25}
+            strokeLinecap="round"
+            strokeWidth={2}
+          />
+        ) : null}
       </svg>
 
-      <div aria-hidden="true" className="absolute flex flex-col items-center gap-0.5">
-        <span className={cn('numeric font-semibold text-display', TONE_TEXT[tone])}>
+      <div aria-hidden="true" className="absolute flex select-none flex-col items-center gap-0.5">
+        <span className={cn('numeric font-semibold text-display tracking-tight', TONE_TEXT[tone])}>
           {levelPct === null ? EMPTY_VALUE : formatPercent(ratio)}
         </span>
         {isCharging ? (
-          <span className={cn('flex items-center gap-1 text-caption', TONE_TEXT[tone])}>
-            <Zap className="size-3" />
+          <span
+            className={cn(
+              'flex animate-pulse items-center gap-1 font-medium text-[11px]',
+              TONE_TEXT[tone],
+            )}
+          >
+            <Zap className="size-3 fill-current" />
             Charging
           </span>
         ) : null}
