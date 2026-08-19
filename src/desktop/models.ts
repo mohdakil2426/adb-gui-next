@@ -481,6 +481,38 @@ export namespace backend {
     sourceDir: string;
   }
 
+  // ─── Firmware Hub & Catalog ──────────────────────────────────────────────
+
+  export type FirmwareBrand = 'google' | 'nothing' | 'xiaomi' | 'oneplus' | 'samsung';
+
+  export type FirmwareImageType = 'factory' | 'ota';
+
+  export interface FirmwareBuild {
+    androidVersion: string;
+    buildId: string;
+    carrier?: string | null;
+    downloadUrl: string;
+    fileSize?: number | null;
+    id: string;
+    imageType: FirmwareImageType;
+    isLatest: boolean;
+    releaseDate?: string | null;
+    securityPatch?: string | null;
+    sha256?: string | null;
+    version: string;
+  }
+
+  export interface FirmwareDeviceModel {
+    brand: FirmwareBrand;
+    builds: FirmwareBuild[];
+    codename: string;
+    id: string;
+    name: string;
+    releaseYear?: number | null;
+    series?: string | null;
+    soc?: string | null;
+  }
+
   // ─── Marketplace ─────────────────────────────────────────────────────────
 
   export type ProviderSource = 'F-Droid' | 'GitHub' | 'Aptoide';

@@ -881,3 +881,41 @@ export function ExecuteCliCommand(
 ): Promise<backend.CliExecutionResult> {
   return call('execute_cli_command', { command, serial: serial ?? null });
 }
+
+export function GetFirmwareCatalog(
+  brand?: backend.FirmwareBrand,
+  forceRefresh?: boolean,
+): Promise<backend.FirmwareDeviceModel[]> {
+  return call('get_firmware_catalog', {
+    brand: brand ?? null,
+    forceRefresh: forceRefresh ?? false,
+  });
+}
+
+export function RefreshFirmwareCatalog(
+  brand?: backend.FirmwareBrand,
+): Promise<backend.FirmwareDeviceModel[]> {
+  return call('refresh_firmware_catalog', {
+    brand: brand ?? null,
+  });
+}
+
+export function GetSupportedFirmwareBrands(): Promise<backend.FirmwareBrand[]> {
+  return call('get_supported_firmware_brands');
+}
+
+export function ClearFirmwareCache(brand?: backend.FirmwareBrand): Promise<void> {
+  return call('clear_firmware_cache', {
+    brand: brand ?? null,
+  });
+}
+
+export function UnpackSuperImage(
+  superPath: string,
+  outputDir: string,
+): Promise<[string, number][]> {
+  return call('unpack_super_image', {
+    superPath,
+    outputDir,
+  });
+}
