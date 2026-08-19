@@ -252,11 +252,21 @@ impl GooglePixelScraper {
 
     fn extract_device_name(heading_text: &str, codename: &str) -> String {
         let mut text = heading_text.trim();
-        // If text contains ("codename"), strip it
+
+        // 1. If heading contains `"codename" for <Model>` or `<codename> for <Model>`, take the part after `for `
+        if let Some(for_idx) = text.find(" for ") {
+            text = text[for_idx + 5..].trim();
+        }
+
+        // 2. Strip parentheses e.g. "Pixel 8 Pro (Wi-Fi)" or "(husky)"
         if let Some(idx) = text.find('(') {
             text = text[..idx].trim();
         }
-        if text.is_empty() { format!("Pixel ({codename})") } else { text.to_string() }
+
+        // 3. Strip any quotes (double, single, smart/curly quotes)
+        let cleaned = text.replace(['"', '\'', '“', '”', '‘', '’'], "").trim().to_string();
+
+        if cleaned.is_empty() { format!("Pixel ({codename})") } else { cleaned }
     }
 
     fn parse_version_string(raw: &str) -> ParsedVersion {
