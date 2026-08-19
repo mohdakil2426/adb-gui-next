@@ -10,7 +10,6 @@ import {
   Radio,
   Sparkles,
   Store,
-  UploadCloud,
   Zap,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -160,38 +159,8 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
           </Badge>
         </div>
 
-        <div className="grid @lg:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-3.5">
-          {/* 1. Source & Remote Loader */}
-          <Card
-            className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
-            onClick={() => onNavigateTab('source')}
-          >
-            <CardContent className="flex h-full flex-col justify-between p-4">
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-primary transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
-                    <UploadCloud className="size-4.5" />
-                  </div>
-                  <Badge variant="secondary">Step 1</Badge>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-body text-foreground group-hover:text-primary">
-                    Source Loader
-                  </h3>
-                  <p className="mt-1 text-caption text-muted-foreground leading-relaxed">
-                    Load local packages (<code className="text-[11px]">payload.bin</code>, ZIP) or
-                    paste direct OTA download links.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1.5 font-medium text-caption text-primary">
-                <span>Configure Source</span>
-                <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 2. Google Pixel Firmware Hub */}
+        <div className="grid @lg:grid-cols-3 @sm:grid-cols-2 grid-cols-1 gap-3.5">
+          {/* 1. Google Pixel Firmware Hub */}
           <Card
             className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
             onClick={() => onNavigateTab('marketplace')}
@@ -221,7 +190,8 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
               </div>
             </CardContent>
           </Card>
-          {/* 2. Selective Partition Extractor */}
+
+          {/* 2. Selective Partition Extractor & Ingestion */}
           <Card
             className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
             onClick={() => onNavigateTab('extractor')}
@@ -232,14 +202,14 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
                   <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-primary transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
                     <Layers className="size-4.5" />
                   </div>
-                  <Badge variant="secondary">Step 2</Badge>
+                  <Badge variant="secondary">Extractor</Badge>
                 </div>
                 <div>
                   <h3 className="font-semibold text-body text-foreground group-hover:text-primary">
                     Partition Extractor
                   </h3>
                   <p className="mt-1 text-caption text-muted-foreground leading-relaxed">
-                    Search, filter, and extract specific partition images (
+                    Load local files or remote URLs, filter, and extract specific partition images (
                     <code className="text-[11px]">boot</code>,{' '}
                     <code className="text-[11px]">init_boot</code>,{' '}
                     <code className="text-[11px]">vbmeta</code>,{' '}
@@ -306,8 +276,8 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
               <h4 className="font-medium text-caption text-foreground">Select Payload Source</h4>
             </div>
             <p className="text-caption text-muted-foreground leading-relaxed">
-              Open the <strong>Source</strong> tab to drop a local payload file or paste an official
-              OEM OTA download URL.
+              Open the <strong>Extractor</strong> tab to drop a local payload file or paste an
+              official OEM OTA download URL.
             </p>
           </div>
 

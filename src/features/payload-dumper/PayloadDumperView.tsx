@@ -1,4 +1,4 @@
-import { BarChart3, History, Layers, Loader2, Store, UploadCloud } from 'lucide-react';
+import { BarChart3, History, Layers, Store } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { usePayloadActions } from '@/features/payload-dumper/hooks/usePayloadActions';
 import { usePayloadEvents } from '@/features/payload-dumper/hooks/usePayloadEvents';
@@ -8,16 +8,14 @@ import { usePayloadProgressStore } from '@/features/payload-dumper/model/payload
 import { ExtractionStatusCard } from '@/features/payload-dumper/ui/ExtractionStatusCard';
 import { PayloadExtractorTab } from '@/features/payload-dumper/ui/extractor/PayloadExtractorTab';
 import { PayloadHistoryTab } from '@/features/payload-dumper/ui/history/PayloadHistoryTab';
-import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
 import { PayloadMarketplaceTab } from '@/features/payload-dumper/ui/marketplace/PayloadMarketplaceTab';
 import { PayloadOverviewTab } from '@/features/payload-dumper/ui/overview/PayloadOverviewTab';
 import { PayloadDumperHeroBanner } from '@/features/payload-dumper/ui/PayloadDumperHeroBanner';
-import { PayloadSourceTab } from '@/features/payload-dumper/ui/source/PayloadSourceTab';
 import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
-export type PayloadTabType = 'overview' | 'source' | 'marketplace' | 'extractor' | 'history';
+export type PayloadTabType = 'overview' | 'marketplace' | 'extractor' | 'history';
 
 export function ViewPayloadDumper() {
   const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
@@ -75,7 +73,7 @@ export function ViewPayloadDumper() {
     (url: string) => {
       setRemoteUrl(url);
       setActiveMode('remote');
-      setActiveTab('source');
+      setActiveTab('extractor');
       actions.handleCheckUrl();
     },
     [setRemoteUrl, setActiveMode, actions],
@@ -144,14 +142,6 @@ export function ViewPayloadDumper() {
                 Overview
               </TabsTrigger>
 
-              <TabsTrigger className="flex-1" value="source">
-                <UploadCloud aria-hidden="true" className="mr-2 size-4" />
-                Source & Remote Loader
-                {status === 'loading-partitions' ? (
-                  <Loader2 aria-hidden="true" className="ml-1.5 size-3 animate-spin" />
-                ) : null}
-              </TabsTrigger>
-
               <TabsTrigger className="flex-1" value="marketplace">
                 <Store aria-hidden="true" className="mr-2 size-4" />
                 Firmware Hub
@@ -183,12 +173,19 @@ export function ViewPayloadDumper() {
               <PayloadOverviewTab onNavigateTab={setActiveTab} />
             </TabsContent>
 
-            {/* Tab 2: Source & Remote Loader */}
-            <TabsContent value="source">
-              <PayloadSourceTab
+            {/* Tab 2: Google Pixel Firmware Marketplace */}
+            <TabsContent value="marketplace">
+              <PayloadMarketplaceTab onSelectRemoteUrl={handleSelectMarketplaceUrl} />
+            </TabsContent>
+
+            {/* Tab 3: Extractor & Partitions Workspace */}
+            <TabsContent value="extractor">
+              <PayloadExtractorTab
+                completedPartitions={completedPartitions}
                 connectionStatus={connectionStatus}
-                disabled={status === 'extracting' || status === 'loading-partitions'}
+                effectiveOutputPath={effectiveOutputPath}
                 estimatedSize={estimatedSize}
+                isExtractionActive={isExtractionActive}
                 isLoadingPartitions={status === 'loading-partitions'}
                 loadDetail={loadDetail}
                 loadMessage={loadMessage}
@@ -197,53 +194,33 @@ export function ViewPayloadDumper() {
                 loadStep={loadStep}
                 loadTotalSteps={loadTotalSteps}
                 mode={activeMode}
+                onCancelExtraction={cancelExtraction}
                 onCancelLoadPartitions={actions.handleCancelLoadPartitions}
                 onCheckUrl={actions.handleCheckUrl}
+                onExtract={actions.handleExtract}
                 onLoadRemotePartitions={actions.loadRemotePartitions}
                 onModeChange={setActiveMode}
+                onOpenOutputFolder={actions.handleOpenOutputFolder}
                 onPayloadDrop={actions.handlePayloadDrop}
                 onPrefetchChange={setPrefetch}
+                onReset={actions.handleReset}
+                onSelectOutput={actions.handleSelectOutput}
                 onSelectPayload={actions.handleSelectPayload}
+                onToggleAll={toggleAllPartitions}
+                onTogglePartition={togglePartition}
                 onUrlChange={setRemoteUrl}
+                outputIsAuto={outputIsAuto}
+                outputPath={outputPath}
+                partitionProgress={partitionProgress}
+                partitionStatuses={partitionStatuses}
+                partitions={partitions}
+                payloadPath={payloadPath}
                 prefetch={prefetch}
                 remoteUrl={remoteUrl}
+                status={status}
+                toExtractCount={selectedNotExtracted.length}
+                toExtractSize={toExtractSize}
               />
-            </TabsContent>
-
-            {/* Tab 3: Google Pixel Firmware Marketplace */}
-            <TabsContent value="marketplace">
-              <PayloadMarketplaceTab onSelectRemoteUrl={handleSelectMarketplaceUrl} />
-            </TabsContent>
-
-            {/* Tab 3: Extractor & Partitions Table */}
-            <TabsContent value="extractor">
-              {status === 'loading-partitions' && activeMode === 'local' ? (
-                <LoadingState mode={activeMode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
-              ) : (
-                <PayloadExtractorTab
-                  completedPartitions={completedPartitions}
-                  effectiveOutputPath={effectiveOutputPath}
-                  isExtractionActive={isExtractionActive}
-                  onCancelExtraction={cancelExtraction}
-                  onExtract={actions.handleExtract}
-                  onNavigateToSource={() => setActiveTab('source')}
-                  onOpenOutputFolder={actions.handleOpenOutputFolder}
-                  onReset={actions.handleReset}
-                  onSelectOutput={actions.handleSelectOutput}
-                  onSelectPayload={actions.handleSelectPayload}
-                  onToggleAll={toggleAllPartitions}
-                  onTogglePartition={togglePartition}
-                  outputIsAuto={outputIsAuto}
-                  outputPath={outputPath}
-                  partitionProgress={partitionProgress}
-                  partitionStatuses={partitionStatuses}
-                  partitions={partitions}
-                  payloadPath={payloadPath}
-                  status={status}
-                  toExtractCount={selectedNotExtracted.length}
-                  toExtractSize={toExtractSize}
-                />
-              )}
             </TabsContent>
 
             {/* Tab 4: Extracted Outputs & History */}

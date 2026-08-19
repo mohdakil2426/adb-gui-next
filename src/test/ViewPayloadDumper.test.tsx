@@ -85,13 +85,12 @@ describe('ViewPayloadDumper', () => {
     });
   });
 
-  it('renders precision hero banner and 5 tab triggers in empty state', () => {
+  it('renders precision hero banner and 4 tab triggers in empty state', () => {
     renderWithClient();
     expect(
       screen.getByRole('heading', { name: 'Payload Dumper', hidden: true }),
     ).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /^overview$/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /source & remote loader/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /firmware hub/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /extractor/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /extracted outputs & history/i })).toBeInTheDocument();
@@ -100,13 +99,13 @@ describe('ViewPayloadDumper', () => {
     expect(screen.getByText('3-Step Extraction Workflow')).toBeInTheDocument();
   });
 
-  it('navigates to source tab when clicking source workflow shortcut card', async () => {
+  it('navigates to extractor tab when clicking extractor workflow shortcut card', async () => {
     const user = userEvent.setup();
     renderWithClient();
-    await user.click(screen.getByText('Configure Source'));
+    await user.click(screen.getByText('Open Extractor'));
     expect(screen.getByText(/Local File Archive/i)).toBeInTheDocument();
+    expect(screen.getByText(/Remote OTA URL Stream/i)).toBeInTheDocument();
   });
-
   it('navigates to firmware hub and opens device detail', async () => {
     const user = userEvent.setup();
     renderWithClient();
