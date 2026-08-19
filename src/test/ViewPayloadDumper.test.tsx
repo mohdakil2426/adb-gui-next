@@ -47,13 +47,13 @@ describe('ViewPayloadDumper', () => {
     expect(
       screen.getByRole('heading', { name: 'Payload Dumper', hidden: true }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /overview & telemetry/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /^overview$/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /extractor & partitions/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /source & remote loader/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /extracted outputs & history/i })).toBeInTheDocument();
   });
 
-  it('renders the loaded state with precision hero banner, telemetry, and extractor controls', async () => {
+  it('renders the loaded state with precision hero banner and extractor controls', async () => {
     const user = userEvent.setup();
     usePayloadDumperStore.setState({
       partitions: [
@@ -69,10 +69,6 @@ describe('ViewPayloadDumper', () => {
     expect(screen.getAllByText('payload.bin').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Standard payload.bin').length).toBeGreaterThan(0);
 
-    // Overview tab telemetry & presets
-    expect(screen.getByText('Payload Partition Breakdown')).toBeInTheDocument();
-    expect(screen.getByText('Top 10 Largest Partitions')).toBeInTheDocument();
-    expect(screen.getByText('Quick Extraction Presets')).toBeInTheDocument();
     // Navigate to Extractor tab
     await user.click(screen.getByRole('tab', { name: /extractor & partitions/i }));
     expect(screen.getByText('Output directory')).toBeInTheDocument();

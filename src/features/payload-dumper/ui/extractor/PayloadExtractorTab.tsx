@@ -11,7 +11,6 @@ import { useCallback, useMemo, useState } from 'react';
 import type { backend } from '@/desktop/models';
 import type { PartitionProgress } from '@/features/payload-dumper/model/payloadProgressStore';
 import { ActionFooter } from '@/features/payload-dumper/ui/ActionFooter';
-import { ExtractionLiveCockpit } from '@/features/payload-dumper/ui/extractor/ExtractionLiveCockpit';
 import {
   type CategoryFilterType,
   PartitionCategoryFilter,
@@ -137,17 +136,6 @@ export function PayloadExtractorTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Live Extraction Cockpit (Only active while running or has progress) */}
-      <ExtractionLiveCockpit
-        completedPartitions={completedPartitions}
-        isExtractionActive={isExtractionActive}
-        onCancelExtraction={onCancelExtraction}
-        partitionProgress={partitionProgress}
-        partitionStatuses={partitionStatuses}
-        partitions={partitions}
-        status={status}
-      />
-
       {/* Destination Directory Selector */}
       <OutputDirectoryField
         disabled={status === 'extracting'}

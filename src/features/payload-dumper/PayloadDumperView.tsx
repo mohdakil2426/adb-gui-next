@@ -44,7 +44,6 @@ export function ViewPayloadDumper() {
   const setActiveMode = usePayloadDumperStore((state) => state.setActiveMode);
   const togglePartition = usePayloadDumperStore((state) => state.togglePartition);
   const toggleAll = usePayloadDumperStore((state) => state.toggleAll);
-  const setPartitions = usePayloadDumperStore((state) => state.setPartitions);
   const cancelExtraction = usePayloadDumperStore((state) => state.cancelExtraction);
   const clearHistory = usePayloadDumperStore((state) => state.clearHistory);
 
@@ -95,18 +94,6 @@ export function ViewPayloadDumper() {
     toggleAll(!allSelected);
   }, [allSelected, toggleAll]);
 
-  // Apply extraction presets
-  const handleApplyPreset = useCallback(
-    (matcher: (name: string) => boolean) => {
-      const updated = partitions.map((p) => ({
-        ...p,
-        selected: matcher(p.name),
-      }));
-      setPartitions(updated);
-    },
-    [partitions, setPartitions],
-  );
-
   const isTerminal = status === 'success' || status === 'error';
   const effectiveOutputPath = outputDir || outputPath;
   const outputIsAuto = Boolean(outputDir);
@@ -145,7 +132,7 @@ export function ViewPayloadDumper() {
             <TabsList className="w-full">
               <TabsTrigger className="flex-1" value="overview">
                 <BarChart3 aria-hidden="true" className="mr-2 size-4" />
-                Overview & Telemetry
+                Overview
               </TabsTrigger>
 
               <TabsTrigger className="flex-1" value="extractor">
@@ -177,15 +164,9 @@ export function ViewPayloadDumper() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: Overview & Telemetry */}
+            {/* Tab 1: Overview */}
             <TabsContent value="overview">
-              <PayloadOverviewTab
-                completedPartitions={completedPartitions}
-                onApplyPreset={handleApplyPreset}
-                onNavigateToExtractor={() => setActiveTab('extractor')}
-                partitions={partitions}
-                remoteMetadata={remoteMetadata}
-              />
+              <PayloadOverviewTab />
             </TabsContent>
 
             {/* Tab 2: Extractor & Partitions Table */}

@@ -128,17 +128,8 @@ This transformation elevates all remaining secondary screens into first-class **
 - **Header Banner:** `PayloadDumperHeroBanner`
   - Loaded Payload File / URL name, Format badge (Standard `payload.bin`, Factory ZIP, OTA ZIP, OPS/OFP), Total Payload Size, Total Partitions Count, Target Android Version / Build Fingerprint, Compression Ratio, Extraction Destination Directory with 1-click folder reveal.
 - **Tabs:**
-  1. `Overview & Telemetry` (`PayloadOverviewTab`)
-     - **Pure SVG Telemetry Visualizations**:
-       - `PayloadCompositionDonut`: Core Boot (`boot`, `init_boot`, `vendor_boot`, `dtbo`, `vbmeta`) vs Dynamic OS (`system`, `vendor`, `product`, `system_ext`) vs Modem & Firmware (`modem`, `dsp`, `bluetooth`) partition distribution.
-       - `PartitionSizeBarChart`: Top 10 largest partitions visual horizontal bars with formatted sizes and compression status.
-       - `CompressionEfficiencyGauge`: Raw size vs uncompressed extracted footprint.
-     - **Payload Architecture Guide & Information Card**: Complete interactive guide explaining Android Delta/Full OTA `payload.bin` structure (Header, Manifest protobuf, Blob operations: `REPLACE`, `REPLACE_XZ`, `REPLACE_BZ`, `ZERO`, `DIFF`), hash verification, and partition header offsets.
-     - **Quick Extraction Presets**:
-       - ⚡ *Root Kit* (1-click selects `boot`, `init_boot`, `vendor_boot`, `vbmeta`)
-       - 📱 *System & Vendor* (1-click selects `system`, `vendor`, `product`, `system_ext`)
-       - 📻 *Modem & Radio* (1-click selects `modem`, `radio`, `bluetooth`, `dsp`)
-       - 📦 *Full Flash Image* (selects all)
+  1. `Overview` (`PayloadOverviewTab`)
+     - Clean overview screen.
   2. `Extractor & Partitions Table` (`PayloadExtractorTab`)
      - Filterable, searchable partition data grid with category chips (All, Boot/Kernel, System, Modem, Other).
      - Select all / Invert selection / Search filter.
@@ -160,7 +151,6 @@ This transformation elevates all remaining secondary screens into first-class **
   - ADB Server version & status (Running / Restarting / Stopped), Host Platform-tools version, Connected Device Serial & Mode (`device` / `recovery` / `sideload` / `fastboot` / `offline`), Fastboot binary path status, Quick Restart Server button.
 - **Tabs:**
   1. `Overview & Quick Actions` (`UtilitiesOverviewTab`)
-     - **Device Vitals & Diagnostic Matrix**: 6-item live status: USB Debugging state, SELinux enforcement (`Enforcing` / `Permissive`), Battery Temp & Voltage, Root status (`su` available), Display resolution & density (DPI), Android Security Patch.
      - **Instant Action Command Cockpit (Symmetrical 3x2 Grid)**:
        - 📸 `Capture Screenshot` (instant preview + copy to clipboard + save PNG)
        - 🎥 `Screen Record` (quick 30s record to host)

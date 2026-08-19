@@ -85,7 +85,6 @@ describe('ViewUtilities', () => {
     // Default active tab is Overview
     expect(screen.getByRole('tab', { name: /overview/i, selected: true })).toBeInTheDocument();
     expect(screen.getByText('Instant Action Command Cockpit')).toBeInTheDocument();
-    expect(screen.getByText('Device Vitals & Diagnostic Matrix')).toBeInTheDocument();
 
     // Navigate to Power tab
     await user.click(screen.getByRole('tab', { name: /power & tweaks/i }));
