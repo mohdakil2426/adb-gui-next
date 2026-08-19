@@ -81,7 +81,8 @@ export function FirmwareDeviceCard({ device, onSelect }: FirmwareDeviceCardProps
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Layers className="size-3.5 text-primary/80" />
             <span>
-              {otaBuildsCount} OTA · {factoryBuildsCount} Factory
+              {otaBuildsCount} {device.brand === 'xiaomi' ? 'Recovery' : 'OTA'} ·{' '}
+              {factoryBuildsCount} {device.brand === 'xiaomi' ? 'Fastboot' : 'Factory'}
             </span>
           </div>
           <div className="flex items-center gap-1 font-medium text-primary">

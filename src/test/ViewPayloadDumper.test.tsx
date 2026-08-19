@@ -55,6 +55,28 @@ const { mockCatalogDevices } = vi.hoisted(() => ({
         },
       ],
     },
+    {
+      id: 'xiaomi_14',
+      brand: 'xiaomi',
+      name: 'Xiaomi 14',
+      codename: 'houji',
+      series: 'Xiaomi 14 Series',
+      soc: 'Qualcomm Snapdragon 8 Gen 3',
+      releaseYear: 2023,
+      builds: [
+        {
+          id: 'xiaomi_houji_ota',
+          version: 'HyperOS 1.0.18.0.UNCMIXM',
+          buildId: 'OS1.0.18.0.UNCMIXM',
+          androidVersion: 'Android 14',
+          imageType: 'ota',
+          releaseDate: '2024-11-20',
+          downloadUrl:
+            'https://bigota.d.miui.com/OS1.0.18.0.UNCMIXM/houji_global-ota_full-OS1.0.18.0.UNCMIXM-user-14.0-53296c0d4a.zip',
+          isLatest: true,
+        },
+      ],
+    },
   ],
 }));
 
@@ -148,6 +170,16 @@ describe('ViewPayloadDumper', () => {
     expect(screen.getAllByText(/Pong-B4.1-260618-1026/).length).toBeGreaterThan(0);
   });
 
+  it('filters Xiaomi devices in firmware hub and opens device detail', async () => {
+    const user = userEvent.setup();
+    renderWithClient();
+    await user.click(screen.getByRole('tab', { name: /firmware hub/i }));
+    await user.click(screen.getByRole('button', { name: /xiaomi/i }));
+    expect(screen.getByText('Xiaomi 14')).toBeInTheDocument();
+    await user.click(screen.getByText('Xiaomi 14'));
+    expect(screen.getAllByText('houji').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/OS1.0.18.0.UNCMIXM/).length).toBeGreaterThan(0);
+  });
   it('renders the loaded state with precision hero banner and extractor controls', async () => {
     const user = userEvent.setup();
     usePayloadDumperStore.setState({
@@ -164,6 +196,9 @@ describe('ViewPayloadDumper', () => {
     expect(await screen.findByText('boot.img')).toBeInTheDocument();
     expect(await screen.findByText('init_boot.img')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /extract 1 · 64.0 MB/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Local File Archive/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Remote OTA URL Stream/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /change payload file/i })).toBeInTheDocument();
   });
 
   it('surfaces a failure that wrote zero files in terminal error state', () => {

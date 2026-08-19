@@ -111,7 +111,7 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
             {build.imageType === 'ota' ? (
               <Button onClick={handleRemoteExtract} size="sm" type="button" variant="default">
                 <Zap className="mr-1.5 size-3.5 text-amber-300" />
-                Remote Stream Extract
+                {device.brand === 'xiaomi' ? 'Extract Recovery ROM' : 'Remote Stream Extract'}
               </Button>
             ) : (
               <Button
@@ -121,7 +121,7 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
                 variant="default"
               >
                 <Download className="mr-1.5 size-3.5" />
-                Download Factory Archive
+                {device.brand === 'xiaomi' ? 'Download Fastboot TGZ' : 'Download Factory Archive'}
               </Button>
             )}
 

@@ -103,12 +103,12 @@ export function FirmwareDeviceDetailView({
                   ) : null}
                   <span>·</span>
                   <span className="text-foreground">
-                    {otaBuildsCount} OTA & {factoryBuildsCount} Factory Images
+                    {otaBuildsCount} {device.brand === 'xiaomi' ? 'Recovery' : 'OTA'} &{' '}
+                    {factoryBuildsCount} {device.brand === 'xiaomi' ? 'Fastboot' : 'Factory'} Images
                   </span>
                 </div>
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => BrowserOpenURL(brandInfo.portalUrl)}
@@ -147,7 +147,9 @@ export function FirmwareDeviceDetailView({
             variant={selectedType === 'ota' ? 'default' : 'ghost'}
           >
             <Zap className="mr-1.5 size-3 text-amber-400" />
-            Full OTA Images (Remote Stream)
+            {device.brand === 'xiaomi'
+              ? 'Recovery ROM (Remote Stream)'
+              : 'Full OTA Images (Remote Stream)'}
           </Button>
           <Button
             className="h-7 px-3 text-caption"
@@ -157,7 +159,7 @@ export function FirmwareDeviceDetailView({
             variant={selectedType === 'factory' ? 'default' : 'ghost'}
           >
             <Layers className="mr-1.5 size-3" />
-            Factory Images (Fastboot)
+            {device.brand === 'xiaomi' ? 'Fastboot ROM (TGZ)' : 'Factory Images (Fastboot)'}
           </Button>
           <Button
             className="h-7 px-2.5 text-caption"

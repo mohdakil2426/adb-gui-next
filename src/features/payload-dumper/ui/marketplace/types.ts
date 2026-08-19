@@ -38,9 +38,10 @@ export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
     id: 'xiaomi',
     displayName: 'Xiaomi',
     shortLabel: 'Xiaomi',
-    description: 'HyperOS & MIUI official recovery and fastboot ROM catalogs.',
-    portalUrl: 'https://miuirom.org',
-    portalName: 'Xiaomi HyperOS Archive',
+    description:
+      'Xiaomi, Redmi, and POCO official HyperOS & MIUI recovery ROMs and fastboot image archives.',
+    portalUrl: 'https://xmfirmwareupdater.com',
+    portalName: 'XM Firmware Updater Portal',
   },
   oneplus: {
     id: 'oneplus',
