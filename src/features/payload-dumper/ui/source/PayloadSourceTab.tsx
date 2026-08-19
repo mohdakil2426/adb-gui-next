@@ -1,7 +1,6 @@
 import { FileArchive, Globe } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { RemoteLoadProgressCard } from '@/features/payload-dumper/ui/RemoteLoadProgressCard';
-import { RemotePresetCatalog } from '@/features/payload-dumper/ui/source/RemotePresetCatalog';
 import { DropZone } from '@/shared/components/DropZone';
 import { type ConnectionStatus, RemoteUrlPanel } from '@/shared/components/RemoteUrlPanel';
 import { Button } from '@/shared/ui/button';
@@ -139,15 +138,6 @@ export function PayloadSourceTab({
           </Tabs>
         </CardContent>
       </Card>
-
-      {/* Remote Presets Catalog */}
-      <RemotePresetCatalog
-        onSelectUrl={(url) => {
-          onModeChange('remote');
-          onUrlChange(url);
-          onCheckUrl();
-        }}
-      />
     </div>
   );
 }
