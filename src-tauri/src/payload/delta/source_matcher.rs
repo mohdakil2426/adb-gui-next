@@ -40,17 +40,16 @@ impl SourceMatcher {
             let p_lower = partition_name.to_ascii_lowercase();
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.is_file() {
-                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                        let stem_lower = stem.to_ascii_lowercase();
-                        if stem_lower == p_lower
-                            || stem_lower == format!("{}_a", p_lower)
-                            || stem_lower == format!("{}_b", p_lower)
-                        {
-                            if !candidate_paths.contains(&path) {
-                                candidate_paths.push(path);
-                            }
-                        }
+                if path.is_file()
+                    && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+                {
+                    let stem_lower = stem.to_ascii_lowercase();
+                    if (stem_lower == p_lower
+                        || stem_lower == format!("{}_a", p_lower)
+                        || stem_lower == format!("{}_b", p_lower))
+                        && !candidate_paths.contains(&path)
+                    {
+                        candidate_paths.push(path);
                     }
                 }
             }
@@ -59,12 +58,11 @@ impl SourceMatcher {
         for path in &candidate_paths {
             if path.is_file() {
                 // If expected size is given, quickly verify file metadata length
-                if let Some(exp_size) = expected_size {
-                    if let Ok(meta) = path.metadata() {
-                        if meta.len() < exp_size {
-                            continue;
-                        }
-                    }
+                if let Some(exp_size) = expected_size
+                    && let Ok(meta) = path.metadata()
+                    && meta.len() < exp_size
+                {
+                    continue;
                 }
 
                 if let Some(exp_hash) = expected_hash.filter(|h| !h.is_empty()) {

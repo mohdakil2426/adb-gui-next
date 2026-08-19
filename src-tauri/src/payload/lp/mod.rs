@@ -138,10 +138,10 @@ impl LpMetadata {
             Err(primary_err) => {
                 // Try backup geometry at offset LP_METADATA_GEOMETRY_SIZE (4096)
                 reader.seek(SeekFrom::Start(LP_METADATA_GEOMETRY_SIZE as u64))?;
-                if reader.read_exact(&mut geom_buf).is_ok() {
-                    if let Ok(geom) = Self::validate_and_build_geometry(&geom_buf) {
-                        return Ok(geom);
-                    }
+                if reader.read_exact(&mut geom_buf).is_ok()
+                    && let Ok(geom) = Self::validate_and_build_geometry(&geom_buf)
+                {
+                    return Ok(geom);
                 }
                 Err(primary_err)
             }
@@ -616,7 +616,7 @@ mod tests {
         let tables_checksum = Sha256::digest(&tables_buf);
 
         // 3. Header at slot 0 (offset 8192)
-        let header_offset = (LP_METADATA_GEOMETRY_SIZE * 2) as usize;
+        let header_offset = LP_METADATA_GEOMETRY_SIZE * 2;
         let header_size = 128u32;
         let mut header_raw = vec![0u8; header_size as usize];
 

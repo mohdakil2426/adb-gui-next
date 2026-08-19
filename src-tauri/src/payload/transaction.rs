@@ -30,8 +30,7 @@ impl TransactionGuard {
         let session_id = {
             let now = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0);
+                .map_or(0, |d| d.as_nanos());
             format!("{:016x}_{}", now, std::process::id())
         };
 
@@ -73,7 +72,7 @@ impl TransactionGuard {
 
         if path.starts_with(&self.staging_dir) {
             let file_name =
-                path.file_name().map(PathBuf::from).unwrap_or_else(|| PathBuf::from("unnamed.img"));
+                path.file_name().map_or_else(|| PathBuf::from("unnamed.img"), PathBuf::from);
             let final_target = self.target_dir.join(file_name);
             files.push((path, final_target));
         } else {
@@ -132,15 +131,16 @@ impl TransactionGuard {
         };
 
         for (staged, final_target) in files {
-            if staged != final_target && staged.exists() {
-                if let Err(e) = move_file_cross_device(&staged, &final_target) {
-                    log::error!(
-                        "Failed to move staged file {} to {}: {}",
-                        staged.display(),
-                        final_target.display(),
-                        e
-                    );
-                }
+            if staged != final_target
+                && staged.exists()
+                && let Err(e) = move_file_cross_device(&staged, &final_target)
+            {
+                log::error!(
+                    "Failed to move staged file {} to {}: {}",
+                    staged.display(),
+                    final_target.display(),
+                    e
+                );
             }
         }
 

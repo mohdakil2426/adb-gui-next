@@ -64,32 +64,32 @@ impl FirmwareCache {
         // Tier 1: Check RAM
         {
             let mem = self.memory.read().await;
-            if let Some(entry) = mem.get(&brand) {
-                if entry.is_fresh() {
-                    return Some(entry.devices.clone());
-                }
+            if let Some(entry) = mem.get(&brand)
+                && entry.is_fresh()
+            {
+                return Some(entry.devices.clone());
             }
         }
 
         // Tier 2: Check Disk
         let path = self.disk_file_path(brand);
-        if path.exists() {
-            if let Ok(contents) = tokio::fs::read_to_string(&path).await {
-                if let Ok(disk_entry) = serde_json::from_str::<DiskCacheEntry>(&contents) {
-                    let cached_time = UNIX_EPOCH + Duration::from_secs(disk_entry.cached_at_unix);
-                    if let Ok(elapsed) = cached_time.elapsed() {
-                        if elapsed < CACHE_TTL && disk_entry.brand == brand {
-                            // Populate Tier 1
-                            let devices = disk_entry.devices;
-                            let mut mem = self.memory.write().await;
-                            mem.insert(
-                                brand,
-                                CachedCatalog { devices: devices.clone(), cached_at: cached_time },
-                            );
-                            return Some(devices);
-                        }
-                    }
-                }
+        if path.exists()
+            && let Ok(contents) = tokio::fs::read_to_string(&path).await
+            && let Ok(disk_entry) = serde_json::from_str::<DiskCacheEntry>(&contents)
+        {
+            let cached_time = UNIX_EPOCH + Duration::from_secs(disk_entry.cached_at_unix);
+            if let Ok(elapsed) = cached_time.elapsed()
+                && elapsed < CACHE_TTL
+                && disk_entry.brand == brand
+            {
+                // Populate Tier 1
+                let devices = disk_entry.devices;
+                let mut mem = self.memory.write().await;
+                mem.insert(
+                    brand,
+                    CachedCatalog { devices: devices.clone(), cached_at: cached_time },
+                );
+                return Some(devices);
             }
         }
 

@@ -355,8 +355,7 @@ pub fn move_file_cross_device(src: &Path, dst: &Path) -> std::io::Result<()> {
                 let file_name = dst.file_name().unwrap_or_default().to_string_lossy();
                 let random_suffix: u128 = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
-                    .map(|d| d.as_nanos())
-                    .unwrap_or(0);
+                    .map_or(0, |d| d.as_nanos());
                 let tmp_name = format!(".tmp_move_{:032x}_{}", random_suffix, file_name);
                 dst.with_file_name(tmp_name)
             };

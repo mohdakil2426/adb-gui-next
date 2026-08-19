@@ -50,23 +50,22 @@ impl FirmwareHubService {
         brand: Option<FirmwareBrand>,
         force_refresh: bool,
     ) -> Result<Vec<FirmwareDeviceModel>, String> {
-        match brand {
-            Some(single_brand) => self.get_devices_for_brand(single_brand, force_refresh).await,
-            None => {
-                let mut all_devices = Vec::new();
-                let brands = [FirmwareBrand::Google, FirmwareBrand::Nothing, FirmwareBrand::Xiaomi];
+        if let Some(single_brand) = brand {
+            self.get_devices_for_brand(single_brand, force_refresh).await
+        } else {
+            let mut all_devices = Vec::new();
+            let brands = [FirmwareBrand::Google, FirmwareBrand::Nothing, FirmwareBrand::Xiaomi];
 
-                for b in brands {
-                    match self.get_devices_for_brand(b, force_refresh).await {
-                        Ok(mut devs) => all_devices.append(&mut devs),
-                        Err(e) => {
-                            log::warn!("Failed to fetch firmware catalog for {}: {e}", b.as_str());
-                        }
+            for b in brands {
+                match self.get_devices_for_brand(b, force_refresh).await {
+                    Ok(mut devs) => all_devices.append(&mut devs),
+                    Err(e) => {
+                        log::warn!("Failed to fetch firmware catalog for {}: {e}", b.as_str());
                     }
                 }
-
-                Ok(all_devices)
             }
+
+            Ok(all_devices)
         }
     }
 
@@ -76,10 +75,8 @@ impl FirmwareHubService {
         force_refresh: bool,
     ) -> Result<Vec<FirmwareDeviceModel>, String> {
         // 1. Check cache if not forcing refresh
-        if !force_refresh {
-            if let Some(cached) = self.cache.get(brand).await {
-                return Ok(cached);
-            }
+        if !force_refresh && let Some(cached) = self.cache.get(brand).await {
+            return Ok(cached);
         }
 
         // 2. Query provider
@@ -123,16 +120,8 @@ impl FirmwareHubService {
                 let matches_dev = dev.name.to_ascii_lowercase().contains(&q)
                     || dev.codename.to_ascii_lowercase().contains(&q)
                     || dev.brand.as_str().contains(&q)
-                    || dev
-                        .soc
-                        .as_deref()
-                        .map(|s| s.to_ascii_lowercase().contains(&q))
-                        .unwrap_or(false)
-                    || dev
-                        .series
-                        .as_deref()
-                        .map(|s| s.to_ascii_lowercase().contains(&q))
-                        .unwrap_or(false);
+                    || dev.soc.as_deref().is_some_and(|s| s.to_ascii_lowercase().contains(&q))
+                    || dev.series.as_deref().is_some_and(|s| s.to_ascii_lowercase().contains(&q));
 
                 if matches_dev {
                     Some(dev)
@@ -147,8 +136,7 @@ impl FirmwareHubService {
                                 || b.android_version.contains(&q)
                                 || b.carrier
                                     .as_deref()
-                                    .map(|c| c.to_ascii_lowercase().contains(&q))
-                                    .unwrap_or(false)
+                                    .is_some_and(|c| c.to_ascii_lowercase().contains(&q))
                         })
                         .collect();
 

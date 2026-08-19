@@ -83,12 +83,21 @@ impl GooglePixelScraper {
 
     pub fn parse_html(html: &str, image_type: FirmwareImageType) -> Vec<FirmwareDeviceModel> {
         let document = Html::parse_document(html);
-        let heading_selector = Selector::parse("h2[id], h3[id]")
-            .unwrap_or_else(|_| Selector::parse("h2").expect("valid selector fallback"));
-        let table_selector = Selector::parse("table").expect("valid selector");
-        let tr_selector = Selector::parse("tr").expect("valid selector");
-        let td_selector = Selector::parse("td").expect("valid selector");
-        let a_selector = Selector::parse("a[href]").expect("valid selector");
+        let Ok(heading_selector) = Selector::parse("h2[id], h3[id]") else {
+            return Vec::new();
+        };
+        let Ok(table_selector) = Selector::parse("table") else {
+            return Vec::new();
+        };
+        let Ok(tr_selector) = Selector::parse("tr") else {
+            return Vec::new();
+        };
+        let Ok(td_selector) = Selector::parse("td") else {
+            return Vec::new();
+        };
+        let Ok(a_selector) = Selector::parse("a[href]") else {
+            return Vec::new();
+        };
 
         let mut devices = Vec::new();
 
@@ -143,14 +152,13 @@ impl GooglePixelScraper {
                             let mut download_url = None;
                             for td in &tds[1..] {
                                 for a in td.select(&a_selector) {
-                                    if let Some(href) = a.value().attr("href") {
-                                        if href.ends_with(".zip")
+                                    if let Some(href) = a.value().attr("href")
+                                        && (href.ends_with(".zip")
                                             || href.contains("dl.google.com")
-                                            || href.contains("google.com")
-                                        {
-                                            download_url = Some(href.to_string());
-                                            break;
-                                        }
+                                            || href.contains("google.com"))
+                                    {
+                                        download_url = Some(href.to_string());
+                                        break;
                                     }
                                 }
                                 if download_url.is_some() {
@@ -299,7 +307,7 @@ impl GooglePixelScraper {
             // Fallback when no parentheses
             let tokens: Vec<&str> = raw.split_whitespace().collect();
             let android_ver = tokens.first().unwrap_or(&raw).to_string();
-            let build_id = tokens.get(1).unwrap_or(&tokens.first().unwrap_or(&raw)).to_string();
+            let build_id = tokens.get(1).unwrap_or(tokens.first().unwrap_or(&raw)).to_string();
 
             ParsedVersion {
                 android_version: android_ver,
