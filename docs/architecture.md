@@ -41,7 +41,7 @@ ADB GUI Next is a **native desktop application** (not a web product). It wraps A
 | File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, host drop-in, in-app move, mutate, optional verified root mode |
 | Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
 | Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
-| Payload Dumper | Local/remote OTA `payload.bin`, factory ZIPs, OnePlus OPS, Oppo OFP |
+| Payload Dumper | Universal Android firmware extractor: CrAU v1/v2 payload.bin, Delta OTAs (BSDiff/Puffin/Brotli), liblp dynamic partitions (super.img unpack), Samsung .tar.md5 + LZ4, Xiaomi dat.br, OnePlus OPS, Oppo OFP, and live OEM Firmware Hub |
 | Marketplace | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth) |
 | Scrcpy | Download/manage official binaries, multi-device selection, presets catalog, live session detection, launch native mirror windows |
 | Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore |
@@ -700,7 +700,7 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Flasher | `features/flasher` | local | flash/boot/sideload/wipe | `flasher` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
 | Scrcpy | `features/scrcpy` | local + presets | `ScrcpyLaunch`, `ScrcpyStop`, `ScrcpyInstall`, `ScrcpyUninstall`, `ScrcpyStatus`, `ScrcpyCheckUpdate`, `ScrcpyPresets`, `ScrcpyActiveSessions`, `ScrcpyOpenToolbar`, `ScrcpyCloseToolbar`, `ScrcpySetToolbarMode`, `ScrcpySetToolbarSize`, `ScrcpySendKeyevent`, `ScrcpySendStatusbar`, `ScrcpyRotateDevice` | `scrcpy` domain + `scrcpy/toolbar` |
-| Payload Dumper | `features/payload-dumper` | `payloadDumperStore` | list/extract/remote/cancel | `payload` domain |
+| Payload Dumper & Hub | `features/payload-dumper` | `payloadDumperStore`, `payloadProgressStore`, TanStack Query `useFirmwareCatalog` | `ExtractPayload`, `ListPayloadPartitions`, `UnpackSuperImage`, `GetFirmwareCatalog`, `RefreshFirmwareCatalog`, `GetSupportedFirmwareBrands`, `ClearFirmwareCache`, `CancelPayloadExtraction` | `payload` domain (crau, lp, delta, samsung, xiaomi, ops, io, verify) + `firmware` domain (Google scraper, 24h cache) |
 | Marketplace | `features/marketplace` | `marketplaceStore` | search/download/install/auth | `marketplace` domain |
 | Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
 | Logs / Shell | `app/shell/BottomPanel` (`LogsPanel`/`LogRow`, `ShellPanel`/`ShellInput`/`ShellTranscript`) | `logStore`, `shellStore` | shell/host cmds, `SaveLog` | `adb`, `fastboot`, `system` |

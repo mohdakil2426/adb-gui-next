@@ -14,7 +14,7 @@ Fonts are **not** an npm runtime dep: Inter + JetBrains Mono variable woff2 are 
 
 ### Backend
 
-Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · optional brotli · sha1 · sha2 · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
+Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · brotli · sha1 · sha2 · byteorder · lz4_flex · scraper · windows-sys (sparse IOCTLs) · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
 
 `[profile.release]`: `opt-level = 3` · `lto = true` · `codegen-units = 1` · `panic = "abort"` · `strip = true`. The old `opt-level = "s"` and the separate `release-fast` profile are gone — the workload is CPU-bound, so `release` **is** the speed profile.
 
@@ -50,7 +50,7 @@ src-tauri/
   commands/     thin IPC
   adb/          AdbClient (single adb spawn point) + telemetry + parse
   helpers.rs    binary, path safety, adb serial helpers (adb_shell_checked forwards to adb/)
-  payload/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ host_setup/ apps/ flasher/ app_icons.rs
+  payload/ (crau, lp, delta, samsung, xiaomi, ops, zip, remote, io, verify) firmware/ marketplace/ scrcpy/ emulator/ debloat/ utilities/ host_setup/ apps/ flasher/ app_icons.rs
   resources/{windows,linux,darwin}/
   permissions/ + capabilities/
 scripts/

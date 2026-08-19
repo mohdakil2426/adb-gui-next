@@ -2,17 +2,19 @@
 
 ## Current Focus
 
-**UI-to-Rust Backend Logic Migration & Code Quality Optimization**: Migrating all heavy business logic, hardware telemetry calculations, data parsers, batch execution loops, dynamic update inspections, and cryptographic hashing into the Rust backend (`src-tauri/src/`) while keeping UI and presentation purely in React.
+**Universal Firmware Dumper Engine & Live OEM Firmware Hub**:
+Universal Android firmware container extraction and real-time OEM firmware catalog scraping in the Rust backend (`src-tauri/src/payload/` and `src-tauri/src/firmware/`), paired with a reactive React 19 frontend (`src/features/payload-dumper/`).
 
-### Key Objectives
-1. **App Manager Domain (`src-tauri/src/apps/`)**: Real `get_app_overview_telemetry` from `dumpsys diskstats` / packages, real `targetSdk` / `apkSizeBytes` on `InstalledPackage`, batch APK inspection, and atomic sideloading.
-2. **Flasher Domain (`src-tauri/src/flasher/`)**: Single `fastboot getvar all` parser for `get_flasher_vitals`, binary magic byte sniffer for images, background transactional `flash_partition_batch`, and streaming `sideload_package_stream`.
-3. **Scrcpy & Emulator Domains**: Server-side `scrcpy_preview_command`, quality profiles catalog, typed `scrcpy_toolbar_action` dispatcher, real `config.ini` hardware specs parser, real disk breakdown inspection, and host resource telemetry via `sysinfo`.
-4. **Marketplace & Payload Domains**: Real dynamic update inspector, device ABI matching, `marketplace_get_overview_stats`, authentic on-disk SHA-256 partition hashing, and unified `get_all_devices`.
-5. **Desktop IPC & Models**: Complete TypeScript DTOs in `src/desktop/models.ts` with strict literal unions and typed backend invoke wrappers.
-
-See full audit and plan in `docs/internal/reports/full_ui_and_backend_logic_migration_audit.md` and `docs/internal/reports/ui_to_rust_migration_implementation_plan.md`.
-
+### Key Implementations & Capabilities
+1. **Dynamic Partitions (`src-tauri/src/payload/lp/`)**: Native Rust `liblp` binary parser (`LpMetadataGeometry` 0x616c4467, `LpMetadataHeader` 0x414C5030, `LpMetadataPartition`, `LpMetadataExtent`) and `unpack_super_image` streaming sub-partitions (`system.img`, `vendor.img`, `product.img`, `system_ext.img`, `odm.img`) directly from `super.img` to disk without temporary file overhead.
+2. **Incremental & Delta OTA Differential Engine (`src-tauri/src/payload/delta/`)**: `DeltaEngine` executing `SOURCE_COPY`, `SOURCE_BSDIFF` (via `bsdiff-android`), `PUFFDIFF` (via `puffdiff` deflate puff-repuff), and `BROTLI_BSDIFF` (Brotli patch stream decompression + BSDiff against base blocks), accompanied by `SourceMatcher` for pre-OTA base partition SHA-256 resolution.
+3. **CrAU v1 & v2 Header Support (`src-tauri/src/payload/crau/`)**: Dual parsing of legacy 20-byte ChromeOS / Android 6 (v1) and modern 24-byte Android 7–15+ (v2) headers.
+4. **Samsung Odin `.tar.md5` & LZ4 Streaming Unpacker (`src-tauri/src/payload/samsung/`)**: `SamsungTarMd5Extractor` streaming tar entries and decompressing `.lz4` partition frames on-the-fly (`lz4_flex`) with in-flight MD5 verification.
+5. **Xiaomi `transfer.list` & Brotli `dat.br` Extractor (`src-tauri/src/payload/xiaomi/`)**: `TransferList` script interpreter and `XiaomiDatExtractor` streaming Brotli-decompressed blocks into sparse target images.
+6. **Cross-Platform Native Sparse File IOCTL Manager (`src-tauri/src/payload/io/sparse_ioctl.rs`)**: `SparseFileExt` implementing Windows `FSCTL_SET_SPARSE` / `FSCTL_SET_ZERO_DATA`, Linux `fallocate(FALLOC_FL_PUNCH_HOLE)`, and macOS `fcntl(F_PUNCHHOLE)` to eliminate physical SSD zero-writes.
+7. **Storage Pre-Flight Validation & Resilient Mover (`src-tauri/src/payload/storage_check.rs`)**: User-quota-aware free space verification (5% headroom + 256 MiB metadata margin), FAT32 4GB limit rejection, `dunce::canonicalize` Windows `\\?\` path normalization, and `move_file_cross_device` handling `EXDEV` / error 17.
+8. **Universal Firmware Hub Backend (`src-tauri/src/firmware/`)**: Pluggable `FirmwareProvider` trait, `GooglePixelScraper` fetching Factory Images and Full OTAs with `devsite_wall_acks` cookie authentication, hardware metadata enrichment (SoC, Release Year, Series, isLatest), and two-tier caching (RAM `RwLock` + 24h disk JSON TTL at `<cache_dir>/firmware/`).
+9. **Universal Frontend Hub & 1-Click Remote Extraction (`src/features/payload-dumper/ui/marketplace/`)**: Multi-brand selector chips (`All`, `Google Pixel`, `Nothing`, `Xiaomi`, `OnePlus`, `Samsung`), TanStack Query `useFirmwareCatalog`, live loading skeletons, 1-click **Remote Stream Extract** bridge into payload dumper, dynamic partition sub-unpack controls in `PayloadLoadedPanel` and `PayloadOverviewTab`, and complete removal of static mock data.
 | Area | Decision |
 | --- | --- |
 | **Theme** | Official shadcn Neutral: light `--background: oklch(1 0 0)`, dark `--background: oklch(0.145 0 0)`. `canvas`/`surface` alias those tokens. Status colours = device state, not UI emphasis. |

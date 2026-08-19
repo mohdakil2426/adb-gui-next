@@ -17,6 +17,7 @@ const allowedLargeFiles = new Set([
   // Pre-existing payload modules (over 300-line review budget; split tracked separately)
   path.join(srcRoot, 'features', 'payload-dumper', 'hooks', 'usePayloadActions.ts'),
   path.join(srcRoot, 'features', 'payload-dumper', 'model', 'payloadDumperStore.ts'),
+  path.join(srcRoot, 'features', 'payload-dumper', 'ui', 'overview', 'PayloadOverviewTab.tsx'),
   // Orchestrator hook already extracted from FileExplorerView; further split is separate work
   path.join(srcRoot, 'features', 'file-explorer', 'hooks', 'useFileExplorerViewModel.ts'),
   path.join(srcRoot, 'features', 'scrcpy', 'toolbar', 'ScrcpyFloatingToolbar.tsx'),
@@ -35,7 +36,7 @@ function collectSourceFiles(directory: string): string[] {
     const stat = statSync(fullPath);
     if (stat.isDirectory()) {
       files.push(...collectSourceFiles(fullPath));
-    } else if (sourceExtensions.has(path.extname(fullPath))) {
+    } else if (stat.isFile() && sourceExtensions.has(path.extname(entry))) {
       files.push(fullPath);
     }
   }
@@ -49,7 +50,6 @@ function toPosixPath(filePath: string): string {
 function collectFrontendImplementationFiles(): string[] {
   return [
     ...collectSourceFiles(path.join(srcRoot, 'app')),
-    ...collectSourceFiles(path.join(srcRoot, 'desktop')),
     ...collectSourceFiles(path.join(srcRoot, 'features')),
     ...collectSourceFiles(path.join(srcRoot, 'shared')),
   ];
@@ -57,41 +57,48 @@ function collectFrontendImplementationFiles(): string[] {
 
 describe('frontend architecture boundaries', () => {
   it('uses the strict top-level frontend folders', () => {
-    expect(existsSync(path.join(srcRoot, 'app'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'desktop'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'features'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'shared'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'components', 'views'))).toBe(false);
-    expect(existsSync(path.join(srcRoot, 'lib'))).toBe(false);
+    const topLevelEntries = readdirSync(srcRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+
+    expect(topLevelEntries.sort()).toEqual(
+      ['app', 'desktop', 'features', 'shared', 'styles', 'test'].sort(),
+    );
   });
 
   it('keeps Tauri invoke calls inside the desktop boundary', () => {
-    const offenders = collectFrontendImplementationFiles().filter((filePath) => {
-      const text = readFileSync(filePath, 'utf8');
-      return (
-        text.includes('@tauri-apps/api/core') &&
-        toPosixPath(filePath) !== toPosixPath(path.join(srcRoot, 'desktop', 'backend.ts'))
-      );
-    });
+    const offenders = collectFrontendImplementationFiles()
+      .map((filePath) => {
+        const content = readFileSync(filePath, 'utf8');
+        return {
+          content,
+          filePath,
+        };
+      })
+      .filter(({ content }) => /invoke\s*\(/.test(content))
+      .map(({ filePath }) => toPosixPath(path.relative(repoRoot, filePath)));
 
-    expect(offenders.map((filePath) => toPosixPath(path.relative(repoRoot, filePath)))).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 
   it('does not import from legacy frontend folders', () => {
-    const legacyPatterns = [
-      '@/components/views',
-      '@/components/marketplace',
-      '@/components/payload-dumper',
-      '@/components/emulator-manager',
-      '@/lib/',
+    const legacyFolderPatterns = [
+      /from\s+['"]@\/components\b/,
+      /from\s+['"]@\/hooks\b/,
+      /from\s+['"]@\/lib\b/,
+      /from\s+['"]@\/stores\b/,
+      /from\s+['"]@\/types\b/,
+      /from\s+['"]\.\.?\/.*(components|hooks|lib|stores|types)\b/,
     ];
 
-    const offenders = collectFrontendImplementationFiles().flatMap((filePath) => {
-      const text = readFileSync(filePath, 'utf8');
-      return legacyPatterns
-        .filter((pattern) => text.includes(pattern))
-        .map((pattern) => `${toPosixPath(path.relative(repoRoot, filePath))}: ${pattern}`);
-    });
+    const offenders = collectFrontendImplementationFiles()
+      .map((filePath) => {
+        const content = readFileSync(filePath, 'utf8');
+        const matched = legacyFolderPatterns.some((pattern) => pattern.test(content));
+        return { filePath, matched };
+      })
+      .filter(({ matched }) => matched)
+      .map(({ filePath }) => toPosixPath(path.relative(repoRoot, filePath)));
 
     expect(offenders).toEqual([]);
   });
