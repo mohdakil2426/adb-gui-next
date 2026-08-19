@@ -203,6 +203,7 @@ export function ViewPayloadDumper() {
                 onOpenOutputFolder={actions.handleOpenOutputFolder}
                 onPayloadDrop={actions.handlePayloadDrop}
                 onPrefetchChange={setPrefetch}
+                onRefreshPartitions={actions.handleRefreshPartitions}
                 onReset={actions.handleReset}
                 onSelectOutput={actions.handleSelectOutput}
                 onSelectPayload={actions.handleSelectPayload}
@@ -216,6 +217,7 @@ export function ViewPayloadDumper() {
                 partitions={partitions}
                 payloadPath={payloadPath}
                 prefetch={prefetch}
+                remoteMetadata={remoteMetadata}
                 remoteUrl={remoteUrl}
                 status={status}
                 toExtractCount={selectedNotExtracted.length}

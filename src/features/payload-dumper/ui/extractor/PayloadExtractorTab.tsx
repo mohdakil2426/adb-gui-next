@@ -1,22 +1,17 @@
-import { ArrowDownUp, CheckSquare, Search, Square } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import type { backend } from '@/desktop/models';
 import type { PartitionProgress } from '@/features/payload-dumper/model/payloadProgressStore';
 import { ActionFooter } from '@/features/payload-dumper/ui/ActionFooter';
-import {
-  type CategoryFilterType,
-  PartitionCategoryFilter,
-} from '@/features/payload-dumper/ui/extractor/PartitionCategoryFilter';
+import type { CategoryFilterType } from '@/features/payload-dumper/ui/extractor/PartitionCategoryFilter';
 import { PartitionTableList } from '@/features/payload-dumper/ui/extractor/PartitionTableList';
+import { PartitionToolbar } from '@/features/payload-dumper/ui/extractor/PartitionToolbar';
+import { FileBanner } from '@/features/payload-dumper/ui/FileBanner';
 import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
 import { OutputDirectoryField } from '@/features/payload-dumper/ui/OutputDirectoryField';
 import { PayloadSourceTabs } from '@/features/payload-dumper/ui/PayloadSourceTabs';
 import { getPartitionCategory } from '@/features/payload-dumper/utils/partitionCategories';
 import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
-import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
-import { Input } from '@/shared/ui/input';
-import { formatBytes } from '@/shared/utils/format';
 
 interface PartitionInfo {
   name: string;
@@ -48,6 +43,7 @@ interface PayloadExtractorTabProps {
   onOpenOutputFolder: () => void;
   onPayloadDrop: (paths: string[]) => void;
   onPrefetchChange: (prefetch: boolean) => void;
+  onRefreshPartitions?: () => void;
   onReset: () => void;
   onSelectOutput: () => void;
   onSelectPayload: () => void;
@@ -61,6 +57,7 @@ interface PayloadExtractorTabProps {
   partitions: PartitionInfo[];
   payloadPath: string;
   prefetch: boolean;
+  remoteMetadata?: backend.RemotePayloadMetadata | null | undefined;
   remoteUrl: string;
   status: string;
   toExtractCount: number;
@@ -107,12 +104,20 @@ export function PayloadExtractorTab({
   onCancelExtraction,
   onReset,
   onSelectPayload,
+  onRefreshPartitions,
+  remoteMetadata,
 }: PayloadExtractorTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryFilterType>('all');
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const isBusy = status === 'extracting' || status === 'loading-partitions';
-
+  const isRemote =
+    mode === 'remote' || payloadPath.startsWith('http://') || payloadPath.startsWith('https://');
+  const totalPayloadSize = useMemo(
+    () => partitions.reduce((total, partition) => total + partition.size, 0),
+    [partitions],
+  );
   const filteredPartitions = useMemo(
     () =>
       partitions
@@ -138,47 +143,70 @@ export function PayloadExtractorTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Integrated Source & Remote Loader Ingestion Card */}
-      <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
-        <CardContent className="flex flex-col gap-4 p-0">
-          <PayloadSourceTabs
-            connectionStatus={connectionStatus}
-            disabled={isBusy}
-            estimatedSize={estimatedSize}
-            isLoadingPartitions={isLoadingPartitions}
-            loadDetail={loadDetail}
-            loadMessage={loadMessage}
-            loadPhase={loadPhase}
-            loadStartedAt={loadStartedAt}
-            loadStep={loadStep}
-            loadTotalSteps={loadTotalSteps}
-            mode={mode}
-            onCancelLoadPartitions={onCancelLoadPartitions}
-            onCheckUrl={onCheckUrl}
-            onLoadRemotePartitions={onLoadRemotePartitions}
-            onModeChange={onModeChange}
-            onPayloadDrop={onPayloadDrop}
-            onPrefetchChange={onPrefetchChange}
-            onSelectPayload={onSelectPayload}
-            onUrlChange={onUrlChange}
-            prefetch={prefetch}
-            remoteUrl={remoteUrl}
-          />
-        </CardContent>
-      </Card>
+      {/* Ingestion & Loading States (shown when no partitions are loaded) */}
+      {partitions.length === 0 ? (
+        <>
+          {/* Integrated Source & Remote Loader Ingestion Card */}
+          <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+            <CardContent className="flex flex-col gap-4 p-0">
+              <PayloadSourceTabs
+                connectionStatus={connectionStatus}
+                disabled={isBusy}
+                estimatedSize={estimatedSize}
+                isLoadingPartitions={isLoadingPartitions}
+                loadDetail={loadDetail}
+                loadMessage={loadMessage}
+                loadPhase={loadPhase}
+                loadStartedAt={loadStartedAt}
+                loadStep={loadStep}
+                loadTotalSteps={loadTotalSteps}
+                mode={mode}
+                onCancelLoadPartitions={onCancelLoadPartitions}
+                onCheckUrl={onCheckUrl}
+                onLoadRemotePartitions={onLoadRemotePartitions}
+                onModeChange={onModeChange}
+                onPayloadDrop={onPayloadDrop}
+                onPrefetchChange={onPrefetchChange}
+                onSelectPayload={onSelectPayload}
+                onUrlChange={onUrlChange}
+                prefetch={prefetch}
+                remoteUrl={remoteUrl}
+              />
+            </CardContent>
+          </Card>
 
-      {/* Local Parsing Loading State */}
-      {status === 'loading-partitions' && mode === 'local' ? (
-        <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
-          <CardContent className="p-0">
-            <LoadingState mode={mode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
-          </CardContent>
-        </Card>
+          {/* Local Parsing Loading State */}
+          {status === 'loading-partitions' && mode === 'local' ? (
+            <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+              <CardContent className="p-0">
+                <LoadingState mode={mode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
+              </CardContent>
+            </Card>
+          ) : null}
+        </>
       ) : null}
 
       {/* Partitions & Extraction Workspace */}
       {partitions.length > 0 ? (
         <>
+          {/* Active Loaded Payload Source Banner */}
+          <FileBanner
+            isDetailsOpen={isDetailsOpen}
+            isRemote={isRemote}
+            onRefreshPartitions={onRefreshPartitions ?? (() => {})}
+            onReset={onReset}
+            onSelectPayload={onSelectPayload}
+            onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
+            outputPath={effectiveOutputPath}
+            partitionCount={partitions.length}
+            payloadPath={payloadPath}
+            prefetch={prefetch}
+            remoteMetadata={remoteMetadata ?? null}
+            remoteUrl={remoteUrl}
+            status={status}
+            totalPayloadSize={totalPayloadSize}
+          />
+
           {/* Destination Directory Selector */}
           <OutputDirectoryField
             disabled={status === 'extracting'}
@@ -191,78 +219,22 @@ export function PayloadExtractorTab({
           {/* Partitions Command Bar */}
           <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
             <CardContent className="flex flex-col gap-3.5 p-0">
-              {/* Top Bar: Search Input & Category Filters */}
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="relative min-w-[200px] max-w-sm flex-1">
-                  <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    className="h-8 pl-8 text-body"
-                    disabled={isBusy}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search partition name (e.g. boot, system)…"
-                    value={searchQuery}
-                  />
-                </div>
-
-                <PartitionCategoryFilter
-                  activeCategory={activeCategory}
-                  onSelectCategory={setActiveCategory}
-                  partitions={partitions}
-                />
-              </div>
-
-              {/* Sub-bar: Selection Counters & Bulk Selection Actions */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-border/50 border-t pt-2.5 text-caption">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    {filteredPartitions.length} of {partitions.length} partitions shown
-                  </span>
-                  <span>·</span>
-                  <span className="tabular-nums">
-                    {selectedCount} selected ({formatBytes(toExtractSize)} to extract)
-                  </span>
-                  {completedPartitions.size > 0 ? (
-                    <>
-                      <span>·</span>
-                      <span className="font-medium text-success">
-                        {completedPartitions.size} extracted
-                      </span>
-                    </>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Button
-                    className="h-7 px-2 text-caption"
-                    disabled={isBusy}
-                    onClick={onToggleAll}
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    {allFilteredSelected ? (
-                      <>
-                        <Square className="mr-1 size-3.5" /> Deselect All
-                      </>
-                    ) : (
-                      <>
-                        <CheckSquare className="mr-1 size-3.5" /> Select All
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    className="h-7 px-2 text-caption"
-                    disabled={isBusy}
-                    onClick={handleInvertFiltered}
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    <ArrowDownUp className="mr-1 size-3.5" /> Invert Selection
-                  </Button>
-                </div>
-              </div>
-
+              <PartitionToolbar
+                activeCategory={activeCategory}
+                allFilteredSelected={allFilteredSelected}
+                completedCount={completedPartitions.size}
+                filteredCount={filteredPartitions.length}
+                isBusy={isBusy}
+                onInvertFiltered={handleInvertFiltered}
+                onSearchChange={setSearchQuery}
+                onSelectCategory={setActiveCategory}
+                onToggleAll={onToggleAll}
+                partitions={partitions}
+                searchQuery={searchQuery}
+                selectedCount={selectedCount}
+                toExtractSize={toExtractSize}
+                totalCount={partitions.length}
+              />
               {/* Partition Grid List */}
               <PartitionTableList
                 filteredPartitions={filteredPartitions}

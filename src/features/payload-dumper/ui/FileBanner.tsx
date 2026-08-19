@@ -13,6 +13,7 @@ interface FileBannerProps {
   isDetailsOpen: boolean;
   isRemote: boolean;
   onRefreshPartitions: () => void;
+  onReset?: () => void;
   onSelectPayload: () => void;
   onToggleDetails: () => void;
   outputPath: string;
@@ -37,6 +38,7 @@ export const FileBanner = memo(function FileBanner({
   isDetailsOpen,
   isRemote,
   onRefreshPartitions,
+  onReset,
   onSelectPayload,
   onToggleDetails,
   outputPath,
@@ -72,14 +74,18 @@ export const FileBanner = memo(function FileBanner({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <Button
-            aria-label="Change payload file"
+            aria-label={isRemote ? 'Change remote payload URL' : 'Change payload file'}
             disabled={isDisabled}
-            onClick={onSelectPayload}
+            onClick={isRemote ? (onReset ?? onSelectPayload) : onSelectPayload}
             size="sm"
             type="button"
             variant="outline"
           >
-            <FileArchive aria-hidden="true" />
+            {isRemote ? (
+              <Globe aria-hidden="true" className="mr-1.5 size-3.5" />
+            ) : (
+              <FileArchive aria-hidden="true" className="mr-1.5 size-3.5" />
+            )}
             Change
           </Button>
           {partitionCount > 0 ? (
