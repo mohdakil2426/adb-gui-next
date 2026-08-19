@@ -726,6 +726,92 @@ mod transaction_guard_tests {
         let guard = TransactionGuard::new(output_dir.clone());
         guard.abort(); // Should not panic
     }
+
+    #[test]
+    fn staged_isolation_commit_and_cleanup() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let guard = TransactionGuard::new(output_dir.clone());
+        let staged_file = guard.stage_path("system.img");
+        fs::write(&staged_file, b"staged partition content").expect("write staged");
+        guard.add_file(staged_file.clone());
+
+        assert!(staged_file.exists());
+        assert!(guard.staging_dir().exists());
+
+        guard.commit();
+
+        let final_file = output_dir.join("system.img");
+        assert!(final_file.exists());
+        assert_eq!(fs::read(&final_file).expect("read final"), b"staged partition content");
+        assert!(!guard.staging_dir().exists(), "Staging directory should be cleaned up on commit");
+    }
+
+    #[test]
+    fn staged_isolation_abort_preserves_unrelated_files() {
+        let temp = tempdir().expect("tempdir");
+        let output_dir = temp.path().join("output");
+        fs::create_dir_all(&output_dir).expect("create dir");
+
+        let user_file = output_dir.join("important_photo.jpg");
+        fs::write(&user_file, b"original content").expect("write user file");
+
+        let guard = TransactionGuard::new(output_dir.clone());
+        let staged_file = guard.stage_path("failed_part.img");
+        fs::write(&staged_file, b"corrupted payload").expect("write staged");
+        guard.add_file(staged_file.clone());
+
+        guard.abort();
+
+        assert!(!staged_file.exists());
+        assert!(!output_dir.join("failed_part.img").exists());
+        assert!(user_file.exists(), "User files must remain untouched");
+    }
+}
+
+mod storage_preflight_tests {
+    use super::super::storage_check::*;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_normalize_path_ancestor() {
+        let temp = tempdir().expect("tempdir");
+        let non_existent = temp.path().join("a").join("b").join("c");
+        let normalized = normalize_path(&non_existent);
+        assert!(!normalized.as_os_str().is_empty());
+    }
+
+    #[test]
+    fn test_preflight_storage_free_space() {
+        let temp = tempdir().expect("tempdir");
+        assert!(validate_preflight_storage(temp.path(), 1024).is_ok());
+    }
+
+    #[test]
+    fn test_preflight_storage_rejects_huge_capacity() {
+        let temp = tempdir().expect("tempdir");
+        let impossible_bytes = 100 * 1024 * 1024 * 1024 * 1024 * 1024u64; // 100 PB
+        let res = validate_preflight_storage(temp.path(), impossible_bytes);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_cross_device_move_stepdown() {
+        let temp = tempdir().expect("tempdir");
+        let src = temp.path().join("source_data.bin");
+        let dst = temp.path().join("deep").join("nested").join("target.bin");
+
+        let content = b"Payload extractor resilient move test data!";
+        std::fs::write(&src, content).expect("write src");
+
+        move_file_cross_device(&src, &dst).expect("move file");
+
+        assert!(!src.exists());
+        assert!(dst.exists());
+        assert_eq!(std::fs::read(&dst).expect("read dst"), content);
+    }
 }
 
 // =============================================================================
@@ -1099,5 +1185,362 @@ mod manifest_size_cap_tests {
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
         assert!(err.contains("exceeds maximum"), "error should mention exceeds maximum: {}", err);
+    }
+}
+
+// =============================================================================
+// Tests for CrAU v1 and v2 Header Parsing
+// =============================================================================
+
+mod crau_header_version_tests {
+    use super::super::crau::parse_header;
+    use crate::payload::chromeos_update_engine::DeltaArchiveManifest;
+    use prost::Message;
+
+    #[test]
+    fn test_parse_crau_v1_header_success() {
+        let manifest = DeltaArchiveManifest { block_size: Some(4096), ..Default::default() };
+        let mut manifest_bytes = Vec::new();
+        manifest.encode(&mut manifest_bytes).expect("encode manifest");
+
+        let mut payload = Vec::new();
+        payload.extend_from_slice(b"CrAU");
+        payload.extend_from_slice(&1u64.to_be_bytes()); // Version 1
+        payload.extend_from_slice(&(manifest_bytes.len() as u64).to_be_bytes());
+        // Note: CrAU v1 has NO metadata_sig_len (20-byte header)
+        payload.extend_from_slice(&manifest_bytes);
+        payload.extend_from_slice(b"payload-data-starts-here");
+
+        let (parsed_manifest, data_offset) = parse_header(&payload).expect("parse v1 header");
+        assert_eq!(parsed_manifest, manifest_bytes);
+        assert_eq!(data_offset, 20 + manifest_bytes.len());
+    }
+
+    #[test]
+    fn test_parse_crau_v2_header_success() {
+        let manifest = DeltaArchiveManifest { block_size: Some(4096), ..Default::default() };
+        let mut manifest_bytes = Vec::new();
+        manifest.encode(&mut manifest_bytes).expect("encode manifest");
+
+        let metadata_sig = b"test-metadata-signature";
+        let mut payload = Vec::new();
+        payload.extend_from_slice(b"CrAU");
+        payload.extend_from_slice(&2u64.to_be_bytes()); // Version 2
+        payload.extend_from_slice(&(manifest_bytes.len() as u64).to_be_bytes());
+        payload.extend_from_slice(&(metadata_sig.len() as u32).to_be_bytes());
+        payload.extend_from_slice(&manifest_bytes);
+        payload.extend_from_slice(metadata_sig);
+        payload.extend_from_slice(b"payload-data-starts-here");
+
+        let (parsed_manifest, data_offset) = parse_header(&payload).expect("parse v2 header");
+        assert_eq!(parsed_manifest, manifest_bytes);
+        assert_eq!(data_offset, 24 + manifest_bytes.len() + metadata_sig.len());
+    }
+
+    #[test]
+    fn test_parse_crau_header_rejects_unsupported_version() {
+        let mut payload = Vec::new();
+        payload.extend_from_slice(b"CrAU");
+        payload.extend_from_slice(&3u64.to_be_bytes()); // Unsupported version 3
+        payload.extend_from_slice(&100u64.to_be_bytes());
+        payload.extend_from_slice(&0u32.to_be_bytes());
+
+        let result = parse_header(&payload);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("unsupported payload version"));
+    }
+
+    #[test]
+    fn test_parse_crau_header_rejects_invalid_magic() {
+        let mut payload = vec![0u8; 24];
+        payload[0..4].copy_from_slice(b"FAKE");
+        payload[4..12].copy_from_slice(&2u64.to_be_bytes());
+
+        let result = parse_header(&payload);
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("invalid payload magic"));
+    }
+
+    #[test]
+    fn test_parse_crau_header_rejects_truncated_payload() {
+        let payload = b"CrAU\x00\x00\x00\x00";
+        let result = parse_header(payload);
+        assert!(result.is_err());
+    }
+}
+
+// =============================================================================
+// Tests for Delta Engine & Source Matcher
+// =============================================================================
+
+mod delta_engine_tests {
+    use super::*;
+    use crate::payload::delta::{DeltaEngine, Extent, MAX_OPERATION_SIZE, SourceMatcher};
+    use sha2::{Digest, Sha256};
+    use std::io::Cursor;
+
+    fn generate_simple_bsdiff_patch(old_data: &[u8], new_data: &[u8]) -> Vec<u8> {
+        let mut patch = Vec::new();
+        patch.extend_from_slice(b"BSDIFF40");
+
+        let x = old_data.len().min(new_data.len());
+        let y = new_data.len().saturating_sub(old_data.len());
+        let z = 0i64;
+
+        let mut diff_bytes = Vec::new();
+        for i in 0..x {
+            diff_bytes.push(new_data[i].wrapping_sub(old_data[i]));
+        }
+
+        let extra_bytes = new_data[x..].to_vec();
+
+        let mut ctrl_bytes = Vec::new();
+        ctrl_bytes.extend_from_slice(&(x as i64).to_le_bytes());
+        ctrl_bytes.extend_from_slice(&(y as i64).to_le_bytes());
+        ctrl_bytes.extend_from_slice(&z.to_le_bytes());
+
+        let mut bz_ctrl = Vec::new();
+        {
+            let mut enc = bzip2::write::BzEncoder::new(&mut bz_ctrl, bzip2::Compression::best());
+            enc.write_all(&ctrl_bytes).unwrap();
+            enc.finish().unwrap();
+        }
+
+        let mut bz_diff = Vec::new();
+        {
+            let mut enc = bzip2::write::BzEncoder::new(&mut bz_diff, bzip2::Compression::best());
+            enc.write_all(&diff_bytes).unwrap();
+            enc.finish().unwrap();
+        }
+
+        let mut bz_extra = Vec::new();
+        {
+            let mut enc = bzip2::write::BzEncoder::new(&mut bz_extra, bzip2::Compression::best());
+            enc.write_all(&extra_bytes).unwrap();
+            enc.finish().unwrap();
+        }
+
+        patch.extend_from_slice(&(bz_ctrl.len() as i64).to_le_bytes());
+        patch.extend_from_slice(&(bz_diff.len() as i64).to_le_bytes());
+        patch.extend_from_slice(&(new_data.len() as i64).to_le_bytes());
+
+        patch.extend_from_slice(&bz_ctrl);
+        patch.extend_from_slice(&bz_diff);
+        patch.extend_from_slice(&bz_extra);
+
+        patch
+    }
+
+    #[test]
+    fn test_source_matcher_locates_and_verifies_hash() {
+        let temp = tempdir().expect("tempdir");
+        let base_img = temp.path().join("system.img");
+        let base_data = vec![0x42u8; 8192];
+        fs::write(&base_img, &base_data).expect("write base");
+
+        let expected_hash = Sha256::digest(&base_data);
+
+        let resolved = SourceMatcher::resolve_partition(
+            temp.path(),
+            "system",
+            Some(expected_hash.as_slice()),
+            Some(8192),
+        )
+        .expect("resolve partition");
+        assert_eq!(resolved, base_img);
+    }
+
+    #[test]
+    fn test_source_matcher_rejects_hash_mismatch() {
+        let temp = tempdir().expect("tempdir");
+        let base_img = temp.path().join("boot.img");
+        let base_data = vec![0x11u8; 4096];
+        fs::write(&base_img, &base_data).expect("write base");
+
+        let wrong_hash = [0xFFu8; 32];
+        let result =
+            SourceMatcher::resolve_partition(temp.path(), "boot", Some(&wrong_hash), Some(4096));
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("matching SHA-256"));
+    }
+
+    #[test]
+    fn test_delta_engine_source_copy() {
+        let old_data = vec![0xA5u8; 8192];
+        let mut src_reader = Cursor::new(old_data.clone());
+        let mut dst_writer = Cursor::new(vec![0u8; 8192]);
+
+        let src_extents = vec![Extent { start_block: 0, num_blocks: 2 }];
+        let dst_extents = vec![Extent { start_block: 0, num_blocks: 2 }];
+
+        DeltaEngine::apply_operation(
+            Type::SourceCopy,
+            &[],
+            &mut src_reader,
+            &src_extents,
+            &mut dst_writer,
+            &dst_extents,
+            4096,
+            None,
+        )
+        .expect("apply source copy");
+
+        assert_eq!(dst_writer.into_inner(), old_data);
+    }
+
+    #[test]
+    fn test_delta_engine_source_bsdiff() {
+        let old_data = vec![0x33u8; 4096];
+        let mut new_data = vec![0x33u8; 4096];
+        new_data[100..200].fill(0x77);
+
+        let patch = generate_simple_bsdiff_patch(&old_data, &new_data);
+
+        let mut src_reader = Cursor::new(old_data);
+        let mut dst_writer = Cursor::new(vec![0u8; 4096]);
+
+        let src_extents = vec![Extent { start_block: 0, num_blocks: 1 }];
+        let dst_extents = vec![Extent { start_block: 0, num_blocks: 1 }];
+
+        DeltaEngine::apply_operation(
+            Type::SourceBsdiff,
+            &patch,
+            &mut src_reader,
+            &src_extents,
+            &mut dst_writer,
+            &dst_extents,
+            4096,
+            None,
+        )
+        .expect("apply source bsdiff");
+
+        assert_eq!(dst_writer.into_inner(), new_data);
+    }
+
+    #[test]
+    fn test_delta_engine_brotli_bsdiff() {
+        let old_data = vec![0x55u8; 4096];
+        let mut new_data = vec![0x55u8; 4096];
+        new_data[50..150].fill(0xAA);
+
+        let raw_patch = generate_simple_bsdiff_patch(&old_data, &new_data);
+        let mut brotli_patch = Vec::new();
+        {
+            let mut writer = brotli::CompressorWriter::new(&mut brotli_patch, 4096, 6, 22);
+            writer.write_all(&raw_patch).unwrap();
+        }
+
+        let mut src_reader = Cursor::new(old_data);
+        let mut dst_writer = Cursor::new(vec![0u8; 4096]);
+
+        let src_extents = vec![Extent { start_block: 0, num_blocks: 1 }];
+        let dst_extents = vec![Extent { start_block: 0, num_blocks: 1 }];
+
+        DeltaEngine::apply_operation(
+            Type::BrotliBsdiff,
+            &brotli_patch,
+            &mut src_reader,
+            &src_extents,
+            &mut dst_writer,
+            &dst_extents,
+            4096,
+            None,
+        )
+        .expect("apply brotli bsdiff");
+
+        assert_eq!(dst_writer.into_inner(), new_data);
+    }
+
+    #[test]
+    fn test_delta_engine_safety_cap() {
+        let old_data = vec![0u8; 4096];
+        let mut src_reader = Cursor::new(old_data);
+        let mut dst_writer = Cursor::new(Vec::new());
+
+        // Extents requesting > 512 MB
+        let huge_num_blocks = (MAX_OPERATION_SIZE / 4096 + 10) as u64;
+        let huge_extents = vec![Extent { start_block: 0, num_blocks: huge_num_blocks }];
+
+        let result = DeltaEngine::apply_operation(
+            Type::SourceCopy,
+            &[],
+            &mut src_reader,
+            &huge_extents,
+            &mut dst_writer,
+            &huge_extents,
+            4096,
+            None,
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("safety cap"));
+    }
+
+    #[test]
+    fn test_extract_payload_end_to_end_with_source_copy_delta() {
+        let temp = tempdir().expect("tempdir");
+        let source_dir = temp.path().join("source");
+        fs::create_dir_all(&source_dir).expect("create source dir");
+
+        let base_image = vec![0x7Cu8; 4096];
+        let base_hash = Sha256::digest(&base_image).to_vec();
+        fs::write(source_dir.join("system.img"), &base_image).expect("write base image");
+
+        let payload_path = temp.path().join("payload.bin");
+        let output_dir = temp.path().join("out");
+
+        write_custom_payload(
+            &payload_path,
+            DeltaArchiveManifest {
+                partitions: vec![PartitionUpdate {
+                    partition_name: "system".to_string(),
+                    old_partition_info: Some(PartitionInfo {
+                        size: Some(4096),
+                        hash: Some(base_hash.clone()),
+                    }),
+                    new_partition_info: Some(PartitionInfo {
+                        size: Some(4096),
+                        hash: Some(base_hash.clone()),
+                    }),
+                    operations: vec![InstallOperation {
+                        r#type: Type::SourceCopy as i32,
+                        data_offset: Some(0),
+                        data_length: Some(0),
+                        src_extents: vec![chromeos_update_engine::Extent {
+                            start_block: Some(0),
+                            num_blocks: Some(1),
+                        }],
+                        dst_extents: vec![chromeos_update_engine::Extent {
+                            start_block: Some(0),
+                            num_blocks: Some(1),
+                        }],
+                        src_sha256_hash: Some(base_hash),
+                        ..Default::default()
+                    }],
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+            &[],
+        );
+
+        let cache = PayloadCache::default();
+        let result = extract_payload(
+            &payload_path,
+            Some(&output_dir),
+            &[String::from("system")],
+            &cache,
+            None,
+            VerifyMode::default(),
+            |_, _, _, _| {},
+            None,
+            Some(&source_dir),
+        )
+        .expect("delta extraction");
+
+        assert!(result.success);
+        assert_eq!(fs::read(output_dir.join("system.img")).expect("read out"), base_image);
     }
 }

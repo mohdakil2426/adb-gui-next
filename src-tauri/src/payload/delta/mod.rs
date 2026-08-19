@@ -1,6 +1,9 @@
-//! Incremental / delta OTA helpers (stub until Wave 4).
+//! Incremental / delta OTA engine, source image resolution, and differential algorithms.
 
-mod source_copy;
+pub mod engine;
+pub mod source_copy;
+pub mod source_matcher;
 
-#[allow(dead_code)]
+pub use engine::{DeltaEngine, Extent, MAX_OPERATION_SIZE};
 pub use source_copy::source_copy;
+pub use source_matcher::SourceMatcher;

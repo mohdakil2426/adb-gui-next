@@ -12,11 +12,15 @@ pub mod crau;
 pub mod delta;
 mod error;
 pub mod io;
+pub mod lp;
 pub mod ops;
+pub mod samsung;
 pub mod source;
+pub mod storage_check;
 pub mod transaction;
 mod types;
 pub mod verify;
+pub mod xiaomi;
 pub mod zip;
 
 #[cfg(feature = "remote_zip")]
@@ -61,6 +65,7 @@ pub use crau::{
     list_payload_partitions_with_details, open_mmap, parse_header,
 };
 pub use io::{NonTemporalWriter, copy_raw_slice};
+pub use lp::{LpMetadata, unpack_super_image};
 pub use types::{
     DynamicGroupInfo, ExtractPayloadResult, ExtractionStats, PartitionDetail, PayloadDiagnostics,
     RemotePayloadMetadata,
@@ -75,4 +80,18 @@ pub use remote::{
     get_remote_factory_image_metadata, get_remote_payload_metadata, is_zip_url,
     list_remote_factory_image_partitions, list_remote_payload_partitions, open_http_reader,
     read_text_file_from_zip,
+};
+
+pub use xiaomi::{
+    BLOCK_SIZE as XIAOMI_BLOCK_SIZE, Range as XiaomiRange,
+    TransferCommand as XiaomiTransferCommand, TransferList as XiaomiTransferList,
+    XiaomiDatExtractor, extract_xiaomi_dat,
+};
+
+pub use delta::{DeltaEngine, Extent as DeltaExtent, SourceMatcher, source_copy};
+pub use samsung::{HashingReader, SamsungTarMd5Extractor, unpack_samsung_tar};
+pub use storage_check::{
+    FAT32_MAX_FILE_SIZE, METADATA_MARGIN_BYTES, check_fat32_file_limit, get_available_disk_space,
+    is_fat32_filesystem, move_file_cross_device, normalize_path, validate_preflight_storage,
+    validate_preflight_storage_detailed,
 };

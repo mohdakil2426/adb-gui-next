@@ -1,8 +1,8 @@
 //! Shared I/O utilities for payload extraction.
 
+pub use crate::payload::storage_check::move_file_cross_device;
 use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
-
 #[allow(dead_code)]
 const COPY_BUF_SIZE: usize = 65536;
 

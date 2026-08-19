@@ -222,7 +222,7 @@ fn extract_partition(
     verify_mode: VerifyMode,
     app_handle: Option<&tauri::AppHandle>,
     cancel_token: Option<&CancellationToken>,
-    _source_dir: Option<&Path>,
+    source_dir: Option<&Path>,
 ) -> Result<()> {
     let total_operations = partition.operations.len();
     if total_operations == 0 {
@@ -243,6 +243,39 @@ fn extract_partition(
     if let Some(token) = cancel_token {
         token.check()?;
     }
+
+    use chromeos_update_engine::install_operation::Type;
+
+    #[allow(deprecated)]
+    let has_delta_ops = partition.operations.iter().any(|op| {
+        matches!(
+            Type::try_from(op.r#type).ok(),
+            Some(
+                Type::SourceCopy
+                    | Type::SourceBsdiff
+                    | Type::Puffdiff
+                    | Type::BrotliBsdiff
+                    | Type::Move
+                    | Type::Bsdiff
+            )
+        )
+    });
+
+    let mut source_file = if has_delta_ops {
+        let s_dir = source_dir.ok_or_else(|| {
+            anyhow::anyhow!(
+                "Partition '{}' contains delta OTA operations but no base image directory was provided",
+                partition.partition_name
+            )
+        })?;
+        let base_path =
+            crate::payload::delta::SourceMatcher::resolve_from_partition_update(s_dir, partition)?;
+        let file = fs::File::open(&base_path)
+            .with_context(|| format!("Failed to open base partition file at {:?}", base_path))?;
+        Some(std::io::BufReader::new(file))
+    } else {
+        None
+    };
 
     let mut current_pos = 0u64;
     let mut total_bytes_written = 0u64;
@@ -296,9 +329,80 @@ fn extract_partition(
             anyhow::bail!("payload operation {} compressed data hash mismatch", index);
         }
 
-        use chromeos_update_engine::install_operation::Type;
         let operation_type = Type::try_from(operation.r#type)
             .map_err(|_| anyhow::anyhow!("unsupported operation type {}", operation.r#type))?;
+
+        // Handle delta operations
+        #[allow(deprecated)]
+        let is_delta_op = matches!(
+            operation_type,
+            Type::SourceCopy
+                | Type::SourceBsdiff
+                | Type::Puffdiff
+                | Type::BrotliBsdiff
+                | Type::Move
+                | Type::Bsdiff
+        );
+        if is_delta_op {
+            let src_reader = source_file.as_mut().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Delta operation {:?} requires source base partition reader",
+                    operation_type
+                )
+            })?;
+            let src_extents: Vec<crate::payload::delta::Extent> =
+                operation.src_extents.iter().map(crate::payload::delta::Extent::from).collect();
+            let dst_extents: Vec<crate::payload::delta::Extent> =
+                destination_extents.iter().map(crate::payload::delta::Extent::from).collect();
+
+            crate::payload::delta::DeltaEngine::apply_operation(
+                operation_type,
+                raw_data,
+                src_reader,
+                &src_extents,
+                writer,
+                &dst_extents,
+                block_size as usize,
+                operation.src_sha256_hash.as_deref(),
+            )?;
+
+            let op_written: u64 =
+                dst_extents.iter().map(|e| e.num_blocks * block_size as u64).sum();
+            total_bytes_written += op_written;
+
+            let completed = index + 1 == total_operations;
+            let now = Instant::now();
+            let elapsed = now.duration_since(last_progress_time);
+            let (throughput_mbps, eta_seconds) = if elapsed >= progress_interval {
+                let bytes_delta = total_bytes_written.saturating_sub(last_bytes);
+                let tp = if elapsed.as_secs_f64() > 0.0 {
+                    (bytes_delta as f64) / (1024.0 * 1024.0) / elapsed.as_secs_f64()
+                } else {
+                    0.0
+                };
+                let remaining = partition_size.saturating_sub(total_bytes_written);
+                let eta =
+                    if tp > 0.0 { ((remaining as f64) / (1024.0 * 1024.0) / tp) as u64 } else { 0 };
+                last_progress_time = now;
+                last_bytes = total_bytes_written;
+                (Some(tp), Some(eta))
+            } else {
+                (None, None)
+            };
+
+            emit_progress(
+                app_handle,
+                &partition.partition_name,
+                index + 1,
+                total_operations,
+                Some(total_bytes_written),
+                Some(partition_size),
+                throughput_mbps,
+                eta_seconds,
+                completed,
+            );
+            continue;
+        }
 
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
@@ -321,13 +425,8 @@ fn extract_partition(
                 zstd::stream::read::Decoder::new(Cursor::new(raw_data))
                     .map_err(|e| anyhow::anyhow!("zstd decoder: {e}"))?,
             )),
-            #[cfg(feature = "brotli")]
-            Type::BrotliBsdiff => {
-                Some(Box::new(brotli::Decompressor::new(Cursor::new(raw_data), 4096)))
-            }
             _ => anyhow::bail!("unsupported payload operation type: {:?}", operation_type),
         };
-
         let extents = destination_extents;
         let mut ei = 0usize;
 
@@ -500,6 +599,11 @@ pub fn diagnose_payload_file(payload_path: &Path) -> Result<PayloadDiagnostics> 
                 Some(Type::ReplaceBz) => "bz2".to_string(),
                 Some(Type::Zstd) => "zstd".to_string(),
                 Some(Type::Zero) => "zero".to_string(),
+                Some(Type::SourceCopy) => "source_copy".to_string(),
+                Some(Type::SourceBsdiff) => "source_bsdiff".to_string(),
+                Some(Type::Puffdiff) => "puffdiff".to_string(),
+                Some(Type::BrotliBsdiff) => "brotli_bsdiff".to_string(),
+                Some(Type::Zucchini) => "zucchini".to_string(),
                 Some(t) => format!("type_{}", t as i32),
                 None => format!("unknown_{}", operation.r#type),
             };

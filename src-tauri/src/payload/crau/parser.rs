@@ -31,8 +31,8 @@ pub fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
 /// Parse the CrAU header and decode the protobuf manifest.
 /// Returns `(manifest_bytes, data_offset)`.
 pub fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
-    if payload_bytes.len() < 24 {
-        anyhow::bail!("payload is too small");
+    if payload_bytes.len() < 20 {
+        anyhow::bail!("payload is too small (minimum 20 bytes for CrAU v1 header)");
     }
     if &payload_bytes[..4] != b"CrAU" {
         anyhow::bail!("invalid payload magic");
@@ -43,7 +43,7 @@ pub fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
             .try_into()
             .map_err(|_| anyhow::anyhow!("invalid payload: version slice too short"))?,
     );
-    if version != 2 {
+    if version != 1 && version != 2 {
         anyhow::bail!("unsupported payload version: {version}");
     }
 
@@ -63,13 +63,20 @@ pub fn parse_header(payload_bytes: &[u8]) -> Result<(Vec<u8>, usize)> {
         );
     }
 
-    let metadata_sig_len =
-        usize::try_from(u32::from_be_bytes(payload_bytes[20..24].try_into().map_err(|_| {
-            anyhow::anyhow!("invalid payload: metadata sig length slice too short")
-        })?))
-        .map_err(|_| anyhow::anyhow!("payload metadata signature is too large"))?;
+    let (metadata_sig_len, manifest_start): (usize, usize) = if version == 2 {
+        if payload_bytes.len() < 24 {
+            anyhow::bail!("payload is too small for CrAU v2 header (minimum 24 bytes)");
+        }
+        let sig_len =
+            usize::try_from(u32::from_be_bytes(payload_bytes[20..24].try_into().map_err(
+                |_| anyhow::anyhow!("invalid payload: metadata sig length slice too short"),
+            )?))
+            .map_err(|_| anyhow::anyhow!("payload metadata signature is too large"))?;
+        (sig_len, 24)
+    } else {
+        (0, 20)
+    };
 
-    let manifest_start: usize = 24;
     let manifest_end = manifest_start
         .checked_add(manifest_len)
         .ok_or_else(|| anyhow::anyhow!("payload manifest offset overflow"))?;
