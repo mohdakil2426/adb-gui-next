@@ -62,3 +62,13 @@ export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
 // Legacy types for backwards-compatibility
 export type PixelFirmwareBuild = FirmwareBuild;
 export type PixelDeviceModel = FirmwareDeviceModel;
+
+export function formatCleanDeviceName(name: string): string {
+  let cleaned = name.trim();
+  const forIdx = cleaned.indexOf(' for ');
+  if (forIdx !== -1) {
+    cleaned = cleaned.slice(forIdx + 5).trim();
+  }
+  cleaned = cleaned.replace(/["'“”‘’]/g, '').trim();
+  return cleaned || name;
+}

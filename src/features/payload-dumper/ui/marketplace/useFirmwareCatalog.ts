@@ -5,10 +5,11 @@ import {
   GetSupportedFirmwareBrands,
   RefreshFirmwareCatalog,
 } from '@/desktop/backend';
-import type {
-  BrandFilter,
-  FirmwareBrand,
-  FirmwareDeviceModel,
+import {
+  type BrandFilter,
+  type FirmwareBrand,
+  type FirmwareDeviceModel,
+  formatCleanDeviceName,
 } from '@/features/payload-dumper/ui/marketplace/types';
 
 const DEFAULT_SUPPORTED_BRANDS: FirmwareBrand[] = [
@@ -64,14 +65,15 @@ export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all'): UseFirmw
   });
 
   const devices = useMemo(() => {
-    if (isAll) {
-      return allDevices;
-    }
-    if (brandDevices && brandDevices.length > 0) {
-      return brandDevices;
-    }
-    // Fallback to client-side filtering from allDevices
-    return allDevices.filter((d) => d.brand === brandParam);
+    const raw = isAll
+      ? allDevices
+      : brandDevices && brandDevices.length > 0
+        ? brandDevices
+        : allDevices.filter((d) => d.brand === brandParam);
+    return raw.map((device) => {
+      const cleanName = formatCleanDeviceName(device.name);
+      return cleanName === device.name ? device : { ...device, name: cleanName };
+    });
   }, [isAll, allDevices, brandDevices, brandParam]);
 
   const brandCounts = useMemo(() => {

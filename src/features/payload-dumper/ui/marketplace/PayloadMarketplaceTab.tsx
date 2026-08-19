@@ -1,4 +1,13 @@
-import { RefreshCw, Search, Sparkles, Store } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  RefreshCw,
+  Search,
+  Smartphone,
+  Sparkles,
+  Store,
+  X,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { FirmwareDeviceCard } from '@/features/payload-dumper/ui/marketplace/FirmwareDeviceCard';
 import { FirmwareDeviceDetailView } from '@/features/payload-dumper/ui/marketplace/FirmwareDeviceDetailView';
@@ -10,7 +19,16 @@ import { useFirmwareCatalog } from '@/features/payload-dumper/ui/marketplace/use
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/shared/ui/command';
 import { Input } from '@/shared/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 import { cn } from '@/shared/utils/cn';
 
 interface PayloadMarketplaceTabProps {
@@ -29,29 +47,38 @@ const BRAND_CHIPS: Array<{ id: BrandFilter; label: string }> = [
 export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceTabProps) {
   const [selectedDevice, setSelectedDevice] = useState<FirmwareDeviceModel | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<BrandFilter>('all');
-  const [selectedSeries, setSelectedSeries] = useState<string>('All');
+  const [selectedModelId, setSelectedModelId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-
+  const [isModelOpen, setIsModelOpen] = useState(false);
   const { devices, isLoading, isFetching, refresh, brandCounts } =
     useFirmwareCatalog(selectedBrand);
 
-  const seriesOptions = useMemo(() => {
-    const seriesSet = new Set<string>();
-    for (const device of devices) {
-      if (device.series) {
-        seriesSet.add(device.series);
-      }
+  const sortedDevices = useMemo(
+    () =>
+      [...devices].sort((a, b) => {
+        const yearDiff = (b.releaseYear ?? 0) - (a.releaseYear ?? 0);
+        if (yearDiff !== 0) {
+          return yearDiff;
+        }
+        return a.name.localeCompare(b.name, undefined, { numeric: true });
+      }),
+    [devices],
+  );
+
+  const selectedModel = useMemo(() => {
+    if (selectedModelId === 'all') {
+      return null;
     }
-    return ['All', ...Array.from(seriesSet).sort()];
-  }, [devices]);
+    return devices.find((d) => d.id === selectedModelId) ?? null;
+  }, [devices, selectedModelId]);
 
   const filteredDevices = useMemo(
     () =>
-      devices.filter((device) => {
-        const matchesSeries = selectedSeries === 'All' || device.series === selectedSeries;
+      sortedDevices.filter((device) => {
+        const matchesModel = selectedModelId === 'all' || device.id === selectedModelId;
         const query = searchQuery.toLowerCase().trim();
         if (!query) {
-          return matchesSeries;
+          return matchesModel;
         }
         const matchesQuery =
           device.name.toLowerCase().includes(query) ||
@@ -59,14 +86,14 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
           (device.soc && device.soc.toLowerCase().includes(query)) ||
           (device.releaseYear && device.releaseYear.toString().includes(query)) ||
           (device.series && device.series.toLowerCase().includes(query));
-        return matchesSeries && matchesQuery;
+        return matchesModel && matchesQuery;
       }),
-    [devices, selectedSeries, searchQuery],
+    [sortedDevices, selectedModelId, searchQuery],
   );
 
   const handleBrandChange = (brand: BrandFilter) => {
     setSelectedBrand(brand);
-    setSelectedSeries('All');
+    setSelectedModelId('all');
   };
 
   if (selectedDevice) {
@@ -158,35 +185,145 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
         })}
       </div>
 
-      {/* Search & Series Filters */}
+      {/* Search & Dropdown Filters Bar (Left: Search, Right: Filter) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative min-w-[220px] max-w-sm flex-1">
+        {/* Left Side: Global Search Bar */}
+        <div className="relative min-w-[260px] max-w-sm flex-1 sm:flex-initial">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
-            className="h-8 pl-8 text-body"
+            className="h-8.5 pr-8 pl-8 text-body"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search device model, codename (e.g. husky), SoC…"
             value={searchQuery}
           />
+          {searchQuery ? (
+            <Button
+              aria-label="Clear search"
+              className="absolute top-1/2 right-1.5 size-5 -translate-y-1/2 rounded-full p-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearchQuery('')}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <X className="size-3" />
+            </Button>
+          ) : null}
         </div>
 
-        {/* Series Filter Chips */}
-        {seriesOptions.length > 1 ? (
-          <div className="flex flex-wrap items-center gap-1.5">
-            {seriesOptions.map((series) => (
+        {/* Right Side: All Models Dropdown Filter */}
+        <div className="flex items-center gap-2">
+          <Popover onOpenChange={setIsModelOpen} open={isModelOpen}>
+            <PopoverTrigger asChild>
               <Button
-                className="h-7 px-2.5 text-caption"
-                key={series}
-                onClick={() => setSelectedSeries(series)}
+                aria-expanded={isModelOpen}
+                className="h-8.5 min-w-[200px] max-w-[280px] justify-between gap-2 border-border-control bg-surface-raised/40 px-3 font-normal text-body hover:bg-surface-raised"
+                role="combobox"
                 size="sm"
                 type="button"
-                variant={selectedSeries === series ? 'secondary' : 'ghost'}
+                variant="outline"
               >
-                {series}
+                <div className="flex min-w-0 items-center gap-2 truncate">
+                  <Smartphone className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">
+                    {selectedModel ? selectedModel.name : 'All Models'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" />
               </Button>
-            ))}
-          </div>
-        ) : null}
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0 shadow-lg">
+              <Command>
+                <CommandInput placeholder="Search all models or codenames…" />
+                <CommandList className="max-h-72">
+                  <CommandEmpty>No device models found.</CommandEmpty>
+                  <CommandGroup heading="Device Models">
+                    {/* All Models Option */}
+                    <CommandItem
+                      className="flex items-center justify-between text-body"
+                      key="all-models"
+                      onSelect={() => {
+                        setSelectedModelId('all');
+                        setIsModelOpen(false);
+                      }}
+                      value="All Models all"
+                    >
+                      <div className="flex min-w-0 items-center gap-2 truncate">
+                        <Check
+                          className={cn(
+                            'size-3.5 shrink-0 text-primary',
+                            selectedModelId === 'all' ? 'opacity-100' : 'opacity-0',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'truncate',
+                            selectedModelId === 'all' && 'font-medium text-foreground',
+                          )}
+                        >
+                          All Models
+                        </span>
+                      </div>
+                      <span className="ml-2 shrink-0 font-mono text-[10px] text-muted-foreground">
+                        {devices.length}
+                      </span>
+                    </CommandItem>
+
+                    {/* Individual Models */}
+                    {sortedDevices.map((device) => {
+                      const isSelected = selectedModelId === device.id;
+                      return (
+                        <CommandItem
+                          className="flex items-center justify-between text-body"
+                          key={device.id}
+                          onSelect={() => {
+                            setSelectedModelId(device.id);
+                            setIsModelOpen(false);
+                          }}
+                          value={`${device.name} ${device.codename} ${device.series ?? ''} ${device.soc ?? ''}`}
+                        >
+                          <div className="flex min-w-0 items-center gap-2 truncate">
+                            <Check
+                              className={cn(
+                                'size-3.5 shrink-0 text-primary',
+                                isSelected ? 'opacity-100' : 'opacity-0',
+                              )}
+                            />
+                            <div className="flex min-w-0 items-center gap-1.5 truncate">
+                              <span className={cn('truncate', isSelected && 'font-medium')}>
+                                {device.name}
+                              </span>
+                              <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                                ({device.codename})
+                              </span>
+                            </div>
+                          </div>
+                          {device.releaseYear ? (
+                            <span className="ml-2 shrink-0 font-mono text-[10px] text-muted-foreground">
+                              {device.releaseYear}
+                            </span>
+                          ) : null}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Active Filter Reset */}
+          {selectedModelId === 'all' ? null : (
+            <Button
+              className="h-8.5 px-2.5 text-caption text-muted-foreground hover:text-foreground"
+              onClick={() => setSelectedModelId('all')}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Device Grid / Loading Skeletons / Empty State */}
@@ -224,7 +361,7 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
             className="mt-3"
             onClick={() => {
               setSelectedBrand('all');
-              setSelectedSeries('All');
+              setSelectedModelId('all');
               setSearchQuery('');
             }}
             size="sm"
