@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Activity, Camera, Power, Server, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { TabsWithIcon } from '@/components/shadcn-studio/tabs/tabs-03';
 import { GetHostToolVersions } from '@/desktop/backend';
 import { UtilitiesDiagnosticsTab } from '@/features/utilities/diagnostics/UtilitiesDiagnosticsTab';
 import { UtilitiesFastbootTab } from '@/features/utilities/fastboot/UtilitiesFastbootTab';
@@ -13,6 +12,7 @@ import { UtilitiesPowerTab } from '@/features/utilities/power/UtilitiesPowerTab'
 import { GetVarDialog } from '@/features/utilities/ui/GetVarDialog';
 import { UtilitiesCockpitHero } from '@/features/utilities/ui/UtilitiesCockpitHero';
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
+import { TabsWithIcon } from '@/shared/ui/tabs-with-icon';
 import { queryKeys } from '@/shared/utils/queries';
 
 export type UtilitiesTab = 'overview' | 'power' | 'diagnostics' | 'fastboot' | 'host';

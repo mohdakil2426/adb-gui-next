@@ -17,5 +17,5 @@ export function useIsMobile() {
     };
   }, []);
 
-  return !!isMobile;
+  return Boolean(isMobile);
 }
