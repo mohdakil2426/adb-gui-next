@@ -4,7 +4,7 @@
 **Date**: 2026-08-19  
 **Status**: Active / Engineering Proposal  
 **Target Systems**: `adb-gui-next` (Tauri 2 / Rust / React 19), AOSP Update Engine, OEM Firmware Containers  
-**Scope**: CrAU v1/v2 Header Specs, Protobuf Manifests, Full vs Delta OTAs, Compression Engines, Vendor Firmware Formats (Nothing OS, Xiaomi, Samsung, Motorola, Huawei, Unisoc, MTK, ASUS), Memory & I/O Optimizations, Hardware Acceleration, UI/UX Pipelines, Scalable Folder Architecture, Trait Hierarchy, Production Rust Implementations
+**Scope**: CrAU v1/v2 Header Specs, Protobuf Manifests, Full vs Delta OTAs, Compression Engines, Vendor Firmware Formats (Nothing OS, Xiaomi, Samsung, Motorola, Huawei, Unisoc, MTK, ASUS), Memory & I/O Optimizations, Hardware Acceleration, UI/UX Pipelines, Scalable Folder Architecture, Trait Hierarchy, Production Rust Implementations, Exhaustive Edge-Case & Failure-Mode Analysis
 
 ---
 
@@ -66,7 +66,12 @@
     - 12.5 [Blueprint 5: Cross-Platform Native Sparse File IOCTL Manager](#125-blueprint-5-cross-platform-native-sparse-file-ioctl-manager)
     - 12.6 [Blueprint 6: Universal Remote HTTP Multi-Range Stream Reader](#126-blueprint-6-universal-remote-http-multi-range-stream-reader)
     - 12.7 [Blueprint 7: CrAU v1 & v2 Header Parser](#127-blueprint-7-crau-v1--v2-header-parser)
-13. [External References, Specifications & Tooling Inventory](#13-external-references-specifications--tooling-inventory)
+13. [Deep Edge-Case Engineering & Failure-Mode Analysis](#13-deep-edge-case-engineering--failure-mode-analysis)
+    - 13.1 [Storage, Filesystem & OS-Level Edge Cases](#131-storage-filesystem--os-level-edge-cases)
+    - 13.2 [Android OTA, dm-verity & Protocol-Level Edge Cases](#132-android-ota-dm-verity--protocol-level-edge-cases)
+    - 13.3 [Network, HTTP Range Streaming & CDN Edge Cases](#133-network-http-range-streaming--cdn-edge-cases)
+    - 13.4 [Concurrency, Threadpool, Memory & Lifecycle Edge Cases](#134-concurrency-threadpool-memory--lifecycle-edge-cases)
+14. [External References, Specifications & Tooling Inventory](#14-external-references-specifications--tooling-inventory)
 
 ---
 
@@ -79,7 +84,7 @@ Android firmware updates rely on diverse container architectures across manufact
 - **Vendor-Encrypted Containers**: Wrap raw partitions in proprietary ciphers (OnePlus `.ops` S-box, Oppo/Realme `.ofp` AES-128-CFB + MTK bit shuffling).
 - **OEM Proprietary Packages**: Samsung Odin `.tar.md5` with LZ4 frames, Xiaomi `transfer.list` + `system.new.dat.br`, Motorola `flashfile.xml` with split sparse chunks, Huawei sequential `UPDATE.APP` packets, Unisoc `.pac` archives, and MediaTek scatter packages.
 
-This document presents a comprehensive audit of **`adb-gui-next`**'s Rust core (`src-tauri/src/payload/`) and React 19 frontend (`src/features/payload-dumper/`), bench-marking it against industry tools (`payload-dumper-go`, `payload-dumper-rust`, `otaripper`, `vm03/payload_dumper`, AOSP `update_engine`). It provides production-ready Rust code implementations, a modular directory layout, unified trait abstractions, and a robust disk writing pipeline to establish `adb-gui-next` as a universal, enterprise-grade Android firmware analysis and extraction platform.
+This document presents a comprehensive audit of **`adb-gui-next`**'s Rust core (`src-tauri/src/payload/`) and React 19 frontend (`src/features/payload-dumper/`), bench-marking it against industry tools (`payload-dumper-go`, `payload-dumper-rust`, `otaripper`, `vm03/payload_dumper`, AOSP `update_engine`). It provides production-ready Rust code implementations, a modular directory layout, unified trait abstractions, a robust disk writing pipeline, and an exhaustive failure-mode engineering analysis to establish `adb-gui-next` as a universal, enterprise-grade Android firmware analysis and extraction platform.
 
 ---
 
@@ -612,7 +617,7 @@ To ensure clean separation of concerns, high maintainability, and effortless add
 src-tauri/src/payload/
 ├── mod.rs                      # Public domain exports & facade API
 ├── router.rs                   # Universal format detector & container dispatcher
-├── traits.rs                   # FirmwareContainer, PartitionExtractor, BlockReader, BlockWriter traits
+├── traits.rs                   # FirmwareContainer, PartitionExtractor, BlockWriter traits
 ├── types.rs                    # Serde DTOs (PartitionDetail, ExtractionStats, PayloadMetadata)
 ├── cancel.rs                   # Thread-safe atomic CancellationToken & token registry
 ├── transaction.rs              # TransactionGuard: atomic staging, commit, and rollback
@@ -2009,7 +2014,178 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 
 ---
 
-## 13. External References, Specifications & Tooling Inventory
+## 13. Deep Edge-Case Engineering & Failure-Mode Analysis
+
+```
++---------------------------------------------------------------------------------------------------+
+| Universal Edge-Case Mitigation Matrix                                                             |
++----------------------+--------------------+---------------------+---------------------------------+
+| Storage & Filesystem | Android Protocol   | Network & Streaming | Concurrency & Lifecycle         |
++----------------------+--------------------+---------------------+---------------------------------+
+| • Windows 0x20 lock  | • 16KB Page Size   | • HTTP 206/200 drop | • Dynamic core clamp (<= 8)     |
+| • NTFS 0x29C limit   | • dm-verity FEC    | • Chunked Spooling  | • IPC 100ms Atomic Throttling   |
+| • FAT32 4GB limit    | • V-ABC COW v2/v3  | • Byte-Exact Resume | • Tokio / Rayon Isolation       |
+| • Space Pre-flight   | • Partial OTAs     | • Bot / Cloudflare  | • Cross-Device EXDEV Move       |
+| • MAX_PATH UNC (\\?\)| • APEX validation  | • SSRF IP Blocklist | • Isolated Staged Rollback      |
+| • Case Collisions    | • Malicious Bombs  | • DNS Rebinding Pin | • Poison-Resilient Drop Guards  |
++----------------------+--------------------+---------------------+---------------------------------+
+```
+
+### 13.1 Storage, Filesystem & OS-Level Edge Cases
+
+#### 1. Windows Memory-Mapped File Locking (`ERROR_SHARING_VIOLATION` 0x20)
+- **Root Cause**: On Windows NT, memory mapping via `CreateFileMappingW` and `MapViewOfFile` creates a Kernel Section Object (`SECTION`). The NT kernel strictly prohibits deleting or renaming files while open Section handles or virtual address pointers exist. If a worker thread fails and triggers cleanup while another worker holds an open `MmapMut`, calling `std::fs::remove_file` throws `ERROR_SHARING_VIOLATION` (`0x20` / decimal 32).
+- **Engineering Mitigation**:
+  1. Strict RAII drop sequencing: `NonTemporalWriter` must flush (`FlushViewOfFile`), settle length, and drop `MmapMut` *before* closing the file descriptor.
+  2. Thread joining barrier: The transaction coordinator must wait for all Rayon worker threads to join and drop local writers before executing rollback unlinks.
+  3. Retry backoff loop (50ms, 150ms, 300ms) to accommodate temporary handles held by antivirus scanners (e.g. Windows Defender `MsMpEng.exe`).
+  4. Enable POSIX delete semantics on Windows 10+ (`FILE_DISPOSITION_FLAG_POSIX_SEMANTICS`) via `SetFileInformationByHandle`.
+
+#### 2. NTFS Sparse File Limits & Fragmentation (`ERROR_FILE_SYSTEM_LIMITATION` 0x29C)
+- **Root Cause**: NTFS tracks sparse holes via mapping pairs (Runlists) in the Master File Table (MFT). When an extractor punches thousands of small (< 64 KiB) non-allocated holes via `FSCTL_SET_ZERO_DATA`, the runlist overflows the base MFT record (1024 bytes) and exhausts the `$ATTRIBUTE_LIST` attribute, throwing `ERROR_FILE_SYSTEM_LIMITATION` (`0x29C` / decimal 668).
+- **Engineering Mitigation**:
+  - **Extent Coalescing**: Consecutive `DONT_CARE` / `ZERO` blocks are merged into continuous runs.
+  - **64 KiB Thresholding**:
+    $$\text{Punch Sparse Hole} \iff \text{Hole Size} \ge 64\text{ KiB (NTFS Compression Unit)}$$
+    Holes smaller than 64 KiB are zero-filled directly into memory maps without issuing `FSCTL_SET_ZERO_DATA`.
+
+#### 3. FAT32 4 GiB Single-File Limit (`EFBIG` / Win32 `0xDF`)
+- **Root Cause**: FAT32 directory entries store file size in a 32-bit integer (`DIR_FileSize`), capping file size at $2^{32}-1 \approx 4\text{ GiB} - 1\text{ B}$. Modern Android `super.img` files range from 6 GiB to 25 GiB. Extracting to FAT32 USB drives triggers `EFBIG` (Errno 27) or `ERROR_DISK_FULL`.
+- **Engineering Mitigation**:
+  - Pre-flight filesystem inspection (`GetVolumeInformationW` on Windows, `statfs f_type == 0x4d44` on Linux, `statvfs f_fstypename == "msdos"` on macOS).
+  - If target volume is FAT32 and any selected partition $\ge 4\text{ GiB} - 64\text{ KiB}$, immediately halt with an informative UI warning suggesting exFAT/NTFS reformatting.
+
+#### 4. Free Disk Space Pre-Flight Validation (`ENOSPC` Prevention)
+- **Root Cause**: Running out of disk space mid-extraction throws `ENOSPC` (Errno 28) / `ERROR_DISK_FULL` (0x70), wasting write cycles and leaving partial files.
+- **Engineering Mitigation**:
+  - Query user-quota-aware free space (`GetDiskFreeSpaceExW` / `statvfs.f_bavail`).
+  - Enforce pre-flight safety margin:
+    $$\text{Required Space} = \left( \sum_{p \in \text{selected}} \text{size}(p) \right) \times 1.05 + 256\text{ MiB (Metadata/Journal)}$$
+
+#### 5. Windows `MAX_PATH` (260 Chars) & Long Path Prefix
+- **Root Cause**: Win32 path limits (260 characters) fail when nesting deep output paths (e.g. `C:\Users\...\extracted_2026-08-19\system.img`).
+- **Engineering Mitigation**:
+  - Normalize long Windows paths by prepending `\\?\` verbatim UNC prefixes via `dunce::canonicalize()` when path length $\ge 240$ characters, converting forward slashes to backslashes and stripping relative segments.
+
+#### 6. Case-Insensitive Name Collisions
+- **Root Cause**: Linux/Android is case-sensitive (`System` $\ne$ `system`), while Windows NTFS and macOS APFS are case-insensitive by default.
+- **Engineering Mitigation**:
+  - Pre-flight collision scan using `UniCase` hash sets. Automatically append disambiguation tags (`_conflict_1.img`) if collisions occur.
+
+#### 7. Modern ARM64 16 KiB Memory Page Alignment
+- **Root Cause**: Apple Silicon (M1–M4) and Android 15 ARM64 use **16 KiB (16,384 bytes)** memory pages, whereas x86_64 uses 4 KiB. Individual sub-mapping at non-16KB boundaries throws `EINVAL` (Errno 22).
+- **Engineering Mitigation**:
+  - Map the entire container once via a single base mapping (`LoadedPayload::mmap`), and slice byte regions in user-space via pointer offset arithmetic (`mmap.get(offset..end)`).
+
+---
+
+### 13.2 Android OTA, dm-verity & Protocol-Level Edge Cases
+
+#### 1. Android 15 16 KiB Filesystem Block Sizes
+- **Specification**: In Android 15, `DeltaArchiveManifest.block_size` can be set to `16384` (16 KiB) instead of default `4096`.
+- **Engineering Mitigation**:
+  - Dynamically propagate `manifest.block_size.unwrap_or(4096)` into all extent offset and length multipliers:
+    $$\text{Offset} = \text{start\_block} \times \text{block\_size}$$
+
+#### 2. Forward Error Correction (FEC) & Hash Tree Extents
+- **Specification**: Android system partitions append dm-verity hash trees and Reed-Solomon Forward Error Correction (FEC) codes at partition ends (`hash_tree_extent`, `fec_extent`).
+- **Engineering Mitigation**:
+  - Output files must be sized to `new_partition_info.size` (which accounts for root filesystem + hash trees + FEC). Extent writers must write trailing verification extents to preserve bit-for-bit dm-verity cryptographic compatibility.
+
+#### 3. Virtual A/B Compression (V-ABC) COW v2 vs COW v3
+- **Specification**: Android 14/15 introduced COW v3 supporting batch operations and multi-threaded decompression.
+- **Engineering Mitigation**:
+  - Parse `DeltaArchiveManifest.dynamic_partition_metadata` to inspect `vabc_compression_param` (`zstd`, `lz4`, `gz`) and `cow_version`, reporting compression metadata to the UI.
+
+#### 4. Partial OTA Updates
+- **Specification**: OEM partial updates only include a subset of partitions (e.g. `boot`, `init_boot`, `vendor_boot`, `dtbo`), omitting `system` and `vendor`.
+- **Engineering Mitigation**:
+  - Detect `manifest.partial_update == Some(true)`, display a distinct "Partial OTA" badge in the UI, and guide the user on flashing instructions.
+
+#### 5. Decompressed APEX Containers (`apex_info`)
+- **Specification**: Payloads contain compressed APEX packages (`.capex`). `manifest.apex_info` defines decompressed sizes and package names.
+- **Engineering Mitigation**:
+  - Expose APEX package manifests and compression states in metadata inspection dialogs.
+
+#### 6. Malicious & Malformed Payload Defenses
+- **Integer Overflow Guards**: All extent calculations use `checked_mul` and `checked_add` to prevent 64-bit integer wrapping in release builds.
+- **Manifest Length Bounds**: Enforce `MAX_MANIFEST_SIZE = 100_000_000` (100 MB).
+- **Path Traversal Sanitization**: Sanitize partition names using `crate::helpers::safe_image_file_name()`, stripping `..`, `/`, `\`, and Windows DOS reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1..9`, `LPT1..9`).
+
+---
+
+### 13.3 Network, HTTP Range Streaming & CDN Edge Cases
+
+#### 1. HTTP 206 Partial Content vs HTTP 200 OK Fallback
+- **Root Cause**: Some misconfigured servers ignore `Range: bytes=X-Y` headers and return the full file with HTTP 200 OK.
+- **Engineering Mitigation**:
+  - Check `response.status() == StatusCode::PARTIAL_CONTENT`. If server returns 200 OK for a small range probe, immediately abort the stream to prevent buffering gigabytes of unwanted data into memory.
+
+#### 2. Chunk-Encoded Streams (`Transfer-Encoding: chunked`)
+- **Root Cause**: Servers streaming dynamic data omit `Content-Length`.
+- **Engineering Mitigation**:
+  - Issue a probe `Range: bytes=0-0` request. If `Content-Range` is returned (e.g. `bytes 0-0/12345678`), parse the total size from the denominator.
+
+#### 3. Transient Connection Failures & Byte-Exact Resume
+- **Root Cause**: Wi-Fi drops or CDN timeouts interrupt multi-gigabyte remote extractions.
+- **Engineering Mitigation**:
+  - Implement exponential backoff with full jitter (3 retries: 500ms, 1500ms, 4000ms).
+  - Resume streaming from the exact interrupted byte offset using `Range: bytes={current_pos}-{end}` and validate `If-Match: "{etag}"` to prevent Frankenstein data corruption if the remote file changed.
+
+#### 4. CDN Rate-Limiting & Bot Protection
+- **Root Cause**: Cloudflare 429 Too Many Requests, Google Drive download quota limits.
+- **Engineering Mitigation**:
+  - Spoof standard desktop browser `User-Agent` headers.
+  - Implement token-bucket request throttling and reuse HTTP/2 TCP connections via connection pooling.
+
+#### 5. Server-Side Request Forgery (SSRF) Firewall & DNS Rebinding
+- **Root Cause**: Malicious users could input `http://169.254.169.254/` (cloud metadata) or `http://127.0.0.1:8080/`.
+- **Engineering Mitigation**:
+  - Strict IP filter checking resolved socket addresses against:
+    - Loopback: `127.0.0.0/8`, `::1`
+    - Private RFC 1918: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`
+    - Link-Local: `169.254.0.0/16`, `fe80::/10`
+    - Carrier-Grade NAT: `100.64.0.0/10`
+  - Pin resolved IPs on the socket connector to eliminate DNS Rebinding TOCTOU attacks.
+
+---
+
+### 13.4 Concurrency, Threadpool, Memory & Lifecycle Edge Cases
+
+#### 1. Rayon Threadpool Starvation & Core Sizing
+- **Root Cause**: Unbounded `par_iter()` across 30+ partitions causes L3 cache thrashing, context-switching overhead, and memory explosion.
+- **Engineering Mitigation**:
+  - Dynamically size worker pool:
+    $$N_{\text{workers}} = \min(\max(1, N_{\text{physical\_cores}}), 8)$$
+  - Throttle heavy-memory decompressions via `Arc<tokio::sync::Semaphore>` (max 4 concurrent dictionary allocations).
+  - Schedule partitions using LPT (Longest Processing Time) order (largest partitions start first).
+
+#### 2. High-Frequency IPC Event Flooding
+- **Root Cause**: 100,000+ unthrottled progress events choke the Tauri FFI bridge, starving the webview event loop and freezing the UI.
+- **Engineering Mitigation**:
+  - Worker threads update shared lock-free atomic counters (`AtomicU64`).
+  - A background Tokio task samples counters and emits consolidated JSON events at **100ms intervals (10 Hz)** with EWMA throughput smoothing.
+
+#### 3. Tokio Async Blocking I/O Deadlocks
+- **Root Cause**: Executing CPU-bound decompressions inside Tokio worker threads blocks the async scheduler, while calling `block_on` in Rayon causes threadpool inversion deadlocks.
+- **Engineering Mitigation**:
+  - Tokio drives asynchronous network downloads and timers; Rayon drives synchronous decompressions; bounded crossbeam channels bridge the runtimes. Rayon worker threads **never** invoke `block_on`.
+
+#### 4. Cross-Device Link Errors (`EXDEV` / Windows Error 17)
+- **Root Cause**: `std::fs::rename` across different mount points (`tmpfs` $\to$ `ext4`) or drive letters (`C:` $\to$ `D:`) fails with `EXDEV` (errno 18) or `ERROR_NOT_SAME_DEVICE` (Win32 Error 17).
+- **Engineering Mitigation**:
+  - Implement a resilient step-down mover:
+    $$\text{Try Atomic Rename} \xrightarrow{\text{on EXDEV}} \text{1 MiB Stream Copy} \to \text{File::sync\_all()} \to \text{Atomic Replace} \to \text{Source Unlink}$$
+
+#### 5. Transaction Rollback Race Conditions
+- **Root Cause**: `remove_dir_all` on user folders destroys pre-existing files, while open handles on Windows block unlinking.
+- **Engineering Mitigation**:
+  - Stage extractions into an isolated temporary subfolder (`.tmp_tx_{session_id}`).
+  - On commit, move verified files to the final directory; on failure/abort, delete only the isolated staging directory.
+
+---
+
+## 14. External References, Specifications & Tooling Inventory
 
 1. **AOSP Update Engine**:
    - Canonical Protobuf Schema: `system/update_engine/update_metadata.proto`
@@ -2035,3 +2211,4 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
    - `tar`: [https://docs.rs/tar](https://docs.rs/tar)
    - `windows-sys`: [https://docs.rs/windows-sys](https://docs.rs/windows-sys)
    - `libc`: [https://docs.rs/libc](https://docs.rs/libc)
+   - `dunce`: [https://docs.rs/dunce](https://docs.rs/dunce)
