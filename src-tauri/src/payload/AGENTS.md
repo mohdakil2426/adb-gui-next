@@ -270,3 +270,24 @@ All IPC commands return `CmdResult<T> = Result<T, String>`:
    - Tested against `C:\Users\akila\OneDrive\Desktop\AGN-Test\payloaddumper\EvolutionX-15.0-20260415-marble-10.16-Unofficial.zip`:
      - Listed 11 partitions (`boot`, `dtbo`, `odm`, `product`, `system`, `system_ext`, `vbmeta`, `vendor`, `vendor_boot`, `vendor_dlkm`).
      - Extracted `boot.img` (192 MB) with SHA-256 verification and atomic commit.
+
+---
+
+## 8. Payload Domain Invariants & Rules
+
+1. **Zero Unbounded Buffering**:
+   - Never buffer whole multi-gigabyte files in RAM. Always map via `Arc<memmap2::Mmap>` or stream chunks through the 256 KiB thread-local buffer pool (`io::buffers::with_io_buf`).
+2. **Transaction Integrity**:
+   - Never invoke `std::fs::remove_dir_all` directly on user-provided output directories during failure rollback.
+   - All extractions must register files in `TransactionGuard`. Rollback deletes only actively registered `.img` files from the current session.
+3. **Cooperative Cancellation**:
+   - Inner decompression loops must check `cancel_token.check()?` at the start of each extent.
+   - Unrecognized or invalid cancellation token IDs must return an explicit `Err`, never silently execute unmonitored.
+4. **Sparse Hole Thresholding**:
+   - Never issue native sparse hole punching (`FSCTL_SET_ZERO_DATA` / `fallocate`) for holes $< 64\text{ KiB}$ to avoid NTFS MFT `ATTRIBUTE_LIST` extent exhaustion (`0x29C`).
+5. **Path Traversal Sanitization**:
+   - All partition names from untrusted manifests must pass `crate::helpers::safe_image_file_name()`, rejecting `..`, `/`, `\`, and Windows DOS reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1..9`, `LPT1..9`).
+6. **Output Directory Security**:
+   - Output paths must be canonicalized before creating files to prevent symlink traversal outside target directories.
+7. **SSRF Protection on Remote URLs**:
+   - Outbound HTTP range requests must validate IP targets against private, loopback, link-local, and cloud metadata ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.169.254`), with socket IP pinning across redirects.

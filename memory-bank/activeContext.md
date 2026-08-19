@@ -15,6 +15,9 @@ Universal Android firmware container extraction and real-time OEM firmware catal
 7. **Storage Pre-Flight Validation & Resilient Mover (`src-tauri/src/payload/storage_check.rs`)**: User-quota-aware free space verification (5% headroom + 256 MiB metadata margin), FAT32 4GB limit rejection, `dunce::canonicalize` Windows `\\?\` path normalization, and `move_file_cross_device` handling `EXDEV` / error 17.
 8. **Universal Firmware Hub Backend (`src-tauri/src/firmware/`)**: Pluggable `FirmwareProvider` trait, `GooglePixelScraper` fetching Factory Images and Full OTAs with `devsite_wall_acks` cookie authentication, hardware metadata enrichment (SoC, Release Year, Series, isLatest), and two-tier caching (RAM `RwLock` + 24h disk JSON TTL at `<cache_dir>/firmware/`).
 9. **Universal Frontend Hub & 1-Click Remote Extraction (`src/features/payload-dumper/ui/marketplace/`)**: Multi-brand selector chips (`All`, `Google Pixel`, `Nothing`, `Xiaomi`, `OnePlus`, `Samsung`), TanStack Query `useFirmwareCatalog`, live loading skeletons, 1-click **Remote Stream Extract** bridge into payload dumper, dynamic partition sub-unpack controls in `PayloadLoadedPanel` and `PayloadOverviewTab`, and complete removal of static mock data.
+10. **Firmware Hub Search & Filter Architecture (`PayloadMarketplaceTab.tsx`)**: Global search bar on the left side, searchable **All Models Combobox Dropdown** on the right side (`Popover` + `Command` with `align="end"`), listing all individual device models (with codenames, series, and release years) alongside instant inline search and reset capabilities.
+11. **OEM Scraper & Client Device Name Normalization**: Rust scraper `extract_device_name` (`src-tauri/src/firmware/providers/google.rs`) and client normalizer `formatCleanDeviceName` (`types.ts` & `useFirmwareCatalog.ts`) stripping `"codename" for ` HTML prefixes, parentheses, and quotation marks across all providers and cached JSON catalogs.
+12. **Dedicated Payload Module Guide & Agent Routing (`src-tauri/src/payload/AGENTS.md`)**: Complete 350+ line payload domain guide with zero-copy memory model, dynamic partition algorithms, delta engine specs, sparse IOCTL thresholds, and safety invariants, referenced directly from root and backend module guides.
 | Area | Decision |
 | --- | --- |
 | **Theme** | Official shadcn Neutral: light `--background: oklch(1 0 0)`, dark `--background: oklch(0.145 0 0)`. `canvas`/`surface` alias those tokens. Status colours = device state, not UI emphasis. |
@@ -50,4 +53,4 @@ Universal Android firmware container extraction and real-time OEM firmware catal
 - Push to origin only when the user asks
 - Manual smoke: host setup split installs + system Path; scrcpy; icons; editor; marketplace; utilities WIPE
 
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-19

@@ -28,7 +28,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 | Cross-module design / data flow / IPC map | `docs/architecture.md` |
 | Visual design, theme, type, shared UI taste | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
 | Entire frontend (`src/**`) | `src/AGENTS.md` |
-| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` |
+| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`) |
 | FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
 | Living session context (not architecture) | `memory-bank/` — read before non-trivial work; verify against code |
 
