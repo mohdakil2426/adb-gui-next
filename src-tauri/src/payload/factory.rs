@@ -5,20 +5,21 @@
 //! system, vendor, product, vbmeta, etc.). This module discovers and extracts
 //! those images directly from the local ZIP archive without requiring payload.bin.
 
-use anyhow::{Result, anyhow};
-use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
-use std::time::Instant;
-use tauri::{AppHandle, Emitter};
-use zip::ZipArchive;
-
 use crate::payload::cancel::CancellationToken;
 use crate::payload::storage_check::validate_preflight_storage;
 use crate::payload::transaction::TransactionGuard;
 use crate::payload::types::{
     ExtractPayloadResult, ExtractionStats, PartitionDetail, PayloadDiagnostics,
 };
+use anyhow::{Result, anyhow};
+use rayon::prelude::*;
+use std::fs::File;
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::time::Instant;
+use tauri::{AppHandle, Emitter};
+use zip::ZipArchive;
 
 #[derive(Debug, Clone)]
 pub struct LocalFactoryEntry {
@@ -315,39 +316,63 @@ pub fn extract_factory_zip_partitions(
     // Validate available disk space
     validate_preflight_storage(&output_dir_path, total_bytes)?;
 
-    let guard = TransactionGuard::new(output_dir_path.clone());
-    let mut extracted_files = Vec::new();
+    let guard = Arc::new(TransactionGuard::new(output_dir_path.clone()));
+    let output_dir_arc = Arc::new(output_dir_path.clone());
+    let zip_path_buf = zip_path.to_path_buf();
     let start_time = Instant::now();
-    let mut extracted_bytes = 0u64;
 
-    for entry in &entries_to_extract {
-        if cancel_token.is_some_and(CancellationToken::is_cancelled) {
-            guard.abort();
-            return Ok(ExtractPayloadResult {
-                success: false,
-                output_dir: output_dir_path.display().to_string(),
-                extracted_files,
-                error: Some("extraction cancelled".to_string()),
-                stats: None,
-            });
+    // Parallel extraction of all selected factory partitions using Rayon
+    let results: Vec<Result<String>> = entries_to_extract
+        .par_iter()
+        .map(|entry| {
+            if cancel_token.is_some_and(CancellationToken::is_cancelled) {
+                anyhow::bail!("extraction cancelled");
+            }
+
+            let file_name =
+                format!("{}.img", crate::helpers::safe_image_file_name(&entry.partition_name));
+            let out_file_path = output_dir_arc.join(&file_name);
+
+            guard.add_file(out_file_path.clone());
+
+            extract_single_factory_entry(
+                &zip_path_buf,
+                entry,
+                &out_file_path,
+                app_handle.as_ref(),
+                cancel_token,
+            )?;
+
+            Ok(file_name)
+        })
+        .collect();
+
+    // Collect extracted files or fail transaction on first error
+    let mut extracted_files = Vec::new();
+    let mut first_error = None;
+
+    for res in results {
+        match res {
+            Ok(file) => extracted_files.push(file),
+            Err(e) => {
+                if first_error.is_none() {
+                    first_error = Some(e);
+                }
+            }
         }
+    }
 
-        let file_name =
-            format!("{}.img", crate::helpers::safe_image_file_name(&entry.partition_name));
-        let out_file_path = output_dir_path.join(&file_name);
-
-        guard.add_file(out_file_path.clone());
-
-        extract_single_factory_entry(
-            zip_path,
-            entry,
-            &out_file_path,
-            app_handle.as_ref(),
-            cancel_token,
-        )?;
-
-        extracted_bytes += entry.uncompressed_size;
-        extracted_files.push(file_name);
+    if let Some(err) = first_error {
+        guard.abort();
+        let message = err.to_string();
+        let cancelled = message.to_ascii_lowercase().contains("cancelled");
+        return Ok(ExtractPayloadResult {
+            success: false,
+            output_dir: output_dir_path.display().to_string(),
+            extracted_files: Vec::new(),
+            error: Some(if cancelled { "extraction cancelled".to_string() } else { message }),
+            stats: None,
+        });
     }
 
     guard.commit();
@@ -356,7 +381,7 @@ pub fn extract_factory_zip_partitions(
     let duration_ms = duration.as_millis() as u64;
     let duration_secs = duration.as_secs_f64();
     let throughput_mbps = if duration_secs > 0.0 {
-        (extracted_bytes as f64 / (1024.0 * 1024.0)) / duration_secs
+        (total_bytes as f64 / (1024.0 * 1024.0)) / duration_secs
     } else {
         0.0
     };
@@ -370,7 +395,7 @@ pub fn extract_factory_zip_partitions(
             duration_ms,
             partitions_extracted: extracted_files.len(),
             throughput_mbps,
-            total_bytes: extracted_bytes,
+            total_bytes,
         }),
     })
 }
