@@ -33,6 +33,28 @@ const { mockCatalogDevices } = vi.hoisted(() => ({
         },
       ],
     },
+    {
+      id: 'nothing_phone_2',
+      brand: 'nothing',
+      name: 'Nothing Phone (2)',
+      codename: 'pong',
+      series: 'Phone (2)',
+      soc: 'Qualcomm Snapdragon 8+ Gen 1',
+      releaseYear: 2023,
+      builds: [
+        {
+          id: 'pong_b4_1',
+          version: 'Nothing OS 4.1',
+          buildId: 'Pong-B4.1-260618-1026',
+          androidVersion: 'Android 16',
+          imageType: 'ota',
+          releaseDate: '2026-06-18',
+          downloadUrl:
+            'https://android.googleapis.com/packages/ota-api/package/821762bba7df49d1648ab91eef5c98574f20e740.zip',
+          isLatest: true,
+        },
+      ],
+    },
   ],
 }));
 
@@ -114,6 +136,16 @@ describe('ViewPayloadDumper', () => {
     await user.click(await screen.findByText('Google Pixel 8 Pro'));
     expect(screen.getAllByText('husky').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/AP4A.250105.002/).length).toBeGreaterThan(0);
+  });
+  it('filters Nothing devices in firmware hub and opens device detail', async () => {
+    const user = userEvent.setup();
+    renderWithClient();
+    await user.click(screen.getByRole('tab', { name: /firmware hub/i }));
+    await user.click(screen.getByRole('button', { name: /nothing/i }));
+    expect(screen.getByText('Nothing Phone (2)')).toBeInTheDocument();
+    await user.click(screen.getByText('Nothing Phone (2)'));
+    expect(screen.getAllByText('pong').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Pong-B4.1-260618-1026/).length).toBeGreaterThan(0);
   });
 
   it('renders the loaded state with precision hero banner and extractor controls', async () => {

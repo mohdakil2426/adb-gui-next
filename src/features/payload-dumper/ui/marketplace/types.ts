@@ -29,9 +29,10 @@ export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
     id: 'nothing',
     displayName: 'Nothing',
     shortLabel: 'Nothing',
-    description: 'Nothing OS official firmware packages and fastboot archives.',
-    portalUrl: 'https://nothing.tech',
-    portalName: 'Official Nothing Portal',
+    description:
+      'Nothing OS & CMF by Nothing official firmware builds, OTA updates, and image packages.',
+    portalUrl: 'https://nothingarchive.tech/docs/firmware',
+    portalName: 'Nothing OS Firmware Archive',
   },
   xiaomi: {
     id: 'xiaomi',
