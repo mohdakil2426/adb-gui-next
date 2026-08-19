@@ -217,6 +217,42 @@ pub async fn extract_payload(
             }
         };
     }
+    // Route local Google Pixel factory image ZIPs
+    if payload::is_factory_zip(local_path) {
+        info!("Detected local factory image ZIP, using factory extraction pipeline");
+        let result = tokio::task::block_in_place(|| {
+            payload::extract_factory_zip_partitions(
+                local_path,
+                output_dir.as_deref(),
+                &selected_partitions,
+                Some(app),
+                cancel_token.as_ref(),
+            )
+        });
+
+        return match result {
+            Ok(result) => {
+                info!("Factory ZIP extraction completed: {} files", result.extracted_files.len());
+                Ok(result)
+            }
+            Err(e) => {
+                error!("Factory ZIP extraction failed: {}", e);
+                let message = e.to_string();
+                let cancelled = message.to_ascii_lowercase().contains("cancelled");
+                Ok(ExtractPayloadResult {
+                    success: false,
+                    output_dir: String::new(),
+                    extracted_files: Vec::new(),
+                    error: Some(if cancelled {
+                        "extraction cancelled".to_string()
+                    } else {
+                        message
+                    }),
+                    stats: None,
+                })
+            }
+        };
+    }
 
     let result = tokio::task::block_in_place(|| {
         payload::extract_payload(
@@ -261,12 +297,20 @@ pub async fn list_payload_partitions(
 ) -> CmdResult<Vec<String>> {
     info!("Listing payload partitions from {}", payload_path.trim());
     let path = payload_path.trim().to_string();
+    let file_path = std::path::Path::new(&path);
+    if payload::is_factory_zip(file_path) {
+        info!("Detected local factory image ZIP, using factory partition listing");
+        return tokio::task::block_in_place(|| {
+            payload::list_factory_zip_partitions(file_path)
+                .map(|list| list.into_iter().map(|p| p.name).collect())
+                .map_err(|error| error.to_string())
+        });
+    }
     tokio::task::block_in_place(|| {
-        payload::list_payload_partitions(std::path::Path::new(&path), &payload_cache)
+        payload::list_payload_partitions(file_path, &payload_cache)
             .map_err(|error| error.to_string())
     })
 }
-
 #[tauri::command]
 pub async fn list_payload_partitions_with_details(
     payload_cache: State<'_, PayloadCache>,
@@ -281,6 +325,13 @@ pub async fn list_payload_partitions_with_details(
         info!("Detected OPS/OFP file, using OPS partition listing");
         return tokio::task::block_in_place(|| {
             ops::list_ops_partitions(file_path).map_err(|error| error.to_string())
+        });
+    }
+    // Route local Google Pixel factory image ZIPs
+    if payload::is_factory_zip(file_path) {
+        info!("Detected local factory image ZIP, using factory partition listing");
+        return tokio::task::block_in_place(|| {
+            payload::list_factory_zip_partitions(file_path).map_err(|error| error.to_string())
         });
     }
 
@@ -473,6 +524,11 @@ pub async fn diagnose_payload(payload_path: String) -> CmdResult<PayloadDiagnost
     if ops::extractor::should_use_ops_pipeline(path) {
         return tokio::task::block_in_place(|| {
             diagnose_ops_payload(path).map_err(|error| error.to_string())
+        });
+    }
+    if payload::is_factory_zip(path) {
+        return tokio::task::block_in_place(|| {
+            payload::diagnose_factory_zip(path).map_err(|error| error.to_string())
         });
     }
 

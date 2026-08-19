@@ -11,6 +11,7 @@ pub mod cancel;
 pub mod crau;
 pub mod delta;
 mod error;
+pub mod factory;
 pub mod io;
 pub mod lp;
 pub mod ops;
@@ -63,6 +64,10 @@ pub use cancel::CancellationToken;
 pub use crau::{
     LoadedPayload, diagnose_payload_file, extract_payload, list_payload_partitions,
     list_payload_partitions_with_details, open_mmap, parse_header,
+};
+pub use factory::{
+    diagnose_factory_zip, discover_local_factory_entries, extract_factory_zip_partitions,
+    is_factory_zip, list_factory_zip_partitions,
 };
 pub use io::{NonTemporalWriter, copy_raw_slice};
 pub use lp::{LpMetadata, unpack_super_image};
