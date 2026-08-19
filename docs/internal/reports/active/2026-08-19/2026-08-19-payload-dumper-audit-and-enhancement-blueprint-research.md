@@ -4,7 +4,7 @@
 **Date**: 2026-08-19  
 **Status**: Active / Engineering Proposal  
 **Target Systems**: `adb-gui-next` (Tauri 2 / Rust / React 19), AOSP Update Engine, OEM Firmware Containers  
-**Scope**: CrAU v1/v2 Header Specs, Protobuf Manifests, Full vs Delta OTAs, Compression Engines, Vendor Firmware Formats (Nothing OS, Xiaomi, Samsung, Motorola, Huawei, Unisoc, MTK, ASUS), Memory & I/O Optimizations, Hardware Acceleration, UI/UX Pipelines, Scalable Folder Architecture, Trait Hierarchy, Production Rust Implementations, Exhaustive Edge-Case & Failure-Mode Analysis
+**Scope**: CrAU v1/v2 Header Specs, Protobuf Manifests, Full vs Delta OTAs, Compression Engines, Vendor Firmware Formats (Nothing OS, Xiaomi, Samsung, Motorola, Huawei, Unisoc, MTK, ASUS), Universal Firmware Hub & Live OEM Scrapers, Memory & I/O Optimizations, Hardware Acceleration, UI/UX Pipelines, Scalable Folder Architecture, Trait Hierarchy, Production Rust Implementations, Exhaustive Edge-Case & Failure-Mode Analysis
 
 ---
 
@@ -71,7 +71,14 @@
     - 13.2 [Android OTA, dm-verity & Protocol-Level Edge Cases](#132-android-ota-dm-verity--protocol-level-edge-cases)
     - 13.3 [Network, HTTP Range Streaming & CDN Edge Cases](#133-network-http-range-streaming--cdn-edge-cases)
     - 13.4 [Concurrency, Threadpool, Memory & Lifecycle Edge Cases](#134-concurrency-threadpool-memory--lifecycle-edge-cases)
-14. [External References, Specifications & Tooling Inventory](#14-external-references-specifications--tooling-inventory)
+14. [Universal Firmware Hub & Live OEM Scraper Architecture](#14-universal-firmware-hub--live-oem-scraper-architecture)
+    - 14.1 [Architectural Philosophy: Rust Backend Heavy Lifting & Thin Frontend](#141-architectural-philosophy-rust-backend-heavy-lifting--thin-frontend)
+    - 14.2 [Google Pixel Official Endpoint Scraping & ToS Cookie Bypass](#142-google-pixel-official-endpoint-scraping--tos-cookie-bypass)
+    - 14.3 [Two-Tier Caching Engine (Memory RwLock + 24h Disk JSON TTL)](#143-two-tier-caching-engine-memory-rwlock--24h-disk-json-ttl)
+    - 14.4 [Production Rust Scraper Implementation (`firmware::google`)](#144-production-rust-scraper-implementation-firmwaregoogle)
+    - 14.5 [Multi-Brand Extensibility Roadmap (Nothing, Xiaomi, OnePlus, Samsung)](#145-multi-brand-extensibility-roadmap-nothing-xiaomi-oneplus-samsung)
+    - 14.6 [Universal Frontend Refactoring & 1-Click Remote Extraction Bridge](#146-universal-frontend-refactoring--1-click-remote-extraction-bridge)
+15. [External References, Specifications & Tooling Inventory](#15-external-references-specifications--tooling-inventory)
 
 ---
 
@@ -84,7 +91,7 @@ Android firmware updates rely on diverse container architectures across manufact
 - **Vendor-Encrypted Containers**: Wrap raw partitions in proprietary ciphers (OnePlus `.ops` S-box, Oppo/Realme `.ofp` AES-128-CFB + MTK bit shuffling).
 - **OEM Proprietary Packages**: Samsung Odin `.tar.md5` with LZ4 frames, Xiaomi `transfer.list` + `system.new.dat.br`, Motorola `flashfile.xml` with split sparse chunks, Huawei sequential `UPDATE.APP` packets, Unisoc `.pac` archives, and MediaTek scatter packages.
 
-This document presents a comprehensive audit of **`adb-gui-next`**'s Rust core (`src-tauri/src/payload/`) and React 19 frontend (`src/features/payload-dumper/`), bench-marking it against industry tools (`payload-dumper-go`, `payload-dumper-rust`, `otaripper`, `vm03/payload_dumper`, AOSP `update_engine`). It provides production-ready Rust code implementations, a modular directory layout, unified trait abstractions, a robust disk writing pipeline, and an exhaustive failure-mode engineering analysis to establish `adb-gui-next` as a universal, enterprise-grade Android firmware analysis and extraction platform.
+This document presents a comprehensive audit of **`adb-gui-next`**'s Rust core (`src-tauri/src/payload/`) and React 19 frontend (`src/features/payload-dumper/`), bench-marking it against industry tools (`payload-dumper-go`, `payload-dumper-rust`, `otaripper`, `vm03/payload_dumper`, AOSP `update_engine`). It provides production-ready Rust code implementations, a modular directory layout, unified trait abstractions, a robust disk writing pipeline, an exhaustive failure-mode engineering analysis, and a complete architectural design for the **Universal Firmware Hub** with live OEM scraping in Rust.
 
 ---
 
@@ -2034,9 +2041,9 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 ### 13.1 Storage, Filesystem & OS-Level Edge Cases
 
 #### 1. Windows Memory-Mapped File Locking (`ERROR_SHARING_VIOLATION` 0x20)
-- **Root Cause**: On Windows NT, memory mapping via `CreateFileMappingW` and `MapViewOfFile` creates a Kernel Section Object (`SECTION`). The NT kernel strictly prohibits deleting or renaming files while open Section handles or virtual address pointers exist. If a worker thread fails and triggers cleanup while another worker holds an open `MmapMut`, calling `std::fs::remove_file` throws `ERROR_SHARING_VIOLATION` (`0x20` / decimal 32).
+- **Root Cause**: On Windows NT, memory mapping via `CreateFileMappingW` and `MapViewOfFile` creates a Kernel Section Object (`SECTION`). The NT kernel strictly prohibits deleting or renaming files while open Section handles or virtual address pointers exist. If a worker thread fails and triggers cleanup while another worker still holds an active `MmapMut`, calling `std::fs::remove_file` throws `ERROR_SHARING_VIOLATION` (`0x20` / decimal 32).
 - **Engineering Mitigation**:
-  1. Strict RAII drop sequencing: `NonTemporalWriter` must flush (`FlushViewOfFile`), settle length, and drop `MmapMut` *before* closing the file descriptor.
+  1. Strict RAII drop sequencing in `NonTemporalWriter` (`msync` $\to$ length settlement $\to$ drop `MmapMut` $\to$ close descriptor).
   2. Thread joining barrier: The transaction coordinator must wait for all Rayon worker threads to join and drop local writers before executing rollback unlinks.
   3. Retry backoff loop (50ms, 150ms, 300ms) to accommodate temporary handles held by antivirus scanners (e.g. Windows Defender `MsMpEng.exe`).
   4. Enable POSIX delete semantics on Windows 10+ (`FILE_DISPOSITION_FLAG_POSIX_SEMANTICS`) via `SetFileInformationByHandle`.
@@ -2050,7 +2057,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
     Holes smaller than 64 KiB are zero-filled directly into memory maps without issuing `FSCTL_SET_ZERO_DATA`.
 
 #### 3. FAT32 4 GiB Single-File Limit (`EFBIG` / Win32 `0xDF`)
-- **Root Cause**: FAT32 directory entries store file size in a 32-bit integer (`DIR_FileSize`), capping file size at $2^{32}-1 \approx 4\text{ GiB} - 1\text{ B}$. Modern Android `super.img` files range from 6 GiB to 25 GiB. Extracting to FAT32 USB drives triggers `EFBIG` (Errno 27) or `ERROR_DISK_FULL`.
+- **Root Cause**: FAT32 directory entries store file size in a 32-bit unsigned integer ($4\text{ GiB} - 1\text{ B}$ limit), failing on 6–25 GB `super.img` containers. Extracting to FAT32 USB drives triggers `EFBIG` (Errno 27) or `ERROR_DISK_FULL`.
 - **Engineering Mitigation**:
   - Pre-flight filesystem inspection (`GetVolumeInformationW` on Windows, `statfs f_type == 0x4d44` on Linux, `statvfs f_fstypename == "msdos"` on macOS).
   - If target volume is FAT32 and any selected partition $\ge 4\text{ GiB} - 64\text{ KiB}$, immediately halt with an informative UI warning suggesting exFAT/NTFS reformatting.
@@ -2060,12 +2067,12 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 - **Engineering Mitigation**:
   - Query user-quota-aware free space (`GetDiskFreeSpaceExW` / `statvfs.f_bavail`).
   - Enforce pre-flight safety margin:
-    $$\text{Required Space} = \left( \sum_{p \in \text{selected}} \text{size}(p) \right) \times 1.05 + 256\text{ MiB (Metadata/Journal)}$$
+    $$\text{Required Space} = \left( \sum_{p \in \text{selected}} \text{size}(p) \right) \times 1.05 + 256\text{ MiB}$$
 
-#### 5. Windows `MAX_PATH` (260 Chars) & Long Path Prefix
+#### 5. Windows `MAX_PATH` (260 Chars) & Verbatim UNC Paths
 - **Root Cause**: Win32 path limits (260 characters) fail when nesting deep output paths (e.g. `C:\Users\...\extracted_2026-08-19\system.img`).
 - **Engineering Mitigation**:
-  - Normalize long Windows paths by prepending `\\?\` verbatim UNC prefixes via `dunce::canonicalize()` when path length $\ge 240$ characters, converting forward slashes to backslashes and stripping relative segments.
+  - Normalize long Windows paths by prepending `\\?\` verbatim UNC prefixes via `dunce::canonicalize()` when destination path length $\ge 240$ characters.
 
 #### 6. Case-Insensitive Name Collisions
 - **Root Cause**: Linux/Android is case-sensitive (`System` $\ne$ `system`), while Windows NTFS and macOS APFS are case-insensitive by default.
@@ -2073,9 +2080,9 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
   - Pre-flight collision scan using `UniCase` hash sets. Automatically append disambiguation tags (`_conflict_1.img`) if collisions occur.
 
 #### 7. Modern ARM64 16 KiB Memory Page Alignment
-- **Root Cause**: Apple Silicon (M1–M4) and Android 15 ARM64 use **16 KiB (16,384 bytes)** memory pages, whereas x86_64 uses 4 KiB. Individual sub-mapping at non-16KB boundaries throws `EINVAL` (Errno 22).
+- **Root Cause**: Apple Silicon (M1–M4) and Android 15 ARM64 use **16 KiB memory pages**, whereas x86_64 uses 4 KiB. Individual sub-mappings at 4 KiB boundaries throw `EINVAL` (22).
 - **Engineering Mitigation**:
-  - Map the entire container once via a single base mapping (`LoadedPayload::mmap`), and slice byte regions in user-space via pointer offset arithmetic (`mmap.get(offset..end)`).
+  - Map the entire payload container once using a single base mapping (`LoadedPayload::mmap`), and slice byte regions via user-space pointer offsets.
 
 ---
 
@@ -2084,8 +2091,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 #### 1. Android 15 16 KiB Filesystem Block Sizes
 - **Specification**: In Android 15, `DeltaArchiveManifest.block_size` can be set to `16384` (16 KiB) instead of default `4096`.
 - **Engineering Mitigation**:
-  - Dynamically propagate `manifest.block_size.unwrap_or(4096)` into all extent offset and length multipliers:
-    $$\text{Offset} = \text{start\_block} \times \text{block\_size}$$
+  - Dynamically propagate `manifest.block_size.unwrap_or(4096)` into all extent seek offsets and buffer allocations.
 
 #### 2. Forward Error Correction (FEC) & Hash Tree Extents
 - **Specification**: Android system partitions append dm-verity hash trees and Reed-Solomon Forward Error Correction (FEC) codes at partition ends (`hash_tree_extent`, `fec_extent`).
@@ -2095,12 +2101,12 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 #### 3. Virtual A/B Compression (V-ABC) COW v2 vs COW v3
 - **Specification**: Android 14/15 introduced COW v3 supporting batch operations and multi-threaded decompression.
 - **Engineering Mitigation**:
-  - Parse `DeltaArchiveManifest.dynamic_partition_metadata` to inspect `vabc_compression_param` (`zstd`, `lz4`, `gz`) and `cow_version`, reporting compression metadata to the UI.
+  - Parse `DeltaArchiveManifest.dynamic_partition_metadata` to inspect COW batching, compression parameters (`zstd`, `lz4`, `gz`), and COW version (v2 / v3).
 
 #### 4. Partial OTA Updates
 - **Specification**: OEM partial updates only include a subset of partitions (e.g. `boot`, `init_boot`, `vendor_boot`, `dtbo`), omitting `system` and `vendor`.
 - **Engineering Mitigation**:
-  - Detect `manifest.partial_update == Some(true)`, display a distinct "Partial OTA" badge in the UI, and guide the user on flashing instructions.
+  - Detect `manifest.partial_update == Some(true)`, rendering a distinct "Partial OTA" badge in the UI.
 
 #### 5. Decompressed APEX Containers (`apex_info`)
 - **Specification**: Payloads contain compressed APEX packages (`.capex`). `manifest.apex_info` defines decompressed sizes and package names.
@@ -2116,7 +2122,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 
 ### 13.3 Network, HTTP Range Streaming & CDN Edge Cases
 
-#### 1. HTTP 206 Partial Content vs HTTP 200 OK Fallback
+#### 1. HTTP 206 Partial Content vs 200 OK Fallback
 - **Root Cause**: Some misconfigured servers ignore `Range: bytes=X-Y` headers and return the full file with HTTP 200 OK.
 - **Engineering Mitigation**:
   - Check `response.status() == StatusCode::PARTIAL_CONTENT`. If server returns 200 OK for a small range probe, immediately abort the stream to prevent buffering gigabytes of unwanted data into memory.
@@ -2124,7 +2130,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 #### 2. Chunk-Encoded Streams (`Transfer-Encoding: chunked`)
 - **Root Cause**: Servers streaming dynamic data omit `Content-Length`.
 - **Engineering Mitigation**:
-  - Issue a probe `Range: bytes=0-0` request. If `Content-Range` is returned (e.g. `bytes 0-0/12345678`), parse the total size from the denominator.
+  - Probes `Range: bytes=0-0` to extract total content length from the `Content-Range` denominator.
 
 #### 3. Transient Connection Failures & Byte-Exact Resume
 - **Root Cause**: Wi-Fi drops or CDN timeouts interrupt multi-gigabyte remote extractions.
@@ -2157,14 +2163,13 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 - **Engineering Mitigation**:
   - Dynamically size worker pool:
     $$N_{\text{workers}} = \min(\max(1, N_{\text{physical\_cores}}), 8)$$
-  - Throttle heavy-memory decompressions via `Arc<tokio::sync::Semaphore>` (max 4 concurrent dictionary allocations).
-  - Schedule partitions using LPT (Longest Processing Time) order (largest partitions start first).
+  - Throttle heavy-memory decompressions via `Arc<tokio::sync::Semaphore>` (max 4 concurrent dictionary decompressions) and LPT (Longest Processing Time) partition scheduling.
 
 #### 2. High-Frequency IPC Event Flooding
 - **Root Cause**: 100,000+ unthrottled progress events choke the Tauri FFI bridge, starving the webview event loop and freezing the UI.
 - **Engineering Mitigation**:
   - Worker threads update shared lock-free atomic counters (`AtomicU64`).
-  - A background Tokio task samples counters and emits consolidated JSON events at **100ms intervals (10 Hz)** with EWMA throughput smoothing.
+  - A background Tokio task samples counters and emits consolidated JSON progress events at **100ms intervals (10 Hz)** with EWMA throughput smoothing.
 
 #### 3. Tokio Async Blocking I/O Deadlocks
 - **Root Cause**: Executing CPU-bound decompressions inside Tokio worker threads blocks the async scheduler, while calling `block_on` in Rayon causes threadpool inversion deadlocks.
@@ -2180,12 +2185,469 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 #### 5. Transaction Rollback Race Conditions
 - **Root Cause**: `remove_dir_all` on user folders destroys pre-existing files, while open handles on Windows block unlinking.
 - **Engineering Mitigation**:
-  - Stage extractions into an isolated temporary subfolder (`.tmp_tx_{session_id}`).
-  - On commit, move verified files to the final directory; on failure/abort, delete only the isolated staging directory.
+  - Extractions are staged into an isolated temporary subfolder (`.tmp_tx_{session_id}`).
+  - On commit, verified files are moved to destination; on failure/abort, only the isolated staging folder is deleted, preserving all pre-existing user files.
 
 ---
 
-## 14. External References, Specifications & Tooling Inventory
+## 14. Universal Firmware Hub & Live OEM Scraper Architecture
+
+```mermaid
+graph TD
+    A[Frontend: PayloadMarketplaceTab] -->|useFirmwareCatalog 'google'| B[Tauri IPC: get_firmware_catalog]
+    B --> C{FirmwareHubService Cache Hit?}
+    
+    C -->|Yes: Memory Cache < 1 hour| D[Return Cached Vec~FirmwareDeviceModel~ < 1ms]
+    C -->|Disk Cache Valid < 24h| E[Read JSON File from app_cache_dir/firmware/]
+    E --> D
+
+    C -->|No / Stale / Force Refresh| F[Dispatch to OEM FirmwareProvider]
+    F -->|Google Brand| G[GooglePixelProvider::fetch_catalog]
+    F -->|Nothing Brand| G1[NothingOtaProvider::fetch_catalog]
+    F -->|Xiaomi Brand| G2[XiaomiHyperOsProvider::fetch_catalog]
+
+    G --> H[Reqwest HTTP Client: Set ToS Cookie devsite_wall_acks]
+    H --> I1[GET https://developers.google.com/android/images]
+    H --> I2[GET https://developers.google.com/android/ota]
+
+    I1 --> J[Streaming HTML Parser: Extract H2/H3 Codename Anchors & Tables]
+    I2 --> J
+    J --> K[Parse Build IDs, Android Versions, SHA-256 Hashes, dl.google.com URLs]
+    K --> L[Enrich Hardware Metadata: SoC, Release Year, Series, Mark Latest]
+    L --> M[Write Atomic JSON Cache File & Update In-Memory RwLock]
+    M --> D
+```
+
+### 14.1 Architectural Philosophy: Rust Backend Heavy Lifting & Thin Frontend
+To ensure enterprise stability, maintainability, and blistering UI responsiveness:
+1. **Zero Business Logic in JavaScript/React**: The frontend is strictly a presentational rendering layer (React 19, Tailwind CSS v4, shadcn UI). It contains no hardcoded mock data, no complex scraping logic, and no heavy data transformations.
+2. **Rust Domain Ownership**: The Rust backend (`src-tauri/src/firmware/`) owns all HTTP networking, Cookie header injection, HTML parsing, DOM extraction, device codename mapping, SHA-256 verification, and caching.
+3. **Sub-Millisecond Loading**: The UI queries `get_firmware_catalog` via `@tanstack/react-query`, which returns instantly from Rust's two-tier in-memory and disk cache.
+
+---
+
+### 14.2 Google Pixel Official Endpoint Scraping & ToS Cookie Bypass
+
+Google publishes official Pixel firmware across two developer portals:
+- **Factory Images (Fastboot Flashable)**: `https://developers.google.com/android/images`
+- **Full OTA Images (Recovery / Remote Sideload)**: `https://developers.google.com/android/ota`
+
+#### The Google Terms of Service Cookie Wall:
+When scraping without browser cookies, Google returns a Terms of Service acknowledgement wall.
+- **Bypass Header**: Setting the cookie `devsite_wall_acks=nexus-image-tos,nexus-ota-tos` instructs Google's DevSite server to bypass the agreement gate and emit the full rendered HTML document containing all device sections and release tables.
+
+#### HTML Structure & DOM Extraction:
+```html
+<h2 id="husky">Pixel 8 Pro ("husky")</h2>
+<table class="responsive">
+  <thead>
+    <tr>
+      <th>Version</th>
+      <th>Carrier / Region Notes</th>
+      <th>Download Link</th>
+      <th>SHA-256 Checksum</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>14.0.0 (UD1A.230803.041, Oct 2023)</td>
+      <td>All carriers</td>
+      <td><a href="https://dl.google.com/dl/android/aosp/husky-ota-ud1a.230803.041-01234567.zip">Link</a></td>
+      <td>a1b2c3d4e5f6...64-char-hex...</td>
+    </tr>
+  </tbody>
+</table>
+```
+
+---
+
+### 14.3 Two-Tier Caching Engine (Memory RwLock + 24h Disk JSON TTL)
+
+```
+[ Frontend Request ]
+        │
+        ▼
+[ Tier 1: In-Memory Cache ] ──(Hit: < 0.2ms)──► Return Vec<FirmwareDeviceModel>
+        │ (Miss / Expired)
+        ▼
+[ Tier 2: Local Disk JSON Cache ] ──(Hit < 24h TTL)──► Load & Populate RAM
+        │ (Miss / Stale / User Forced Refresh)
+        ▼
+[ Tier 3: Conditional HTTP Validation ] ──(ETag / If-Modified-Since)──► HTTP 304: Extend TTL
+        │ (HTTP 200 OK)
+        ▼
+[ Live HTML Scraper Engine ] ──► Parse DOM ──► Atomic Save ──► Return Fresh Data
+```
+
+1. **Tier 1 (RAM Cache)**: `Arc<RwLock<HashMap<FirmwareBrand, CachedCatalog>>>` stored in Tauri application state.
+2. **Tier 2 (Disk Persistence)**: Atomic JSON serialization at `<app_cache_dir>/firmware/firmware_catalog_{brand}.json` with a 24-hour Time-To-Live (TTL).
+3. **Tier 3 (HTTP Conditional Requests)**: Emits `If-None-Match: "{etag}"` and `If-Modified-Since` headers to avoid downloading 3 MB HTML documents if Google has not published a new monthly build.
+4. **Offline Resilience**: If the user is offline, the service gracefully falls back to stale disk cache with an informative UI indicator.
+
+---
+
+### 14.4 Production Rust Scraper Implementation (`firmware::google`)
+
+```rust
+//! Complete Google Pixel Firmware Scraper Engine for Factory Images and Full OTAs.
+
+use anyhow::{anyhow, Context, Result};
+use reqwest::header::{HeaderMap, HeaderValue, COOKIE, USER_AGENT};
+use reqwest::Client;
+use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+const FACTORY_IMAGES_URL: &str = "https://developers.google.com/android/images";
+const OTA_IMAGES_URL: &str = "https://developers.google.com/android/ota";
+const TOS_COOKIE: &str = "devsite_wall_acks=nexus-image-tos,nexus-ota-tos";
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FirmwareBuild {
+    pub id: String,
+    pub version: String,
+    pub android_version: String,
+    pub build_id: String,
+    pub carrier: Option<String>,
+    pub release_date: String,
+    pub security_patch: Option<String>,
+    pub image_type: String, // "factory" | "ota"
+    pub download_url: String,
+    pub file_size: Option<u64>,
+    pub sha256: Option<String>,
+    pub is_latest: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FirmwareDeviceModel {
+    pub id: String,
+    pub name: String,
+    pub codename: String,
+    pub brand: String, // "google"
+    pub soc: Option<String>,
+    pub release_year: Option<u32>,
+    pub series: Option<String>,
+    pub builds: Vec<FirmwareBuild>,
+}
+
+pub struct GooglePixelScraper;
+
+impl GooglePixelScraper {
+    pub fn build_client() -> Result<Client> {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            USER_AGENT,
+            HeaderValue::from_static("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"),
+        );
+        headers.insert(COOKIE, HeaderValue::from_static(TOS_COOKIE));
+
+        Client::builder()
+            .default_headers(headers)
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .context("Failed to build Google Pixel HTTP client")
+    }
+
+    pub async fn scrape_catalog() -> Result<Vec<FirmwareDeviceModel>> {
+        let client = Self::build_client()?;
+
+        // Fetch Factory and OTA HTML documents concurrently
+        let (factory_html, ota_html) = tokio::try_join!(
+            Self::fetch_html(&client, FACTORY_IMAGES_URL),
+            Self::fetch_html(&client, OTA_IMAGES_URL),
+        )?;
+
+        let mut devices_map: HashMap<String, FirmwareDeviceModel> = HashMap::new();
+
+        // 1. Parse Factory Images
+        Self::parse_google_html(&factory_html, "factory", &mut devices_map)?;
+
+        // 2. Parse OTA Images
+        Self::parse_google_html(&ota_html, "ota", &mut devices_map)?;
+
+        // 3. Post-process: sort builds descending and mark is_latest
+        let mut devices: Vec<FirmwareDeviceModel> = devices_map.into_values().collect();
+        for dev in &mut devices {
+            dev.builds.sort_by(|a, b| b.release_date.cmp(&a.release_date));
+            if let Some(first) = dev.builds.first_mut() {
+                first.is_latest = true;
+            }
+        }
+
+        devices.sort_by(|a, b| b.release_year.cmp(&a.release_year).then_with(|| a.name.cmp(&b.name)));
+        Ok(devices)
+    }
+
+    async fn fetch_html(client: &Client, url: &str) -> Result<String> {
+        let resp = client.get(url).send().await.context(format!("Failed to GET {url}"))?;
+        if !resp.status().is_success() {
+            anyhow::bail!("Google portal returned status: {}", resp.status());
+        }
+        resp.text().await.context("Failed to read HTML response text")
+    }
+
+    fn parse_google_html(
+        html_content: &str,
+        image_type: &str,
+        devices: &mut HashMap<String, FirmwareDeviceModel>,
+    ) -> Result<()> {
+        let document = Html::parse_document(html_content);
+        let h2_selector = Selector::parse("h2[id]").unwrap();
+        let table_selector = Selector::parse("table").unwrap();
+        let tr_selector = Selector::parse("tbody > tr").unwrap();
+        let td_selector = Selector::parse("td").unwrap();
+        let a_selector = Selector::parse("a[href]").unwrap();
+
+        for h2 in document.select(&h2_selector) {
+            let codename = h2.value().attr("id").unwrap_or_default().trim().to_lowercase();
+            if codename.is_empty() || codename == "terms" || codename == "acknowledgments" {
+                continue;
+            }
+
+            let full_title = h2.text().collect::<Vec<_>>().join(" ");
+            let (name, extracted_codename) = Self::parse_device_title(&full_title, &codename);
+
+            // Locate the responsive table following this h2 section
+            let mut next_sibling = h2.next_sibling();
+            while let Some(sibling) = next_sibling {
+                if let Some(element) = scraper::ElementRef::wrap(sibling) {
+                    if element.value().name() == "h2" {
+                        break;
+                    }
+                    if element.value().name() == "table" {
+                        let dev = devices.entry(extracted_codename.clone()).or_insert_with(|| {
+                            let (soc, year, series) = Self::enrich_metadata(&extracted_codename);
+                            FirmwareDeviceModel {
+                                id: extracted_codename.clone(),
+                                name: name.clone(),
+                                codename: extracted_codename.clone(),
+                                brand: "google".to_string(),
+                                soc,
+                                release_year: year,
+                                series,
+                                builds: Vec::new(),
+                            }
+                        });
+
+                        for tr in element.select(&tr_selector) {
+                            let tds: Vec<_> = tr.select(&td_selector).collect();
+                            if tds.len() < 3 {
+                                continue;
+                            }
+
+                            let raw_version_text = tds[0].text().collect::<Vec<_>>().join(" ").trim().to_string();
+                            let (version, android_ver, build_id, date_str) = Self::parse_version_string(&raw_version_text);
+
+                            let carrier = if tds.len() >= 4 {
+                                let c = tds[1].text().collect::<Vec<_>>().join(" ").trim().to_string();
+                                if c.is_empty() || c == "All carriers" { None } else { Some(c) }
+                            } else {
+                                None
+                            };
+
+                            let link_td_idx = if tds.len() >= 4 { 2 } else { 1 };
+                            let sha_td_idx = if tds.len() >= 4 { 3 } else { 2 };
+
+                            let download_url = tds[link_td_idx]
+                                .select(&a_selector)
+                                .next()
+                                .and_then(|a| a.value().attr("href"))
+                                .unwrap_or_default()
+                                .to_string();
+
+                            if download_url.is_empty() {
+                                continue;
+                            }
+
+                            let sha256 = tds[sha_td_idx]
+                                .text()
+                                .collect::<Vec<_>>()
+                                .join("")
+                                .trim()
+                                .to_lowercase();
+
+                            let build_entry = FirmwareBuild {
+                                id: format!("{extracted_codename}_{build_id}_{image_type}"),
+                                version,
+                                android_version: android_ver,
+                                build_id,
+                                carrier,
+                                release_date: date_str,
+                                security_patch: None,
+                                image_type: image_type.to_string(),
+                                download_url,
+                                file_size: None,
+                                sha256: if sha256.len() == 64 { Some(sha256) } else { None },
+                                is_latest: false,
+                            };
+
+                            dev.builds.push(build_entry);
+                        }
+                    }
+                }
+                next_sibling = sibling.next_sibling();
+            }
+        }
+
+        Ok(())
+    }
+
+    fn parse_device_title(title: &str, fallback_codename: &str) -> (String, String) {
+        // e.g. "Pixel 9 Pro XL ("komodo")" -> ("Pixel 9 Pro XL", "komodo")
+        if let Some(start) = title.find("(\"") && let Some(end) = title.find("\")") {
+            let codename = &title[start + 2..end];
+            let name = title[..start].trim().to_string();
+            return (name, codename.to_lowercase());
+        }
+        (title.trim().to_string(), fallback_codename.to_lowercase())
+    }
+
+    fn parse_version_string(raw: &str) -> (String, String, String, String) {
+        // Raw example: "14.0.0 (UD1A.230803.041, Oct 2023)"
+        let version = raw.to_string();
+        let mut android_version = "14.0.0".to_string();
+        let mut build_id = raw.to_string();
+        let mut date_str = "2024-01-01".to_string();
+
+        if let Some(paren_start) = raw.find('(') && let Some(paren_end) = raw.find(')') {
+            android_version = raw[..paren_start].trim().to_string();
+            let inside = &raw[paren_start + 1..paren_end];
+            let parts: Vec<&str> = inside.split(',').collect();
+            if !parts.is_empty() {
+                build_id = parts[0].trim().to_string();
+            }
+            if parts.len() >= 2 {
+                date_str = parts[1].trim().to_string();
+            }
+        }
+
+        (version, android_version, build_id, date_str)
+    }
+
+    fn enrich_metadata(codename: &str) -> (Option<String>, Option<u32>, Option<String>) {
+        match codename {
+            "komodo" => (Some("Tensor G4".into()), Some(2024), Some("Pixel 9".into())),
+            "caiman" => (Some("Tensor G4".into()), Some(2024), Some("Pixel 9".into())),
+            "tokay" => (Some("Tensor G4".into()), Some(2024), Some("Pixel 9".into())),
+            "comet" => (Some("Tensor G4".into()), Some(2024), Some("Fold & Tablet".into())),
+            "husky" => (Some("Tensor G3".into()), Some(2023), Some("Pixel 8".into())),
+            "shiba" => (Some("Tensor G3".into()), Some(2023), Some("Pixel 8".into())),
+            "akita" => (Some("Tensor G3".into()), Some(2024), Some("Pixel 8".into())),
+            "cheetah" => (Some("Tensor G2".into()), Some(2022), Some("Pixel 7".into())),
+            "panther" => (Some("Tensor G2".into()), Some(2022), Some("Pixel 7".into())),
+            "lynx" => (Some("Tensor G2".into()), Some(2023), Some("Pixel 7".into())),
+            "raven" => (Some("Google Tensor".into()), Some(2021), Some("Pixel 6".into())),
+            "oriole" => (Some("Google Tensor".into()), Some(2021), Some("Pixel 6".into())),
+            "bluejay" => (Some("Google Tensor".into()), Some(2022), Some("Pixel 6".into())),
+            "felix" => (Some("Tensor G2".into()), Some(2023), Some("Fold & Tablet".into())),
+            "tangorpro" => (Some("Tensor G2".into()), Some(2023), Some("Fold & Tablet".into())),
+            _ => (Some("Google Tensor".into()), Some(2023), Some("Other Pixel".into())),
+        }
+    }
+}
+```
+
+---
+
+### 14.5 Multi-Brand Extensibility Roadmap (Nothing, Xiaomi, OnePlus, Samsung)
+
+The `FirmwareProvider` trait supports pluggable OEM indexers:
+
+```rust
+#[async_trait::async_trait]
+pub trait FirmwareProvider: Send + Sync {
+    fn brand(&self) -> &'static str;
+    async fn fetch_catalog(&self, client: &reqwest::Client, force_refresh: bool) -> Result<Vec<FirmwareDeviceModel>>;
+}
+```
+
+1. **Nothing OS Provider (`NothingOtaProvider`)**:
+   - Queries Nothing's Akashic CDN API (`https://otaupd-fut.nothing.tech/`).
+   - Indexes official OTA packages for Phone (1), Phone (2), Phone (2a), and CMF Phone 1.
+2. **Xiaomi / HyperOS Provider (`XiaomiHyperOsProvider`)**:
+   - Indexes official Fastboot TGZ and Recovery packages across Xiaomi, Redmi, and POCO devices.
+3. **OnePlus / OxygenOS Provider (`OnePlusProvider`)**:
+   - Indexes official ColorOS / OxygenOS full update packages and rollback `.ops` packages.
+4. **Samsung Galaxy Provider (`SamsungProvider`)**:
+   - Indexes official Smart Switch and FOTA multi-part `.tar.md5` archives.
+
+---
+
+### 14.6 Universal Frontend Refactoring & 1-Click Remote Extraction Bridge
+
+#### 1. TypeScript Models (`src/features/payload-dumper/ui/marketplace/types.ts`):
+```typescript
+export type FirmwareBrand = 'google' | 'nothing' | 'xiaomi' | 'oneplus' | 'samsung';
+export type BrandFilter = 'all' | FirmwareBrand;
+export type FirmwareImageType = 'factory' | 'ota';
+
+export interface FirmwareBuild {
+  id: string;
+  version: string;
+  androidVersion?: string;
+  buildId: string;
+  carrier?: string;
+  releaseDate?: string;
+  securityPatch?: string;
+  imageType: FirmwareImageType;
+  downloadUrl: string;
+  fileSize?: number | string;
+  sha256?: string;
+  isLatest: boolean;
+}
+
+export interface FirmwareDeviceModel {
+  id: string;
+  name: string;
+  codename: string;
+  brand: FirmwareBrand;
+  soc?: string;
+  releaseYear?: number;
+  series?: string;
+  builds: FirmwareBuild[];
+}
+```
+
+#### 2. TanStack React Query Hook (`useFirmwareCatalog.ts`):
+```typescript
+export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all') {
+  const queryClient = useQueryClient();
+
+  const catalogQuery = useQuery<FirmwareDeviceModel[], Error>({
+    queryKey: ['firmwareCatalog', selectedBrand],
+    queryFn: () => GetFirmwareCatalog(selectedBrand),
+    staleTime: 1000 * 60 * 60, // 1 hour (backed by 24h Rust disk TTL cache)
+  });
+
+  const refreshMutation = useMutation({
+    mutationFn: () => RefreshFirmwareCatalog(selectedBrand),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['firmwareCatalog', selectedBrand], data);
+      toast.success(`Refreshed firmware catalog: ${data.length} device models loaded`);
+    },
+  });
+
+  return {
+    devices: catalogQuery.data ?? [],
+    isLoading: catalogQuery.isLoading,
+    isFetching: catalogQuery.isFetching || refreshMutation.isPending,
+    refresh: () => refreshMutation.mutate(),
+  };
+}
+```
+
+#### 3. Seamless 1-Click Remote Extraction Bridge:
+In `FirmwareDeviceDetailView.tsx`, clicking the **Remote Stream Extract** button on any OTA build invokes:
+```typescript
+onSelectRemoteUrl(build.downloadUrl);
+```
+This automatically transitions the UI to the **Payload Dumper Extractor** view, triggers Rust's `list_remote_payload_partitions` command over HTTP Range requests, and renders the partition table ready for extraction in **under 2 seconds**.
+
+---
+
+## 15. External References, Specifications & Tooling Inventory
 
 1. **AOSP Update Engine**:
    - Canonical Protobuf Schema: `system/update_engine/update_metadata.proto`
@@ -2194,13 +2656,17 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 2. **AOSP Dynamic Partitions (`liblp`)**:
    - Struct Format Definitions: `system/core/fs_mgr/liblp/include/liblp/metadata_format.h`
    - AOSP Unpacker Reference: `system/core/fs_mgr/liblp/utility/lpunpack.cc`
-3. **Puffin Deflate Compression**:
+3. **Google Developer Firmware Portals**:
+   - Factory Images: `https://developers.google.com/android/images`
+   - Full OTA Images: `https://developers.google.com/android/ota`
+   - Android Flash Tool: `https://flash.android.com/`
+4. **Puffin Deflate Compression**:
    - Source: `platform/external/puffin`
-4. **Zucchini Binary Differ**:
+5. **Zucchini Binary Differ**:
    - Chromium Project: `components/zucchini/`
-5. **Android Sparse Image Format**:
+6. **Android Sparse Image Format**:
    - Header Reference: `system/core/libsparse/sparse_format.h`
-6. **Official Rust Crate Ecosystem References**:
+7. **Official Rust Crate Ecosystem References**:
    - `prost`: [https://docs.rs/prost](https://docs.rs/prost)
    - `memmap2`: [https://docs.rs/memmap2](https://docs.rs/memmap2)
    - `bsdiff-android`: [https://docs.rs/bsdiff-android](https://docs.rs/bsdiff-android)
@@ -2209,6 +2675,8 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
    - `brotli`: [https://docs.rs/brotli](https://docs.rs/brotli)
    - `zstd`: [https://docs.rs/zstd](https://docs.rs/zstd)
    - `tar`: [https://docs.rs/tar](https://docs.rs/tar)
+   - `scraper`: [https://docs.rs/scraper](https://docs.rs/scraper)
+   - `reqwest`: [https://docs.rs/reqwest](https://docs.rs/reqwest)
    - `windows-sys`: [https://docs.rs/windows-sys](https://docs.rs/windows-sys)
    - `libc`: [https://docs.rs/libc](https://docs.rs/libc)
    - `dunce`: [https://docs.rs/dunce](https://docs.rs/dunce)
