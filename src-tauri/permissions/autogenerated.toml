@@ -60,7 +60,9 @@ commands.allow = [
   "marketplace_get_overview_stats",
   "marketplace_get_curated_tools",
   "compute_partition_file_sha256",
-  "get_extraction_presets"
+  "get_extraction_presets",
+  "get_firmware_catalog",
+  "get_supported_firmware_brands",
 ]
 
 [[permission]]
@@ -121,6 +123,9 @@ commands.allow = [
   "scrcpy_stop",
   "scrcpy_open_toolbar",
   "scrcpy_close_toolbar",
+  "refresh_firmware_catalog",
+  "clear_firmware_cache",
+  "unpack_super_image",
   "scrcpy_set_toolbar_mode",
   "scrcpy_set_toolbar_offset",
   "scrcpy_set_toolbar_side",

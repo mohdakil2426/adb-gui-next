@@ -1,4 +1,4 @@
-import { BarChart3, History, Layers, Loader2, UploadCloud } from 'lucide-react';
+import { BarChart3, History, Layers, Loader2, Store, UploadCloud } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { usePayloadActions } from '@/features/payload-dumper/hooks/usePayloadActions';
 import { usePayloadEvents } from '@/features/payload-dumper/hooks/usePayloadEvents';
@@ -9,6 +9,7 @@ import { ExtractionStatusCard } from '@/features/payload-dumper/ui/ExtractionSta
 import { PayloadExtractorTab } from '@/features/payload-dumper/ui/extractor/PayloadExtractorTab';
 import { PayloadHistoryTab } from '@/features/payload-dumper/ui/history/PayloadHistoryTab';
 import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
+import { PayloadMarketplaceTab } from '@/features/payload-dumper/ui/marketplace/PayloadMarketplaceTab';
 import { PayloadOverviewTab } from '@/features/payload-dumper/ui/overview/PayloadOverviewTab';
 import { PayloadDumperHeroBanner } from '@/features/payload-dumper/ui/PayloadDumperHeroBanner';
 import { PayloadSourceTab } from '@/features/payload-dumper/ui/source/PayloadSourceTab';
@@ -16,7 +17,7 @@ import type { ConnectionStatus } from '@/shared/components/RemoteUrlPanel';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
-export type PayloadTabType = 'overview' | 'extractor' | 'source' | 'history';
+export type PayloadTabType = 'overview' | 'source' | 'marketplace' | 'extractor' | 'history';
 
 export function ViewPayloadDumper() {
   const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
@@ -69,6 +70,16 @@ export function ViewPayloadDumper() {
     setRemoteUrl,
     status,
   });
+
+  const handleSelectMarketplaceUrl = useCallback(
+    (url: string) => {
+      setRemoteUrl(url);
+      setActiveMode('remote');
+      setActiveTab('source');
+      actions.handleCheckUrl();
+    },
+    [setRemoteUrl, setActiveMode, actions],
+  );
 
   const selectedNotExtracted = useMemo(
     () => partitions.filter((p) => p.selected && !completedPartitions.has(p.name)),
@@ -141,6 +152,11 @@ export function ViewPayloadDumper() {
                 ) : null}
               </TabsTrigger>
 
+              <TabsTrigger className="flex-1" value="marketplace">
+                <Store aria-hidden="true" className="mr-2 size-4" />
+                Firmware Hub
+              </TabsTrigger>
+
               <TabsTrigger className="flex-1" value="extractor">
                 <Layers aria-hidden="true" className="mr-2 size-4" />
                 Extractor & Partitions
@@ -192,6 +208,11 @@ export function ViewPayloadDumper() {
                 prefetch={prefetch}
                 remoteUrl={remoteUrl}
               />
+            </TabsContent>
+
+            {/* Tab 3: Google Pixel Firmware Marketplace */}
+            <TabsContent value="marketplace">
+              <PayloadMarketplaceTab onSelectRemoteUrl={handleSelectMarketplaceUrl} />
             </TabsContent>
 
             {/* Tab 3: Extractor & Partitions Table */}

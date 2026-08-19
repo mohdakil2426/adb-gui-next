@@ -1,0 +1,64 @@
+import type { backend } from '@/desktop/models';
+
+export type FirmwareBrand = backend.FirmwareBrand;
+export type BrandFilter = 'all' | FirmwareBrand;
+export type FirmwareImageType = backend.FirmwareImageType;
+export type FirmwareBuild = backend.FirmwareBuild;
+export type FirmwareDeviceModel = backend.FirmwareDeviceModel;
+
+export interface BrandMetadata {
+  description: string;
+  displayName: string;
+  icon?: string;
+  id: FirmwareBrand;
+  portalName: string;
+  portalUrl: string;
+  shortLabel: string;
+}
+
+export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
+  google: {
+    id: 'google',
+    displayName: 'Google Pixel',
+    shortLabel: 'Pixel',
+    description: 'Official Google Pixel firmware builds with verified OTA payloads.',
+    portalUrl: 'https://developers.google.com/android/ota',
+    portalName: 'Google Pixel OTA Portal',
+  },
+  nothing: {
+    id: 'nothing',
+    displayName: 'Nothing',
+    shortLabel: 'Nothing',
+    description: 'Nothing OS official firmware packages and fastboot archives.',
+    portalUrl: 'https://nothing.tech',
+    portalName: 'Official Nothing Portal',
+  },
+  xiaomi: {
+    id: 'xiaomi',
+    displayName: 'Xiaomi',
+    shortLabel: 'Xiaomi',
+    description: 'HyperOS & MIUI official recovery and fastboot ROM catalogs.',
+    portalUrl: 'https://miuirom.org',
+    portalName: 'Xiaomi HyperOS Archive',
+  },
+  oneplus: {
+    id: 'oneplus',
+    displayName: 'OnePlus',
+    shortLabel: 'OnePlus',
+    description: 'OxygenOS & ColorOS full firmware payloads and OTA updates.',
+    portalUrl: 'https://service.oneplus.com',
+    portalName: 'OnePlus Software Portal',
+  },
+  samsung: {
+    id: 'samsung',
+    displayName: 'Samsung',
+    shortLabel: 'Samsung',
+    description: 'Samsung Galaxy official multi-file (AP/BL/CP/CSC) firmware packages.',
+    portalUrl: 'https://samfw.com',
+    portalName: 'Samsung Firmware Portal',
+  },
+};
+
+// Legacy types for backwards-compatibility
+export type PixelFirmwareBuild = FirmwareBuild;
+export type PixelDeviceModel = FirmwareDeviceModel;
