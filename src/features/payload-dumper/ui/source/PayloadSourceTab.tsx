@@ -1,7 +1,6 @@
 import { FileArchive, Globe } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { RemoteLoadProgressCard } from '@/features/payload-dumper/ui/RemoteLoadProgressCard';
-import { PayloadStreamDiagnostics } from '@/features/payload-dumper/ui/source/PayloadStreamDiagnostics';
 import { RemotePresetCatalog } from '@/features/payload-dumper/ui/source/RemotePresetCatalog';
 import { DropZone } from '@/shared/components/DropZone';
 import { type ConnectionStatus, RemoteUrlPanel } from '@/shared/components/RemoteUrlPanel';
@@ -149,9 +148,6 @@ export function PayloadSourceTab({
           onCheckUrl();
         }}
       />
-
-      {/* Stream Engine Diagnostics */}
-      <PayloadStreamDiagnostics />
     </div>
   );
 }

@@ -48,9 +48,18 @@ describe('ViewPayloadDumper', () => {
       screen.getByRole('heading', { name: 'Payload Dumper', hidden: true }),
     ).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /^overview$/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /extractor & partitions/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /source & remote loader/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /extractor & partitions/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /extracted outputs & history/i })).toBeInTheDocument();
+    expect(screen.getByText('Workflow Shortcuts')).toBeInTheDocument();
+    expect(screen.getByText('Engine Capabilities')).toBeInTheDocument();
+    expect(screen.getByText('3-Step Extraction Workflow')).toBeInTheDocument();
+  });
+  it('navigates to source tab when clicking source workflow shortcut card', async () => {
+    const user = userEvent.setup();
+    render(<ViewPayloadDumper />);
+    await user.click(screen.getByText('Configure Source'));
+    expect(screen.getByText(/Local File Archive/i)).toBeInTheDocument();
   });
 
   it('renders the loaded state with precision hero banner and extractor controls', async () => {

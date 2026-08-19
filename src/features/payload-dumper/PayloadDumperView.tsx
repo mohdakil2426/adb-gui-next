@@ -48,9 +48,7 @@ export function ViewPayloadDumper() {
   const clearHistory = usePayloadDumperStore((state) => state.clearHistory);
 
   // Local UI state
-  const [activeTab, setActiveTab] = useState<PayloadTabType>(() =>
-    partitions.length > 0 ? 'overview' : 'source',
-  );
+  const [activeTab, setActiveTab] = useState<PayloadTabType>('overview');
   const [prefetch, setPrefetch] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('idle');
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
@@ -135,6 +133,14 @@ export function ViewPayloadDumper() {
                 Overview
               </TabsTrigger>
 
+              <TabsTrigger className="flex-1" value="source">
+                <UploadCloud aria-hidden="true" className="mr-2 size-4" />
+                Source & Remote Loader
+                {status === 'loading-partitions' ? (
+                  <Loader2 aria-hidden="true" className="ml-1.5 size-3 animate-spin" />
+                ) : null}
+              </TabsTrigger>
+
               <TabsTrigger className="flex-1" value="extractor">
                 <Layers aria-hidden="true" className="mr-2 size-4" />
                 Extractor & Partitions
@@ -142,14 +148,6 @@ export function ViewPayloadDumper() {
                   <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.2 font-mono text-[10px] text-primary">
                     {partitions.length}
                   </span>
-                ) : null}
-              </TabsTrigger>
-
-              <TabsTrigger className="flex-1" value="source">
-                <UploadCloud aria-hidden="true" className="mr-2 size-4" />
-                Source & Remote Loader
-                {status === 'loading-partitions' ? (
-                  <Loader2 aria-hidden="true" className="ml-1.5 size-3 animate-spin" />
                 ) : null}
               </TabsTrigger>
 
@@ -166,10 +164,37 @@ export function ViewPayloadDumper() {
 
             {/* Tab 1: Overview */}
             <TabsContent value="overview">
-              <PayloadOverviewTab />
+              <PayloadOverviewTab onNavigateTab={setActiveTab} />
             </TabsContent>
 
-            {/* Tab 2: Extractor & Partitions Table */}
+            {/* Tab 2: Source & Remote Loader */}
+            <TabsContent value="source">
+              <PayloadSourceTab
+                connectionStatus={connectionStatus}
+                disabled={status === 'extracting' || status === 'loading-partitions'}
+                estimatedSize={estimatedSize}
+                isLoadingPartitions={status === 'loading-partitions'}
+                loadDetail={loadDetail}
+                loadMessage={loadMessage}
+                loadPhase={loadPhase}
+                loadStartedAt={loadStartedAt}
+                loadStep={loadStep}
+                loadTotalSteps={loadTotalSteps}
+                mode={activeMode}
+                onCancelLoadPartitions={actions.handleCancelLoadPartitions}
+                onCheckUrl={actions.handleCheckUrl}
+                onLoadRemotePartitions={actions.loadRemotePartitions}
+                onModeChange={setActiveMode}
+                onPayloadDrop={actions.handlePayloadDrop}
+                onPrefetchChange={setPrefetch}
+                onSelectPayload={actions.handleSelectPayload}
+                onUrlChange={setRemoteUrl}
+                prefetch={prefetch}
+                remoteUrl={remoteUrl}
+              />
+            </TabsContent>
+
+            {/* Tab 3: Extractor & Partitions Table */}
             <TabsContent value="extractor">
               {status === 'loading-partitions' && activeMode === 'local' ? (
                 <LoadingState mode={activeMode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
@@ -198,33 +223,6 @@ export function ViewPayloadDumper() {
                   toExtractSize={toExtractSize}
                 />
               )}
-            </TabsContent>
-
-            {/* Tab 3: Source & Remote Loader */}
-            <TabsContent value="source">
-              <PayloadSourceTab
-                connectionStatus={connectionStatus}
-                disabled={status === 'extracting' || status === 'loading-partitions'}
-                estimatedSize={estimatedSize}
-                isLoadingPartitions={status === 'loading-partitions'}
-                loadDetail={loadDetail}
-                loadMessage={loadMessage}
-                loadPhase={loadPhase}
-                loadStartedAt={loadStartedAt}
-                loadStep={loadStep}
-                loadTotalSteps={loadTotalSteps}
-                mode={activeMode}
-                onCancelLoadPartitions={actions.handleCancelLoadPartitions}
-                onCheckUrl={actions.handleCheckUrl}
-                onLoadRemotePartitions={actions.loadRemotePartitions}
-                onModeChange={setActiveMode}
-                onPayloadDrop={actions.handlePayloadDrop}
-                onPrefetchChange={setPrefetch}
-                onSelectPayload={actions.handleSelectPayload}
-                onUrlChange={setRemoteUrl}
-                prefetch={prefetch}
-                remoteUrl={remoteUrl}
-              />
             </TabsContent>
 
             {/* Tab 4: Extracted Outputs & History */}
