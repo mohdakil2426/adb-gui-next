@@ -647,3 +647,24 @@ pub fn get_extraction_presets() -> Vec<PayloadExtractionPreset> {
         },
     ]
 }
+
+#[tauri::command]
+pub async fn unpack_super_image(
+    super_path: String,
+    output_dir: String,
+) -> CmdResult<Vec<(String, u64)>> {
+    tokio::task::spawn_blocking(move || {
+        let super_p = std::path::Path::new(super_path.trim());
+        if !super_p.exists() {
+            return Err(format!("Super image does not exist: {super_path}"));
+        }
+        let out_p = std::path::Path::new(output_dir.trim());
+        std::fs::create_dir_all(out_p)
+            .map_err(|e| format!("Failed to create output directory: {e}"))?;
+
+        crate::payload::lp::unpack_super_image(super_p, out_p)
+            .map_err(|e| format!("Failed to unpack super image: {e}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

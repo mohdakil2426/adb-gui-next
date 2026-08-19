@@ -9,6 +9,7 @@ pub mod apps;
 mod commands;
 pub mod debloat;
 pub mod emulator;
+pub mod firmware;
 pub mod flasher;
 mod helpers;
 pub mod host_setup;
@@ -68,6 +69,7 @@ pub fn run() {
         .manage(marketplace::ManagedMarketplaceCache::default())
         .manage(marketplace::ManagedHttpClient::default())
         .manage(debloat::cache::DebloatCache::default())
+        .manage(firmware::FirmwareHubService::default())
         .setup(|app| {
             if let Some(window) = app.get_webview_window("main")
                 && let Some(icon) = app.default_window_icon()
@@ -212,6 +214,11 @@ pub fn run() {
             commands::host_setup_install_driver,
             commands::launch_host_setup_terminal,
             commands::host_setup_repair_path,
+            commands::get_firmware_catalog,
+            commands::refresh_firmware_catalog,
+            commands::get_supported_firmware_brands,
+            commands::clear_firmware_cache,
+            commands::unpack_super_image,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
