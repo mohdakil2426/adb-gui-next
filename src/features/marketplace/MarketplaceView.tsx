@@ -9,7 +9,6 @@ import {
 import { MarketplaceOverviewTab } from '@/features/marketplace/overview/MarketplaceOverviewTab';
 import { MarketplaceSourcesTab } from '@/features/marketplace/sources/MarketplaceSourcesTab';
 import { MarketplaceHeroBanner } from '@/features/marketplace/ui/MarketplaceHeroBanner';
-import { MarketplaceSettings } from '@/features/marketplace/ui/MarketplaceSettings';
 import { MarketplaceUpdatesTab } from '@/features/marketplace/updates/MarketplaceUpdatesTab';
 import { Badge } from '@/shared/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
@@ -18,7 +17,6 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
   const activeTab = useMarketplaceStore((state) => state.activeTab);
   const setActiveTab = useMarketplaceStore((state) => state.setActiveTab);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
-  const openSettings = useMarketplaceStore((state) => state.openSettings);
 
   const {
     localQuery,
@@ -30,6 +28,7 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
     hasQuery,
     handleInputChange,
     handleClear,
+    handleExplore,
     handleQuickSearch,
     handleRetry,
   } = useMarketplaceSearch();
@@ -89,13 +88,13 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
           <MarketplaceBrowseTab
             fromCache={fromCache}
             handleClear={handleClear}
+            handleExplore={handleExplore}
             handleInputChange={handleInputChange}
             handleQuickSearch={handleQuickSearch}
             handleRetry={handleRetry}
             hasQuery={hasQuery}
             isSearching={isSearching}
             localQuery={localQuery}
-            onOpenSettings={openSettings}
             rawCount={rawCount}
             results={results}
             searchError={searchError}
@@ -111,8 +110,6 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
           <MarketplaceSourcesTab />
         </TabsContent>
       </Tabs>
-
-      <MarketplaceSettings />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Clock3, Compass, SearchX, Settings2 } from 'lucide-react';
+import { Clock3, Compass, Database, Package, SearchX } from 'lucide-react';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 import { Button } from '@/shared/ui/button';
@@ -34,6 +34,7 @@ const RECENT_APP_LIMIT = 3;
 
 interface MarketplaceEmptyStateProps {
   hasQuery: boolean;
+  onExplore?: () => void;
   onQuickSearch: (query: string) => void;
   target: InstallTarget;
 }
@@ -71,6 +72,7 @@ function SectionHeading({ children }: { children: string }) {
 
 export function MarketplaceEmptyState({
   hasQuery,
+  onExplore,
   onQuickSearch,
   target,
 }: MarketplaceEmptyStateProps) {
@@ -79,7 +81,9 @@ export function MarketplaceEmptyState({
   const githubSession = useMarketplaceStore((state) => state.githubSession);
   const lastSearch = useMarketplaceStore((state) => state.lastSearch);
   const openDetail = useMarketplaceStore((state) => state.openDetail);
-  const openSettings = useMarketplaceStore((state) => state.openSettings);
+  const setActiveTab = useMarketplaceStore((state) => state.setActiveTab);
+
+  const openSourcesTab = () => setActiveTab('sources');
 
   if (hasQuery) {
     return (
@@ -90,14 +94,15 @@ export function MarketplaceEmptyState({
           </EmptyMedia>
           <EmptyTitle>No apps matched that search</EmptyTitle>
           <EmptyDescription>
-            Try a shorter term, enable more sources in Settings, or search by exact package name
-            (for example <span className="font-mono text-mono">org.mozilla.firefox</span>).
+            Try a shorter term, enable more sources in Sources &amp; Repos, or search by exact
+            package name (for example{' '}
+            <span className="font-mono text-mono">org.mozilla.firefox</span>).
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button onClick={openSettings} size="sm" type="button" variant="outline">
-            <Settings2 aria-hidden="true" data-icon="inline-start" />
-            Open source settings
+          <Button onClick={openSourcesTab} size="sm" type="button" variant="outline">
+            <Database aria-hidden="true" data-icon="inline-start" />
+            Open Sources &amp; Repos
           </Button>
         </EmptyContent>
       </Empty>
@@ -119,6 +124,12 @@ export function MarketplaceEmptyState({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent className="max-w-xl gap-3">
+          {onExplore ? (
+            <Button onClick={onExplore} size="sm" type="button" variant="default">
+              <Package aria-hidden="true" data-icon="inline-start" />
+              Browse all APKs — trending Android
+            </Button>
+          ) : null}
           {lastSearch?.query ? (
             <Button
               onClick={() => {
@@ -126,6 +137,7 @@ export function MarketplaceEmptyState({
               }}
               size="sm"
               type="button"
+              variant={onExplore ? 'outline' : 'default'}
             >
               Resume “{lastSearch.query}”
             </Button>
@@ -168,10 +180,10 @@ export function MarketplaceEmptyState({
           : 'Anonymous browsing is the default.'}{' '}
         <button
           className="cursor-pointer text-primary underline underline-offset-2"
-          onClick={openSettings}
+          onClick={openSourcesTab}
           type="button"
         >
-          {githubSession.user ? 'Manage session' : 'Sign in to raise GitHub rate limits'}
+          {githubSession.user ? 'Manage in Sources & Repos' : 'Sign in to raise GitHub rate limits'}
         </button>
       </p>
     </div>

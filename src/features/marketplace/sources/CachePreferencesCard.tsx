@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from '@/shared/ui/select';
 
+const RESULTS_OPTIONS = [6, 8, 12, 16, 25, 50, 100] as const;
+
 export function CachePreferencesCard() {
   const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
   const setResultsPerProvider = useMarketplaceStore((state) => state.setResultsPerProvider);
@@ -42,12 +44,13 @@ export function CachePreferencesCard() {
           Cache & Query Preferences
         </CardTitle>
         <CardDescription className="text-caption">
-          Tune search density and manage offline metadata caches for responsive browsing.
+          Tune search density and manage offline metadata caches for responsive browsing. GitHub
+          authentication is handled in the GitHub section above.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        {/* Results per provider */}
+        {/* Results per provider — merged from Settings SearchPreferences (6,8,12,16) + Sources (10,25,50,100) */}
         <div className="flex items-center justify-between gap-4 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
           <div className="flex flex-col">
             <span className="font-semibold text-body text-foreground">
@@ -67,41 +70,44 @@ export function CachePreferencesCard() {
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="10">10 items</SelectItem>
-                <SelectItem value="25">25 items</SelectItem>
-                <SelectItem value="50">50 items</SelectItem>
-                <SelectItem value="100">100 items</SelectItem>
+                {RESULTS_OPTIONS.map((value) => (
+                  <SelectItem key={value} value={String(value)}>
+                    {value} items
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Clear Search History & Cache */}
+        {/* Clear Search History & Cache — merged from Settings CacheHistorySection */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
           <div className="flex flex-col">
             <span className="font-semibold text-body text-foreground">
               Local Metadata & Search Cache
             </span>
             <span className="text-caption text-muted-foreground">
-              {searchHistory.length} cached search queries in memory.
+              {searchHistory.length > 0
+                ? `${searchHistory.length} recent search${searchHistory.length === 1 ? '' : 'es'} saved locally.`
+                : 'No local search history saved yet.'}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {searchHistory.length > 0 ? (
-              <Button
-                className="h-8 gap-1.5 text-caption"
-                onClick={() => {
-                  clearSearchHistory();
-                  toast.success('Search history cleared');
-                }}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                Clear History
-              </Button>
-            ) : null}
+            <Button
+              className="h-8 gap-1.5 text-caption"
+              disabled={searchHistory.length === 0}
+              onClick={() => {
+                clearSearchHistory();
+                toast.success('Search history cleared');
+              }}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              Clear History
+            </Button>
 
             <Button
               className="h-8 gap-1.5 text-caption"

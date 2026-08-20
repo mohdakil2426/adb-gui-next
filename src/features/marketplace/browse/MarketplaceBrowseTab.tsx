@@ -15,29 +15,28 @@ type MarketplaceApp = backend.MarketplaceApp;
 interface MarketplaceBrowseTabProps {
   fromCache: boolean;
   handleClear: () => void;
+  handleExplore?: () => void;
   handleInputChange: (value: string) => void;
   handleQuickSearch: (query: string) => void;
   handleRetry: () => void;
   hasQuery: boolean;
   isSearching: boolean;
   localQuery: string;
-  onOpenSettings?: () => void;
   rawCount: number;
   results: MarketplaceApp[];
   searchError: string | null;
   target: InstallTarget;
 }
-
 export function MarketplaceBrowseTab({
   fromCache,
   handleClear,
+  handleExplore,
   handleInputChange,
   handleQuickSearch,
   handleRetry,
   hasQuery,
   isSearching,
   localQuery,
-  onOpenSettings,
   rawCount,
   results,
   searchError,
@@ -48,7 +47,6 @@ export function MarketplaceBrowseTab({
   const openDetail = useMarketplaceStore((state) => state.openDetail);
   const viewMode = useMarketplaceStore((state) => state.viewMode);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
-  const openSettings = useMarketplaceStore((state) => state.openSettings);
 
   const hasResults = (results ?? []).length > 0;
   const showSkeleton = isSearching && rawCount === 0;
@@ -62,7 +60,6 @@ export function MarketplaceBrowseTab({
           onChange={handleInputChange}
           onClear={handleClear}
           onSelectHistory={handleQuickSearch}
-          onSettings={onOpenSettings ?? openSettings}
           searchHistory={searchHistory}
           value={localQuery}
         />
@@ -100,6 +97,7 @@ export function MarketplaceBrowseTab({
         ) : (
           <MarketplaceEmptyState
             hasQuery={hasQuery}
+            {...(handleExplore ? { onExplore: handleExplore } : {})}
             onQuickSearch={handleQuickSearch}
             target={target}
           />

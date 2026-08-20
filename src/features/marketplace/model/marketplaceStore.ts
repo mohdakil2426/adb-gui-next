@@ -29,7 +29,7 @@ interface MarketplaceState {
   clearGithubSession: () => void;
   clearSearchHistory: () => void;
   closeDetail: () => void;
-  closeSettings: () => void;
+  githubApkOnly: boolean;
   githubDeviceChallenge: ActiveGithubDeviceChallenge | null;
   githubOauthClientId: string;
   githubPat: string;
@@ -38,10 +38,8 @@ interface MarketplaceState {
   isDetailOpen: boolean;
   isGithubAuthenticating: boolean;
   isSearching: boolean;
-  isSettingsOpen: boolean;
   lastSearch: MarketplaceLastSearch | null;
   openDetail: (app: MarketplaceApp) => void;
-  openSettings: () => void;
   query: string;
   recentlyViewedApps: MarketplaceApp[];
   reset: () => void;
@@ -53,6 +51,7 @@ interface MarketplaceState {
   setActiveProviders: (providers: ProviderSource[]) => void;
   setActiveTab: (activeTab: MarketplaceTab) => void;
   setAllProviders: () => void;
+  setGithubApkOnly: (githubApkOnly: boolean) => void;
   setGithubDeviceChallenge: (challenge: ActiveGithubDeviceChallenge | null) => void;
   setGithubOauthClientId: (clientId: string) => void;
   setGithubPat: (githubPat: string) => void;
@@ -114,7 +113,7 @@ export function getMarketplaceEffectiveGithubToken(state: MarketplaceState): str
 export function getMarketplaceActiveFilterSummary(
   state: Pick<
     MarketplaceState,
-    'activeProviders' | 'sortBy' | 'resultsPerProvider' | 'installableOnly'
+    'activeProviders' | 'sortBy' | 'resultsPerProvider' | 'installableOnly' | 'githubApkOnly'
   >,
 ): string[] {
   const activeProviders = state.activeProviders ?? ALL_PROVIDERS;
@@ -124,6 +123,9 @@ export function getMarketplaceActiveFilterSummary(
   ];
   if (state.installableOnly) {
     summaries.push('Installable only');
+  }
+  if (state.githubApkOnly) {
+    summaries.push('APK/APKS only');
   }
   if (activeProviders.length === ALL_PROVIDERS.length) {
     summaries.unshift('All sources');
@@ -145,7 +147,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   viewMode: loadFromStorage<'grid' | 'list'>('marketplace_view', 'grid'),
   searchHistory: loadFromStorage<string[]>('marketplace_history', []),
   recentlyViewedApps: loadFromStorage<MarketplaceApp[]>('marketplace_recently_viewed', []),
-  isSettingsOpen: false,
   githubPat: '',
   githubOauthClientId: loadFromStorage<string>('marketplace_github_client_id', ''),
   resultsPerProvider: loadFromStorage<number>('marketplace_results_per_provider', 12),
@@ -157,6 +158,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   githubDeviceChallenge: null,
   isGithubAuthenticating: false,
   installableOnly: loadFromStorage<boolean>('marketplace_installable_only', false),
+  githubApkOnly: loadFromStorage<boolean>('marketplace_github_apk_only', true),
   lastSearch: loadFromStorage<MarketplaceLastSearch | null>('marketplace_last_search', null),
   setActiveTab: (activeTab) => {
     saveToStorage('marketplace_tab', activeTab);
@@ -215,6 +217,10 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     saveToStorage('marketplace_installable_only', installableOnly);
     set({ installableOnly });
   },
+  setGithubApkOnly: (githubApkOnly) => {
+    saveToStorage('marketplace_github_apk_only', githubApkOnly);
+    set({ githubApkOnly });
+  },
   setLastSearch: (lastSearch) => {
     saveToStorage('marketplace_last_search', lastSearch);
     set({ lastSearch });
@@ -234,12 +240,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   clearSearchHistory: () => {
     saveToStorage('marketplace_history', []);
     set({ searchHistory: [] });
-  },
-  openSettings: () => {
-    set({ isSettingsOpen: true });
-  },
-  closeSettings: () => {
-    set({ isSettingsOpen: false });
   },
   setGithubPat: (githubPat) => {
     set({ githubPat });

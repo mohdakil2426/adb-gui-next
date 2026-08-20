@@ -1,4 +1,4 @@
-import { Clock3, Loader2, Search, Settings2, X } from 'lucide-react';
+import { Clock3, Loader2, Search, X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Button } from '@/shared/ui/button';
 import {
@@ -23,7 +23,6 @@ interface SearchBarProps {
   onChange: (value: string) => void;
   onClear: () => void;
   onSelectHistory: (value: string) => void;
-  onSettings: () => void;
   placeholder?: string;
   searchHistory: string[];
   value: string;
@@ -33,7 +32,6 @@ export function SearchBar({
   value,
   onChange,
   onClear,
-  onSettings,
   onSelectHistory,
   isSearching,
   searchHistory,
@@ -123,22 +121,6 @@ export function SearchBar({
           )}
         </InputGroupAddon>
       </InputGroup>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            aria-label="Marketplace settings"
-            className="h-10 shrink-0"
-            onClick={onSettings}
-            type="button"
-            variant="outline"
-          >
-            <Settings2 aria-hidden="true" data-icon="inline-start" />
-            <span className="@lg:inline hidden">Settings</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Marketplace settings</TooltipContent>
-      </Tooltip>
     </div>
   );
 }
