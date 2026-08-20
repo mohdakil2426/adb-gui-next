@@ -5,6 +5,7 @@ import { debugLog } from '@/shared/utils/debug';
 
 interface Props {
   children: ReactNode;
+  onReset?: () => void;
   /** Shown in the error message, e.g. "Dashboard". */
   viewName?: string;
 }
@@ -33,7 +34,8 @@ export class ErrorBoundary extends Component<Props, State> {
     debugLog('[ErrorBoundary] Uncaught render error:', error, info.componentStack);
   }
 
-  private handleRetry = (): void => {
+  resetErrorBoundary = (): void => {
+    this.props.onReset?.();
     this.setState({ hasError: false, error: null });
   };
 
@@ -61,7 +63,15 @@ export class ErrorBoundary extends Component<Props, State> {
               is recorded there.
             </p>
           </div>
-          <Button onClick={this.handleRetry} size="sm" type="button" variant="outline">
+          <Button
+            aria-label={
+              this.props.viewName ? `Retry loading ${this.props.viewName}` : 'Retry loading view'
+            }
+            onClick={this.resetErrorBoundary}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
             Retry
           </Button>
         </div>

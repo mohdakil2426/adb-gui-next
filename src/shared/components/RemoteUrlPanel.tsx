@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, Globe, History, Loader2, Trash2, X, Zap } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Field, FieldContent, FieldDescription, FieldGroup, FieldLabel } from '@/shared/ui/field';
@@ -12,7 +12,8 @@ import {
 import { Switch } from '@/shared/ui/switch';
 import { getFileName } from '@/shared/utils/filePath';
 
-const RECENT_URLS_STORAGE_KEY = 'adb-gui-recent-payload-urls';
+const STORAGE_KEY_V1 = 'adb-gui-recent-urls-v1';
+const LEGACY_STORAGE_KEY = 'adb-gui-recent-payload-urls';
 const MAX_RECENT_URLS = 6;
 
 export type ConnectionStatus = 'idle' | 'checking' | 'ready' | 'error';
@@ -41,10 +42,12 @@ export function RemoteUrlPanel({
   disabled = false,
 }: RemoteUrlPanelProps) {
   const [recentUrls, setRecentUrls] = useState<string[]>([]);
+  const isLoadedRef = useRef(false);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(RECENT_URLS_STORAGE_KEY);
+      const saved =
+        localStorage.getItem(STORAGE_KEY_V1) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
@@ -57,6 +60,8 @@ export function RemoteUrlPanel({
       }
     } catch {
       // Ignore localStorage read errors
+    } finally {
+      isLoadedRef.current = true;
     }
   }, []);
 
@@ -67,22 +72,23 @@ export function RemoteUrlPanel({
     }
     setRecentUrls((prev) => {
       const next = [trimmed, ...prev.filter((u) => u !== trimmed)].slice(0, MAX_RECENT_URLS);
-      try {
-        localStorage.setItem(RECENT_URLS_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        // Ignore localStorage write errors
-      }
       return next;
     });
   }, []);
 
+  useEffect(() => {
+    if (!isLoadedRef.current) {
+      return;
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY_V1, JSON.stringify(recentUrls));
+    } catch {
+      // Ignore localStorage write errors
+    }
+  }, [recentUrls]);
+
   const clearRecentUrls = useCallback(() => {
     setRecentUrls([]);
-    try {
-      localStorage.removeItem(RECENT_URLS_STORAGE_KEY);
-    } catch {
-      // Ignore
-    }
   }, []);
 
   const isChecking = connectionStatus === 'checking';

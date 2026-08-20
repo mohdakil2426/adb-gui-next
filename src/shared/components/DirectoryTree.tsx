@@ -194,7 +194,6 @@ const TreeRow = memo(function TreeRow({
       onClick={() => {
         onSelect(node.path);
       }}
-      onDragEnter={dropProps?.onDragEnter}
       onDragLeave={dropProps?.onDragLeave}
       onDragOver={dropProps?.onDragOver}
       onDrop={dropProps?.onDrop}
@@ -271,6 +270,11 @@ export function DirectoryTree({
   serial,
 }: DirectoryTreeProps) {
   const [nodes, setNodesRaw] = useState<TreeNode[]>(() => INITIAL_NODES);
+  const [prevSerial, setPrevSerial] = useState(serial);
+  if (serial !== prevSerial) {
+    setPrevSerial(serial);
+    setNodesRaw(INITIAL_NODES);
+  }
 
   // Sync ref — always holds latest nodes for use in async callbacks
   const nodesRef = useRef<TreeNode[]>(INITIAL_NODES);
@@ -279,23 +283,13 @@ export function DirectoryTree({
   }, [nodes]);
 
   const updateNodes = useCallback((updater: (prev: TreeNode[]) => TreeNode[]) => {
-    setNodesRaw((prev) => {
-      const next = updater(prev);
-      nodesRef.current = next;
-      return next;
-    });
+    setNodesRaw(updater);
   }, []);
 
   const getFileAccessModeRef = useRef(getFileAccessMode);
   useEffect(() => {
     getFileAccessModeRef.current = getFileAccessMode;
   }, [getFileAccessMode]);
-
-  useEffect(() => {
-    const next = INITIAL_NODES;
-    nodesRef.current = next;
-    setNodesRaw(next);
-  }, [serial]);
 
   // Refresh stale children of currentPath when right pane reloads
   const prevRefreshTriggerRef = useRef(0);

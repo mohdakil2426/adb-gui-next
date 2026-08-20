@@ -289,6 +289,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
 function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input>) {
   return (
     <Input
+      aria-label={props['aria-label'] || 'Sidebar search'}
       className={cn('h-8 w-full bg-background shadow-none', className)}
       data-sidebar="input"
       data-slot="sidebar-input"

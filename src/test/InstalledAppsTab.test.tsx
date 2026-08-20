@@ -224,7 +224,7 @@ describe('InstalledAppsTab', () => {
     expect(batchBar).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /export apks/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /clear cache/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /uninstall \(1\)/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /uninstall/i })).toBeInTheDocument();
 
     // Trigger batch force stop from batch bar
     const batchForceStop = screen

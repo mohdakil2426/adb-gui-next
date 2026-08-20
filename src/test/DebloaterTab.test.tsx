@@ -173,7 +173,7 @@ describe('DebloaterTab Precision Cockpit', () => {
 
     render(<DebloaterTab />);
 
-    expect(await screen.findByText('com.samsung.telemetry')).toBeInTheDocument();
+    expect((await screen.findAllByText('com.samsung.telemetry'))[0]).toBeInTheDocument();
 
     const snapshotButton = screen.getByRole('button', { name: /Take State Snapshot/i });
     await user.click(snapshotButton);

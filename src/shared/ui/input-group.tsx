@@ -120,6 +120,7 @@ function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
 function InputGroupInput({ className, ...props }: React.ComponentProps<'input'>) {
   return (
     <Input
+      aria-label={props['aria-label'] || props.placeholder || 'Search or input'}
       className={cn(
         'flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 dark:bg-transparent',
         className,
@@ -133,6 +134,7 @@ function InputGroupInput({ className, ...props }: React.ComponentProps<'input'>)
 function InputGroupTextarea({ className, ...props }: React.ComponentProps<'textarea'>) {
   return (
     <Textarea
+      aria-label={props['aria-label'] || props.placeholder || 'Text input'}
       className={cn(
         'flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0 dark:bg-transparent',
         className,
