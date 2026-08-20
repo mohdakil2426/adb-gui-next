@@ -135,18 +135,21 @@ export function MarketplaceEmptyState({
         </EmptyContent>
       </Empty>
 
-      {searchHistory.length > 0 ? (
+      {(searchHistory ?? []).length > 0 ? (
         <section className="flex flex-col gap-2">
           <SectionHeading>Recent searches</SectionHeading>
-          <ChipRow entries={searchHistory.slice(0, RECENT_SEARCH_LIMIT)} onSelect={onQuickSearch} />
+          <ChipRow
+            entries={(searchHistory ?? []).slice(0, RECENT_SEARCH_LIMIT)}
+            onSelect={onQuickSearch}
+          />
         </section>
       ) : null}
 
-      {recentlyViewedApps.length > 0 ? (
+      {(recentlyViewedApps ?? []).length > 0 ? (
         <section className="flex flex-col gap-2">
           <SectionHeading>Recently viewed</SectionHeading>
           <div className="grid @4xl:grid-cols-3 @lg:grid-cols-2 gap-3">
-            {recentlyViewedApps.slice(0, RECENT_APP_LIMIT).map((app) => (
+            {(recentlyViewedApps ?? []).slice(0, RECENT_APP_LIMIT).map((app) => (
               <AppCard
                 app={app}
                 key={`${app.source}-${app.packageName}`}

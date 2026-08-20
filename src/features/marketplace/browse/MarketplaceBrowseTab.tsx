@@ -50,11 +50,11 @@ export function MarketplaceBrowseTab({
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const openSettings = useMarketplaceStore((state) => state.openSettings);
 
-  const hasResults = results.length > 0;
+  const hasResults = (results ?? []).length > 0;
   const showSkeleton = isSearching && rawCount === 0;
 
   return (
-    <div className="flex h-full w-full flex-col gap-4">
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-4">
       {/* Search & Filter Header Area */}
       <div className="flex shrink-0 flex-col gap-3">
         <SearchBar
@@ -67,7 +67,7 @@ export function MarketplaceBrowseTab({
           value={localQuery}
         />
 
-        <FilterBar resultCount={results.length} />
+        <FilterBar resultCount={(results ?? []).length} />
       </div>
 
       <Separator />

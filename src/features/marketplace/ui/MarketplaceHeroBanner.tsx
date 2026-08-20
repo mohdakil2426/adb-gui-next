@@ -72,7 +72,7 @@ export function MarketplaceHeroBanner({ onSync, isSyncing = false }: Marketplace
       icon: Package,
       label: 'Catalog Ecosystem',
       value: '14,200+',
-      subtext: `${activeProviders.length} active repos`,
+      subtext: `${(activeProviders ?? []).length} active repos`,
     },
     {
       icon: Smartphone,

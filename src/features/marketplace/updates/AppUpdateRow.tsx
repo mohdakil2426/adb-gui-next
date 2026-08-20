@@ -74,17 +74,17 @@ export function AppUpdateRow({ item, onUpdate, target }: AppUpdateRowProps) {
           >
             {isUpdating ? (
               <>
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
                 Updating...
               </>
             ) : isUpdated ? (
               <>
-                <CheckCircle2 className="size-3.5 text-success" />
+                <CheckCircle2 className="size-3.5 text-success" data-icon="inline-start" />
                 Installed
               </>
             ) : (
               <>
-                <Download className="size-3.5" />
+                <Download className="size-3.5" data-icon="inline-start" />
                 Update
               </>
             )}

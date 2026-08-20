@@ -112,9 +112,9 @@ export function CachePreferencesCard() {
               variant="outline"
             >
               {isClearingCache ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               ) : (
-                <Trash2 className="size-3.5 text-muted-foreground" />
+                <Trash2 className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               )}
               Purge Cache
             </Button>

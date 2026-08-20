@@ -115,7 +115,10 @@ export function RepositorySourcesCard() {
                   type="button"
                   variant="ghost"
                 >
-                  <ExternalLink className="size-3.5 text-muted-foreground" />
+                  <ExternalLink
+                    className="size-3.5 text-muted-foreground"
+                    data-icon="inline-start"
+                  />
                 </Button>
                 <Switch
                   aria-label={`Toggle ${provider.label}`}

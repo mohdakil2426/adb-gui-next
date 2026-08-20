@@ -64,18 +64,18 @@ export function MarketplaceOverviewTab({
               type="button"
               variant="outline"
             >
-              <Search className="mr-1 size-3 text-muted-foreground" />
+              <Search className="mr-1 size-3 text-muted-foreground" data-icon="inline-start" />
               {tag.label}
             </Button>
           ))}
         </div>
 
-        {searchHistory.length > 0 && (
+        {(searchHistory ?? []).length > 0 && (
           <div className="flex items-center gap-2 border-border/40 border-t pt-1 text-caption text-muted-foreground">
             <History className="size-3.5 shrink-0" />
             <span className="font-medium text-foreground">Recent searches:</span>
             <div className="flex flex-wrap items-center gap-1">
-              {searchHistory.slice(0, 5).map((term) => (
+              {(searchHistory ?? []).slice(0, 5).map((term) => (
                 <button
                   className="cursor-pointer rounded px-1.5 py-0.5 font-mono text-caption text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                   key={term}

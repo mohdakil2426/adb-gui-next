@@ -13,13 +13,16 @@ export interface MarketplaceLastSearch {
 }
 
 export function visibleMarketplaceApps(
-  results: MarketplaceApp[],
+  results: MarketplaceApp[] | null | undefined,
   installableOnly: boolean,
 ): MarketplaceApp[] {
+  if (!Array.isArray(results)) {
+    return [];
+  }
   if (!installableOnly) {
     return results;
   }
-  return results.filter((app) => app.installable);
+  return results.filter((app) => app?.installable);
 }
 
 export function lastSearchMatches(
@@ -29,7 +32,7 @@ export function lastSearchMatches(
   sortBy: MarketplaceSortBy,
   resultsPerProvider: number,
 ): cache is MarketplaceLastSearch {
-  if (!cache) {
+  if (!(Array.isArray(cache?.providers) && Array.isArray(providers))) {
     return false;
   }
   if (cache.query !== query.trim()) {

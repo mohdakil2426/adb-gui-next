@@ -78,10 +78,10 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
               </span>
             ) : null}
             {downloadsLabel ? <span>{downloadsLabel} downloads</span> : null}
-            {app.availableSources.length > 1 ? (
+            {(app.availableSources ?? []).length > 1 ? (
               <span>
-                +{app.availableSources.length - 1} source
-                {app.availableSources.length > 2 ? 's' : ''}
+                +{(app.availableSources ?? []).length - 1} source
+                {(app.availableSources ?? []).length > 2 ? 's' : ''}
               </span>
             ) : null}
           </div>

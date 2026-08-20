@@ -80,11 +80,11 @@ export function AppDetailHero({
           type="button"
         >
           {installState === 'done' ? (
-            <Check aria-hidden="true" />
+            <Check aria-hidden="true" data-icon="inline-start" />
           ) : installState === 'running' ? (
-            <Loader2 aria-hidden="true" className="animate-spin" />
+            <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
           ) : (
-            <Download aria-hidden="true" />
+            <Download aria-hidden="true" data-icon="inline-start" />
           )}
           {installState === 'done'
             ? 'Installed'

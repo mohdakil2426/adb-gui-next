@@ -67,9 +67,13 @@ export function AppDetailVersions({
                     variant="secondary"
                   >
                     {isInstallingVersion ? (
-                      <Loader2 aria-hidden="true" className="animate-spin" />
+                      <Loader2
+                        aria-hidden="true"
+                        className="animate-spin"
+                        data-icon="inline-start"
+                      />
                     ) : (
-                      <Download aria-hidden="true" />
+                      <Download aria-hidden="true" data-icon="inline-start" />
                     )}
                     Install
                   </Button>

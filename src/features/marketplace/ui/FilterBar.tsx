@@ -48,7 +48,7 @@ export function FilterBar({ resultCount }: { resultCount: number }) {
     resultsPerProvider,
     sortBy,
   });
-  const allActive = activeProviders.length === MARKETPLACE_PROVIDERS.length;
+  const allActive = (activeProviders ?? []).length === MARKETPLACE_PROVIDERS.length;
 
   return (
     <div className="flex flex-col gap-3">

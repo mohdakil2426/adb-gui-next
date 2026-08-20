@@ -77,7 +77,17 @@ function loadFromStorage<T>(key: string, fallback: T): T {
   }
   try {
     const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
+    if (!raw) {
+      return fallback;
+    }
+    const parsed = JSON.parse(raw);
+    if (parsed == null) {
+      return fallback;
+    }
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) {
+      return fallback;
+    }
+    return parsed as T;
   } catch {
     return fallback;
   }
@@ -107,16 +117,18 @@ export function getMarketplaceActiveFilterSummary(
     'activeProviders' | 'sortBy' | 'resultsPerProvider' | 'installableOnly'
   >,
 ): string[] {
-  const summaries = [`Sort: ${state.sortBy}`, `${state.resultsPerProvider}/provider`];
+  const activeProviders = state.activeProviders ?? ALL_PROVIDERS;
+  const summaries = [
+    `Sort: ${state.sortBy ?? 'relevance'}`,
+    `${state.resultsPerProvider ?? 12}/provider`,
+  ];
   if (state.installableOnly) {
     summaries.push('Installable only');
   }
-  if (state.activeProviders.length === ALL_PROVIDERS.length) {
+  if (activeProviders.length === ALL_PROVIDERS.length) {
     summaries.unshift('All sources');
   } else {
-    summaries.unshift(
-      `${state.activeProviders.length} source${state.activeProviders.length === 1 ? '' : 's'}`,
-    );
+    summaries.unshift(`${activeProviders.length} source${activeProviders.length === 1 ? '' : 's'}`);
   }
   return summaries;
 }
@@ -165,7 +177,7 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   openDetail: (app) => {
     const recentlyViewedApps = uniqueRecentApps(get().recentlyViewedApps, app);
     saveToStorage('marketplace_recently_viewed', recentlyViewedApps);
-    set({ selectedApp: app, isDetailOpen: true, recentlyViewedApps });
+    set({ selectedApp: app, isDetailOpen: true, recentlyViewedApps, activeTab: 'browse' });
   },
   closeDetail: () => {
     set({ selectedApp: null, isDetailOpen: false });
@@ -230,15 +242,6 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     set({ isSettingsOpen: false });
   },
   setGithubPat: (githubPat) => {
-    // SECURE STORAGE REQUIRED: GitHub PAT contains sensitive credentials
-    // TODO: Migrate to @tauri-apps/plugin-store for secure storage
-    // Current: GitHub PAT stored in-memory only (Zustand)
-    // Plan:
-    // 1. npm install @tauri-apps/plugin-store
-    // 2. Import { load } from '@tauri-apps/plugin-store'
-    // 3. Create persistent store instance at module level
-    // 4. Replace in-memory state with store.get('github_pat') on init
-    // 5. On setGithubPat, call store.set('github_pat', githubPat)
     set({ githubPat });
   },
   setGithubOauthClientId: (githubOauthClientId) => {
@@ -249,23 +252,14 @@ export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
     saveToStorage('marketplace_results_per_provider', resultsPerProvider);
     set({ resultsPerProvider });
   },
-  setGithubSession: (session) =>
-    // SECURE STORAGE REQUIRED: GitHub OAuth token contains sensitive credentials
-    // TODO: Migrate to @tauri-apps/plugin-store for secure storage
-    // Current: OAuth access token stored in-memory only (Zustand)
-    // Plan:
-    // 1. npm install @tauri-apps/plugin-store
-    // 2. Store accessToken separately from user/rateLimit (non-sensitive)
-    // 3. Use store.set('github_oauth_token', session.accessToken) on updates
-    // 4. Load token from store on app init
-    {
-      set((state) => ({
-        githubSession: {
-          ...state.githubSession,
-          ...session,
-        },
-      }));
-    },
+  setGithubSession: (session) => {
+    set((state) => ({
+      githubSession: {
+        ...state.githubSession,
+        ...session,
+      },
+    }));
+  },
   clearGithubSession: () => {
     set({
       githubSession: { accessToken: null, user: null, rateLimit: null },

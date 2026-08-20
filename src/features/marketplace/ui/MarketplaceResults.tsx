@@ -4,6 +4,8 @@ import { AppCard } from '@/features/marketplace/ui/AppCard';
 import { AppListItem } from '@/features/marketplace/ui/AppListItem';
 import { ResultsSkeleton } from '@/features/marketplace/ui/ResultsSkeleton';
 
+// Empty state handled across UI when data?.length === 0
+
 type MarketplaceApp = backend.MarketplaceApp;
 
 function MarketplaceResults({
@@ -23,7 +25,8 @@ function MarketplaceResults({
   target: InstallTarget;
   viewMode: 'grid' | 'list';
 }) {
-  const filtered = results.length !== rawCount;
+  const safeResults = results ?? [];
+  const filtered = safeResults.length !== rawCount;
 
   return (
     <div className="flex flex-col gap-3">
@@ -35,14 +38,14 @@ function MarketplaceResults({
             : isSearching
               ? 'Updating…'
               : filtered
-                ? `${results.length} of ${rawCount} apps`
-                : `${results.length} apps`}
+                ? `${safeResults.length} of ${rawCount} apps`
+                : `${safeResults.length} apps`}
         </span>
       </div>
 
       {viewMode === 'grid' ? (
         <div className="grid @4xl:grid-cols-3 @7xl:grid-cols-4 @lg:grid-cols-2 gap-3">
-          {results.map((app) => (
+          {safeResults.map((app) => (
             <AppCard
               app={app}
               key={`${app.source}-${app.packageName}`}
@@ -53,7 +56,7 @@ function MarketplaceResults({
         </div>
       ) : (
         <div className="flex flex-col gap-1">
-          {results.map((app) => (
+          {safeResults.map((app) => (
             <AppListItem
               app={app}
               key={`${app.source}-${app.packageName}`}

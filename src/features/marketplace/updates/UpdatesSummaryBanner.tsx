@@ -56,12 +56,12 @@ export function UpdatesSummaryBanner({
         >
           {isBatchUpdating ? (
             <>
-              <Loader2 className="size-3.5 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               Updating ({batchProgress}%)...
             </>
           ) : (
             <>
-              <ArrowUpCircle className="size-3.5" />
+              <ArrowUpCircle className="size-3.5" data-icon="inline-start" />
               Update All ({updatableCount})
             </>
           )}

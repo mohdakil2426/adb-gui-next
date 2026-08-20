@@ -77,10 +77,10 @@ export const AppCard = memo(function AppCard({ app, onSelect, target }: AppCardP
             ) : null}
             {downloadLabel ? <span>{downloadLabel} downloads</span> : null}
             {app.updatedAt ? <span>{formatDisplayDate(app.updatedAt)}</span> : null}
-            {app.availableSources.length > 1 ? (
+            {(app.availableSources ?? []).length > 1 ? (
               <span>
-                +{app.availableSources.length - 1} more source
-                {app.availableSources.length > 2 ? 's' : ''}
+                +{(app.availableSources ?? []).length - 1} more source
+                {(app.availableSources ?? []).length > 2 ? 's' : ''}
               </span>
             ) : null}
             {!app.installable && app.repoUrl ? (

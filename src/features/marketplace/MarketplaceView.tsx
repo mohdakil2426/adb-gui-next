@@ -38,7 +38,7 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
   const currentTab: MarketplaceTab =
     initialTab ?? (activeTab || (hasQuery ? 'browse' : 'overview'));
   return (
-    <div className="@container relative flex h-full w-full flex-col gap-4">
+    <div className="@container relative flex min-h-0 w-full flex-1 flex-col gap-4">
       <h1 className="sr-only">Open-Source App Marketplace</h1>
 
       {/* Top Precision Hero Banner */}
@@ -46,7 +46,7 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
 
       {/* Segmented Hardware Tabs Navigation */}
       <Tabs
-        className="flex min-h-0 flex-1 flex-col gap-4"
+        className="flex min-h-0 w-full flex-1 flex-col gap-4"
         onValueChange={(val) => setActiveTab(val as MarketplaceTab)}
         value={currentTab}
       >
@@ -65,9 +65,9 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
           >
             <Search className="size-4" />
             <span>Browse & Search</span>
-            {results.length > 0 && (
+            {(results ?? []).length > 0 && (
               <Badge className="ml-1 px-1.5 py-0 font-mono text-caption" variant="neutral">
-                {results.length}
+                {(results ?? []).length}
               </Badge>
             )}
           </TabsTrigger>

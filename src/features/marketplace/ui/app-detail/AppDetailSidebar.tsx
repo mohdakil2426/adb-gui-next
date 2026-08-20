@@ -61,7 +61,7 @@ export function AppDetailSidebar({
             {source === 'GitHub' ? (
               <GitBranch aria-hidden="true" />
             ) : (
-              <ExternalLink aria-hidden="true" />
+              <ExternalLink aria-hidden="true" data-icon="inline-start" />
             )}
             Open repository
           </Button>

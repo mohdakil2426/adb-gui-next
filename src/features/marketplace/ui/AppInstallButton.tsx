@@ -72,13 +72,13 @@ export function AppInstallButton({ app, onSelect, target }: AppInstallButtonProp
       variant={installState === 'done' ? 'default' : 'outline'}
     >
       {installState === 'done' ? (
-        <Check aria-hidden="true" />
+        <Check aria-hidden="true" data-icon="inline-start" />
       ) : installState === 'running' ? (
-        <Loader2 aria-hidden="true" className="animate-spin" />
+        <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
       ) : isInstallable ? (
-        <Download aria-hidden="true" />
+        <Download aria-hidden="true" data-icon="inline-start" />
       ) : (
-        <ExternalLink aria-hidden="true" />
+        <ExternalLink aria-hidden="true" data-icon="inline-start" />
       )}
       {label}
     </Button>
