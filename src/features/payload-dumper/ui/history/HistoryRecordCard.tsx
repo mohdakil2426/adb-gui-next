@@ -122,7 +122,7 @@ export function HistoryRecordCard({ record, onFlashToDevice }: HistoryRecordCard
               type="button"
               variant="outline"
             >
-              <FolderOpen className="mr-1 size-3.5" /> Open Folder
+              <FolderOpen className="mr-1 size-3.5" data-icon="inline-start" /> Open Folder
             </Button>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function HistoryRecordCard({ record, onFlashToDevice }: HistoryRecordCard
                         type="button"
                         variant="ghost"
                       >
-                        <Zap className="mr-1 size-3 text-warning" /> Flash
+                        <Zap className="mr-1 size-3 text-warning" data-icon="inline-start" /> Flash
                       </Button>
                     </div>
                   </div>
@@ -216,7 +216,7 @@ export function HistoryRecordCard({ record, onFlashToDevice }: HistoryRecordCard
                         type="button"
                         variant="ghost"
                       >
-                        <Hash className="mr-1 size-3" />
+                        <Hash className="mr-1 size-3" data-icon="inline-start" />
                         {isComputing ? 'Computing…' : 'Compute Hash'}
                       </Button>
                     )}

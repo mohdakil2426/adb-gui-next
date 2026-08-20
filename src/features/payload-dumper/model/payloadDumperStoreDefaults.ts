@@ -10,6 +10,7 @@ interface PartitionInfo {
 /**
  * Per-partition progress/status lives in the non-persisted `payloadProgressStore`
  * — see the note there for why it must never sit behind `zustand/persist`.
+ * Error state and progress updates are announced via role="alert" and role="status" in ExtractionStatusCard and PayloadDumperView.
  */
 export const payloadDumperInitialState = {
   activeMode: 'local' as 'local' | 'remote',

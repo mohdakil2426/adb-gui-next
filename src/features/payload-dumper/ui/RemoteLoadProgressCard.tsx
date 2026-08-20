@@ -228,7 +228,7 @@ export function RemoteLoadProgressCard({
           type="button"
           variant="outline"
         >
-          <XCircle aria-hidden="true" className="size-3.5" />
+          <XCircle aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           Cancel Remote Stream
         </Button>
       </div>

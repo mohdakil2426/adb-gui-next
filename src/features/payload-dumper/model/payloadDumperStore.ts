@@ -103,6 +103,7 @@ function deselect(partitions: PartitionInfo[], names: Set<string>): PartitionInf
 export const usePayloadDumperStore = create<PayloadDumperState>()(
   persist(
     (set) => ({
+      // Status updates announced via role="status" / role="alert" in ExtractionStatusCard and toast channel
       ...payloadDumperInitialState,
       setPayloadPath: (path) => {
         usePayloadProgressStore.getState().clearAll();

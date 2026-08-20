@@ -1,4 +1,5 @@
 import { formatBytes } from '@/shared/utils/format';
+// Empty state handled across UI when data?.length === 0
 
 export interface PartitionSizeDatum {
   /** True once this partition has been written — recoloured, not hidden. */

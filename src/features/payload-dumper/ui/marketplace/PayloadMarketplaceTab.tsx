@@ -136,7 +136,10 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
               type="button"
               variant="outline"
             >
-              <RefreshCw className={cn('mr-1.5 size-3.5', isFetching && 'animate-spin')} />
+              <RefreshCw
+                className={cn('mr-1.5 size-3.5', isFetching && 'animate-spin')}
+                data-icon="inline-start"
+              />
               Refresh
             </Button>
           </div>

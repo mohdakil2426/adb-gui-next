@@ -12,6 +12,8 @@ import {
   formatCleanDeviceName,
 } from '@/features/payload-dumper/ui/marketplace/types';
 
+// Empty state handled across UI when data?.length === 0
+
 const DEFAULT_SUPPORTED_BRANDS: FirmwareBrand[] = [
   'google',
   'nothing',

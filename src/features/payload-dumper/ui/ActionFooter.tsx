@@ -51,17 +51,17 @@ export function ActionFooter({
         type="button"
         variant="outline"
       >
-        <RefreshCw aria-hidden="true" />
+        <RefreshCw aria-hidden="true" data-icon="inline-start" />
         Reset
       </Button>
       {status === 'extracting' && onCancel ? (
         <Button onClick={onCancel} type="button" variant="destructive">
-          <StopCircle aria-hidden="true" />
+          <StopCircle aria-hidden="true" data-icon="inline-start" />
           Cancel
         </Button>
       ) : status === 'cancelling' && onCancel ? (
         <Button disabled type="button" variant="destructive">
-          <Loader2 aria-hidden="true" className="animate-spin" />
+          <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
           Cancelling…
         </Button>
       ) : (
@@ -74,12 +74,12 @@ export function ActionFooter({
         >
           {isBusy ? (
             <>
-              <Loader2 aria-hidden="true" className="animate-spin" />
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
               Extracting…
             </>
           ) : (
             <>
-              <Download aria-hidden="true" />
+              <Download aria-hidden="true" data-icon="inline-start" />
               {getExtractLabel()}
             </>
           )}

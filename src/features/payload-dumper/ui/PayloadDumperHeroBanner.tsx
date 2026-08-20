@@ -152,7 +152,7 @@ export const PayloadDumperHeroBanner = memo(function PayloadDumperHeroBanner({
               type="button"
               variant="outline"
             >
-              <FileArchive className="size-3.5 text-muted-foreground" />
+              <FileArchive className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               {isLoaded ? 'Change Source' : 'Open Payload File'}
             </Button>
 
@@ -163,7 +163,7 @@ export const PayloadDumperHeroBanner = memo(function PayloadDumperHeroBanner({
               type="button"
               variant="outline"
             >
-              <FolderOpen className="size-3.5 text-muted-foreground" />
+              <FolderOpen className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               Output Folder
             </Button>
 
@@ -183,6 +183,7 @@ export const PayloadDumperHeroBanner = memo(function PayloadDumperHeroBanner({
                     'size-3.5 text-muted-foreground',
                     status === 'loading-partitions' && 'animate-spin text-foreground',
                   )}
+                  data-icon="inline-start"
                 />
               </Button>
             ) : null}

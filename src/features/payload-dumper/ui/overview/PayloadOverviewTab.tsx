@@ -120,12 +120,12 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
             >
               {isUnpackingSuper ? (
                 <>
-                  <Loader2 className="mr-1.5 size-4 animate-spin" />
+                  <Loader2 className="mr-1.5 size-4 animate-spin" data-icon="inline-start" />
                   Unpacking Sub-Partitions...
                 </>
               ) : (
                 <>
-                  <PackageOpen className="mr-1.5 size-4" />
+                  <PackageOpen className="mr-1.5 size-4" data-icon="inline-start" />
                   Unpack super.img Sub-Partitions
                 </>
               )}

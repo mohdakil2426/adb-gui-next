@@ -78,7 +78,7 @@ export function PayloadHistoryTab({
           </div>
           {onNavigateToExtractor ? (
             <Button onClick={onNavigateToExtractor} type="button" variant="default">
-              <Zap className="mr-1.5 size-4" /> Start New Extraction
+              <Zap className="mr-1.5 size-4" data-icon="inline-start" /> Start New Extraction
             </Button>
           ) : null}
         </CardContent>
@@ -116,7 +116,8 @@ export function PayloadHistoryTab({
             type="button"
             variant="outline"
           >
-            <Trash2 className="mr-1 size-3.5 text-destructive" /> Clear History
+            <Trash2 className="mr-1 size-3.5 text-destructive" data-icon="inline-start" /> Clear
+            History
           </Button>
         </CardContent>
       </Card>

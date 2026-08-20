@@ -105,7 +105,7 @@ export function PayloadMarketplaceFilterBar({
               type="button"
               variant="ghost"
             >
-              <X className="size-3" />
+              <X className="size-3" data-icon="inline-start" />
             </Button>
           ) : null}
         </div>
@@ -123,12 +123,15 @@ export function PayloadMarketplaceFilterBar({
                 variant="outline"
               >
                 <div className="flex min-w-0 items-center gap-2 truncate">
-                  <Smartphone className="size-3.5 shrink-0 text-muted-foreground" />
+                  <Smartphone
+                    className="size-3.5 shrink-0 text-muted-foreground"
+                    data-icon="inline-start"
+                  />
                   <span className="truncate">
                     {selectedModel ? selectedModel.name : 'All Models'}
                   </span>
                 </div>
-                <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" />
+                <ChevronsUpDown className="size-3.5 shrink-0 opacity-50" data-icon="inline-start" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-80 p-0 shadow-lg">

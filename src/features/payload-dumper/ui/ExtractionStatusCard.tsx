@@ -136,7 +136,7 @@ export function ExtractionStatusCard({
             </Button>
             {outputDir ? (
               <Button onClick={onOpenOutputFolder} size="sm" type="button" variant="ghost">
-                <FolderOpen aria-hidden="true" />
+                <FolderOpen aria-hidden="true" data-icon="inline-start" />
                 Open output folder
               </Button>
             ) : null}
@@ -169,7 +169,7 @@ export function ExtractionStatusCard({
             type="button"
             variant="ghost"
           >
-            <ExternalLink aria-hidden="true" className="size-4" />
+            <ExternalLink aria-hidden="true" className="size-4" data-icon="inline-start" />
           </Button>
         </div>
       ) : null}

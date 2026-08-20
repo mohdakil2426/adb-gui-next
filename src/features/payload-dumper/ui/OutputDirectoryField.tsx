@@ -73,7 +73,7 @@ export const OutputDirectoryField = memo(function OutputDirectoryField({
             type="button"
             variant="ghost"
           >
-            <ExternalLink aria-hidden="true" className="size-4" />
+            <ExternalLink aria-hidden="true" className="size-4" data-icon="inline-start" />
           </Button>
         ) : null}
       </div>

@@ -96,9 +96,9 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
               variant="ghost"
             >
               {copiedSha ? (
-                <Check className="mr-1 size-3 text-success" />
+                <Check className="mr-1 size-3 text-success" data-icon="inline-start" />
               ) : (
-                <Copy className="mr-1 size-3" />
+                <Copy className="mr-1 size-3" data-icon="inline-start" />
               )}
               {copiedSha ? 'Copied' : 'Copy Hash'}
             </Button>
@@ -110,7 +110,7 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
           <div className="flex items-center gap-2">
             {build.imageType === 'ota' ? (
               <Button onClick={handleRemoteExtract} size="sm" type="button" variant="default">
-                <Zap className="mr-1.5 size-3.5 text-amber-300" />
+                <Zap className="mr-1.5 size-3.5 text-amber-300" data-icon="inline-start" />
                 {device.brand === 'xiaomi' ? 'Extract Recovery ROM' : 'Remote Stream Extract'}
               </Button>
             ) : (
@@ -120,7 +120,7 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
                 type="button"
                 variant="default"
               >
-                <Download className="mr-1.5 size-3.5" />
+                <Download className="mr-1.5 size-3.5" data-icon="inline-start" />
                 {device.brand === 'xiaomi' ? 'Download Fastboot TGZ' : 'Download Factory Archive'}
               </Button>
             )}
@@ -131,16 +131,16 @@ export function FirmwareBuildCard({ build, device, onSelectRemoteUrl }: Firmware
               type="button"
               variant="outline"
             >
-              <Download className="mr-1.5 size-3.5" />
+              <Download className="mr-1.5 size-3.5" data-icon="inline-start" />
               Direct Download
             </Button>
           </div>
 
           <Button onClick={handleCopyUrl} size="sm" type="button" variant="ghost">
             {copiedUrl ? (
-              <Check className="mr-1 size-3 text-success" />
+              <Check className="mr-1 size-3 text-success" data-icon="inline-start" />
             ) : (
-              <Copy className="mr-1 size-3" />
+              <Copy className="mr-1 size-3" data-icon="inline-start" />
             )}
             {copiedUrl ? 'URL Copied' : 'Copy Download Link'}
           </Button>

@@ -96,11 +96,11 @@ export function PartitionToolbar({
           >
             {allFilteredSelected ? (
               <>
-                <Square className="mr-1 size-3.5" /> Deselect All
+                <Square className="mr-1 size-3.5" data-icon="inline-start" /> Deselect All
               </>
             ) : (
               <>
-                <CheckSquare className="mr-1 size-3.5" /> Select All
+                <CheckSquare className="mr-1 size-3.5" data-icon="inline-start" /> Select All
               </>
             )}
           </Button>
@@ -112,7 +112,7 @@ export function PartitionToolbar({
             type="button"
             variant="ghost"
           >
-            <ArrowDownUp className="mr-1 size-3.5" /> Invert Selection
+            <ArrowDownUp className="mr-1 size-3.5" data-icon="inline-start" /> Invert Selection
           </Button>
         </div>
       </div>

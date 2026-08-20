@@ -68,7 +68,7 @@ export function FirmwareDeviceDetailView({
       {/* Top Bar: Breadcrumb Navigation */}
       <div className="flex items-center justify-between">
         <Button onClick={onBack} size="sm" type="button" variant="outline">
-          <ArrowLeft className="mr-1.5 size-3.5" />
+          <ArrowLeft className="mr-1.5 size-3.5" data-icon="inline-start" />
           Back to Device Catalog
         </Button>
         <div className="flex items-center gap-1.5 font-mono text-caption text-muted-foreground">
@@ -123,9 +123,12 @@ export function FirmwareDeviceDetailView({
                 type="button"
                 variant="outline"
               >
-                <Globe className="mr-1.5 size-3.5" />
+                <Globe className="mr-1.5 size-3.5" data-icon="inline-start" />
                 {brandInfo.portalName}
-                <ExternalLink className="ml-1 size-3 text-muted-foreground" />
+                <ExternalLink
+                  className="ml-1 size-3 text-muted-foreground"
+                  data-icon="inline-start"
+                />
               </Button>
             </div>
           </div>
@@ -154,7 +157,7 @@ export function FirmwareDeviceDetailView({
             type="button"
             variant={selectedType === 'ota' ? 'default' : 'ghost'}
           >
-            <Zap className="mr-1.5 size-3 text-amber-400" />
+            <Zap className="mr-1.5 size-3 text-amber-400" data-icon="inline-start" />
             {device.brand === 'xiaomi'
               ? 'Recovery ROM (Remote Stream)'
               : 'Full OTA Images (Remote Stream)'}
@@ -166,7 +169,7 @@ export function FirmwareDeviceDetailView({
             type="button"
             variant={selectedType === 'factory' ? 'default' : 'ghost'}
           >
-            <Layers className="mr-1.5 size-3" />
+            <Layers className="mr-1.5 size-3" data-icon="inline-start" />
             {device.brand === 'xiaomi' ? 'Fastboot ROM (TGZ)' : 'Factory Images (Fastboot)'}
           </Button>
           <Button
