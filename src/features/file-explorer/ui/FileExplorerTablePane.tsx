@@ -68,16 +68,6 @@ function resolvePaneState(
   return 'listing';
 }
 
-function dismissTarget(target: EventTarget | null): boolean {
-  const element = target instanceof Element ? target : null;
-  if (!element) {
-    return false;
-  }
-  return !element.closest(
-    '[data-index], [data-slot=table-head], button, input, [role=checkbox], [role=separator]',
-  );
-}
-
 export function FileExplorerTablePane({
   actions,
   editing,
@@ -95,19 +85,11 @@ export function FileExplorerTablePane({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className={cn('min-h-0 flex-1 overflow-auto overscroll-contain', FE_DROP_OVER_CLASS)}
+          className={cn(
+            'min-h-0 flex-1 overflow-auto overscroll-contain focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            FE_DROP_OVER_CLASS,
+          )}
           data-fe-drop-pane={listing.currentPath}
-          onClick={(event) => {
-            if (actions.consumeGhostClick()) {
-              return;
-            }
-            if (editing.renamingName || editing.creatingType) {
-              return;
-            }
-            if (dismissTarget(event.target)) {
-              actions.clearSelection();
-            }
-          }}
           ref={tableScrollRef}
         >
           {paneState === 'loading' ? <FileExplorerRowSkeleton /> : null}

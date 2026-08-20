@@ -17,8 +17,11 @@ interface Options {
  *  is DOM-only so the virtual list does not re-render on every pointer move. */
 export function useFileExplorerHostDrop(options: Options): void {
   const latestRef = useRef(options);
-  latestRef.current = options;
   const highlightedRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    latestRef.current = options;
+  });
 
   useEffect(() => {
     if (!options.enabled) {

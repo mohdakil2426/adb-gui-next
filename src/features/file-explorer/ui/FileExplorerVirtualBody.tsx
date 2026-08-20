@@ -184,10 +184,6 @@ export function FileExplorerVirtualBody({
                 fileTableColumns={fileTableColumns}
                 getDragNames={actions.getDragNames}
                 index={virtualRow.index}
-                isBeingRenamed={isBeingRenamed}
-                isMultiSelectMode={selection.isMultiSelectMode}
-                isNavigable={file.type === 'Directory' || file.type === 'Symlink'}
-                isSelected={selection.selectedNames.has(file.name)}
                 key={virtualRow.key}
                 loadFiles={actions.loadFiles}
                 measureElement={rowVirtualizer.measureElement}
@@ -203,6 +199,11 @@ export function FileExplorerVirtualBody({
                 // keystroke there cannot invalidate every other row's memo.
                 renameError={isBeingRenamed ? editing.renameError : ''}
                 renameValue={isBeingRenamed ? editing.renameValue : ''}
+                selectionState={{
+                  isBeingRenamed,
+                  isMultiSelectMode: selection.isMultiSelectMode,
+                  isSelected: selection.selectedNames.has(file.name),
+                }}
                 start={virtualRow.start}
                 toggleCheckbox={actions.toggleCheckbox}
                 visibleCount={listing.visibleList.length}

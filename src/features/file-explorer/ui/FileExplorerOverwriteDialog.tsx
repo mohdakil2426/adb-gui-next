@@ -32,6 +32,7 @@ export function FileExplorerOverwriteDialog({ isBusy, onConfirm, onOpenChange, o
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isBusy}>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            aria-label={isBusy ? 'Replacing items…' : 'Replace'}
             className={buttonVariants({ variant: 'destructive' })}
             disabled={isBusy}
             onClick={onConfirm}

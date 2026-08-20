@@ -168,15 +168,16 @@ export function useFileExplorerTransfers(options: Options) {
         toastId = toast.loading(`Importing ${count} item${count === 1 ? '' : 's'}…`, {
           description: `To: ${destDir}`,
         });
-        for (const item of kinds) {
-          if (item.isDir) {
-            await PushFile(item.path, destDir, serial, getFileAccessMode(destDir));
-          } else {
+        await Promise.all(
+          kinds.map((item) => {
+            if (item.isDir) {
+              return PushFile(item.path, destDir, serial, getFileAccessMode(destDir));
+            }
             const fileName = item.path.replace(/\\/g, '/').split('/').pop() ?? '';
             const remotePath = path.posix.join(destDir, fileName);
-            await PushFile(item.path, remotePath, serial, getFileAccessMode(remotePath));
-          }
-        }
+            return PushFile(item.path, remotePath, serial, getFileAccessMode(remotePath));
+          }),
+        );
         toast.success('Import Complete', {
           description: `${count} item${count === 1 ? '' : 's'} to ${destDir}`,
           id: toastId,

@@ -1,4 +1,4 @@
-import { File, Folder, Link } from 'lucide-react';
+import { File, Folder, Link as LinkIcon } from 'lucide-react';
 import path from 'path-browserify';
 import { memo } from 'react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
@@ -20,10 +20,6 @@ interface Props {
   fileTableColumns: string;
   getDragNames: (clickedName: string) => string[];
   index: number;
-  isBeingRenamed: boolean;
-  isMultiSelectMode: boolean;
-  isNavigable: boolean;
-  isSelected: boolean;
   loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
   measureElement: (node: Element | null) => void;
   onMoveToFolder: (destDir: string, names: Iterable<string>) => Promise<void>;
@@ -36,6 +32,11 @@ interface Props {
   phantomOffset: number;
   renameError: string;
   renameValue: string;
+  selectionState: {
+    isBeingRenamed: boolean;
+    isMultiSelectMode: boolean;
+    isSelected: boolean;
+  };
   start: number;
   toggleCheckbox: (name: string) => void;
   visibleCount: number;
@@ -47,10 +48,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   fileTableColumns,
   getDragNames,
   index,
-  isBeingRenamed,
-  isMultiSelectMode,
-  isNavigable,
-  isSelected,
+  selectionState,
   loadFiles,
   measureElement,
   onRenameCancel,
@@ -67,6 +65,8 @@ export const FileExplorerRow = memo(function FileExplorerRow({
   toggleCheckbox,
   visibleCount,
 }: Props) {
+  const { isBeingRenamed, isMultiSelectMode, isSelected } = selectionState;
+  const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
   const destDir = isNavigable ? `${path.posix.join(currentPath, file.name)}/` : undefined;
   const dropProps = destDir
     ? folderInternalDropProps(
@@ -88,7 +88,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
       )}
       data-fe-drop-dir={destDir}
       data-index={index}
-      data-state={isSelected ? 'selected' : ''}
+      data-state={isSelected ? 'selected' : undefined}
       draggable={!isBeingRenamed}
       onClick={(e) => onRowClick(file, e)}
       onDoubleClick={() => onRowDoubleClick(file)}
@@ -135,6 +135,7 @@ export const FileExplorerRow = memo(function FileExplorerRow({
         {isBeingRenamed ? (
           <div className="flex min-w-0 flex-col gap-0.5">
             <Input
+              aria-label={`Rename ${file.name}`}
               autoFocus
               className={cn(
                 'h-7 w-full px-1.5 py-0 text-body',
@@ -163,27 +164,19 @@ export const FileExplorerRow = memo(function FileExplorerRow({
         ) : (
           <div className="flex min-w-0 items-center gap-2">
             {isMultiSelectMode ? (
-              <span
-                className="flex size-4 shrink-0 items-center justify-center"
+              <Checkbox
+                aria-label={`Select ${file.name}`}
+                checked={isSelected}
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleCheckbox(file.name);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleCheckbox(file.name);
-                  }
-                }}
-              >
-                <Checkbox aria-label={`Select ${file.name}`} checked={isSelected} tabIndex={-1} />
-              </span>
+              />
             ) : null}
             {file.type === 'Directory' ? (
               <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
             ) : file.type === 'Symlink' ? (
-              <Link aria-hidden="true" className="size-4 shrink-0 text-info" />
+              <LinkIcon aria-hidden="true" className="size-4 shrink-0 text-info" />
             ) : (
               <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
             )}

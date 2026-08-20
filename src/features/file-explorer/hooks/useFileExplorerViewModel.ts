@@ -480,7 +480,9 @@ export function useFileExplorerViewModel(activeView: string) {
   }, [loadFiles, setIsEditingPath]);
 
   const selectedNamesRef = useRef(selectedNames);
-  selectedNamesRef.current = selectedNames;
+  useEffect(() => {
+    selectedNamesRef.current = selectedNames;
+  }, [selectedNames]);
   const getDragNames = useCallback((clickedName: string) => {
     const selected = selectedNamesRef.current;
     if (selected.has(clickedName)) {

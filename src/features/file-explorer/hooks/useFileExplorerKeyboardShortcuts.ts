@@ -31,10 +31,6 @@ interface Options {
   visibleList: FileEntry[];
 }
 
-function isTypingTarget(tag: string | undefined): boolean {
-  return tag === 'INPUT' || tag === 'TEXTAREA';
-}
-
 export function useFileExplorerKeyboardShortcuts(options: Options) {
   const {
     activeView,
@@ -68,19 +64,29 @@ export function useFileExplorerKeyboardShortcuts(options: Options) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable) ||
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement ||
+        document.activeElement instanceof HTMLSelectElement ||
+        (document.activeElement instanceof HTMLElement && document.activeElement.isContentEditable)
+      ) {
+        return;
+      }
       if (activeView !== 'files') {
         return;
       }
-      const tag = (document.activeElement as HTMLElement | null)?.tagName;
-      const isInput = isTypingTarget(tag);
       const mod = e.ctrlKey || e.metaKey;
-
-      if (mod && !e.shiftKey && e.key === 'n' && !isInput) {
+      if (mod && !e.shiftKey && e.key === 'n') {
         e.preventDefault();
         startCreate('file');
         return;
       }
-      if (mod && e.shiftKey && e.key === 'N' && !isInput) {
+      if (mod && e.shiftKey && e.key === 'N') {
         e.preventDefault();
         startCreate('folder');
         return;
@@ -105,7 +111,7 @@ export function useFileExplorerKeyboardShortcuts(options: Options) {
         handlePathClick();
         return;
       }
-      if (mod && e.key === 'f' && !isInput) {
+      if (mod && e.key === 'f') {
         e.preventDefault();
         document.getElementById('fe-search-input')?.focus();
         return;
@@ -122,12 +128,9 @@ export function useFileExplorerKeyboardShortcuts(options: Options) {
           handleRenameCancel();
         } else if (searchQuery) {
           setSearchQuery('');
-        } else if (!isInput && selectedNames.size > 0) {
+        } else if (selectedNames.size > 0) {
           clearSelection();
         }
-        return;
-      }
-      if (isInput) {
         return;
       }
       if (e.key === 'Backspace' && !mod) {

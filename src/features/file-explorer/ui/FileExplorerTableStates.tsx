@@ -146,7 +146,7 @@ export function EmptyDirectoryState({
             type="button"
             variant="outline"
           >
-            <FilePlus2 aria-hidden="true" />
+            <FilePlus2 aria-hidden="true" data-icon="inline-start" />
             New file
           </Button>
           <Button
@@ -156,7 +156,7 @@ export function EmptyDirectoryState({
             type="button"
             variant="outline"
           >
-            <FolderPlus aria-hidden="true" />
+            <FolderPlus aria-hidden="true" data-icon="inline-start" />
             New folder
           </Button>
         </div>

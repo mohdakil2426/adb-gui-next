@@ -19,6 +19,7 @@ import { Button } from '@/shared/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
@@ -182,17 +183,16 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
   }
 
   const lastIndex = visible.length - 1;
-
   return (
-    <div
-      className="flex h-8 min-w-0 flex-1 items-center gap-1 rounded-md border border-border-control bg-background px-1 dark:bg-input/30"
-      onClick={(event) => {
-        if ((event.target as HTMLElement).closest('button')) {
-          return;
-        }
-        onPathClick();
-      }}
-    >
+    <div className="flex h-8 min-w-0 flex-1 items-center gap-1 rounded-md border border-border-control bg-background px-1 dark:bg-input/30">
+      <button
+        aria-label="Edit path location"
+        className="sr-only focus:not-sr-only"
+        onClick={onPathClick}
+        type="button"
+      >
+        Edit path
+      </button>
       <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
         <BreadcrumbList className="flex-nowrap font-mono text-mono">
           {visible.map((segment, index) => {
@@ -221,14 +221,16 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
                           <BreadcrumbEllipsis />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
-                          {hidden.map((segment) => (
-                            <DropdownMenuItem
-                              key={segment.path}
-                              onClick={() => onNavigate(segment.path)}
-                            >
-                              <span className="font-mono text-mono">{segment.label}</span>
-                            </DropdownMenuItem>
-                          ))}
+                          <DropdownMenuGroup>
+                            {hidden.map((segment) => (
+                              <DropdownMenuItem
+                                key={segment.path}
+                                onClick={() => onNavigate(segment.path)}
+                              >
+                                <span className="font-mono text-mono">{segment.label}</span>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuGroup>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </BreadcrumbItem>

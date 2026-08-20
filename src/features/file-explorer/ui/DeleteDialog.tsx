@@ -1,4 +1,4 @@
-import { File, Folder, Link, Loader2, Trash2 } from 'lucide-react';
+import { File, Folder, Link as LinkIcon, Loader2, Trash2 } from 'lucide-react';
 import type { FileEntry } from '@/features/file-explorer/model/fileExplorerTypes';
 import {
   AlertDialog,
@@ -54,7 +54,7 @@ export function DeleteDialog({
                         {file?.type === 'Directory' ? (
                           <Folder aria-hidden="true" className="size-3 shrink-0" />
                         ) : file?.type === 'Symlink' ? (
-                          <Link aria-hidden="true" className="size-3 shrink-0" />
+                          <LinkIcon aria-hidden="true" className="size-3 shrink-0" />
                         ) : (
                           <File aria-hidden="true" className="size-3 shrink-0" />
                         )}
@@ -73,6 +73,7 @@ export function DeleteDialog({
         <AlertDialogFooter className="min-w-0">
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            aria-label={isDeleting ? 'Deleting permanently…' : 'Delete permanently'}
             className={buttonVariants({ variant: 'destructive' })}
             disabled={isDeleting}
             onClick={onConfirm}

@@ -233,9 +233,13 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <Plus aria-hidden="true" />
+              <Plus aria-hidden="true" data-icon="inline-start" />
               New
-              <ChevronDown aria-hidden="true" className="size-3.5 opacity-70" />
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 opacity-70"
+                data-icon="inline-end"
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
