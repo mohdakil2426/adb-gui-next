@@ -79,11 +79,19 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                   </>
                 ) : (
                   <>
-                    <MonitorSmartphone aria-hidden="true" className="size-3.5 shrink-0" />
+                    <MonitorSmartphone
+                      aria-hidden="true"
+                      className="size-3.5 shrink-0"
+                      data-icon="inline-start"
+                    />
                     <span>No Device</span>
                   </>
                 )}
-                <ChevronDown aria-hidden="true" className="size-3 shrink-0 opacity-60" />
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-3 shrink-0 opacity-60"
+                  data-icon="inline-start"
+                />
               </Button>
             </PopoverTrigger>
           </TooltipTrigger>
@@ -190,7 +198,7 @@ export function DeviceSwitcher({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         type="button"
                         variant="ghost"
                       >
-                        <Pencil aria-hidden="true" className="size-3" />
+                        <Pencil aria-hidden="true" className="size-3" data-icon="inline-start" />
                       </Button>
                     </div>
                   );

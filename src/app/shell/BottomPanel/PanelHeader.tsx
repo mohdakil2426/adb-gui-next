@@ -160,7 +160,7 @@ export function PanelHeader({
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              <X aria-hidden="true" className="size-3" />
+              <X aria-hidden="true" className="size-3" data-icon="inline-start" />
             </Button>
           ) : null}
         </div>

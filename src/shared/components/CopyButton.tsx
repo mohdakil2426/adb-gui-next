@@ -75,9 +75,9 @@ export function CopyButton({ value, label = 'Value', className }: CopyButtonProp
       variant="ghost"
     >
       {copied ? (
-        <Check aria-hidden="true" className="size-3.5 text-success" />
+        <Check aria-hidden="true" className="size-3.5 text-success" data-icon="inline-start" />
       ) : (
-        <Copy aria-hidden="true" className="size-3.5" />
+        <Copy aria-hidden="true" className="size-3.5" data-icon="inline-start" />
       )}
     </Button>
   );

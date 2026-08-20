@@ -26,13 +26,12 @@ function ViewFallback() {
 
 function ViewContentImpl({ activeView, renderContent }: ViewContentProps) {
   const isFileExplorerView = activeView === VIEWS.FILES;
-  const isMarketplaceView = activeView === VIEWS.MARKETPLACE;
 
   return (
     <main
       className={cn(
         'custom-scroll main-scroll-area min-h-0 flex-1 overflow-x-hidden',
-        isFileExplorerView || isMarketplaceView ? 'overflow-hidden' : 'overflow-y-auto',
+        isFileExplorerView ? 'overflow-hidden' : 'overflow-y-auto',
       )}
       id="main-content"
       tabIndex={-1}
@@ -40,7 +39,7 @@ function ViewContentImpl({ activeView, renderContent }: ViewContentProps) {
       <div
         className={cn(
           'flex w-full flex-col p-5',
-          isFileExplorerView || isMarketplaceView ? 'h-full min-h-0' : 'min-h-full',
+          isFileExplorerView ? 'h-full min-h-0' : 'min-h-full',
         )}
       >
         {/* Fluid width: the old 1280px cap centred content on a desktop app that
@@ -50,7 +49,7 @@ function ViewContentImpl({ activeView, renderContent }: ViewContentProps) {
             permanently on. This box is the real, sidebar-aware content area — the
             actual quantity every per-view `@sm:`/`@lg:`/etc. container query below
             should measure instead. */}
-        <div className="@container flex min-h-0 w-full flex-1 flex-col overflow-hidden">
+        <div className="@container flex min-h-0 w-full flex-1 flex-col">
           <AnimatePresence mode="wait">
             <m.div
               animate={{ opacity: 1 }}

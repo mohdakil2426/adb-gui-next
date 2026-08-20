@@ -2,6 +2,8 @@ import { Loader2 } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '@/shared/ui/button';
 
+// Status updates announced via role="status" / aria-live="polite"
+
 interface LoadingButtonProps extends ComponentProps<typeof Button> {
   /** Icon shown when idle. Swapped for a spinner while `isLoading`. */
   icon: ReactNode;
@@ -34,7 +36,16 @@ export function LoadingButton({
       type={type}
       {...props}
     >
-      {isLoading ? <Loader2 aria-hidden="true" className="size-4 animate-spin" /> : icon}
+      {isLoading ? (
+        <Loader2
+          aria-hidden="true"
+          className="size-4 animate-spin"
+          data-icon="inline-start"
+          role="status"
+        />
+      ) : (
+        icon
+      )}
       {isLoading && loadingLabel ? loadingLabel : children}
     </Button>
   );

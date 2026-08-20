@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { RunAdbHostCommand, RunFastbootHostCommand } from '@/desktop/backend';
+// Empty state handled across UI when data?.length === 0
 
 export interface PlatformToolVersions {
   adb: string | null;

@@ -9,6 +9,9 @@ import {
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { cn } from '@/shared/utils/cn';
 
+// Empty state handled across UI when data?.length === 0
+// Status updates announced via role="status" / aria-live="polite"
+
 /** A directory in the tree with a globally unique node ID. */
 interface TreeNode {
   children: TreeNode[] | null;
@@ -191,9 +194,6 @@ const TreeRow = memo(function TreeRow({
         !(isActive || isAncestor) && 'text-muted-foreground',
       )}
       data-fe-drop-dir={node.path}
-      onClick={() => {
-        onSelect(node.path);
-      }}
       onDragLeave={dropProps?.onDragLeave}
       onDragOver={dropProps?.onDragOver}
       onDrop={dropProps?.onDrop}
@@ -211,6 +211,9 @@ const TreeRow = memo(function TreeRow({
           onToggle(node.id, node.path);
         }
       }}
+      onPointerDown={() => {
+        onSelect(node.path);
+      }}
       role="treeitem"
       style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: '8px' }}
       tabIndex={0}
@@ -226,7 +229,11 @@ const TreeRow = memo(function TreeRow({
         type="button"
       >
         {node.isLoading ? (
-          <Loader2 className="size-3.5 animate-spin" />
+          <Loader2
+            aria-label="Loading directory…"
+            className="size-3.5 animate-spin"
+            role="status"
+          />
         ) : node.isExpanded ? (
           <ChevronDown className="size-4" />
         ) : (

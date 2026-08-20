@@ -73,7 +73,7 @@ export function MainLayout() {
   const isPanelMaximized = useLogStore((state) => state.isPanelMaximized);
   const setDevices = useDeviceStore((state) => state.setDevices);
 
-  // ── Centralized device polling ─────────────────────────────────────────
+  // ── Centralized device polling (child views render NoDeviceState when data?.length === 0) ──
   const {
     isError: isDeviceError,
     isFetching: isDeviceRefreshing,

@@ -131,7 +131,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              <Search aria-hidden="true" className="size-3.5" />
+              <Search aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Search Logs</TooltipContent>

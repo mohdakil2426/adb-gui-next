@@ -54,17 +54,11 @@ function InputGroupAddon({
       className={cn(inputGroupAddonVariants({ align }), className)}
       data-align={align}
       data-slot="input-group-addon"
-      onClick={(event) => {
+      onPointerDown={(event) => {
         if ((event.target as HTMLElement).closest('button')) {
           return;
         }
         event.currentTarget.parentElement?.querySelector('input')?.focus();
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          event.currentTarget.parentElement?.querySelector('input')?.focus();
-        }
       }}
       role="group"
       {...props}

@@ -4,6 +4,8 @@ import { Button } from '@/shared/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
 
+// Status updates announced via role="status" / aria-live="polite"
+
 type RefreshButtonBase = {
   className?: string | undefined;
   disabled?: boolean | undefined;
@@ -63,9 +65,14 @@ export function RefreshButton(props: RefreshButtonProps) {
         variant={buttonVariant}
       >
         {isLoading ? (
-          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+          <Loader2
+            aria-hidden="true"
+            className="size-4 animate-spin"
+            data-icon="inline-start"
+            role="status"
+          />
         ) : (
-          <RefreshCw aria-hidden="true" className="size-4" />
+          <RefreshCw aria-hidden="true" className="size-4" data-icon="inline-start" />
         )}
       </Button>
     );
@@ -94,9 +101,14 @@ export function RefreshButton(props: RefreshButtonProps) {
       variant={buttonVariant}
     >
       {isLoading ? (
-        <Loader2 aria-hidden="true" className="animate-spin" />
+        <Loader2
+          aria-hidden="true"
+          className="animate-spin"
+          data-icon="inline-start"
+          role="status"
+        />
       ) : (
-        <RefreshCw aria-hidden="true" />
+        <RefreshCw aria-hidden="true" data-icon="inline-start" />
       )}
       {isLoading && loadingLabel ? loadingLabel : label}
     </Button>

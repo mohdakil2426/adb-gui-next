@@ -172,17 +172,25 @@ export function RemoteUrlPanel({
             >
               {isChecking ? (
                 <>
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-4 animate-spin"
+                    data-icon="inline-start"
+                  />
                   Checking…
                 </>
               ) : isReady ? (
                 <>
-                  <Zap aria-hidden="true" className="size-4 text-amber-300" />
+                  <Zap
+                    aria-hidden="true"
+                    className="size-4 text-amber-300"
+                    data-icon="inline-start"
+                  />
                   Read Partitions
                 </>
               ) : (
                 <>
-                  <Globe aria-hidden="true" className="size-4" />
+                  <Globe aria-hidden="true" className="size-4" data-icon="inline-start" />
                   Check & Stream
                 </>
               )}

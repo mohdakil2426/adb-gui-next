@@ -4,6 +4,8 @@ import { Button } from '@/shared/ui/button';
 import { Field, FieldDescription, FieldLabel } from '@/shared/ui/field';
 import { cn } from '@/shared/utils/cn';
 
+// Status updates announced via role="status" / aria-live="polite"
+
 interface FileSelectorProps {
   className?: string;
   /** Whether the selector should be fully disabled */
@@ -55,7 +57,12 @@ export function FileSelector({
           variant="secondary"
         >
           {isLoading ? (
-            <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin" />
+            <Loader2
+              aria-hidden="true"
+              className="size-4 shrink-0 animate-spin"
+              data-icon="inline-start"
+              role="status"
+            />
           ) : icon ? (
             <span aria-hidden="true" className="flex size-4 shrink-0 items-center">
               {icon}

@@ -35,7 +35,7 @@ export function ExternalLinkButton({
       variant={variant}
     >
       {children}
-      <ExternalLink aria-hidden="true" />
+      <ExternalLink aria-hidden="true" data-icon="inline-start" />
     </Button>
   );
 }
