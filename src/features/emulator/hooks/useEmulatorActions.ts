@@ -19,7 +19,6 @@ export function useEmulatorActions({
   refetch,
   selectedAvd,
 }: UseEmulatorActionsParams) {
-  const pendingAction = useEmulatorManagerStore((state) => state.pendingAction);
   const launchOptions = useEmulatorManagerStore((state) => state.launchOptions);
   const setRestorePlan = useEmulatorManagerStore((state) => state.setRestorePlan);
   const setPendingAction = useEmulatorManagerStore((state) => state.setPendingAction);
@@ -33,7 +32,7 @@ export function useEmulatorActions({
 
   const runAction = useCallback(
     async (
-      action: Exclude<typeof pendingAction, null>,
+      action: Parameters<typeof setPendingAction>[0],
       task: () => Promise<void>,
       fallbackMessage: string,
     ) => {
@@ -46,7 +45,7 @@ export function useEmulatorActions({
         setPendingAction(null);
       }
     },
-    [pendingAction, setPendingAction],
+    [setPendingAction],
   );
 
   const handleLaunch = useCallback(

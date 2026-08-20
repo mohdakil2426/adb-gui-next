@@ -125,7 +125,11 @@ export function ViewEmulatorManager() {
           />
         </Card>
       ) : avds.length === 0 && !isLoading ? (
-        <Card className="rounded-lg border-border bg-surface p-6 shadow-none">
+        <Card
+          aria-live="polite"
+          className="rounded-lg border-border bg-surface p-6 shadow-none"
+          role="status"
+        >
           <EmptyState
             action={
               <Button onClick={() => void refreshAvds()} size="sm" variant="outline">

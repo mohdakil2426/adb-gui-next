@@ -68,7 +68,7 @@ export function EmulatorRootStudioTab({ avd, onLaunch }: EmulatorRootStudioTabPr
               size="sm"
               type="button"
             >
-              <Snowflake aria-hidden="true" className="size-3.5" />
+              <Snowflake aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Cold boot (recommended)
             </Button>
             <Button
@@ -80,7 +80,7 @@ export function EmulatorRootStudioTab({ avd, onLaunch }: EmulatorRootStudioTabPr
               type="button"
               variant="outline"
             >
-              <Play aria-hidden="true" className="size-3.5" />
+              <Play aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Normal launch
             </Button>
           </div>

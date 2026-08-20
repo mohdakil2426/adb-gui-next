@@ -193,7 +193,11 @@ export function EmulatorRestoreStudioTab({
                             type="button"
                             variant="ghost"
                           >
-                            <FolderOpen aria-hidden="true" className="size-3.5" />
+                            <FolderOpen
+                              aria-hidden="true"
+                              className="size-3.5"
+                              data-icon="inline-start"
+                            />
                             <span className="@xs:inline hidden">Open Folder</span>
                           </Button>
                         </TooltipTrigger>

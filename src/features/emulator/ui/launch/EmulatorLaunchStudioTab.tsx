@@ -75,7 +75,7 @@ export function EmulatorLaunchStudioTab({
             type="button"
             variant="destructive"
           >
-            <Square className="size-3.5 fill-current" />
+            <Square aria-hidden="true" className="size-3.5 fill-current" data-icon="inline-start" />
             Stop AVD Process
           </Button>
         ) : (
@@ -85,7 +85,7 @@ export function EmulatorLaunchStudioTab({
             onClick={() => onLaunch()}
             type="button"
           >
-            <Play className="size-3.5 fill-current" />
+            <Play aria-hidden="true" className="size-3.5 fill-current" data-icon="inline-start" />
             Launch Virtual Device
           </Button>
         )}

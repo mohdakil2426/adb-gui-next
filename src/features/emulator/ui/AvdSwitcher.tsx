@@ -62,9 +62,17 @@ export function AvdSwitcher({
               type="button"
               variant="outline"
             >
-              <MonitorSmartphone aria-hidden="true" className="size-3.5 shrink-0" />
+              <MonitorSmartphone
+                aria-hidden="true"
+                className="size-3.5 shrink-0"
+                data-icon="inline-start"
+              />
               <span className="max-w-40 truncate">{selectedAvd?.name ?? 'No AVD'}</span>
-              <ChevronDown aria-hidden="true" className="size-3 shrink-0 opacity-60" />
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3 shrink-0 opacity-60"
+                data-icon="inline-end"
+              />
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>

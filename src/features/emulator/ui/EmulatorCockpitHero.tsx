@@ -159,7 +159,11 @@ export function EmulatorCockpitHero({
               type="button"
               variant="outline"
             >
-              <FolderOpen className="size-3.5 text-muted-foreground" />
+              <FolderOpen
+                aria-hidden="true"
+                className="size-3.5 text-muted-foreground"
+                data-icon="inline-start"
+              />
               Open Folder
             </Button>
 
@@ -178,7 +182,11 @@ export function EmulatorCockpitHero({
                 type="button"
                 variant="destructive"
               >
-                <Square className="size-3.5 fill-current" />
+                <Square
+                  aria-hidden="true"
+                  className="size-3.5 fill-current"
+                  data-icon="inline-start"
+                />
                 Stop AVD
               </Button>
             ) : (
@@ -190,7 +198,11 @@ export function EmulatorCockpitHero({
                 title={launchBlockedReason || 'Launch this AVD'}
                 type="button"
               >
-                <Play className="size-3.5 fill-current" />
+                <Play
+                  aria-hidden="true"
+                  className="size-3.5 fill-current"
+                  data-icon="inline-start"
+                />
                 Launch AVD
               </Button>
             )}

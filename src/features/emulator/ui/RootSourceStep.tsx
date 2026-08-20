@@ -167,7 +167,7 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
                 type="button"
                 variant="outline"
               >
-                <RefreshCw aria-hidden="true" />
+                <RefreshCw aria-hidden="true" data-icon="inline-start" />
                 Retry
               </Button>
             </Alert>

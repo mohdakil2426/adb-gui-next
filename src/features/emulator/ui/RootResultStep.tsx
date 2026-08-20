@@ -25,24 +25,44 @@ interface RootResultStepProps {
   verification: backend.RootVerificationResult | null;
 }
 
-const NEXT_STEPS: ReactNode[] = [
-  <>
-    The emulator was stopped automatically. Use <strong>Cold Boot Emulator</strong> below to start
-    it with the patch applied.
-  </>,
-  <>
-    Open <strong>Magisk Manager</strong> on the emulator and accept the &ldquo;Additional
-    Setup&rdquo; prompt if it appears.
-  </>,
-  <>
-    Verify root from a shell:{' '}
-    <code className="rounded-sm bg-muted px-1 font-mono text-mono">su</code> should return a root
-    prompt.
-  </>,
-  <>
-    If the emulator bootloops, hold <strong>Volume Down</strong> during boot to enter Safe Mode and
-    disable Magisk modules.
-  </>,
+const NEXT_STEPS: Array<{ content: ReactNode; id: string }> = [
+  {
+    content: (
+      <>
+        The emulator was stopped automatically. Use <strong>Cold Boot Emulator</strong> below to
+        start it with the patch applied.
+      </>
+    ),
+    id: 'cold-boot',
+  },
+  {
+    content: (
+      <>
+        Open <strong>Magisk Manager</strong> on the emulator and accept the &ldquo;Additional
+        Setup&rdquo; prompt if it appears.
+      </>
+    ),
+    id: 'magisk-setup',
+  },
+  {
+    content: (
+      <>
+        Verify root from a shell:{' '}
+        <code className="rounded-sm bg-muted px-1 font-mono text-mono">su</code> should return a
+        root prompt.
+      </>
+    ),
+    id: 'verify-root',
+  },
+  {
+    content: (
+      <>
+        If the emulator bootloops, hold <strong>Volume Down</strong> during boot to enter Safe Mode
+        and disable Magisk modules.
+      </>
+    ),
+    id: 'safe-mode',
+  },
 ];
 
 export function RootResultStep({
@@ -104,11 +124,11 @@ export function RootResultStep({
           <SectionHeader>Next steps</SectionHeader>
           <ol className="flex flex-col gap-1.5 text-body text-foreground">
             {NEXT_STEPS.map((step, index) => (
-              <li className="flex items-start gap-2" key={`next-step-${index + 1}`}>
+              <li className="flex items-start gap-2" key={step.id}>
                 <span className="numeric mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-caption text-primary-foreground">
                   {index + 1}
                 </span>
-                <span className="min-w-0">{step}</span>
+                <span className="min-w-0">{step.content}</span>
               </li>
             ))}
           </ol>
@@ -130,7 +150,7 @@ export function RootResultStep({
             size="sm"
             type="button"
           >
-            <RefreshCcw aria-hidden="true" />
+            <RefreshCcw aria-hidden="true" data-icon="inline-start" />
             Cold Boot Emulator
           </Button>
           {result.activationStatus === 'patchInstalled' && (
@@ -144,9 +164,9 @@ export function RootResultStep({
               variant="outline"
             >
               {isVerifying ? (
-                <Loader2 aria-hidden="true" className="animate-spin" />
+                <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
               ) : (
-                <ShieldCheck aria-hidden="true" />
+                <ShieldCheck aria-hidden="true" data-icon="inline-start" />
               )}
               Verify Root
             </Button>
@@ -159,7 +179,7 @@ export function RootResultStep({
             type="button"
             variant="outline"
           >
-            <RotateCcw aria-hidden="true" />
+            <RotateCcw aria-hidden="true" data-icon="inline-start" />
             Restore stock (undo)
           </Button>
           <Button
@@ -206,7 +226,7 @@ export function RootResultStep({
           type="button"
           variant="outline"
         >
-          <ShieldCheck aria-hidden="true" />
+          <ShieldCheck aria-hidden="true" data-icon="inline-start" />
           Switch to Manual FAKEBOOTIMG mode
         </Button>
         <p className="text-caption text-muted-foreground">

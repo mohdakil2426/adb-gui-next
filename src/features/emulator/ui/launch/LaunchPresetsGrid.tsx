@@ -19,7 +19,7 @@ interface LaunchPreset {
   title: string;
 }
 
-export const LAUNCH_PRESETS: LaunchPreset[] = [
+const LAUNCH_PRESETS: LaunchPreset[] = [
   {
     badge: 'Default',
     description: 'Fast launch with state restored from the last saved snapshot.',

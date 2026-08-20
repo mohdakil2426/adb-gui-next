@@ -79,11 +79,6 @@ export const LAUNCH_OPTIONS: readonly LaunchOptionMeta[] = [
   },
 ] as const;
 
-/** Enabled flags, as short labels — the toolbar's "what will happen" summary. */
-export function summarizeLaunchOptions(options: backend.EmulatorLaunchOptions): string[] {
-  return LAUNCH_OPTIONS.filter((option) => options[option.key]).map((option) => option.label);
-}
-
 /** Which destructive launch flags the user has explicitly ticked. */
 export type LaunchAcknowledgements = Partial<Record<LaunchOptionKey, boolean>>;
 
@@ -103,11 +98,4 @@ export function unacknowledgedLaunchOptions(
   acknowledgements: LaunchAcknowledgements,
 ): LaunchOptionMeta[] {
   return destructiveLaunchOptions(options).filter((option) => !acknowledgements[option.key]);
-}
-
-/** True when the configured options are exactly a cold boot and nothing else. */
-export function isColdBootPreset(options: backend.EmulatorLaunchOptions): boolean {
-  return LAUNCH_OPTIONS.every(
-    (option) => options[option.key] === COLD_BOOT_LAUNCH_OPTIONS[option.key],
-  );
 }

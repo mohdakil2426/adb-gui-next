@@ -90,7 +90,7 @@ function RecommendedAction({
           <p className="text-body text-foreground">The emulator must be running before rooting.</p>
           <div className="flex flex-wrap gap-2">
             <Button id="preflight-cold-boot-btn" onClick={onColdBoot} size="sm" type="button">
-              <Snowflake aria-hidden="true" />
+              <Snowflake aria-hidden="true" data-icon="inline-start" />
               Cold boot (recommended)
             </Button>
             <Button
@@ -123,7 +123,7 @@ function RecommendedAction({
             type="button"
             variant="outline"
           >
-            <Snowflake aria-hidden="true" />
+            <Snowflake aria-hidden="true" data-icon="inline-start" />
             Restart with cold boot
           </Button>
           <p className="text-caption text-muted-foreground">
