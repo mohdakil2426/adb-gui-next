@@ -9,6 +9,10 @@ const ESTIMATED_ROW_HEIGHT = 20;
 const AT_BOTTOM_TOLERANCE_PX = 30;
 const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
+function escapeRegExp(value: string): string {
+  return value.replace(REGEX_ESCAPE, '\\$&');
+}
+
 export const LogsPanel = memo(function LogsPanel() {
   const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore(
     useShallow((state) => ({
@@ -39,7 +43,7 @@ export const LogsPanel = memo(function LogsPanel() {
 
   // Compiled once per query instead of once per row per render.
   const searchRegex = useMemo(
-    () => (searchQuery ? new RegExp(searchQuery.replace(REGEX_ESCAPE, '\\$&'), 'gi') : null),
+    () => (searchQuery ? new RegExp(escapeRegExp(searchQuery), 'gi') : null),
     [searchQuery],
   );
 

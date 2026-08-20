@@ -4,12 +4,13 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { ViewType } from '@/app/shell/viewConfig';
 import { buildCommands, COMMAND_GROUPS } from '@/shared/commands/registry';
-import { SHORTCUT_HELP } from '@/shared/commands/shortcuts';
+import { SHORTCUT_HELP, type ShortcutHelp } from '@/shared/commands/shortcuts';
 import type { CommandAction, CommandContext, CommandShell } from '@/shared/commands/types';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useNicknameStore } from '@/shared/stores/nicknameStore';
 import {
   Command,
+  CommandDialog,
   CommandEmpty,
   CommandGroup,
   CommandInput,
@@ -17,14 +18,21 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/shared/ui/command';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/shared/ui/dialog';
+import { DialogDescription, DialogTitle } from '@/shared/ui/dialog';
 import { Kbd, KbdGroup } from '@/shared/ui/kbd';
 import { useSidebar } from '@/shared/ui/sidebar';
 import { cn } from '@/shared/utils/cn';
 
-const LIST_HEIGHT = 'max-h-[min(60vh,26rem)]';
-const SHORTCUT_SCOPES = [...new Set(SHORTCUT_HELP.map((entry) => entry.scope))];
-
+const LIST_HEIGHT = 'max-h-[300px] min-h-[220px]';
+const SHORTCUT_GROUPS: Array<{ scope: string; entries: ShortcutHelp[] }> = (() => {
+  const groups: Record<string, ShortcutHelp[]> = {};
+  for (const item of SHORTCUT_HELP) {
+    const list = groups[item.scope] ?? [];
+    list.push(item);
+    groups[item.scope] = list;
+  }
+  return Object.entries(groups).map(([scope, entries]) => ({ entries, scope }));
+})();
 interface PaletteRowProps {
   action: CommandAction;
   ctx: CommandContext;
@@ -76,11 +84,11 @@ function ShortcutsPage() {
         <h2 className="font-medium text-body">Keyboard Shortcuts</h2>
       </div>
       <div className={cn('custom-scroll overflow-y-auto p-2', LIST_HEIGHT)}>
-        {SHORTCUT_SCOPES.map((scope) => (
+        {SHORTCUT_GROUPS.map(({ scope, entries }) => (
           <section className="mb-2" key={scope}>
             <h3 className="px-2 py-1.5 text-caption text-muted-foreground uppercase">{scope}</h3>
             <ul className="flex flex-col">
-              {SHORTCUT_HELP.filter((entry) => entry.scope === scope).map((entry) => (
+              {entries.map((entry) => (
                 <li
                   className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 text-body"
                   key={`${scope}:${entry.label}`}
@@ -191,10 +199,15 @@ export function CommandPalette({
 
   const groups = useMemo(() => {
     const actions = buildCommands(ctx);
-    return COMMAND_GROUPS.map((group) => ({
-      ...group,
-      actions: actions.filter((action) => action.group === group.id),
-    })).filter((group) => group.actions.length > 0);
+    return COMMAND_GROUPS.reduce<
+      Array<(typeof COMMAND_GROUPS)[number] & { actions: CommandAction[] }>
+    >((acc, group) => {
+      const groupActions = actions.filter((action) => action.group === group.id);
+      if (groupActions.length > 0) {
+        acc.push({ ...group, actions: groupActions });
+      }
+      return acc;
+    }, []);
   }, [ctx]);
 
   const runAction = useCallback(
@@ -220,68 +233,71 @@ export function CommandPalette({
   );
 
   return (
-    <Dialog onOpenChange={handleOpenChange} open={open}>
-      <DialogContent
-        className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0"
-        showCloseButton={false}
-      >
-        <DialogTitle className="sr-only">Command palette</DialogTitle>
-        <DialogDescription className="sr-only">
-          Search actions, views and connected devices.
-        </DialogDescription>
+    <CommandDialog
+      aria-describedby="palette-description"
+      aria-labelledby="palette-title"
+      className="top-[12%] max-w-xl translate-y-0 gap-0 overflow-hidden p-0"
+      onOpenChange={handleOpenChange}
+      open={open}
+      showCloseButton={false}
+    >
+      <DialogTitle className="sr-only" id="palette-title">
+        Command palette
+      </DialogTitle>
+      <DialogDescription className="sr-only" id="palette-description">
+        Search actions, views and connected devices.
+      </DialogDescription>
+      {page === 'commands' ? (
+        <Command loop>
+          <CommandInput
+            onValueChange={setSearch}
+            placeholder="Search actions, views and devices…"
+            value={search}
+          />
+          <CommandList className={LIST_HEIGHT}>
+            <CommandEmpty>No matching command.</CommandEmpty>
+            {groups.map((group) => (
+              <CommandGroup heading={group.label} key={group.id}>
+                {group.actions.map((action) => (
+                  <PaletteRow action={action} ctx={ctx} key={action.id} onRun={runAction} />
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      ) : (
+        <ShortcutsPage />
+      )}
 
-        {page === 'commands' ? (
-          <Command loop>
-            <CommandInput
-              onValueChange={setSearch}
-              placeholder="Search actions, views and devices…"
-              value={search}
-            />
-            <CommandList className={LIST_HEIGHT}>
-              <CommandEmpty>No matching command.</CommandEmpty>
-              {groups.map((group) => (
-                <CommandGroup heading={group.label} key={group.id}>
-                  {group.actions.map((action) => (
-                    <PaletteRow action={action} ctx={ctx} key={action.id} onRun={runAction} />
-                  ))}
-                </CommandGroup>
-              ))}
-            </CommandList>
-          </Command>
-        ) : (
-          <ShortcutsPage />
-        )}
-
-        <div className="flex h-9 shrink-0 items-center gap-4 border-t bg-surface-raised px-3 text-caption text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <Kbd>↑</Kbd>
-            <Kbd>↓</Kbd>
-            navigate
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Kbd>
-              <CornerDownLeft aria-hidden="true" />
-            </Kbd>
-            run
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Kbd>Esc</Kbd>
-            close
-          </span>
-          {page === 'shortcuts' ? (
-            <button
-              className="ml-auto flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-foreground hover:bg-accent"
-              onClick={() => {
-                setPage('commands');
-              }}
-              type="button"
-            >
-              <ArrowLeft aria-hidden="true" className="size-3.5" />
-              Back to commands
-            </button>
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
+      <div className="flex h-9 shrink-0 items-center gap-4 border-t bg-surface-raised px-3 text-caption text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <Kbd>↑</Kbd>
+          <Kbd>↓</Kbd>
+          navigate
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Kbd>
+            <CornerDownLeft aria-hidden="true" />
+          </Kbd>
+          run
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Kbd>Esc</Kbd>
+          close
+        </span>
+        {page === 'shortcuts' ? (
+          <button
+            className="ml-auto flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-foreground hover:bg-accent"
+            onClick={() => {
+              setPage('commands');
+            }}
+            type="button"
+          >
+            <ArrowLeft aria-hidden="true" className="size-3.5" />
+            Back to commands
+          </button>
+        ) : null}
+      </div>
+    </CommandDialog>
   );
 }

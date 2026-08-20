@@ -49,7 +49,7 @@ export function ViewAbout() {
       <section className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4 rounded-lg border border-border bg-surface p-4 shadow-none">
         <div className="flex items-center gap-3.5">
           <img
-            alt={`${APP_NAME} logo`}
+            alt="ADB GUI Next logo"
             className="size-12 shrink-0 object-contain"
             height={48}
             src="/logo.png"
@@ -119,7 +119,7 @@ export function ViewAbout() {
           <div className="grid @4xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2.5">
             {CREDITS.map((credit) => (
               <button
-                className="group flex cursor-pointer flex-col justify-between gap-2 rounded-lg border border-border bg-surface-raised/40 p-3 text-left transition-all duration-150 hover:border-border hover:bg-surface-raised"
+                className="group flex cursor-pointer flex-col justify-between gap-2 rounded-lg border border-border bg-surface-raised/40 p-3 text-left transition-colors duration-150 hover:border-border hover:bg-surface-raised"
                 key={credit.name}
                 onClick={() => BrowserOpenURL(credit.url)}
                 type="button"

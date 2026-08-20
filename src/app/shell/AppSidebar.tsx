@@ -18,6 +18,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarSeparator,
+  SidebarTrigger,
 } from '@/shared/ui/sidebar';
 import { cn } from '@/shared/utils/cn';
 
@@ -68,6 +69,7 @@ function SidebarDeviceCard({ onOpenDevicePicker }: SidebarDeviceCardProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton
+          aria-label={`Current device: ${primary}. Click to select device or view actions.`}
           className="h-auto gap-2.5 border border-sidebar-border bg-sidebar-accent/50 py-1.5"
           onClick={onOpenDevicePicker}
           size="lg"
@@ -166,19 +168,22 @@ export function AppSidebar({
       <SidebarHeader className="gap-2">
         {/* Brand is a readout, not a control — it used to be a `pointer-events-none`
             menu button that still looked clickable. */}
-        <div className="flex items-center gap-2 px-1 py-0.5">
-          <img
-            alt=""
-            aria-hidden="true"
-            className="size-6 shrink-0 object-contain"
-            height={24}
-            src="/logo.png"
-            width={24}
-          />
-          <span className="grid min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-            <span className="truncate font-semibold text-body">ADB GUI Next</span>
-            <span className="truncate text-caption text-muted-foreground">Desktop toolkit</span>
-          </span>
+        <div className="flex items-center justify-between px-1 py-0.5">
+          <div className="flex items-center gap-2">
+            <img
+              alt=""
+              aria-hidden="true"
+              className="size-6 shrink-0 object-contain"
+              height={24}
+              src="/logo.png"
+              width={24}
+            />
+            <span className="grid min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+              <span className="truncate font-semibold text-body">ADB GUI Next</span>
+              <span className="truncate text-caption text-muted-foreground">Desktop toolkit</span>
+            </span>
+          </div>
+          <SidebarTrigger aria-label="Toggle mobile navigation" className="md:hidden" />
         </div>
         <SidebarDeviceCard onOpenDevicePicker={onOpenDevicePicker} />
       </SidebarHeader>

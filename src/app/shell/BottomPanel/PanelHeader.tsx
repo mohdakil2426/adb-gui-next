@@ -112,10 +112,12 @@ export function PanelHeader({
           clearHistory={clearHistory}
           clearLogs={clearLogs}
           filter={filter}
-          hasLogs={logCount > 0}
-          isFollowing={isFollowing}
-          isPanelMaximized={isPanelMaximized}
-          isSearchOpen={isSearchOpen}
+          flags={{
+            hasLogs: logCount > 0,
+            isFollowing,
+            isPanelMaximized,
+            isSearchOpen,
+          }}
           setFilter={setFilter}
           setIsFollowing={setIsFollowing}
           setIsSearchOpen={setIsSearchOpen}
@@ -123,7 +125,6 @@ export function PanelHeader({
           togglePanel={togglePanel}
         />
       </div>
-
       {isSearchOpen && activeTab === 'logs' ? (
         <div
           className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5"
@@ -151,7 +152,7 @@ export function PanelHeader({
           {searchQuery ? (
             <Button
               aria-label="Clear Log Search"
-              className="size-5 opacity-60 hover:opacity-100"
+              className="size-6 opacity-60 hover:opacity-100"
               onClick={() => {
                 setSearchQuery('');
               }}

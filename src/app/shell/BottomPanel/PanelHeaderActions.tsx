@@ -38,15 +38,19 @@ const FILTER_OPTIONS: { value: LogLevel | 'all'; label: string }[] = [
   { value: 'warning', label: 'Warning' },
 ];
 
+export interface PanelHeaderFlags {
+  hasLogs: boolean;
+  isFollowing: boolean;
+  isPanelMaximized: boolean;
+  isSearchOpen: boolean;
+}
+
 interface PanelHeaderActionsProps {
   activeTab: 'logs' | 'shell';
   clearHistory: () => void;
   clearLogs: () => void;
   filter: LogLevel | 'all';
-  hasLogs: boolean;
-  isFollowing: boolean;
-  isPanelMaximized: boolean;
-  isSearchOpen: boolean;
+  flags: PanelHeaderFlags;
   setFilter: (filter: LogLevel | 'all') => void;
   setIsFollowing: (following: boolean) => void;
   setIsSearchOpen: (open: boolean) => void;
@@ -60,45 +64,43 @@ function serializeLogs(): string {
   return logs.map((l) => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`).join('\n');
 }
 
+async function copyLogsToClipboard() {
+  try {
+    await writeText(serializeLogs());
+    toast.info('Logs copied to clipboard');
+  } catch {
+    toast.error('Failed to copy logs to clipboard');
+  }
+}
+
+async function saveLogsToFile() {
+  const text = serializeLogs();
+  const toastId = toast.loading('Saving logs...');
+  try {
+    const path = await SaveLog(text, 'terminal-logs');
+    toast.success('Logs Saved', {
+      description: `Saved to ${path}`,
+      id: toastId,
+    });
+  } catch (error) {
+    debugLog('Failed to save logs', error);
+    toast.error('Save Failed', { description: String(error), id: toastId });
+  }
+}
+
 export const PanelHeaderActions = memo(function PanelHeaderActions({
   activeTab,
-  hasLogs,
+  clearHistory,
+  clearLogs,
   filter,
+  flags,
   setFilter,
-  isFollowing,
   setIsFollowing,
-  isPanelMaximized,
+  setIsSearchOpen,
   toggleMaximized,
   togglePanel,
-  clearLogs,
-  clearHistory,
-  isSearchOpen,
-  setIsSearchOpen,
 }: PanelHeaderActionsProps) {
-  const handleCopy = async () => {
-    try {
-      await writeText(serializeLogs());
-      toast.info('Logs copied to clipboard');
-    } catch {
-      toast.error('Failed to copy logs to clipboard');
-    }
-  };
-
-  const handleSave = async () => {
-    const text = serializeLogs();
-    const toastId = toast.loading('Saving logs...');
-    try {
-      const path = await SaveLog(text, 'terminal-logs');
-      toast.success('Logs Saved', {
-        description: `Saved to ${path}`,
-        id: toastId,
-      });
-    } catch (error) {
-      debugLog('Failed to save logs', error);
-      toast.error('Save Failed', { description: String(error), id: toastId });
-    }
-  };
-
+  const { hasLogs, isFollowing, isPanelMaximized, isSearchOpen } = flags;
   const handleClear = () => {
     if (activeTab === 'logs') {
       clearLogs();
@@ -106,7 +108,6 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
       clearHistory();
     }
   };
-
   // Component references (not JSX ternaries) keep follow/maximize icons simple
   // without multiplying PanelHeaderActions into explicit boolean-variant components.
   const FollowIcon = isFollowing ? Pin : PinOff;
@@ -152,7 +153,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
                   style={{ color: 'var(--terminal-fg)' }}
                   variant="ghost"
                 >
-                  <Filter aria-hidden="true" className="size-3.5" />
+                  <Filter aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 </Button>
               </DropdownMenuTrigger>
             </TooltipTrigger>
@@ -198,7 +199,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              <FollowIcon aria-hidden="true" className="size-3.5" />
+              <FollowIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -215,12 +216,12 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
             <Button
               aria-label="Copy Logs"
               className="size-6 opacity-60 hover:opacity-100"
-              onClick={handleCopy}
+              onClick={copyLogsToClipboard}
               size="icon"
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              <Copy aria-hidden="true" className="size-3.5" />
+              <Copy aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Copy Logs</TooltipContent>
@@ -233,12 +234,12 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
             <Button
               aria-label="Save Logs"
               className="size-6 opacity-60 hover:opacity-100"
-              onClick={handleSave}
+              onClick={saveLogsToFile}
               size="icon"
               style={{ color: 'var(--terminal-fg)' }}
               variant="ghost"
             >
-              <Save aria-hidden="true" className="size-3.5" />
+              <Save aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Save Logs</TooltipContent>
@@ -255,7 +256,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
             style={{ color: 'var(--terminal-fg)' }}
             variant="ghost"
           >
-            <Trash2 aria-hidden="true" className="size-3.5" />
+            <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Clear {activeTab === 'logs' ? 'Logs' : 'Shell'}</TooltipContent>
@@ -271,7 +272,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
             style={{ color: 'var(--terminal-fg)' }}
             variant="ghost"
           >
-            <MaximizeIcon aria-hidden="true" className="size-3.5" />
+            <MaximizeIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">
@@ -289,7 +290,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
             style={{ color: 'var(--terminal-fg)' }}
             variant="ghost"
           >
-            <X aria-hidden="true" className="size-3.5" />
+            <X aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top">Close Panel (Ctrl+`)</TooltipContent>

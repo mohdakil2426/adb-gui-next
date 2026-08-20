@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from 'next-themes';
 import { useEffect } from 'react';
 import { MainLayout } from '@/app/shell/MainLayout';
 import { ScrcpyFloatingToolbar } from '@/features/scrcpy/toolbar/ScrcpyFloatingToolbar';
+import { ThemeProvider } from '@/shared/components/ThemeProvider';
 import { Toaster } from '@/shared/ui/sonner';
 import { STALE_TIME } from '@/shared/utils/queries';
 
@@ -38,25 +38,52 @@ function ToolbarWindowContainer() {
   }, []);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <QueryClientProvider client={queryClient}>
-        <div className="flex h-screen w-screen items-start justify-start overflow-visible bg-transparent p-0">
-          <ScrcpyFloatingToolbar />
-          <Toaster position="bottom-right" richColors />
-        </div>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <div className="flex h-screen w-screen items-start justify-start overflow-visible bg-transparent p-0">
+      <ScrcpyFloatingToolbar />
+    </div>
   );
 }
 
 export default function App() {
-  if (isToolbarWindow) {
-    return <ToolbarWindowContainer />;
-  }
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+      if (
+        e.key === 'd' ||
+        e.key === 'D' ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'd' || e.key === 'D'))
+      ) {
+        e.preventDefault();
+        document.documentElement.classList.toggle('dark');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <MainLayout />
-    </QueryClientProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme={isToolbarWindow ? 'dark' : 'system'}
+      disableTransitionOnChange
+      enableSystem
+    >
+      <QueryClientProvider client={queryClient}>
+        {isToolbarWindow ? <ToolbarWindowContainer /> : <MainLayout />}
+        <Toaster
+          closeButton={!isToolbarWindow}
+          position={isToolbarWindow ? 'bottom-right' : 'top-right'}
+          richColors
+        />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

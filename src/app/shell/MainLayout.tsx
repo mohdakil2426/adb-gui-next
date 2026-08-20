@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import '@/styles/global.css';
 import {
   AnimatePresence,
@@ -8,6 +8,7 @@ import {
   MotionConfig,
   useReducedMotion,
 } from 'framer-motion';
+import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { AppSidebar } from '@/app/shell/AppSidebar';
 import { BottomPanel } from '@/app/shell/BottomPanel/BottomPanel';
@@ -19,7 +20,6 @@ import { ViewContent } from '@/app/shell/ViewContent';
 import { VIEW_RENDERERS, VIEWS, type ViewType } from '@/app/shell/viewConfig';
 import { LaunchDeviceManager, LaunchTerminal } from '@/desktop/backend';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
-import { ThemeProvider } from '@/shared/components/ThemeProvider';
 import { UnreadLogAnnouncer } from '@/shared/components/UnreadLogBadge';
 import { useAppReady } from '@/shared/hooks/useAppReady';
 import { useGlobalShortcuts } from '@/shared/hooks/useGlobalShortcuts';
@@ -27,7 +27,6 @@ import { usePersistedActiveView } from '@/shared/hooks/usePersistedActiveView';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { SidebarInset, SidebarProvider } from '@/shared/ui/sidebar';
-import { Toaster } from '@/shared/ui/sonner';
 import { cn } from '@/shared/utils/cn';
 import { handleError } from '@/shared/utils/errorHandler';
 import { isMac } from '@/shared/utils/platform';
@@ -84,9 +83,9 @@ export function MainLayout() {
     queryKey: queryKeys.allDevices(),
     queryFn: async () => {
       try {
-        const devices = await fetchAllDevices();
-        setDevices(devices);
-        return devices;
+        const list = await fetchAllDevices();
+        setDevices(list);
+        return list;
       } catch (error) {
         handleError('Device Poll', error);
         throw error;
@@ -100,16 +99,34 @@ export function MainLayout() {
     void refetchDevices();
   }, [refetchDevices]);
 
+  const { resolvedTheme, setTheme } = useTheme();
   const togglePalette = useCallback(() => {
     setIsPaletteOpen((open) => !open);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  }, [resolvedTheme, setTheme]);
 
   const openPalette = useCallback(() => {
     setIsPaletteOpen(true);
   }, []);
 
-  useGlobalShortcuts({ onTogglePalette: togglePalette });
-
+  useGlobalShortcuts({
+    onTogglePalette: togglePalette,
+    onToggleTheme: toggleTheme,
+  });
   const handleLaunchDeviceManager = useCallback(async () => {
     const label = isMac ? 'System Information' : 'Device Manager';
     try {
@@ -162,83 +179,80 @@ export function MainLayout() {
     : panelHeight || DEFAULT_PANEL_HEIGHT;
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" disableTransitionOnChange enableSystem>
-      <LazyMotion features={domAnimation} strict>
-        <MotionConfig reducedMotion="user">
-          <AnimatePresence>
-            {isReady ? null : (
-              <LoadingScreen
-                progress={isReady ? 100 : 0}
-                shouldReduceMotion={shouldReduceMotion ?? false}
-              />
-            )}
-          </AnimatePresence>
-          <div
-            className={cn(
-              'h-svh overflow-hidden bg-background text-foreground',
-              isReady ? 'opacity-100 transition-opacity duration-300 ease-out' : 'opacity-0',
-            )}
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion="user">
+        <AnimatePresence>
+          {isReady ? null : (
+            <LoadingScreen
+              progress={isReady ? 100 : 0}
+              shouldReduceMotion={shouldReduceMotion ?? false}
+            />
+          )}
+        </AnimatePresence>
+        <div
+          className={cn(
+            'h-svh overflow-hidden bg-background text-foreground',
+            isReady ? 'opacity-100 transition-opacity duration-300 ease-out' : 'opacity-0',
+          )}
+        >
+          <a
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:ring-2 focus:ring-ring"
+            href="#main-content"
           >
-            <a
-              className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:ring-2 focus:ring-ring"
-              href="#main-content"
-            >
-              Skip to main content
-            </a>
-            <SidebarProvider>
-              <ErrorBoundary viewName="Sidebar">
-                <AppSidebar
-                  activeView={activeView}
-                  onOpenDevicePicker={openPalette}
-                  onViewChange={setActiveView}
-                />
-              </ErrorBoundary>
-              <SidebarInset>
-                <Header
-                  activeTab={activeTab}
-                  activeView={activeView}
-                  isDeviceRefreshing={isDeviceRefreshing}
-                  isLogOpen={isLogOpen}
-                  onLaunchDeviceManager={handleLaunchDeviceManager}
-                  onLaunchTerminal={handleLaunchTerminal}
-                  onOpenCommandPalette={openPalette}
-                  onOpenLogsPanel={handleOpenLogsPanel}
-                  onOpenShellPanel={handleOpenShellPanel}
-                  onRefreshDevices={refreshDevices}
-                />
-                <ViewContent activeView={activeView} renderContent={renderView} />
-                <StatusBar adbState={resolveAdbState(isDeviceError, isDevicePending)} />
-                {isPanelMounted ? (
-                  <>
-                    {isLogOpen ? (
-                      <div
-                        aria-hidden="true"
-                        className="shrink-0"
-                        style={{ height: `${panelDockHeight}px` }}
-                      />
-                    ) : null}
-                    <ErrorBoundary viewName="Bottom Panel">
-                      <BottomPanel viewportHeight={viewportHeight} />
-                    </ErrorBoundary>
-                  </>
-                ) : null}
-              </SidebarInset>
-              <CommandPalette
+            Skip to main content
+          </a>
+          <SidebarProvider>
+            <ErrorBoundary viewName="Sidebar">
+              <AppSidebar
                 activeView={activeView}
+                onOpenDevicePicker={openPalette}
+                onViewChange={setActiveView}
+              />
+            </ErrorBoundary>
+            <SidebarInset>
+              <Header
+                activeTab={activeTab}
+                activeView={activeView}
+                isDeviceRefreshing={isDeviceRefreshing}
+                isLogOpen={isLogOpen}
                 onLaunchDeviceManager={handleLaunchDeviceManager}
                 onLaunchTerminal={handleLaunchTerminal}
-                onOpenChange={setIsPaletteOpen}
+                onOpenCommandPalette={openPalette}
+                onOpenLogsPanel={handleOpenLogsPanel}
+                onOpenShellPanel={handleOpenShellPanel}
                 onRefreshDevices={refreshDevices}
-                onTogglePanel={handleTogglePanel}
-                onViewChange={setActiveView}
-                open={isPaletteOpen}
               />
-            </SidebarProvider>
-          </div>
-          <UnreadLogAnnouncer />
-          <Toaster closeButton position="top-right" richColors />
-        </MotionConfig>
-      </LazyMotion>
-    </ThemeProvider>
+              <ViewContent activeView={activeView} renderContent={renderView} />
+              <StatusBar adbState={resolveAdbState(isDeviceError, isDevicePending)} />
+              {isPanelMounted ? (
+                <>
+                  {isLogOpen ? (
+                    <div
+                      aria-hidden="true"
+                      className="shrink-0"
+                      style={{ height: `${panelDockHeight}px` }}
+                    />
+                  ) : null}
+                  <ErrorBoundary viewName="Bottom Panel">
+                    <BottomPanel viewportHeight={viewportHeight} />
+                  </ErrorBoundary>
+                </>
+              ) : null}
+            </SidebarInset>
+            <CommandPalette
+              activeView={activeView}
+              onLaunchDeviceManager={handleLaunchDeviceManager}
+              onLaunchTerminal={handleLaunchTerminal}
+              onOpenChange={setIsPaletteOpen}
+              onRefreshDevices={refreshDevices}
+              onTogglePanel={handleTogglePanel}
+              onViewChange={setActiveView}
+              open={isPaletteOpen}
+            />
+          </SidebarProvider>
+        </div>
+        <UnreadLogAnnouncer />
+      </MotionConfig>
+    </LazyMotion>
   );
 }

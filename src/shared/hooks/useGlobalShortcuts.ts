@@ -2,36 +2,48 @@ import { useEffect } from 'react';
 
 interface GlobalShortcutHandlers {
   /** Toggles the ⌘K / Ctrl+K command palette. */
-  onTogglePalette: () => void;
+  onTogglePalette?: () => void;
+  /** Toggles the application theme. */
+  onToggleTheme?: () => void;
 }
 
-/**
- * Application-wide keyboard shortcuts that are not already owned by a component.
- *
- * `Ctrl/⌘+B` (sidebar) lives in `shared/ui/sidebar` and `Ctrl+\`` (bottom panel)
- * lives in `BottomPanel` — both keep working untouched. This hook adds only the
- * palette binding.
- *
- * It listens in the **capture** phase and stops propagation so the palette wins
- * over view-local `Ctrl+K` handlers (the Marketplace search box binds the same
- * chord on `window` in the bubble phase). Without this both would fire.
- */
-export function useGlobalShortcuts({ onTogglePalette }: GlobalShortcutHandlers): void {
+export function useGlobalShortcuts({
+  onTogglePalette,
+  onToggleTheme,
+}: GlobalShortcutHandlers): void {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const isPaletteChord =
-        (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k';
-      if (!isPaletteChord) {
+      const isCmdK = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+      if (isCmdK && onTogglePalette) {
+        event.preventDefault();
+        event.stopPropagation();
+        onTogglePalette();
         return;
       }
-      event.preventDefault();
-      event.stopPropagation();
-      onTogglePalette();
+
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLSelectElement ||
+        (event.target instanceof HTMLElement && event.target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const isThemeHotkey =
+        event.key.toLowerCase() === 'd' ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'd');
+
+      if (isThemeHotkey && onToggleTheme) {
+        event.preventDefault();
+        event.stopPropagation();
+        onToggleTheme();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown, true);
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true);
     };
-  }, [onTogglePalette]);
+  }, [onTogglePalette, onToggleTheme]);
 }

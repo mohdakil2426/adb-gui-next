@@ -77,7 +77,7 @@ export function Header({
           size="sm"
           variant="outline"
         >
-          <Search aria-hidden="true" className="size-3.5" />
+          <Search aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           <span className="text-label">Search</span>
           <KbdGroup>
             <Kbd>{MOD_KEY}</Kbd>
@@ -100,7 +100,7 @@ export function Header({
                 size="icon"
                 variant="ghost"
               >
-                <Cpu aria-hidden="true" className="size-4" />
+                <Cpu aria-hidden="true" className="size-4" data-icon="inline-start" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{deviceManagerLabel}</TooltipContent>
@@ -116,7 +116,7 @@ export function Header({
               size="icon"
               variant="ghost"
             >
-              <SquareTerminal aria-hidden="true" className="size-4" />
+              <SquareTerminal aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Launch Terminal</TooltipContent>
@@ -145,7 +145,7 @@ export function Header({
               size="icon"
               variant="ghost"
             >
-              <Terminal aria-hidden="true" className="size-4" />
+              <Terminal aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
@@ -165,7 +165,7 @@ export function Header({
               size="icon"
               variant="ghost"
             >
-              <Logs aria-hidden="true" className="size-4" />
+              <Logs aria-hidden="true" className="size-4" data-icon="inline-start" />
               <UnreadLogBadge />
             </Button>
           </TooltipTrigger>

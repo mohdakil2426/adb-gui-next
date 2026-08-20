@@ -88,11 +88,11 @@ function OperationSegment() {
       {operation.cancel ? (
         <button
           aria-label={`Cancel ${operation.label}`}
-          className="flex size-4 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-destructive-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="flex size-6 shrink-0 items-center justify-center rounded-sm p-1 text-muted-foreground transition-colors hover:bg-destructive-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           onClick={operation.cancel}
           type="button"
         >
-          <X aria-hidden="true" className="size-3" />
+          <X aria-hidden="true" className="size-3.5" />
         </button>
       ) : null}
     </span>
