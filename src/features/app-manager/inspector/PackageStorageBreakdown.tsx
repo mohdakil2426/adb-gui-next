@@ -31,7 +31,7 @@ export function PackageStorageBreakdown({ info }: PackageStorageBreakdownProps) 
               type="button"
               variant="ghost"
             >
-              <Copy aria-hidden="true" className="size-3" />
+              <Copy aria-hidden="true" className="size-3" data-icon="inline-start" />
             </Button>
           </div>
           <span className="break-all font-mono text-caption text-foreground">
@@ -53,7 +53,7 @@ export function PackageStorageBreakdown({ info }: PackageStorageBreakdownProps) 
               type="button"
               variant="ghost"
             >
-              <Copy aria-hidden="true" className="size-3" />
+              <Copy aria-hidden="true" className="size-3" data-icon="inline-start" />
             </Button>
           </div>
           <span className="break-all font-mono text-caption text-foreground">

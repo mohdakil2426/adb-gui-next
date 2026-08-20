@@ -186,7 +186,9 @@ export function ReviewSelectionDialog({
               type="button"
               variant="outline"
             >
-              {isCreatingBackup ? <Loader2 className="animate-spin" /> : null}
+              {isCreatingBackup ? (
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+              ) : null}
               Backup
             </Button>
           )}
@@ -229,7 +231,7 @@ export function ReviewSelectionDialog({
             type="button"
             variant={hasUnsafe ? 'destructive' : 'default'}
           >
-            {isApplying ? <Loader2 className="animate-spin" /> : null}
+            {isApplying ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
             {isApplying
               ? 'Applying…'
               : `Apply ${selectedPackages.size} Action${selectedPackages.size === 1 ? '' : 's'}`}

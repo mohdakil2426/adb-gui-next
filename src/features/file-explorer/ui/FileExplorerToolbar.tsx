@@ -130,7 +130,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               size="icon-sm"
               variant="ghost"
             >
-              <ArrowLeft aria-hidden="true" className="size-4 shrink-0" />
+              <ArrowLeft aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <ToolbarTooltip label="Forward (Alt+Right)">
@@ -142,7 +142,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               size="icon-sm"
               variant="ghost"
             >
-              <ArrowRight aria-hidden="true" className="size-4 shrink-0" />
+              <ArrowRight aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <ToolbarTooltip label="Go up one directory">
@@ -154,7 +154,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               size="icon-sm"
               variant="ghost"
             >
-              <ArrowUp aria-hidden="true" className="size-4 shrink-0" />
+              <ArrowUp aria-hidden="true" className="size-4 shrink-0" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <RefreshButton
@@ -215,9 +215,9 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
             variant="ghost"
           >
             {isTreeCollapsed ? (
-              <PanelLeft aria-hidden="true" className="size-4" />
+              <PanelLeft aria-hidden="true" className="size-4" data-icon="inline-start" />
             ) : (
-              <PanelLeftClose aria-hidden="true" className="size-4" />
+              <PanelLeftClose aria-hidden="true" className="size-4" data-icon="inline-start" />
             )}
           </Button>
         </ToolbarTooltip>
@@ -282,7 +282,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <Pencil aria-hidden="true" className="size-4" />
+              <Pencil aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <ToolbarTooltip label="Delete">
@@ -295,7 +295,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <Trash2 aria-hidden="true" className="size-4" />
+              <Trash2 aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
         </div>
@@ -318,7 +318,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <FileUp aria-hidden="true" className="size-4" />
+              <FileUp aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <ToolbarTooltip label="Import folder">
@@ -331,7 +331,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <FolderUp aria-hidden="true" className="size-4" />
+              <FolderUp aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
           <ToolbarTooltip label="Export selected">
@@ -344,7 +344,7 @@ export function FileExplorerToolbar(props: FileExplorerToolbarProps) {
               type="button"
               variant="ghost"
             >
-              <Download aria-hidden="true" className="size-4" />
+              <Download aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
         </div>

@@ -125,12 +125,12 @@ export function InstallFlagsCockpit({ disabled = false }: InstallFlagsCockpitPro
           >
             {isExpanded ? (
               <>
-                <ChevronUp aria-hidden="true" className="size-3.5" />
+                <ChevronUp aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 Hide Controls
               </>
             ) : (
               <>
-                <ChevronDown aria-hidden="true" className="size-3.5" />
+                <ChevronDown aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 Configure ({activeFlagArgs.length})
               </>
             )}

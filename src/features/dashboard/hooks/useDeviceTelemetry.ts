@@ -7,6 +7,8 @@ import { useMemoryHistoryStore } from '@/features/dashboard/model/memoryHistoryS
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { handleError } from '@/shared/utils/errorHandler';
 
+// Empty state handled across UI when data?.length === 0
+
 /** A snapshot older than this is refetched when the Dashboard mounts. */
 const TELEMETRY_STALE_MS = 10_000;
 /**

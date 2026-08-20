@@ -124,7 +124,7 @@ export function InstalledPackageToolbar({
               type="button"
               variant="ghost"
             >
-              <X aria-hidden="true" className="size-3.5" />
+              <X aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           ) : null}
         </div>
@@ -214,9 +214,17 @@ export function InstalledPackageToolbar({
             variant="outline"
           >
             {isAllFilteredSelected ? (
-              <Square aria-hidden="true" className="size-3.5 text-primary" />
+              <Square
+                aria-hidden="true"
+                className="size-3.5 text-primary"
+                data-icon="inline-start"
+              />
             ) : (
-              <CheckSquare aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <CheckSquare
+                aria-hidden="true"
+                className="size-3.5 text-muted-foreground"
+                data-icon="inline-start"
+              />
             )}
             <span>{isAllFilteredSelected ? 'Deselect all' : 'Select filtered'}</span>
           </Button>

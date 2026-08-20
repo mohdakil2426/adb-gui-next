@@ -95,9 +95,14 @@ export function DescriptionPanel({
                 variant="outline"
               >
                 {isPending ? (
-                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                    data-icon="inline-start"
+                    role="status"
+                  />
                 ) : (
-                  <EyeOff aria-hidden="true" className="size-3.5" />
+                  <EyeOff aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 )}
                 Disable Package
               </Button>
@@ -111,9 +116,14 @@ export function DescriptionPanel({
                 variant="outline"
               >
                 {isPending ? (
-                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                    data-icon="inline-start"
+                    role="status"
+                  />
                 ) : (
-                  <Trash2 aria-hidden="true" className="size-3.5" />
+                  <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 )}
                 Uninstall Package
               </Button>
@@ -128,9 +138,14 @@ export function DescriptionPanel({
               variant="outline"
             >
               {isPending ? (
-                <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin"
+                  data-icon="inline-start"
+                  role="status"
+                />
               ) : (
-                <Undo2 aria-hidden="true" className="size-3.5" />
+                <Undo2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               )}
               {pkg.state === 'Disabled' ? 'Re-enable Package' : 'Restore Package'}
             </Button>
@@ -145,7 +160,7 @@ export function DescriptionPanel({
               type="button"
               variant="ghost"
             >
-              <X aria-hidden="true" className="size-4" />
+              <X aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           ) : null}
         </div>

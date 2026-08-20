@@ -180,7 +180,7 @@ export function PreFlightApkCard({
               type="button"
               variant="ghost"
             >
-              <Trash2 aria-hidden="true" className="size-3.5" />
+              <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             </Button>
           )}
         </div>

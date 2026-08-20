@@ -159,7 +159,7 @@ export function InstalledPackageRow({
               type="button"
               variant="ghost"
             >
-              <Zap aria-hidden="true" className="size-3.5 fill-current" />
+              <Zap aria-hidden="true" className="size-3.5 fill-current" data-icon="inline-start" />
             </Button>
           ) : null
         ) : (
@@ -177,7 +177,11 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <Play aria-hidden="true" className="size-3.5 fill-current" />
+                <Play
+                  aria-hidden="true"
+                  className="size-3.5 fill-current"
+                  data-icon="inline-start"
+                />
               </Button>
             ) : null}
 
@@ -194,7 +198,11 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <Square aria-hidden="true" className="size-3.5 fill-current" />
+                <Square
+                  aria-hidden="true"
+                  className="size-3.5 fill-current"
+                  data-icon="inline-start"
+                />
               </Button>
             ) : null}
 
@@ -211,7 +219,7 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <ZapOff aria-hidden="true" className="size-3.5" />
+                <ZapOff aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               </Button>
             ) : null}
           </>
@@ -230,7 +238,7 @@ export function InstalledPackageRow({
             type="button"
             variant="ghost"
           >
-            <Settings aria-hidden="true" className="size-3.5" />
+            <Settings aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           </Button>
         ) : null}
       </div>

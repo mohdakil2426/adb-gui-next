@@ -163,13 +163,17 @@ export function DebloaterPackageRow({
             >
               {isPending ? (
                 <>
-                  <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3 animate-spin"
+                    data-icon="inline-start"
+                  />
                   <span className="sr-only" role="status">
                     Disabling {pkg.name}…
                   </span>
                 </>
               ) : (
-                <EyeOff aria-hidden="true" className="size-3" />
+                <EyeOff aria-hidden="true" className="size-3" data-icon="inline-start" />
               )}
               <span>Disable</span>
             </Button>
@@ -190,13 +194,17 @@ export function DebloaterPackageRow({
             >
               {isPending ? (
                 <>
-                  <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3 animate-spin"
+                    data-icon="inline-start"
+                  />
                   <span className="sr-only" role="status">
                     Uninstalling {pkg.name}…
                   </span>
                 </>
               ) : (
-                <Trash2 aria-hidden="true" className="size-3" />
+                <Trash2 aria-hidden="true" className="size-3" data-icon="inline-start" />
               )}
               <span>Uninstall</span>
             </Button>
@@ -214,13 +222,17 @@ export function DebloaterPackageRow({
           >
             {isPending ? (
               <>
-                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="size-3 animate-spin"
+                  data-icon="inline-start"
+                />
                 <span className="sr-only" role="status">
                   Enabling {pkg.name}…
                 </span>
               </>
             ) : (
-              <RotateCcw aria-hidden="true" className="size-3" />
+              <RotateCcw aria-hidden="true" className="size-3" data-icon="inline-start" />
             )}
             <span>Enable</span>
           </Button>
@@ -237,13 +249,17 @@ export function DebloaterPackageRow({
           >
             {isPending ? (
               <>
-                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="size-3 animate-spin"
+                  data-icon="inline-start"
+                />
                 <span className="sr-only" role="status">
                   Restoring {pkg.name}…
                 </span>
               </>
             ) : (
-              <Undo2 aria-hidden="true" className="size-3" />
+              <Undo2 aria-hidden="true" className="size-3" data-icon="inline-start" />
             )}
             <span>Restore</span>
           </Button>
@@ -258,7 +274,7 @@ export function DebloaterPackageRow({
           type="button"
           variant="ghost"
         >
-          <Info aria-hidden="true" className="size-3.5" />
+          <Info aria-hidden="true" className="size-3.5" data-icon="inline-start" />
         </Button>
       </div>
     </div>

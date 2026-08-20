@@ -250,7 +250,7 @@ export const FileExplorerPathBar = memo(function FileExplorerPathBar({
           size="icon-sm"
           variant="ghost"
         >
-          <TextCursorInput aria-hidden="true" className="size-3.5" />
+          <TextCursorInput aria-hidden="true" className="size-3.5" data-icon="inline-start" />
         </Button>
       </ToolbarTooltip>
     </div>

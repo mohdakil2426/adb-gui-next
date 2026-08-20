@@ -222,7 +222,11 @@ export function ApkPickerPanel({
             >
               {isInstalling ? (
                 <>
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-4 animate-spin"
+                    data-icon="inline-start"
+                  />
                   <span>
                     Installing Queue ({installProgress ? installProgress.completed + 1 : 1} of{' '}
                     {apkPaths.length})…
@@ -230,7 +234,7 @@ export function ApkPickerPanel({
                 </>
               ) : (
                 <>
-                  <Package aria-hidden="true" className="size-4" />
+                  <Package aria-hidden="true" className="size-4" data-icon="inline-start" />
                   <span>
                     Install {apkPaths.length} Package{apkPaths.length === 1 ? '' : 's'} onto Device
                   </span>

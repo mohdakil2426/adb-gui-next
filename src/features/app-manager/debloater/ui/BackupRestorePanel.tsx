@@ -26,13 +26,12 @@ const backupTimestampFormatter = new Intl.DateTimeFormat(undefined, {
   timeStyle: 'short',
 });
 
-function formatBackupTimestamp(createdAt: string): string {
-  const seconds = Number.parseInt(createdAt, 10);
-  if (!Number.isFinite(seconds) || seconds <= 0) {
-    return 'Unknown date';
-  }
-  return backupTimestampFormatter.format(new Date(seconds * 1000));
-}
+const formatBackupTimestamp = (createdAt: string): string => {
+  const s = Number.parseInt(createdAt, 10);
+  return Number.isFinite(s) && s > 0
+    ? backupTimestampFormatter.format(new Date(s * 1000))
+    : 'Unknown date';
+};
 
 export function BackupRestorePanel() {
   const backups = useDebloatStore((s) => s.backups);
@@ -51,7 +50,6 @@ export function BackupRestorePanel() {
       toast.error('Cannot create backup: No active device packages found');
       return;
     }
-
     setIsCreatingBackup(true);
     const toastId = toast.loading('Creating device package snapshot…');
     try {
@@ -60,8 +58,7 @@ export function BackupRestorePanel() {
         state: p.state,
       }));
       await CreateDebloatBackup(snapshots, selectedSerial);
-      const updatedBackups = await ListDebloatBackups(selectedSerial);
-      setBackups(updatedBackups);
+      setBackups(await ListDebloatBackups(selectedSerial));
       useLogStore
         .getState()
         .addLog(`Debloat snapshot created (${snapshots.length} packages)`, 'success');
@@ -102,7 +99,7 @@ export function BackupRestorePanel() {
     try {
       const results = await RestoreDebloatBackup(backup.fileName, selectedSerial);
       applyResults(results);
-      const failed = results.filter((result) => !result.success).length;
+      const failed = results.filter((r) => !r.success).length;
       const restored = results.length - failed;
       if (failed === 0) {
         toast.success(`Restored ${restored} package${restored === 1 ? '' : 's'} successfully`, {
@@ -151,9 +148,13 @@ export function BackupRestorePanel() {
             variant="outline"
           >
             {isCreatingBackup ? (
-              <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+              <Loader2
+                aria-hidden="true"
+                className="size-3.5 animate-spin"
+                data-icon="inline-start"
+              />
             ) : (
-              <Camera aria-hidden="true" className="size-3.5" />
+              <Camera aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             )}
             Take State Snapshot
           </Button>
@@ -170,6 +171,7 @@ export function BackupRestorePanel() {
             <RefreshCw
               aria-hidden="true"
               className={isRefreshing ? 'size-3.5 animate-spin' : 'size-3.5'}
+              data-icon="inline-start"
             />
           </Button>
         </div>
@@ -200,9 +202,13 @@ export function BackupRestorePanel() {
               variant="outline"
             >
               {isCreatingBackup ? (
-                <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin"
+                  data-icon="inline-start"
+                />
               ) : (
-                <Plus aria-hidden="true" className="size-3.5" />
+                <Plus aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               )}
               Create First State Snapshot
             </Button>
@@ -243,9 +249,13 @@ export function BackupRestorePanel() {
                   variant="outline"
                 >
                   {restoringFile === backup.fileName ? (
-                    <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-3 animate-spin"
+                      data-icon="inline-start"
+                    />
                   ) : (
-                    <RotateCcw aria-hidden="true" className="size-3" />
+                    <RotateCcw aria-hidden="true" className="size-3" data-icon="inline-start" />
                   )}
                   Restore State
                 </Button>
@@ -278,16 +288,8 @@ export function BackupRestorePanel() {
               ]
             : []
         }
-        onConfirm={() => {
-          if (pending) {
-            void restoreBackup(pending);
-          }
-        }}
-        onOpenChange={(open) => {
-          if (!open) {
-            setPending(null);
-          }
-        }}
+        onConfirm={() => pending && void restoreBackup(pending)}
+        onOpenChange={(open) => !open && setPending(null)}
         open={pending !== null}
         title="Restore device state snapshot?"
       />

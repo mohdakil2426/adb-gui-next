@@ -128,16 +128,15 @@ export function SecurityPanel({ isLoading, security }: SecurityPanelProps) {
     );
   }
 
-  if (!security) {
+  const rows = security ? buildRows(security) : [];
+
+  if (!security || rows.length === 0) {
     return (
       <PanelCard icon={ShieldCheck} title="Security & boot">
         <p className="text-body text-muted-foreground">{EMPTY_VALUE}</p>
       </PanelCard>
     );
   }
-
-  const rows = buildRows(security);
-
   return (
     <PanelCard icon={ShieldCheck} title="Security & boot">
       <div className="flex flex-1 flex-col justify-between gap-1.5">

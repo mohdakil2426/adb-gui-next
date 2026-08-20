@@ -108,7 +108,7 @@ export function PackageInspectorDrawer({
             type="button"
             variant="ghost"
           >
-            <X aria-hidden="true" className="size-4" />
+            <X aria-hidden="true" className="size-4" data-icon="inline-start" />
             <span className="sr-only">Close inspector</span>
           </Button>
         </SheetHeader>

@@ -193,7 +193,7 @@ export function DebloaterPackageList({
               </>
             ) : (
               <>
-                <Square aria-hidden="true" />
+                <Square aria-hidden="true" data-icon="inline-start" />
                 Select all ({filteredPackages.length})
               </>
             )}
@@ -229,9 +229,9 @@ export function DebloaterPackageList({
             variant="default"
           >
             {isApplying ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
             ) : (
-              <ShieldCheck aria-hidden="true" />
+              <ShieldCheck aria-hidden="true" data-icon="inline-start" />
             )}
             Review & Debloat ({selectedPackages.size})
           </Button>

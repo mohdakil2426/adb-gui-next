@@ -31,9 +31,9 @@ export function FileExplorerRootAccessButton({ disabled, onToggle, rootAccessGra
           variant="ghost"
         >
           {rootAccessGranted ? (
-            <ShieldCheck aria-hidden="true" className="size-4" />
+            <ShieldCheck aria-hidden="true" className="size-4" data-icon="inline-start" />
           ) : (
-            <Shield aria-hidden="true" className="size-4" />
+            <Shield aria-hidden="true" className="size-4" data-icon="inline-start" />
           )}
         </Button>
       </TooltipTrigger>

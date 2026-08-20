@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect } from 'react';
 import { useFileExplorerColumnWidths } from '@/features/file-explorer/hooks/useFileExplorerColumnWidths';
 import type {
   FileExplorerActions,
@@ -81,6 +82,30 @@ export function FileExplorerTablePane({
   const { fileTableColumns, resizeColumn } = useFileExplorerColumnWidths();
   const showSelectAll = selection.isMultiSelectMode;
 
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) {
+      return;
+    }
+    const handleClick = (event: MouseEvent) => {
+      if (actions.consumeGhostClick()) {
+        return;
+      }
+      if (editing.renamingName || editing.creatingType) {
+        return;
+      }
+      const element = event.target instanceof Element ? event.target : null;
+      if (
+        !element?.closest(
+          '[data-index], [data-slot=table-head], button, input, [role=checkbox], [role=separator]',
+        )
+      ) {
+        actions.clearSelection();
+      }
+    };
+    el.addEventListener('click', handleClick);
+    return () => el.removeEventListener('click', handleClick);
+  }, [actions, editing.creatingType, editing.renamingName, tableScrollRef]);
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -91,7 +116,7 @@ export function FileExplorerTablePane({
             FE_DROP_OVER_CLASS,
           )}
           data-fe-drop-pane={listing.currentPath}
-          onClick={(event) => {
+          onPointerDown={(event) => {
             if (actions.consumeGhostClick()) {
               return;
             }

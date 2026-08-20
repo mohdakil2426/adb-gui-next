@@ -51,6 +51,7 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
                 autoComplete="off"
                 disabled={isPending}
                 id="dashboard-wireless-ip"
+                maxLength={45}
                 placeholder="192.168.1.14"
                 required
                 {...form.register('ip')}
@@ -70,6 +71,7 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
                 disabled={isPending}
                 id="dashboard-wireless-port"
                 inputMode="numeric"
+                maxLength={5}
                 placeholder="5555"
                 required
                 {...form.register('port')}
@@ -127,9 +129,9 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
             variant="secondary"
           >
             {isEnablingTcpip ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
             ) : (
-              <Usb aria-hidden="true" />
+              <Usb aria-hidden="true" data-icon="inline-start" />
             )}
             Enable wireless mode (tcpip 5555)
           </Button>

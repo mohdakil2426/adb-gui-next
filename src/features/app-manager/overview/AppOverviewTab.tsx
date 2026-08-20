@@ -26,6 +26,7 @@ export function AppOverviewTab({
   onSelectApp,
   selectedSerial,
 }: AppOverviewTabProps) {
+  // Telemetry poll (child charts handle empty display when data?.length === 0)
   const { data: telemetry } = useQuery({
     enabled: Boolean(selectedSerial),
     queryFn: () => GetAppOverviewTelemetry(selectedSerial),

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { backend } from '@/desktop/models';
+// Empty state handled across UI when data?.length === 0
 
 /**
  * Three jobs, three tabs. `installation` (install APKs) and `installed`
