@@ -871,6 +871,50 @@ export function MarketplaceGetCuratedTools(): Promise<backend.MarketplaceApp[]> 
   return call('marketplace_get_curated_tools');
 }
 
+export function MarketplaceGetTokenStatus(): Promise<backend.MarketplaceTokenStatus> {
+  return call('marketplace_get_token_status');
+}
+
+export function MarketplaceSavePat(token: string): Promise<backend.MarketplaceTokenStatus> {
+  return call('marketplace_save_pat', { token });
+}
+
+export function MarketplaceLogout(): Promise<string> {
+  return call('marketplace_logout');
+}
+
+export function MarketplaceGithubWebAuthFlow(
+  clientId?: string | null,
+): Promise<backend.MarketplaceTokenStatus> {
+  return call('marketplace_github_web_auth_flow', { clientId: clientId ?? null });
+}
+
+export function MarketplaceGetRateLimit(): Promise<backend.MarketplaceRateLimitStatus | null> {
+  return call('marketplace_get_rate_limit');
+}
+
+export function MarketplaceGetHostTokens(): Promise<backend.MarketplaceHostTokenEntry[]> {
+  return call('marketplace_get_host_tokens');
+}
+
+export function MarketplaceSaveHostToken(
+  host: string,
+  token: string,
+  displayName?: string | null,
+): Promise<backend.MarketplaceHostTokenEntry[]> {
+  return call('marketplace_save_host_token', { host, token, displayName: displayName ?? null });
+}
+
+export function MarketplaceRemoveHostToken(
+  host: string,
+): Promise<backend.MarketplaceHostTokenEntry[]> {
+  return call('marketplace_remove_host_token', { host });
+}
+
+export function MarketplaceGetCuratedFeed(category: string): Promise<unknown[]> {
+  return call('marketplace_get_curated_feed', { category });
+}
+
 export function ComputePartitionFileSha256(filePath: string): Promise<string> {
   return call('compute_partition_file_sha256', { filePath });
 }

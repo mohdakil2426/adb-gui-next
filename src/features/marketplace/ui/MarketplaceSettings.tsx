@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { MarketplaceClearCache } from '@/desktop/backend';
 import { BrowserOpenURL } from '@/desktop/runtime';
 import { useMarketplaceAuth } from '@/features/marketplace/hooks/useMarketplaceAuth';
+import { useMarketplaceAuthStore } from '@/features/marketplace/model/authStore';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 import { CacheHistorySection } from '@/features/marketplace/ui/settings/CacheHistorySection';
 import { SearchPreferencesSection } from '@/features/marketplace/ui/settings/SearchPreferencesSection';
@@ -24,18 +25,6 @@ function openExternal(url: string) {
   BrowserOpenURL(url);
 }
 
-function githubAuthStatus(login: string | undefined, oauthClientId: string): string {
-  if (login) {
-    return `Signed in as ${login}`;
-  }
-
-  if (oauthClientId.trim()) {
-    return 'Ready for GitHub device-flow sign-in';
-  }
-
-  return 'GitHub sign-in is unavailable until an OAuth client ID is configured';
-}
-
 async function handleClearCache() {
   try {
     await MarketplaceClearCache();
@@ -52,15 +41,13 @@ export function MarketplaceSettings() {
   const closeSettings = useMarketplaceStore((state) => state.closeSettings);
   const activeProviders = useMarketplaceStore((state) => state.activeProviders);
   const toggleProvider = useMarketplaceStore((state) => state.toggleProvider);
-  const githubPat = useMarketplaceStore((state) => state.githubPat);
-  const setGithubPat = useMarketplaceStore((state) => state.setGithubPat);
   const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
   const setGithubOauthClientId = useMarketplaceStore((state) => state.setGithubOauthClientId);
   const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
   const setResultsPerProvider = useMarketplaceStore((state) => state.setResultsPerProvider);
   const clearSearchHistory = useMarketplaceStore((state) => state.clearSearchHistory);
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
-  const githubSession = useMarketplaceStore((state) => state.githubSession);
+  const { tokenStatus, rateLimit } = useMarketplaceAuthStore();
   const {
     githubDeviceChallenge,
     isGithubAuthenticating,
@@ -69,13 +56,12 @@ export function MarketplaceSettings() {
     signOutGithub,
   } = useMarketplaceAuth();
 
-  const [localPat, setLocalPat] = useState(githubPat);
   const [localClientId, setLocalClientId] = useState(githubOauthClientId);
 
-  const authStatus = githubAuthStatus(githubSession.user?.login, localClientId);
+  const isSignedIn = tokenStatus?.hasToken === true;
+  const login = tokenStatus?.login ?? null;
 
   const handleSaveLocalSettings = () => {
-    setGithubPat(localPat.trim());
     setGithubOauthClientId(localClientId.trim());
   };
 
@@ -100,7 +86,7 @@ export function MarketplaceSettings() {
             Marketplace settings
           </DialogTitle>
           <DialogDescription>
-            Tune your providers, result density, cache behavior, and optional GitHub session.
+            Tune your providers, result density, cache behavior, and GitHub rate limits.
           </DialogDescription>
         </DialogHeader>
 
@@ -115,47 +101,45 @@ export function MarketplaceSettings() {
           <section className="flex flex-col gap-4">
             <div className="flex items-center gap-2 font-medium text-body">
               <GitBranch className="size-4 text-muted-foreground" />
-              GitHub session
+              GitHub
             </div>
             <div className="rounded-lg border bg-muted/20 p-4">
               <FieldGroup className="gap-4">
                 <div>
-                  <p className="font-medium text-body">{authStatus}</p>
-                  <p className="mt-1 text-caption text-muted-foreground">
-                    Device-flow sign-in is optional and improves GitHub API rate limits without
-                    affecting anonymous browsing.
+                  <p className="font-medium text-body">
+                    {isSignedIn
+                      ? `Signed in as ${login ?? 'github-user'}`
+                      : 'Not signed in — one-click sign-in ready'}
                   </p>
+                  <p className="mt-1 text-caption text-muted-foreground">
+                    {isSignedIn
+                      ? `Keychain: ${tokenStatus?.source ?? 'keyring'} • Token is AES-256-GCM encrypted via OS keychain, never in localStorage.`
+                      : 'Sign in once to get 5,000 GitHub API requests/hour (vs 60 anonymous). No setup needed — uses built-in OAuth app.'}
+                  </p>
+                  {isSignedIn && rateLimit ? (
+                    <p className="mt-2 text-caption">
+                      Rate limit: {rateLimit.remaining}/{rateLimit.limit} (reset in{' '}
+                      {Math.ceil(rateLimit.secondsUntilReset / 60)} min)
+                    </p>
+                  ) : null}
                 </div>
 
-                <Field>
-                  <FieldLabel htmlFor="github-oauth-client-id">GitHub OAuth client ID</FieldLabel>
-                  <Input
-                    autoComplete="off"
-                    className="font-mono text-mono"
-                    id="github-oauth-client-id"
-                    name="github-oauth-client-id"
-                    onChange={(event) => {
-                      setLocalClientId(event.target.value);
-                    }}
-                    placeholder="Iv1.xxxxxxxxxxxxxxxx"
-                    spellCheck={false}
-                    value={localClientId}
-                  />
-                </Field>
-
-                {githubSession.user ? (
+                {isSignedIn ? (
                   <div className="rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
                     <div className="flex items-center gap-2 text-foreground">
-                      <CheckCircle2 className="size-4" />
-                      <span className="font-medium">{githubSession.user.login}</span>
+                      <CheckCircle2 className="size-4 text-success" />
+                      <span className="font-medium">{login ?? 'Signed in'}</span>
+                      {tokenStatus?.source ? (
+                        <span className="text-caption text-muted-foreground">
+                          via {tokenStatus.source}
+                        </span>
+                      ) : null}
                     </div>
-                    {githubSession.rateLimit ? (
+                    {rateLimit ? (
                       <p className="mt-2">
                         Remaining API requests:{' '}
-                        <span className="font-medium text-foreground">
-                          {githubSession.rateLimit.remaining}
-                        </span>{' '}
-                        / {githubSession.rateLimit.limit}
+                        <span className="font-medium text-foreground">{rateLimit.remaining}</span> /{' '}
+                        {rateLimit.limit}
                       </p>
                     ) : null}
                   </div>
@@ -163,9 +147,15 @@ export function MarketplaceSettings() {
 
                 {githubDeviceChallenge && isGithubAuthenticating ? (
                   <div className="rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
-                    <p className="font-medium text-foreground">Verification code</p>
-                    <p className="mt-1 font-mono text-foreground text-title tracking-[0.2em]">
+                    <p className="font-medium text-foreground">
+                      Enter this code at github.com/login/device
+                    </p>
+                    <p className="mt-1 select-all font-mono text-foreground text-title tracking-[0.2em]">
                       {githubDeviceChallenge.challenge.userCode}
+                    </p>
+                    <p className="mt-1 text-caption">
+                      Code expires in {Math.ceil(githubDeviceChallenge.challenge.expiresIn / 60)}{' '}
+                      min — approve in browser to finish.
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Button
@@ -179,7 +169,7 @@ export function MarketplaceSettings() {
                         type="button"
                         variant="outline"
                       >
-                        Open verification page
+                        Open github.com/login/device
                       </Button>
                       <Button onClick={cancelGithubSignIn} size="sm" type="button" variant="ghost">
                         Cancel
@@ -189,14 +179,14 @@ export function MarketplaceSettings() {
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
-                  {githubSession.user ? (
-                    <Button onClick={signOutGithub} type="button" variant="outline">
+                  {isSignedIn ? (
+                    <Button onClick={() => void signOutGithub()} type="button" variant="outline">
                       <LogOut aria-hidden="true" data-icon="inline-start" />
                       Sign out
                     </Button>
                   ) : (
                     <Button
-                      disabled={!localClientId.trim() || isGithubAuthenticating}
+                      disabled={isGithubAuthenticating}
                       onClick={() => void handleStartGithubSignIn()}
                       type="button"
                     >
@@ -213,6 +203,29 @@ export function MarketplaceSettings() {
                     </Button>
                   )}
                 </div>
+
+                <Field>
+                  <FieldLabel htmlFor="github-oauth-client-id">
+                    GitHub OAuth client ID{' '}
+                    <span className="text-muted-foreground">(advanced, optional)</span>
+                  </FieldLabel>
+                  <Input
+                    autoComplete="off"
+                    className="font-mono text-mono"
+                    id="github-oauth-client-id"
+                    name="github-oauth-client-id"
+                    onChange={(event) => {
+                      setLocalClientId(event.target.value);
+                    }}
+                    placeholder="Built-in Ov23linTY28VFpFjFiI9 used if empty"
+                    spellCheck={false}
+                    value={localClientId}
+                  />
+                  <p className="text-caption text-muted-foreground">
+                    Leave empty for one-click sign-in. Custom ID only if you use your own GitHub
+                    OAuth app.
+                  </p>
+                </Field>
               </FieldGroup>
             </div>
           </section>
@@ -220,8 +233,6 @@ export function MarketplaceSettings() {
           <Separator />
 
           <SearchPreferencesSection
-            localPat={localPat}
-            onLocalPatChange={setLocalPat}
             onResultsPerProviderChange={setResultsPerProvider}
             resultsPerProvider={resultsPerProvider}
           />

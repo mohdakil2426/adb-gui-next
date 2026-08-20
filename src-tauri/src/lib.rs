@@ -68,6 +68,8 @@ pub fn run() {
         .manage(payload::PayloadCache::default())
         .manage(marketplace::ManagedMarketplaceCache::default())
         .manage(marketplace::ManagedHttpClient::default())
+        .manage(marketplace::token_store::ManagedTokenStore::default())
+        .manage(marketplace::rate_limit::ManagedRateLimitStore::default())
         .manage(debloat::cache::DebloatCache::default())
         .manage(firmware::FirmwareHubService::default())
         .setup(|app| {
@@ -164,6 +166,15 @@ pub fn run() {
             commands::marketplace_check_updates,
             commands::marketplace_get_overview_stats,
             commands::marketplace_get_curated_tools,
+            commands::marketplace_get_token_status,
+            commands::marketplace_save_pat,
+            commands::marketplace_logout,
+            commands::marketplace_github_web_auth_flow,
+            commands::marketplace_get_rate_limit,
+            commands::marketplace_get_host_tokens,
+            commands::marketplace_save_host_token,
+            commands::marketplace_remove_host_token,
+            commands::marketplace_get_curated_feed,
             commands::load_debloat_lists,
             commands::get_debloat_packages,
             commands::debloat_packages,

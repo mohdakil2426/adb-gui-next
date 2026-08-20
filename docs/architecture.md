@@ -618,18 +618,26 @@ payload/
 
 Routing idea: local path → OPS/OFP detector or CrAU; HTTP URL → remote pipeline (OTA or factory image when no `payload.bin`).
 
-#### Marketplace (`src-tauri/src/marketplace/`)
+#### Marketplace (`src-tauri/src/marketplace/`) — Komi backend emulation (2026-08-21 implemented, 2026-08-22 simplified per UX review)
 
 ```text
 service  →  providers (fdroid, github, aptoide, …)
-         →  ranking · cache · auth
+         →  ranking · cache · auth (device-flow one-click, built-in client ID Ov23linTY28VFpFjFiI9)
 resolver →  package-id → owner/repo (URL parse → F-Droid sourceCode → GitHub search)
 assets   →  is_apk_asset + classify_abi + rank_and_select_best_apk (arm64-v8a priority)
 markdown →  enrich_readme_markdown (relative → raw/blob, <details> flatten, code-block safe)
 cache    →  SWR (search fresh 3m/stale 30m, detail fresh 10m/stale 60m, verified-APK 12h/2h) + verifiedApks
 install_queue → streaming download (bytes_stream + 8 Hz throttled events) + owned-temp guard
-ManagedHttpClient  — tuned reqwest (pool 32, idle 180s, tcp_nodelay, http2 adaptive window)
+token_store → keyring OS keychain (service com.astrixforge.adbguinext) + gh CLI fallback (gh auth token) + HostToken per-forge PATs backend-only
+rate_limit  → X-RateLimit-* parser + should_fallback_to_github policy → marketplace:rate-limit UI
+backend    → local BackendEmulator (offline-mirror raw.githubusercontent.com/kurikomi-labs/komi-store-backend-data → cache → GitHub verified search) + fallback policy
+pkce/web_auth → SHA-256 S256 + localhost TcpListener callback (kept backend, hidden from default UI — Device Flow is the one-click UX)
+ManagedHttpClient  — tuned reqwest (pool 32, idle 180s, tcp_nodelay, http2 adaptive window) + Bearer injection from TokenStore
 ```
+
+UI: `features/marketplace/ui/MarketplaceSettings.tsx` now **single GitHub card** — `Signed in as … / Not signed in — one-click ready`, `Rate limit: remaining/limit`, `Sign in with GitHub` (device flow `user_code XXXX-XXXX` → `github.com/login/device`), `Sign out`, `Advanced: OAuth client ID (optional)` built-in fallback. Duplicate `Secure GitHub Login` / `Per-host PATs` / `SearchPreferences PAT` removed 2026-08-22 per user review. Backend `token_store/pkce/web_auth/host_tokens` kept for advanced/IPC.
+
+Plan: `docs/internal/reports/active/2026-08-21/2026-08-21-komi-github-backend-integration-plan.md` (implemented) + `closed/2026-08-20` audit.
 
 Install path: streaming `marketplace_download_apk(url, packageName?, downloadId?)` → throttled `marketplace:download-progress` events → owned-temp file → `marketplace_install_apk` (only paths under owned temp) → `adb -s SERIAL install`.
 

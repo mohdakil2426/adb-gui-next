@@ -218,3 +218,34 @@ pub struct InstallStatusPayload {
     pub state: String,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketplaceTokenStatus {
+    pub has_token: bool,
+    pub login: Option<String>,
+    pub avatar_url: Option<String>,
+    pub profile_url: Option<String>,
+    pub token_type: Option<String>,
+    pub scope: Option<String>,
+    pub source: String, // "keyring" | "gh-cli" | "none"
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketplaceRateLimitStatus {
+    pub limit: u64,
+    pub remaining: u64,
+    pub reset_epoch_secs: u64,
+    pub resource: String,
+    pub seconds_until_reset: u64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketplaceHostTokenEntry {
+    pub host: String,
+    pub display_name: Option<String>,
+    pub created_at_epoch_millis: u64,
+    pub has_token: bool,
+}

@@ -1,11 +1,14 @@
 use crate::CmdResult;
 use crate::commands::device::run_adb_for_serial;
 use crate::marketplace::cache::ManagedMarketplaceCache;
+use crate::marketplace::rate_limit::ManagedRateLimitStore;
 use crate::marketplace::service;
+use crate::marketplace::token_store::ManagedTokenStore;
 use crate::marketplace::{
     AppUpdateCandidate, CuratedTool, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult,
-    ManagedHttpClient, MarketplaceApp, MarketplaceAppDetail, MarketplaceOverviewStats,
-    SearchFilters, VersionInfo, marketplace_check_updates as check_updates,
+    ManagedHttpClient, MarketplaceApp, MarketplaceAppDetail, MarketplaceHostTokenEntry,
+    MarketplaceOverviewStats, MarketplaceRateLimitStatus, MarketplaceTokenStatus, SearchFilters,
+    VersionInfo, marketplace_check_updates as check_updates,
 };
 use crate::payload::remote::validate_outbound_url;
 use log::info;
@@ -16,6 +19,7 @@ pub async fn marketplace_search(
     filters: Option<SearchFilters>,
     http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
+    token_store: State<'_, ManagedTokenStore>,
 ) -> CmdResult<Vec<MarketplaceApp>> {
     let query = query.trim().to_string();
     if query.is_empty() {
@@ -24,7 +28,15 @@ pub async fn marketplace_search(
 
     info!("Marketplace search: {query}");
     let client = &http.0;
-    let filters = filters.unwrap_or_default();
+    let mut filters = filters.unwrap_or_default();
+    // Komi parity: fallback to OS keychain / gh CLI token if FE didn't pass one
+    if filters.github_token.is_none() {
+        if let Ok(Some(stored)) = token_store.get_token() {
+            filters.github_token = Some(stored.access_token);
+        } else if let Some(gh_tok) = token_store.try_gh_cli_token() {
+            filters.github_token = Some(gh_tok);
+        }
+    }
     let search_key = service::search_cache_key(&query, &filters);
 
     {
@@ -49,7 +61,16 @@ pub async fn marketplace_get_app_detail(
     github_token: Option<String>,
     http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
+    token_store: State<'_, ManagedTokenStore>,
 ) -> CmdResult<MarketplaceAppDetail> {
+    let mut github_token = github_token;
+    if github_token.is_none() {
+        if let Ok(Some(stored)) = token_store.get_token() {
+            github_token = Some(stored.access_token);
+        } else if let Some(gh_tok) = token_store.try_gh_cli_token() {
+            github_token = Some(gh_tok);
+        }
+    }
     info!("Marketplace detail: {package_name} from {source}");
     let client = &http.0;
     let detail_key = service::detail_cache_key(&package_name, &source, &github_token);
@@ -75,7 +96,16 @@ pub async fn marketplace_list_versions(
     source: String,
     github_token: Option<String>,
     http: State<'_, ManagedHttpClient>,
+    token_store: State<'_, ManagedTokenStore>,
 ) -> CmdResult<Vec<VersionInfo>> {
+    let mut github_token = github_token;
+    if github_token.is_none() {
+        if let Ok(Some(stored)) = token_store.get_token() {
+            github_token = Some(stored.access_token);
+        } else if let Some(gh_tok) = token_store.try_gh_cli_token() {
+            github_token = Some(gh_tok);
+        }
+    }
     let client = &http.0;
     service::list_versions(client, &package_name, &source, &github_token).await
 }
@@ -187,4 +217,200 @@ pub fn marketplace_get_overview_stats() -> MarketplaceOverviewStats {
 #[tauri::command]
 pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
     service::marketplace_get_curated_tools()
+}
+
+// ─── Komi-style token + rate-limit + host-token + curated feed ───────────
+
+#[tauri::command]
+pub fn marketplace_get_token_status(
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<MarketplaceTokenStatus> {
+    if let Some(tok) = token_store.get_token()? {
+        Ok(MarketplaceTokenStatus {
+            has_token: true,
+            login: tok.login.clone(),
+            avatar_url: None,
+            profile_url: None,
+            token_type: Some(tok.token_type.clone()),
+            scope: tok.scope.clone(),
+            source: "keyring".into(),
+        })
+    } else if token_store.try_gh_cli_token().is_some() {
+        Ok(MarketplaceTokenStatus {
+            has_token: true,
+            login: None,
+            avatar_url: None,
+            profile_url: None,
+            token_type: Some("Bearer".into()),
+            scope: None,
+            source: "gh-cli".into(),
+        })
+    } else {
+        Ok(MarketplaceTokenStatus {
+            has_token: false,
+            login: None,
+            avatar_url: None,
+            profile_url: None,
+            token_type: None,
+            scope: None,
+            source: "none".into(),
+        })
+    }
+}
+
+#[tauri::command]
+pub async fn marketplace_save_pat(
+    token: String,
+    http: State<'_, ManagedHttpClient>,
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<MarketplaceTokenStatus> {
+    let raw = token.trim().to_string();
+    if raw.is_empty() {
+        return Err("GitHub token is empty".into());
+    }
+    if raw.len() < 20 || raw.contains(char::is_whitespace) {
+        return Err("Token looks invalid — must be at least 20 chars with no spaces".into());
+    }
+    // Live probe: GET /user
+    let client = &http.0;
+    let user = crate::marketplace::auth::fetch_user_summary(client, &raw)
+        .await
+        .map_err(|e| format!("Token validation failed: {e}"))?;
+
+    let stored = crate::marketplace::token_store::StoredGithubToken {
+        access_token: raw.clone(),
+        token_type: "Bearer".into(),
+        scope: None,
+        saved_at_epoch_millis: None,
+        login: Some(user.login.clone()),
+    };
+    token_store.save_token(stored)?;
+
+    Ok(MarketplaceTokenStatus {
+        has_token: true,
+        login: Some(user.login),
+        avatar_url: user.avatar_url,
+        profile_url: user.profile_url,
+        token_type: Some("Bearer".into()),
+        scope: None,
+        source: "keyring".into(),
+    })
+}
+
+#[tauri::command]
+pub fn marketplace_logout(token_store: State<'_, ManagedTokenStore>) -> CmdResult<String> {
+    token_store.clear_token()?;
+    Ok("Logged out — token cleared from OS keychain".into())
+}
+
+#[tauri::command]
+pub async fn marketplace_github_web_auth_flow(
+    client_id: Option<String>,
+    http: State<'_, ManagedHttpClient>,
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<MarketplaceTokenStatus> {
+    let client = http.0.clone();
+    let stored =
+        crate::marketplace::web_auth::run_web_auth_flow(client, &token_store, client_id).await?;
+
+    Ok(MarketplaceTokenStatus {
+        has_token: true,
+        login: stored.login,
+        avatar_url: None,
+        profile_url: None,
+        token_type: Some(stored.token_type),
+        scope: stored.scope,
+        source: "keyring".into(),
+    })
+}
+
+#[tauri::command]
+pub fn marketplace_get_rate_limit(
+    rate_store: State<'_, ManagedRateLimitStore>,
+) -> CmdResult<Option<MarketplaceRateLimitStatus>> {
+    if let Some(info) = rate_store.get_last() {
+        Ok(Some(MarketplaceRateLimitStatus {
+            limit: info.limit,
+            remaining: info.remaining,
+            reset_epoch_secs: info.reset_epoch_secs,
+            resource: info.resource.clone(),
+            seconds_until_reset: info.seconds_until_reset(),
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub fn marketplace_get_host_tokens(
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<Vec<MarketplaceHostTokenEntry>> {
+    let tokens = token_store.get_host_tokens()?;
+    Ok(tokens
+        .into_iter()
+        .map(|t| MarketplaceHostTokenEntry {
+            host: t.host,
+            display_name: t.display_name,
+            created_at_epoch_millis: t.created_at_epoch_millis,
+            has_token: true,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub fn marketplace_save_host_token(
+    host: String,
+    token: String,
+    display_name: Option<String>,
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<Vec<MarketplaceHostTokenEntry>> {
+    if host.trim().is_empty() || token.trim().is_empty() {
+        return Err("Host and token are required".into());
+    }
+    let all = token_store.save_host_token(host, token, display_name)?;
+    Ok(all
+        .into_iter()
+        .map(|t| MarketplaceHostTokenEntry {
+            host: t.host,
+            display_name: t.display_name,
+            created_at_epoch_millis: t.created_at_epoch_millis,
+            has_token: true,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub fn marketplace_remove_host_token(
+    host: String,
+    token_store: State<'_, ManagedTokenStore>,
+) -> CmdResult<Vec<MarketplaceHostTokenEntry>> {
+    let remaining = token_store.remove_host_token(&host)?;
+    Ok(remaining
+        .into_iter()
+        .map(|t| MarketplaceHostTokenEntry {
+            host: t.host,
+            display_name: t.display_name,
+            created_at_epoch_millis: t.created_at_epoch_millis,
+            has_token: true,
+        })
+        .collect())
+}
+
+#[tauri::command]
+pub async fn marketplace_get_curated_feed(
+    category: String,
+    http: State<'_, ManagedHttpClient>,
+    token_store: State<'_, ManagedTokenStore>,
+    rate_store: State<'_, ManagedRateLimitStore>,
+) -> CmdResult<Vec<serde_json::Value>> {
+    let client = &http.0;
+    let cat = if category.trim().is_empty() { "trending" } else { category.trim() };
+    crate::marketplace::backend::fetch_curated_or_trending(
+        client,
+        &token_store,
+        &rate_store,
+        cat,
+        "",
+    )
+    .await
 }

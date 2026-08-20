@@ -1,6 +1,5 @@
 import { SlidersHorizontal } from 'lucide-react';
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSet } from '@/shared/ui/field';
-import { Input } from '@/shared/ui/input';
 import {
   Select,
   SelectContent,
@@ -11,13 +10,9 @@ import {
 } from '@/shared/ui/select';
 
 export function SearchPreferencesSection({
-  localPat,
-  onLocalPatChange,
   onResultsPerProviderChange,
   resultsPerProvider,
 }: {
-  localPat: string;
-  onLocalPatChange: (value: string) => void;
   onResultsPerProviderChange: (value: number) => void;
   resultsPerProvider: number;
 }) {
@@ -28,7 +23,7 @@ export function SearchPreferencesSection({
         Search preferences
       </div>
       <FieldSet>
-        <FieldGroup className="grid grid-cols-2 gap-4">
+        <FieldGroup className="grid grid-cols-1 gap-4">
           <Field>
             <FieldLabel htmlFor="results-per-provider">Results per provider</FieldLabel>
             <Select
@@ -49,24 +44,10 @@ export function SearchPreferencesSection({
               </SelectContent>
             </Select>
           </Field>
-          <Field>
-            <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
-            <Input
-              autoComplete="current-password"
-              id="github-pat"
-              name="github-pat"
-              onChange={(event) => onLocalPatChange(event.target.value)}
-              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-              spellCheck={false}
-              type="password"
-              value={localPat}
-            />
-          </Field>
         </FieldGroup>
       </FieldSet>
       <FieldDescription>
-        Personal access tokens are optional session-only fallbacks. They are kept in memory for the
-        current app session and are not saved after reload or restart.
+        GitHub authentication is handled in the GitHub section above (OS keychain, no setup needed).
       </FieldDescription>
     </section>
   );

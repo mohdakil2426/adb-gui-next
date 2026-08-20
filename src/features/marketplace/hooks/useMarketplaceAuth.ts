@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { MarketplaceGithubDevicePoll, MarketplaceGithubDeviceStart } from '@/desktop/backend';
+import {
+  MarketplaceGithubDevicePoll,
+  MarketplaceGithubDeviceStart,
+  MarketplaceGithubWebAuthFlow,
+  MarketplaceLogout,
+  MarketplaceSavePat,
+} from '@/desktop/backend';
 import { BrowserOpenURL } from '@/desktop/runtime';
+import { useMarketplaceAuthStore } from '@/features/marketplace/model/authStore';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
 
 const AUTH_SCOPES = ['read:user'];
 const SLOW_DOWN_MS = 5000;
+// Komi public OAuth app — works for device + web PKCE, no user setup needed. User can override in Advanced.
+const DEFAULT_CLIENT_ID = 'Ov23linTY28VFpFjFiI9';
 
 export function useMarketplaceAuth() {
   const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
@@ -15,6 +24,7 @@ export function useMarketplaceAuth() {
   const setGithubSession = useMarketplaceStore((state) => state.setGithubSession);
   const clearGithubSession = useMarketplaceStore((state) => state.clearGithubSession);
   const setIsGithubAuthenticating = useMarketplaceStore((state) => state.setIsGithubAuthenticating);
+  const refreshSecureAuth = useMarketplaceAuthStore((state) => state.refresh);
 
   const timeoutRef = useRef<number | null>(null);
 
@@ -27,12 +37,8 @@ export function useMarketplaceAuth() {
 
   const startGithubSignIn = useCallback(
     async (clientIdOverride?: string) => {
-      const resolvedClientId = (clientIdOverride ?? githubOauthClientId).trim();
-
-      if (!resolvedClientId) {
-        toast.error('GitHub OAuth client ID is required before sign-in');
-        return;
-      }
+      const raw = (clientIdOverride ?? githubOauthClientId).trim();
+      const resolvedClientId = raw || DEFAULT_CLIENT_ID;
 
       clearPendingPoll();
       setIsGithubAuthenticating(true);
@@ -60,6 +66,73 @@ export function useMarketplaceAuth() {
     setGithubDeviceChallenge(null);
     setIsGithubAuthenticating(false);
   }, [clearPendingPoll, setGithubDeviceChallenge, setIsGithubAuthenticating]);
+
+  const savePatSecure = useCallback(
+    async (token: string) => {
+      try {
+        const status = await MarketplaceSavePat(token);
+        // also mirror to old session for immediate UI
+        setGithubSession({
+          accessToken: token,
+          user: status.login
+            ? {
+                login: status.login,
+                avatarUrl: status.avatarUrl ?? undefined,
+                profileUrl: status.profileUrl ?? undefined,
+              }
+            : null,
+          rateLimit: null,
+        });
+        await refreshSecureAuth();
+        toast.success('GitHub PAT saved to OS keychain');
+        return true;
+      } catch (error) {
+        toast.error('Failed to save PAT', { description: String(error) });
+        return false;
+      }
+    },
+    [refreshSecureAuth, setGithubSession],
+  );
+
+  const webAuthSignIn = useCallback(
+    async (clientIdOverride?: string) => {
+      try {
+        setIsGithubAuthenticating(true);
+        const status = await MarketplaceGithubWebAuthFlow(clientIdOverride ?? null);
+        setGithubSession({
+          accessToken: '__keyring__',
+          user: status.login
+            ? {
+                login: status.login,
+                avatarUrl: status.avatarUrl ?? undefined,
+                profileUrl: status.profileUrl ?? undefined,
+              }
+            : null,
+          rateLimit: null,
+        });
+        await refreshSecureAuth();
+        toast.success('Signed in via Web OAuth (keyring)');
+        return true;
+      } catch (error) {
+        toast.error('Web OAuth failed', { description: String(error) });
+        return false;
+      } finally {
+        setIsGithubAuthenticating(false);
+      }
+    },
+    [refreshSecureAuth, setGithubSession, setIsGithubAuthenticating],
+  );
+
+  const signOutSecure = useCallback(async () => {
+    try {
+      await MarketplaceLogout();
+    } catch {
+      // ignore
+    }
+    clearGithubSession();
+    await refreshSecureAuth();
+    toast.success('Signed out — keychain cleared');
+  }, [clearGithubSession, refreshSecureAuth]);
 
   useEffect(() => {
     if (!(githubDeviceChallenge && isGithubAuthenticating)) {
@@ -93,9 +166,13 @@ export function useMarketplaceAuth() {
             user: result.user,
             rateLimit: result.rateLimit,
           });
+          // Persist to OS keychain securely (Komi KSafe parity)
+          void MarketplaceSavePat(result.accessToken)
+            .then(() => refreshSecureAuth())
+            .catch(() => {});
           setGithubDeviceChallenge(null);
           setIsGithubAuthenticating(false);
-          toast.success('Signed in with GitHub');
+          toast.success('Signed in with GitHub — token saved to OS keychain');
           return;
         }
 
@@ -164,6 +241,8 @@ export function useMarketplaceAuth() {
     isGithubAuthenticating,
     startGithubSignIn,
     cancelGithubSignIn,
-    signOutGithub: clearGithubSession,
+    signOutGithub: signOutSecure,
+    savePatSecure,
+    webAuthSignIn,
   };
 }

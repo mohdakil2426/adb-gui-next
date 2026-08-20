@@ -1,16 +1,24 @@
 pub mod aptoide;
 pub mod assets;
 pub mod auth;
+pub mod backend;
 pub mod cache;
 pub mod fdroid;
 pub mod github;
+pub mod host_tokens_compat {
+    pub use crate::marketplace::token_store::{HostToken, ManagedTokenStore};
+}
 pub mod install_queue;
 pub mod markdown;
+pub mod pkce;
 pub mod ranking;
+pub mod rate_limit;
 pub mod resolver;
 pub mod service;
+pub mod token_store;
 pub mod types;
 pub mod updates;
+pub mod web_auth;
 pub use cache::ManagedMarketplaceCache;
 pub use types::*;
 pub use updates::marketplace_check_updates;

@@ -1033,4 +1033,39 @@ export namespace backend {
     stdout?: string;
     success?: boolean;
   }
+
+  export interface MarketplaceTokenStatus {
+    avatarUrl?: string | null;
+    hasToken: boolean;
+    login?: string | null;
+    profileUrl?: string | null;
+    scope?: string | null;
+    source: string;
+    tokenType?: string | null;
+  }
+
+  export interface MarketplaceRateLimitStatus {
+    limit: number;
+    remaining: number;
+    resetEpochSecs: number;
+    resource: string;
+    secondsUntilReset: number;
+  }
+
+  export interface MarketplaceHostTokenEntry {
+    createdAtEpochMillis: number;
+    displayName?: string | null;
+    hasToken: boolean;
+    host: string;
+  }
+
+  export interface DownloadProgressPayload {
+    bytesDownloaded: number;
+    downloadId: string;
+    etaSeconds?: number | null;
+    packageName: string;
+    percentage: number;
+    speedBps: number;
+    totalBytes?: number | null;
+  }
 }
