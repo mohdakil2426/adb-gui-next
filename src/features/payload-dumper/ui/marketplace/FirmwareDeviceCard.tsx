@@ -23,7 +23,7 @@ export function FirmwareDeviceCard({ device, onSelect }: FirmwareDeviceCardProps
 
   return (
     <Card
-      className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
+      className="group relative cursor-pointer rounded-xl border-border bg-surface transition-[border-color,background-color,box-shadow] duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
       onClick={() => onSelect(device)}
     >
       <CardContent className="flex h-full flex-col justify-between p-4.5">
@@ -94,5 +94,3 @@ export function FirmwareDeviceCard({ device, onSelect }: FirmwareDeviceCardProps
     </Card>
   );
 }
-
-export const PixelModelCard = FirmwareDeviceCard;

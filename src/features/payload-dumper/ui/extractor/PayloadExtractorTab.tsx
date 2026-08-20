@@ -106,18 +106,23 @@ export function PayloadExtractorTab({
   const [activeCategory, setActiveCategory] = useState<CategoryFilterType>('all');
 
   const isBusy = status === 'extracting' || status === 'loading-partitions';
-  const filteredPartitions = useMemo(
-    () =>
-      partitions
-        .map((partition, index) => ({ index, partition }))
-        .filter(({ partition }) => {
-          const matchesSearch = partition.name.toLowerCase().includes(searchQuery.toLowerCase());
-          const matchesCategory =
-            activeCategory === 'all' || getPartitionCategory(partition.name) === activeCategory;
-          return matchesSearch && matchesCategory;
-        }),
-    [partitions, searchQuery, activeCategory],
-  );
+  const filteredPartitions = useMemo(() => {
+    const query = searchQuery.toLowerCase();
+    const result: Array<{ index: number; partition: (typeof partitions)[number] }> = [];
+    for (let index = 0; index < partitions.length; index++) {
+      const partition = partitions[index];
+      if (!partition) {
+        continue;
+      }
+      const matchesSearch = partition.name.toLowerCase().includes(query);
+      const matchesCategory =
+        activeCategory === 'all' || getPartitionCategory(partition.name) === activeCategory;
+      if (matchesSearch && matchesCategory) {
+        result.push({ index, partition });
+      }
+    }
+    return result;
+  }, [partitions, searchQuery, activeCategory]);
 
   const selectedCount = useMemo(() => partitions.filter((p) => p.selected).length, [partitions]);
   const allFilteredSelected =

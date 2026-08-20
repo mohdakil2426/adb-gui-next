@@ -105,20 +105,6 @@ const MODEM_PARTITIONS: Record<string, true> = {
   xbl_config_b: true,
 };
 
-export const CATEGORY_LABELS: Record<PartitionCategory, string> = {
-  boot: 'Core Boot & Kernel',
-  modem: 'Modem & Firmware',
-  other: 'Other Partitions',
-  system: 'Dynamic OS & System',
-};
-
-export const CATEGORY_COLORS: Record<PartitionCategory, string> = {
-  boot: 'var(--chart-1)',
-  modem: 'var(--chart-3)',
-  other: 'var(--chart-4)',
-  system: 'var(--chart-2)',
-};
-
 export const CATEGORY_DOT_CLASSES: Record<PartitionCategory, string> = {
   boot: 'bg-chart-1',
   modem: 'bg-chart-3',
@@ -166,42 +152,3 @@ export function detectPayloadFormat(
   }
   return { label: 'payload.bin', type: 'bin' };
 }
-
-export interface ExtractionPreset {
-  badge: string;
-  description: string;
-  id: string;
-  matcher: (name: string) => boolean;
-  name: string;
-}
-
-export const EXTRACTION_PRESETS: ExtractionPreset[] = [
-  {
-    badge: 'Root & Recovery',
-    description: 'Kernel, ramdisk & Android Verified Boot metadata',
-    id: 'root-kit',
-    matcher: (name) => getPartitionCategory(name) === 'boot',
-    name: 'Root Kit',
-  },
-  {
-    badge: 'Dynamic OS',
-    description: 'Core Android OS, vendor drivers & product overlays',
-    id: 'system-vendor',
-    matcher: (name) => getPartitionCategory(name) === 'system',
-    name: 'System & Vendor',
-  },
-  {
-    badge: 'Baseband',
-    description: 'Baseband radio, cellular modem, DSP & bootloaders',
-    id: 'modem-radio',
-    matcher: (name) => getPartitionCategory(name) === 'modem',
-    name: 'Modem & Radio',
-  },
-  {
-    badge: 'Full Image',
-    description: 'All partitions inside payload archive',
-    id: 'full-flash',
-    matcher: () => true,
-    name: 'Full Flash Image',
-  },
-];

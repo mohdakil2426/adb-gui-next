@@ -119,7 +119,7 @@ export function ExtractionStatusCard({
 
       {/* Failure: the message, then what to do about it. */}
       {isSuccess ? null : (
-        <div className="flex flex-col gap-2">
+        <div aria-live="assertive" className="flex flex-col gap-2" role="alert">
           {errorMessage ? (
             <p className="min-w-0 break-words font-mono text-destructive text-mono">
               {errorMessage}

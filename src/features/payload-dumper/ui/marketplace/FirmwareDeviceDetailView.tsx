@@ -137,6 +137,7 @@ export function FirmwareDeviceDetailView({
         <div className="relative min-w-[220px] max-w-sm flex-1">
           <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
+            aria-label="Search builds, version, patch date"
             className="h-8 pl-8 text-body"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search build ID, version, patch date…"
@@ -202,5 +203,3 @@ export function FirmwareDeviceDetailView({
     </div>
   );
 }
-
-export const PixelDeviceDetailView = FirmwareDeviceDetailView;

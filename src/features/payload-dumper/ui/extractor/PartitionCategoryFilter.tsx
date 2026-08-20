@@ -9,12 +9,19 @@ import { cn } from '@/shared/utils/cn';
 
 export type CategoryFilterType = 'all' | PartitionCategory;
 
+const FILTER_BUTTONS: Array<{ id: CategoryFilterType; label: string; dot?: string }> = [
+  { id: 'all', label: 'All Partitions' },
+  { dot: CATEGORY_DOT_CLASSES.boot, id: 'boot', label: 'Boot & Kernel' },
+  { dot: CATEGORY_DOT_CLASSES.system, id: 'system', label: 'Dynamic OS' },
+  { dot: CATEGORY_DOT_CLASSES.modem, id: 'modem', label: 'Modem & Radio' },
+  { dot: CATEGORY_DOT_CLASSES.other, id: 'other', label: 'Other' },
+];
+
 interface PartitionCategoryFilterProps {
   activeCategory: CategoryFilterType;
   onSelectCategory: (category: CategoryFilterType) => void;
   partitions: Array<{ name: string; size: number }>;
 }
-
 export function PartitionCategoryFilter({
   partitions,
   activeCategory,
@@ -35,17 +42,9 @@ export function PartitionCategoryFilter({
     return counts;
   }, [partitions]);
 
-  const filterButtons: Array<{ id: CategoryFilterType; label: string; dot?: string }> = [
-    { id: 'all', label: 'All Partitions' },
-    { dot: CATEGORY_DOT_CLASSES.boot, id: 'boot', label: 'Boot & Kernel' },
-    { dot: CATEGORY_DOT_CLASSES.system, id: 'system', label: 'Dynamic OS' },
-    { dot: CATEGORY_DOT_CLASSES.modem, id: 'modem', label: 'Modem & Radio' },
-    { dot: CATEGORY_DOT_CLASSES.other, id: 'other', label: 'Other' },
-  ];
-
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {filterButtons.map((btn) => {
+      {FILTER_BUTTONS.map((btn) => {
         const count = categoryCounts[btn.id];
         const isActive = activeCategory === btn.id;
 

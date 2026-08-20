@@ -1,6 +1,11 @@
-import type { PartitionSizeDatum } from '@/features/payload-dumper/ui/partitionSizeData';
 import { formatBytes } from '@/shared/utils/format';
 
+export interface PartitionSizeDatum {
+  /** True once this partition has been written — recoloured, not hidden. */
+  extracted: boolean;
+  name: string;
+  size: number;
+}
 /**
  * Hand-built bars. This deliberately does not use a charting library — see the
  * note in `MemorySparkline.tsx`: Recharts' `decimal.js-light` assigns

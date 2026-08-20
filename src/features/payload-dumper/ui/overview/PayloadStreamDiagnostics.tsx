@@ -1,38 +1,37 @@
 import { Cpu, Database, Network, Radio, Zap } from 'lucide-react';
 import { Card, CardContent } from '@/shared/ui/card';
 
-export function PayloadStreamDiagnostics() {
-  const steps = [
-    {
-      badge: 'Step 1',
-      description:
-        'Issues HTTP HEAD & 1-byte Range request to verify remote server partial content support.',
-      icon: Network,
-      title: 'HTTP Range Probing',
-    },
-    {
-      badge: 'Step 2',
-      description:
-        'Fetches the trailing 64 KB of the remote ZIP to locate the End of Central Directory (EOCD).',
-      icon: Database,
-      title: 'Tail Directory Scan',
-    },
-    {
-      badge: 'Step 3',
-      description:
-        'Extracts the CrAU magic header and Protobuf manifest without reading data blobs.',
-      icon: Radio,
-      title: 'Manifest Extraction',
-    },
-    {
-      badge: 'Step 4',
-      description:
-        'Only downloads byte extents required for your chosen partitions, saving gigabytes of bandwidth.',
-      icon: Zap,
-      title: 'Selective Extent Pull',
-    },
-  ];
+const STREAM_STEPS = [
+  {
+    badge: 'Step 1',
+    description:
+      'Issues HTTP HEAD & 1-byte Range request to verify remote server partial content support.',
+    icon: Network,
+    title: 'HTTP Range Probing',
+  },
+  {
+    badge: 'Step 2',
+    description:
+      'Fetches the trailing 64 KB of the remote ZIP to locate the End of Central Directory (EOCD).',
+    icon: Database,
+    title: 'Tail Directory Scan',
+  },
+  {
+    badge: 'Step 3',
+    description: 'Extracts the CrAU magic header and Protobuf manifest without reading data blobs.',
+    icon: Radio,
+    title: 'Manifest Extraction',
+  },
+  {
+    badge: 'Step 4',
+    description:
+      'Only downloads byte extents required for your chosen partitions, saving gigabytes of bandwidth.',
+    icon: Zap,
+    title: 'Selective Extent Pull',
+  },
+];
 
+export function PayloadStreamDiagnostics() {
   return (
     <Card className="flex flex-col rounded-lg border-border bg-surface p-4 shadow-none">
       <div className="pb-2">
@@ -45,7 +44,7 @@ export function PayloadStreamDiagnostics() {
       </div>
 
       <CardContent className="grid @lg:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-3 p-0 pt-2">
-        {steps.map((step) => {
+        {STREAM_STEPS.map((step) => {
           const Icon = step.icon;
           return (
             <div

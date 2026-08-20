@@ -143,7 +143,7 @@ export function RemoteLoadProgressCard({
           return (
             <div
               className={cn(
-                'flex items-center gap-2 rounded-lg border p-2 text-caption transition-all duration-150',
+                'flex items-center gap-2 rounded-lg border p-2 text-caption transition-colors duration-150',
                 done && 'border-success/30 bg-success/5 text-success',
                 working && 'border-primary/50 bg-primary/10 font-medium text-foreground shadow-xs',
                 pending && 'border-border/50 bg-surface/50 text-muted-foreground',
@@ -183,7 +183,7 @@ export function RemoteLoadProgressCard({
       >
         <div
           className={cn(
-            'h-full rounded-full transition-all duration-300 ease-out',
+            'h-full rounded-full transition-[width] duration-300 ease-out',
             isError
               ? 'bg-destructive'
               : 'animate-pulse bg-gradient-to-r from-primary to-primary/80',

@@ -78,7 +78,6 @@ export function ViewPayloadDumper() {
     },
     [setRemoteUrl, setActiveMode, actions],
   );
-
   const selectedNotExtracted = useMemo(
     () => partitions.filter((p) => p.selected && !completedPartitions.has(p.name)),
     [partitions, completedPartitions],
@@ -107,9 +106,11 @@ export function ViewPayloadDumper() {
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
+      <div aria-live="polite" className="sr-only" role="status">
+        {status ? `Extraction status: ${status}.` : ''}{' '}
+        {errorMessage ? `Error: ${errorMessage}.` : ''}
+      </div>
       <h1 className="sr-only">Payload Dumper</h1>
-
-      {/* Top Precision Hardware Hero Banner */}
       <PayloadDumperHeroBanner
         activeMode={activeMode}
         completedCount={completedPartitions.size}
