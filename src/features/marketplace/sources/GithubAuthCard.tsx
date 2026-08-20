@@ -79,7 +79,7 @@ export function GithubAuthCard() {
               type="button"
               variant="outline"
             >
-              <LogOut className="size-3.5" />
+              <LogOut aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Sign Out
             </Button>
           </div>
@@ -100,6 +100,7 @@ export function GithubAuthCard() {
 
           <div className="flex gap-2">
             <Input
+              autoComplete="current-password"
               className="font-mono text-mono-sm"
               id="github-pat-input"
               onChange={(e) => setLocalPat(e.target.value)}

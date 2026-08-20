@@ -114,7 +114,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
     <div className="flex flex-col gap-5">
       <div>
         <Button className="-ml-2" onClick={closeDetail} size="sm" type="button" variant="ghost">
-          <ArrowLeft aria-hidden="true" />
+          <ArrowLeft aria-hidden="true" data-icon="inline-start" />
           Back to results
         </Button>
       </div>

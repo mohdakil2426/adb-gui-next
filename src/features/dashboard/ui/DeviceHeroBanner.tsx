@@ -124,12 +124,13 @@ export function DeviceHeroBanner({
                 <h2 className="truncate font-semibold text-foreground text-title">{headline}</h2>
                 {onEditNickname ? (
                   <button
-                    className="flex size-5 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    aria-label="Edit device nickname"
+                    className="flex size-6 items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     onClick={onEditNickname}
                     title="Edit device nickname"
                     type="button"
                   >
-                    <Edit3 className="size-3" />
+                    <Edit3 className="size-3.5" />
                   </button>
                 ) : null}
                 <Badge className={status.badgeClass} variant={status.variant}>
@@ -172,10 +173,12 @@ export function DeviceHeroBanner({
                 variant="outline"
               >
                 <RefreshCw
+                  aria-hidden="true"
                   className={cn(
                     'size-3.5 text-muted-foreground transition-transform',
                     isRefreshing ? 'animate-spin text-foreground' : '',
                   )}
+                  data-icon="inline-start"
                 />
               </Button>
             ) : null}

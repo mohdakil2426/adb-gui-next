@@ -18,7 +18,7 @@ export function CacheHistorySection({
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={onClearCache} type="button" variant="outline">
-          <RefreshCw />
+          <RefreshCw aria-hidden="true" data-icon="inline-start" />
           Clear cache
         </Button>
         <Button
@@ -27,7 +27,7 @@ export function CacheHistorySection({
           type="button"
           variant="outline"
         >
-          <Trash2 />
+          <Trash2 aria-hidden="true" data-icon="inline-start" />
           Clear search history
         </Button>
       </div>

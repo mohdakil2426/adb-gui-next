@@ -5,7 +5,14 @@ import { GetLogcatSnapshot, SaveLog } from '@/desktop/backend';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { cn } from '@/shared/utils/cn';
 
 interface LogcatStreamCardProps {
@@ -140,28 +147,30 @@ export function LogcatStreamCard({ deviceMode, deviceSerial }: LogcatStreamCardP
             <div className="relative flex-1">
               <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label="Filter logcat logs"
                 className="h-8 pl-8 text-caption"
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter logs (e.g. tag, error, pid)…"
                 value={searchQuery}
               />
             </div>
-
             <Select
               onValueChange={(val) => setSelectedLevel(val as LogLevel)}
               value={selectedLevel}
             >
-              <SelectTrigger className="h-8 w-28 text-caption">
+              <SelectTrigger aria-label="Filter log level" className="h-8 w-28 text-caption">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">All Levels</SelectItem>
-                <SelectItem value="V">Verbose (V)</SelectItem>
-                <SelectItem value="D">Debug (D)</SelectItem>
-                <SelectItem value="I">Info (I)</SelectItem>
-                <SelectItem value="W">Warning (W)</SelectItem>
-                <SelectItem value="E">Error (E)</SelectItem>
-                <SelectItem value="F">Fatal (F)</SelectItem>
+                <SelectGroup>
+                  <SelectItem value="ALL">All Levels</SelectItem>
+                  <SelectItem value="V">Verbose (V)</SelectItem>
+                  <SelectItem value="D">Debug (D)</SelectItem>
+                  <SelectItem value="I">Info (I)</SelectItem>
+                  <SelectItem value="W">Warning (W)</SelectItem>
+                  <SelectItem value="E">Error (E)</SelectItem>
+                  <SelectItem value="F">Fatal (F)</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>

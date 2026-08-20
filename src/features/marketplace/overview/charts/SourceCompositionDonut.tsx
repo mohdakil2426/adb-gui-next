@@ -109,7 +109,7 @@ export function SourceCompositionDonut(props: SourceCompositionDonutProps) {
 
               return (
                 <circle
-                  className="transition-all duration-300 ease-out"
+                  className="transition-[stroke-dasharray,stroke-dashoffset] duration-300 ease-out"
                   cx={SIZE / 2}
                   cy={SIZE / 2}
                   fill="none"

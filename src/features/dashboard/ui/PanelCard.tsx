@@ -29,7 +29,7 @@ export function PanelCard({
   return (
     <Card
       className={cn(
-        '@container flex h-full flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-all duration-150',
+        '@container flex h-full flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-colors duration-150',
         className,
       )}
     >

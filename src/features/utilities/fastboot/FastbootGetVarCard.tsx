@@ -142,6 +142,7 @@ export function FastbootGetVarCard({ deviceMode, deviceSerial }: FastbootGetVarC
             <div className="relative flex-1">
               <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label="Search fastboot variables"
                 className="h-8 pl-8 text-caption"
                 onChange={(e) => setVarSearch(e.target.value)}
                 placeholder="Search variables (e.g. secure, product, slot)…"

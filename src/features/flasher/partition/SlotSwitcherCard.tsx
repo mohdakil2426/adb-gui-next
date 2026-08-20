@@ -61,7 +61,7 @@ export function SlotSwitcherCard({
           {/* Slot A Card */}
           <div
             className={cn(
-              'flex flex-col gap-2.5 rounded-lg border p-3.5 transition-all',
+              'flex flex-col gap-2.5 rounded-lg border p-3.5 transition-[border-color,background-color,box-shadow] duration-150',
               isSlotA
                 ? 'border-success/40 bg-success/5 shadow-xs'
                 : 'border-border/80 bg-surface-raised/40',
@@ -107,7 +107,7 @@ export function SlotSwitcherCard({
           {/* Slot B Card */}
           <div
             className={cn(
-              'flex flex-col gap-2.5 rounded-lg border p-3.5 transition-all',
+              'flex flex-col gap-2.5 rounded-lg border p-3.5 transition-[border-color,background-color,box-shadow] duration-150',
               isSlotB
                 ? 'border-success/40 bg-success/5 shadow-xs'
                 : 'border-border/80 bg-surface-raised/40',
@@ -165,7 +165,7 @@ export function SlotSwitcherCard({
               type="button"
               variant="ghost"
             >
-              <Zap className="size-3 text-warning" />
+              <Zap aria-hidden="true" className="size-3 text-warning" data-icon="inline-start" />
               Reboot FastbootD
             </Button>
           </div>

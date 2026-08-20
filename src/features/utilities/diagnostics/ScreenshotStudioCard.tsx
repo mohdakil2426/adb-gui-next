@@ -66,6 +66,9 @@ export function ScreenshotStudioCard({ deviceMode, deviceSerial }: ScreenshotStu
     }
     try {
       const res = await fetch(screenshotBase64);
+      if (!res.ok) {
+        throw new Error(`Failed to load screenshot data: ${res.statusText}`);
+      }
       const blob = await res.blob();
       if (navigator.clipboard && window.ClipboardItem) {
         await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);

@@ -5,18 +5,18 @@ function inlineNodes(text: string): ReactNode[] {
   const pattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|`([^`]+)`|\*\*([^*]+)\*\*/g;
   let last = 0;
   let match = pattern.exec(text);
-  let index = 0;
   while (match) {
     if (match.index > last) {
-      nodes.push(<Fragment key={`t-${index}`}>{text.slice(last, match.index)}</Fragment>);
-      index += 1;
+      nodes.push(
+        <Fragment key={`t-${last}-${match.index}`}>{text.slice(last, match.index)}</Fragment>,
+      );
     }
     if (match[1] && match[2]) {
       nodes.push(
         <a
           className="text-foreground underline underline-offset-2"
           href={match[2]}
-          key={`a-${index}`}
+          key={`a-${match.index}-${match[2]}`}
           rel="noreferrer"
           target="_blank"
         >
@@ -27,24 +27,23 @@ function inlineNodes(text: string): ReactNode[] {
       nodes.push(
         <code
           className="rounded-sm bg-surface-raised px-1 font-mono text-mono-sm"
-          key={`c-${index}`}
+          key={`c-${match.index}-${match[3]}`}
         >
           {match[3]}
         </code>,
       );
     } else if (match[4]) {
       nodes.push(
-        <strong className="font-medium text-foreground" key={`b-${index}`}>
+        <strong className="font-medium text-foreground" key={`b-${match.index}-${match[4]}`}>
           {match[4]}
         </strong>,
       );
     }
-    index += 1;
     last = match.index + match[0].length;
     match = pattern.exec(text);
   }
   if (last < text.length) {
-    nodes.push(<Fragment key={`t-${index}`}>{text.slice(last)}</Fragment>);
+    nodes.push(<Fragment key={`tail-${last}`}>{text.slice(last)}</Fragment>);
   }
   return nodes;
 }

@@ -191,7 +191,7 @@ export function MarketplaceSettings() {
                 <div className="flex flex-wrap gap-2">
                   {githubSession.user ? (
                     <Button onClick={signOutGithub} type="button" variant="outline">
-                      <LogOut />
+                      <LogOut aria-hidden="true" data-icon="inline-start" />
                       Sign out
                     </Button>
                   ) : (
@@ -201,9 +201,13 @@ export function MarketplaceSettings() {
                       type="button"
                     >
                       {isGithubAuthenticating ? (
-                        <Loader2 className="animate-spin" />
+                        <Loader2
+                          aria-hidden="true"
+                          className="animate-spin"
+                          data-icon="inline-start"
+                        />
                       ) : (
-                        <GitBranch />
+                        <GitBranch aria-hidden="true" data-icon="inline-start" />
                       )}
                       Sign in with GitHub
                     </Button>

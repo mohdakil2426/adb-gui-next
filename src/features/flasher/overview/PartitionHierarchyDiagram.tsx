@@ -72,7 +72,7 @@ export function PartitionHierarchyDiagram({ activeSlot }: PartitionHierarchyDiag
             type="button"
             variant="outline"
           >
-            <Layers className="size-3" />
+            <Layers aria-hidden="true" className="size-3" data-icon="inline-start" />
             Visual
           </Button>
           <Button
@@ -85,7 +85,7 @@ export function PartitionHierarchyDiagram({ activeSlot }: PartitionHierarchyDiag
             type="button"
             variant="outline"
           >
-            <Terminal className="size-3" />
+            <Terminal aria-hidden="true" className="size-3" data-icon="inline-start" />
             ASCII
           </Button>
         </div>

@@ -53,7 +53,7 @@ export function CuratedPowerToolsGrid({ onSelectApp, target }: CuratedPowerTools
       <div className="grid @2xl:grid-cols-4 @lg:grid-cols-2 @xs:grid-cols-1 gap-3">
         {tools.map((app) => (
           <Card
-            className="flex flex-col justify-between gap-0 rounded-lg border-border bg-surface py-0 shadow-none transition-all duration-150 hover:border-border-strong hover:bg-surface-raised/40"
+            className="flex flex-col justify-between gap-0 rounded-lg border-border bg-surface py-0 shadow-none transition-[border-color,background-color] duration-150 hover:border-border-strong hover:bg-surface-raised/40"
             key={app.packageName}
           >
             <button

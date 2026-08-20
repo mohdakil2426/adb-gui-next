@@ -62,7 +62,7 @@ export function CachePreferencesCard() {
             onValueChange={(val) => setResultsPerProvider(Number.parseInt(val, 10))}
             value={resultsPerProvider.toString()}
           >
-            <SelectTrigger className="w-32">
+            <SelectTrigger aria-label="Results Limit per Repository" className="w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -49,7 +49,7 @@ export function SideloadHelperActions({
             variant="outline"
           >
             <div className="flex items-center gap-1.5 font-semibold text-body text-foreground">
-              <RotateCcw className="size-3.5" />
+              <RotateCcw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Reboot to Recovery
             </div>
             <span className="text-[11px] text-muted-foreground">
@@ -67,7 +67,7 @@ export function SideloadHelperActions({
             variant="outline"
           >
             <div className="flex items-center gap-1.5 font-semibold text-body text-foreground">
-              <RefreshCw className="size-3.5" />
+              <RefreshCw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Check Sideload State
             </div>
             <span className="text-[11px] text-muted-foreground">
@@ -85,7 +85,7 @@ export function SideloadHelperActions({
           type="button"
           variant="secondary"
         >
-          <Smartphone className="size-3.5" />
+          <Smartphone aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           Reboot to System OS (Finish Sideload)
         </Button>
 

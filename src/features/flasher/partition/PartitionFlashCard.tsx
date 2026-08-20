@@ -180,7 +180,7 @@ export function PartitionFlashCard({
             type="button"
             variant="outline"
           >
-            <ListPlus className="size-4" />
+            <ListPlus aria-hidden="true" className="size-4" data-icon="inline-start" />
             Add to Batch Queue
           </Button>
 
@@ -197,7 +197,7 @@ export function PartitionFlashCard({
             type="button"
             variant={isHighRisk ? 'destructive' : 'default'}
           >
-            <HardDrive className="size-4" />
+            <HardDrive aria-hidden="true" className="size-4" data-icon="inline-start" />
             {loadingAction === 'flash' ? 'Flashing...' : 'Flash Partition'}
           </Button>
         </CardFooter>

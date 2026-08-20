@@ -63,7 +63,7 @@ export function QuickActionsPanel({
               type="button"
               variant="outline"
             >
-              <Tv aria-hidden="true" className="size-3.5" />
+              <Tv aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               <span>Screen Mirror (Scrcpy)</span>
             </Button>
 
@@ -74,7 +74,7 @@ export function QuickActionsPanel({
               type="button"
               variant="outline"
             >
-              <Terminal aria-hidden="true" className="size-3.5" />
+              <Terminal aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               <span>Open Interactive Shell</span>
             </Button>
           </>
@@ -94,7 +94,7 @@ export function QuickActionsPanel({
               type="button"
               variant="outline"
             >
-              <Icon aria-hidden="true" className="size-3.5" />
+              <Icon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               <span>{REBOOT_LABEL[target]}</span>
             </Button>
           );

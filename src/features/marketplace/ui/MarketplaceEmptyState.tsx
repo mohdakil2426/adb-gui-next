@@ -96,7 +96,7 @@ export function MarketplaceEmptyState({
         </EmptyHeader>
         <EmptyContent>
           <Button onClick={openSettings} size="sm" type="button" variant="outline">
-            <Settings2 aria-hidden="true" />
+            <Settings2 aria-hidden="true" data-icon="inline-start" />
             Open source settings
           </Button>
         </EmptyContent>

@@ -83,7 +83,7 @@ export function NoDeviceOnboarding({
 
           <div className="flex flex-wrap items-center justify-center gap-2">
             <Button onClick={onToggleWireless} size="sm" type="button">
-              <Wifi aria-hidden="true" />
+              <Wifi aria-hidden="true" data-icon="inline-start" />
               {showWireless ? 'Hide wireless pairing' : 'Connect wirelessly'}
             </Button>
             <Button
@@ -93,7 +93,11 @@ export function NoDeviceOnboarding({
               type="button"
               variant="outline"
             >
-              <RefreshCw aria-hidden="true" className={isScanning ? 'animate-spin' : undefined} />
+              <RefreshCw
+                aria-hidden="true"
+                className={isScanning ? 'animate-spin' : undefined}
+                data-icon="inline-start"
+              />
               Scan again
             </Button>
             <Button
@@ -104,7 +108,7 @@ export function NoDeviceOnboarding({
               type="button"
               variant="ghost"
             >
-              <ExternalLink aria-hidden="true" />
+              <ExternalLink aria-hidden="true" data-icon="inline-start" />
               Troubleshoot
             </Button>
           </div>

@@ -41,5 +41,6 @@ export function lastSearchMatches(
   if (cache.providers.length !== providers.length) {
     return false;
   }
-  return cache.providers.every((provider) => providers.includes(provider));
+  const providerSet = new Set(providers);
+  return cache.providers.every((provider) => providerSet.has(provider));
 }

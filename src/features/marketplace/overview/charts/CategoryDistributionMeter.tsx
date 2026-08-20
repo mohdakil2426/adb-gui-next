@@ -97,7 +97,7 @@ export function CategoryDistributionMeter(props: CategoryDistributionMeterProps)
           const pct = (cat.count / total) * 100;
           return (
             <div
-              className="h-full transition-all duration-300 first:rounded-l-full last:rounded-r-full hover:opacity-80"
+              className="h-full transition-[width,opacity] duration-300 first:rounded-l-full last:rounded-r-full hover:opacity-80"
               key={cat.key}
               style={{
                 width: `${pct}%`,

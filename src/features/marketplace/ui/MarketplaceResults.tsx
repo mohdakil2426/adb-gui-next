@@ -6,7 +6,7 @@ import { ResultsSkeleton } from '@/features/marketplace/ui/ResultsSkeleton';
 
 type MarketplaceApp = backend.MarketplaceApp;
 
-export function MarketplaceResults({
+function MarketplaceResults({
   fromCache,
   isSearching,
   onSelect,

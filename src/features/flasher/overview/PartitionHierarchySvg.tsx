@@ -55,7 +55,7 @@ export function PartitionHierarchySvg({
         {/* Level 1: Primary Bootloader */}
         <g className="cursor-pointer" onClick={() => onSelectPartition('bootloader')}>
           <rect
-            className="stroke-border/80 transition-all hover:stroke-foreground"
+            className="stroke-border/80 transition-[stroke] duration-150 hover:stroke-foreground"
             fill="var(--surface-raised)"
             height="36"
             rx="8"
@@ -89,7 +89,7 @@ export function PartitionHierarchySvg({
         <g className="cursor-pointer" onClick={() => onSelectPartition('boot')}>
           <rect
             className={cn(
-              'transition-all',
+              'transition-[stroke] duration-150',
               activeSlot === 'a' ? 'stroke-success' : 'stroke-border',
             )}
             fill="var(--surface)"
@@ -124,7 +124,7 @@ export function PartitionHierarchySvg({
         <g className="cursor-pointer" onClick={() => onSelectPartition('boot')}>
           <rect
             className={cn(
-              'transition-all',
+              'transition-[stroke] duration-150',
               activeSlot === 'b' ? 'stroke-success' : 'stroke-border',
             )}
             fill="var(--surface)"
@@ -168,7 +168,7 @@ export function PartitionHierarchySvg({
         <g className="cursor-pointer" onClick={() => onSelectPartition('boot')}>
           <rect
             className={cn(
-              'transition-all',
+              'transition-[stroke] duration-150',
               selectedPartition === 'boot' || selectedPartition === 'init_boot'
                 ? 'stroke-primary'
                 : 'stroke-border/80',
@@ -205,7 +205,7 @@ export function PartitionHierarchySvg({
         <g className="cursor-pointer" onClick={() => onSelectPartition('vbmeta')}>
           <rect
             className={cn(
-              'transition-all',
+              'transition-[stroke] duration-150',
               selectedPartition.startsWith('vbmeta') ? 'stroke-primary' : 'stroke-border/80',
             )}
             fill="var(--surface-raised)"
@@ -249,7 +249,7 @@ export function PartitionHierarchySvg({
         <g className="cursor-pointer" onClick={() => onSelectPartition('super')}>
           <rect
             className={cn(
-              'transition-all',
+              'transition-[stroke] duration-150',
               selectedPartition === 'super' || selectedPartition === 'system'
                 ? 'stroke-primary'
                 : 'stroke-border/80',

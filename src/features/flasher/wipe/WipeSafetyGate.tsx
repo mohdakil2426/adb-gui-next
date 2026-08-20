@@ -125,6 +125,7 @@ export function WipeSafetyGate({
             Type <span className="font-bold font-mono text-destructive">WIPE</span> to Authorize
           </span>
           <Input
+            aria-label="Type WIPE to authorize data wipe"
             className="font-mono uppercase"
             onChange={(e) => handleWordChange(e.target.value)}
             placeholder="Type WIPE here..."

@@ -185,10 +185,12 @@ export function FlasherCockpitHero({
               variant="outline"
             >
               <RefreshCw
+                aria-hidden="true"
                 className={cn(
                   'size-3.5 text-muted-foreground',
                   isProbing && 'animate-spin text-foreground',
                 )}
+                data-icon="inline-start"
               />
             </Button>
           </div>

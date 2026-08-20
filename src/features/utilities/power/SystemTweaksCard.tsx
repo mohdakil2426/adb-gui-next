@@ -190,6 +190,7 @@ export function SystemTweaksCard({ deviceMode, deviceSerial }: SystemTweaksCardP
 
             <div className="flex items-center gap-2">
               <Input
+                aria-label="Custom display density DPI"
                 className="h-8 text-body"
                 disabled={!isAdb}
                 onChange={(e) => setCustomDpi(e.target.value)}

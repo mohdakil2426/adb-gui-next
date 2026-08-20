@@ -34,7 +34,7 @@ export function PartitionInspectionBadge({
           type="button"
           variant="outline"
         >
-          <Plus className="size-3" />
+          <Plus aria-hidden="true" className="size-3" data-icon="inline-start" />
           Queue in Batch
         </Button>
       </div>

@@ -13,6 +13,7 @@ import { UpdatesSummaryBanner } from '@/features/marketplace/updates/UpdatesSumm
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { runSerial } from '@/shared/utils/serialAsync';
 
 export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
   const selectedSerial = useDeviceStore((s) => s.selectedSerial);
@@ -107,23 +108,20 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
     setIsBatchUpdating(true);
     setBatchProgress(0);
     let successCount = 0;
-
-    for (let i = 0; i < updatable.length; i++) {
-      const item = updatable[i];
-      if (!item) {
-        continue;
-      }
-      try {
-        await handleUpdate(item);
-        successCount++;
-      } catch {
-        // Continue with next update
-      }
-      setBatchProgress(Math.round(((i + 1) / updatable.length) * 100));
+    try {
+      await runSerial(updatable, async (item, i) => {
+        try {
+          await handleUpdate(item);
+          successCount++;
+        } catch {
+          // Continue with next update
+        }
+        setBatchProgress(Math.round(((i + 1) / updatable.length) * 100));
+      });
+      toast.success(`Batch update completed: ${successCount} apps updated successfully`);
+    } finally {
+      setIsBatchUpdating(false);
     }
-
-    setIsBatchUpdating(false);
-    toast.success(`Batch update completed: ${successCount} apps updated successfully`);
   };
 
   return (
@@ -140,6 +138,7 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            aria-label="Search installed open-source apps"
             className="pl-9"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search installed open-source apps..."
@@ -155,7 +154,11 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
           type="button"
           variant="outline"
         >
-          <RefreshCw className={isLoading ? 'size-3.5 animate-spin' : 'size-3.5'} />
+          <RefreshCw
+            aria-hidden="true"
+            className={isLoading ? 'size-3.5 animate-spin' : 'size-3.5'}
+            data-icon="inline-start"
+          />
           Rescan Device
         </Button>
       </div>

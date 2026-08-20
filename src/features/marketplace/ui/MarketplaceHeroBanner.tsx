@@ -160,7 +160,11 @@ export function MarketplaceHeroBanner({ onSync, isSyncing = false }: Marketplace
                 type="button"
                 variant="outline"
               >
-                <RefreshCw className={cn('size-3.5', syncing && 'animate-spin')} />
+                <RefreshCw
+                  aria-hidden="true"
+                  className={cn('size-3.5', syncing && 'animate-spin')}
+                  data-icon="inline-start"
+                />
                 <span>{syncing ? 'Syncing...' : 'Sync Index'}</span>
               </Button>
             </div>

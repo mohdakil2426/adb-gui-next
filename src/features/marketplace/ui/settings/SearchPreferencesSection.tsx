@@ -52,8 +52,7 @@ export function SearchPreferencesSection({
           <Field>
             <FieldLabel htmlFor="github-pat">Advanced fallback token</FieldLabel>
             <Input
-              autoComplete="off"
-              className="font-mono text-mono"
+              autoComplete="current-password"
               id="github-pat"
               name="github-pat"
               onChange={(event) => onLocalPatChange(event.target.value)}

@@ -82,7 +82,7 @@ export function AppDetailSidebar({
           type="button"
           variant="ghost"
         >
-          <Copy aria-hidden="true" />
+          <Copy aria-hidden="true" data-icon="inline-start" />
           Copy package ID
         </Button>
       </div>

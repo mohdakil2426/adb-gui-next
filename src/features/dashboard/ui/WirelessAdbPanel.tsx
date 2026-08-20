@@ -16,8 +16,8 @@ interface WirelessAdbPanelProps {
 
 export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: WirelessAdbPanelProps) {
   const { form, ip, isBusy, isConnecting, isDisconnecting, isEnablingTcpip } = wireless;
-  const { errors } = form.formState;
-
+  const { errors, isSubmitting } = form.formState;
+  const isPending = isBusy || isConnecting || isDisconnecting || isSubmitting;
   return (
     <PanelCard
       action={
@@ -37,8 +37,8 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
     >
       <form
         className="flex flex-col gap-3"
-        onSubmit={form.handleSubmit((values) => {
-          void wireless.connect(values);
+        onSubmit={form.handleSubmit(async (values) => {
+          await wireless.connect(values);
         })}
       >
         <FieldGroup>
@@ -49,9 +49,10 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
                 aria-describedby={errors.ip ? 'dashboard-wireless-ip-error' : undefined}
                 aria-invalid={Boolean(errors.ip)}
                 autoComplete="off"
-                disabled={isConnecting || isDisconnecting}
+                disabled={isPending}
                 id="dashboard-wireless-ip"
                 placeholder="192.168.1.14"
+                required
                 {...form.register('ip')}
               />
               {errors.ip ? (
@@ -66,10 +67,11 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
                 aria-describedby={errors.port ? 'dashboard-wireless-port-error' : undefined}
                 aria-invalid={Boolean(errors.port)}
                 autoComplete="off"
-                disabled={isConnecting || isDisconnecting}
+                disabled={isPending}
                 id="dashboard-wireless-port"
                 inputMode="numeric"
                 placeholder="5555"
+                required
                 {...form.register('port')}
               />
               {errors.port ? (
@@ -82,17 +84,17 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
         </FieldGroup>
 
         <div className="flex flex-wrap gap-2">
-          <Button className="flex-1" disabled={isBusy || !ip} size="sm" type="submit">
-            {isConnecting ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
+          <Button className="flex-1" disabled={isPending || !ip} size="sm" type="submit">
+            {isConnecting || isSubmitting ? (
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
             ) : (
-              <Wifi aria-hidden="true" />
+              <Wifi aria-hidden="true" data-icon="inline-start" />
             )}
             Connect
           </Button>
           <Button
             className="flex-1"
-            disabled={isBusy || !ip}
+            disabled={isPending || !ip}
             onClick={() => {
               void wireless.disconnect();
             }}
@@ -101,9 +103,9 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
             variant="outline"
           >
             {isDisconnecting ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
             ) : (
-              <PlugZap aria-hidden="true" />
+              <PlugZap aria-hidden="true" data-icon="inline-start" />
             )}
             Disconnect
           </Button>

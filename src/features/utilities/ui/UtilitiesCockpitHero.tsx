@@ -104,7 +104,7 @@ export function UtilitiesCockpitHero({
       : 'Searching…';
 
   return (
-    <Card className="@container rounded-xl border border-border bg-surface p-4.5 shadow-none transition-all duration-150">
+    <Card className="@container rounded-xl border border-border bg-surface p-4.5 shadow-none transition-colors duration-150">
       <CardContent className="flex flex-col gap-4 p-0">
         {/* Top bar: Identity & Quick Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -160,7 +160,11 @@ export function UtilitiesCockpitHero({
               type="button"
               variant="outline"
             >
-              <RefreshCw className={cn('mr-1.5 size-3.5', isRestarting && 'animate-spin')} />
+              <RefreshCw
+                aria-hidden="true"
+                className={cn('mr-1.5 size-3.5', isRestarting && 'animate-spin')}
+                data-icon="inline-start"
+              />
               {isRestarting ? 'Restarting…' : 'Restart Server'}
             </Button>
             <Button
@@ -171,7 +175,11 @@ export function UtilitiesCockpitHero({
               type="button"
               variant="outline"
             >
-              <RefreshCw className={cn('size-3.5', isLoading && 'animate-spin')} />
+              <RefreshCw
+                aria-hidden="true"
+                className={cn('size-3.5', isLoading && 'animate-spin')}
+                data-icon="inline-start"
+              />
             </Button>
           </div>
         </div>
@@ -244,7 +252,7 @@ export function UtilitiesCockpitHero({
                   type="button"
                   variant="ghost"
                 >
-                  <Edit3 className="size-3" />
+                  <Edit3 aria-hidden="true" className="size-3" data-icon="inline-start" />
                 </Button>
               ) : null}
             </div>

@@ -50,7 +50,10 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
         {/* Main Level Arc */}
         {levelPct === null ? null : (
           <circle
-            className={cn(TONE_STROKE[tone], 'transition-all duration-500 ease-out')}
+            className={cn(
+              TONE_STROKE[tone],
+              'transition-[stroke-dasharray,stroke] duration-500 ease-out',
+            )}
             cx={CENTER}
             cy={CENTER}
             fill="none"

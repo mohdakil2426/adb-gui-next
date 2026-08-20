@@ -175,7 +175,11 @@ export function PreFlightDiagnosticMatrix({
           type="button"
           variant="outline"
         >
-          <RefreshCw className={cn('size-3.5', isProbing && 'animate-spin')} />
+          <RefreshCw
+            aria-hidden="true"
+            className={cn('size-3.5', isProbing && 'animate-spin')}
+            data-icon="inline-start"
+          />
           Re-Check
         </Button>
       </CardHeader>

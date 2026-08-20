@@ -61,7 +61,11 @@ export function FlashAuditLogCard() {
             type="button"
             variant="ghost"
           >
-            <Trash2 className="size-3.5 text-muted-foreground" />
+            <Trash2
+              aria-hidden="true"
+              className="size-3.5 text-muted-foreground"
+              data-icon="inline-start"
+            />
           </Button>
         </div>
       </CardHeader>

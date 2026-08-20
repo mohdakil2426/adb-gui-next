@@ -49,7 +49,7 @@ export function GetVarDialog({
                     size="icon"
                     variant="outline"
                   >
-                    <Save className="size-4" />
+                    <Save aria-hidden="true" className="size-4" data-icon="inline-start" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Save to Log</TooltipContent>

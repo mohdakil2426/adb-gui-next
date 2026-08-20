@@ -116,7 +116,7 @@ export function SideloadProgressCard({
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-info transition-all duration-300 ease-out"
+                className="h-full rounded-full bg-info transition-[width] duration-300 ease-out"
                 style={{ width: `${Math.max(2, Math.min(100, streamProgress.percentage))}%` }}
               />
             </div>

@@ -57,7 +57,7 @@ export function MarketplaceOverviewTab({
         <div className="flex flex-wrap items-center gap-1.5">
           {QUICK_DISCOVERY_TAGS.map((tag) => (
             <Button
-              className="h-7 rounded-full border-border/80 bg-surface-raised/40 text-caption transition-all hover:bg-accent hover:text-foreground"
+              className="h-7 rounded-full border-border/80 bg-surface-raised/40 text-caption transition-colors hover:bg-accent hover:text-foreground"
               key={tag.label}
               onClick={() => handleChipClick(tag.query)}
               size="sm"
