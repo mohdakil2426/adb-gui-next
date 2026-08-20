@@ -77,8 +77,8 @@ export function useMarketplaceAuth() {
           user: status.login
             ? {
                 login: status.login,
-                avatarUrl: status.avatarUrl ?? undefined,
-                profileUrl: status.profileUrl ?? undefined,
+                avatarUrl: status.avatarUrl ?? null,
+                profileUrl: status.profileUrl ?? null,
               }
             : null,
           rateLimit: null,
@@ -104,8 +104,8 @@ export function useMarketplaceAuth() {
           user: status.login
             ? {
                 login: status.login,
-                avatarUrl: status.avatarUrl ?? undefined,
-                profileUrl: status.profileUrl ?? undefined,
+                avatarUrl: status.avatarUrl ?? null,
+                profileUrl: status.profileUrl ?? null,
               }
             : null,
           rateLimit: null,

@@ -5,6 +5,7 @@ type MarketplaceSortBy = backend.MarketplaceSortBy;
 type ProviderSource = backend.ProviderSource;
 
 export interface MarketplaceLastSearch {
+  githubApkOnly: boolean;
   providers: ProviderSource[];
   query: string;
   results: MarketplaceApp[];
@@ -24,13 +25,13 @@ export function visibleMarketplaceApps(
   }
   return results.filter((app) => app?.installable);
 }
-
 export function lastSearchMatches(
   cache: MarketplaceLastSearch | null,
   query: string,
   providers: ProviderSource[],
   sortBy: MarketplaceSortBy,
   resultsPerProvider: number,
+  githubApkOnly: boolean,
 ): cache is MarketplaceLastSearch {
   if (!(Array.isArray(cache?.providers) && Array.isArray(providers))) {
     return false;
@@ -39,6 +40,9 @@ export function lastSearchMatches(
     return false;
   }
   if (cache.sortBy !== sortBy || cache.resultsPerProvider !== resultsPerProvider) {
+    return false;
+  }
+  if (cache.githubApkOnly !== githubApkOnly) {
     return false;
   }
   if (cache.providers.length !== providers.length) {

@@ -100,6 +100,10 @@ pub struct SearchFilters {
     pub github_token: Option<String>,
     #[serde(default = "default_results_per_provider")]
     pub results_per_provider: u32,
+    /// When true, GitHub search returns only repos with APK/APKS installers.
+    /// Mirrors Komi Store `assetMatchesPlatform(Android) == .apk` check.
+    #[serde(default = "default_github_apk_only")]
+    pub github_apk_only: bool,
 }
 
 fn default_sort() -> String {
@@ -108,6 +112,10 @@ fn default_sort() -> String {
 
 fn default_results_per_provider() -> u32 {
     12
+}
+
+fn default_github_apk_only() -> bool {
+    true
 }
 
 // ─── GitHub device flow auth DTOs ────────────────────────────────────────────

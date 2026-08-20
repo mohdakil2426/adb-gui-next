@@ -1,4 +1,4 @@
-import { ArrowDownWideNarrow, LayoutGrid, List } from 'lucide-react';
+import { ArrowDownWideNarrow, LayoutGrid, List, Package } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import {
   getMarketplaceActiveFilterSummary,
@@ -41,14 +41,18 @@ export function FilterBar({ resultCount }: { resultCount: number }) {
   const resultsPerProvider = useMarketplaceStore((state) => state.resultsPerProvider);
   const installableOnly = useMarketplaceStore((state) => state.installableOnly);
   const setInstallableOnly = useMarketplaceStore((state) => state.setInstallableOnly);
+  const githubApkOnly = useMarketplaceStore((state) => state.githubApkOnly);
+  const setGithubApkOnly = useMarketplaceStore((state) => state.setGithubApkOnly);
 
   const summaries = getMarketplaceActiveFilterSummary({
     activeProviders,
+    githubApkOnly,
     installableOnly,
     resultsPerProvider,
     sortBy,
   });
   const allActive = (activeProviders ?? []).length === MARKETPLACE_PROVIDERS.length;
+  const isGithubActive = activeProviders.includes('GitHub');
 
   return (
     <div className="flex flex-col gap-3">
@@ -92,6 +96,25 @@ export function FilterBar({ resultCount }: { resultCount: number }) {
               onCheckedChange={setInstallableOnly}
             />
             Installable only
+          </label>
+
+          <label
+            className="flex items-center gap-2 text-caption text-muted-foreground"
+            htmlFor="marketplace-github-apk-only"
+            title={
+              isGithubActive
+                ? 'GitHub: verified .apk/.apks/.xapk releases (Komi assetMatchesPlatform)'
+                : 'Enable GitHub to filter APK/APKS'
+            }
+          >
+            <Switch
+              checked={githubApkOnly}
+              disabled={!isGithubActive}
+              id="marketplace-github-apk-only"
+              onCheckedChange={setGithubApkOnly}
+            />
+            <Package aria-hidden="true" className="size-3.5" />
+            APK/APKS only
           </label>
 
           <DropdownMenu>

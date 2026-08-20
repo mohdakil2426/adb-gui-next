@@ -11,8 +11,8 @@ use super::resolver::resolve_github_repo_dynamic;
 use super::types::{MarketplaceApp, MarketplaceAppDetail, VersionInfo};
 use crate::CmdResult;
 
-/// Maximum concurrent verification requests to avoid overwhelming GitHub API.
-const VERIFY_CONCURRENCY: usize = 5;
+/// Komi Store uses VERIFY_CONCURRENCY=15. We match it for Android APK verification.
+const VERIFY_CONCURRENCY: usize = 15;
 
 /// Number of releases to scan per repo during APK verification.
 const VERIFY_RELEASE_DEPTH: usize = 5;
@@ -74,11 +74,14 @@ fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
         .collect()
 }
 
-/// Verify search results have APK assets by scanning recent releases.
+/// Verify search results have APK/APKS assets by scanning recent releases.
+/// When `apk_only` is false, all repos are returned with `installable` annotated.
+/// When true, only repos with installable Android assets survive (Komi behavior).
 async fn verify_apk_availability(
     client: &Client,
     repos: Vec<MarketplaceApp>,
     token: &Option<String>,
+    apk_only: bool,
 ) -> Vec<MarketplaceApp> {
     if repos.is_empty() {
         return repos;
@@ -136,6 +139,9 @@ async fn verify_apk_availability(
     let mut verified = Vec::new();
     while let Some(result) = set.join_next().await {
         if let Ok(app) = result {
+            if apk_only && !app.installable {
+                continue;
+            }
             verified.push(app);
         }
     }
@@ -148,8 +154,19 @@ pub async fn search(
     token: &Option<String>,
     sort: &str,
     per_page: u32,
+    apk_only: bool,
 ) -> Vec<MarketplaceApp> {
-    let q = format!("{query} topic:android fork:false archived:false");
+    // Komi-style: when query is blank, list everything via trending Android repos.
+    // Fallback to "stars:>100" style when empty (mirrors Komi buildSearchQuery).
+    let effective_query = {
+        let trimmed = query.trim();
+        if trimmed.is_empty() {
+            "topic:android stars:>100".to_string()
+        } else {
+            format!("{trimmed} topic:android fork:false archived:false")
+        }
+    };
+    let q = effective_query;
     let url = format!(
         "https://api.github.com/search/repositories?q={}&sort={sort}&per_page={per_page}",
         urlencoding::encode(&q)
@@ -185,7 +202,7 @@ pub async fn search(
     let items = body["items"].as_array().unwrap_or(&empty);
     let parsed = parse_repo_items(items);
 
-    verify_apk_availability(client, parsed, token).await
+    verify_apk_availability(client, parsed, token, apk_only).await
 }
 
 pub async fn get_detail(

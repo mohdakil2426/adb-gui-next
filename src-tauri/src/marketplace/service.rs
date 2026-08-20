@@ -24,10 +24,11 @@ pub fn search_cache_key(query: &str, filters: &SearchFilters) -> String {
     };
 
     format!(
-        "search:{query}|{provider_key}|{}|{}|{}",
+        "search:{query}|{provider_key}|{}|{}|{}|apk:{}",
         filters.sort_by,
         token_scope(&filters.github_token),
-        filters.results_per_provider
+        filters.results_per_provider,
+        filters.github_apk_only
     )
 }
 
@@ -45,6 +46,7 @@ pub async fn fetch_search_apps(
     };
     let limit = filters.results_per_provider.max(5);
     let github_token = filters.github_token.clone();
+    let apk_only = filters.github_apk_only;
 
     let (fdroid_results, github_results, aptoide_results) = tokio::join!(
         async {
@@ -58,7 +60,8 @@ pub async fn fetch_search_apps(
         },
         async {
             if is_provider_enabled("GitHub") {
-                github::search(client, query, &github_token, &filters.sort_by, limit).await
+                github::search(client, query, &github_token, &filters.sort_by, limit, apk_only)
+                    .await
             } else {
                 vec![]
             }
@@ -164,7 +167,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.9),
             categories: vec!["System".into(), "Developer Tools".into()],
             download_url: Some("https://github.com/RikkaApps/Shizuku/releases/latest/download/shizuku-v13.5.4.r1046.06c4b22-release.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/RikkaApps/Shizuku/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
+            icon_url: Some("https://raw.githubusercontent.com/RikkaApps/Shizuku/master/manager/src/main/res/mipmap-xxhdpi/ic_launcher.png".into()),
         },
         CuratedTool {
             name: "Magisk".into(),
@@ -177,7 +180,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.9),
             categories: vec!["System & Root".into(), "Utility".into()],
             download_url: Some("https://github.com/topjohnwu/Magisk/releases/latest/download/Magisk-v27.0.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/topjohnwu/Magisk/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
+            icon_url: Some("https://raw.githubusercontent.com/topjohnwu/Magisk/master/docs/images/logo.png".into()),
         },
         CuratedTool {
             name: "ViPER4Android FX".into(),
@@ -190,7 +193,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.7),
             categories: vec!["Media".into(), "System".into()],
             download_url: Some("https://github.com/v4a-re/ViPER4Android-FX/releases/latest/download/ViPER4AndroidFX.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/v4a-re/ViPER4Android-FX/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
+            icon_url: None,
         },
         CuratedTool {
             name: "ReVanced Manager".into(),
@@ -203,7 +206,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.8),
             categories: vec!["Utility".into(), "Customization".into()],
             download_url: Some("https://github.com/ReVanced/revanced-manager/releases/latest/download/revanced-manager-v1.21.0.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/ReVanced/revanced-manager/main/assets/images/logo.png".into()),
+            icon_url: Some("https://raw.githubusercontent.com/ReVanced/revanced-manager/main/assets/revanced-logo/revanced-logo.svg".into()),
         },
         CuratedTool {
             name: "Lawnchair 14".into(),
@@ -216,7 +219,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.6),
             categories: vec!["Customization".into(), "System".into()],
             download_url: Some("https://github.com/LawnchairLauncher/lawnchair/releases/latest/download/Lawnchair.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/LawnchairLauncher/lawnchair/develop/assets/icons/lawnchair.png".into()),
+            icon_url: Some("https://raw.githubusercontent.com/LawnchairLauncher/lawnchair/16-dev/fastlane/metadata/android/en-US/images/icon.png".into()),
         },
         CuratedTool {
             name: "Proton Pass".into(),
@@ -229,7 +232,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.7),
             categories: vec!["Privacy & Security".into()],
             download_url: Some("https://github.com/protonpass/android-pass/releases/latest/download/ProtonPass.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/protonpass/android-pass/main/pass/res/mipmap-xxxhdpi/ic_launcher.png".into()),
+            icon_url: Some("https://raw.githubusercontent.com/protonpass/android-pass/main/app/src/alpha/ic_launcher-playstore.png".into()),
         },
         CuratedTool {
             name: "PipePipe".into(),
@@ -242,7 +245,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.8),
             categories: vec!["Media & Streaming".into(), "Privacy".into()],
             download_url: Some("https://github.com/InfinityLoop1309/PipePipe/releases/latest/download/PipePipe.apk".into()),
-            icon_url: Some("https://raw.githubusercontent.com/InfinityLoop1309/PipePipe/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
+            icon_url: None,
         },
     ]
 }

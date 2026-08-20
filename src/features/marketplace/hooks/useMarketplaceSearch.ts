@@ -29,6 +29,7 @@ export function useMarketplaceSearch() {
   const setLastSearch = useMarketplaceStore((state) => state.setLastSearch);
   const lastSearch = useMarketplaceStore((state) => state.lastSearch);
   const installableOnly = useMarketplaceStore((state) => state.installableOnly);
+  const githubApkOnly = useMarketplaceStore((state) => state.githubApkOnly);
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
@@ -46,8 +47,9 @@ export function useMarketplaceSearch() {
     async (searchQuery: string) => {
       const trimmed = searchQuery.trim();
       const requestId = ++requestIdRef.current;
+      const isExplore = trimmed === '';
 
-      if (!trimmed || trimmed.length < MIN_QUERY_LENGTH) {
+      if (!isExplore && trimmed.length < MIN_QUERY_LENGTH) {
         setQuery('');
         setResults([]);
         setSearchError(null);
@@ -58,8 +60,19 @@ export function useMarketplaceSearch() {
       setSearchError(null);
       setIsSearching(true);
       setQuery(trimmed);
-      addToSearchHistory(trimmed);
-      if (lastSearchMatches(lastSearch, trimmed, activeProviders, sortBy, resultsPerProvider)) {
+      if (!isExplore) {
+        addToSearchHistory(trimmed);
+      }
+      if (
+        lastSearchMatches(
+          lastSearch,
+          trimmed,
+          activeProviders,
+          sortBy,
+          resultsPerProvider,
+          githubApkOnly,
+        )
+      ) {
         setResults(lastSearch.results);
       }
 
@@ -68,12 +81,14 @@ export function useMarketplaceSearch() {
           providers: activeProviders,
           sortBy,
           githubToken,
+          githubApkOnly,
           resultsPerProvider,
         });
 
         if (requestId === requestIdRef.current) {
           setResults(apps);
           setLastSearch({
+            githubApkOnly,
             providers: activeProviders,
             query: trimmed,
             results: apps,
@@ -85,7 +100,14 @@ export function useMarketplaceSearch() {
         if (requestId === requestIdRef.current) {
           handleError('Marketplace Search', error);
           if (
-            !lastSearchMatches(lastSearch, trimmed, activeProviders, sortBy, resultsPerProvider)
+            !lastSearchMatches(
+              lastSearch,
+              trimmed,
+              activeProviders,
+              sortBy,
+              resultsPerProvider,
+              githubApkOnly,
+            )
           ) {
             setResults([]);
           }
@@ -100,6 +122,7 @@ export function useMarketplaceSearch() {
     [
       activeProviders,
       addToSearchHistory,
+      githubApkOnly,
       githubToken,
       lastSearch,
       resultsPerProvider,
@@ -153,13 +176,22 @@ export function useMarketplaceSearch() {
     [clearPendingDebounce, performSearch],
   );
 
+  const handleExplore = useCallback(() => {
+    clearPendingDebounce();
+    setLocalQuery('');
+    void performSearch('');
+  }, [clearPendingDebounce, performSearch]);
+
   useEffect(() => {
     if (query.trim().length >= MIN_QUERY_LENGTH) {
       void performSearch(query);
     }
+    if (query.trim() === '' && lastSearch?.query === '') {
+      void performSearch('');
+    }
     // Re-run the latest search only when filters or auth state change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeProviders, sortBy, resultsPerProvider, githubToken]);
+  }, [activeProviders, sortBy, resultsPerProvider, githubToken, githubApkOnly]);
 
   useEffect(
     () => () => {
@@ -183,11 +215,19 @@ export function useMarketplaceSearch() {
     rawCount: results.length,
     isSearching,
     searchError,
-    fromCache: lastSearchMatches(lastSearch, query, activeProviders, sortBy, resultsPerProvider),
+    fromCache: lastSearchMatches(
+      lastSearch,
+      query,
+      activeProviders,
+      sortBy,
+      resultsPerProvider,
+      githubApkOnly,
+    ),
     hasQuery: localQuery.trim().length >= MIN_QUERY_LENGTH,
     handleInputChange,
     handleClear,
     handleQuickSearch,
+    handleExplore,
     handleRetry,
   };
 }

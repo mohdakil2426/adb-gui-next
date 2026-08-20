@@ -601,6 +601,7 @@ export namespace backend {
   }
 
   export interface MarketplaceSearchFilters {
+    githubApkOnly?: boolean;
     githubToken?: string | null;
     providers: ProviderSource[];
     resultsPerProvider?: number;

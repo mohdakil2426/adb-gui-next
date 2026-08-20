@@ -55,35 +55,27 @@ pub fn classify_abi(filename: &str) -> (i32, &'static str) {
     (70, "universal")
 }
 
-/// Determine if a GitHub release asset is a valid, installable Android APK.
+/// Determine if a GitHub release asset is a valid, installable Android package.
 ///
+/// Supports `.apk`, `.apks`, `.xapk`, `.apkm` (Komi-style `assetMatchesPlatform(Android)`).
 /// Filters out:
-/// - Non-APK extensions (`.aab`, `.xapk`, `.apks`, `.zip`, `.tar.gz`, `.json`, `.sha256`)
-/// - Alpine Linux APK packages (`.apk` targeting alpine packaging systems)
-/// - Pure development test builds unless it is the only APK asset published
+/// - Non-Android installers (`.aab`, `.zip`, `.tar.gz`, etc.)
+/// - Alpine Linux APK packages
+/// - Pure development test builds
 pub fn is_apk_asset(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
 
-    if !lower.ends_with(".apk") {
-        return false;
-    }
-
-    // Exclude bundles and archives that happen to match substring
-    if lower.ends_with(".aab")
-        || lower.ends_with(".xapk")
+    let is_android_package = lower.ends_with(".apk")
         || lower.ends_with(".apks")
-        || lower.ends_with(".zip")
-        || lower.ends_with(".tar.gz")
-        || lower.ends_with(".tar.xz")
-        || lower.ends_with(".sig")
-        || lower.ends_with(".asc")
-        || lower.ends_with(".sha256")
-        || lower.ends_with(".md5")
-    {
+        || lower.ends_with(".xapk")
+        || lower.ends_with(".apkm");
+    if !is_android_package {
         return false;
     }
 
-    // Exclude Alpine Linux package manager APKs (e.g., alpine-keys.apk, package-r1.apk)
+    // (`.aab` etc. already excluded by `is_android_package` guard above)
+
+    // Exclude Alpine Linux package manager APKs
     if lower.starts_with("alpine-")
         || lower.contains("_alpine")
         || lower.contains("apk-tools")
@@ -92,7 +84,7 @@ pub fn is_apk_asset(name: &str) -> bool {
         return false;
     }
 
-    // Exclude test / runner / benchmark helper artifacts if they are obvious test harnesses
+    // Exclude test / runner / benchmark helper artifacts
     if lower.contains("androidTest.apk")
         || lower.contains("-androidTest")
         || lower.contains("_test_runner")
@@ -101,6 +93,11 @@ pub fn is_apk_asset(name: &str) -> bool {
     }
 
     true
+}
+
+/// Komi Store-style platform check: does this asset match Android installable?
+pub fn is_android_installable_asset(name: &str) -> bool {
+    is_apk_asset(name)
 }
 
 /// Filter and rank release APK assets, picking the best asset for Android devices.
