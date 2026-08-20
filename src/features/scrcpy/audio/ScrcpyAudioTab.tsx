@@ -217,7 +217,11 @@ export function ScrcpyAudioTab({ onOptionsChange, options }: ScrcpyAudioTabProps
                       type="button"
                       variant="outline"
                     >
-                      <FolderOpen aria-hidden="true" className="size-3.5" />
+                      <FolderOpen
+                        aria-hidden="true"
+                        className="size-3.5"
+                        data-icon="inline-start"
+                      />
                       <span>Browse File</span>
                     </Button>
                     <Button
@@ -227,7 +231,7 @@ export function ScrcpyAudioTab({ onOptionsChange, options }: ScrcpyAudioTabProps
                       type="button"
                       variant="ghost"
                     >
-                      <X aria-hidden="true" className="size-3.5" />
+                      <X aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                       <span>Clear</span>
                     </Button>
                   </div>

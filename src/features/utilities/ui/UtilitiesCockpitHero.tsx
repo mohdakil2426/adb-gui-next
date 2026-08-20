@@ -106,7 +106,14 @@ export function UtilitiesCockpitHero({
   return (
     <Card className="@container rounded-xl border border-border bg-surface p-4.5 shadow-none transition-colors duration-150">
       <CardContent className="flex flex-col gap-4 p-0">
-        {/* Top bar: Identity & Quick Actions */}
+        {/* Screen-reader status announcement region */}
+        <div aria-live="polite" className="sr-only" role="status">
+          {isLoading
+            ? 'Refreshing utilities telemetry…'
+            : isRestarting
+              ? 'Restarting ADB server…'
+              : ''}
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground shadow-none">

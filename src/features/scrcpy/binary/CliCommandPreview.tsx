@@ -6,6 +6,8 @@ import { CopyButton } from '@/shared/components/CopyButton';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
+// Empty state handled across UI when data?.length === 0
+
 interface CliCommandPreviewProps {
   options: backend.ScrcpyLaunchOptions;
   selectedSerials: Set<string>;

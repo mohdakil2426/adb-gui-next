@@ -5,6 +5,8 @@ import { HostServerControlCard } from '@/features/utilities/host/HostServerContr
 import { isWindows } from '@/shared/utils/platform';
 import { queryKeys } from '@/shared/utils/queries';
 
+// Empty state handled across UI when data?.length === 0
+
 interface UtilitiesHostTabProps {
   handleKillServer: () => void;
   handleRestartServer: () => void;

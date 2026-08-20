@@ -80,9 +80,9 @@ export function TargetRebootCard({
             variant="outline"
           >
             {loadingAction === 'reboot-system' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <RotateCw className="size-5 text-muted-foreground" />
+              <RotateCw className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot System</span>
@@ -99,9 +99,9 @@ export function TargetRebootCard({
             variant="outline"
           >
             {loadingAction === 'reboot-recovery' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Smartphone className="size-5 text-muted-foreground" />
+              <Smartphone className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot Recovery</span>
@@ -118,9 +118,9 @@ export function TargetRebootCard({
             variant="outline"
           >
             {loadingAction === 'reboot-bootloader' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Zap className="size-5 text-muted-foreground" />
+              <Zap className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot Bootloader</span>
@@ -137,9 +137,9 @@ export function TargetRebootCard({
             variant="outline"
           >
             {loadingAction === 'reboot-fastbootd' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Zap className="size-5 text-warning" />
+              <Zap className="size-5 text-warning" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot FastbootD</span>
@@ -155,7 +155,7 @@ export function TargetRebootCard({
             type="button"
             variant="outline"
           >
-            <Flame className="size-5 text-destructive" />
+            <Flame className="size-5 text-destructive" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot EDL (9008)</span>
               <span className="text-caption text-muted-foreground">Emergency Download Mode</span>

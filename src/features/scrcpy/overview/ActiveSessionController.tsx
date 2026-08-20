@@ -120,7 +120,11 @@ export function ActiveSessionController({
                         type="button"
                         variant={isToolbarOpen ? 'secondary' : 'outline'}
                       >
-                        <PanelRight aria-hidden="true" className="size-3.5" />
+                        <PanelRight
+                          aria-hidden="true"
+                          className="size-3.5"
+                          data-icon="inline-start"
+                        />
                         <span>{isToolbarOpen ? 'Hide Toolbar' : 'Floating Toolbar'}</span>
                       </Button>
                     </TooltipTrigger>
@@ -137,7 +141,7 @@ export function ActiveSessionController({
                     type="button"
                     variant="outline"
                   >
-                    <Square aria-hidden="true" className="size-3" />
+                    <Square aria-hidden="true" className="size-3" data-icon="inline-start" />
                     <span>Stop Mirror</span>
                   </Button>
                 </div>

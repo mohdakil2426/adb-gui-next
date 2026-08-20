@@ -229,7 +229,11 @@ export function RootSourceStep({ source, onSourceChange, onContinue }: RootSourc
             type="button"
             variant="outline"
           >
-            <FolderOpen aria-hidden="true" className="text-muted-foreground" />
+            <FolderOpen
+              aria-hidden="true"
+              className="text-muted-foreground"
+              data-icon="inline-start"
+            />
             <span className="min-w-0 text-left">
               {source?.type === 'local' ? (
                 <>

@@ -71,7 +71,7 @@ export function HostGoogleSetupCard({ status }: HostGoogleSetupCardProps) {
     },
   });
 
-  const isBusy = installTools.isPending || installDriver.isPending || repairPath.isPending;
+  const isPending = installTools.isPending || installDriver.isPending || repairPath.isPending;
 
   return (
     <Card className="rounded-xl border-border bg-surface shadow-none">
@@ -142,14 +142,15 @@ export function HostGoogleSetupCard({ status }: HostGoogleSetupCardProps) {
             </div>
 
             <Button
+              aria-busy={isPending}
               className="h-8 gap-1.5 text-caption"
-              disabled={isBusy}
+              disabled={isPending}
               onClick={() => setToolsConfirmOpen(true)}
               size="sm"
               type="button"
               variant="outline"
             >
-              <Download className="size-3.5 text-muted-foreground" />
+              <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               {status?.adbPresent ? 'Reinstall Platform-Tools' : 'Install Platform-Tools'}
             </Button>
           </div>
@@ -175,14 +176,15 @@ export function HostGoogleSetupCard({ status }: HostGoogleSetupCardProps) {
             </div>
 
             <Button
+              aria-busy={isPending}
               className="h-8 gap-1.5 text-caption"
-              disabled={isBusy}
+              disabled={isPending}
               onClick={() => setDriverConfirmOpen(true)}
               size="sm"
               type="button"
               variant="outline"
             >
-              <Usb className="size-3.5 text-muted-foreground" />
+              <Usb className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               {status?.driverInstalled ? 'Reinstall USB Driver' : 'Install USB Driver'}
             </Button>
           </div>
@@ -210,14 +212,15 @@ export function HostGoogleSetupCard({ status }: HostGoogleSetupCardProps) {
             </div>
 
             <Button
+              aria-busy={isPending}
               className="h-8 gap-1.5 text-caption"
-              disabled={isBusy || status?.onPath}
+              disabled={isPending || status?.onPath}
               onClick={() => setPathConfirmOpen(true)}
               size="sm"
               type="button"
               variant="outline"
             >
-              <ListTree className="size-3.5 text-muted-foreground" />
+              <ListTree className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               {status?.onPath ? 'PATH Configured' : 'Add to System PATH'}
             </Button>
           </div>

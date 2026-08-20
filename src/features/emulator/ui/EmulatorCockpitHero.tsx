@@ -26,6 +26,8 @@ import { Card, CardContent } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
 import { EMPTY_VALUE } from '@/shared/utils/format';
 
+// Empty state handled across UI when data?.length === 0
+
 interface EmulatorCockpitHeroProps {
   avds: backend.AvdSummary[];
   isBusy: boolean;

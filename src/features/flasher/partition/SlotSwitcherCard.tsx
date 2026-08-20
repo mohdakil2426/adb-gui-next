@@ -96,9 +96,9 @@ export function SlotSwitcherCard({
               variant={isSlotA ? 'secondary' : 'outline'}
             >
               {switchingSlot === 'a' ? (
-                <Loader2 className="mr-1.5 size-3 animate-spin" />
+                <Loader2 className="mr-1.5 size-3 animate-spin" data-icon="inline-start" />
               ) : (
-                <ArrowLeftRight className="mr-1.5 size-3" />
+                <ArrowLeftRight className="mr-1.5 size-3" data-icon="inline-start" />
               )}
               {isSlotA ? 'Current Slot' : 'Set Active Slot A'}
             </Button>
@@ -142,9 +142,9 @@ export function SlotSwitcherCard({
               variant={isSlotB ? 'secondary' : 'outline'}
             >
               {switchingSlot === 'b' ? (
-                <Loader2 className="mr-1.5 size-3 animate-spin" />
+                <Loader2 className="mr-1.5 size-3 animate-spin" data-icon="inline-start" />
               ) : (
-                <ArrowLeftRight className="mr-1.5 size-3" />
+                <ArrowLeftRight className="mr-1.5 size-3" data-icon="inline-start" />
               )}
               {isSlotB ? 'Current Slot' : 'Set Active Slot B'}
             </Button>

@@ -92,9 +92,9 @@ export function FlasherWipeTab({ serial, disabled, isLoading, onWipeData }: Flas
               variant="destructive"
             >
               {isLoading && pendingAction === 'userdata' ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" data-icon="inline-start" />
               ) : (
-                <Trash2 className="mr-2 size-4" />
+                <Trash2 className="mr-2 size-4" data-icon="inline-start" />
               )}
               Factory Reset Device
             </Button>
@@ -124,9 +124,9 @@ export function FlasherWipeTab({ serial, disabled, isLoading, onWipeData }: Flas
               variant="outline"
             >
               {isActionLoading && pendingAction === 'cache' ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" data-icon="inline-start" />
               ) : (
-                <HardDrive className="mr-2 size-4" />
+                <HardDrive className="mr-2 size-4" data-icon="inline-start" />
               )}
               Erase Cache
             </Button>
@@ -157,9 +157,9 @@ export function FlasherWipeTab({ serial, disabled, isLoading, onWipeData }: Flas
               variant="outline"
             >
               {isActionLoading && pendingAction === 'metadata' ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" data-icon="inline-start" />
               ) : (
-                <FolderLock className="mr-2 size-4" />
+                <FolderLock className="mr-2 size-4" data-icon="inline-start" />
               )}
               Erase Metadata
             </Button>
@@ -189,9 +189,9 @@ export function FlasherWipeTab({ serial, disabled, isLoading, onWipeData }: Flas
               variant="destructive"
             >
               {isActionLoading && pendingAction === 'system' ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" data-icon="inline-start" />
               ) : (
-                <ShieldAlert className="mr-2 size-4" />
+                <ShieldAlert className="mr-2 size-4" data-icon="inline-start" />
               )}
               Erase System
             </Button>

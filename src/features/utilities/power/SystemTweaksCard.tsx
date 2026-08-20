@@ -160,7 +160,7 @@ export function SystemTweaksCard({ deviceMode, deviceSerial }: SystemTweaksCardP
                 type="button"
                 variant="outline"
               >
-                <Moon className="size-3.5 text-muted-foreground" />
+                <Moon className="size-3.5 text-muted-foreground" data-icon="inline-start" />
                 Force Dark
               </Button>
               <Button
@@ -171,7 +171,7 @@ export function SystemTweaksCard({ deviceMode, deviceSerial }: SystemTweaksCardP
                 type="button"
                 variant="outline"
               >
-                <Sun className="size-3.5 text-muted-foreground" />
+                <Sun className="size-3.5 text-muted-foreground" data-icon="inline-start" />
                 Force Light
               </Button>
             </div>
@@ -237,9 +237,9 @@ export function SystemTweaksCard({ deviceMode, deviceSerial }: SystemTweaksCardP
               variant="outline"
             >
               {isTweaking === 'soft-reboot' ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               ) : (
-                <RotateCcw className="size-3.5 text-muted-foreground" />
+                <RotateCcw className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               )}
               Trigger Soft Reboot
             </Button>

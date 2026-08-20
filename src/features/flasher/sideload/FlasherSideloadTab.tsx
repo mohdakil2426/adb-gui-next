@@ -93,7 +93,7 @@ export function FlasherSideloadTab({
                             size="icon"
                             variant="ghost"
                           >
-                            <X className="size-4" />
+                            <X className="size-4" data-icon="inline-start" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>Clear selection</TooltipContent>
@@ -139,9 +139,9 @@ export function FlasherSideloadTab({
               type="button"
             >
               {isSideloading ? (
-                <Loader2 className="mr-2 size-4 shrink-0 animate-spin" />
+                <Loader2 className="mr-2 size-4 shrink-0 animate-spin" data-icon="inline-start" />
               ) : (
-                <Package className="mr-2 size-4 shrink-0" />
+                <Package className="mr-2 size-4 shrink-0" data-icon="inline-start" />
               )}
               Sideload Package {fileName ? `(${fileName})` : ''}
             </Button>

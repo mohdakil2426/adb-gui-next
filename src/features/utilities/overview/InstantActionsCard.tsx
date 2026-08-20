@@ -131,9 +131,9 @@ export function InstantActionsCard({
             variant="outline"
           >
             {runningAction === 'screenshot' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Camera className="size-5 text-muted-foreground" />
+              <Camera className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Capture Screenshot</span>
@@ -150,9 +150,9 @@ export function InstantActionsCard({
             variant="outline"
           >
             {runningAction === 'bugreport' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <FileText className="size-5 text-muted-foreground" />
+              <FileText className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Dump Sysinfo Report</span>
@@ -169,9 +169,9 @@ export function InstantActionsCard({
             variant="outline"
           >
             {runningAction === 'clear-logcat' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Trash2 className="size-5 text-muted-foreground" />
+              <Trash2 className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Flush Logcat Buffer</span>
@@ -188,9 +188,9 @@ export function InstantActionsCard({
             variant="outline"
           >
             {runningAction === 'wifi' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Wifi className="size-5 text-muted-foreground" />
+              <Wifi className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Cycle Wi-Fi Radio</span>
@@ -207,9 +207,9 @@ export function InstantActionsCard({
             variant="outline"
           >
             {runningAction === 'demo' ? (
-              <Loader2 className="size-5 animate-spin text-primary" />
+              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
             ) : (
-              <Tv className="size-5 text-muted-foreground" />
+              <Tv className="size-5 text-muted-foreground" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">SystemUI Demo Mode</span>
@@ -224,7 +224,7 @@ export function InstantActionsCard({
             type="button"
             variant="outline"
           >
-            <Camera className="size-5 text-muted-foreground" />
+            <Camera className="size-5 text-muted-foreground" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">
                 Screenshot & Log Studio

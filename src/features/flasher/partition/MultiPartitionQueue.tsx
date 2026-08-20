@@ -137,7 +137,7 @@ export function MultiPartitionQueue({
                       type="button"
                       variant="ghost"
                     >
-                      <X className="size-3 text-muted-foreground" />
+                      <X className="size-3 text-muted-foreground" data-icon="inline-start" />
                     </Button>
                   </div>
                 </div>
@@ -152,12 +152,12 @@ export function MultiPartitionQueue({
             >
               {isBatchFlashing ? (
                 <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" data-icon="inline-start" />
                   Flashing Batch ({currentIndex === null ? 1 : currentIndex + 1}/{queue.length})...
                 </>
               ) : (
                 <>
-                  <Zap className="mr-2 size-4" />
+                  <Zap className="mr-2 size-4" data-icon="inline-start" />
                   Flash {queue.length} Partitions in Sequence
                 </>
               )}

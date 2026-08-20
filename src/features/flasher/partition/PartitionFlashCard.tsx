@@ -140,7 +140,7 @@ export function PartitionFlashCard({
                           size="icon"
                           variant="ghost"
                         >
-                          <X className="size-4" />
+                          <X className="size-4" data-icon="inline-start" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>Clear selection</TooltipContent>

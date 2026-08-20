@@ -15,6 +15,7 @@ import { ScrcpyCockpitHero } from '@/features/scrcpy/ScrcpyCockpitHero';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { queryKeys } from '@/shared/utils/queries';
+// Empty state handled across UI when data?.length === 0
 
 export function ViewScrcpy() {
   const devices = useDeviceStore((state) => state.devices);
@@ -85,7 +86,16 @@ export function ViewScrcpy() {
   return (
     <div className="@container flex flex-col gap-4">
       <h1 className="sr-only">Scrcpy Mirroring Cockpit</h1>
-
+      {/* Screen-reader status announcement region */}
+      <div aria-live="polite" className="sr-only" role="status">
+        {install.isPending
+          ? 'Installing scrcpy…'
+          : launch.isPending
+            ? 'Launching scrcpy mirror session…'
+            : stop.isPending || stopDevice.isPending
+              ? 'Stopping scrcpy session…'
+              : ''}
+      </div>
       {/* Top Precision Cockpit Hero Banner */}
       <ScrcpyCockpitHero
         actionState={

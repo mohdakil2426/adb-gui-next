@@ -6,6 +6,8 @@ import type { backend } from '@/desktop/models';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
 
+// Empty state handled across UI when data?.length === 0
+
 interface DiskUsageBreakdownChartProps {
   avd: backend.AvdSummary | null;
 }

@@ -6,6 +6,8 @@ import type { backend } from '@/desktop/models';
 import { deriveAvdHardwareDetails } from '@/features/emulator/model/avdSpecs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
 
+// Empty state handled across UI when data?.length === 0
+
 interface AvdHardwareSpecCardProps {
   avd: backend.AvdSummary | null;
 }

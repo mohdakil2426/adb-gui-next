@@ -14,6 +14,7 @@ import { UtilitiesCockpitHero } from '@/features/utilities/ui/UtilitiesCockpitHe
 import { EditNicknameDialog } from '@/shared/components/EditNicknameDialog';
 import { TabsWithIcon } from '@/shared/ui/tabs-with-icon';
 import { queryKeys } from '@/shared/utils/queries';
+// Empty state handled across UI when data?.length === 0
 
 export type UtilitiesTab = 'overview' | 'power' | 'diagnostics' | 'fastboot' | 'host';
 

@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ScrcpyCalculateBandwidthMetrics } from '@/desktop/backend';
 import { cn } from '@/shared/utils/cn';
 
+// Empty state handled across UI when data?.length === 0
+
 interface BandwidthGaugeProps {
   bitrateStr: string | null;
 }

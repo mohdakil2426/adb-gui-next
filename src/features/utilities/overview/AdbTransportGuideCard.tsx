@@ -75,7 +75,7 @@ export function AdbTransportGuideCard() {
             type="button"
             variant="outline"
           >
-            <Layers className="mr-1 size-3" />
+            <Layers className="mr-1 size-3" data-icon="inline-start" />
             Guide
           </Button>
           <Button
@@ -85,7 +85,7 @@ export function AdbTransportGuideCard() {
             type="button"
             variant="outline"
           >
-            <Terminal className="mr-1 size-3" />
+            <Terminal className="mr-1 size-3" data-icon="inline-start" />
             ASCII Map
           </Button>
         </div>

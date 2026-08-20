@@ -184,7 +184,10 @@ export function LogcatStreamCard({ deviceMode, deviceSerial }: LogcatStreamCardP
               type="button"
               variant="outline"
             >
-              <RefreshCw className={cn('size-3.5', isFetchingLogs && 'animate-spin')} />
+              <RefreshCw
+                className={cn('size-3.5', isFetchingLogs && 'animate-spin')}
+                data-icon="inline-start"
+              />
               Refresh
             </Button>
 
@@ -196,7 +199,7 @@ export function LogcatStreamCard({ deviceMode, deviceSerial }: LogcatStreamCardP
               type="button"
               variant="outline"
             >
-              <Download className="size-3.5 text-muted-foreground" />
+              <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               Export .txt
             </Button>
 
@@ -208,7 +211,7 @@ export function LogcatStreamCard({ deviceMode, deviceSerial }: LogcatStreamCardP
               type="button"
               variant="ghost"
             >
-              <Trash2 className="size-3.5 text-muted-foreground" />
+              <Trash2 className="size-3.5 text-muted-foreground" data-icon="inline-start" />
               Clear
             </Button>
           </div>

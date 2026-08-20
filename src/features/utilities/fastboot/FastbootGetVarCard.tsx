@@ -175,9 +175,9 @@ export function FastbootGetVarCard({ deviceMode, deviceSerial }: FastbootGetVarC
               type="button"
             >
               {isLoadingVars ? (
-                <Loader2 className="size-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               ) : (
-                <RefreshCw className="size-3.5" />
+                <RefreshCw className="size-3.5" data-icon="inline-start" />
               )}
               Query Variables
             </Button>
@@ -190,7 +190,7 @@ export function FastbootGetVarCard({ deviceMode, deviceSerial }: FastbootGetVarC
                 type="button"
                 variant="outline"
               >
-                <FileJson className="size-3.5 text-muted-foreground" />
+                <FileJson className="size-3.5 text-muted-foreground" data-icon="inline-start" />
                 Export JSON
               </Button>
             ) : null}

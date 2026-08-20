@@ -8,6 +8,8 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
 
+// Empty state handled across UI when data?.length === 0
+
 interface QualityPresetsCardProps {
   onApplyPreset: (partialOptions: Partial<backend.ScrcpyLaunchOptions>) => void;
   options: backend.ScrcpyLaunchOptions;

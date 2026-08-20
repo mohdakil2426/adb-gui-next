@@ -87,9 +87,13 @@ export function ScrcpyBinaryTab({
                 variant="outline"
               >
                 {isCheckingUpdate ? (
-                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                    data-icon="inline-start"
+                  />
                 ) : (
-                  <RefreshCw aria-hidden="true" className="size-3.5" />
+                  <RefreshCw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 )}
                 <span>Check Updates</span>
               </Button>
@@ -103,9 +107,13 @@ export function ScrcpyBinaryTab({
                 variant={installed && !updateAvailable ? 'secondary' : 'default'}
               >
                 {isInstalling ? (
-                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                    data-icon="inline-start"
+                  />
                 ) : (
-                  <Download aria-hidden="true" className="size-3.5" />
+                  <Download aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 )}
                 <span>
                   {isInstalling
@@ -126,7 +134,7 @@ export function ScrcpyBinaryTab({
                   type="button"
                   variant="outline"
                 >
-                  <FolderOpen aria-hidden="true" className="size-3.5" />
+                  <FolderOpen aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                   <span>Open Folder</span>
                 </Button>
               ) : null}
@@ -140,7 +148,7 @@ export function ScrcpyBinaryTab({
                   type="button"
                   variant="outline"
                 >
-                  <Trash2 aria-hidden="true" className="size-3.5" />
+                  <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                   <span>Uninstall</span>
                 </Button>
               ) : null}

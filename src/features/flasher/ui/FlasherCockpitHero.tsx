@@ -163,7 +163,7 @@ export function FlasherCockpitHero({
                 type="button"
                 variant="outline"
               >
-                <ArrowLeftRight className="size-3.5" />
+                <ArrowLeftRight className="size-3.5" data-icon="inline-start" />
                 Switch to Slot _{nextSlot.toUpperCase()}
               </Button>
             ) : null}

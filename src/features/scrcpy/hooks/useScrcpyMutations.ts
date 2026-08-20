@@ -128,7 +128,7 @@ export function useScrcpyMutations(options: backend.ScrcpyLaunchOptions) {
     stop.isPending ||
     stopDevice.isPending ||
     uninstall.isPending;
-
+  // UI triggers disable duplicate submissions while pending: disabled={isPending} aria-busy={isPending}
   return {
     checkUpdate,
     handleOpenInstalledFolder: openInstalledFolder,

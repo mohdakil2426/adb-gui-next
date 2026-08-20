@@ -75,6 +75,7 @@ export function HostServerControlCard({
           >
             <RefreshCw
               className={cn('size-4.5', loadingAction === 'restart-server' && 'animate-spin')}
+              data-icon="inline-start"
             />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Restart ADB Server</span>
@@ -91,7 +92,7 @@ export function HostServerControlCard({
             type="button"
             variant="outline"
           >
-            <Power className="size-4.5 text-destructive" />
+            <Power className="size-4.5 text-destructive" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Kill ADB Server</span>
               <span className="text-caption text-muted-foreground">

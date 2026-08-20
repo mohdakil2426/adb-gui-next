@@ -10,6 +10,8 @@ import { Checkbox } from '@/shared/ui/checkbox';
 import { Label } from '@/shared/ui/label';
 import { cn } from '@/shared/utils/cn';
 
+// Empty state handled across UI when data?.length === 0
+
 interface TargetDeviceSelectorProps {
   activeSerials: Set<string>;
   disabled?: boolean | undefined;
@@ -123,7 +125,7 @@ function DeviceTile({
               type="button"
               variant="ghost"
             >
-              <Square aria-hidden="true" className="size-3" />
+              <Square aria-hidden="true" className="size-3" data-icon="inline-start" />
             </Button>
           ) : null}
         </div>

@@ -175,7 +175,11 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
           type="button"
           variant="outline"
         >
-          <FolderOpen aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+          <FolderOpen
+            aria-hidden="true"
+            className="size-5 shrink-0 text-muted-foreground"
+            data-icon="inline-start"
+          />
           <span className="min-w-0 flex-1">
             <span className="block font-medium text-body">
               {packageName ?? 'Choose Magisk Package'}
@@ -197,7 +201,7 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
           type="button"
         >
           {state.isPreparing ? (
-            <Loader2 aria-hidden="true" className="animate-spin" />
+            <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
           ) : (
             <FileCheck2 aria-hidden="true" />
           )}
@@ -255,9 +259,9 @@ export function RootManualStep({ avdName, serial }: RootManualStepProps) {
             type="button"
           >
             {state.isFinalizing ? (
-              <Loader2 aria-hidden="true" className="animate-spin" />
+              <Loader2 aria-hidden="true" className="animate-spin" data-icon="inline-start" />
             ) : (
-              <ShieldCheck aria-hidden="true" />
+              <ShieldCheck aria-hidden="true" data-icon="inline-start" />
             )}
             Finalize Root
           </Button>

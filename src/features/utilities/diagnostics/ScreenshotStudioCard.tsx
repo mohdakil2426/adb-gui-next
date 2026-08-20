@@ -110,9 +110,9 @@ export function ScreenshotStudioCard({ deviceMode, deviceSerial }: ScreenshotStu
             type="button"
           >
             {isCapturing ? (
-              <Loader2 className="size-3.5 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
             ) : (
-              <Camera className="size-3.5" />
+              <Camera className="size-3.5" data-icon="inline-start" />
             )}
             {screenshotBase64 ? 'Capture Fresh Frame' : 'Take Screenshot'}
           </Button>
@@ -127,9 +127,9 @@ export function ScreenshotStudioCard({ deviceMode, deviceSerial }: ScreenshotStu
                 variant="outline"
               >
                 {copiedScreenshot ? (
-                  <Check className="size-3.5 text-success" />
+                  <Check className="size-3.5 text-success" data-icon="inline-start" />
                 ) : (
-                  <Copy className="size-3.5 text-muted-foreground" />
+                  <Copy className="size-3.5 text-muted-foreground" data-icon="inline-start" />
                 )}
                 {copiedScreenshot ? 'Copied to Clipboard' : 'Copy Image'}
               </Button>
@@ -141,7 +141,7 @@ export function ScreenshotStudioCard({ deviceMode, deviceSerial }: ScreenshotStu
                 type="button"
                 variant="outline"
               >
-                <Download className="size-3.5 text-muted-foreground" />
+                <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
                 Save PNG to Disk
               </Button>
             </>

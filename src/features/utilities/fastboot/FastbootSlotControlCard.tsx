@@ -68,7 +68,7 @@ export function FastbootSlotControlCard({
             type="button"
             variant="outline"
           >
-            <Layers className="size-5 text-muted-foreground" />
+            <Layers className="size-5 text-muted-foreground" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Set Active Slot _A</span>
               <span className="text-caption text-muted-foreground">fastboot --set-active=a</span>
@@ -82,7 +82,7 @@ export function FastbootSlotControlCard({
             type="button"
             variant="outline"
           >
-            <Layers className="size-5 text-muted-foreground" />
+            <Layers className="size-5 text-muted-foreground" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Set Active Slot _B</span>
               <span className="text-caption text-muted-foreground">fastboot --set-active=b</span>
@@ -99,7 +99,7 @@ export function FastbootSlotControlCard({
             type="button"
             variant="outline"
           >
-            <RotateCw className="size-4.5 text-muted-foreground" />
+            <RotateCw className="size-4.5 text-muted-foreground" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot System</span>
               <span className="text-caption text-muted-foreground">Normal boot</span>
@@ -113,7 +113,7 @@ export function FastbootSlotControlCard({
             type="button"
             variant="outline"
           >
-            <Zap className="size-4.5 text-muted-foreground" />
+            <Zap className="size-4.5 text-muted-foreground" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot Bootloader</span>
               <span className="text-caption text-muted-foreground">Restart fastboot</span>
@@ -127,7 +127,7 @@ export function FastbootSlotControlCard({
             type="button"
             variant="outline"
           >
-            <Zap className="size-4.5 text-warning" />
+            <Zap className="size-4.5 text-warning" data-icon="inline-start" />
             <div className="flex flex-col">
               <span className="font-semibold text-body text-foreground">Reboot FastbootD</span>
               <span className="text-caption text-muted-foreground">Userspace flasher</span>
