@@ -32,7 +32,7 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 | Shared process/path helpers | `src/helpers.rs` |
 | Payload domain | `src/payload/` (see `src/payload/AGENTS.md` for domain guide) |
 | Firmware hub domain | `src/firmware/` (Google Pixel scraper, Nothing/Xiaomi stubs, 24h disk cache) |
-| Marketplace domain | `src/marketplace/` |
+| Marketplace domain | `src/marketplace/` — `service` + `github`/`fdroid`/`aptoide` providers + `assets` (ABI rank) + `resolver` (package-ID → repo) + `markdown` (README enrich) + `cache` (SWR) + `install_queue` (streaming) + `types` (progress DTOs) |
 | Scrcpy domain | `src/scrcpy/` |
 | Host setup (Windows Google tools/USB) | `src/host_setup/` |
 | Utilities domain | `src/utilities/` |
@@ -83,7 +83,13 @@ Rules:
 - File Explorer host drop: `host_path_kinds` is a thin host `Path::is_dir` classify (cap 256). Import still uses `push_file`; device moves still use `transfer_device_files`. Do not add a second ADB push loop in Rust for OS drops.
 - Payload: domain invariants live in `src/payload/AGENTS.md` (streaming/mmap, dynamic partitions, delta differential patching, transaction safety, sparse IOCTL threshold $\ge 64\text{ KiB}$).
 - Firmware Hub: real-time OEM scrapers (`GooglePixelScraper` with ToS cookie bypass); two-tier cache (RAM `RwLock` + 24h disk JSON TTL); fallback to stale cache on network failure.
-- Marketplace install: selected serial + owned temp download path only.
+- Marketplace install: selected serial + owned temp download path only. `marketplace_download_apk(app, url, package_name?, download_id?)` streams via `install_queue::download_apk_streaming` → throttled `marketplace:download-progress` (8 Hz, `DownloadProgressPayload {packageName, downloadId, bytesDownloaded, totalBytes, speedBps, percentage, etaSeconds}` over `camelCase` serde) + `create_download_client` (300s, pool 8, `limited(5)` redirects, tcp_nodelay). Guard is `install_queue::is_owned_marketplace_download`.
+- Marketplace cache: SWR via `cache.rs` — `SwrEntry {fresh_ttl, stale_ttl}` with `SwrStatus::Fresh/Stale/Miss`; `get_search_swr` (fresh 3m / stale 30m, max 200) and `get_detail_swr` (fresh 10m / stale 60m, max 500), plus `verified_apks: HashMap<String,RepoApkStatus>` (positive 12h / negative 2h, max 1000) memoising APK-existence; callers in `commands/marketplace.rs` return stale rather than blocking.
+- Marketplace resolver: `resolver.rs` `resolve_github_repo` (slug/URL sync) + `resolve_github_repo_dynamic(client, id, download_url?, repo_url?, token)` async chain — F-Droid `sourceCode` API → GitHub search `"<package_id>" topic:android`. `extract_repo_from_url` handles `github.com/`, `raw.githubusercontent.com`, `api.github.com/repos/`, `git@github.com:`.
+- Marketplace assets: `assets.rs` `is_apk_asset` (only `.apk`, excludes `.aab/.xapk/.apks/.sig/.sha256`, alpine `alpine-`/`_alpine`, `androidTest`) + `classify_abi` (arm64-v8a 100 > universal 80 > generic 70 > armeabi-v7a 60 > x86_64 40 > x86 20) + `rank_and_select_best_apk` (score +10 for `release`/`stable`, -15 for `debug` except `github-debug`). Used by `github::verify_apk_availability` and `get_detail`/`list_releases`.
+- Marketplace markdown: `markdown.rs` `enrich_readme_markdown` rewrites relative `![alt](path)` → `raw.githubusercontent.com/{owner}/{repo}/{branch}/...` and `[text](path)` → `github.com/{owner}/{repo}/blob/{branch}/...`, rewrites `<img src>`, flattens `<details>/<summary>` → `###`, guards fenced code-blocks. `github::fetch_readme` dual-path: `GET /repos/{slug}/readme` with `Accept: application/vnd.github.raw` then raw CDN fallback (`head`/`main`/`master` × 6 filenames) + pre-release fallback (`/releases/latest` 404 → `/releases?per_page=5`).
+- Marketplace HTTP client: `ManagedHttpClient` tuned (`connect_timeout 2500ms`, `timeout 10s`, `pool_max_idle_per_host 32`, `idle 180s`, `tcp_nodelay true`, `http2_adaptive_window`, keep-alive 15s/5s) for bursty provider calls. Download client separate (`install_queue` 300s/15s, pool 8).
+- Apps telemetry: `apps/telemetry.rs` trims surrounding `"`/`'` on CSV package lists and filters `storageBreakdown` to user packages only (skip system pkgs; when `user_pkgs` non-empty require membership).
 - Emulator AVD discovery: `~/.android/avd/*.ini` (not `emulator -list-avds`). Root proof: `verify_avd_root` / `su -c id -u == 0`.
 - Clippy bar: package `[lints]` + `clippy.toml`; CI uses `-D warnings`.
 

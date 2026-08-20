@@ -50,19 +50,13 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
         onValueChange={(val) => setActiveTab(val as MarketplaceTab)}
         value={currentTab}
       >
-        <TabsList className="w-full justify-start overflow-x-auto border-border border-b bg-transparent p-0">
-          <TabsTrigger
-            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-            value="overview"
-          >
+        <TabsList className="w-full">
+          <TabsTrigger className="flex-1 gap-2" value="overview">
             <Sparkles className="size-4 text-primary" />
             <span>Overview & Curated</span>
           </TabsTrigger>
 
-          <TabsTrigger
-            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-            value="browse"
-          >
+          <TabsTrigger className="flex-1 gap-2" value="browse">
             <Search className="size-4" />
             <span>Browse & Search</span>
             {(results ?? []).length > 0 && (
@@ -72,18 +66,12 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
             )}
           </TabsTrigger>
 
-          <TabsTrigger
-            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-            value="updates"
-          >
+          <TabsTrigger className="flex-1 gap-2" value="updates">
             <ArrowUpCircle className="size-4" />
             <span>Installed & Updates</span>
           </TabsTrigger>
 
-          <TabsTrigger
-            className="relative gap-2 rounded-none border-transparent border-b-2 px-4 py-2 font-medium text-body data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-foreground"
-            value="sources"
-          >
+          <TabsTrigger className="flex-1 gap-2" value="sources">
             <Database className="size-4" />
             <span>Sources & Repos</span>
           </TabsTrigger>

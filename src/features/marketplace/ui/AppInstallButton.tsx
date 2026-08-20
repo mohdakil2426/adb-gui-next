@@ -1,6 +1,7 @@
 import { Check, Download, ExternalLink, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import type { backend } from '@/desktop/models';
+import { useMarketplaceDownloadStore } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { installMarketplacePackage } from '@/features/marketplace/utils/install';
 import { Button } from '@/shared/ui/button';
@@ -26,9 +27,11 @@ interface AppInstallButtonProps {
  */
 export function AppInstallButton({ app, onSelect, target }: AppInstallButtonProps) {
   const [installState, setInstallState] = useState<InstallState>('idle');
+  const downloadProgress = useMarketplaceDownloadStore(
+    (state) => state.activeDownloads[app.packageName],
+  );
   const isInstallable = Boolean(app.downloadUrl);
   const isBlocked = isInstallable && !target.canInstall;
-
   const handleClick = async (event: React.MouseEvent) => {
     event.stopPropagation();
 
@@ -39,8 +42,7 @@ export function AppInstallButton({ app, onSelect, target }: AppInstallButtonProp
 
     try {
       setInstallState('running');
-      await installMarketplacePackage(app.name, app.downloadUrl);
-      setInstallState('done');
+      await installMarketplacePackage(app.name, app.downloadUrl, null, app.packageName);
       setTimeout(() => {
         setInstallState('idle');
       }, DONE_RESET_MS);
@@ -50,6 +52,9 @@ export function AppInstallButton({ app, onSelect, target }: AppInstallButtonProp
   };
 
   const label = (() => {
+    if (downloadProgress && downloadProgress.percentage < 100) {
+      return `${Math.round(downloadProgress.percentage)}%`;
+    }
     if (installState === 'running') {
       return 'Installing…';
     }
@@ -58,7 +63,6 @@ export function AppInstallButton({ app, onSelect, target }: AppInstallButtonProp
     }
     return isInstallable ? 'Install' : 'Details';
   })();
-
   const button = (
     <Button
       aria-label={isInstallable ? `Install ${app.name}` : `View details for ${app.name}`}

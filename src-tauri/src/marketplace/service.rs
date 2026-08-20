@@ -89,7 +89,21 @@ pub async fn fetch_app_detail(
     github_token: &Option<String>,
 ) -> CmdResult<MarketplaceAppDetail> {
     match source {
-        "F-Droid" => fdroid::get_detail(client, package_name).await,
+        "F-Droid" => {
+            match fdroid::get_detail(client, package_name).await {
+                Ok(detail) => Ok(detail),
+                Err(err) => {
+                    // If F-Droid fails, try resolving via GitHub if a known mapping or slug exists
+                    if let Some(repo) =
+                        super::resolver::resolve_github_repo(package_name, None, None)
+                    {
+                        github::get_detail(client, &repo, github_token).await
+                    } else {
+                        Err(err)
+                    }
+                }
+            }
+        }
         "GitHub" => github::get_detail(client, package_name, github_token).await,
         "Aptoide" => aptoide::get_detail(client, package_name).await,
         _ => Err(format!("Unknown source: {source}")),
@@ -176,7 +190,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.7),
             categories: vec!["Media".into(), "System".into()],
             download_url: Some("https://github.com/v4a-re/ViPER4Android-FX/releases/latest/download/ViPER4AndroidFX.apk".into()),
-            icon_url: None,
+            icon_url: Some("https://raw.githubusercontent.com/v4a-re/ViPER4Android-FX/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
         },
         CuratedTool {
             name: "ReVanced Manager".into(),
@@ -202,7 +216,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.6),
             categories: vec!["Customization".into(), "System".into()],
             download_url: Some("https://github.com/LawnchairLauncher/lawnchair/releases/latest/download/Lawnchair.apk".into()),
-            icon_url: None,
+            icon_url: Some("https://raw.githubusercontent.com/LawnchairLauncher/lawnchair/develop/assets/icons/lawnchair.png".into()),
         },
         CuratedTool {
             name: "Proton Pass".into(),
@@ -215,7 +229,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.7),
             categories: vec!["Privacy & Security".into()],
             download_url: Some("https://github.com/protonpass/android-pass/releases/latest/download/ProtonPass.apk".into()),
-            icon_url: None,
+            icon_url: Some("https://raw.githubusercontent.com/protonpass/android-pass/main/pass/res/mipmap-xxxhdpi/ic_launcher.png".into()),
         },
         CuratedTool {
             name: "PipePipe".into(),
@@ -228,7 +242,7 @@ pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
             rating: Some(4.8),
             categories: vec!["Media & Streaming".into(), "Privacy".into()],
             download_url: Some("https://github.com/InfinityLoop1309/PipePipe/releases/latest/download/PipePipe.apk".into()),
-            icon_url: None,
+            icon_url: Some("https://raw.githubusercontent.com/InfinityLoop1309/PipePipe/master/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png".into()),
         },
     ]
 }

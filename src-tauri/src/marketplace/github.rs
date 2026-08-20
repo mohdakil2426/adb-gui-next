@@ -5,6 +5,9 @@ use reqwest::Client;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
+use super::assets::{is_apk_asset, rank_and_select_best_apk};
+use super::markdown::enrich_readme_markdown;
+use super::resolver::resolve_github_repo_dynamic;
 use super::types::{MarketplaceApp, MarketplaceAppDetail, VersionInfo};
 use crate::CmdResult;
 
@@ -18,22 +21,14 @@ fn auth_headers(
     builder: reqwest::RequestBuilder,
     token: &Option<String>,
 ) -> reqwest::RequestBuilder {
-    let builder = builder
-        .header("Accept", "application/vnd.github+json")
-        .header("X-GitHub-Api-Version", "2022-11-28");
-    match token {
-        Some(t) if !t.is_empty() => builder.header("Authorization", format!("Bearer {t}")),
-        _ => builder,
+    let mut req = builder.header("User-Agent", "ADB-GUI-Next-Marketplace");
+    if let Some(tok) = token {
+        let trimmed = tok.trim();
+        if !trimmed.is_empty() {
+            req = req.header("Authorization", format!("Bearer {trimmed}"));
+        }
     }
-}
-
-fn is_apk_asset(name: &str) -> bool {
-    let lower = name.to_lowercase();
-    lower.ends_with(".apk")
-        && !lower.contains("debug")
-        && !lower.ends_with(".aab")
-        && !lower.ends_with(".xapk")
-        && !lower.ends_with(".apks")
+    req
 }
 
 fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
@@ -80,13 +75,6 @@ fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
 }
 
 /// Verify search results have APK assets by scanning recent releases.
-///
-/// Uses `JoinSet` + `Semaphore` for bounded concurrency (max 5 simultaneous).
-/// Each repo is checked for APK assets in its last N releases. If found, the
-/// `installable` flag is set to `true` and the download URL is captured.
-///
-/// On rate-limit (403/429), verification is gracefully skipped — the app is
-/// returned unmodified (installable=false) rather than blocking the search.
 async fn verify_apk_availability(
     client: &Client,
     repos: Vec<MarketplaceApp>,
@@ -105,7 +93,6 @@ async fn verify_apk_availability(
         let sem = Arc::clone(&semaphore);
 
         set.spawn(async move {
-            // semaphore closed — return unmodified
             let Ok(_permit) = sem.acquire().await else {
                 return app;
             };
@@ -119,7 +106,6 @@ async fn verify_apk_availability(
                 return app;
             };
 
-            // On rate-limit, skip verification gracefully
             let status = response.status().as_u16();
             if status == 403 || status == 429 || !response.status().is_success() {
                 return app;
@@ -134,13 +120,11 @@ async fn verify_apk_availability(
             for release in &releases {
                 let empty = vec![];
                 let assets = release["assets"].as_array().unwrap_or(&empty);
-                if let Some(apk) =
-                    assets.iter().find(|a| a["name"].as_str().is_some_and(is_apk_asset))
-                {
+                if let Some(best_apk) = rank_and_select_best_apk(assets) {
                     app.installable = true;
                     if app.download_url.is_none() {
                         app.download_url =
-                            apk["browser_download_url"].as_str().map(|s| s.to_string());
+                            best_apk["browser_download_url"].as_str().map(|s| s.to_string());
                     }
                     break;
                 }
@@ -201,54 +185,64 @@ pub async fn search(
     let items = body["items"].as_array().unwrap_or(&empty);
     let parsed = parse_repo_items(items);
 
-    // Verify which repos actually have APK releases (eliminates ghost results)
     verify_apk_availability(client, parsed, token).await
 }
 
 pub async fn get_detail(
     client: &Client,
-    full_name: &str,
+    package_or_repo: &str,
     token: &Option<String>,
 ) -> CmdResult<MarketplaceAppDetail> {
+    // Resolve package ID or alias to canonical owner/repo slug dynamically
+    let full_name = resolve_github_repo_dynamic(client, package_or_repo, None, None, token)
+        .await
+        .unwrap_or_else(|| package_or_repo.to_string());
+
     let repo_url = format!("https://api.github.com/repos/{full_name}");
     let repo_response =
         auth_headers(client.get(&repo_url), token).send().await.map_err(|e| e.to_string())?;
 
-    if !repo_response.status().is_success() {
-        return Err(format!("GitHub repository lookup failed: HTTP {}", repo_response.status()));
+    let repo_status = repo_response.status();
+    if repo_status == reqwest::StatusCode::FORBIDDEN || repo_status.as_u16() == 429 {
+        return Err("GitHub API rate limit reached. Please sign in with GitHub or provide a Personal Access Token in Settings.".into());
+    }
+
+    if !repo_status.is_success() {
+        return Err(format!("GitHub repository lookup failed: HTTP {repo_status} for {full_name}"));
     }
 
     let repo: serde_json::Value = repo_response.json().await.map_err(|e| e.to_string())?;
+    let default_branch = repo["default_branch"].as_str().unwrap_or("HEAD");
 
-    let release_url = format!("https://api.github.com/repos/{full_name}/releases/latest");
-    let release_response =
-        auth_headers(client.get(&release_url), token).send().await.map_err(|e| e.to_string())?;
-
-    let release = if release_response.status() == reqwest::StatusCode::NOT_FOUND {
-        None
-    } else if !release_response.status().is_success() {
-        return Err(format!("GitHub release lookup failed: HTTP {}", release_response.status()));
-    } else {
-        Some(release_response.json::<serde_json::Value>().await.map_err(|e| e.to_string())?)
-    };
+    // Fetch releases: try /releases/latest first
+    let latest_url = format!("https://api.github.com/repos/{full_name}/releases/latest");
+    let latest_resp = auth_headers(client.get(&latest_url), token).send().await.ok();
+    let mut release: Option<serde_json::Value> = None;
+    if let Some(resp) = latest_resp.filter(|r| r.status().is_success()) {
+        release = resp.json().await.ok();
+    }
+    // Fallback if /releases/latest returned 404 (e.g. pre-releases only, like Lawnchair 14 beta)
+    if release.is_none() {
+        release = fetch_first_release(client, &full_name, token).await;
+    }
 
     let empty = vec![];
     let assets = release.as_ref().and_then(|value| value["assets"].as_array()).unwrap_or(&empty);
-    let apk_assets: Vec<&serde_json::Value> =
-        assets.iter().filter(|asset| asset["name"].as_str().is_some_and(is_apk_asset)).collect();
+    let best_apk = rank_and_select_best_apk(assets);
 
-    let first_apk = apk_assets.first();
-    let download_url = first_apk
+    let download_url = best_apk
         .and_then(|asset| asset["browser_download_url"].as_str())
         .map(|value| value.to_string());
-    let size = first_apk.and_then(|asset| asset["size"].as_u64());
+    let size = best_apk.and_then(|asset| asset["size"].as_u64());
+
     let changelog = release.as_ref().and_then(|value| {
         value["body"].as_str().filter(|body| !body.is_empty()).map(|body| body.to_string())
     });
 
-    let versions = list_releases(client, full_name, token).await.unwrap_or_else(|_| {
-        apk_assets
+    let versions = list_releases(client, &full_name, token).await.unwrap_or_else(|_| {
+        assets
             .iter()
+            .filter(|a| a["name"].as_str().is_some_and(is_apk_asset))
             .map(|asset| VersionInfo {
                 version_name: format!(
                     "{} ({})",
@@ -268,11 +262,12 @@ pub async fn get_detail(
             })
             .collect()
     });
-    let readme_markdown = fetch_readme(client, full_name, token).await;
+
+    let readme_markdown = fetch_readme(client, &full_name, Some(default_branch), token).await;
 
     Ok(MarketplaceAppDetail {
-        name: repo["name"].as_str().unwrap_or(full_name).to_string(),
-        package_name: full_name.to_string(),
+        name: repo["name"].as_str().unwrap_or(&full_name).to_string(),
+        package_name: package_or_repo.to_string(),
         version: release
             .as_ref()
             .and_then(|value| value["tag_name"].as_str())
@@ -299,13 +294,17 @@ pub async fn get_detail(
 
 pub async fn list_releases(
     client: &Client,
-    full_name: &str,
+    package_or_repo: &str,
     token: &Option<String>,
 ) -> CmdResult<Vec<VersionInfo>> {
+    let full_name = resolve_github_repo_dynamic(client, package_or_repo, None, None, token)
+        .await
+        .unwrap_or_else(|| package_or_repo.to_string());
+
     let mut versions = Vec::new();
-    for page in 1..=10 {
+    for page in 1..=5 {
         let url =
-            format!("https://api.github.com/repos/{full_name}/releases?per_page=100&page={page}");
+            format!("https://api.github.com/repos/{full_name}/releases?per_page=50&page={page}");
         let response =
             auth_headers(client.get(&url), token).send().await.map_err(|e| e.to_string())?;
         let status = response.status().as_u16();
@@ -338,29 +337,95 @@ pub async fn list_releases(
                 });
             }
         }
-        if releases.len() < 100 {
+        if releases.len() < 50 {
             break;
         }
     }
     Ok(versions)
 }
 
-pub async fn fetch_readme(
+async fn fetch_first_release(
     client: &Client,
     full_name: &str,
     token: &Option<String>,
+) -> Option<serde_json::Value> {
+    let releases_url = format!("https://api.github.com/repos/{full_name}/releases?per_page=5");
+    let resp = auth_headers(client.get(&releases_url), token).send().await.ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let mut list = resp.json::<Vec<serde_json::Value>>().await.ok()?;
+    if list.is_empty() { None } else { Some(list.remove(0)) }
+}
+
+async fn fetch_readme_endpoint(
+    client: &Client,
+    url: &str,
+    is_api: bool,
+    token: &Option<String>,
 ) -> Option<String> {
-    let url = format!("https://api.github.com/repos/{full_name}/readme");
-    let response = auth_headers(client.get(&url), token)
-        .header("Accept", "application/vnd.github.raw")
-        .send()
-        .await
-        .ok()?;
+    let mut req = client.get(url);
+    if is_api {
+        req = auth_headers(req, token).header("Accept", "application/vnd.github.raw");
+    }
+    let response = req.send().await.ok()?;
     if !response.status().is_success() {
         return None;
     }
     let text = response.text().await.ok()?;
-    if text.trim().is_empty() { None } else { Some(text) }
+    let trimmed = text.trim();
+    if trimmed.is_empty() { None } else { Some(trimmed.to_string()) }
+}
+
+/// Fetches README markdown using a dual-path engine:
+/// 1. GitHub API `/repos/{full_name}/readme` with raw accept header.
+/// 2. Raw CDN fallback (`raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}`)
+///    across standard root, `.github/`, and `docs/` paths.
+/// 3. Enriches markdown by rewriting relative images and document links.
+pub async fn fetch_readme(
+    client: &Client,
+    package_or_repo: &str,
+    default_branch: Option<&str>,
+    token: &Option<String>,
+) -> Option<String> {
+    let full_name = resolve_github_repo_dynamic(client, package_or_repo, None, None, token)
+        .await
+        .unwrap_or_else(|| package_or_repo.to_string());
+
+    let parts: Vec<&str> = full_name.split('/').collect();
+    if parts.len() != 2 {
+        return None;
+    }
+    let (owner, repo) = (parts[0], parts[1]);
+
+    // 1. Primary path: GitHub API
+    let api_url = format!("https://api.github.com/repos/{full_name}/readme");
+    if let Some(text) = fetch_readme_endpoint(client, &api_url, true, token).await {
+        return Some(enrich_readme_markdown(&text, owner, repo, default_branch));
+    }
+
+    // 2. Secondary path: Direct raw CDN fallback
+    let branches = [default_branch.unwrap_or("HEAD"), "main", "master"];
+    let files = [
+        "README.md",
+        "README.markdown",
+        "README.rst",
+        "README",
+        ".github/README.md",
+        "docs/README.md",
+    ];
+
+    for branch in branches {
+        for file in files {
+            let raw_url =
+                format!("https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}");
+            if let Some(text) = fetch_readme_endpoint(client, &raw_url, false, token).await {
+                return Some(enrich_readme_markdown(&text, owner, repo, Some(branch)));
+            }
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -368,11 +433,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn apk_filter_excludes_debug_and_non_apk() {
-        assert!(is_apk_asset("app-release.apk"));
-        assert!(!is_apk_asset("app-debug.apk"));
-        assert!(!is_apk_asset("bundle.aab"));
-        assert!(!is_apk_asset("app.xapk"));
-        assert!(!is_apk_asset("app.apks"));
+    fn test_auth_headers_with_and_without_token() {
+        let client = Client::new();
+        let builder = client.get("https://example.com");
+        let with_token = auth_headers(builder, &Some("ghp_test123".into()));
+        let req = with_token.build().unwrap();
+        assert!(req.headers().contains_key("authorization"));
+
+        let builder2 = client.get("https://example.com");
+        let no_token = auth_headers(builder2, &None);
+        let req2 = no_token.build().unwrap();
+        assert!(!req2.headers().contains_key("authorization"));
     }
 }

@@ -195,3 +195,26 @@ pub struct CuratedTool {
     pub download_url: Option<String>,
     pub icon_url: Option<String>,
 }
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadProgressPayload {
+    pub download_id: String,
+    pub package_name: String,
+    pub bytes_downloaded: u64,
+    pub total_bytes: Option<u64>,
+    pub speed_bps: u64,
+    pub percentage: f64,
+    pub eta_seconds: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallStatusPayload {
+    pub task_id: String,
+    pub package_name: String,
+    pub app_name: String,
+    pub serial: String,
+    pub state: String,
+    pub error: Option<String>,
+}

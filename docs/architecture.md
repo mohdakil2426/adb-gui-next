@@ -451,6 +451,7 @@ export function ListFiles(
 | `root:progress` | Emulator Magisk root pipeline |
 | `scrcpy:download-progress` | Official scrcpy archive download |
 | `host-setup:progress` | Official Google platform-tools / USB driver download |
+| `marketplace:download-progress` | Marketplace APK streaming download (bytes, %, speed, ETA) — consumed by `marketplace/model/downloadStore.ts` |
 | `files:edit-pushed` | File Explorer editor save pushed back to the device |
 | `flasher:batch-progress` | Multi-partition flashing progress and status |
 | `flasher:sideload-progress` | Recovery ZIP streaming sideload percentage |
@@ -564,7 +565,7 @@ flowchart TB
 | `commands/apk_inspector.rs` | Binary AXML manifest parsing, batch parallel inspection via Rayon |
 | `commands/system.rs` | Open folder, terminal, device manager, host resources, unified CLI command executor |
 | `commands/payload.rs` | List/extract/remote/cancel tokens/SHA-256/presets (thin over `payload/`) |
-| `commands/marketplace.rs` | Search/detail/download/install/auth/dynamic updates/curated tools (thin over `marketplace/`) |
+| `commands/marketplace.rs` | Search/detail/download/install/auth/dynamic updates/curated tools (thin over `marketplace/` — `marketplace_download_apk` now `fn(app, url, packageName?, downloadId?)` with streaming + progress events) |
 | `commands/scrcpy.rs` | Status/install/launch/command preview/profiles/bandwidth metrics/toolbar actions |
 | `commands/emulator.rs` | AVD lifecycle + root wizard IPC + real config.ini specs + virtual disk breakdown |
 | `commands/debloat.rs` | UAD data + actions + backups |
@@ -622,10 +623,17 @@ Routing idea: local path → OPS/OFP detector or CrAU; HTTP URL → remote pipel
 ```text
 service  →  providers (fdroid, github, aptoide, …)
          →  ranking · cache · auth
-ManagedHttpClient  — connection-pooled reqwest
+resolver →  package-id → owner/repo (URL parse → F-Droid sourceCode → GitHub search)
+assets   →  is_apk_asset + classify_abi + rank_and_select_best_apk (arm64-v8a priority)
+markdown →  enrich_readme_markdown (relative → raw/blob, <details> flatten, code-block safe)
+cache    →  SWR (search fresh 3m/stale 30m, detail fresh 10m/stale 60m, verified-APK 12h/2h) + verifiedApks
+install_queue → streaming download (bytes_stream + 8 Hz throttled events) + owned-temp guard
+ManagedHttpClient  — tuned reqwest (pool 32, idle 180s, tcp_nodelay, http2 adaptive window)
 ```
 
-Install path: download to owned temp → `marketplace_install_apk` only accepts paths under that temp root → `adb install` with selected serial.
+Install path: streaming `marketplace_download_apk(url, packageName?, downloadId?)` → throttled `marketplace:download-progress` events → owned-temp file → `marketplace_install_apk` (only paths under owned temp) → `adb -s SERIAL install`.
+
+Provider detail fallback: `F-Droid` `get_detail` now tries `resolver::resolve_github_repo` → `github::get_detail` when F-Droid has no entry, so package-IDs from curated tools never 404. GitHub detail itself resolves any `identifier` via `resolve_github_repo_dynamic`, supports pre-release fallback (`/releases/latest` → first from `/releases`), dual-path README (`api /readme` → raw CDN across `master/main/HEAD` + `.github/README.md` etc.), and enriched markdown.
 
 #### Emulator (`src-tauri/src/emulator/`)
 
@@ -694,14 +702,14 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 | Area | Frontend | Store / state | Desktop | Rust |
 | --- | --- | --- | --- | --- |
 | Device / Dashboard | `features/dashboard` · `DeviceSwitcher` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` | `GetDevices`, `GetDeviceTelemetry`, wireless cmds | `commands/device`, `adb/`, `commands/adb` |
-| App Manager | `features/app-manager` | `installationStore`, `debloatStore` | `GetInstalledPackages`, `GetPackageDetails`, `PackageLifecycleOp`, `PullPackageApk`, `InstallPackage`, `InspectPackageFile`, `UninstallPackage` | `commands/apps`, `commands/apk_inspector` |
+| App Manager | `features/app-manager` | `installationStore`, `debloatStore` | `GetInstalledPackages`, `GetPackageDetails`, `PackageLifecycleOp`, `PullPackageApk`, `InstallPackage`, `InspectPackageFile`, `UninstallPackage` | `commands/apps`, `commands/apk_inspector`, `apps/telemetry.rs` (storage csv trims quotes; `StorageConsumerItem.packageName` filters to user packages only; `TopStorageConsumersChart` caps 5 + strips quotes) |
 | Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, `DebloatPackages`, `CreateDebloatBackup`, `RestoreDebloatBackup`, `SaveDebloatDeviceSettings` | `debloat` domain |
 | File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop` | `files` + helpers |
 | Flasher | `features/flasher` | local | flash/boot/sideload/wipe | `flasher` |
 | Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
 | Scrcpy | `features/scrcpy` | local + presets | `ScrcpyLaunch`, `ScrcpyStop`, `ScrcpyInstall`, `ScrcpyUninstall`, `ScrcpyStatus`, `ScrcpyCheckUpdate`, `ScrcpyPresets`, `ScrcpyActiveSessions`, `ScrcpyOpenToolbar`, `ScrcpyCloseToolbar`, `ScrcpySetToolbarMode`, `ScrcpySetToolbarSize`, `ScrcpySendKeyevent`, `ScrcpySendStatusbar`, `ScrcpyRotateDevice` | `scrcpy` domain + `scrcpy/toolbar` |
 | Payload Dumper & Hub | `features/payload-dumper` | `payloadDumperStore`, `payloadProgressStore`, TanStack Query `useFirmwareCatalog` | `ExtractPayload`, `ListPayloadPartitions`, `UnpackSuperImage`, `GetFirmwareCatalog`, `RefreshFirmwareCatalog`, `GetSupportedFirmwareBrands`, `ClearFirmwareCache`, `CancelPayloadExtraction` | `payload` domain (crau, lp, delta, samsung, xiaomi, ops, remote, io, verify) + `firmware` domain (Google, Nothing, Xiaomi, OnePlus, Samsung multi-feed scrapers & 24h two-tier cache) |
-| Marketplace | `features/marketplace` | `marketplaceStore` | search/download/install/auth | `marketplace` domain |
+| Marketplace | `features/marketplace` | `marketplaceStore` + `downloadStore` (SWR progress, 8 Hz throttled, auto-clear at 100% +2s) + search/auth hooks | `MarketplaceSearch`, `MarketplaceGetAppDetail(packageName, source, token)`, `MarketplaceDownloadApk(url, packageName?, downloadId?)` + `marketplace:download-progress`, `MarketplaceInstallApk` | `marketplace` domain (service, github, fdroid, aptoide, assets, resolver, markdown, cache SWR, install_queue streaming) |
 | Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
 | Logs / Shell | `app/shell/BottomPanel` (`LogsPanel`/`LogRow`, `ShellPanel`/`ShellInput`/`ShellTranscript`) | `logStore`, `shellStore` | shell/host cmds, `SaveLog` | `adb`, `fastboot`, `system` |
 | Palette / status | `app/shell/CommandPalette`, `StatusBar` | `shared/commands/*`, `operationStore` | none (delegates to existing wrappers) | — |
@@ -767,14 +775,24 @@ sequenceDiagram
   W->>BE: VerifyAvdRoot after cold boot
 ```
 
-### 10.4 Marketplace install
+### 10.4 Marketplace install (streaming + resolver-aware)
 
 ```text
-Search/Detail (marketplace/service + providers)
-  → MarketplaceDownloadApk (owned temp, SSRF-safe URL)
-  → MarketplaceInstallApk(path, selectedSerial)
-  → adb install -s SERIAL
+Search (service → fdroid/github/aptode → assets ABI rank → verifiedApks cache SWR)
+  → Detail: resolver.rs dynamic (identifier or owner/repo or F-Droid sourceCode or GitHub search)
+          → github.rs dual-path README + pre-release fallback + enriched markdown
+          → markdown.rs relative image/link → raw/blob + code-block guard
+Detail (changelog, versions, readme, best-APK URL)
+  → MarketplaceDownloadApk(url, packageName, downloadId) — create_download_client (300s, pool 8, redirect 5)
+    → bytes_stream chunked write to owned temp + throttled marketplace:download-progress (8 Hz, {bytes, total, %, speed_bps, eta})
+    → downloadStore.setDownloadProgress → AppInstallButton/AppDetailHero live % + speed
+  → MarketplaceInstallApk(path, serial) — is_owned_marketplace_download guard
+  → adb -s SERIAL install + toast + logStore
 ```
+
+Cache semantics: `cache.rs` is SWR — `Fresh(cached)` / `Stale(cached)` / `Miss`. `get_search_swr` (fresh 3m / stale 30m, max 200) and `get_detail_swr` (fresh 10m / stale 60m, max 500) return stale rather than blocking; `verified_apks` (positive 12h / negative 2h, max 1000) memoises APK-availability checks. `service.rs` HTTP pool tuned for bursty marketplace traffic (32 idle/host, 180s, tcp_nodelay, http2 keepalive).
+
+`StorageConsumerItem` rename: Rust/TS field `packageName` (was `name`). Frontend `TopStorageConsumersChart` caps to 5, strips surrounding quotes, and `packageStats.ts` / `apps/telemetry.rs` filter `storageBreakdown` to user packages only (exclude system packages), with trim of quoted CSV values.
 
 ---
 
@@ -944,6 +962,10 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 | Single `AdbClient` for `adb` | Removes per-spawn path re-resolution and three duplicate exit-marker parsers; `shell_batch` collapses N device reads into one process |
 | Structured telemetry over display strings | `get_device_info` returned pre-formatted text nothing could chart; `get_device_telemetry` returns typed numbers and formats in the frontend |
 | Release profile `opt-level = 3` | The workload is CPU-bound (sha2, inflate/zstd/lzma, large memcpy). `opt-level = "s"` disabled loop vectorization and most unrolling, and every shipped artifact had been built with it. The separate `release-fast` profile was deleted as redundant. |
+| Marketplace SWR + verified-APK memo | `search` fresh 3m/stale 30m, `detail` fresh 10m/stale 60m, `verified_apks` positive 12h/negative 2h. Stale is returned rather than blocking, verified-APK skips repeated GitHub 403/429 scans. Borrowed stale-while-revalidate from Komi Store pattern. |
+| Marketplace ABI ranking | `assets::rank_and_select_best_apk` scores `arm64-v8a` 100 > `universal` 80 > generic 70 > `armeabi-v7a` 60 > `x86_64` 40 > `x86` 20; penalises stray `debug` (except `github-debug`), rewards `release`/`stable`. Fixes Termux `+github-debug` exclusion. |
+| Marketplace resolver | `resolver::resolve_github_repo_dynamic` handles package-ID → repo via URL parse → F-Droid `sourceCode` API → GitHub search `"<package_id>" topic:android`. Prevents 404 for curated tools (`com.pittvandewitt.viperfx` → `v4a-re/ViPER4Android-FX`) and feeds `service.rs` F-Droid fallback. |
+| Marketplace README enrichment | `markdown::enrich_readme_markdown` rewrites relative images → `raw.githubusercontent.com` + links → `github.com/blob`, flattens `<details>`, guards code-blocks; `github::fetch_readme` dual-path (API then raw CDN `master/main/HEAD` × 6 paths) + pre-release fallback fixes Lawnchair 14 beta. Frontend `ReadmeMarkdown.tsx` now GFM (tables with alignment, alerts `> [!NOTE]`, images, `kbd`, task lists, copyable code blocks). |
 
 ---
 

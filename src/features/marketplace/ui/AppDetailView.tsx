@@ -31,13 +31,16 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [detail, setDetail] = useState<AppDetail | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [primaryInstallState, setPrimaryInstallState] = useState<InstallState>('idle');
   const [activeVersionName, setActiveVersionName] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   useEffect(() => {
     if (!selectedApp) {
       setDetail(null);
+      setDetailError(null);
       setPrimaryInstallState('idle');
       setActiveVersionName(null);
       return;
@@ -45,16 +48,20 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
 
     let cancelled = false;
     setDetail(null);
+    setDetailError(null);
     setIsLoadingDetail(true);
 
     MarketplaceGetAppDetail(selectedApp.packageName, selectedApp.source, githubToken)
       .then((nextDetail) => {
         if (!cancelled) {
           setDetail(nextDetail);
+          setDetailError(null);
         }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
+          const message = error instanceof Error ? error.message : String(error);
+          setDetailError(message);
           handleError('Marketplace Detail', error);
         }
       })
@@ -67,7 +74,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
     return () => {
       cancelled = true;
     };
-  }, [githubToken, selectedApp]);
+  }, [githubToken, selectedApp, retryTrigger]);
 
   const displayName = detail?.name ?? selectedApp?.name ?? 'App';
   const effectiveDownloadUrl = detail?.downloadUrl ?? selectedApp?.downloadUrl;
@@ -139,10 +146,23 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
         <AppDetailSkeleton />
       ) : (
         <>
+          {detailError ? (
+            <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-body">
+              <span className="text-destructive-foreground">{detailError}</span>
+              <Button
+                onClick={() => setRetryTrigger((n) => n + 1)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Retry
+              </Button>
+            </div>
+          ) : null}
+
           {detail?.screenshots && detail.screenshots.length > 0 ? (
             <AppScreenshots appName={displayName} urls={detail.screenshots} />
           ) : null}
-
           <div className="grid @2xl:grid-cols-[1fr_280px] gap-6">
             <div className="flex min-w-0 flex-col gap-5">
               <section className="flex flex-col gap-2">

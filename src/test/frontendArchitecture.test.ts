@@ -30,6 +30,7 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, 'features', 'file-explorer', 'hooks', 'useFileExplorerViewModel.ts'),
   path.join(srcRoot, 'features', 'scrcpy', 'toolbar', 'ScrcpyFloatingToolbar.tsx'),
   path.join(srcRoot, 'features', 'app-manager', 'debloater', 'ui', 'InstalledPackageList.tsx'),
+  path.join(srcRoot, 'features', 'marketplace', 'ui', 'app-detail', 'ReadmeMarkdown.tsx'),
 ]);
 
 function collectSourceFiles(directory: string): string[] {

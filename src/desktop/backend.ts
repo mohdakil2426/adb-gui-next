@@ -560,8 +560,16 @@ export function MarketplaceGithubDevicePoll(
 }
 
 /** Download an APK from a URL to a temp directory. Returns the local file path. */
-export function MarketplaceDownloadApk(url: string): Promise<string> {
-  return call('marketplace_download_apk', { url });
+export function MarketplaceDownloadApk(
+  url: string,
+  packageName?: string,
+  downloadId?: string,
+): Promise<string> {
+  return call('marketplace_download_apk', {
+    url,
+    packageName: packageName ?? null,
+    downloadId: downloadId ?? null,
+  });
 }
 
 /** Install a downloaded APK via ADB on the selected device when serial is set. */

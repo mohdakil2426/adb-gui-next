@@ -52,11 +52,36 @@ export function computePackageOverviewStats(
     const disabledCount = telemetry.disabledAppsCount ?? 0;
     const totalCount = userCount + systemCount + disabledCount;
 
+    const userPackageNames = new Set(
+      fallbackInstalled.filter((pkg) => pkg.packageType === 'user').map((pkg) => pkg.name),
+    );
+    const systemPackageNames = new Set(
+      fallbackInstalled.filter((pkg) => pkg.packageType === 'system').map((pkg) => pkg.name),
+    );
+
+    const storageBreakdown = (telemetry.storageBreakdown ?? []).filter((item) => {
+      const pkg =
+        item.packageName ??
+        (typeof item === 'object' &&
+        item !== null &&
+        'name' in item &&
+        typeof item.name === 'string'
+          ? item.name
+          : '');
+      if (systemPackageNames.has(pkg)) {
+        return false;
+      }
+      if (userPackageNames.size > 0 && !userPackageNames.has(pkg)) {
+        return false;
+      }
+      return true;
+    });
+
     return {
       disabledCount,
       permissionDensity: telemetry.permissionDensity ?? [],
       safetyTiers: { advanced, expert, recommended, unsafe },
-      storageBreakdown: telemetry.storageBreakdown ?? [],
+      storageBreakdown,
       systemCount,
       targetSdkBuckets: {
         legacy: telemetry.targetSdkDistribution?.legacy ?? 0,

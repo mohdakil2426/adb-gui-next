@@ -111,7 +111,7 @@ pub fn get_app_overview_telemetry(
                 let inner = &trimmed[start + 1..end];
                 parsed_pkg_names = inner
                     .split(',')
-                    .map(|s| s.trim().to_string())
+                    .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\'').trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect();
             }
@@ -143,11 +143,17 @@ pub fn get_app_overview_telemetry(
 
     if !parsed_pkg_names.is_empty() {
         for (i, pkg_name) in parsed_pkg_names.into_iter().enumerate() {
+            if system_pkgs.contains(&pkg_name) {
+                continue;
+            }
+            if !user_pkgs.is_empty() && !user_pkgs.contains(&pkg_name) {
+                continue;
+            }
+
             let app_size = parsed_app_sizes.get(i).copied().unwrap_or(0);
             let data_size = parsed_data_sizes.get(i).copied().unwrap_or(0);
             let cache_size = parsed_cache_sizes.get(i).copied().unwrap_or(0);
             let total_size = app_size.saturating_add(data_size).saturating_add(cache_size);
-
             let label = pkg_name.split('.').next_back().map_or_else(
                 || pkg_name.clone(),
                 |s| {

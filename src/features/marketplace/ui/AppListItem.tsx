@@ -1,6 +1,7 @@
 import { CheckCircle2, Package, Star } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
+import { formatBytes } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
@@ -71,6 +72,7 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
           <div className="numeric flex flex-wrap items-center gap-x-3 text-caption text-muted-foreground">
             <span className="truncate font-mono">{app.packageName}</span>
             <span>{app.version || 'Version unknown'}</span>
+            {app.size ? <span>{formatBytes(app.size)}</span> : null}
             {app.rating != null && app.rating > 0 ? (
               <span className="inline-flex items-center gap-1">
                 <Star aria-hidden="true" className="size-3 fill-current" />

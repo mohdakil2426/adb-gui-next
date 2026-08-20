@@ -2,6 +2,8 @@ import { HardDrive } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { formatBytes } from '@/shared/utils/format';
 
+const MAX_DISPLAY_CONSUMERS = 5;
+
 interface TopStorageConsumersChartProps {
   consumers: backend.StorageConsumerItem[];
   onSelectApp?: ((packageName: string) => void) | undefined;
@@ -11,8 +13,8 @@ export function TopStorageConsumersChart({
   consumers,
   onSelectApp,
 }: TopStorageConsumersChartProps) {
-  const maxBytes = Math.max(...consumers.map((c) => c.totalSize), 1);
-
+  const displayConsumers = consumers.slice(0, MAX_DISPLAY_CONSUMERS);
+  const maxBytes = Math.max(...displayConsumers.map((c) => c.totalSize), 1);
   return (
     <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
@@ -37,13 +39,23 @@ export function TopStorageConsumersChart({
       </div>
 
       <div className="flex flex-col gap-2.5">
-        {consumers.length === 0 ? (
+        {displayConsumers.length === 0 ? (
           <div className="flex h-32 items-center justify-center rounded-md border border-border border-dashed text-caption text-muted-foreground">
             No storage telemetry available
           </div>
         ) : (
-          consumers.map((app, index) => {
-            const pkgName = app.name;
+          displayConsumers.map((app, index) => {
+            const rawPkg =
+              app.packageName ??
+              (typeof app === 'object' &&
+              app !== null &&
+              'name' in app &&
+              typeof app.name === 'string'
+                ? app.name
+                : '');
+            const pkgName = rawPkg ? rawPkg.replace(/^["']+|["']+$/g, '') : '';
+            const rawLabel = app.label || pkgName;
+            const label = rawLabel ? rawLabel.replace(/^["']+|["']+$/g, '') : pkgName;
             const ratio = (app.totalSize / maxBytes) * 100;
             const appPct = app.totalSize > 0 ? (app.appSize / app.totalSize) * 100 : 40;
             const dataPct = app.totalSize > 0 ? (app.dataSize / app.totalSize) * 100 : 50;
@@ -52,7 +64,7 @@ export function TopStorageConsumersChart({
             return (
               <button
                 className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
-                key={pkgName}
+                key={pkgName || index}
                 onClick={() => onSelectApp?.(pkgName)}
                 type="button"
               >
@@ -62,7 +74,7 @@ export function TopStorageConsumersChart({
                       #{index + 1}
                     </span>
                     <span className="truncate font-medium text-foreground group-hover:text-primary">
-                      {app.label || pkgName}
+                      {label}
                     </span>
                   </div>
                   <span className="numeric font-semibold text-caption text-foreground">

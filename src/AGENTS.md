@@ -89,6 +89,7 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 | `root:progress` | `features/emulator/ui/RootWizard.tsx` |
 | `scrcpy:download-progress` | `features/scrcpy/hooks/useScrcpyProgress.ts` |
 | `host-setup:progress` | `features/utilities/hooks/useHostSetupProgress.ts` |
+| `marketplace:download-progress` | `features/marketplace/model/downloadStore.ts` + `AppInstallButton`/`AppDetailHero` (8 Hz throttled `{bytes, total, %, speed_bps, eta}`) |
 | `files:edit-pushed` | `features/file-explorer/hooks/useFileExplorerClipboard.ts` |
 
 ### File drop
@@ -115,7 +116,7 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 ### Feature stores (under `features/*/model/`)
 
 - `app-manager/debloater/model/debloatStore.ts`, `installationStore.ts`
-- `marketplace/model/marketplaceStore.ts`
+- `marketplace/model/marketplaceStore.ts` + `marketplace/model/downloadStore.ts` (**not** persisted — high-frequency `marketplace:download-progress`, 8 Hz throttled, auto-clear at 100% +2s; mirrors `payloadProgressStore` split)
 - `payload-dumper/model/payloadDumperStore.ts` (persisted, `partialize`d — durable selections/settings only)
 - `payload-dumper/model/payloadProgressStore.ts` (**not** persisted — high-frequency extraction progress)
 - `emulator/model/emulatorManagerStore.ts`
@@ -237,13 +238,13 @@ Re-added **with real call sites** — each stays only while its call site exists
 | Dashboard | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers |
 | File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor (VS Code / Notepad). **Show in Explorer** opens the same path in Windows Explorer over MTP (File transfer) — not the editor temp folder. Copy/cut/paste and overwrite live in `transfer_device_files`; editor saves emit `files:edit-pushed`. Host files/folders drop into the open pane (or a folder / Place / tree / crumb) via `OnFileDrop` + `host_path_kinds` then serial `push_file`. In-app row/tree/Places/crumb drops move with `application/x-adb-gui-files`. |
 | Debloat | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase) |
-| Marketplace | 4-tab Hardware Cockpit (Overview & Curated, Browse & Search, Installed & Updates, Sources & Repos); `MarketplaceHeroBanner` with live repo sync pulse & device ABI/SDK compatibility indicator; install with selected serial; session-only PAT/OAuth; provider orchestration stays on Rust side; FE caches last search results |
+| Marketplace | 4-tab Hardware Cockpit (Overview & Curated, Browse & Search, Installed & Updates, Sources & Repos); `MarketplaceHeroBanner` with live repo sync pulse & device ABI/SDK compatibility indicator; install with selected serial; session-only PAT/OAuth; provider orchestration stays on Rust side; FE caches last search results; `marketplace:download-progress` via `downloadStore` drives live % + speed in `AppInstallButton`/`AppDetailHero`; `MarketplaceDownloadApk(url, packageName?, downloadId?)` streaming; `AppDetailView`_retry + `ReadmeMarkdown` GFM (tables with centered/right alignment, `> [!NOTE]` alerts, images, `kbd`/`sup`/`sub`, task lists, copyable code blocks) backed by Rust `assets` ABI-ranking + `resolver` dynamic + `markdown` dual-path README |
 | Flasher | 4-tab Hardware Cockpit (Overview & Diagnostics, Partition Flasher, Recovery Sideload, Partitions & Wipe); `FlasherCockpitHero` with connection mode & lock state badges; interactive pure SVG & ASCII `PartitionHierarchyDiagram` and 6-row pre-flight hardware matrix; auto-detecting DropArea and deterministic `MultiPartitionQueue` |
 | Payload Dumper | 5-tab Precision Hardware Cockpit (Overview, Source & Remote Loader, Firmware Hub, Extractor & Partitions, Extracted Outputs & History); `PayloadDumperHeroBanner` with format detection & uncompressed footprint; `PayloadMarketplaceTab` multi-brand live OEM Firmware Hub with Google Pixel scraper, ToS cookie authentication, and 1-click Remote Stream Extraction bridge; dynamic partition sub-unpacking controls (`unpack_super_image`) |
 | Utilities | 5-tab Hardware Cockpit (Overview & Quick Actions, Power & Tweaks, Diagnostics, Fastboot, Host Setup); `UtilitiesCockpitHero` with live ADB daemon status; `InstantActionsCard` symmetrical 3x2 grid; `AdbTransportGuideCard` socket architecture guide; deep `getvar all` variable inspector; official Google platform-tools & USB driver installer for Windows |
 | Scrcpy | 5-tab Hardware Cockpit (Overview & Quick Mirror, Display & Video Engine, Audio & Recording Studio, Input & Keymaps, Binary Management); `ScrcpyCockpitHero` with session count & transport badges; 4 tailored 1-click quality presets (Gaming, Productivity, Battery Saver, Creator); Genymobile binary lifecycle manager and live CLI command preview |
 | Emulator | 4-tab Hardware Cockpit (Overview & Telemetry, AVD Launch Studio, Root Engine, Snapshots & Restore); `EmulatorCockpitHero` with 8-spec hardware grid; pure SVG `AvdResourceAllocationMeter` and `DiskUsageBreakdownChart`; 5 startup presets in `LaunchPresetsGrid`; multi-step Magisk/KernelSU root wizard |
-| App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster |
+| App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster; `TopStorageConsumersChart` caps to 5, strips quoted `packageName`/`label`, `computePackageOverviewStats` filters `storageBreakdown` to user packages only (system excluded, quoted CSV trimmed in `apps/telemetry.rs`) |
 ## Tests
 
 - All Vitest FE tests live under `src/test/`.

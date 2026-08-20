@@ -777,7 +777,7 @@ export namespace backend {
     cacheSize: number;
     dataSize: number;
     label: string;
-    name: string;
+    packageName: string;
     totalSize: number;
   }
 

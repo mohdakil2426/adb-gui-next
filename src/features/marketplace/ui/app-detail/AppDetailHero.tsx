@@ -1,4 +1,8 @@
 import { Check, Download, Loader2, Package, Star } from 'lucide-react';
+import {
+  formatSpeed,
+  useMarketplaceDownloadStore,
+} from '@/features/marketplace/model/downloadStore';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Button } from '@/shared/ui/button';
 import { formatBytes } from '@/shared/utils/format';
@@ -33,8 +37,10 @@ export function AppDetailHero({
   repoStars,
   source,
 }: AppDetailHeroProps) {
+  const downloadProgress = useMarketplaceDownloadStore(
+    (state) => state.activeDownloads[packageName],
+  );
   const sizeSuffix = installSize ? ` (${formatBytes(installSize)})` : '';
-
   return (
     <div className="flex @md:flex-row flex-col @md:items-start @md:justify-between gap-4">
       <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -88,9 +94,11 @@ export function AppDetailHero({
           )}
           {installState === 'done'
             ? 'Installed'
-            : installState === 'running'
-              ? 'Installing…'
-              : `Install${sizeSuffix}`}
+            : downloadProgress && downloadProgress.percentage < 100
+              ? `${Math.round(downloadProgress.percentage)}% (${formatSpeed(downloadProgress.speedBps)})`
+              : installState === 'running'
+                ? 'Installing…'
+                : `Install${sizeSuffix}`}
         </Button>
         {canInstall || !blockedReason ? null : (
           <p className="@md:text-right text-caption text-muted-foreground">{blockedReason}</p>
