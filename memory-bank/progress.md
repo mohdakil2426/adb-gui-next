@@ -2,13 +2,19 @@
 
 ## Overall status
 
-Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger + Windows Google host setup), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README), emulator + Magisk root wizard, bottom logs/shell.
+Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger + Windows Google host setup), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README) with **GitHub APK/APKS filter + trending explore (Komi Store port)**, emulator + Magisk root wizard, bottom logs/shell.
+
+**2026-08-21 — Komi Store GitHub APK Filter (apk/.apks/.xapk) & Explore:**
+- **Source audit:** raw fetch `kurikomi-labs/komi-store` — `SearchRepositoryImpl.assetMatchesPlatform(Android)=.apk`, `verifyBatch` concurrency 15 + 2s timeout + LruCache 500, `tryBackendSearch` fallback policy, `exploreFromGithub`/`BackendApiClient` feed. Docs: `BackendSearchResponse`, `GithubRepoNetworkModel`, `BackendExploreResponse`, `BackendFallbackPolicy`, `BackendApiClient.search`.
+- **Rust:** `types.rs SearchFilters.github_apk_only: bool` default true, `assets.rs is_apk_asset` now `.apk/.apks/.xapk/.apkm`, `github.rs VERIFY_CONCURRENCY 15`, `verify_apk_availability(..., apk_only)` filters non-installable when true, `search(..., apk_only)` empty query → `topic:android stars:>100` trending + `verify_apk_availability`, `service.rs search_cache_key apk:{bool}` + `fetch_search_apps` `apk_only` passthrough, `cargo fmt` clean.
+- **Frontend:** `desktop/models.ts MarketplaceSearchFilters.githubApkOnly`, `marketplaceStore.githubApkOnly` `marketplace_github_apk_only` persist default true, `FilterBar` APK/APKS Switch (disabled without GitHub, `Package` icon), `browseFilters.MarketplaceLastSearch.githubApkOnly` + `lastSearchMatches(..., githubApkOnly)`, `useMarketplaceSearch.performSearch` `isExplore` + `githubApkOnly` forward + `handleExplore` trending, `MarketplaceView`/`MarketplaceBrowseTab`/`MarketplaceEmptyState` `Browse all APKs — trending Android` button, `ultracite` sorted interface, `exactOptionalPropertyTypes` spread fix.
+- **Tests:** `browseFilters.test` + `marketplaceStore.test` `githubApkOnly`, `packageStats.test` `maxApi/minApi` + `!` assert, `useMarketplaceAuth` `?? null` fix. `vitest 48/48 285/285`, `vite build` clean.
 
 **Comprehensive Codebase Audit & Optimization (2026-08-20):**
 - **React Doctor Score:** **100 / 100** (All 117 issues resolved, 0 remaining)
 - **ShadScan Score:** **79 / 100** (Foundation 20/20 100%, Interaction 20/20 100%)
-- **Vitest Unit Tests:** **46 / 46 files passed, 271 / 271 tests passed**
-- **Ultracite (Biome) Linter:** **466 files checked, 0 errors, 0 warnings**
+- **Vitest Unit Tests:** **48 / 48 files passed, 285 / 285 tests passed** (was 46/46 271/271)
+- **Ultracite (Biome) Linter:** **470 files checked, 0 errors, 0 warnings** (was 466)
 - **TypeScript:** `tsc --noEmit` passed with 0 errors
 - **Rust Backend:** `cargo check` passed with 0 errors
 - **Desktop Smoke Test:** Inspected & verified live via `orca computer` and screenshots
@@ -43,7 +49,7 @@ Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core feat
 - Utilities: 5-tab Precision Hardware Cockpit with Google standalone platform-tools & USB driver installer
 - Flasher: 4-tab Precision Hardware Cockpit with interactive pure SVG/ASCII Android A/B partition hierarchy diagram
 - Payload Dumper: 4-tab Precision Hardware Cockpit with container format detection, uncompressed footprint, and destination reveal
-- Marketplace: 4-tab Precision Hardware Cockpit with curated open-source power tools showcase
+- Marketplace: 4-tab Precision Hardware Cockpit with curated open-source power tools showcase — now **GitHub APK/APKS only filter (default on) + trending explore `Browse all APKs` (Komi `exploreFromGithub` port, `.apk/.apks/.xapk/.apkm`, verify 15 concurrency, empty `stars:>100` fallback)**
 - Emulator: 4-tab Precision Hardware Cockpit with 8-spec hardware grid, VM state badge, and quick switcher
 
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-21

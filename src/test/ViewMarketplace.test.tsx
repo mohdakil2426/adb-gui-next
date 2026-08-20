@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { ViewMarketplace } from '@/features/marketplace/MarketplaceView';
 
 const openDetailMock = vi.fn();
-const openSettingsMock = vi.fn();
 
 vi.mock('@/features/marketplace/model/marketplaceStore', () => ({
   useMarketplaceStore: (selector: (state: object) => unknown) =>
@@ -16,7 +15,6 @@ vi.mock('@/features/marketplace/model/marketplaceStore', () => ({
       githubSession: { rateLimit: null, user: null },
       isDetailOpen: false,
       openDetail: openDetailMock,
-      openSettings: openSettingsMock,
       resultsPerProvider: 25,
       searchHistory: [],
       selectedApp: null,
@@ -29,6 +27,7 @@ vi.mock('@/features/marketplace/hooks/useMarketplaceSearch', () => ({
   useMarketplaceSearch: () => ({
     fromCache: false,
     handleClear: vi.fn(),
+    handleExplore: vi.fn(),
     handleInputChange: vi.fn(),
     handleQuickSearch: vi.fn(),
     hasQuery: true,
@@ -75,10 +74,6 @@ vi.mock('@/features/marketplace/ui/AttributionFooter', () => ({
 
 vi.mock('@/features/marketplace/ui/AppDetailView', () => ({
   AppDetailView: () => <div>App Detail View</div>,
-}));
-
-vi.mock('@/features/marketplace/ui/MarketplaceSettings', () => ({
-  MarketplaceSettings: () => <div>Marketplace Settings</div>,
 }));
 
 function wrapper({ children }: { children: ReactNode }) {

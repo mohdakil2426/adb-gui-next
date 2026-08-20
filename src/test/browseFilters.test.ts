@@ -34,13 +34,18 @@ describe('marketplace browse filters', () => {
 
   it('matches a cached search only when query and filters align', () => {
     const cache = {
+      githubApkOnly: true,
       providers: ['F-Droid', 'GitHub'] as backend.ProviderSource[],
       query: 'camera',
       results: [app],
       resultsPerProvider: 12,
       sortBy: 'relevance' as const,
     };
-    expect(lastSearchMatches(cache, 'camera', ['F-Droid', 'GitHub'], 'relevance', 12)).toBe(true);
-    expect(lastSearchMatches(cache, 'maps', ['F-Droid', 'GitHub'], 'relevance', 12)).toBe(false);
+    expect(lastSearchMatches(cache, 'camera', ['F-Droid', 'GitHub'], 'relevance', 12, true)).toBe(
+      true,
+    );
+    expect(lastSearchMatches(cache, 'maps', ['F-Droid', 'GitHub'], 'relevance', 12, true)).toBe(
+      false,
+    );
   });
 });

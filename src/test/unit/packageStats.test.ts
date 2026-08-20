@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { backend } from '@/desktop/models';
 import { computePackageOverviewStats } from '@/features/app-manager/model/packageStats';
 
 describe('computePackageOverviewStats', () => {
@@ -21,7 +22,6 @@ describe('computePackageOverviewStats', () => {
       { label: 'User App', name: 'com.user.app', packageType: 'user' },
       { label: 'System App', name: 'com.google.android.gms', packageType: 'system' },
     ];
-
     const telemetry = {
       disabledAppsCount: 0,
       permissionDensity: [],
@@ -44,13 +44,13 @@ describe('computePackageOverviewStats', () => {
         },
       ],
       systemAppsCount: 1,
-      targetSdkDistribution: { legacy: 0, standard: 1, modern: 1 },
+      targetSdkDistribution: { legacy: 0, standard: 1, modern: 1, maxApi: 34, minApi: 21 },
       totalStorageBytes: 1000,
       userAppsCount: 1,
-    };
+    } as backend.AppOverviewTelemetry;
 
     const stats = computePackageOverviewStats(telemetry, [], packages);
     expect(stats.storageBreakdown).toHaveLength(1);
-    expect(stats.storageBreakdown[0].packageName).toBe('com.user.app');
+    expect(stats.storageBreakdown[0]?.packageName).toBe('com.user.app');
   });
 });

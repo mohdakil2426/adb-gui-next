@@ -20,13 +20,15 @@ describe('marketplaceStore', () => {
       viewMode: 'grid',
       searchHistory: [],
       recentlyViewedApps: [],
-      isSettingsOpen: false,
       githubPat: '',
       githubOauthClientId: '',
       resultsPerProvider: 12,
       githubSession: { accessToken: null, user: null, rateLimit: null },
       githubDeviceChallenge: null,
       isGithubAuthenticating: false,
+      installableOnly: false,
+      githubApkOnly: true,
+      lastSearch: null,
     });
   });
 
@@ -85,6 +87,7 @@ describe('marketplaceStore', () => {
   it('summarizes active filters consistently', () => {
     const summary = getMarketplaceActiveFilterSummary({
       activeProviders: ['F-Droid', 'GitHub'],
+      githubApkOnly: false,
       installableOnly: false,
       sortBy: 'downloads',
       resultsPerProvider: 8,
@@ -96,6 +99,7 @@ describe('marketplaceStore', () => {
   it('adds an installable-only chip to the filter summary', () => {
     const summary = getMarketplaceActiveFilterSummary({
       activeProviders: ['F-Droid', 'GitHub', 'Aptoide'],
+      githubApkOnly: true,
       installableOnly: true,
       sortBy: 'relevance',
       resultsPerProvider: 12,
