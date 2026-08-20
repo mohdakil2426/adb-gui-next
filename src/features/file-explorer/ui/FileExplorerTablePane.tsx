@@ -85,12 +85,30 @@ export function FileExplorerTablePane({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
+          aria-label="Files table"
           className={cn(
             'min-h-0 flex-1 overflow-auto overscroll-contain focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
             FE_DROP_OVER_CLASS,
           )}
           data-fe-drop-pane={listing.currentPath}
+          onClick={(event) => {
+            if (actions.consumeGhostClick()) {
+              return;
+            }
+            if (editing.renamingName || editing.creatingType) {
+              return;
+            }
+            const element = event.target instanceof Element ? event.target : null;
+            if (
+              !element?.closest(
+                '[data-index], [data-slot=table-head], button, input, [role=checkbox], [role=separator]',
+              )
+            ) {
+              actions.clearSelection();
+            }
+          }}
           ref={tableScrollRef}
+          role="region"
         >
           {paneState === 'loading' ? <FileExplorerRowSkeleton /> : null}
           {paneState === 'no-device' ? <NoDeviceState /> : null}
