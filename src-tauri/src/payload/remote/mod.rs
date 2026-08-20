@@ -31,6 +31,11 @@ pub use http_zip::{ZipPayloadInfo, find_payload_in_zip, is_zip_url, read_text_fi
 pub use prefetch::{PayloadByteSpan, absolute_download_range, compute_payload_span};
 pub use session::open_http_reader;
 
+use std::fs::File;
+use std::io::{Cursor, Read, Seek, SeekFrom, Write};
+use std::sync::Arc;
+use tempfile::NamedTempFile;
+
 use crate::payload::cancel::CancellationToken;
 use crate::payload::chromeos_update_engine::DeltaArchiveManifest;
 use crate::payload::crau::parse_header;
@@ -43,11 +48,53 @@ use memmap2::Mmap;
 use progress::ProgressThrottle;
 use prost::Message;
 use rayon::prelude::*;
-use std::fs::File;
-use std::io::{Cursor, Read, Seek, SeekFrom, Write};
-use std::sync::Arc;
-use tempfile::NamedTempFile;
+/// Read the full CrAU payload header dynamically: reads first 32 bytes to determine
+/// the exact manifest length, then reads the complete manifest buffer.
+async fn read_remote_crau_header(
+    reader: &HttpPayloadReader,
+    zip_info: &Option<ZipPayloadInfo>,
+) -> Result<Vec<u8>> {
+    // Read the initial 32 bytes to parse magic, version, manifest_len, and metadata_sig_len
+    let prefix = read_from_zip_or_direct(reader, zip_info, 0, 32).await?;
+    if prefix.len() < 20 || &prefix[0..4] != b"CrAU" {
+        anyhow::bail!("Invalid payload magic (expected CrAU)");
+    }
 
+    let version = u64::from_be_bytes(
+        prefix[4..12]
+            .try_into()
+            .map_err(|_| anyhow!("invalid payload: version slice too short"))?,
+    );
+    let manifest_len = u64::from_be_bytes(
+        prefix[12..20]
+            .try_into()
+            .map_err(|_| anyhow!("invalid payload: manifest length slice too short"))?,
+    );
+    if manifest_len > 100 * 1024 * 1024 {
+        anyhow::bail!("Manifest size ({manifest_len}) exceeds maximum allowed (100 MB)");
+    }
+
+    let (sig_len, header_start) = if version == 2 {
+        if prefix.len() < 24 {
+            anyhow::bail!("Prefix too short for CrAU v2 header");
+        }
+        let s_len = u32::from_be_bytes(
+            prefix[20..24]
+                .try_into()
+                .map_err(|_| anyhow!("invalid payload: metadata sig length slice too short"))?,
+        );
+        (s_len as u64, 24u64)
+    } else {
+        (0u64, 20u64)
+    };
+
+    let total_header_len = header_start
+        .checked_add(manifest_len)
+        .and_then(|l| l.checked_add(sig_len))
+        .ok_or_else(|| anyhow!("Manifest length offset overflow"))?;
+
+    read_from_zip_or_direct(reader, zip_info, 0, total_header_len).await
+}
 #[cfg(feature = "remote_zip")]
 use tauri::Emitter;
 
@@ -163,22 +210,21 @@ pub async fn list_remote_payload_partitions(
             TOTAL_STEPS,
         );
 
-        // Read the first 1MB of payload.bin from within the ZIP
-        let header_data =
-            match read_from_zip_or_direct(&reader, &Some(zip_info), 0, 1024 * 1024).await {
-                Ok(data) => data,
-                Err(err) => {
-                    load_progress::emit_load_progress(
-                        app_ref,
-                        "error",
-                        "Failed to read payload header",
-                        Some(&err.to_string()),
-                        3,
-                        TOTAL_STEPS,
-                    );
-                    return Err(err);
-                }
-            };
+        // Dynamically read payload.bin CrAU header based on exact manifest length
+        let header_data = match read_remote_crau_header(&reader, &Some(zip_info)).await {
+            Ok(data) => data,
+            Err(err) => {
+                load_progress::emit_load_progress(
+                    app_ref,
+                    "error",
+                    "Failed to read payload header",
+                    Some(&err.to_string()),
+                    3,
+                    TOTAL_STEPS,
+                );
+                return Err(err);
+            }
+        };
         match parse_header(&header_data) {
             Ok(parsed) => parsed,
             Err(err) => {
@@ -211,8 +257,8 @@ pub async fn list_remote_payload_partitions(
             TOTAL_STEPS,
         );
 
-        // Direct payload.bin: read first 1MB
-        let header_data = match reader.read_range(0, 1024 * 1024).await {
+        // Direct payload.bin: dynamically read exact header length
+        let header_data = match read_remote_crau_header(&reader, &None).await {
             Ok(data) => data,
             Err(err) => {
                 load_progress::emit_load_progress(
@@ -329,12 +375,11 @@ pub async fn get_remote_payload_metadata(
                 });
             }
         };
-        let header_data =
-            read_from_zip_or_direct(&reader, &Some(zi.clone()), 0, 1024 * 1024).await?;
+        let header_data = read_remote_crau_header(&reader, &Some(zi.clone())).await?;
         let (manifest, _) = parse_header(&header_data)?;
         (manifest, Some(zi))
     } else {
-        let header_data = reader.read_range(0, 1024 * 1024).await?;
+        let header_data = read_remote_crau_header(&reader, &None).await?;
         let (manifest, _) = parse_header(&header_data)?;
         (manifest, None)
     };
@@ -551,7 +596,7 @@ pub async fn extract_remote_prefetch(
     if cancel_token.is_some_and(CancellationToken::is_cancelled) {
         anyhow::bail!("extraction cancelled");
     }
-    let header_data = read_from_zip_or_direct(&reader, &zip_info, 0, 1024 * 1024).await?;
+    let header_data = read_remote_crau_header(&reader, &zip_info).await?;
     let (manifest_bytes, data_offset) = parse_header(&header_data)?;
     let probe_manifest = DeltaArchiveManifest::decode(&manifest_bytes[..])?;
     let span =
@@ -816,12 +861,11 @@ pub async fn extract_remote_direct(
             zip_info.compressed_size,
             zip_info.uncompressed_size
         );
-        let header_data =
-            read_from_zip_or_direct(&reader, &Some(zip_info.clone()), 0, 1024 * 1024).await?;
+        let header_data = read_remote_crau_header(&reader, &Some(zip_info.clone())).await?;
         let (manifest, offset) = parse_header(&header_data)?;
         (manifest, offset, Some(zip_info))
     } else {
-        let header_data = reader.read_range(0, 1024 * 1024).await?;
+        let header_data = read_remote_crau_header(&reader, &None).await?;
         let (manifest, offset) = parse_header(&header_data)?;
         (manifest, offset, None)
     };
@@ -1044,6 +1088,26 @@ fn extract_partition_from_mmap(
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
 
+        #[allow(deprecated)]
+        let is_delta_op = matches!(
+            operation_type,
+            Type::SourceCopy
+                | Type::SourceBsdiff
+                | Type::Puffdiff
+                | Type::BrotliBsdiff
+                | Type::Move
+                | Type::Bsdiff
+        );
+
+        if is_delta_op {
+            anyhow::bail!(
+                "Partition '{}' is an incremental delta update ({:?}) and requires the base partition image ({}.img) from the previous build. Please select a Full OTA package from the Firmware Hub.",
+                partition.partition_name,
+                operation_type,
+                partition.partition_name
+            );
+        }
+
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,
             Type::ReplaceXz => {
@@ -1192,6 +1256,26 @@ fn extract_partition_from_remote(
 
         let mut decoded_offset = 0usize;
         let is_zero = operation_type == Type::Zero;
+
+        #[allow(deprecated)]
+        let is_delta_op = matches!(
+            operation_type,
+            Type::SourceCopy
+                | Type::SourceBsdiff
+                | Type::Puffdiff
+                | Type::BrotliBsdiff
+                | Type::Move
+                | Type::Bsdiff
+        );
+
+        if is_delta_op {
+            anyhow::bail!(
+                "Partition '{}' is an incremental delta update ({:?}) and requires the base partition image ({}.img) from the previous build. Please select a Full OTA package from the Firmware Hub.",
+                partition.partition_name,
+                operation_type,
+                partition.partition_name
+            );
+        }
 
         let mut compressed_reader: Option<Box<dyn Read + '_>> = match operation_type {
             Type::Replace | Type::Zero => None,

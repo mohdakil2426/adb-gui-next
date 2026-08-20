@@ -74,7 +74,7 @@ export function ViewPayloadDumper() {
       setRemoteUrl(url);
       setActiveMode('remote');
       setActiveTab('extractor');
-      actions.handleCheckUrl();
+      void actions.loadRemotePartitions(url);
     },
     [setRemoteUrl, setActiveMode, actions],
   );
@@ -142,11 +142,6 @@ export function ViewPayloadDumper() {
                 Overview
               </TabsTrigger>
 
-              <TabsTrigger className="flex-1" value="marketplace">
-                <Store aria-hidden="true" className="mr-2 size-4" />
-                Firmware Hub
-              </TabsTrigger>
-
               <TabsTrigger className="flex-1" value="extractor">
                 <Layers aria-hidden="true" className="mr-2 size-4" />
                 Extractor & Partitions
@@ -157,6 +152,10 @@ export function ViewPayloadDumper() {
                 ) : null}
               </TabsTrigger>
 
+              <TabsTrigger className="flex-1" value="marketplace">
+                <Store aria-hidden="true" className="mr-2 size-4" />
+                Firmware Hub
+              </TabsTrigger>
               <TabsTrigger className="flex-1" value="history">
                 <History aria-hidden="true" className="mr-2 size-4" />
                 Extracted Outputs & History
@@ -173,12 +172,7 @@ export function ViewPayloadDumper() {
               <PayloadOverviewTab onNavigateTab={setActiveTab} />
             </TabsContent>
 
-            {/* Tab 2: Google Pixel Firmware Marketplace */}
-            <TabsContent value="marketplace">
-              <PayloadMarketplaceTab onSelectRemoteUrl={handleSelectMarketplaceUrl} />
-            </TabsContent>
-
-            {/* Tab 3: Extractor & Partitions Workspace */}
+            {/* Tab 2: Extractor & Partitions Workspace */}
             <TabsContent value="extractor">
               <PayloadExtractorTab
                 completedPartitions={completedPartitions}
@@ -203,7 +197,6 @@ export function ViewPayloadDumper() {
                 onOpenOutputFolder={actions.handleOpenOutputFolder}
                 onPayloadDrop={actions.handlePayloadDrop}
                 onPrefetchChange={setPrefetch}
-                onRefreshPartitions={actions.handleRefreshPartitions}
                 onReset={actions.handleReset}
                 onSelectOutput={actions.handleSelectOutput}
                 onSelectPayload={actions.handleSelectPayload}
@@ -217,7 +210,6 @@ export function ViewPayloadDumper() {
                 partitions={partitions}
                 payloadPath={payloadPath}
                 prefetch={prefetch}
-                remoteMetadata={remoteMetadata}
                 remoteUrl={remoteUrl}
                 status={status}
                 toExtractCount={selectedNotExtracted.length}
@@ -225,6 +217,10 @@ export function ViewPayloadDumper() {
               />
             </TabsContent>
 
+            {/* Tab 3: OEM Firmware Hub & Device Marketplace */}
+            <TabsContent value="marketplace">
+              <PayloadMarketplaceTab onSelectRemoteUrl={handleSelectMarketplaceUrl} />
+            </TabsContent>
             {/* Tab 4: Extracted Outputs & History */}
             <TabsContent value="history">
               <PayloadHistoryTab

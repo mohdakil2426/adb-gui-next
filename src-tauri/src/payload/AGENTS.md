@@ -209,9 +209,10 @@ src-tauri/src/firmware/
 └── providers/
     ├── mod.rs            Provider registry & dispatcher
     ├── google.rs         GooglePixelScraper: Factory & OTA scraper with ToS cookie bypass
-    ├── nothing.rs        NothingOtaProvider (Akashic CDN feed stub)
-    └── xiaomi.rs         XiaomiHyperOsProvider (Fastboot TGZ / Recovery feed stub)
-```
+    ├── nothing.rs        NothingProvider: Live nothingarchive.tech scraper with static catalog fallback
+    ├── oneplus.rs        OnePlusProvider: Live spike0en/oneplus_archive releases scraper with 50+ models
+    ├── samsung.rs        SamsungProvider: Live FOTA version.xml query with 70+ models across S/Z/Note/A/Tab
+    └── xiaomi.rs         XiaomiProvider: Live XM Firmware Updater multi-YAML scraper with static catalog
 
 ### 4.1 Google Pixel Scraper (`firmware/providers/google.rs`)
 - **Target URLs**:
@@ -291,3 +292,7 @@ All IPC commands return `CmdResult<T> = Result<T, String>`:
    - Output paths must be canonicalized before creating files to prevent symlink traversal outside target directories.
 7. **SSRF Protection on Remote URLs**:
    - Outbound HTTP range requests must validate IP targets against private, loopback, link-local, and cloud metadata ranges (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.169.254`), with socket IP pinning across redirects.
+8. **Dynamic CrAU Header Extraction**:
+   - Never assume fixed 1MB manifest sizes. Read the 32-byte CrAU prefix to compute `manifest_len` + `metadata_sig_len` and issue exact single-range HTTP requests (`read_remote_crau_header`).
+9. **Validated Redirect Range Following**:
+   - HTTP Range clients must follow `301`, `302`, `307`, and `308` redirects with preserved `Range: bytes={start}-{end}` headers and per-hop SSRF validation (`validated_redirect_policy`).

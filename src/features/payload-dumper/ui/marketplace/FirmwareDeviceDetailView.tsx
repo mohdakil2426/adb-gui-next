@@ -24,8 +24,15 @@ export function FirmwareDeviceDetailView({
   onSelectRemoteUrl,
 }: FirmwareDeviceDetailViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<FirmwareImageType | 'all'>('ota');
-
+  const [selectedType, setSelectedType] = useState<FirmwareImageType | 'all'>(() => {
+    if (device.builds.some((b) => b.imageType === 'ota')) {
+      return 'ota';
+    }
+    if (device.builds.some((b) => b.imageType === 'factory')) {
+      return 'factory';
+    }
+    return 'all';
+  });
   const brandInfo = BRAND_DISPLAY_INFO[device.brand] ?? {
     displayName: device.brand,
     portalName: 'Official Firmware Portal',

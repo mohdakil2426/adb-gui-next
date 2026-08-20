@@ -44,7 +44,7 @@ interface PayloadActions {
   handleReset: () => void;
   handleSelectOutput: () => Promise<void>;
   handleSelectPayload: () => Promise<void>;
-  loadRemotePartitions: () => Promise<void>;
+  loadRemotePartitions: (targetUrl?: string) => Promise<void>;
 }
 export function usePayloadActions(options: UsePayloadActionsOptions): PayloadActions {
   const {
@@ -117,37 +117,41 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
       void checkRemoteUrl(remoteUrl, setConnectionStatus, setEstimatedSize);
     }, 500);
   }, [remoteUrl, setConnectionStatus, setEstimatedSize]);
-  const loadRemotePartitions = useCallback(async () => {
-    if (!remoteUrl.trim()) {
-      return;
-    }
-    cancelLoadingRef.current = false;
-    await runLoadRemotePartitions(
+  const loadRemotePartitions = useCallback(
+    async (overrideUrl?: string) => {
+      const urlToLoad = (overrideUrl ?? remoteUrl).trim();
+      if (!urlToLoad) {
+        return;
+      }
+      cancelLoadingRef.current = false;
+      await runLoadRemotePartitions(
+        urlToLoad,
+        {
+          beginLoadProgress,
+          clearLoadProgress,
+          setErrorMessage,
+          setPartitions,
+          setPayloadPath,
+          setRemoteMetadata,
+          setStatus,
+        },
+        () => cancelLoadingRef.current,
+        () => {
+          cancelLoadingRef.current = false;
+        },
+      );
+    },
+    [
       remoteUrl,
-      {
-        beginLoadProgress,
-        clearLoadProgress,
-        setErrorMessage,
-        setPartitions,
-        setPayloadPath,
-        setRemoteMetadata,
-        setStatus,
-      },
-      () => cancelLoadingRef.current,
-      () => {
-        cancelLoadingRef.current = false;
-      },
-    );
-  }, [
-    remoteUrl,
-    setPartitions,
-    setPayloadPath,
-    setStatus,
-    setErrorMessage,
-    setRemoteMetadata,
-    beginLoadProgress,
-    clearLoadProgress,
-  ]);
+      setPartitions,
+      setPayloadPath,
+      setStatus,
+      setErrorMessage,
+      setRemoteMetadata,
+      beginLoadProgress,
+      clearLoadProgress,
+    ],
+  );
   const handleCancelLoadPartitions = useCallback(() => {
     cancelLoadingRef.current = true;
     setStatus('idle');

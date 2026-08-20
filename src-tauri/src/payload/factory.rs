@@ -14,7 +14,7 @@ use crate::payload::types::{
 use anyhow::{Result, anyhow};
 use rayon::prelude::*;
 use std::fs::File;
-use std::io::{BufReader, Read, Seek, SeekFrom, Write};
+use std::io::{BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
@@ -32,8 +32,7 @@ pub struct LocalFactoryEntry {
 #[derive(Debug, Clone)]
 pub enum FactorySource {
     Outer { index: usize },
-    NestedStored { outer_data_start: u64, outer_size: u64, nested_entry_index: usize },
-    NestedDeflated { outer_index: usize, nested_entry_index: usize },
+    Nested { outer_index: usize, nested_entry_index: usize },
 }
 
 #[derive(serde::Serialize, Clone)]
@@ -45,55 +44,6 @@ struct FactoryProgressPayload {
     percentage: f64,
     speed: f64,
     completed: bool,
-}
-
-/// A zero-copy reader and seeker over a slice of an underlying `File`.
-#[derive(Debug)]
-pub struct FileSection {
-    file: File,
-    start_offset: u64,
-    len: u64,
-    pos: u64,
-}
-
-impl FileSection {
-    pub fn new(mut file: File, start_offset: u64, len: u64) -> Result<Self> {
-        file.seek(SeekFrom::Start(start_offset))?;
-        Ok(Self { file, start_offset, len, pos: 0 })
-    }
-}
-
-impl Read for FileSection {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.pos >= self.len {
-            return Ok(0);
-        }
-        let max_read = (self.len - self.pos).min(buf.len() as u64) as usize;
-        let n = self.file.read(&mut buf[..max_read])?;
-        self.pos += n as u64;
-        Ok(n)
-    }
-}
-
-impl Seek for FileSection {
-    fn seek(&mut self, pos: SeekFrom) -> std::io::Result<u64> {
-        let new_pos = match pos {
-            SeekFrom::Start(offset) => offset as i64,
-            SeekFrom::End(offset) => self.len as i64 + offset,
-            SeekFrom::Current(offset) => self.pos as i64 + offset,
-        };
-
-        if new_pos < 0 || new_pos > self.len as i64 {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "invalid seek position in FileSection",
-            ));
-        }
-
-        self.pos = new_pos as u64;
-        self.file.seek(SeekFrom::Start(self.start_offset + self.pos))?;
-        Ok(self.pos)
-    }
 }
 
 fn basename(path: &str) -> Option<&str> {
@@ -188,75 +138,37 @@ pub fn discover_local_factory_entries(zip_path: &Path) -> Result<Vec<LocalFactor
                 source: FactorySource::Outer { index: i },
             });
         } else if is_image_zip_entry(&name) && size > 0 {
-            let is_stored = entry.compression() == zip::CompressionMethod::Stored;
-            let data_start = entry.data_start();
-            nested_zip_specs.push((i, name, is_stored, data_start, size));
+            nested_zip_specs.push((i, name));
         }
     }
 
     // Inspect nested image-*.zip archives
-    for (outer_idx, zip_name, is_stored, data_start, size) in nested_zip_specs {
-        if is_stored && data_start.is_some() {
-            let offset = data_start.unwrap_or(0);
-            let section = FileSection::new(File::open(zip_path)?, offset, size)?;
-            let mut nested_archive = match ZipArchive::new(BufReader::new(section)) {
-                Ok(a) => a,
-                Err(e) => {
-                    log::warn!("Failed to open stored nested ZIP '{}': {}", zip_name, e);
-                    continue;
-                }
-            };
-
-            for j in 0..nested_archive.len() {
-                let inner_entry = nested_archive.by_index(j)?;
-                let inner_name = inner_entry.name().to_string();
-                let inner_size = inner_entry.size();
-
-                if is_image_entry(&inner_name) && inner_size > 0 {
-                    let partition_name = partition_name_from_image_entry(&inner_name);
-                    entries.push(LocalFactoryEntry {
-                        partition_name,
-                        original_file_name: inner_name,
-                        uncompressed_size: inner_size,
-                        source: FactorySource::NestedStored {
-                            outer_data_start: offset,
-                            outer_size: size,
-                            nested_entry_index: j,
-                        },
-                    });
-                }
+    for (outer_idx, zip_name) in nested_zip_specs {
+        let mut nested_file = outer_archive.by_index(outer_idx)?;
+        let mut bytes = Vec::new();
+        nested_file.read_to_end(&mut bytes)?;
+        let cursor = std::io::Cursor::new(bytes);
+        let mut nested_archive = match ZipArchive::new(cursor) {
+            Ok(a) => a,
+            Err(e) => {
+                log::warn!("Failed to open nested ZIP '{}': {}", zip_name, e);
+                continue;
             }
-        } else {
-            // Deflated fallback
-            let mut nested_file = outer_archive.by_index(outer_idx)?;
-            let mut bytes = Vec::new();
-            nested_file.read_to_end(&mut bytes)?;
-            let cursor = std::io::Cursor::new(bytes);
-            let mut nested_archive = match ZipArchive::new(cursor) {
-                Ok(a) => a,
-                Err(e) => {
-                    log::warn!("Failed to open deflated nested ZIP '{}': {}", zip_name, e);
-                    continue;
-                }
-            };
+        };
 
-            for j in 0..nested_archive.len() {
-                let inner_entry = nested_archive.by_index(j)?;
-                let inner_name = inner_entry.name().to_string();
-                let inner_size = inner_entry.size();
+        for j in 0..nested_archive.len() {
+            let inner_entry = nested_archive.by_index(j)?;
+            let inner_name = inner_entry.name().to_string();
+            let inner_size = inner_entry.size();
 
-                if is_image_entry(&inner_name) && inner_size > 0 {
-                    let partition_name = partition_name_from_image_entry(&inner_name);
-                    entries.push(LocalFactoryEntry {
-                        partition_name,
-                        original_file_name: inner_name,
-                        uncompressed_size: inner_size,
-                        source: FactorySource::NestedDeflated {
-                            outer_index: outer_idx,
-                            nested_entry_index: j,
-                        },
-                    });
-                }
+            if is_image_entry(&inner_name) && inner_size > 0 {
+                let partition_name = partition_name_from_image_entry(&inner_name);
+                entries.push(LocalFactoryEntry {
+                    partition_name,
+                    original_file_name: inner_name,
+                    uncompressed_size: inner_size,
+                    source: FactorySource::Nested { outer_index: outer_idx, nested_entry_index: j },
+                });
             }
         }
     }
@@ -329,8 +241,7 @@ pub fn extract_factory_zip_partitions(
                 anyhow::bail!("extraction cancelled");
             }
 
-            let file_name =
-                format!("{}.img", crate::helpers::safe_image_file_name(&entry.partition_name));
+            let file_name = crate::helpers::safe_image_file_name(&entry.partition_name);
             let out_file_path = output_dir_arc.join(&file_name);
 
             guard.add_file(out_file_path.clone());
@@ -423,20 +334,7 @@ fn extract_single_factory_entry(
                 cancel_token,
             )?;
         }
-        FactorySource::NestedStored { outer_data_start, outer_size, nested_entry_index } => {
-            let section = FileSection::new(File::open(zip_path)?, *outer_data_start, *outer_size)?;
-            let mut nested_archive = ZipArchive::new(BufReader::new(section))?;
-            let mut zip_entry = nested_archive.by_index(*nested_entry_index)?;
-            stream_entry_to_file(
-                &mut zip_entry,
-                &mut out_file,
-                entry.uncompressed_size,
-                &entry.partition_name,
-                app_handle,
-                cancel_token,
-            )?;
-        }
-        FactorySource::NestedDeflated { outer_index, nested_entry_index } => {
+        FactorySource::Nested { outer_index, nested_entry_index } => {
             let file = File::open(zip_path)?;
             let mut outer_archive = ZipArchive::new(BufReader::new(file))?;
             let mut nested_file = outer_archive.by_index(*outer_index)?;
@@ -606,10 +504,9 @@ mod tests {
             outer_writer.finish().unwrap();
         }
 
-        let temp_file = tempfile::NamedTempFile::new().unwrap();
-        let path = temp_file.path().with_extension("zip");
+        let temp_file = tempfile::Builder::new().suffix(".zip").tempfile().unwrap();
+        let path = temp_file.path().to_path_buf();
         std::fs::write(&path, &outer_buf).unwrap();
-
         assert!(is_factory_zip(&path));
 
         let partitions = list_factory_zip_partitions(&path).unwrap();
@@ -637,7 +534,5 @@ mod tests {
 
         let boot_data = std::fs::read(out_dir.path().join("boot.img")).unwrap();
         assert_eq!(boot_data, b"ANDROID!_BOOT");
-
-        let _ = std::fs::remove_file(&path);
     }
 }

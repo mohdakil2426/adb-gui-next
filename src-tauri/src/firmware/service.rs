@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::cache::FirmwareCache;
-use super::providers::{GooglePixelScraper, NothingProvider, XiaomiProvider};
+use super::providers::{
+    GooglePixelScraper, NothingProvider, OnePlusProvider, SamsungProvider, XiaomiProvider,
+};
 use super::traits::FirmwareProvider;
 use super::types::{FirmwareBrand, FirmwareDeviceModel};
 
@@ -24,7 +26,8 @@ impl FirmwareHubService {
         providers.insert(FirmwareBrand::Google, Arc::new(GooglePixelScraper::new()));
         providers.insert(FirmwareBrand::Nothing, Arc::new(NothingProvider::new()));
         providers.insert(FirmwareBrand::Xiaomi, Arc::new(XiaomiProvider::new()));
-
+        providers.insert(FirmwareBrand::OnePlus, Arc::new(OnePlusProvider::new()));
+        providers.insert(FirmwareBrand::Samsung, Arc::new(SamsungProvider::new()));
         Self { cache: FirmwareCache::new(cache_dir), providers }
     }
 

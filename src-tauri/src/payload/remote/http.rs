@@ -72,6 +72,23 @@ pub(crate) fn is_blocked_ip(ip: IpAddr) -> bool {
 
 const MAX_HTTP_REDIRECTS: usize = 5;
 
+fn validated_redirect_policy() -> Policy {
+    Policy::custom(|attempt| {
+        if let Err(e) = validate_outbound_url(attempt.url(), false) {
+            return attempt.error(e);
+        }
+        Policy::limited(MAX_HTTP_REDIRECTS).redirect(attempt)
+    })
+}
+
+fn validated_blocking_redirect_policy() -> reqwest::redirect::Policy {
+    reqwest::redirect::Policy::custom(|attempt| {
+        if let Err(e) = validate_outbound_url(attempt.url(), false) {
+            return attempt.error(e);
+        }
+        reqwest::redirect::Policy::limited(MAX_HTTP_REDIRECTS).redirect(attempt)
+    })
+}
 /// Check if a URL points to a private/internal IP address.
 /// Returns true if the URL should be blocked to prevent SSRF attacks.
 pub(crate) fn is_private_url(url: &url::Url) -> bool {
@@ -209,9 +226,13 @@ impl HttpPayloadReader {
 
         validate_outbound_url(&url, false)?;
 
-        // Never auto-follow redirects: each hop must pass SSRF validation.
         let client = Client::builder()
-            .redirect(Policy::none())
+            .redirect(validated_redirect_policy())
+            .user_agent(concat!("ADB-GUI-Next/", env!("CARGO_PKG_VERSION")))
+            .no_gzip()
+            .no_brotli()
+            .no_deflate()
+            .no_zstd()
             .timeout(Duration::from_secs(600))
             .connect_timeout(Duration::from_secs(30))
             .build()
@@ -288,7 +309,12 @@ impl HttpPayloadReader {
             return Ok(client.clone());
         }
         let client = reqwest::blocking::Client::builder()
-            .redirect(Policy::none())
+            .redirect(validated_blocking_redirect_policy())
+            .user_agent(concat!("ADB-GUI-Next/", env!("CARGO_PKG_VERSION")))
+            .no_gzip()
+            .no_brotli()
+            .no_deflate()
+            .no_zstd()
             .timeout(RANGE_REQUEST_TIMEOUT)
             .connect_timeout(Duration::from_secs(30))
             .build()
@@ -330,6 +356,7 @@ impl HttpPayloadReader {
             match client
                 .get(&self.url)
                 .header("Range", &range_header)
+                .header("Accept-Encoding", "identity")
                 .timeout(RANGE_REQUEST_TIMEOUT)
                 .send()
             {
@@ -405,16 +432,15 @@ impl HttpPayloadReader {
         }
         let end = offset.checked_add(length - 1).ok_or_else(|| anyhow!("Range overflow"))?;
         let range_header = format!("bytes={}-{}", offset, end);
-
         for attempt in 0..MAX_RETRIES {
             if cancel_token.is_some_and(CancellationToken::is_cancelled) {
                 anyhow::bail!("extraction cancelled");
             }
-
             let send_fut = self
                 .client
                 .get(&self.url)
                 .header("Range", &range_header)
+                .header("Accept-Encoding", "identity")
                 .timeout(RANGE_REQUEST_TIMEOUT)
                 .send();
 

@@ -3,7 +3,6 @@ import type { backend } from '@/desktop/models';
 import { RemoteLoadProgressCard } from '@/features/payload-dumper/ui/RemoteLoadProgressCard';
 import { DropZone } from '@/shared/components/DropZone';
 import { type ConnectionStatus, RemoteUrlPanel } from '@/shared/components/RemoteUrlPanel';
-import { Button } from '@/shared/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
 const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'];
@@ -96,6 +95,7 @@ export function PayloadSourceTabs({
           disabled={disabled || showLoadCard}
           estimatedSize={estimatedSize}
           onCheckUrl={onCheckUrl}
+          onLoadPartitions={onLoadRemotePartitions}
           onPrefetchChange={onPrefetchChange}
           onUrlChange={onUrlChange}
           prefetch={prefetch}
@@ -103,7 +103,7 @@ export function PayloadSourceTabs({
         />
 
         {showLoadCard ? (
-          <div className="mt-2">
+          <div className="mt-1">
             <RemoteLoadProgressCard
               detail={loadDetail}
               estimatedSizeLabel={estimatedSize}
@@ -114,14 +114,6 @@ export function PayloadSourceTabs({
               step={loadStep}
               totalSteps={loadTotalSteps}
             />
-          </div>
-        ) : null}
-
-        {connectionStatus === 'ready' && !showLoadCard ? (
-          <div className="mt-2 flex min-w-0 justify-end">
-            <Button onClick={onLoadRemotePartitions} size="sm" type="button" variant="default">
-              Read Remote Partitions Index
-            </Button>
           </div>
         ) : null}
       </TabsContent>

@@ -5,7 +5,6 @@ import { ActionFooter } from '@/features/payload-dumper/ui/ActionFooter';
 import type { CategoryFilterType } from '@/features/payload-dumper/ui/extractor/PartitionCategoryFilter';
 import { PartitionTableList } from '@/features/payload-dumper/ui/extractor/PartitionTableList';
 import { PartitionToolbar } from '@/features/payload-dumper/ui/extractor/PartitionToolbar';
-import { FileBanner } from '@/features/payload-dumper/ui/FileBanner';
 import { LoadingState } from '@/features/payload-dumper/ui/LoadingState';
 import { OutputDirectoryField } from '@/features/payload-dumper/ui/OutputDirectoryField';
 import { PayloadSourceTabs } from '@/features/payload-dumper/ui/PayloadSourceTabs';
@@ -43,7 +42,6 @@ interface PayloadExtractorTabProps {
   onOpenOutputFolder: () => void;
   onPayloadDrop: (paths: string[]) => void;
   onPrefetchChange: (prefetch: boolean) => void;
-  onRefreshPartitions?: () => void;
   onReset: () => void;
   onSelectOutput: () => void;
   onSelectPayload: () => void;
@@ -57,7 +55,6 @@ interface PayloadExtractorTabProps {
   partitions: PartitionInfo[];
   payloadPath: string;
   prefetch: boolean;
-  remoteMetadata?: backend.RemotePayloadMetadata | null | undefined;
   remoteUrl: string;
   status: string;
   toExtractCount: number;
@@ -104,20 +101,11 @@ export function PayloadExtractorTab({
   onCancelExtraction,
   onReset,
   onSelectPayload,
-  onRefreshPartitions,
-  remoteMetadata,
 }: PayloadExtractorTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryFilterType>('all');
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const isBusy = status === 'extracting' || status === 'loading-partitions';
-  const isRemote =
-    mode === 'remote' || payloadPath.startsWith('http://') || payloadPath.startsWith('https://');
-  const totalPayloadSize = useMemo(
-    () => partitions.reduce((total, partition) => total + partition.size, 0),
-    [partitions],
-  );
   const filteredPartitions = useMemo(
     () =>
       partitions
@@ -143,71 +131,47 @@ export function PayloadExtractorTab({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Ingestion & Loading States (shown when no partitions are loaded) */}
-      {partitions.length === 0 ? (
-        <>
-          {/* Integrated Source & Remote Loader Ingestion Card */}
-          <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
-            <CardContent className="flex flex-col gap-4 p-0">
-              <PayloadSourceTabs
-                connectionStatus={connectionStatus}
-                disabled={isBusy}
-                estimatedSize={estimatedSize}
-                isLoadingPartitions={isLoadingPartitions}
-                loadDetail={loadDetail}
-                loadMessage={loadMessage}
-                loadPhase={loadPhase}
-                loadStartedAt={loadStartedAt}
-                loadStep={loadStep}
-                loadTotalSteps={loadTotalSteps}
-                mode={mode}
-                onCancelLoadPartitions={onCancelLoadPartitions}
-                onCheckUrl={onCheckUrl}
-                onLoadRemotePartitions={onLoadRemotePartitions}
-                onModeChange={onModeChange}
-                onPayloadDrop={onPayloadDrop}
-                onPrefetchChange={onPrefetchChange}
-                onSelectPayload={onSelectPayload}
-                onUrlChange={onUrlChange}
-                prefetch={prefetch}
-                remoteUrl={remoteUrl}
-              />
-            </CardContent>
-          </Card>
+      {/* Integrated Source & Remote Loader Ingestion Card (Always Accessible) */}
+      <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+        <CardContent className="flex flex-col gap-4 p-0">
+          <PayloadSourceTabs
+            connectionStatus={connectionStatus}
+            disabled={isBusy}
+            estimatedSize={estimatedSize}
+            isLoadingPartitions={isLoadingPartitions}
+            loadDetail={loadDetail}
+            loadMessage={loadMessage}
+            loadPhase={loadPhase}
+            loadStartedAt={loadStartedAt}
+            loadStep={loadStep}
+            loadTotalSteps={loadTotalSteps}
+            mode={mode}
+            onCancelLoadPartitions={onCancelLoadPartitions}
+            onCheckUrl={onCheckUrl}
+            onLoadRemotePartitions={onLoadRemotePartitions}
+            onModeChange={onModeChange}
+            onPayloadDrop={onPayloadDrop}
+            onPrefetchChange={onPrefetchChange}
+            onSelectPayload={onSelectPayload}
+            onUrlChange={onUrlChange}
+            prefetch={prefetch}
+            remoteUrl={remoteUrl}
+          />
+        </CardContent>
+      </Card>
 
-          {/* Local Parsing Loading State */}
-          {status === 'loading-partitions' && mode === 'local' ? (
-            <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
-              <CardContent className="p-0">
-                <LoadingState mode={mode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
-              </CardContent>
-            </Card>
-          ) : null}
-        </>
+      {/* Local Parsing Loading State */}
+      {status === 'loading-partitions' && mode === 'local' ? (
+        <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+          <CardContent className="p-0">
+            <LoadingState mode={mode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
+          </CardContent>
+        </Card>
       ) : null}
 
       {/* Partitions & Extraction Workspace */}
       {partitions.length > 0 ? (
         <>
-          {/* Active Loaded Payload Source Banner */}
-          <FileBanner
-            isDetailsOpen={isDetailsOpen}
-            isRemote={isRemote}
-            onRefreshPartitions={onRefreshPartitions ?? (() => {})}
-            onReset={onReset}
-            onSelectPayload={onSelectPayload}
-            onToggleDetails={() => setIsDetailsOpen((prev) => !prev)}
-            outputPath={effectiveOutputPath}
-            partitionCount={partitions.length}
-            payloadPath={payloadPath}
-            prefetch={prefetch}
-            remoteMetadata={remoteMetadata ?? null}
-            remoteUrl={remoteUrl}
-            status={status}
-            totalPayloadSize={totalPayloadSize}
-          />
-
-          {/* Destination Directory Selector */}
           <OutputDirectoryField
             disabled={status === 'extracting'}
             effectiveOutputPath={effectiveOutputPath}

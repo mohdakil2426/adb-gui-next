@@ -1,14 +1,15 @@
-import { Check, Loader2, XCircle } from 'lucide-react';
+import { Check, Clock, Globe, Loader2, Radio, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { backend } from '@/desktop/models';
+import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 
-const STEP_LABELS = [
-  'Verify connection',
-  'Locate ZIP index',
-  'Detect format',
-  'Read partition list',
+const STEP_DEFINITIONS = [
+  { step: 1, title: 'Verify connection', desc: 'HTTP Range header verification' },
+  { step: 2, title: 'Locate ZIP index', desc: 'Central Directory & EOCD records' },
+  { step: 3, title: 'Detect format', desc: 'OTA payload.bin / Factory manifest' },
+  { step: 4, title: 'Read partition list', desc: 'Parse partition table & metadata' },
 ] as const;
 
 const PHASE_TO_STEP: Record<backend.PayloadLoadPhase, number> = {
@@ -43,21 +44,14 @@ function resolveActiveStep(
   step: number | undefined,
 ): number {
   if (phase && phase in PHASE_TO_STEP) {
-    const fromPhase = PHASE_TO_STEP[phase];
-    if (fromPhase > 0) {
-      return fromPhase;
-    }
+    return PHASE_TO_STEP[phase];
   }
-  if (typeof step === 'number' && step > 0) {
-    return Math.min(step, 4);
+  if (typeof step === 'number' && step >= 1) {
+    return step;
   }
   return 1;
 }
 
-/**
- * In-panel remote load stages while listing partitions from a URL.
- * Indeterminate progress — not a full-file download.
- */
 export function RemoteLoadProgressCard({
   phase = null,
   message,
@@ -71,6 +65,7 @@ export function RemoteLoadProgressCard({
   const [now, setNow] = useState(() => Date.now());
   const activeStep = resolveActiveStep(phase, step);
   const isError = phase === 'error';
+  const isDone = phase === 'done';
   const elapsedMs = now - startedAt;
   const elapsedLabel = formatElapsed(elapsedMs);
 
@@ -85,114 +80,158 @@ export function RemoteLoadProgressCard({
 
   const statusLine =
     message?.trim() ||
-    (isError ? 'Couldn’t read remote index.' : (STEP_LABELS[activeStep - 1] ?? 'Loading…'));
+    (isError
+      ? 'Unable to read remote archive index.'
+      : (STEP_DEFINITIONS[activeStep - 1]?.title ?? 'Streaming remote manifest…'));
 
   let slowHint: string | null = null;
-  if (!isError && elapsedMs > 45_000) {
-    slowHint = 'Taking longer than usual. Check network or Cancel and retry.';
-  } else if (!isError && elapsedMs > 15_000) {
-    slowHint = 'Still working — large packages can take up to a minute.';
+  if (!(isError || isDone) && elapsedMs > 40_000) {
+    slowHint = 'High server latency detected. Checking range headers or retry if stalled.';
+  } else if (!(isError || isDone) && elapsedMs > 15_000) {
+    slowHint =
+      'Streaming remote headers from CDN — large factory packages may take up to a minute.';
   }
 
   const sizeCopy = estimatedSizeLabel
     ? `Only reading index — not downloading full ${estimatedSizeLabel}`
-    : 'Only reading the package index — not a full-file download';
+    : 'Streaming package header index without downloading full archive';
+
+  const progressPercent = isError
+    ? 100
+    : isDone
+      ? 100
+      : Math.min(95, Math.max(15, activeStep * 25 - 5));
 
   return (
     <div
-      aria-busy={!isError}
+      aria-busy={!(isError || isDone)}
       aria-live="polite"
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface-raised p-4"
+      className="flex flex-col gap-3.5 rounded-xl border border-primary/30 bg-surface-raised p-4 shadow-xs"
     >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-title">Loading partitions</h3>
-        <span className="numeric text-caption text-muted-foreground">
-          Step {Math.min(activeStep, totalSteps)} of {totalSteps}
-        </span>
+      {/* Header Row: Live Pulse Indicator, Title & Live Elapsed Counter */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary">
+            <Radio aria-hidden="true" className="size-3.5 animate-pulse" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-body text-foreground">Loading partitions</h3>
+            <p className="text-[11px] text-muted-foreground">
+              Zero-download partition manifest extraction
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Badge className="font-mono text-[10px]" variant="outline">
+            Phase {Math.min(activeStep, totalSteps)} of {totalSteps}
+          </Badge>
+          <Badge className="gap-1 font-mono text-[10px]" variant="secondary">
+            <span className="size-1.5 animate-ping rounded-full bg-primary" />
+            {elapsedLabel}
+          </Badge>
+        </div>
       </div>
 
-      <ol className="flex flex-col gap-2">
-        {STEP_LABELS.map((label, index) => {
-          const stepNumber = index + 1;
-          const done = !isError && activeStep > stepNumber;
-          const working = !isError && activeStep === stepNumber;
+      {/* 4-Phase Stepper Cards */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {STEP_DEFINITIONS.map(({ step: stepNum, title }) => {
+          const done = !isError && (isDone || activeStep > stepNum);
+          const working = !(isError || isDone) && activeStep === stepNum;
           const pending = !(done || working);
+
           return (
-            <li className="flex min-w-0 items-center gap-2 text-body" key={label}>
-              <span
-                aria-hidden="true"
+            <div
+              className={cn(
+                'flex items-center gap-2 rounded-lg border p-2 text-caption transition-all duration-150',
+                done && 'border-success/30 bg-success/5 text-success',
+                working && 'border-primary/50 bg-primary/10 font-medium text-foreground shadow-xs',
+                pending && 'border-border/50 bg-surface/50 text-muted-foreground',
+                isError &&
+                  stepNum === activeStep &&
+                  'border-destructive/40 bg-destructive/10 text-destructive',
+              )}
+              key={stepNum}
+            >
+              <div
                 className={cn(
-                  'numeric flex size-5 shrink-0 items-center justify-center rounded-full border text-caption',
-                  done && 'border-success/40 bg-success-muted text-success',
-                  working && 'border-primary/40 bg-primary-muted text-primary',
-                  pending && 'border-border bg-surface text-muted-foreground',
-                  isError && stepNumber === activeStep && 'border-destructive/40 text-destructive',
+                  'flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px]',
+                  done && 'bg-success/20 text-success',
+                  working && 'bg-primary text-primary-foreground',
+                  pending && 'border border-border bg-surface text-muted-foreground',
+                  isError && stepNum === activeStep && 'bg-destructive text-destructive-foreground',
                 )}
               >
-                {done ? <Check className="size-3" /> : null}
-                {working ? <Loader2 className="size-3 animate-spin" /> : null}
-                {pending ? stepNumber : null}
-              </span>
-              <span
-                className={cn(
-                  'min-w-0 truncate',
-                  done && 'text-muted-foreground',
-                  working && 'font-medium text-foreground',
-                  pending && 'text-muted-foreground',
+                {done ? (
+                  <Check className="size-3" />
+                ) : working ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  stepNum
                 )}
-              >
-                {label}
-              </span>
-              <span className="ml-auto shrink-0 text-caption text-muted-foreground">
-                {done ? 'done' : null}
-                {working ? 'working' : null}
-                {pending ? 'waiting' : null}
-              </span>
-            </li>
+              </div>
+              <span className="truncate text-[11px] leading-tight">{title}</span>
+            </div>
           );
         })}
-      </ol>
+      </div>
 
-      {/* Indeterminate progress bar (not a percentage of full download) */}
+      {/* Animated Multi-Stage Progress Bar */}
       <div
         aria-hidden="true"
-        className="relative h-1.5 w-full overflow-hidden rounded-full bg-primary-muted"
+        className="relative h-1.5 w-full overflow-hidden rounded-full bg-border/60"
       >
-        {isError ? (
-          <div className="h-full w-full bg-destructive/40" />
-        ) : (
-          <div className="h-full w-full origin-left animate-pulse bg-primary/70" />
-        )}
+        <div
+          className={cn(
+            'h-full rounded-full transition-all duration-300 ease-out',
+            isError
+              ? 'bg-destructive'
+              : 'animate-pulse bg-gradient-to-r from-primary to-primary/80',
+          )}
+          style={{ width: `${progressPercent}%` }}
+        />
       </div>
 
-      <div className="flex flex-col gap-1 text-caption">
-        <p className="text-muted-foreground">
-          <span className="numeric">{elapsedLabel}</span>
-          <span className="mx-1 text-foreground-subtle">·</span>
-          {sizeCopy}
-        </p>
-        <p className={cn('font-medium', isError ? 'text-destructive' : 'text-foreground')}>
-          {statusLine}
-        </p>
+      {/* Telemetry Status Box */}
+      <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface px-3 py-2.5 text-caption">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className={cn('font-medium', isError ? 'text-destructive' : 'text-foreground')}>
+            {statusLine}
+          </span>
+          <span className="font-mono text-[11px] text-muted-foreground">{sizeCopy}</span>
+        </div>
+
         {detail ? (
-          <p className="truncate font-mono text-mono-sm text-muted-foreground" title={detail}>
-            {detail}
-          </p>
+          <div className="flex items-center gap-1.5 font-mono text-[11px] text-primary/90">
+            <Globe className="size-3 shrink-0" />
+            <span className="truncate" title={detail}>
+              {detail}
+            </span>
+          </div>
         ) : null}
-        {slowHint ? <p className="text-warning">{slowHint}</p> : null}
+
+        {slowHint ? (
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-400">
+            <Clock className="size-3 shrink-0" />
+            <span>{slowHint}</span>
+          </div>
+        ) : null}
       </div>
 
-      <Button
-        aria-label="Cancel loading partitions"
-        className="w-full"
-        onClick={onCancel}
-        size="sm"
-        type="button"
-        variant="destructive"
-      >
-        <XCircle aria-hidden="true" />
-        Cancel loading
-      </Button>
+      {/* Footer Cancel Action */}
+      <div className="flex justify-end pt-0.5">
+        <Button
+          aria-label="Cancel loading partitions"
+          className="h-8 gap-1.5 px-3 text-caption text-destructive hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+          onClick={onCancel}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <XCircle aria-hidden="true" className="size-3.5" />
+          Cancel Remote Stream
+        </Button>
+      </div>
     </div>
   );
 }

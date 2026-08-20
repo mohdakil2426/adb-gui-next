@@ -8,6 +8,8 @@ use crate::firmware::types::{
 };
 
 const XFU_LATEST_YAML_URL: &str = "https://raw.githubusercontent.com/XiaomiFirmwareUpdater/miui-updates-tracker/master/data/latest.yml";
+const XFU_HYPEROS_YAML_URL: &str = "https://raw.githubusercontent.com/XiaomiFirmwareUpdater/xiaomifirmwareupdater.github.io/master/data/devices/hyperos.yml";
+const XFU_DEVICES_LATEST_YAML_URL: &str = "https://raw.githubusercontent.com/XiaomiFirmwareUpdater/xiaomifirmwareupdater.github.io/master/data/devices/latest.yml";
 const USER_AGENT_STR: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
 pub struct XiaomiProvider {
@@ -40,76 +42,77 @@ impl XiaomiProvider {
         Self { client }
     }
 
-    /// Fetch and parse the live catalog from XiaomiFirmwareUpdater
+    /// Fetch and parse the live catalog from XiaomiFirmwareUpdater across all active and archive feeds
     pub async fn fetch_all(&self) -> Result<Vec<FirmwareDeviceModel>, String> {
-        let response = match self.client.get(XFU_LATEST_YAML_URL).send().await {
-            Ok(resp) => resp,
-            Err(e) => {
-                log::warn!(
-                    "Failed to fetch xmfirmwareupdater YAML feed ({e}), using fallback catalog"
-                );
-                return Ok(Self::get_static_catalog());
-            }
-        };
+        let (resp_latest, resp_hyperos, resp_dev_latest) = futures_util::future::join3(
+            self.client.get(XFU_LATEST_YAML_URL).send(),
+            self.client.get(XFU_HYPEROS_YAML_URL).send(),
+            self.client.get(XFU_DEVICES_LATEST_YAML_URL).send(),
+        )
+        .await;
 
-        if !response.status().is_success() {
-            log::warn!(
-                "xmfirmwareupdater feed returned status {}, using fallback catalog",
-                response.status()
-            );
+        let mut all_yaml_contents = Vec::new();
+
+        for resp in [resp_latest, resp_hyperos, resp_dev_latest].into_iter().flatten() {
+            if resp.status().is_success()
+                && let Ok(text) = resp.text().await
+            {
+                all_yaml_contents.push(text);
+            }
+        }
+
+        if all_yaml_contents.is_empty() {
+            log::warn!("Failed to fetch any Xiaomi firmware feeds, using fallback catalog");
             return Ok(Self::get_static_catalog());
         }
 
-        let yaml_content = match response.text().await {
-            Ok(text) => text,
-            Err(e) => {
-                log::warn!(
-                    "Failed to read xmfirmwareupdater YAML feed ({e}), using fallback catalog"
-                );
-                return Ok(Self::get_static_catalog());
-            }
-        };
-
-        let models = Self::parse_yaml(&yaml_content);
+        let models = Self::parse_multiple_yamls(&all_yaml_contents);
         if models.is_empty() {
-            log::warn!("Parsed 0 Xiaomi devices from YAML, using fallback catalog");
+            log::warn!("Parsed 0 Xiaomi devices from feeds, using fallback catalog");
             return Ok(Self::get_static_catalog());
         }
 
         Ok(models)
     }
 
-    /// Fast line-based YAML parser for XiaomiFirmwareUpdater latest.yml feed
+    /// Parse a single YAML feed content
     pub fn parse_yaml(yaml: &str) -> Vec<FirmwareDeviceModel> {
+        Self::parse_multiple_yamls(&[yaml.to_string()])
+    }
+
+    /// Fast line-based multi-YAML parser for XiaomiFirmwareUpdater active and archive feeds
+    pub fn parse_multiple_yamls(yaml_sources: &[String]) -> Vec<FirmwareDeviceModel> {
         let mut raw_records: Vec<HashMap<String, String>> = Vec::new();
-        let mut current_record: HashMap<String, String> = HashMap::new();
 
-        for line in yaml.lines() {
-            let trimmed = line.trim();
-            if trimmed.is_empty() || trimmed.starts_with('#') {
-                continue;
-            }
+        for yaml in yaml_sources {
+            let mut current_record: HashMap<String, String> = HashMap::new();
 
-            let line_content = if let Some(stripped) = trimmed.strip_prefix("- ") {
-                if !current_record.is_empty() {
-                    raw_records.push(std::mem::take(&mut current_record));
+            for line in yaml.lines() {
+                let trimmed = line.trim();
+                if trimmed.is_empty() || trimmed.starts_with('#') {
+                    continue;
                 }
-                stripped.trim()
-            } else {
-                trimmed
-            };
 
-            if let Some((key, val)) = line_content.split_once(':') {
-                let clean_key = key.trim().to_ascii_lowercase();
-                let clean_val = val.trim().trim_matches('\'').trim_matches('"').trim();
-                current_record.insert(clean_key, clean_val.to_string());
+                let line_content = if let Some(stripped) = trimmed.strip_prefix("- ") {
+                    if !current_record.is_empty() {
+                        raw_records.push(std::mem::take(&mut current_record));
+                    }
+                    stripped.trim()
+                } else {
+                    trimmed
+                };
+
+                if let Some((key, val)) = line_content.split_once(':') {
+                    let clean_key = key.trim().to_ascii_lowercase();
+                    let clean_val = val.trim().trim_matches('\'').trim_matches('"').trim();
+                    current_record.insert(clean_key, clean_val.to_string());
+                }
+            }
+
+            if !current_record.is_empty() {
+                raw_records.push(current_record);
             }
         }
-
-        if !current_record.is_empty() {
-            raw_records.push(current_record);
-        }
-
         // Group records by base codename
         let mut grouped_records: HashMap<String, Vec<HashMap<String, String>>> = HashMap::new();
         for record in raw_records {
@@ -136,15 +139,26 @@ impl XiaomiProvider {
 
             let mut builds = Vec::new();
 
+            let mut seen_download_urls = std::collections::HashSet::new();
+
             for r in &records {
-                let Some(download_url) = r.get("link") else {
+                let Some(download_url) = r
+                    .get("link")
+                    .or_else(|| r.get("download"))
+                    .or_else(|| r.get("github"))
+                    .or_else(|| r.get("osdn"))
+                else {
                     continue;
                 };
-                if download_url.is_empty() {
+                if download_url.is_empty() || !seen_download_urls.insert(download_url.clone()) {
                     continue;
                 }
 
-                let version = r.get("version").cloned().unwrap_or_else(|| "Unknown".into());
+                let version = r
+                    .get("version")
+                    .or_else(|| r.get("miui"))
+                    .cloned()
+                    .unwrap_or_else(|| "Unknown".into());
                 let android = r.get("android").cloned().unwrap_or_default();
                 let android_version = if android.is_empty() {
                     "Android".into()
@@ -155,12 +169,14 @@ impl XiaomiProvider {
                 };
 
                 let method = r.get("method").map_or("", |s| s.as_str());
-                let image_type =
-                    if method.eq_ignore_ascii_case("fastboot") || download_url.ends_with(".tgz") {
-                        FirmwareImageType::Factory
-                    } else {
-                        FirmwareImageType::Ota
-                    };
+                let image_type = if method.eq_ignore_ascii_case("fastboot")
+                    || download_url.ends_with(".tgz")
+                    || download_url.contains("_images_")
+                {
+                    FirmwareImageType::Factory
+                } else {
+                    FirmwareImageType::Ota
+                };
 
                 let regional_name = r.get("name").cloned().unwrap_or_default();
                 let carrier = Self::extract_region_label(&regional_name, method);

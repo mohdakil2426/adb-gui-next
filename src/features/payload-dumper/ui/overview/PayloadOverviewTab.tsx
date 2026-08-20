@@ -160,38 +160,7 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
         </div>
 
         <div className="grid @lg:grid-cols-3 @sm:grid-cols-2 grid-cols-1 gap-3.5">
-          {/* 1. Google Pixel Firmware Hub */}
-          <Card
-            className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
-            onClick={() => onNavigateTab('marketplace')}
-          >
-            <CardContent className="flex h-full flex-col justify-between p-4">
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-primary transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
-                    <Store className="size-4.5" />
-                  </div>
-                  <Badge className="border-primary/20 bg-primary/10 text-primary" variant="outline">
-                    Catalog
-                  </Badge>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-body text-foreground group-hover:text-primary">
-                    Firmware Hub
-                  </h3>
-                  <p className="mt-1 text-caption text-muted-foreground leading-relaxed">
-                    Explore official Google Pixel OTA & Factory builds with 1-click remote stream.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1.5 font-medium text-caption text-primary">
-                <span>Open Catalog</span>
-                <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 2. Selective Partition Extractor & Ingestion */}
+          {/* 1. Selective Partition Extractor & Ingestion */}
           <Card
             className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
             onClick={() => onNavigateTab('extractor')}
@@ -219,6 +188,37 @@ export function PayloadOverviewTab({ onNavigateTab }: PayloadOverviewTabProps) {
               </div>
               <div className="mt-4 flex items-center gap-1.5 font-medium text-caption text-primary">
                 <span>Open Extractor</span>
+                <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 2. OEM Firmware Hub */}
+          <Card
+            className="group relative cursor-pointer rounded-xl border-border bg-surface transition-all duration-150 hover:border-primary/50 hover:bg-surface-raised/40 hover:shadow-sm"
+            onClick={() => onNavigateTab('marketplace')}
+          >
+            <CardContent className="flex h-full flex-col justify-between p-4">
+              <div className="flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-primary transition-colors group-hover:border-primary/40 group-hover:bg-primary/10">
+                    <Store className="size-4.5" />
+                  </div>
+                  <Badge className="border-primary/20 bg-primary/10 text-primary" variant="outline">
+                    Catalog
+                  </Badge>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-body text-foreground group-hover:text-primary">
+                    Firmware Hub
+                  </h3>
+                  <p className="mt-1 text-caption text-muted-foreground leading-relaxed">
+                    Explore official Google Pixel, Xiaomi, Nothing & POCO OTA & Factory builds.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center gap-1.5 font-medium text-caption text-primary">
+                <span>Open Catalog</span>
                 <ArrowRight className="size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
               </div>
             </CardContent>

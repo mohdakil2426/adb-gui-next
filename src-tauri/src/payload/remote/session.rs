@@ -38,7 +38,9 @@ fn cache_key_matches(
     content_length: u64,
     etag: Option<&str>,
 ) -> bool {
-    entry.url == url && entry.content_length == content_length && entry.etag.as_deref() == etag
+    (entry.url == url || entry.reader.url() == url)
+        && entry.content_length == content_length
+        && entry.etag.as_deref() == etag
 }
 
 /// Open an HTTP reader, reusing a cached session when URL + length + etag match.

@@ -77,6 +77,49 @@ const { mockCatalogDevices } = vi.hoisted(() => ({
         },
       ],
     },
+    {
+      id: 'oneplus_13',
+      brand: 'oneplus',
+      name: 'OnePlus 13',
+      codename: 'infiniti',
+      series: 'OnePlus Flagship Series',
+      soc: 'Qualcomm Snapdragon 8 Elite',
+      releaseYear: 2024,
+      builds: [
+        {
+          id: 'oneplus_infiniti_cph2749',
+          version: 'OxygenOS 16.0.2.401',
+          buildId: 'CPH2749_16.0.2.401(EX01)',
+          androidVersion: 'Android 16',
+          imageType: 'ota',
+          releaseDate: '2025-01-20',
+          downloadUrl:
+            'https://archive.org/download/oneplus_archive/spike0en/infiniti/CPH2749_16.0.2.401.zip',
+          isLatest: true,
+        },
+      ],
+    },
+    {
+      id: 'samsung_s24_ultra',
+      brand: 'samsung',
+      name: 'Galaxy S24 Ultra',
+      codename: 'SM-S928B',
+      series: 'Galaxy S Series',
+      soc: 'Qualcomm Snapdragon 8 Gen 3 for Galaxy',
+      releaseYear: 2024,
+      builds: [
+        {
+          id: 'samsung_s928b_eux',
+          version: 'S928BXXS6DZG1',
+          buildId: 'S928BXXS6DZG1 (EUX)',
+          androidVersion: 'Android 16',
+          imageType: 'factory',
+          releaseDate: '2026-07-20',
+          downloadUrl: 'https://samfw.com/firmware/SM-S928B/EUX/S928BXXS6DZG1',
+          isLatest: true,
+        },
+      ],
+    },
   ],
 }));
 
@@ -86,7 +129,12 @@ vi.mock('@/desktop/backend', () => ({
   CreateCancellationToken: vi.fn(),
   ExtractPayload: vi.fn(),
   GetExtractionPresets: vi.fn().mockResolvedValue([]),
-  GetFirmwareCatalog: vi.fn().mockResolvedValue(mockCatalogDevices),
+  GetFirmwareCatalog: vi.fn().mockImplementation((brand?: string) => {
+    if (!brand) {
+      return Promise.resolve(mockCatalogDevices);
+    }
+    return Promise.resolve(mockCatalogDevices.filter((d) => d.brand === brand));
+  }),
   GetSupportedFirmwareBrands: vi
     .fn()
     .mockResolvedValue(['google', 'nothing', 'xiaomi', 'oneplus', 'samsung']),
@@ -180,6 +228,27 @@ describe('ViewPayloadDumper', () => {
     expect(screen.getAllByText('houji').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/OS1.0.18.0.UNCMIXM/).length).toBeGreaterThan(0);
   });
+  it('filters OnePlus devices in firmware hub and opens device detail', async () => {
+    const user = userEvent.setup();
+    renderWithClient();
+    await user.click(screen.getByRole('tab', { name: /firmware hub/i }));
+    await user.click(screen.getByRole('button', { name: /oneplus/i }));
+    const oneplusCard = await screen.findByText('OnePlus 13');
+    await user.click(oneplusCard);
+    expect(screen.getAllByText('infiniti').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/CPH2749_16.0.2.401/).length).toBeGreaterThan(0);
+  });
+
+  it('filters Samsung devices in firmware hub and opens device detail', async () => {
+    const user = userEvent.setup();
+    renderWithClient();
+    await user.click(screen.getByRole('tab', { name: /firmware hub/i }));
+    await user.click(screen.getByRole('button', { name: /samsung/i }));
+    const samsungCard = await screen.findByText('Galaxy S24 Ultra');
+    await user.click(samsungCard);
+    expect(screen.getAllByText('SM-S928B').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/S928BXXS6DZG1/).length).toBeGreaterThan(0);
+  });
   it('renders the loaded state with precision hero banner and extractor controls', async () => {
     const user = userEvent.setup();
     usePayloadDumperStore.setState({
@@ -196,9 +265,8 @@ describe('ViewPayloadDumper', () => {
     expect(await screen.findByText('boot.img')).toBeInTheDocument();
     expect(await screen.findByText('init_boot.img')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /extract 1 · 64.0 MB/i })).toBeInTheDocument();
-    expect(screen.queryByText(/Local File Archive/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Remote OTA URL Stream/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /change payload file/i })).toBeInTheDocument();
+    expect(screen.getByText(/Local File Archive/i)).toBeInTheDocument();
+    expect(screen.getByText(/Remote OTA URL Stream/i)).toBeInTheDocument();
   });
 
   it('surfaces a failure that wrote zero files in terminal error state', () => {

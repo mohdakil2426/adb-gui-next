@@ -205,51 +205,88 @@ impl NothingProvider {
                         }
                     }
                 }
-
-                let is_full = full_ota_url.is_some();
-                let download_url =
-                    full_ota_url.or(inc_ota_url).or(ota_image_url).unwrap_or_default();
-
-                if download_url.is_empty() {
-                    continue;
+                let has_full = full_ota_url.is_some();
+                let (android_version, release_date) = parse_build_metadata(&build_id);
+                if let Some(f_url) = full_ota_url {
+                    builds.push(FirmwareBuild {
+                        id: format!(
+                            "nothing-{}-{}-full",
+                            meta.codename,
+                            build_id.to_ascii_lowercase()
+                        ),
+                        version: format!("Nothing OS {version}"),
+                        android_version: android_version.clone(),
+                        build_id: build_id.clone(),
+                        carrier: Some("Full OTA (Direct)".to_string()),
+                        release_date: release_date.clone(),
+                        security_patch: None,
+                        image_type: FirmwareImageType::Ota,
+                        download_url: f_url,
+                        file_size: None,
+                        sha256: None,
+                        is_latest: false,
+                    });
                 }
 
-                let (android_version, release_date) = parse_build_metadata(&build_id);
-
-                let id = format!(
-                    "nothing-{}-{}-{}",
-                    meta.codename,
-                    version.replace(' ', "-").to_ascii_lowercase(),
-                    build_id.to_ascii_lowercase()
-                );
-
-                builds.push(FirmwareBuild {
-                    id,
-                    version: format!("Nothing OS {version}"),
-                    android_version,
-                    build_id: build_id.clone(),
-                    carrier: if is_full {
-                        Some("Full OTA".to_string())
-                    } else {
-                        Some("Incremental OTA".to_string())
-                    },
-                    release_date,
-                    security_patch: None,
-                    image_type: FirmwareImageType::Ota,
-                    download_url,
-                    file_size: None,
-                    sha256: None,
-                    is_latest: false,
-                });
+                if let Some(i_url) = inc_ota_url {
+                    builds.push(FirmwareBuild {
+                        id: format!(
+                            "nothing-{}-{}-inc",
+                            meta.codename,
+                            build_id.to_ascii_lowercase()
+                        ),
+                        version: format!("Nothing OS {version} (Incremental)"),
+                        android_version: android_version.clone(),
+                        build_id: build_id.clone(),
+                        carrier: Some("Incremental Delta OTA".to_string()),
+                        release_date: release_date.clone(),
+                        security_patch: None,
+                        image_type: FirmwareImageType::Ota,
+                        download_url: i_url,
+                        file_size: None,
+                        sha256: None,
+                        is_latest: false,
+                    });
+                } else if !has_full && let Some(img_url) = ota_image_url {
+                    builds.push(FirmwareBuild {
+                        id: format!(
+                            "nothing-{}-{}-img",
+                            meta.codename,
+                            build_id.to_ascii_lowercase()
+                        ),
+                        version: format!("Nothing OS {version} (Archive)"),
+                        android_version,
+                        build_id: build_id.clone(),
+                        carrier: Some("Partition Images".to_string()),
+                        release_date,
+                        security_patch: None,
+                        image_type: FirmwareImageType::Factory,
+                        download_url: img_url,
+                        file_size: None,
+                        sha256: None,
+                        is_latest: false,
+                    });
+                }
             }
 
             if !builds.is_empty() {
-                // Mark the latest build
-                builds[0].is_latest = true;
+                // Sort Full OTAs first, then newest release date
+                builds.sort_by(|a, b| {
+                    let a_is_full = a.carrier.as_deref().unwrap_or("").contains("Full");
+                    let b_is_full = b.carrier.as_deref().unwrap_or("").contains("Full");
+                    b_is_full.cmp(&a_is_full).then_with(|| b.release_date.cmp(&a.release_date))
+                });
 
-                let id = format!("nothing-{}", meta.codename);
+                // Mark the latest Full OTA build (or first build if no full OTA)
+                if let Some(latest) =
+                    builds.iter_mut().find(|b| b.carrier.as_deref().unwrap_or("").contains("Full"))
+                {
+                    latest.is_latest = true;
+                } else if let Some(first) = builds.first_mut() {
+                    first.is_latest = true;
+                }
                 devices.push(FirmwareDeviceModel {
-                    id,
+                    id: format!("nothing-{}", meta.codename),
                     name: meta.name.to_string(),
                     codename: meta.codename.to_string(),
                     brand: FirmwareBrand::Nothing,
@@ -811,11 +848,17 @@ mod tests {
         assert_eq!(models.len(), 1);
         assert_eq!(models[0].name, "Nothing Phone (3)");
         assert_eq!(models[0].codename, "metroid");
-        assert_eq!(models[0].builds.len(), 2);
+        assert_eq!(models[0].builds.len(), 3);
         assert!(models[0].builds[0].is_latest);
         assert_eq!(models[0].builds[0].version, "Nothing OS 4.1");
         assert_eq!(models[0].builds[0].android_version, "Android 16");
-        assert_eq!(models[0].builds[0].release_date, Some("2026-08-14".to_string()));
-        assert_eq!(models[0].builds[1].carrier, Some("Full OTA".to_string()));
+        assert_eq!(models[0].builds[0].release_date, Some("2026-06-03".to_string()));
+        assert!(
+            models[0].builds.iter().any(|b| b
+                .carrier
+                .as_deref()
+                .unwrap_or("")
+                .contains("Full OTA"))
+        );
     }
 }

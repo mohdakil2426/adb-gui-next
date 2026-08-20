@@ -11,9 +11,10 @@ import {
 import { useMemo, useState } from 'react';
 import { FirmwareDeviceCard } from '@/features/payload-dumper/ui/marketplace/FirmwareDeviceCard';
 import { FirmwareDeviceDetailView } from '@/features/payload-dumper/ui/marketplace/FirmwareDeviceDetailView';
-import type {
-  BrandFilter,
-  FirmwareDeviceModel,
+import {
+  BRAND_DISPLAY_INFO,
+  type BrandFilter,
+  type FirmwareDeviceModel,
 } from '@/features/payload-dumper/ui/marketplace/types';
 import { useFirmwareCatalog } from '@/features/payload-dumper/ui/marketplace/useFirmwareCatalog';
 import { Badge } from '@/shared/ui/badge';
@@ -35,24 +36,26 @@ interface PayloadMarketplaceTabProps {
   onSelectRemoteUrl: (url: string) => void;
 }
 
-const BRAND_CHIPS: Array<{ id: BrandFilter; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'google', label: 'Google Pixel' },
-  { id: 'nothing', label: 'Nothing' },
-  { id: 'xiaomi', label: 'Xiaomi' },
-  { id: 'oneplus', label: 'OnePlus' },
-  { id: 'samsung', label: 'Samsung' },
-];
-
 export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceTabProps) {
   const [selectedDevice, setSelectedDevice] = useState<FirmwareDeviceModel | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<BrandFilter>('all');
   const [selectedModelId, setSelectedModelId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isModelOpen, setIsModelOpen] = useState(false);
-  const { devices, isLoading, isFetching, refresh, brandCounts } =
+  const { devices, isLoading, isFetching, refresh, brandCounts, supportedBrands } =
     useFirmwareCatalog(selectedBrand);
 
+  const brandChips = useMemo(() => {
+    const chips: Array<{ id: BrandFilter; label: string }> = [{ id: 'all', label: 'All' }];
+    for (const brand of supportedBrands) {
+      const info = BRAND_DISPLAY_INFO[brand];
+      chips.push({
+        id: brand,
+        label: info?.displayName ?? brand.charAt(0).toUpperCase() + brand.slice(1),
+      });
+    }
+    return chips;
+  }, [supportedBrands]);
   const sortedDevices = useMemo(
     () =>
       [...devices].sort((a, b) => {
@@ -90,11 +93,17 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
       }),
     [sortedDevices, selectedModelId, searchQuery],
   );
-
   const handleBrandChange = (brand: BrandFilter) => {
     setSelectedBrand(brand);
     setSelectedModelId('all');
   };
+
+  const isFiltered =
+    selectedBrand !== 'all' || selectedModelId !== 'all' || Boolean(searchQuery.trim());
+  const totalCountForBrand =
+    selectedBrand === 'all'
+      ? (brandCounts.all ?? devices.length)
+      : (brandCounts[selectedBrand] ?? devices.length);
 
   if (selectedDevice) {
     return (
@@ -134,7 +143,9 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
 
           <div className="flex items-center gap-2.5">
             <Badge className="border-primary/20 bg-primary/10 text-primary" variant="outline">
-              {brandCounts.all ?? devices.length} Devices Available
+              {isFiltered
+                ? `${filteredDevices.length} of ${totalCountForBrand} Devices`
+                : `${totalCountForBrand} Devices Available`}
             </Badge>
             <Button
               disabled={isFetching}
@@ -152,7 +163,7 @@ export function PayloadMarketplaceTab({ onSelectRemoteUrl }: PayloadMarketplaceT
 
       {/* Brand Selector Chips */}
       <div className="flex flex-wrap items-center gap-2">
-        {BRAND_CHIPS.map((chip) => {
+        {brandChips.map((chip) => {
           const count = brandCounts[chip.id] ?? 0;
           const isSelected = selectedBrand === chip.id;
           return (

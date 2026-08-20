@@ -79,22 +79,20 @@ export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all'): UseFirmw
   const brandCounts = useMemo(() => {
     const counts: Record<string, number> = {
       all: allDevices.length,
-      google: 0,
-      nothing: 0,
-      xiaomi: 0,
-      oneplus: 0,
-      samsung: 0,
     };
     for (const brand of supportedBrands) {
-      if (counts[brand] === undefined) {
-        counts[brand] = 0;
-      }
+      counts[brand] = 0;
     }
-    for (const device of allDevices) {
-      counts[device.brand] = (counts[device.brand] ?? 0) + 1;
+    if (allDevices.length > 0) {
+      for (const device of allDevices) {
+        counts[device.brand] = (counts[device.brand] ?? 0) + 1;
+      }
+    } else if (brandParam && brandDevices && brandDevices.length > 0) {
+      counts[brandParam] = brandDevices.length;
+      counts.all = brandDevices.length;
     }
     return counts;
-  }, [allDevices, supportedBrands]);
+  }, [allDevices, supportedBrands, brandParam, brandDevices]);
 
   const isLoading = isAll
     ? isAllLoading && allDevices.length === 0

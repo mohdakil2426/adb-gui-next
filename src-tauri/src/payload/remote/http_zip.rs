@@ -26,10 +26,13 @@ const EOCD_SIG: u32 = 0x06054b50;
 const CD_SIG: u32 = 0x02014b50;
 /// Local File Header signature: 0x04034b50
 const LOCAL_SIG: u32 = 0x04034b50;
+const ZIP64_EOCD_SIG: u32 = 0x06064b50;
+const ZIP64_EOCD_LOCATOR_SIG: u32 = 0x07064b50;
+const ZIP64_EXTRA_ID: u16 = 0x0001;
+const ZIP32_MAX: u64 = u32::MAX as u64;
 
 /// Maximum size of EOCD record (22 bytes + max comment 64KB)
 const EOCD_MAX_SIZE: usize = 64 * 1024 + 22;
-
 /// Information about the payload.bin entry within a ZIP file.
 #[derive(Debug, Clone)]
 pub struct ZipPayloadInfo {
@@ -93,9 +96,9 @@ async fn find_payload_in_zip_uncached(reader: &HttpPayloadReader) -> Result<ZipP
         // Parse CD entry
         let compression_method =
             u16::from_le_bytes(cd_data[parse_pos + 10..parse_pos + 12].try_into()?);
-        let compressed_size =
+        let mut compressed_size =
             u32::from_le_bytes(cd_data[parse_pos + 20..parse_pos + 24].try_into()?) as u64;
-        let uncompressed_size =
+        let mut uncompressed_size =
             u32::from_le_bytes(cd_data[parse_pos + 24..parse_pos + 28].try_into()?) as u64;
         let filename_len =
             u16::from_le_bytes(cd_data[parse_pos + 28..parse_pos + 30].try_into()?) as usize;
@@ -103,9 +106,18 @@ async fn find_payload_in_zip_uncached(reader: &HttpPayloadReader) -> Result<ZipP
             u16::from_le_bytes(cd_data[parse_pos + 30..parse_pos + 32].try_into()?) as usize;
         let comment_len =
             u16::from_le_bytes(cd_data[parse_pos + 32..parse_pos + 34].try_into()?) as usize;
-        let local_header_offset =
+        let mut local_header_offset =
             u32::from_le_bytes(cd_data[parse_pos + 42..parse_pos + 46].try_into()?) as u64;
 
+        let extra_start = parse_pos + 46 + filename_len;
+        if extra_start + extra_len <= cd_data.len() {
+            let _ = apply_zip64_extra(
+                &cd_data[extra_start..extra_start + extra_len],
+                &mut uncompressed_size,
+                &mut compressed_size,
+                &mut local_header_offset,
+            );
+        }
         let entry_start = parse_pos + 46;
         if entry_start + filename_len > cd_data.len() {
             break;
@@ -181,11 +193,23 @@ async fn load_central_directory(reader: &HttpPayloadReader) -> Result<(u64, Vec<
     // 10-11: total entries
     // 12-15: CD size
     // 16-19: CD offset
-    let cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
+    let mut cd_offset = u32::from_le_bytes(eocd_data[16..20].try_into()?) as u64;
+    let mut cd_size = u32::from_le_bytes(eocd_data[12..16].try_into()?) as u64;
 
-    // Step 4: Fetch the entire Central Directory (we know its size and offset from EOCD).
-    // This avoids chunk boundary issues where CD entries span fetch boundaries.
-    let cd_size = eocd_abs_pos.saturating_sub(cd_offset);
+    // Check for ZIP64 EOCD Locator (20 bytes before standard EOCD)
+    if (cd_size == ZIP32_MAX || cd_offset == ZIP32_MAX || eocd_pos >= 20)
+        && let Ok(zip64_offset) = zip64_eocd_offset_from_tail(&tail_data, eocd_pos)
+        && let Ok(z64_eocd) = reader.read_range(zip64_offset, 56).await
+        && z64_eocd.len() >= 56
+        && u32::from_le_bytes(z64_eocd[0..4].try_into().unwrap_or_default()) == ZIP64_EOCD_SIG
+    {
+        cd_size = u64::from_le_bytes(z64_eocd[40..48].try_into().unwrap_or_default());
+        cd_offset = u64::from_le_bytes(z64_eocd[48..56].try_into().unwrap_or_default());
+    }
+
+    if cd_size == 0 || cd_offset >= content_length {
+        cd_size = eocd_abs_pos.saturating_sub(cd_offset);
+    }
     if cd_size == 0 {
         return Err(anyhow!("Central Directory is empty"));
     }
@@ -195,6 +219,62 @@ async fn load_central_directory(reader: &HttpPayloadReader) -> Result<(u64, Vec<
     Ok((cd_offset, cd_data))
 }
 
+fn zip64_eocd_offset_from_tail(tail_data: &[u8], eocd_pos: usize) -> Result<u64> {
+    if eocd_pos < 20 {
+        anyhow::bail!("ZIP64 EOCD locator is missing");
+    }
+    let locator_pos = eocd_pos - 20;
+    let sig = u32::from_le_bytes(tail_data[locator_pos..locator_pos + 4].try_into()?);
+    if sig != ZIP64_EOCD_LOCATOR_SIG {
+        anyhow::bail!("ZIP64 EOCD locator signature mismatch");
+    }
+    Ok(u64::from_le_bytes(tail_data[locator_pos + 8..locator_pos + 16].try_into()?))
+}
+
+fn apply_zip64_extra(
+    extra: &[u8],
+    uncompressed_size: &mut u64,
+    compressed_size: &mut u64,
+    local_header_offset: &mut u64,
+) -> Result<()> {
+    let mut pos = 0;
+    while pos + 4 <= extra.len() {
+        let header_id = u16::from_le_bytes(extra[pos..pos + 2].try_into()?);
+        let data_size = u16::from_le_bytes(extra[pos + 2..pos + 4].try_into()?) as usize;
+        pos += 4;
+
+        if pos + data_size > extra.len() {
+            anyhow::bail!("ZIP64 extra field is truncated");
+        }
+
+        if header_id == ZIP64_EXTRA_ID {
+            let data = &extra[pos..pos + data_size];
+            let mut offset = 0;
+            if *uncompressed_size == ZIP32_MAX && offset + 8 <= data.len() {
+                *uncompressed_size = read_zip64_value(data, &mut offset)?;
+            }
+            if *compressed_size == ZIP32_MAX && offset + 8 <= data.len() {
+                *compressed_size = read_zip64_value(data, &mut offset)?;
+            }
+            if *local_header_offset == ZIP32_MAX && offset + 8 <= data.len() {
+                *local_header_offset = read_zip64_value(data, &mut offset)?;
+            }
+            return Ok(());
+        }
+
+        pos += data_size;
+    }
+    Ok(())
+}
+
+fn read_zip64_value(data: &[u8], offset: &mut usize) -> Result<u64> {
+    if *offset + 8 > data.len() {
+        anyhow::bail!("ZIP64 extra field value is truncated");
+    }
+    let value = u64::from_le_bytes(data[*offset..*offset + 8].try_into()?);
+    *offset += 8;
+    Ok(value)
+}
 /// Read a named text file from a remote ZIP (e.g. `META-INF/com/android/metadata`).
 ///
 /// Scans the Central Directory for the given filename and returns its contents as a string.
