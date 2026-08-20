@@ -1,8 +1,9 @@
-import { CheckCircle2, Package, Star } from 'lucide-react';
+import { CheckCircle2, Star } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import { formatBytes } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
 import { Badge } from '@/shared/ui/badge';
@@ -32,23 +33,7 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
         }}
         type="button"
       >
-        <div className="flex size-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
-          {app.iconUrl ? (
-            <img
-              alt=""
-              className="size-10 object-cover"
-              height={40}
-              loading="lazy"
-              onError={(event) => {
-                (event.target as HTMLImageElement).style.display = 'none';
-              }}
-              src={app.iconUrl}
-              width={40}
-            />
-          ) : (
-            <Package aria-hidden="true" className="size-4 text-muted-foreground" />
-          )}
-        </div>
+        <MarketplaceAppIcon alt={app.name} iconUrl={app.iconUrl} size="sm" />
 
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">

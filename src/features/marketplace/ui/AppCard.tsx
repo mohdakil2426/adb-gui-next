@@ -1,8 +1,9 @@
-import { CheckCircle2, ExternalLink, Package, Star } from 'lucide-react';
+import { CheckCircle2, ExternalLink, Star } from 'lucide-react';
 import { memo } from 'react';
 import type { backend } from '@/desktop/models';
 import { formatBytes } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
 import { Badge } from '@/shared/ui/badge';
@@ -34,23 +35,7 @@ export const AppCard = memo(function AppCard({ app, onSelect, target }: AppCardP
         type="button"
       >
         <CardHeader className="flex flex-row items-start gap-3 px-3 pt-3">
-          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
-            {app.iconUrl ? (
-              <img
-                alt=""
-                className="size-10 object-cover"
-                height={40}
-                loading="lazy"
-                onError={(event) => {
-                  (event.target as HTMLImageElement).style.display = 'none';
-                }}
-                src={app.iconUrl}
-                width={40}
-              />
-            ) : (
-              <Package aria-hidden="true" className="size-4 text-muted-foreground" />
-            )}
-          </div>
+          <MarketplaceAppIcon alt={app.name} iconUrl={app.iconUrl} size="sm" />
 
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">

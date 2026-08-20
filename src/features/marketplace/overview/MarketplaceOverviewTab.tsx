@@ -5,7 +5,6 @@ import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceSto
 import { CuratedPowerToolsGrid } from '@/features/marketplace/overview/CuratedPowerToolsGrid';
 import { CategoryDistributionMeter } from '@/features/marketplace/overview/charts/CategoryDistributionMeter';
 import { SourceCompositionDonut } from '@/features/marketplace/overview/charts/SourceCompositionDonut';
-import { MarketplaceGuideCard } from '@/features/marketplace/overview/MarketplaceGuideCard';
 import { Button } from '@/shared/ui/button';
 
 type MarketplaceApp = backend.MarketplaceApp;
@@ -98,9 +97,6 @@ export function MarketplaceOverviewTab({
 
       {/* Curated Power Tools Grid */}
       <CuratedPowerToolsGrid onSelectApp={onSelectApp} target={target} />
-
-      {/* Security and Architecture Pipeline Guide */}
-      <MarketplaceGuideCard />
     </div>
   );
 }

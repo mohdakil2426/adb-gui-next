@@ -1,13 +1,12 @@
-import { Check, Download, Loader2, Package, Star } from 'lucide-react';
+import { Check, Download, Loader2, Star } from 'lucide-react';
 import {
   formatSpeed,
   useMarketplaceDownloadStore,
 } from '@/features/marketplace/model/downloadStore';
+import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Button } from '@/shared/ui/button';
 import { formatBytes } from '@/shared/utils/format';
-
-const ICON_PX = 72;
 
 interface AppDetailHeroProps {
   /** Why install is unavailable — shown under the button, never left silent. */
@@ -44,23 +43,7 @@ export function AppDetailHero({
   return (
     <div className="flex @md:flex-row flex-col @md:items-start @md:justify-between gap-4">
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-raised">
-          {iconUrl ? (
-            <img
-              alt=""
-              className="size-full object-cover"
-              height={ICON_PX}
-              loading="lazy"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }}
-              src={iconUrl}
-              width={ICON_PX}
-            />
-          ) : (
-            <Package aria-hidden="true" className="size-7 text-muted-foreground" />
-          )}
-        </div>
+        <MarketplaceAppIcon alt={displayName} iconUrl={iconUrl} size="lg" />
 
         <div className="flex min-w-0 flex-col gap-1">
           <h2 className="truncate font-semibold text-display text-foreground">{displayName}</h2>

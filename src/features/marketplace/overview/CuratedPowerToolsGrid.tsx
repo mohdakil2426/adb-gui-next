@@ -1,8 +1,9 @@
-import { Flame, Package, Star } from 'lucide-react';
+import { Flame, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MarketplaceGetCuratedTools } from '@/desktop/backend';
 import type { backend } from '@/desktop/models';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Badge } from '@/shared/ui/badge';
@@ -64,23 +65,7 @@ export function CuratedPowerToolsGrid({ onSelectApp, target }: CuratedPowerTools
             >
               <CardHeader className="flex flex-row items-start justify-between gap-2.5 p-0">
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised">
-                    {app.iconUrl ? (
-                      <img
-                        alt=""
-                        className="size-10 object-cover"
-                        height={40}
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = 'none';
-                        }}
-                        src={app.iconUrl}
-                        width={40}
-                      />
-                    ) : (
-                      <Package className="size-5 text-muted-foreground" />
-                    )}
-                  </div>
+                  <MarketplaceAppIcon alt={app.name} iconUrl={app.iconUrl} size="sm" />
                   <div className="flex min-w-0 flex-col">
                     <div className="flex min-w-0 items-center gap-1.5">
                       <span className="truncate font-semibold text-body text-foreground">
