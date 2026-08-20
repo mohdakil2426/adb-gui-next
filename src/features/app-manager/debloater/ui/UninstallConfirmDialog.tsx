@@ -47,7 +47,7 @@ export function UninstallConfirmDialog({
             type="button"
             variant="destructive"
           >
-            <Trash2 aria-hidden="true" />
+            <Trash2 aria-hidden="true" data-icon="inline-start" />
             Uninstall {count > 0 ? `(${count})` : ''}
           </Button>
         </AlertDialogTrigger>

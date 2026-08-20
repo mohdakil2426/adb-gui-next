@@ -16,6 +16,7 @@ import { useDeviceStore } from '@/shared/stores/deviceStore';
 import { useLogStore } from '@/shared/stores/logStore';
 import { finishOperation, startOperation, updateOperation } from '@/shared/stores/operationStore';
 import { invalidatePackages } from '@/shared/utils/queries';
+import { runSerial } from '@/shared/utils/serialAsync';
 
 const PERCENT = 100;
 
@@ -95,13 +96,10 @@ export function InstalledAppsTab({
       return;
     }
     const list = Array.from(selectedPackages);
-    let count = 0;
-    for (const p of list) {
-      try {
-        await PackageLifecycleOp(p, op, selectedSerial);
-        count++;
-      } catch {}
-    }
+    const results = await Promise.allSettled(
+      list.map((p) => PackageLifecycleOp(p, op, selectedSerial)),
+    );
+    const count = results.filter((r) => r.status === 'fulfilled').length;
     toast.success(`${label} ${count} packages`);
     setSelectedPackages(new Set());
     onRefresh();
@@ -128,9 +126,9 @@ export function InstalledAppsTab({
       return;
     }
     const list = Array.from(selectedPackages);
-    for (const p of list) {
-      await PullPackageApk(p, destDir, selectedSerial).catch(() => {});
-    }
+    await Promise.allSettled(
+      list.map((p) => PullPackageApk(p, destDir, selectedSerial).catch(() => {})),
+    );
     toast.success(`Exported ${list.length} APK(s) to ${destDir}`);
   };
   async function handleUninstall() {
@@ -151,11 +149,8 @@ export function InstalledAppsTab({
     const toastId = toast.loading(`Uninstalling 0 of ${total}…`);
     let ok = 0;
     let failed = 0;
-    for (let index = 0; index < total; index++) {
-      const pkg = list[index];
-      if (!pkg) {
-        continue;
-      }
+    // ponytail: serial batch uninstalls required for real-time per-package progress reporting and ADB daemon stability
+    await runSerial(list, async (pkg, index) => {
       toast.loading(`Uninstalling ${index + 1} of ${total}: ${pkg}`, { id: toastId });
       updateOperation(operationId, {
         detail: `${index} of ${total}`,
@@ -169,7 +164,7 @@ export function InstalledAppsTab({
         useLogStore.getState().addLog(`Failed to uninstall ${pkg}: ${error}`, 'error');
         failed++;
       }
-    }
+    });
     if (failed === 0) {
       toast.success(`Uninstalled ${ok} package${ok === 1 ? '' : 's'}`, { id: toastId });
     } else {

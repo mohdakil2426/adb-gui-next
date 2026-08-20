@@ -34,18 +34,18 @@ export function useAppIcons(serial: string | null, packageNames: string[]) {
     let cancelled = false;
     void GetAppIcons(missing, serial)
       .then((rows) => {
-        if (cancelled) {
+        if (cancelled || serialRef.current !== serial) {
           return;
         }
-        setIcons((prev) => {
-          const next = serialRef.current === serial ? { ...prev } : {};
-          for (const row of rows) {
-            if (row.dataBase64 && row.mime) {
-              next[row.packageName] = `data:${row.mime};base64,${row.dataBase64}`;
-            }
+        const updates: Record<string, string> = {};
+        for (const row of rows) {
+          if (row.dataBase64 && row.mime) {
+            updates[row.packageName] = `data:${row.mime};base64,${row.dataBase64}`;
           }
-          return next;
-        });
+        }
+        if (Object.keys(updates).length > 0) {
+          setIcons((prev) => ({ ...prev, ...updates }));
+        }
       })
       .catch((error: unknown) => {
         if (!cancelled) {

@@ -51,7 +51,7 @@ export function AppMetricsHeroBanner({ stats }: AppMetricsHeroBannerProps) {
           >
             <div className="flex items-center justify-between">
               <span className="font-medium text-caption text-muted-foreground">{spec.label}</span>
-              <Icon className="size-4 text-muted-foreground" />
+              <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
             </div>
             <div className="flex flex-col pt-1.5">
               <span className="numeric font-bold text-foreground text-headline">{spec.value}</span>

@@ -44,17 +44,17 @@ export function TargetSdkDistributionMeter({
       {/* Proportional Segmented Bar */}
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-surface-raised">
         <div
-          className="bg-emerald-500 transition-all duration-300"
+          className="bg-emerald-500 transition-[width] duration-300 ease-out"
           style={{ width: `${modernPct}%` }}
           title={`Android 14+ (API 34+): ${buckets.modern}`}
         />
         <div
-          className="bg-sky-500 transition-all duration-300"
+          className="bg-sky-500 transition-[width] duration-300 ease-out"
           style={{ width: `${standardPct}%` }}
           title={`Android 11-13 (API 30-33): ${buckets.standard}`}
         />
         <div
-          className="bg-amber-500 transition-all duration-300"
+          className="bg-amber-500 transition-[width] duration-300 ease-out"
           style={{ width: `${legacyPct}%` }}
           title={`Legacy (<= API 29): ${buckets.legacy}`}
         />

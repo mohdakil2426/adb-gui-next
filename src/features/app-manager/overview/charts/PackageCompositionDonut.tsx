@@ -1,4 +1,10 @@
-import type { PackageComposition } from '@/features/app-manager/debloater/model/packageComposition';
+export interface PackageComposition {
+  disabled: number;
+  system: number;
+  total: number;
+  user: number;
+}
+
 import { formatPercent, usageRatio } from '@/shared/utils/format';
 
 export interface PackageCompositionDonutProps {

@@ -8,6 +8,8 @@ import {
   REMOVAL_TIER_MEANINGS,
 } from './debloaterUtils';
 
+const DISPLAY_REMOVAL_TIERS = ALL_REMOVAL_TIERS.filter((t) => t !== 'Unlisted');
+
 export function SafetyTierLegend({ expertMode }: { expertMode: boolean }) {
   return (
     <section
@@ -29,7 +31,7 @@ export function SafetyTierLegend({ expertMode }: { expertMode: boolean }) {
 
       {/* 4-Column responsive risk level grid */}
       <div className="grid @3xl:grid-cols-4 @md:grid-cols-2 grid-cols-1 gap-2">
-        {ALL_REMOVAL_TIERS.filter((t) => t !== 'Unlisted').map((tier) => (
+        {DISPLAY_REMOVAL_TIERS.map((tier) => (
           <div
             className="flex flex-col gap-1 rounded-md border border-border/50 bg-surface-raised/40 p-2"
             key={tier}

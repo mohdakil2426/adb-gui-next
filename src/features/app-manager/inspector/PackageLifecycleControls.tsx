@@ -94,9 +94,10 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={() => runOp('launch', 'Launch App')}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <Play className="size-3.5 text-emerald-500" />
+          <Play aria-hidden="true" className="size-3.5 text-emerald-500" data-icon="inline-start" />
           <span>Launch</span>
         </Button>
 
@@ -105,9 +106,10 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={() => setIsConfirmForceStopOpen(true)}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <Square className="size-3.5 text-amber-500" />
+          <Square aria-hidden="true" className="size-3.5 text-amber-500" data-icon="inline-start" />
           <span>Force Stop</span>
         </Button>
         <Button
@@ -115,9 +117,14 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={() => runOp('clear_cache', 'Clear Cache')}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <RotateCcw className="size-3.5 text-sky-500" />
+          <RotateCcw
+            aria-hidden="true"
+            className="size-3.5 text-sky-500"
+            data-icon="inline-start"
+          />
           <span>Clear Cache</span>
         </Button>
 
@@ -126,9 +133,10 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={() => setIsConfirmClearDataOpen(true)}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <Trash2 className="size-3.5 text-rose-500" />
+          <Trash2 aria-hidden="true" className="size-3.5 text-rose-500" data-icon="inline-start" />
           <span>Clear Data</span>
         </Button>
         <Button
@@ -136,9 +144,10 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={handlePullApk}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <Download className="size-3.5 text-primary" />
+          <Download aria-hidden="true" className="size-3.5 text-primary" data-icon="inline-start" />
           <span>Export APK</span>
         </Button>
 
@@ -153,16 +162,25 @@ export function PackageLifecycleControls({
             }
           }}
           size="sm"
+          type="button"
           variant="outline"
         >
           {info.isEnabled ? (
             <>
-              <ZapOff className="size-3.5 text-amber-500" />
+              <ZapOff
+                aria-hidden="true"
+                className="size-3.5 text-amber-500"
+                data-icon="inline-start"
+              />
               <span>Disable App</span>
             </>
           ) : (
             <>
-              <Zap className="size-3.5 text-emerald-500" />
+              <Zap
+                aria-hidden="true"
+                className="size-3.5 text-emerald-500"
+                data-icon="inline-start"
+              />
               <span>Enable App</span>
             </>
           )}
@@ -172,9 +190,14 @@ export function PackageLifecycleControls({
           disabled={isActing}
           onClick={handleOpenSettings}
           size="sm"
+          type="button"
           variant="outline"
         >
-          <Settings className="size-3.5 text-muted-foreground" />
+          <Settings
+            aria-hidden="true"
+            className="size-3.5 text-muted-foreground"
+            data-icon="inline-start"
+          />
           <span>Open App Settings on Device</span>
         </Button>
       </div>

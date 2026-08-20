@@ -195,7 +195,7 @@ export function ReviewSelectionDialog({
         {/* Warning banner */}
         {hasUnsafe ? (
           <Alert variant="destructive">
-            <AlertTriangle />
+            <AlertTriangle aria-hidden="true" className="size-4" />
             <AlertTitle>Unsafe packages selected</AlertTitle>
             <AlertDescription>
               These may cause system instability or bootloops. Ensure you have a backup.
@@ -203,8 +203,8 @@ export function ReviewSelectionDialog({
           </Alert>
         ) : null}
 
-        <Alert className="border-warning/30 bg-warning-muted">
-          <AlertTriangle />
+        <Alert className="border-warning/30 bg-warning-muted text-warning-foreground">
+          <AlertTriangle aria-hidden="true" className="size-4" />
           <AlertTitle>Disclaimer</AlertTitle>
           <AlertDescription>
             You cannot brick your device with user-space debloating, but removing essential packages

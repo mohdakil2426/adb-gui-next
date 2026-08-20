@@ -3,6 +3,39 @@ import { toast } from 'sonner';
 import { RunShellCommand } from '@/desktop/backend';
 import { Button } from '@/shared/ui/button';
 
+const LAUNCHPAD_ACTIONS = [
+  {
+    cmd: 'am start -a android.settings.SETTINGS',
+    icon: Settings,
+    label: 'Android Settings',
+  },
+  {
+    cmd: 'am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS',
+    icon: Code2,
+    label: 'Developer Options',
+  },
+  {
+    cmd: 'am start -a android.intent.action.VIEW -d content://media/internal/images/media',
+    icon: Folder,
+    label: 'Files & Media',
+  },
+  {
+    cmd: 'am start -a android.settings.MANAGE_ALL_APPLICATIONS_SETTINGS',
+    icon: LayoutGrid,
+    label: 'Manage All Apps',
+  },
+  {
+    cmd: 'am start -a android.intent.action.POWER_USAGE_SUMMARY',
+    icon: BatteryCharging,
+    label: 'Battery & Power',
+  },
+  {
+    cmd: 'am start -a android.media.action.IMAGE_CAPTURE',
+    icon: Camera,
+    label: 'Camera',
+  },
+] as const;
+
 interface QuickLaunchpadCardProps {
   selectedSerial: string | null;
 }
@@ -21,38 +54,6 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
     }
   };
 
-  const actions = [
-    {
-      cmd: 'am start -a android.settings.SETTINGS',
-      icon: Settings,
-      label: 'Android Settings',
-    },
-    {
-      cmd: 'am start -a android.settings.APPLICATION_DEVELOPMENT_SETTINGS',
-      icon: Code2,
-      label: 'Developer Options',
-    },
-    {
-      cmd: 'am start -a android.intent.action.VIEW -d content://media/internal/images/media',
-      icon: Folder,
-      label: 'Files & Media',
-    },
-    {
-      cmd: 'am start -a android.settings.MANAGE_ALL_APPLICATIONS_SETTINGS',
-      icon: LayoutGrid,
-      label: 'Manage All Apps',
-    },
-    {
-      cmd: 'am start -a android.intent.action.POWER_USAGE_SUMMARY',
-      icon: BatteryCharging,
-      label: 'Battery & Power',
-    },
-    {
-      cmd: 'am start -a android.media.action.IMAGE_CAPTURE',
-      icon: Camera,
-      label: 'Camera',
-    },
-  ];
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
@@ -64,7 +65,7 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {actions.map((act) => {
+        {LAUNCHPAD_ACTIONS.map((act) => {
           const Icon = act.icon;
           return (
             <Button
@@ -72,6 +73,7 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
               key={act.label}
               onClick={() => launchIntent(act.label, act.cmd)}
               size="sm"
+              type="button"
               variant="outline"
             >
               <Icon className="size-3.5 shrink-0 text-muted-foreground" />

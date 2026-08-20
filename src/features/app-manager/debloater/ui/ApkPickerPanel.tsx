@@ -152,7 +152,7 @@ export function ApkPickerPanel({
                 type="button"
                 variant="outline"
               >
-                <FilePlus2 aria-hidden="true" className="size-3.5" />
+                <FilePlus2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 Add More Files
               </Button>
               <Button
@@ -163,7 +163,7 @@ export function ApkPickerPanel({
                 type="button"
                 variant="ghost"
               >
-                <Trash2 aria-hidden="true" className="size-3.5" />
+                <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 Clear Queue
               </Button>
             </div>

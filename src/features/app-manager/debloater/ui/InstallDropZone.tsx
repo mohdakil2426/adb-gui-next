@@ -159,7 +159,7 @@ export function InstallDropZone({
           type="button"
           variant="outline"
         >
-          <FolderOpen aria-hidden="true" className="size-3.5" />
+          <FolderOpen aria-hidden="true" className="size-3.5" data-icon="inline-start" />
           <span>Browse More</span>
         </Button>
       </div>
@@ -169,7 +169,7 @@ export function InstallDropZone({
   return (
     <div
       className={cn(
-        'group relative flex select-none flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center transition-all duration-200',
+        'group relative flex select-none flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center transition-[border-color,background-color,box-shadow] duration-200',
         isDragOver
           ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
           : 'border-border/80 bg-surface/70 hover:border-border-control hover:bg-surface-raised/40',
@@ -217,7 +217,7 @@ export function InstallDropZone({
           size="default"
           type="button"
         >
-          <FolderOpen aria-hidden="true" className="size-4" />
+          <FolderOpen aria-hidden="true" className="size-4" data-icon="inline-start" />
           Select Package Files
         </Button>
       </div>

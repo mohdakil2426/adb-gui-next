@@ -79,6 +79,7 @@ export function PackageInspectorDrawer({
       open={Boolean(packageName)}
     >
       <SheetContent
+        aria-label={`Package details for ${details?.label || packageName || 'application'}`}
         className="top-11 z-50 flex h-[calc(100vh-2.75rem)] w-full max-w-lg flex-col gap-0 border-border border-t-0 border-l bg-surface p-0 shadow-2xl sm:max-w-lg"
         showCloseButton={false}
         side="right"
@@ -100,18 +101,20 @@ export function PackageInspectorDrawer({
           </div>
 
           <Button
+            aria-label="Close inspector"
             className="size-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
             onClick={onClose}
             size="icon"
+            type="button"
             variant="ghost"
           >
-            <X className="size-4" />
+            <X aria-hidden="true" className="size-4" />
             <span className="sr-only">Close inspector</span>
           </Button>
         </SheetHeader>
 
         {/* Scrollable Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div aria-live="polite" className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="size-6 animate-spin text-primary" />

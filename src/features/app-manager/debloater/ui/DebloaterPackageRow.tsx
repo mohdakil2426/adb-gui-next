@@ -49,7 +49,7 @@ export function DebloaterPackageRow({
     <div
       aria-selected={isSelected}
       className={cn(
-        'group absolute left-0 flex w-full cursor-pointer items-center justify-between gap-3 border-border/30 border-b px-3 py-1.5 outline-none transition-colors duration-90 ease-standard hover:bg-accent/60',
+        'group absolute left-0 flex w-full cursor-pointer items-center justify-between gap-3 border-border/30 border-b px-3 py-1.5 outline-none transition-colors duration-90 ease-standard hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset',
         isSelected && 'bg-primary-muted/40 hover:bg-primary-muted/60',
         isCurrent && !isSelected && 'bg-accent/80 ring-1 ring-border/80 ring-inset',
         isUnsafeBlocked && 'cursor-not-allowed opacity-65',
@@ -75,17 +75,20 @@ export function DebloaterPackageRow({
     >
       {/* Left Column: Checkbox, State Dot & Metadata Stacks */}
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <div
-          className="shrink-0"
+        <button
+          aria-label={isSelected ? `Deselect ${pkg.name}` : `Select ${pkg.name}`}
+          className="shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed"
+          disabled={isUnsafeBlocked}
           onClick={(e) => {
             e.stopPropagation();
             if (!isUnsafeBlocked) {
               onSelectToggle(pkg.name);
             }
           }}
+          type="button"
         >
           <CheckboxItem checked={isSelected} disabled={isUnsafeBlocked} />
-        </div>
+        </button>
 
         {/* State Dot indicator */}
         <span
@@ -141,10 +144,11 @@ export function DebloaterPackageRow({
       </div>
 
       {/* Right Column: 1-Click Action Buttons & Details Inspector */}
-      <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+      <div className="flex shrink-0 items-center gap-1.5">
         {pkg.state === 'Enabled' ? (
           disableMode ? (
             <Button
+              aria-busy={isPending}
               className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-warning/50 hover:bg-warning-muted hover:text-warning"
               disabled={isUnsafeBlocked || isPending || !selectedSerial}
               onClick={() => onSingleAction?.(pkg, 'disable')}
@@ -158,7 +162,12 @@ export function DebloaterPackageRow({
               variant="outline"
             >
               {isPending ? (
-                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <>
+                  <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                  <span className="sr-only" role="status">
+                    Disabling {pkg.name}…
+                  </span>
+                </>
               ) : (
                 <EyeOff aria-hidden="true" className="size-3" />
               )}
@@ -166,6 +175,7 @@ export function DebloaterPackageRow({
             </Button>
           ) : (
             <Button
+              aria-busy={isPending}
               className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-destructive/50 hover:bg-destructive-muted hover:text-destructive"
               disabled={isUnsafeBlocked || isPending || !selectedSerial}
               onClick={() => onSingleAction?.(pkg, 'uninstall')}
@@ -179,7 +189,12 @@ export function DebloaterPackageRow({
               variant="outline"
             >
               {isPending ? (
-                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <>
+                  <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                  <span className="sr-only" role="status">
+                    Uninstalling {pkg.name}…
+                  </span>
+                </>
               ) : (
                 <Trash2 aria-hidden="true" className="size-3" />
               )}
@@ -188,6 +203,7 @@ export function DebloaterPackageRow({
           )
         ) : pkg.state === 'Disabled' ? (
           <Button
+            aria-busy={isPending}
             className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success"
             disabled={isPending || !selectedSerial}
             onClick={() => onSingleAction?.(pkg, 'restore')}
@@ -197,7 +213,12 @@ export function DebloaterPackageRow({
             variant="outline"
           >
             {isPending ? (
-              <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+              <>
+                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <span className="sr-only" role="status">
+                  Enabling {pkg.name}…
+                </span>
+              </>
             ) : (
               <RotateCcw aria-hidden="true" className="size-3" />
             )}
@@ -205,6 +226,7 @@ export function DebloaterPackageRow({
           </Button>
         ) : (
           <Button
+            aria-busy={isPending}
             className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success"
             disabled={isPending || !selectedSerial}
             onClick={() => onSingleAction?.(pkg, 'restore')}
@@ -214,14 +236,18 @@ export function DebloaterPackageRow({
             variant="outline"
           >
             {isPending ? (
-              <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+              <>
+                <Loader2 aria-hidden="true" className="size-3 animate-spin" />
+                <span className="sr-only" role="status">
+                  Restoring {pkg.name}…
+                </span>
+              </>
             ) : (
               <Undo2 aria-hidden="true" className="size-3" />
             )}
             <span>Restore</span>
           </Button>
         )}
-
         {/* Inspect Details trigger */}
         <Button
           aria-label={`Inspect ${pkg.name}`}

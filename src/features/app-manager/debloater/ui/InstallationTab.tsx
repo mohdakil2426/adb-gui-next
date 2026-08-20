@@ -122,7 +122,8 @@ export function InstallationTab({ onInstalled }: { onInstalled: () => void }) {
         toast.warning(`Installed ${ok}, ${failed} failed — review errors below or in Logs`, {
           id: toastId,
         });
-        const remaining = apkPaths.filter((p) => !successfulPaths.includes(p));
+        const successfulSet = new Set(successfulPaths);
+        const remaining = apkPaths.filter((p) => !successfulSet.has(p));
         setApkPaths(remaining);
       }
 

@@ -36,7 +36,8 @@ export function DescriptionPanel({
   return (
     <section
       aria-label={`Package telemetry: ${pkg.name}`}
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5 shadow-none"
+      aria-live="polite"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
     >
       {/* ── Top Header Row ── */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-border/40 border-b pb-2.5">

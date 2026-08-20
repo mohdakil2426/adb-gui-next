@@ -17,14 +17,20 @@ import { DebloaterPackageRow } from './DebloaterPackageRow';
 import { DEBLOAT_ROW_HEIGHT, PACKAGE_LIST_VIEWPORT } from './debloaterUtils';
 import { PackageListEmpty, PackageListSkeleton } from './PackageListState';
 
-interface DebloaterPackageListProps {
-  currentPackageName: string | null;
+const EMPTY_PENDING_SET = new Set<string>();
+
+export interface DebloaterListFlags {
   disableMode: boolean;
   expertMode: boolean;
-  filteredPackages: backend.DebloatPackageRow[];
   hasPackages: boolean;
   isApplying: boolean;
   isLoadingPackages: boolean;
+}
+
+interface DebloaterPackageListProps {
+  currentPackageName: string | null;
+  filteredPackages: backend.DebloatPackageRow[];
+  flags: DebloaterListFlags;
   onClearFilters: () => void;
   onCurrentPackageNameChange: (name: string) => void;
   onReview: () => void;
@@ -51,7 +57,7 @@ function resolveListState({
   onClearFilters: () => void;
   selectedSerial: string | null;
 }): ReactNode {
-  if (selectedSerial === null) {
+  if (!selectedSerial) {
     return (
       <PackageListEmpty
         description="Connect a device over USB and pick it in the sidebar — its system packages are matched against the debloat list here."
@@ -91,12 +97,8 @@ function resolveListState({
 
 export function DebloaterPackageList({
   currentPackageName,
-  disableMode,
-  expertMode,
   filteredPackages,
-  hasPackages,
-  isApplying,
-  isLoadingPackages,
+  flags,
   onClearFilters,
   onCurrentPackageNameChange,
   onReview,
@@ -104,10 +106,11 @@ export function DebloaterPackageList({
   onSelectToggle,
   onSelectUnselectAll,
   onSingleAction,
-  pendingPackageNames = new Set(),
+  pendingPackageNames = EMPTY_PENDING_SET,
   selectedPackages,
   selectedSerial,
 }: DebloaterPackageListProps) {
+  const { disableMode, expertMode, hasPackages, isApplying, isLoadingPackages } = flags;
   const listRef = useRef<HTMLDivElement>(null);
   const rowVirtualizer = useVirtualizer({
     count: filteredPackages.length,
@@ -205,7 +208,7 @@ export function DebloaterPackageList({
               type="button"
               variant="outline"
             >
-              <Sparkles aria-hidden="true" className="size-3.5" />
+              <Sparkles aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               Select Recommended
             </Button>
           ) : null}

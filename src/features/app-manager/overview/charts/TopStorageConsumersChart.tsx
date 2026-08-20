@@ -73,7 +73,7 @@ export function TopStorageConsumersChart({
                 {/* Segmented multi-tone bar */}
                 <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
                   <div
-                    className="flex h-full overflow-hidden rounded-full transition-all duration-300"
+                    className="flex h-full overflow-hidden rounded-full transition-[width] duration-300 ease-out"
                     style={{ width: `${Math.max(4, ratio)}%` }}
                   >
                     <div

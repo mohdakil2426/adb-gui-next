@@ -26,6 +26,8 @@ import { DebloaterSafetyChips } from './DebloaterSafetyChips';
 import { OEM_LIST_OPTIONS, STATE_OPTIONS } from './debloaterConstants';
 import { countAllByTier } from './debloaterUtils';
 
+const EMPTY_PACKAGES: backend.DebloatPackageRow[] = [];
+
 interface DebloaterToolbarProps {
   disableMode: boolean;
   expertMode: boolean;
@@ -63,7 +65,7 @@ export function DebloaterToolbar({
   onRemovalFilterChange,
   onSearchQueryChange,
   onStateFilterChange,
-  packages = [],
+  packages = EMPTY_PACKAGES,
   packagesCount,
   removalFilter,
   searchQuery,
@@ -121,7 +123,11 @@ export function DebloaterToolbar({
               type="button"
               variant="outline"
             >
-              <Building2 aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <Building2
+                aria-hidden="true"
+                className="size-3.5 text-muted-foreground"
+                data-icon="inline-start"
+              />
               <span className="truncate">{listLabel}</span>
             </Button>
           </DropdownMenuTrigger>
@@ -143,14 +149,12 @@ export function DebloaterToolbar({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              className="h-9 gap-1.5"
-              disabled={!selectedSerial}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <Layers aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <Button className="h-9 gap-1.5" disabled={!selectedSerial} size="sm" type="button">
+              <Layers
+                aria-hidden="true"
+                className="size-3.5 text-muted-foreground"
+                data-icon="inline-start"
+              />
               <span className="truncate">{stateLabel}</span>
             </Button>
           </DropdownMenuTrigger>

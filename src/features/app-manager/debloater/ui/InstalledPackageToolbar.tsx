@@ -124,7 +124,7 @@ export function InstalledPackageToolbar({
               type="button"
               variant="ghost"
             >
-              <X className="size-3.5" />
+              <X aria-hidden="true" className="size-3.5" />
             </Button>
           ) : null}
         </div>
@@ -172,9 +172,12 @@ export function InstalledPackageToolbar({
               disabled={!selectedSerial}
               size="sm"
               type="button"
-              variant="outline"
             >
-              <ArrowUpDown aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <ArrowUpDown
+                aria-hidden="true"
+                className="size-3.5 text-muted-foreground"
+                data-icon="inline-start"
+              />
               <span className="@md:inline-block hidden">Sort:</span>
               <span className="font-medium text-foreground">{currentSortOption.label}</span>
             </Button>

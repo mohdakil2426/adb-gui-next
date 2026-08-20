@@ -167,12 +167,14 @@ export function DebloaterTab() {
       <SafetyTierLegend expertMode={expertMode} />
       <DebloaterPackageList
         currentPackageName={currentPackageName}
-        disableMode={disableMode}
-        expertMode={expertMode}
         filteredPackages={filteredPackages}
-        hasPackages={packages.length > 0}
-        isApplying={isApplying}
-        isLoadingPackages={isLoadingPackages}
+        flags={{
+          disableMode,
+          expertMode,
+          hasPackages: packages.length > 0,
+          isApplying,
+          isLoadingPackages,
+        }}
         onClearFilters={resetFilters}
         onCurrentPackageNameChange={setCurrentPackageName}
         onReview={() => setReviewOpen(true)}

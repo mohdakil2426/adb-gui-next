@@ -31,7 +31,7 @@ export function InstalledBatchBar({
   }
 
   return (
-    <div className="fade-in slide-in-from-bottom-2 sticky bottom-0 z-30 flex animate-in flex-wrap items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/95 px-4 py-2.5 shadow-2xl backdrop-blur-md transition-all duration-150">
+    <div className="fade-in slide-in-from-bottom-2 sticky bottom-0 z-30 flex animate-in flex-wrap items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/95 px-4 py-2.5 shadow-2xl backdrop-blur-md transition-colors transition-opacity transition-transform duration-150">
       {/* Selected Items Counter */}
       <div className="flex items-center gap-2.5">
         <Badge className="numeric px-2 py-0.5 font-mono text-caption" variant="default">
@@ -63,7 +63,7 @@ export function InstalledBatchBar({
             type="button"
             variant="outline"
           >
-            <Zap className="size-3.5 fill-current" />
+            <Zap aria-hidden="true" className="size-3.5 fill-current" data-icon="inline-start" />
             <span>Enable Selected</span>
           </Button>
         ) : null}
@@ -75,9 +75,8 @@ export function InstalledBatchBar({
             onClick={onBatchDisable}
             size="sm"
             type="button"
-            variant="outline"
           >
-            <ZapOff className="size-3.5" />
+            <ZapOff aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             <span>Disable Selected</span>
           </Button>
         ) : null}
@@ -91,7 +90,11 @@ export function InstalledBatchBar({
             type="button"
             variant="outline"
           >
-            <Download className="size-3.5 text-primary" />
+            <Download
+              aria-hidden="true"
+              className="size-3.5 text-primary"
+              data-icon="inline-start"
+            />
             <span>Export APKs</span>
           </Button>
         ) : null}
@@ -105,7 +108,7 @@ export function InstalledBatchBar({
             type="button"
             variant="outline"
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             <span>Clear Cache</span>
           </Button>
         ) : null}
@@ -119,12 +122,14 @@ export function InstalledBatchBar({
             type="button"
             variant="outline"
           >
-            <Square className="size-3.5 fill-current" />
+            <Square aria-hidden="true" className="size-3.5 fill-current" data-icon="inline-start" />
             <span>Force Stop</span>
           </Button>
         ) : null}
 
         <Button
+          aria-haspopup="dialog"
+          aria-label={`Uninstall ${selectedCount} selected package${selectedCount === 1 ? '' : 's'}`}
           className="h-8 gap-1.5 font-medium text-caption shadow-xs"
           disabled={isUninstalling}
           onClick={onBatchUninstall}
@@ -133,11 +138,20 @@ export function InstalledBatchBar({
           variant="destructive"
         >
           {isUninstalling ? (
-            <Loader2 className="size-3.5 animate-spin" />
+            <>
+              <Loader2
+                aria-hidden="true"
+                className="size-3.5 animate-spin"
+                data-icon="inline-start"
+              />
+              <span>Uninstalling…</span>
+            </>
           ) : (
-            <Trash2 className="size-3.5" />
+            <>
+              <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              <span>Uninstall Selected</span>
+            </>
           )}
-          <span>Uninstall ({selectedCount})</span>
         </Button>
       </div>
     </div>

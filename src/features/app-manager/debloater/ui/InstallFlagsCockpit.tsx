@@ -111,7 +111,7 @@ export function InstallFlagsCockpit({ disabled = false }: InstallFlagsCockpitPro
               type="button"
               variant="ghost"
             >
-              <RotateCcw aria-hidden="true" className="size-3" />
+              <RotateCcw aria-hidden="true" className="size-3" data-icon="inline-start" />
               Reset
             </Button>
           ) : null}
@@ -165,7 +165,7 @@ export function InstallFlagsCockpit({ disabled = false }: InstallFlagsCockpitPro
                 type="button"
                 variant="outline"
               >
-                <Cpu aria-hidden="true" className="size-3" />
+                <Cpu aria-hidden="true" className="size-3" data-icon="inline-start" />
                 Dev Mode (-r -g -t -d)
               </Button>
               <Button

@@ -148,7 +148,7 @@ export function DebloatSafetySpectrum({
           variant="outline"
         >
           <span>Open Debloater</span>
-          <ArrowRight className="size-3" />
+          <ArrowRight aria-hidden="true" className="size-3" data-icon="inline-end" />
         </Button>
       </div>
     </div>

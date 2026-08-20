@@ -41,7 +41,7 @@ export function InstalledPackageRow({
     <div
       aria-selected={isSelected}
       className={cn(
-        'group absolute left-0 flex w-full cursor-pointer select-none items-center gap-3 border-border/40 border-b px-3.5 outline-none transition-colors duration-90 ease-standard hover:bg-accent/60 focus-visible:bg-accent/60',
+        'group absolute left-0 flex w-full cursor-pointer select-none items-center gap-3 border-border/40 border-b px-3.5 outline-none transition-colors duration-90 ease-standard hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset',
         isSelected && 'bg-primary-muted/70 hover:bg-primary-muted',
         isDisabled && 'opacity-65 hover:opacity-100',
       )}
@@ -148,6 +148,7 @@ export function InstalledPackageRow({
         {isDisabled ? (
           onToggleEnable ? (
             <Button
+              aria-label={`Enable ${pkg.label || pkg.name}`}
               className="size-7 p-0 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
               onClick={(e) => {
                 e.stopPropagation();
@@ -158,13 +159,14 @@ export function InstalledPackageRow({
               type="button"
               variant="ghost"
             >
-              <Zap className="size-3.5 fill-current" />
+              <Zap aria-hidden="true" className="size-3.5 fill-current" />
             </Button>
           ) : null
         ) : (
           <>
             {onLaunch ? (
               <Button
+                aria-label={`Launch ${pkg.label || pkg.name}`}
                 className="size-7 p-0 text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -175,12 +177,13 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <Play className="size-3.5 fill-current" />
+                <Play aria-hidden="true" className="size-3.5 fill-current" />
               </Button>
             ) : null}
 
             {onForceStop ? (
               <Button
+                aria-label={`Force stop ${pkg.label || pkg.name}`}
                 className="size-7 p-0 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -191,12 +194,13 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <Square className="size-3.5 fill-current" />
+                <Square aria-hidden="true" className="size-3.5 fill-current" />
               </Button>
             ) : null}
 
             {onToggleEnable ? (
               <Button
+                aria-label={`Disable ${pkg.label || pkg.name}`}
                 className="size-7 p-0 text-muted-foreground hover:bg-amber-500/10 hover:text-amber-500"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -207,7 +211,7 @@ export function InstalledPackageRow({
                 type="button"
                 variant="ghost"
               >
-                <ZapOff className="size-3.5" />
+                <ZapOff aria-hidden="true" className="size-3.5" />
               </Button>
             ) : null}
           </>
@@ -215,6 +219,7 @@ export function InstalledPackageRow({
 
         {onInspect ? (
           <Button
+            aria-label={`Inspect ${pkg.label || pkg.name} details`}
             className="size-7 p-0 text-muted-foreground hover:bg-primary/10 hover:text-primary"
             onClick={(e) => {
               e.stopPropagation();
@@ -225,7 +230,7 @@ export function InstalledPackageRow({
             type="button"
             variant="ghost"
           >
-            <Settings className="size-3.5" />
+            <Settings aria-hidden="true" className="size-3.5" />
           </Button>
         ) : null}
       </div>
