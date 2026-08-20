@@ -17,15 +17,12 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
 import { cn } from '@/shared/utils/cn';
 
+export type ScrcpyCockpitActionState = 'idle' | 'installing' | 'launching' | 'stopping';
+
 interface ScrcpyCockpitHeroProps {
+  actionState?: ScrcpyCockpitActionState | undefined;
   activeSerials: Set<string>;
   canLaunch: boolean;
-  isCheckingUpdate?: boolean | undefined;
-  isInstalling?: boolean | undefined;
-  isLaunching: boolean;
-  isStopping: boolean;
-  onCheckUpdate?: (() => void) | undefined;
-  onInstall?: (() => void) | undefined;
   onLaunch: () => void;
   onStopAll: () => void;
   progress: backend.ScrcpyDownloadProgress | null;
@@ -35,11 +32,9 @@ interface ScrcpyCockpitHeroProps {
 }
 
 export function ScrcpyCockpitHero({
+  actionState = 'idle',
   activeSerials,
   canLaunch,
-  isInstalling = false,
-  isLaunching,
-  isStopping,
   onLaunch,
   onStopAll,
   progress,
@@ -47,6 +42,9 @@ export function ScrcpyCockpitHero({
   status,
   totalDevicesCount,
 }: ScrcpyCockpitHeroProps) {
+  const isInstalling = actionState === 'installing';
+  const isLaunching = actionState === 'launching';
+  const isStopping = actionState === 'stopping';
   const isInstalled = Boolean(status?.binaryPath);
   const activeCount = activeSerials.size;
   const selectedCount = selectedSerials.size;
@@ -146,9 +144,13 @@ export function ScrcpyCockpitHero({
                 variant="outline"
               >
                 {isStopping ? (
-                  <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                  <Loader2
+                    aria-hidden="true"
+                    className="size-3.5 animate-spin"
+                    data-icon="inline-start"
+                  />
                 ) : (
-                  <Square aria-hidden="true" className="size-3.5" />
+                  <Square aria-hidden="true" className="size-3.5" data-icon="inline-start" />
                 )}
                 <span>Stop All ({activeCount})</span>
               </Button>
@@ -162,9 +164,13 @@ export function ScrcpyCockpitHero({
               type="button"
             >
               {isLaunching ? (
-                <Loader2 aria-hidden="true" className="size-3.5 animate-spin" />
+                <Loader2
+                  aria-hidden="true"
+                  className="size-3.5 animate-spin"
+                  data-icon="inline-start"
+                />
               ) : (
-                <Rocket aria-hidden="true" className="size-3.5" />
+                <Rocket aria-hidden="true" className="size-3.5" data-icon="inline-start" />
               )}
               <span>
                 Launch Mirror

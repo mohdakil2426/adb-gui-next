@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 
 export interface PresetOption<T> {
   label: string;
@@ -104,15 +111,17 @@ export function ScrcpyPresetField<T extends string | number>({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {presets.map((preset) => (
-              <SelectItem
-                key={preset.value === null ? 'none' : String(preset.value)}
-                value={preset.value === null ? 'none' : String(preset.value)}
-              >
-                {preset.label}
-              </SelectItem>
-            ))}
-            <SelectItem value="custom">Custom (manual value)…</SelectItem>
+            <SelectGroup>
+              {presets.map((preset) => (
+                <SelectItem
+                  key={preset.value === null ? 'none' : String(preset.value)}
+                  value={preset.value === null ? 'none' : String(preset.value)}
+                >
+                  {preset.label}
+                </SelectItem>
+              ))}
+              <SelectItem value="custom">Custom (manual value)…</SelectItem>
+            </SelectGroup>
           </SelectContent>
         </Select>
       )}

@@ -15,11 +15,11 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Progress } from '@/shared/ui/progress';
 
+export type ScrcpyBinaryActionState = 'idle' | 'checking' | 'installing' | 'uninstalling';
+
 interface ScrcpyBinaryTabProps {
-  isCheckingUpdate: boolean;
-  isError: boolean;
-  isInstalling: boolean;
-  isUninstalling?: boolean | undefined;
+  actionState?: ScrcpyBinaryActionState | undefined;
+  isError?: boolean | undefined;
   onCheckUpdate: () => void;
   onInstall: () => void;
   onOpenFolder?: (() => void) | undefined;
@@ -31,10 +31,8 @@ interface ScrcpyBinaryTabProps {
 }
 
 export function ScrcpyBinaryTab({
-  isCheckingUpdate,
-  isError,
-  isInstalling,
-  isUninstalling = false,
+  actionState = 'idle',
+  isError = false,
   onCheckUpdate,
   onInstall,
   onOpenFolder,
@@ -44,6 +42,9 @@ export function ScrcpyBinaryTab({
   selectedSerials,
   status,
 }: ScrcpyBinaryTabProps) {
+  const isCheckingUpdate = actionState === 'checking';
+  const isInstalling = actionState === 'installing';
+  const isUninstalling = actionState === 'uninstalling';
   const [confirmUninstallOpen, setConfirmUninstallOpen] = useState(false);
 
   const installed = Boolean(status?.binaryPath);

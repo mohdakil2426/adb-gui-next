@@ -76,7 +76,14 @@ function DeviceTile({
       {/* Top row: Checkbox, Name, Status badges */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2.5">
-          <Checkbox checked={isSelected} className="pointer-events-none size-4" tabIndex={-1} />
+          <div className="flex size-6 shrink-0 items-center justify-center p-1">
+            <Checkbox
+              aria-label={`Select ${displayName}`}
+              checked={isSelected}
+              className="pointer-events-none size-4"
+              tabIndex={-1}
+            />
+          </div>
           <div className="flex min-w-0 flex-col">
             <div className="flex items-center gap-1.5">
               <span className="truncate font-medium text-body text-foreground">{displayName}</span>

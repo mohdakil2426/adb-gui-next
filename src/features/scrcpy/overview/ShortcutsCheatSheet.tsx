@@ -7,6 +7,14 @@ import { Input } from '@/shared/ui/input';
 import { Kbd, KbdGroup } from '@/shared/ui/kbd';
 import { cn } from '@/shared/utils/cn';
 
+const CATEGORIES = [
+  { id: 'all', label: 'All Shortcuts' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'display', label: 'Display & Window' },
+  { id: 'device', label: 'Device Power & UI' },
+  { id: 'audio', label: 'Volume & Audio' },
+];
+
 export function ShortcutsCheatSheet() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,14 +32,6 @@ export function ShortcutsCheatSheet() {
       }),
     [filterCategory, searchQuery],
   );
-
-  const categories = [
-    { id: 'all', label: 'All Shortcuts' },
-    { id: 'navigation', label: 'Navigation' },
-    { id: 'display', label: 'Display & Window' },
-    { id: 'device', label: 'Device Power & UI' },
-    { id: 'audio', label: 'Volume & Audio' },
-  ];
 
   return (
     <Card className="border-border bg-surface shadow-none">
@@ -57,6 +57,7 @@ export function ShortcutsCheatSheet() {
               className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
             />
             <Input
+              aria-label="Search keyboard shortcuts"
               className="h-8 pl-8 text-caption"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search shortcuts..."
@@ -68,7 +69,7 @@ export function ShortcutsCheatSheet() {
 
         {/* Category Pill Filters */}
         <div className="flex flex-wrap gap-1.5 pt-2">
-          {categories.map((cat) => (
+          {CATEGORIES.map((cat) => (
             <Button
               className={cn(
                 'h-6 px-2.5 text-[11px]',

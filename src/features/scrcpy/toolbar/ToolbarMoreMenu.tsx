@@ -56,7 +56,7 @@ export function ToolbarMoreMenu({
   };
 
   return (
-    <div className="fade-in zoom-in-95 flex w-[310px] max-w-[310px] shrink-0 animate-in flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl duration-150 dark:bg-[#1e1f22]/98">
+    <div className="fade-in zoom-in-95 flex w-[310px] max-w-[310px] shrink-0 animate-in flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl dark:bg-[#1e1f22]/98">
       <div className="flex items-center justify-between border-border/60 border-b pb-2">
         <span className="font-semibold text-foreground text-xs">Extended Controls</span>
         <button
@@ -74,7 +74,7 @@ export function ToolbarMoreMenu({
         <span className="font-medium text-[11px] text-muted-foreground">Toolbar Position Mode</span>
         <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-muted/60 p-1">
           <button
-            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-colors ${
               mode === 'locked'
                 ? 'bg-surface text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -86,7 +86,7 @@ export function ToolbarMoreMenu({
             <span>Lock to Phone</span>
           </button>
           <button
-            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-colors ${
               mode === 'freeform'
                 ? 'bg-surface text-foreground shadow-xs'
                 : 'text-muted-foreground hover:text-foreground'
@@ -139,6 +139,7 @@ export function ToolbarMoreMenu({
               <span className="font-mono text-[10px] text-muted-foreground">{localOffset}px</span>
             </div>
             <input
+              aria-label="Vertical Position"
               className="h-1.5 w-full cursor-pointer accent-primary"
               max="400"
               min="-200"

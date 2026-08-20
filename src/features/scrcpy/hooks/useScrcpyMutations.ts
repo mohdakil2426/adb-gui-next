@@ -12,6 +12,15 @@ import type { backend } from '@/desktop/models';
 import { useNicknameStore } from '@/shared/stores/nicknameStore';
 import { handleError } from '@/shared/utils/errorHandler';
 import { queryKeys } from '@/shared/utils/queries';
+export function openInstalledFolder(binaryPath?: string | null) {
+  if (!binaryPath) {
+    return;
+  }
+  const folder = binaryPath.replace(/[/\\][^/\\]+$/, '');
+  void OpenFolder(folder).catch((error: unknown) => {
+    handleError('Open installed folder', error);
+  });
+}
 
 export function useScrcpyMutations(options: backend.ScrcpyLaunchOptions) {
   const queryClient = useQueryClient();
@@ -112,20 +121,19 @@ export function useScrcpyMutations(options: backend.ScrcpyLaunchOptions) {
     },
   });
 
-  const handleOpenInstalledFolder = (binaryPath?: string | null) => {
-    if (!binaryPath) {
-      return;
-    }
-    const folder = binaryPath.replace(/[/\\][^/\\]+$/, '');
-    void OpenFolder(folder).catch((error: unknown) => {
-      handleError('Open installed folder', error);
-    });
-  };
+  const isPending =
+    install.isPending ||
+    checkUpdate.isPending ||
+    launch.isPending ||
+    stop.isPending ||
+    stopDevice.isPending ||
+    uninstall.isPending;
 
   return {
     checkUpdate,
-    handleOpenInstalledFolder,
+    handleOpenInstalledFolder: openInstalledFolder,
     install,
+    isPending,
     launch,
     stop,
     stopDevice,

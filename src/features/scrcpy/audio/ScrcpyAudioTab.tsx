@@ -6,7 +6,14 @@ import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { Switch } from '@/shared/ui/switch';
 import { cn } from '@/shared/utils/cn';
 
@@ -93,11 +100,13 @@ export function ScrcpyAudioTab({ onOptionsChange, options }: ScrcpyAudioTabProps
                   <SelectValue placeholder="Default (Output / Playback)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Output / Playback (Device sounds)</SelectItem>
-                  <SelectItem value="mic">Microphone (Device mic capture)</SelectItem>
-                  <SelectItem value="playback">Playback (Internal app audio)</SelectItem>
-                  <SelectItem value="voice-call">Voice Call (Call audio stream)</SelectItem>
-                  <SelectItem value="mic-unprocessed">Unprocessed Mic (Raw input)</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="default">Output / Playback (Device sounds)</SelectItem>
+                    <SelectItem value="mic">Microphone (Device mic capture)</SelectItem>
+                    <SelectItem value="playback">Playback (Internal app audio)</SelectItem>
+                    <SelectItem value="voice-call">Voice Call (Call audio stream)</SelectItem>
+                    <SelectItem value="mic-unprocessed">Unprocessed Mic (Raw input)</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -186,11 +195,13 @@ export function ScrcpyAudioTab({ onOptionsChange, options }: ScrcpyAudioTabProps
                       <SelectValue placeholder="MP4 (Default)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {RECORD_FORMAT_PRESETS.map((preset) => (
-                        <SelectItem key={preset.label} value={preset.value ?? 'auto'}>
-                          {preset.label}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        {RECORD_FORMAT_PRESETS.map((preset) => (
+                          <SelectItem key={preset.label} value={preset.value ?? 'auto'}>
+                            {preset.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>

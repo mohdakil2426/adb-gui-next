@@ -30,7 +30,12 @@ export function ViewScrcpy() {
   const adbDevices = devices.filter((d) => d.status === 'device');
 
   useEffect(() => {
-    const adbSerials = new Set(devices.filter((d) => d.status === 'device').map((d) => d.serial));
+    const adbSerials = new Set<string>();
+    for (const d of devices) {
+      if (d.status === 'device') {
+        adbSerials.add(d.serial);
+      }
+    }
     setSelectedSerials((prev) => {
       const valid = new Set([...prev].filter((s) => adbSerials.has(s)));
       if (valid.size > 0) {
@@ -83,14 +88,17 @@ export function ViewScrcpy() {
 
       {/* Top Precision Cockpit Hero Banner */}
       <ScrcpyCockpitHero
+        actionState={
+          install.isPending
+            ? 'installing'
+            : launch.isPending
+              ? 'launching'
+              : stop.isPending || stopDevice.isPending
+                ? 'stopping'
+                : 'idle'
+        }
         activeSerials={activeSerials}
         canLaunch={Boolean(statusQuery.data?.binaryPath) || statusQuery.data?.source === 'path'}
-        isCheckingUpdate={checkUpdate.isPending}
-        isInstalling={install.isPending}
-        isLaunching={launch.isPending}
-        isStopping={stop.isPending || stopDevice.isPending}
-        onCheckUpdate={() => checkUpdate.mutate()}
-        onInstall={() => install.mutate()}
         onLaunch={() => launch.mutate(Array.from(selectedSerials))}
         onStopAll={() => {
           if (selectedSerials.size > 0 && selectedSerials.size < activeSerials.size) {
@@ -169,10 +177,16 @@ export function ViewScrcpy() {
         {/* Tab 5: Binary Management & Diagnostics */}
         <TabsContent value="binary">
           <ScrcpyBinaryTab
-            isCheckingUpdate={checkUpdate.isPending}
+            actionState={
+              checkUpdate.isPending
+                ? 'checking'
+                : install.isPending
+                  ? 'installing'
+                  : uninstall.isPending
+                    ? 'uninstalling'
+                    : 'idle'
+            }
             isError={statusQuery.isError}
-            isInstalling={install.isPending}
-            isUninstalling={uninstall.isPending}
             onCheckUpdate={() => checkUpdate.mutate()}
             onInstall={() => install.mutate()}
             onOpenFolder={() => handleOpenInstalledFolder(statusQuery.data?.binaryPath)}

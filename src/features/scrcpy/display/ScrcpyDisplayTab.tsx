@@ -6,7 +6,14 @@ import { ScrcpyPresetField } from '@/features/scrcpy/ui/ScrcpyPresetField';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { Switch } from '@/shared/ui/switch';
 import { cn } from '@/shared/utils/cn';
 
@@ -102,11 +109,13 @@ export function ScrcpyDisplayTab({ onOptionsChange, options }: ScrcpyDisplayTabP
                   <SelectValue placeholder="Select video codec" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="h264">H.264 / AVC (Default — High Compatibility)</SelectItem>
-                  <SelectItem value="h265">H.265 / HEVC (Recommended for Wireless)</SelectItem>
-                  <SelectItem value="av1">AV1 (Next-Gen High Efficiency)</SelectItem>
-                  <SelectItem value="vp8">VP8 (WebRTC standard)</SelectItem>
-                  <SelectItem value="vp9">VP9 (High-efficiency open codec)</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="h264">H.264 / AVC (Default — High Compatibility)</SelectItem>
+                    <SelectItem value="h265">H.265 / HEVC (Recommended for Wireless)</SelectItem>
+                    <SelectItem value="av1">AV1 (Next-Gen High Efficiency)</SelectItem>
+                    <SelectItem value="vp8">VP8 (WebRTC standard)</SelectItem>
+                    <SelectItem value="vp9">VP9 (High-efficiency open codec)</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>

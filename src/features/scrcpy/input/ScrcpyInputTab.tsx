@@ -3,7 +3,14 @@ import type { backend } from '@/desktop/models';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Label } from '@/shared/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
 import { Switch } from '@/shared/ui/switch';
 import { cn } from '@/shared/utils/cn';
 
@@ -57,10 +64,12 @@ export function ScrcpyInputTab({ onOptionsChange, options }: ScrcpyInputTabProps
                   <SelectValue placeholder="UHID (Recommended)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="uhid">UHID (Hardware USB Keyboard Emulation)</SelectItem>
-                  <SelectItem value="sdk">SDK (Android Text Injection)</SelectItem>
-                  <SelectItem value="aoa">AOA (Android Open Accessory Mode)</SelectItem>
-                  <SelectItem value="disabled">Disabled (No keyboard input)</SelectItem>
+                  <SelectGroup>
+                    <SelectItem value="uhid">UHID (Hardware USB Keyboard Emulation)</SelectItem>
+                    <SelectItem value="sdk">SDK (Android Text Injection)</SelectItem>
+                    <SelectItem value="aoa">AOA (Android Open Accessory Mode)</SelectItem>
+                    <SelectItem value="disabled">Disabled (No keyboard input)</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
               <p className="pt-1 text-caption text-muted-foreground">

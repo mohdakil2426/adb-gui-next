@@ -1,7 +1,7 @@
 import { LogicalSize } from '@tauri-apps/api/dpi';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Maximize2, Minus, Pin, PinOff, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
   ScrcpyCloseToolbar,
@@ -19,7 +19,7 @@ import { ToolbarMoreMenu } from '@/features/scrcpy/toolbar/ToolbarMoreMenu';
 import { MAIN_TOOLBAR_ACTIONS } from '@/features/scrcpy/toolbar/toolbarActions';
 
 export function ScrcpyFloatingToolbar() {
-  const [serial, setSerial] = useState<string>('');
+  const serialRef = useRef<string>('');
   const [mode, setMode] = useState<backend.ToolbarMode>('locked');
   const [side, setSide] = useState<backend.ToolbarSide>('left');
   const [yOffset, setYOffset] = useState<number>(20);
@@ -32,7 +32,7 @@ export function ScrcpyFloatingToolbar() {
     const params = new URLSearchParams(window.location.search);
     const s = params.get('serial') || '';
     const m = (params.get('mode') as backend.ToolbarMode) || 'locked';
-    setSerial(s);
+    serialRef.current = s;
     setMode(m);
 
     if (s) {
@@ -53,6 +53,7 @@ export function ScrcpyFloatingToolbar() {
     setTimeout(() => setActiveAction(null), 200);
 
     try {
+      const serial = serialRef.current;
       if (actionId === 'stop-session') {
         await ScrcpyStop(serial);
         await ScrcpyCloseToolbar(serial);
@@ -69,6 +70,7 @@ export function ScrcpyFloatingToolbar() {
   const handleModeToggle = async () => {
     const nextMode: backend.ToolbarMode = mode === 'locked' ? 'freeform' : 'locked';
     setMode(nextMode);
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpySetToolbarMode(serial, nextMode).catch(() => {});
     }
@@ -77,6 +79,7 @@ export function ScrcpyFloatingToolbar() {
 
   const handleSideChange = async (nextSide: backend.ToolbarSide) => {
     setSide(nextSide);
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpySetToolbarSide(serial, nextSide).catch(() => {});
     }
@@ -84,12 +87,14 @@ export function ScrcpyFloatingToolbar() {
 
   const handleOffsetChange = async (nextOffset: number) => {
     setYOffset(nextOffset);
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpySetToolbarOffset(serial, nextOffset).catch(() => {});
     }
   };
 
   const handleClose = async () => {
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpyCloseToolbar(serial).catch(() => {});
     }
@@ -103,6 +108,7 @@ export function ScrcpyFloatingToolbar() {
     try {
       await getCurrentWebviewWindow().setSize(new LogicalSize(targetW, targetH));
     } catch {}
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpySetToolbarSize(serial, targetW, targetH).catch(() => {});
     }
@@ -115,15 +121,15 @@ export function ScrcpyFloatingToolbar() {
     try {
       await getCurrentWebviewWindow().setSize(new LogicalSize(targetW, targetH));
     } catch {}
+    const serial = serialRef.current;
     if (serial) {
       await ScrcpySetToolbarSize(serial, targetW, targetH).catch(() => {});
     }
   };
-
   if (isMinimized) {
     return (
       <div
-        className="flex size-10 cursor-move items-center justify-center rounded-xl border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-all hover:bg-surface-raised dark:bg-[#1e1f22]/95"
+        className="flex size-10 cursor-move items-center justify-center rounded-xl border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-colors hover:bg-surface-raised dark:bg-[#1e1f22]/95"
         data-tauri-drag-region
       >
         <button
@@ -222,8 +228,8 @@ export function ScrcpyFloatingToolbar() {
               try {
                 getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
               } catch {}
-              if (serial) {
-                ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+              if (serialRef.current) {
+                ScrcpySetToolbarSize(serialRef.current, 58, 540).catch(() => {});
               }
             }
             handleAction(actionId);
@@ -233,8 +239,8 @@ export function ScrcpyFloatingToolbar() {
             try {
               getCurrentWebviewWindow().setSize(new LogicalSize(58, 540));
             } catch {}
-            if (serial) {
-              ScrcpySetToolbarSize(serial, 58, 540).catch(() => {});
+            if (serialRef.current) {
+              ScrcpySetToolbarSize(serialRef.current, 58, 540).catch(() => {});
             }
           }}
           onModeChange={handleModeToggle}
