@@ -63,6 +63,15 @@ export default defineConfig(() => ({
             if (id.includes('@tauri-apps')) {
               return 'tauri';
             }
+            // Isolate recharts (when added by ChartAddScout) into its own
+            // chunk — avoids collision with `@tanstack/query` vs
+            // `@tanstack/virtual` (both match `@tanstack`) and keeps the
+            // heavy charting dep cacheable separately. Checked: `recharts`
+            // absent in `package.json` at time of this edit, but chunk is
+            // wired proactively for when `ChartAddScout` adds it.
+            if (id.includes('recharts') || id.includes('decimal.js-light')) {
+              return 'recharts';
+            }
             if (id.includes('@tanstack')) {
               return 'query';
             }

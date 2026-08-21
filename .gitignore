@@ -47,6 +47,7 @@ Thumbs.db
 Desktop.ini
 
 # AI Agents (local dev only — not for repo)
+local/
 .kilocode/
 .kilocode
 .clinerules
