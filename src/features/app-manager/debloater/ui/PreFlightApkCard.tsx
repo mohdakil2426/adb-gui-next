@@ -18,6 +18,7 @@ import {
   getFormatBadgeColor,
   getSdkName,
 } from '@/features/app-manager/debloater/model/installFlags';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
@@ -86,10 +87,10 @@ export function PreFlightApkCard({
   return (
     <div
       className={cn(
-        'group relative flex flex-col gap-2 rounded-lg border p-2.5 transition-all',
+        'group relative flex flex-col gap-2 rounded-lg border p-2.5 transition-colors duration-200',
         status === 'installing' && 'border-primary/50 bg-primary/5 ring-1 ring-primary/30',
-        status === 'completed' && 'border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-950/10',
-        status === 'failed' && 'border-destructive/40 bg-destructive/5 dark:bg-destructive/10',
+        status === 'completed' && 'border-success/30 bg-success-muted',
+        status === 'failed' && 'border-destructive/40 bg-destructive-muted',
         status === 'queued' &&
           'border-border bg-surface hover:border-border-control hover:bg-surface-raised/40',
       )}
@@ -116,7 +117,7 @@ export function PreFlightApkCard({
             )}
 
             {/* Sub-format indicator badge */}
-            <span className="absolute right-0.5 bottom-0.5 rounded bg-background/90 px-1 font-bold font-mono text-[9px] text-foreground uppercase">
+            <span className="absolute right-0.5 bottom-0.5 rounded bg-background/90 px-1 font-bold font-mono text-caption text-foreground uppercase">
               {inspection?.format ?? filePath.split('.').pop() ?? 'apk'}
             </span>
           </div>
@@ -253,7 +254,7 @@ export function PreFlightApkCard({
 
       {/* Pre-flight Warnings / Split package info */}
       {inspection?.splitNames && inspection.splitNames.length > 0 ? (
-        <div className="flex items-center gap-1.5 rounded-md border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-caption text-sky-600 dark:text-sky-400">
+        <div className="flex items-center gap-1.5 rounded-md border border-info/20 bg-info-muted px-2.5 py-1 text-caption text-info">
           <Archive aria-hidden="true" className="size-3.5 shrink-0" />
           <span>
             Split App Bundle: Includes{' '}
@@ -266,7 +267,7 @@ export function PreFlightApkCard({
       ) : null}
 
       {inspection?.targetSdk && inspection.targetSdk < 23 ? (
-        <div className="flex items-center gap-1.5 rounded-md border border-amber-500/25 bg-amber-500/10 px-2.5 py-1 text-amber-600 text-caption dark:text-amber-400">
+        <div className="flex items-center gap-1.5 rounded-md border border-warning/25 bg-warning-muted px-2.5 py-1 text-caption text-warning">
           <ShieldAlert aria-hidden="true" className="size-3.5 shrink-0" />
           <span>
             Legacy Target SDK {inspection.targetSdk}: Android 14+ requires{' '}
@@ -277,14 +278,18 @@ export function PreFlightApkCard({
 
       {/* Error state if inspection or installation failed */}
       {status === 'failed' && installStatus?.error ? (
-        <div className="flex items-start gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1.5 text-caption text-destructive">
-          <AlertCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-          <span className="min-w-0 break-all font-mono text-mono-sm leading-tight">
+        <Alert
+          className="border-destructive/30 bg-destructive-muted text-destructive"
+          variant="destructive"
+        >
+          <AlertCircle aria-hidden="true" className="size-3.5" />
+          <AlertTitle className="text-caption">Installation failed</AlertTitle>
+          <AlertDescription className="break-all font-mono text-mono-sm">
             {installStatus.error}
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : inspectionError ? (
-        <div className="flex items-start gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-amber-500 text-caption">
+        <div className="flex items-start gap-1.5 rounded-md border border-warning/30 bg-warning-muted px-2.5 py-1.5 text-caption text-warning">
           <AlertCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
           <span className="min-w-0 break-all font-mono text-mono-sm leading-tight">
             Manifest inspection notice: {inspectionError}

@@ -1,3 +1,4 @@
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { BarChart3, FileUp, Loader2, Package, ShieldCheck } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useInstalledPackages } from '@/features/app-manager/debloater/hooks/useInstalledPackages';
@@ -12,7 +13,7 @@ import { InstalledAppsTab } from '@/features/app-manager/debloater/ui/InstalledA
 import { PackageInspectorDrawer } from '@/features/app-manager/inspector/PackageInspectorDrawer';
 import { AppOverviewTab } from '@/features/app-manager/overview/AppOverviewTab';
 import { Card, CardContent } from '@/shared/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 
 export function AppManagerView({ activeView }: { activeView: string }) {
   const activeTab = useDebloatStore((s) => s.activeTab);
@@ -20,6 +21,7 @@ export function AppManagerView({ activeView }: { activeView: string }) {
   const isLoadingDebloat = useDebloatStore((s) => s.isLoadingPackages);
   const debloatPackages = useDebloatStore((s) => s.packages);
   const installedPackages = useInstallationStore((s) => s.packages);
+  const shouldReduceMotion = useReducedMotion();
 
   const [inspectedPackage, setInspectedPackage] = useState<string | null>(null);
 
@@ -35,6 +37,8 @@ export function AppManagerView({ activeView }: { activeView: string }) {
     setInspectedPackage(packageName);
   }, []);
 
+  const currentTab = (activeTab || 'overview') as AppManagerTab;
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">Applications</h1>
@@ -46,7 +50,7 @@ export function AppManagerView({ activeView }: { activeView: string }) {
             onValueChange={(v) => {
               setActiveTab(v as AppManagerTab);
             }}
-            value={activeTab || 'overview'}
+            value={currentTab}
           >
             <TabsList>
               <TabsTrigger value="overview">
@@ -73,32 +77,35 @@ export function AppManagerView({ activeView }: { activeView: string }) {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview">
-              <AppOverviewTab
-                debloatPackages={debloatPackages}
-                installedPackages={installedPackages}
-                onOpenDebloat={openDebloat}
-                onSelectApp={handleInspectApp}
-                selectedSerial={selectedSerial}
-              />
-            </TabsContent>
-
-            <TabsContent value="installed">
-              <InstalledAppsTab
-                hasLoaded={hasLoaded}
-                loadError={packagesError}
-                onInspect={handleInspectApp}
-                onRefresh={refresh}
-              />
-            </TabsContent>
-
-            <TabsContent value="installation">
-              <InstallationTab onInstalled={refresh} />
-            </TabsContent>
-
-            <TabsContent value="debloater">
-              <DebloaterTab />
-            </TabsContent>
+            <AnimatePresence mode="wait">
+              <m.div
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: shouldReduceMotion ? 0 : -4 }}
+                initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 4 }}
+                key={currentTab}
+                transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
+              >
+                {currentTab === 'overview' && (
+                  <AppOverviewTab
+                    debloatPackages={debloatPackages}
+                    installedPackages={installedPackages}
+                    onOpenDebloat={openDebloat}
+                    onSelectApp={handleInspectApp}
+                    selectedSerial={selectedSerial}
+                  />
+                )}
+                {currentTab === 'installed' && (
+                  <InstalledAppsTab
+                    hasLoaded={hasLoaded}
+                    loadError={packagesError}
+                    onInspect={handleInspectApp}
+                    onRefresh={refresh}
+                  />
+                )}
+                {currentTab === 'installation' && <InstallationTab onInstalled={refresh} />}
+                {currentTab === 'debloater' && <DebloaterTab />}
+              </m.div>
+            </AnimatePresence>
           </Tabs>
         </CardContent>
       </Card>

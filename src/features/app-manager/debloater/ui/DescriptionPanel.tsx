@@ -50,7 +50,7 @@ export function DescriptionPanel({
           <CopyButton aria-label="Copy package name" value={pkg.name} />
 
           {/* State Badge */}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-raised px-2 py-0.5 text-caption text-muted-foreground">
+          <Badge className="gap-1.5 px-2 py-0.5" variant="secondary">
             <span
               aria-hidden="true"
               className={cn(
@@ -60,8 +60,7 @@ export function DescriptionPanel({
               )}
             />
             {PKG_STATE_LABELS[pkg.state]}
-          </span>
-
+          </Badge>
           {/* Safety Tier Badge */}
           <span
             className={cn(

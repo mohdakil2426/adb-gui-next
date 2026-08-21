@@ -26,7 +26,7 @@ export function DebloaterSafetyChips({
         return (
           <button
             className={cn(
-              'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption transition-all duration-90 ease-standard',
+              'inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption transition-colors duration-90 ease-standard',
               isActive
                 ? chip.active
                 : 'border-border/80 bg-surface-raised/40 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground',

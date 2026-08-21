@@ -12,6 +12,8 @@ import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { OnFileDrop, OnFileDropOff } from '@/desktop/runtime';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
+import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 
@@ -116,7 +118,7 @@ export function InstallDropZone({
     return (
       <div
         className={cn(
-          'group relative flex select-none items-center justify-between gap-3 rounded-lg border-2 border-dashed px-4 py-2.5 transition-all duration-200',
+          'group relative flex select-none items-center justify-between gap-3 rounded-lg border-2 border-dashed px-4 py-2.5 transition-[color,background-color,border-color,box-shadow] duration-200',
           isDragOver
             ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
             : 'border-border/80 bg-surface/60 hover:border-border-control hover:bg-surface-raised/40',
@@ -131,7 +133,7 @@ export function InstallDropZone({
         <div className="flex min-w-0 items-center gap-2.5">
           <div
             className={cn(
-              'flex size-7 shrink-0 items-center justify-center rounded-md border transition-all duration-200',
+              'flex size-7 shrink-0 items-center justify-center rounded-md border transition-colors duration-200',
               isDragOver
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border bg-surface-raised text-muted-foreground group-hover:text-primary',
@@ -184,7 +186,7 @@ export function InstallDropZone({
       {/* Central Illuminated Icon Module */}
       <div
         className={cn(
-          'flex size-14 items-center justify-center rounded-2xl border transition-all duration-300',
+          'flex size-14 items-center justify-center rounded-2xl border transition-[color,background-color,border-color,box-shadow,transform] duration-300',
           isDragOver
             ? 'scale-110 border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20'
             : 'border-border bg-surface-raised text-muted-foreground group-hover:scale-105 group-hover:border-border-control group-hover:text-foreground',
@@ -224,40 +226,41 @@ export function InstallDropZone({
 
       {/* Supported Package Container Formats Pill Band */}
       <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
-        <div className="flex items-center gap-1 rounded-md border border-border/80 bg-surface-raised/60 px-2 py-1 text-caption text-foreground">
-          <PackageCheck aria-hidden="true" className="size-3.5 text-emerald-500" />
+        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
+          <PackageCheck aria-hidden="true" className="size-3.5 text-success" />
           <span className="font-bold font-mono">.APK</span>
           <span className="text-muted-foreground">Standalone</span>
-        </div>
+        </Badge>
 
-        <div className="flex items-center gap-1 rounded-md border border-border/80 bg-surface-raised/60 px-2 py-1 text-caption text-foreground">
-          <Layers aria-hidden="true" className="size-3.5 text-sky-500" />
+        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
+          <Layers aria-hidden="true" className="size-3.5 text-info" />
           <span className="font-bold font-mono">.APKS</span>
           <span className="text-muted-foreground">Split Bundle</span>
-        </div>
+        </Badge>
 
-        <div className="flex items-center gap-1 rounded-md border border-border/80 bg-surface-raised/60 px-2 py-1 text-caption text-foreground">
-          <Archive aria-hidden="true" className="size-3.5 text-amber-500" />
+        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
+          <Archive aria-hidden="true" className="size-3.5 text-warning" />
           <span className="font-bold font-mono">.XAPK</span>
           <span className="text-muted-foreground">OBB Archive</span>
-        </div>
+        </Badge>
 
-        <div className="flex items-center gap-1 rounded-md border border-border/80 bg-surface-raised/60 px-2 py-1 text-caption text-foreground">
-          <FileCode aria-hidden="true" className="size-3.5 text-purple-500" />
+        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
+          <FileCode aria-hidden="true" className="size-3.5 text-info" />
           <span className="font-bold font-mono">.APKM</span>
           <span className="text-muted-foreground">APKMirror</span>
-        </div>
+        </Badge>
       </div>
 
       {/* Device advisory footer note */}
       {selectedSerial ? null : (
-        <div className="mt-1 flex items-center gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-amber-500 text-caption dark:text-amber-400">
-          <Smartphone aria-hidden="true" className="size-3.5 shrink-0" />
-          <span>
-            No device selected in sidebar. You can still queue and inspect packages now;
-            installation activates when a device connects.
-          </span>
-        </div>
+        <Alert className="mt-1 border-warning/30 bg-warning-muted text-warning" variant="default">
+          <Smartphone aria-hidden="true" className="size-3.5" />
+          <AlertTitle className="text-caption">No device selected</AlertTitle>
+          <AlertDescription className="text-caption">
+            You can still queue and inspect packages now; installation activates when a device
+            connects.
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
