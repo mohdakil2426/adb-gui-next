@@ -106,7 +106,7 @@ export function MarketplaceHeroBanner({ onSync, isSyncing = false }: Marketplace
 
   return (
     <Card className="@container gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="@sm:p-5 p-4">
         <div className="flex flex-col gap-4">
           {/* Top Title & Status Row */}
           <div className="flex flex-wrap items-center justify-between gap-3">

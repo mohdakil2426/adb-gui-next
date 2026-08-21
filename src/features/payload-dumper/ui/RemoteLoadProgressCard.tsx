@@ -106,7 +106,7 @@ export function RemoteLoadProgressCard({
     <div
       aria-busy={!(isError || isDone)}
       aria-live="polite"
-      className="flex flex-col gap-3.5 rounded-xl border border-primary/30 bg-surface-raised p-4 shadow-xs"
+      className="@container flex flex-col gap-3.5 rounded-xl border border-primary/30 bg-surface-raised p-4 shadow-xs"
     >
       {/* Header Row: Live Pulse Indicator, Title & Live Elapsed Counter */}
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -134,7 +134,7 @@ export function RemoteLoadProgressCard({
       </div>
 
       {/* 4-Phase Stepper Cards */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="grid @sm:grid-cols-4 grid-cols-2 gap-2">
         {STEP_DEFINITIONS.map(({ step: stepNum, title }) => {
           const done = !isError && (isDone || activeStep > stepNum);
           const working = !(isError || isDone) && activeStep === stepNum;

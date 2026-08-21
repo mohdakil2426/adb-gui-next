@@ -70,7 +70,22 @@ export function ViewScrcpy() {
   const activeSessionsQuery = useQuery({
     queryFn: ScrcpyActiveSessions,
     queryKey: queryKeys.scrcpy.activeSessions,
-    refetchInterval: 2500,
+    // Gate 2.5s poll: only while Overview tab is active and document is
+    // visible, and stop on error (mirrors telemetry `useDeviceTelemetry:52`
+    // `q.state.error ? false`). Keeps single global `allDevices` 30s poll
+    // as sole device poll; this is session state, not device list.
+    refetchInterval: (query) => {
+      if (query.state.error) {
+        return false;
+      }
+      if (activeTab !== 'overview') {
+        return false;
+      }
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return false;
+      }
+      return 2500;
+    },
     staleTime: 1000,
   });
 
@@ -125,28 +140,28 @@ export function ViewScrcpy() {
 
       {/* 5-Tab Precision Cockpit Navigation */}
       <Tabs className="w-full gap-4" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid h-auto w-full @xl:grid-cols-5 grid-cols-2 gap-1 p-1">
-          <TabsTrigger className="gap-1.5" value="overview">
+        <TabsList className="h-auto w-full gap-1 p-1">
+          <TabsTrigger className="flex-1 gap-1.5" value="overview">
             <Monitor aria-hidden="true" className="size-4" />
             <span>Overview & Mirror</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-1.5" value="display">
+          <TabsTrigger className="flex-1 gap-1.5" value="display">
             <Tv aria-hidden="true" className="size-4" />
             <span>Display & Video</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-1.5" value="audio">
+          <TabsTrigger className="flex-1 gap-1.5" value="audio">
             <Volume2 aria-hidden="true" className="size-4" />
             <span>Audio & Record</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-1.5" value="input">
+          <TabsTrigger className="flex-1 gap-1.5" value="input">
             <Keyboard aria-hidden="true" className="size-4" />
             <span>Input & Controls</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-1.5" value="binary">
+          <TabsTrigger className="flex-1 gap-1.5" value="binary">
             <Package aria-hidden="true" className="size-4" />
             <span>Binary & CLI</span>
           </TabsTrigger>

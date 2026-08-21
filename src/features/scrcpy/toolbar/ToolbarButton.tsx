@@ -152,7 +152,7 @@ export function ToolbarButton({
       <TooltipTrigger asChild>
         <button
           aria-label={label}
-          className={`group flex size-10 items-center justify-center rounded-lg transition-all duration-150 active:scale-92 ${
+          className={`group flex size-10 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 ease-standard active:scale-92 ${
             isActive
               ? 'bg-accent text-accent-foreground shadow-xs'
               : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground'

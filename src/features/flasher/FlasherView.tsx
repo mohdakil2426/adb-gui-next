@@ -105,23 +105,23 @@ export function ViewFlasher({ initialTab = 'overview' }: { initialTab?: FlasherT
         onValueChange={(v) => setActiveTab(v as FlasherTab)}
         value={activeTab}
       >
-        <TabsList className="grid w-full grid-cols-4 bg-surface-raised p-1">
-          <TabsTrigger className="gap-2 font-medium text-caption" value="overview">
+        <TabsList className="w-full bg-surface-raised p-1">
+          <TabsTrigger className="flex-1 gap-2 font-medium text-caption" value="overview">
             <LayoutDashboard className="size-4" />
             <span>Overview & Diagnostics</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-2 font-medium text-caption" value="partition">
+          <TabsTrigger className="flex-1 gap-2 font-medium text-caption" value="partition">
             <HardDrive className="size-4" />
             <span>Partition Flasher</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-2 font-medium text-caption" value="sideload">
+          <TabsTrigger className="flex-1 gap-2 font-medium text-caption" value="sideload">
             <Package className="size-4" />
             <span>Recovery Sideload</span>
           </TabsTrigger>
 
-          <TabsTrigger className="gap-2 font-medium text-caption" value="wipe">
+          <TabsTrigger className="flex-1 gap-2 font-medium text-caption" value="wipe">
             <Trash2 className="size-4" />
             <span>Partitions & Wipe</span>
           </TabsTrigger>

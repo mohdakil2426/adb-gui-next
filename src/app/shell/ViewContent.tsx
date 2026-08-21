@@ -2,6 +2,7 @@ import { AnimatePresence, m } from 'framer-motion';
 import { memo, type ReactNode, Suspense } from 'react';
 import { VIEWS, type ViewType } from '@/app/shell/viewConfig';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { cn } from '@/shared/utils/cn';
 
 interface ViewContentProps {
@@ -16,11 +17,11 @@ interface ViewContentProps {
  */
 function ViewFallback() {
   return (
-    <output aria-label="Loading view" className="flex flex-1 flex-col gap-4">
-      <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
-      <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
-      <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
-    </output>
+    <div aria-label="Loading view" className="flex flex-1 flex-col gap-4" role="status">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-32 w-full rounded-lg" />
+      <Skeleton className="h-32 w-full rounded-lg" />
+    </div>
   );
 }
 

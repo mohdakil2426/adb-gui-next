@@ -109,7 +109,7 @@ export function LaunchPresetsGrid({ currentOptions, onApplyPreset }: LaunchPrese
         return (
           <Card
             className={cn(
-              'cursor-pointer rounded-xl border-border bg-surface shadow-none transition-all hover:border-foreground/40 hover:bg-surface-raised/40',
+              'cursor-pointer rounded-xl border-border bg-surface shadow-none transition-colors hover:border-foreground/40 hover:bg-surface-raised/40',
               isMatched && 'border-primary bg-surface-raised/60 ring-1 ring-primary/20',
             )}
             key={preset.id}

@@ -80,7 +80,7 @@ export function CategoryDistributionMeter(props: CategoryDistributionMeterProps)
   const total = categories.reduce((sum, c) => sum + c.count, 0) || 1;
 
   return (
-    <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-4">
+    <div className="@container flex flex-col justify-between rounded-lg border border-border bg-surface p-4">
       <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <FileCode2 className="size-4 text-muted-foreground" />
@@ -110,7 +110,7 @@ export function CategoryDistributionMeter(props: CategoryDistributionMeterProps)
       </div>
 
       {/* Segment Legend Grid */}
-      <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-3">
+      <div className="grid @sm:grid-cols-3 grid-cols-2 gap-2 pt-1">
         {categories.map((cat) => {
           const Icon = cat.icon;
           const ratio = usageRatio(cat.count, total);

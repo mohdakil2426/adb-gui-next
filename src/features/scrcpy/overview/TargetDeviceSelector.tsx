@@ -59,7 +59,7 @@ function DeviceTile({
     <div
       aria-label={`Select device ${displayName}`}
       className={cn(
-        'group relative flex cursor-pointer select-none flex-col justify-between gap-3 rounded-lg border p-3.5 transition-all duration-100 ease-standard',
+        'group relative flex cursor-pointer select-none flex-col justify-between gap-3 rounded-lg border p-3.5 transition-colors duration-100 ease-standard',
         isSelected
           ? 'border-foreground/30 bg-surface-raised ring-1 ring-foreground/20'
           : 'border-border/80 bg-surface-raised/40 hover:border-border hover:bg-surface-raised',

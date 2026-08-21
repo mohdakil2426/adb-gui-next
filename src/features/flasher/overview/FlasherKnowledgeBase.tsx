@@ -19,16 +19,16 @@ export function FlasherKnowledgeBase() {
 
       <CardContent className="flex flex-1 flex-col">
         <Tabs className="flex flex-1 flex-col gap-3" defaultValue="fastboot">
-          <TabsList className="grid w-full grid-cols-3 bg-surface-raised">
-            <TabsTrigger className="gap-1.5 text-caption" value="fastboot">
+          <TabsList className="w-full bg-surface-raised">
+            <TabsTrigger className="flex-1 gap-1.5 text-caption" value="fastboot">
               <HardDrive className="size-3.5" />
               Fastboot Mode
             </TabsTrigger>
-            <TabsTrigger className="gap-1.5 text-caption" value="fastbootd">
+            <TabsTrigger className="flex-1 gap-1.5 text-caption" value="fastbootd">
               <Zap className="size-3.5 text-warning" />
               FastbootD Mode
             </TabsTrigger>
-            <TabsTrigger className="gap-1.5 text-caption" value="sideload">
+            <TabsTrigger className="flex-1 gap-1.5 text-caption" value="sideload">
               <Package className="size-3.5 text-info" />
               ADB Sideload
             </TabsTrigger>

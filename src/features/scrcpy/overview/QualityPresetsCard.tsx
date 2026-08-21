@@ -63,7 +63,7 @@ export function QualityPresetsCard({ onApplyPreset, options }: QualityPresetsCar
             return (
               <div
                 className={cn(
-                  'group relative flex flex-col justify-between rounded-lg border p-3.5 transition-all duration-100 ease-standard',
+                  'group relative flex flex-col justify-between rounded-lg border p-3.5 transition-colors duration-100 ease-standard',
                   isCurrent
                     ? 'border-foreground/40 bg-surface-raised ring-1 ring-foreground/20'
                     : 'border-border/80 bg-surface-raised/40 hover:border-border hover:bg-surface-raised',

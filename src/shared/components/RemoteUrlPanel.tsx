@@ -113,7 +113,7 @@ export function RemoteUrlPanel({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div className="@container flex min-w-0 flex-col gap-3">
       {/* URL Input & Direct Action Header */}
       <FieldGroup>
         <Field>
@@ -128,7 +128,7 @@ export function RemoteUrlPanel({
             <span className="text-caption text-muted-foreground">Direct HTTP/HTTPS stream</span>
           </div>
 
-          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+          <div className="flex @sm:flex-row flex-col @sm:items-center items-stretch gap-2">
             <InputGroup className="min-w-0 flex-1">
               <InputGroupInput
                 autoComplete="off"
