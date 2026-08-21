@@ -1,8 +1,10 @@
-import { BatteryMedium, Gauge, HeartHandshake, Thermometer, Zap } from 'lucide-react';
+import { BatteryMedium, HeartHandshake, Zap } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { batteryTone } from '@/features/dashboard/model/tone';
 import { BatteryGauge } from '@/features/dashboard/ui/BatteryGauge';
+import { MicroScale } from '@/features/dashboard/ui/MicroScale';
 import { PanelCard } from '@/features/dashboard/ui/PanelCard';
+import { SpecChip } from '@/features/dashboard/ui/SpecChip';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { EMPTY_VALUE, formatNumber } from '@/shared/utils/format';
 
@@ -11,20 +13,38 @@ interface BatteryPanelProps {
   isLoading: boolean;
 }
 
+/** Phone Li-ion comfort band; past ~45 °C is thermally dangerous. */
+const TEMP_MIN = -10;
+const TEMP_ZONES = [
+  { to: 40, tone: 'ok' as const },
+  { to: 48, tone: 'warn' as const },
+  { to: 60, tone: 'danger' as const },
+];
+
+/** Nominal single-cell range; low end sags under load, high end is full. */
+const VOLTAGE_MIN = 3200;
+const VOLTAGE_MAX = 4400;
+const VOLTAGE_ZONES = [
+  { to: 3400, tone: 'warn' as const },
+  { to: 4200, tone: 'ok' as const },
+  { to: 4400, tone: 'warn' as const },
+];
+
 export function BatteryPanel({ battery, isLoading }: BatteryPanelProps) {
   const tone = batteryTone(battery?.levelPct ?? null, battery?.isCharging ?? false);
-  const temp = battery?.temperatureC;
+  const temp = battery?.temperatureC ?? null;
+  const voltage = battery?.voltageMv ?? null;
 
   return (
-    <PanelCard icon={BatteryMedium} title="Battery">
+    <PanelCard delay={0.12} icon={BatteryMedium} title="Battery">
       {isLoading && !battery ? (
         <div className="flex flex-col items-center gap-3 py-2">
-          <Skeleton className="size-34 rounded-full" />
+          <Skeleton className="size-32 rounded-full" />
           <Skeleton className="h-4 w-40" />
         </div>
       ) : (
-        <div className="flex w-full flex-1 flex-col items-center justify-between gap-3">
-          <div className="flex flex-1 items-center justify-center py-0.5">
+        <div className="flex w-full flex-1 flex-col justify-between gap-3">
+          <div className="flex items-center justify-center py-0.5">
             <BatteryGauge
               isCharging={battery?.isCharging ?? false}
               levelPct={battery?.levelPct ?? null}
@@ -32,60 +52,33 @@ export function BatteryPanel({ battery, isLoading }: BatteryPanelProps) {
             />
           </div>
 
-          {/* Electrical & Thermal Micro-Metrics Grid */}
+          {/* Electrical & thermal instrument scales */}
+          <div className="flex flex-col gap-2.5 border-border/50 border-t pt-2.5">
+            <MicroScale
+              ariaLabel="Battery temperature"
+              display={
+                temp == null ? EMPTY_VALUE : `${formatNumber(temp, { fractionDigits: 1 })} °C`
+              }
+              label="Temperature"
+              max={TEMP_ZONES[TEMP_ZONES.length - 1]?.to ?? 60}
+              min={TEMP_MIN}
+              value={temp}
+              zones={TEMP_ZONES}
+            />
+            <MicroScale
+              ariaLabel="Battery voltage"
+              display={voltage == null ? EMPTY_VALUE : `${formatNumber(voltage)} mV`}
+              label="Voltage"
+              max={VOLTAGE_MAX}
+              min={VOLTAGE_MIN}
+              value={voltage}
+              zones={VOLTAGE_ZONES}
+            />
+          </div>
+
           <div className="grid w-full grid-cols-2 gap-2 border-border/50 border-t pt-2">
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
-              <Thermometer className="size-3.5 shrink-0 text-muted-foreground" />
-              <div className="flex min-w-0 flex-col">
-                <span className="font-medium text-[10px] text-muted-foreground uppercase">
-                  Temp
-                </span>
-                <span className="truncate font-medium font-mono text-[11px] text-foreground">
-                  {temp == null ? EMPTY_VALUE : `${formatNumber(temp, { fractionDigits: 1 })} °C`}
-                </span>
-              </div>
-            </div>
-
-            {/* Voltage Chip */}
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
-              <Gauge className="size-3.5 shrink-0 text-muted-foreground" />
-              <div className="flex min-w-0 flex-col">
-                <span className="font-medium text-[10px] text-muted-foreground uppercase">
-                  Voltage
-                </span>
-                <span className="truncate font-medium font-mono text-[11px] text-foreground">
-                  {battery?.voltageMv == null
-                    ? EMPTY_VALUE
-                    : `${formatNumber(battery.voltageMv)} mV`}
-                </span>
-              </div>
-            </div>
-
-            {/* Status Chip */}
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
-              <Zap className="size-3.5 shrink-0 text-muted-foreground" />
-              <div className="flex min-w-0 flex-col">
-                <span className="font-medium text-[10px] text-muted-foreground uppercase">
-                  Status
-                </span>
-                <span className="truncate font-medium text-[11px] text-foreground">
-                  {battery?.status ?? EMPTY_VALUE}
-                </span>
-              </div>
-            </div>
-
-            {/* Health Chip */}
-            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
-              <HeartHandshake className="size-3.5 shrink-0 text-muted-foreground" />
-              <div className="flex min-w-0 flex-col">
-                <span className="font-medium text-[10px] text-muted-foreground uppercase">
-                  Health
-                </span>
-                <span className="truncate font-medium text-[11px] text-foreground">
-                  {battery?.health ?? EMPTY_VALUE}
-                </span>
-              </div>
-            </div>
+            <SpecChip icon={Zap} label="Status" value={battery?.status ?? EMPTY_VALUE} />
+            <SpecChip icon={HeartHandshake} label="Health" value={battery?.health ?? EMPTY_VALUE} />
           </div>
         </div>
       )}

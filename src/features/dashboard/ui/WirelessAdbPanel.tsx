@@ -32,6 +32,7 @@ export function WirelessAdbPanel({ isConnected, showEnableStep, wireless }: Wire
           {isConnected ? 'Connected' : 'Not connected'}
         </span>
       }
+      delay={0.44}
       icon={Wifi}
       title="Wireless ADB"
     >

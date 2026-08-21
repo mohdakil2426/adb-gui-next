@@ -1,4 +1,4 @@
-import { type LucideIcon, Power, RotateCcw, Terminal, Tv, Wrench, Zap } from 'lucide-react';
+import { type LucideIcon, Monitor, Power, RotateCcw, Terminal, Wrench, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { ScrcpyLaunch } from '@/desktop/backend';
 import { REBOOT_LABEL, type RebootTarget } from '@/features/dashboard/hooks/useRebootActions';
@@ -50,41 +50,47 @@ export function QuickActionsPanel({
       });
     }
   };
+
+  const actionClass =
+    'h-auto w-full justify-start gap-2.5 rounded-lg px-3 py-2.5 font-medium text-label';
+
   return (
-    <PanelCard icon={Zap} title="Quick actions">
-      <div className="flex flex-1 flex-col justify-between gap-1.5">
+    <PanelCard delay={0.37} icon={Zap} title="Quick actions">
+      <div className="grid flex-1 grid-cols-2 content-start gap-2">
         {mode === 'adb' ? (
           <>
             <Button
-              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
+              className={actionClass}
               disabled={isDisabled || !serial}
               onClick={handleMirror}
               size="sm"
               type="button"
               variant="outline"
             >
-              <Tv aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-              <span>Screen Mirror (Scrcpy)</span>
+              <Monitor aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              <span>Screen Mirror</span>
             </Button>
 
             <Button
-              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
+              className={actionClass}
               onClick={onOpenShell}
               size="sm"
               type="button"
               variant="outline"
             >
               <Terminal aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-              <span>Open Interactive Shell</span>
+              <span>Open Shell</span>
             </Button>
           </>
         ) : null}
 
         {targets.map((target) => {
           const Icon = REBOOT_ICON[target];
+          const isRunning = runningTarget === target;
           return (
             <Button
-              className="w-full justify-start gap-2.5 rounded-lg px-3 py-2 font-medium text-[12px]"
+              aria-busy={isRunning}
+              className={actionClass}
               disabled={isDisabled || runningTarget !== null}
               key={target}
               onClick={() => {
@@ -94,7 +100,11 @@ export function QuickActionsPanel({
               type="button"
               variant="outline"
             >
-              <Icon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              <Icon
+                aria-hidden="true"
+                className={`size-3.5 ${isRunning ? 'animate-spin' : ''}`}
+                data-icon="inline-start"
+              />
               <span>{REBOOT_LABEL[target]}</span>
             </Button>
           );

@@ -50,18 +50,16 @@ function SpecBadge({
 }) {
   return (
     <div
-      className="group relative flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
+      className="group relative flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:border-border hover:bg-surface-raised/80"
       title={tooltip || value}
     >
       <div className="flex min-w-0 items-center gap-2.5">
-        <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+        <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
         <div className="flex min-w-0 flex-col">
-          <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+          <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
             {label}
           </span>
-          <span className="truncate font-medium text-[12px] text-body text-foreground">
-            {value}
-          </span>
+          <span className="truncate font-medium text-foreground text-label">{value}</span>
         </div>
       </div>
       {copyValue ? (
@@ -107,7 +105,7 @@ export function DeviceHeroBanner({
   return (
     <Card className="@container rounded-xl border-border bg-surface p-4.5 shadow-none">
       <CardContent className="flex flex-col gap-4 p-0">
-        {/* Top Row: Device Identity, Badges & Consolidated Sync Capsule */}
+        {/* Identity row */}
         <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3.5">
             <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface-raised p-2 text-foreground shadow-xs">
@@ -130,14 +128,14 @@ export function DeviceHeroBanner({
                     title="Edit device nickname"
                     type="button"
                   >
-                    <Edit3 className="size-3.5" />
+                    <Edit3 aria-hidden="true" className="size-3.5" />
                   </button>
                 ) : null}
                 <Badge className={status.badgeClass} variant={status.variant}>
                   {status.label}
                 </Badge>
                 {isWirelessSerial(device.serial) ? (
-                  <Badge className="gap-1 font-mono text-[10px]" variant="info">
+                  <Badge className="gap-1 font-mono text-caption" variant="info">
                     <Wifi aria-hidden="true" className="size-3" />
                     Wi-Fi ADB
                   </Badge>
@@ -154,10 +152,10 @@ export function DeviceHeroBanner({
             </div>
           </div>
 
-          {/* Top-Right Consolidated Refresh & Status Capsule */}
+          {/* Consolidated refresh & freshness capsule */}
           <div className="flex items-center gap-2.5 @lg:self-auto self-start">
             {updatedAt && updatedAt > 0 ? (
-              <span className="numeric text-[11px] text-caption text-muted-foreground">
+              <span className="numeric text-caption text-muted-foreground">
                 Updated {updatedAtFormatter.format(updatedAt)}
               </span>
             ) : null}
@@ -185,9 +183,9 @@ export function DeviceHeroBanner({
           </div>
         </div>
 
-        {/* Expanded 8-Spec Grid */}
+        {/* 8-spec hardware grid */}
         <div className="grid @3xl:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-2.5 border-border/50 border-t pt-3">
-          {/* Row 1: Software & OS Stack */}
+          {/* Software stack */}
           <SpecBadge
             copyValue={identity?.androidVersion ? `Android ${identity.androidVersion}` : undefined}
             icon={Smartphone}
@@ -214,7 +212,7 @@ export function DeviceHeroBanner({
             value={formatKernelRelease(identity?.kernelVersion)}
           />
 
-          {/* Row 2: Hardware & Runtime Environment */}
+          {/* Hardware & environment */}
           <SpecBadge
             copyValue={device.serial}
             icon={Hash}

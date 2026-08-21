@@ -6,12 +6,16 @@ import { ViewDashboard } from '@/features/dashboard/DashboardView';
 import { useMemoryHistoryStore } from '@/features/dashboard/model/memoryHistoryStore';
 import { useDeviceStore } from '@/shared/stores/deviceStore';
 
-const { GetDeviceTelemetry } = vi.hoisted(() => ({ GetDeviceTelemetry: vi.fn() }));
+const { GetDeviceTelemetry, GetAppOverviewTelemetry } = vi.hoisted(() => ({
+  GetAppOverviewTelemetry: vi.fn(),
+  GetDeviceTelemetry: vi.fn(),
+}));
 
 vi.mock('@/desktop/backend', () => ({
   ConnectWirelessAdb: vi.fn(),
   DisconnectWirelessAdb: vi.fn(),
   EnableWirelessAdb: vi.fn(),
+  GetAppOverviewTelemetry,
   GetDeviceTelemetry,
   Reboot: vi.fn(),
 }));
@@ -88,6 +92,15 @@ describe('ViewDashboard', () => {
     useDeviceStore.getState().reset();
     useMemoryHistoryStore.setState({ samplesBySerial: {} });
     GetDeviceTelemetry.mockResolvedValue(telemetry);
+    GetAppOverviewTelemetry.mockResolvedValue({
+      disabledAppsCount: 3,
+      permissionDensity: [],
+      storageBreakdown: [],
+      systemAppsCount: 212,
+      targetSdkDistribution: { legacy: 4, maxApi: 34, minApi: 21, modern: 96, standard: 115 },
+      totalStorageBytes: 12 * GIB,
+      userAppsCount: 96,
+    });
   });
 
   it('walks through USB setup when no device is connected', () => {

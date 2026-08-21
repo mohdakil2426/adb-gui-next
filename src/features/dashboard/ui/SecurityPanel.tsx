@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import type { backend } from '@/desktop/models';
 import { TONE_TEXT, type Tone } from '@/features/dashboard/model/tone';
 import { PanelCard } from '@/features/dashboard/ui/PanelCard';
+import { PostureSpectrum } from '@/features/dashboard/ui/PostureSpectrum';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { cn } from '@/shared/utils/cn';
 import { daysSince, EMPTY_VALUE, formatRelativeDate } from '@/shared/utils/format';
@@ -117,7 +118,7 @@ function buildRows(security: backend.SecurityInfo): SecurityRow[] {
 export function SecurityPanel({ isLoading, security }: SecurityPanelProps) {
   if (isLoading && !security) {
     return (
-      <PanelCard icon={ShieldCheck} title="Security & boot">
+      <PanelCard delay={0.3} icon={ShieldCheck} title="Security & boot">
         <div className="grid grid-cols-2 gap-2">
           <Skeleton className="h-14 w-full rounded-lg" />
           <Skeleton className="h-14 w-full rounded-lg" />
@@ -132,33 +133,43 @@ export function SecurityPanel({ isLoading, security }: SecurityPanelProps) {
 
   if (!security || rows.length === 0) {
     return (
-      <PanelCard icon={ShieldCheck} title="Security & boot">
+      <PanelCard delay={0.3} icon={ShieldCheck} title="Security & boot">
         <p className="text-body text-muted-foreground">{EMPTY_VALUE}</p>
       </PanelCard>
     );
   }
   return (
-    <PanelCard icon={ShieldCheck} title="Security & boot">
-      <div className="flex flex-1 flex-col justify-between gap-1.5">
-        {rows.map((row) => {
-          const Icon = TONE_ICON[row.tone];
-          return (
-            <div
-              className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
-              key={row.label}
-            >
-              <span className="truncate font-medium text-[12px] text-body text-foreground">
-                {row.label}
-              </span>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Icon aria-hidden="true" className={cn('size-3.5 shrink-0', TONE_TEXT[row.tone])} />
-                <span className={cn('numeric font-medium text-[12px]', TONE_TEXT[row.tone])}>
-                  {row.value}
-                </span>
+    <PanelCard delay={0.3} icon={ShieldCheck} title="Security & boot">
+      <div className="flex flex-1 flex-col justify-between gap-2">
+        <PostureSpectrum items={rows.map((row) => ({ id: row.label, tone: row.tone }))} />
+
+        <div className="flex flex-col gap-1.5 border-border/50 border-t pt-2">
+          {rows.map((row) => {
+            const Icon = TONE_ICON[row.tone];
+            return (
+              <div
+                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
+                key={row.label}
+              >
+                <span className="truncate font-medium text-foreground text-label">{row.label}</span>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {row.hint ? (
+                    <span className="numeric @2xl:inline hidden text-caption text-muted-foreground">
+                      {row.hint}
+                    </span>
+                  ) : null}
+                  <Icon
+                    aria-hidden="true"
+                    className={cn('size-3.5 shrink-0', TONE_TEXT[row.tone])}
+                  />
+                  <span className={cn('numeric font-medium text-label', TONE_TEXT[row.tone])}>
+                    {row.value}
+                  </span>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </PanelCard>
   );

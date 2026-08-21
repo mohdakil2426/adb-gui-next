@@ -33,9 +33,9 @@ export function UsageBar({ label, ratio, tone }: UsageBarProps) {
       role="progressbar"
     >
       <m.div
-        animate={{ width: `${clamped * PERCENT_SCALE}%` }}
-        className={cn('h-full rounded-full', TONE_FILL[resolvedTone])}
-        initial={shouldReduceMotion ? false : { width: 0 }}
+        animate={{ scaleX: clamped }}
+        className={cn('h-full w-full origin-left', TONE_FILL[resolvedTone])}
+        initial={shouldReduceMotion ? false : { scaleX: 0 }}
         transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, ease: [0.2, 0, 0, 1] }}
       />
     </div>

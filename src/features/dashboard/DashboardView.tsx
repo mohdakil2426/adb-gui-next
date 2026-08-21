@@ -1,4 +1,5 @@
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { m, useReducedMotion } from 'framer-motion';
 import { CircleAlert } from 'lucide-react';
 import { type ReactNode, useCallback, useState } from 'react';
 import { useDeviceTelemetry } from '@/features/dashboard/hooks/useDeviceTelemetry';
@@ -11,6 +12,7 @@ import {
   telemetryBlockedReason,
 } from '@/features/dashboard/model/deviceMode';
 import { useMemorySamples } from '@/features/dashboard/model/memoryHistoryStore';
+import { AppsPanel } from '@/features/dashboard/ui/AppsPanel';
 import { BatteryPanel } from '@/features/dashboard/ui/BatteryPanel';
 import { DeviceHeroBanner } from '@/features/dashboard/ui/DeviceHeroBanner';
 import { MemoryPanel } from '@/features/dashboard/ui/MemoryPanel';
@@ -46,16 +48,8 @@ import { invalidateDevices, queryKeys } from '@/shared/utils/queries';
  *   ≥ 32rem  → 2 columns (~351px each at the 718px minimum)
  *   ≥ 56rem  → 3 columns (~314px each at a 1280px window, sidebar expanded)
  *
- * `items-start` stops a shorter card stretching to match a taller neighbour —
- * same-kind panels can still differ in natural height (Storage lists a variable
- * number of volumes), and that is an honest content difference, not the old
- * rigid pairing.
- *
- * In the two-column step a third panel would otherwise sit alone beside a gap.
- * `:nth-child(odd):last-child` matches an item that is both last and in an odd
- * slot — i.e. exactly the one that would be stranded — so it spans the full
- * row. It deliberately does not fire when only two panels render (telemetry
- * blocked hides Security), where the row is already balanced.
+ * `items-stretch` keeps same-kind panels on one baseline; each PanelCard owns
+ * its height honestly via `h-full`.
  */
 const TRIO_GRID_CLASS = [
   'grid grid-cols-1 items-stretch gap-4',
@@ -63,6 +57,8 @@ const TRIO_GRID_CLASS = [
   '@lg:[&>*:nth-child(odd):last-child]:col-span-2',
   '@4xl:[&>*:nth-child(odd):last-child]:col-span-1',
 ].join(' ');
+
+const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
 
 function TelemetryNotice({
   action,
@@ -89,6 +85,7 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   const setActiveTab = useLogStore((state) => state.setActiveTab);
   const setPanelOpen = useLogStore((state) => state.setPanelOpen);
   const queryClient = useQueryClient();
+  const shouldReduceMotion = useReducedMotion();
   const [showWirelessPairing, setShowWirelessPairing] = useState(false);
   const [showNicknameDialog, setShowNicknameDialog] = useState(false);
 
@@ -135,42 +132,33 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
   }
 
   const deviceLabel = `${selectedDevice.serial} · ${selectedDevice.status}`;
-  const quickActions = (
-    <QuickActionsPanel
-      isDisabled={mode === 'unavailable'}
-      mode={mode}
-      onOpenShell={openShell}
-      onReboot={reboot.request}
-      runningTarget={reboot.runningTarget}
-      serial={selectedDevice.serial}
-    />
-  );
-  const wirelessPanel = (
-    <WirelessAdbPanel
-      isConnected={isWirelessSerial(selectedDevice.serial)}
-      showEnableStep={mode === 'adb' && !isWirelessSerial(selectedDevice.serial)}
-      wireless={wireless}
-    />
-  );
 
   return (
     <div className="@container flex w-full max-w-[90rem] flex-col gap-4">
       <h1 className="sr-only">Dashboard</h1>
-      {/* Hero Banner: Identity, status pulses, specs, serial, uptime, and consolidated sync */}
-      <DeviceHeroBanner
-        device={selectedDevice}
-        isLoading={isLoading}
-        isRefreshing={isFetching || isScanningDevices}
-        onEditNickname={() => setShowNicknameDialog(true)}
-        onRefresh={() => {
-          scanAgain();
-          if (canReadTelemetry) {
-            refresh();
-          }
-        }}
-        telemetry={telemetry}
-        updatedAt={updatedAt}
-      />
+
+      {/* Hero: identity, status pulses, specs, serial, uptime, consolidated sync */}
+      <m.div
+        animate={{ opacity: 1, y: 0 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: EASE_STANDARD }}
+      >
+        <DeviceHeroBanner
+          device={selectedDevice}
+          isLoading={isLoading}
+          isRefreshing={isFetching || isScanningDevices}
+          onEditNickname={() => setShowNicknameDialog(true)}
+          onRefresh={() => {
+            scanAgain();
+            if (canReadTelemetry) {
+              refresh();
+            }
+          }}
+          telemetry={telemetry}
+          updatedAt={updatedAt}
+        />
+      </m.div>
+
       {/* Vitals: battery / memory / storage are the same kind of thing —
           "resource X of Y with a percentage" — so sharing a row is honest. */}
       {canReadTelemetry ? (
@@ -203,9 +191,27 @@ export function ViewDashboard({ activeView }: { activeView: string }) {
         {canReadTelemetry ? (
           <SecurityPanel isLoading={isLoading} security={telemetry?.security ?? null} />
         ) : null}
-        {quickActions}
-        {wirelessPanel}
+        <QuickActionsPanel
+          isDisabled={mode === 'unavailable'}
+          mode={mode}
+          onOpenShell={openShell}
+          onReboot={reboot.request}
+          runningTarget={reboot.runningTarget}
+          serial={selectedDevice.serial}
+        />
+        <WirelessAdbPanel
+          isConnected={isWirelessSerial(selectedDevice.serial)}
+          showEnableStep={mode === 'adb' && !isWirelessSerial(selectedDevice.serial)}
+          wireless={wireless}
+        />
       </div>
+
+      {/* Application inventory: composition donut + SDK health. Shares the
+          App Manager overview query, so the adb round-trip is cached. */}
+      {canReadTelemetry ? (
+        <AppsPanel isEnabled={canReadTelemetry} serial={selectedDevice.serial} />
+      ) : null}
+
       <RebootConfirmDialog
         deviceLabel={deviceLabel}
         onCancel={reboot.dismiss}

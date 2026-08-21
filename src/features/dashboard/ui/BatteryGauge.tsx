@@ -6,26 +6,53 @@ import { EMPTY_VALUE, formatPercent, usageRatio } from '@/shared/utils/format';
 
 interface BatteryGaugeProps {
   isCharging: boolean;
-  /** 0–100, or `null` when the device did not report a level. */
   levelPct: number | null;
   tone: Tone;
 }
 
-const SIZE = 120;
-const STROKE = 7.5;
+const SIZE = 128;
 const CENTER = SIZE / 2;
-const RADIUS = (SIZE - STROKE) / 2;
-const INNER_RADIUS = RADIUS - 8;
+const STROKE = 9;
+const RADIUS = (SIZE - STROKE) / 2 - 6;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const INNER_STROKE = 3;
+const INNER_RADIUS = RADIUS - STROKE - 5;
 const INNER_CIRCUMFERENCE = 2 * Math.PI * INNER_RADIUS;
 const PERCENT_SCALE = 100;
 
-/** Hand-drawn dual-arc radial gauge with charging aura. */
+const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
+
+/** Instrument bezel: a minor tick every 5%, a stronger one every 25%. */
+function BezelTicks() {
+  const ticks = Array.from({ length: 21 }, (_, index) => index * 5);
+  return (
+    <g>
+      {ticks.map((pct) => {
+        const major = pct % 25 === 0;
+        const angle = (pct / PERCENT_SCALE) * 2 * Math.PI - Math.PI / 2;
+        const inner = RADIUS + 4;
+        const outer = RADIUS + (major ? 10 : 7);
+        return (
+          <line
+            className={major ? 'stroke-muted-foreground/50' : 'stroke-border'}
+            key={pct}
+            strokeWidth={major ? 1.5 : 1}
+            x1={CENTER + Math.cos(angle) * inner}
+            x2={CENTER + Math.cos(angle) * outer}
+            y1={CENTER + Math.sin(angle) * inner}
+            y2={CENTER + Math.sin(angle) * outer}
+          />
+        );
+      })}
+    </g>
+  );
+}
+
+/** Hand-drawn dual-arc radial gauge with charging aura and instrument bezel. */
 export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) {
   const shouldReduceMotion = useReducedMotion();
   const ratio = levelPct === null ? 0 : usageRatio(levelPct, PERCENT_SCALE);
   const filled = CIRCUMFERENCE * ratio;
-  const innerFilled = isCharging ? INNER_CIRCUMFERENCE * 0.75 : 0;
   const label =
     levelPct === null
       ? 'Battery level unavailable'
@@ -34,9 +61,9 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
   return (
     <m.div
       animate={{ opacity: 1, scale: 1 }}
-      className="relative flex size-30 shrink-0 items-center justify-center"
+      className="relative flex size-32 shrink-0 items-center justify-center"
       initial={{ opacity: 0, scale: 0.96 }}
-      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.2, 0, 0, 1] }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.32, ease: EASE_STANDARD }}
     >
       {isCharging ? (
         <m.div
@@ -59,21 +86,21 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
       ) : null}
       <svg
         aria-label={label}
-        className="size-30 -rotate-90"
+        className="size-32 -rotate-90"
         role="img"
         viewBox={`0 0 ${SIZE} ${SIZE}`}
       >
-        {/* Background Outer Track */}
+        <BezelTicks />
+        {/* Track */}
         <circle
-          className="stroke-border/40"
+          className="stroke-secondary"
           cx={CENTER}
           cy={CENTER}
           fill="none"
           r={RADIUS}
           strokeWidth={STROKE}
         />
-
-        {/* Main Level Arc */}
+        {/* Main level arc */}
         {levelPct === null ? null : (
           <m.circle
             animate={{ strokeDashoffset: CIRCUMFERENCE - filled }}
@@ -81,7 +108,7 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             cx={CENTER}
             cy={CENTER}
             fill="none"
-            initial={{ strokeDashoffset: CIRCUMFERENCE }}
+            initial={shouldReduceMotion ? false : { strokeDashoffset: CIRCUMFERENCE }}
             r={RADIUS}
             strokeLinecap="round"
             strokeWidth={STROKE}
@@ -89,12 +116,11 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
-                : { duration: 0.8, ease: [0.2, 0, 0, 1], delay: 0.1 }
+                : { duration: 0.8, ease: EASE_STANDARD, delay: 0.1 }
             }
           />
         )}
-
-        {/* Inner Charging Aura Ring */}
+        {/* Inner charging aura ring */}
         {isCharging ? (
           <m.circle
             animate={
@@ -107,10 +133,11 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             cy={CENTER}
             fill="none"
             r={INNER_RADIUS}
-            strokeDasharray={`${innerFilled} ${INNER_CIRCUMFERENCE - innerFilled}`}
+            strokeDasharray={`${INNER_CIRCUMFERENCE * 0.75} ${INNER_CIRCUMFERENCE * 0.25}`}
             strokeDashoffset={-INNER_CIRCUMFERENCE * 0.25}
             strokeLinecap="round"
-            strokeWidth={2}
+            strokeWidth={INNER_STROKE}
+            style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
@@ -120,43 +147,33 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
         ) : null}
       </svg>
 
-      <m.div
-        animate={{ opacity: 1 }}
-        aria-hidden="true"
-        className="absolute flex select-none flex-col items-center gap-0.5"
-        initial={{ opacity: 0 }}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0 }
-            : { delay: 0.3, duration: 0.25, ease: [0.2, 0, 0, 1] }
-        }
-      >
+      <div aria-hidden="true" className="absolute flex select-none flex-col items-center gap-0.5">
         <m.span
-          animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          animate={{ y: 0, opacity: 1 }}
           className={cn('numeric font-semibold text-display tracking-tight', TONE_TEXT[tone])}
-          initial={shouldReduceMotion ? { opacity: 0 } : { y: 4, opacity: 0 }}
+          initial={shouldReduceMotion ? false : { y: 4, opacity: 0 }}
           key={levelPct ?? 'empty'}
-          transition={
-            shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.2, 0, 0, 1] }
-          }
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE_STANDARD }}
         >
           {levelPct === null ? EMPTY_VALUE : formatPercent(ratio)}
         </m.span>
         {isCharging ? (
           <m.span
             animate={shouldReduceMotion ? { opacity: 1 } : { opacity: [1, 0.6, 1] }}
-            className={cn('flex items-center gap-1 font-medium text-[11px]', TONE_TEXT[tone])}
+            className={cn('flex items-center gap-1 font-medium text-caption', TONE_TEXT[tone])}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
                 : { duration: 1.2, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
             }
           >
-            <Zap className="size-3 fill-current" />
+            <Zap aria-hidden="true" className="size-3 fill-current" />
             Charging
           </m.span>
-        ) : null}
-      </m.div>
+        ) : (
+          <span className="text-caption text-muted-foreground">Battery</span>
+        )}
+      </div>
     </m.div>
   );
 }

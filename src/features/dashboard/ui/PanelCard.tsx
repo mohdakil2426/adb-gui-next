@@ -5,35 +5,42 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/shared/u
 import { cn } from '@/shared/utils/cn';
 
 interface PanelCardProps {
-  /** Right-aligned control in the header (refresh, toggle, badge). */
-  action?: ReactNode | undefined;
+  action?: ReactNode;
   children: ReactNode;
   className?: string | undefined;
   contentClassName?: string | undefined;
-  icon?: LucideIcon | undefined;
+  /** Seconds to wait before the entrance plays — stagger siblings in a row. */
+  delay?: number | undefined;
+  icon: LucideIcon;
   title: string;
 }
 
+const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
+
 /**
- * One dashboard panel: hairline border and a surface step, never a shadow —
- * shadow is invisible on a near-black canvas. The title is caption-sized
- * metadata, so the numbers inside stay the loudest thing on the card.
+ * The shared dashboard panel shell: equal-height card, quiet uppercase header,
+ * hover lift, and a one-shot rise-and-fade entrance staggered via `delay`.
  */
 export function PanelCard({
   action,
   children,
   className,
   contentClassName,
+  delay = 0,
   icon: Icon,
   title,
 }: PanelCardProps) {
   const shouldReduceMotion = useReducedMotion();
   return (
     <m.div
+      animate={{ opacity: 1, y: 0 }}
       className="flex h-full flex-col"
-      transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
+      transition={
+        shouldReduceMotion ? { duration: 0 } : { duration: 0.32, delay, ease: EASE_STANDARD }
+      }
       whileHover={shouldReduceMotion ? { y: 0 } : { y: -2 }}
-      whileTap={shouldReduceMotion ? { scale: 1 } : { scale: 0.98 }}
+      whileTap={shouldReduceMotion ? { scale: 1 } : { scale: 0.99 }}
     >
       <Card
         className={cn(
@@ -46,7 +53,7 @@ export function PanelCard({
             as="h2"
             className="flex items-center gap-1.5 font-medium text-caption text-muted-foreground uppercase tracking-wider"
           >
-            {Icon ? <Icon aria-hidden="true" className="size-3.5" /> : null}
+            <Icon aria-hidden="true" className="size-3.5" />
             {title}
           </CardTitle>
           {action ? <CardAction>{action}</CardAction> : null}

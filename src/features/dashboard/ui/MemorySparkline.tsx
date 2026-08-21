@@ -15,9 +15,10 @@ import { formatBytes, formatPercent, usageRatio } from '@/shared/utils/format';
  */
 
 const VIEW_W = 300;
-const VIEW_H = 38;
+const VIEW_H = 64;
 /** Keeps the 1.5px stroke from clipping at 0% and 100%. */
-const PAD_Y = 2;
+const PAD_Y = 3;
+const GRID_LINES = [0.25, 0.5, 0.75];
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
@@ -78,16 +79,13 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
   const readout = active ?? latest;
 
   return (
-    <m.div
-      animate={{ opacity: 1 }}
-      className="flex flex-col gap-1"
-      initial={shouldReduceMotion ? false : { opacity: 0 }}
-      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
-    >
+    <div className="flex flex-col gap-1">
       <svg
         aria-label={`Memory usage over the last ${points.length} samples, currently ${formatPercent(latest?.ratio ?? 0)}`}
-        className="h-9 w-full"
-        onPointerLeave={() => {}}
+        className="h-16 w-full touch-none"
+        onPointerLeave={() => {
+          setActiveIndex(null);
+        }}
         onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
           if (bounds.width === 0) {
@@ -107,6 +105,25 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
             <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.02} />
           </linearGradient>
         </defs>
+
+        {/* Dashed reference grid at 25 / 50 / 75 % */}
+        {GRID_LINES.map((level) => {
+          const y = PAD_Y + (1 - level) * (VIEW_H - PAD_Y * 2);
+          return (
+            <line
+              key={level}
+              stroke="var(--border)"
+              strokeDasharray="3 4"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+              x1={0}
+              x2={VIEW_W}
+              y1={y}
+              y2={y}
+            />
+          );
+        })}
+
         <m.polygon
           animate={{ opacity: 1 }}
           fill={`url(#${gradientId})`}
@@ -128,27 +145,59 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
           }
           vectorEffect="non-scaling-stroke"
         />
-        {active ? (
+
+        {/* Live endpoint pulse */}
+        {latest ? (
           <m.circle
-            animate={{ scale: 1 }}
-            cx={active.x}
-            cy={active.y}
+            animate={
+              shouldReduceMotion
+                ? { opacity: 0.9 }
+                : { opacity: [0.9, 0.35, 0.9], scale: [1, 1.25, 1] }
+            }
+            cx={latest.x}
+            cy={latest.y}
             fill="var(--chart-1)"
-            initial={shouldReduceMotion ? false : { scale: 0 }}
-            layout
             r={2.5}
+            style={{ transformOrigin: `${latest.x}px ${latest.y}px` }}
             transition={
-              shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 15 }
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 1.8, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
             }
             vectorEffect="non-scaling-stroke"
           />
         ) : null}
+
+        {/* Hover scrubber: crosshair + focus dot */}
+        {active ? (
+          <g>
+            <line
+              stroke="var(--muted-foreground)"
+              strokeDasharray="2 3"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+              x1={active.x}
+              x2={active.x}
+              y1={0}
+              y2={VIEW_H}
+            />
+            <circle
+              cx={active.x}
+              cy={active.y}
+              fill="var(--background)"
+              r={3.5}
+              stroke="var(--chart-1)"
+              strokeWidth={1.5}
+              vectorEffect="non-scaling-stroke"
+            />
+          </g>
+        ) : null}
       </svg>
-      <p className="text-caption text-muted-foreground tabular-nums">
+      <p className="numeric text-caption text-muted-foreground tabular-nums">
         {readout
           ? `${formatBytes(readout.usedBytes)} · ${formatPercent(readout.ratio)} · ${timeFormatter.format(readout.at)}`
           : null}
       </p>
-    </m.div>
+    </div>
   );
 }
