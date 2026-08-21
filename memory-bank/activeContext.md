@@ -2,19 +2,28 @@
 
 ## Current Focus
 
-**2026-08-21 — Dashboard Vitals (Battery, Memory, Storage) Equal-Height Alignment & Full Consistency:**
-- **Height & Baseline Equalization:**
-  - Updated `PanelCard.tsx` with `<m.div className="flex h-full flex-col">` and `<Card className="flex h-full flex-1 flex-col justify-between...">` + `<CardContent className="flex flex-1 flex-col justify-between...">`.
-  - Streamlined `MemorySparkline.tsx` to `h-9` (38px SVG) and adjusted `StoragePanel.tsx` volume rows (`p-2`, `gap-1.5`) so all three top sections occupy an identical ~110-120px height.
-  - Aligned bottom 2x2 micro-metrics grids on the exact same baseline with identical borders, padding, gaps, and typography across Battery, Memory, and Storage.
-- **Zero Empty Gaps & Flawless Symmetry:** All 3 cards in the Vitals row stretch to the exact same outer height with zero dead space.
+**2026-08-21 — Dashboard "Instrument Deck" redesign + Applications overview upgrade (uncommitted per user request):**
+
+- **Dashboard (`features/dashboard/`)** — full visual rebuild, same tokens:
+  - Global entrance cascade via `PanelCard delay` (hero → battery → memory → storage → security → actions → wireless → apps); reduced-motion aware.
+  - `BatteryGauge`: 128px tick-bezel radial + charging aura; `MicroScale` band meters for temperature/voltage (zone tints + scaleX fill).
+  - `MemorySparkline`: 25/50/75% gridlines, crosshair scrubber, live endpoint pulse; `MemoryPanel` % headline.
+  - `StoragePanel`: `StorageAllocationBar` stacked capacity map; volume rows carry matching legend dots (`model/storageColors.ts`).
+  - `SecurityPanel`: `PostureSpectrum` six-segment strip ("N of M nominal").
+  - New `AppsPanel` + interactive `AppsCompositionDonut` (hover-linked center readout) + Target SDK health meter; `hooks/useAppOverview.ts` shares the `appOverviewTelemetry` query key with App Manager.
+  - Fills animate **scaleX only** (doctor: no layout-property animation); `UsageBar` migrated too. `role="meter"` → `role="progressbar"` (prefer-tag-over-role).
+- **Applications overview (`features/app-manager/overview/`)** — same deck language:
+  - `AppMetricsHeroBanner` staggered cells; `PackageCompositionDonut` rewritten interactive (dead `standalone`/`composition` API removed — single call site verified).
+  - `TargetSdkDistributionMeter` + `DebloatSafetySpectrum`: raw emerald/sky/amber/rgb colors → success/info/warning tokens; staggered scaleX arcs/fills.
+  - `PermissionDensityMatrix`: token risk tones + per-category density mini-meters; dormant `userAppCount` prop now used in the caption.
+  - `TopStorageConsumersChart` / `QuickLaunchpadCard`: staggered entrances (test contracts preserved: ranks, quote-stripping, empty text).
+- **Docs updated:** `DESIGN.md` (Dashboard screen row, Charts list, new "Instrument Deck Choreography" pattern), `src/AGENTS.md` (charts paragraph, Dashboard invariant), this file.
 
 ## Quality Gates Status
-- **Ultracite (Biome):** **466 files checked, 0 errors, 0 warnings**
-- **TypeScript:** `tsc --noEmit` passed with 0 errors
-- **Vite Build:** `bun run build` passed in 2.92s (3435 modules)
-- **Vitest:** **48 / 48 files passed, 285 / 285 tests passed**
-- **Rust Backend:** `cargo check` passed with 0 errors
-- **No commits made** per user request.
+- **Ultracite (Biome):** 475 files checked, 0 errors, 0 warnings
+- **TypeScript:** `tsc --noEmit` passed (via `bun run build`)
+- **Vitest:** 48 / 48 files passed, 285 / 285 tests passed
+- **React Doctor:** 86/100 — zero findings in dashboard or app-manager files; remaining deductions are pre-existing marketplace debt (`authStore` unused exports, `ReadmeMarkdown` label, `useMarketplaceAuth` deps) and the pre-existing `pkgName || index` key fallback required by the missing-packageName test.
+- **No commits made** per user request (pre-existing work was committed first in 6 logical commits earlier this session).
 
 **Last updated:** 2026-08-21
