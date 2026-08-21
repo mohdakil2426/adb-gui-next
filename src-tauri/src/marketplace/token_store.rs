@@ -53,15 +53,10 @@ fn keyring_entry(account: &str) -> CmdResult<keyring::Entry> {
     keyring::Entry::new(KEYRING_SERVICE, account).map_err(|e| format!("Keyring init failed: {e}"))
 }
 
+#[derive(Default)]
 pub struct TokenStoreInner {
     token_cache: Option<StoredGithubToken>,
     host_tokens_cache: Option<Vec<HostToken>>,
-}
-
-impl Default for TokenStoreInner {
-    fn default() -> Self {
-        Self { token_cache: None, host_tokens_cache: None }
-    }
 }
 
 pub struct ManagedTokenStore(pub Mutex<TokenStoreInner>);

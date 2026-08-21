@@ -92,14 +92,15 @@ pub async fn github_search_repos(
 
     // Rate-limit tracking
     let status = resp.status().as_u16();
-    if let Some(info) = rate_store.update_from_headers(resp.headers(), status, "search") {
-        if info.is_exhausted() && (status == 403 || status == 429) {
-            return Err(format!(
-                "GitHub rate limit exhausted ({} remaining, reset in {}s). Login with GitHub to increase limits.",
-                info.remaining,
-                info.seconds_until_reset()
-            ));
-        }
+    if let Some(info) = rate_store.update_from_headers(resp.headers(), status, "search")
+        && info.is_exhausted()
+        && (status == 403 || status == 429)
+    {
+        return Err(format!(
+            "GitHub rate limit exhausted ({} remaining, reset in {}s). Login with GitHub to increase limits.",
+            info.remaining,
+            info.seconds_until_reset()
+        ));
     }
 
     if !resp.status().is_success() {

@@ -90,16 +90,25 @@ pub async fn fetch_app_detail(
     package_name: &str,
     source: &str,
     github_token: &Option<String>,
+    repo_url_hint: Option<&str>,
+    download_url_hint: Option<&str>,
 ) -> CmdResult<MarketplaceAppDetail> {
     match source {
         "F-Droid" => {
             match fdroid::get_detail(client, package_name).await {
                 Ok(detail) => Ok(detail),
                 Err(err) => {
-                    // If F-Droid fails, try resolving via GitHub if a known mapping or slug exists
-                    if let Some(repo) =
-                        super::resolver::resolve_github_repo(package_name, None, None)
-                    {
+                    // If F-Droid fails, try resolving via GitHub using the
+                    // caller's URL hints or a known slug before giving up.
+                    let resolved = super::resolver::resolve_github_repo_dynamic(
+                        client,
+                        package_name,
+                        download_url_hint,
+                        repo_url_hint,
+                        github_token,
+                    )
+                    .await;
+                    if let Some(repo) = resolved {
                         github::get_detail(client, &repo, github_token).await
                     } else {
                         Err(err)
@@ -107,7 +116,21 @@ pub async fn fetch_app_detail(
                 }
             }
         }
-        "GitHub" => github::get_detail(client, package_name, github_token).await,
+        "GitHub" => {
+            // Resolve first so a curated/search hint (`ReVanced/revanced-manager`
+            // from a releases URL, say) fixes the lookup instead of falling back
+            // to the raw package ID and 404ing on `/repos/{id}`.
+            let resolved = super::resolver::resolve_github_repo_dynamic(
+                client,
+                package_name,
+                download_url_hint,
+                repo_url_hint,
+                github_token,
+            )
+            .await
+            .unwrap_or_else(|| package_name.to_string());
+            github::get_detail(client, &resolved, github_token).await
+        }
         "Aptoide" => aptoide::get_detail(client, package_name).await,
         _ => Err(format!("Unknown source: {source}")),
     }

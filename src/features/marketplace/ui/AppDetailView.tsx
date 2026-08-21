@@ -51,7 +51,13 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
     setDetailError(null);
     setIsLoadingDetail(true);
 
-    MarketplaceGetAppDetail(selectedApp.packageName, selectedApp.source, githubToken)
+    MarketplaceGetAppDetail(
+      selectedApp.packageName,
+      selectedApp.source,
+      githubToken,
+      selectedApp.repoUrl,
+      selectedApp.downloadUrl,
+    )
       .then((nextDetail) => {
         if (!cancelled) {
           setDetail(nextDetail);

@@ -519,16 +519,27 @@ export function MarketplaceSearch(
   return call('marketplace_search', { query, filters: filters ?? null });
 }
 
-/** Get detailed info about a single app from a specific provider. */
+/**
+ * Get detailed info about a single app from a specific provider.
+ *
+ * `repoUrl` / `downloadUrl` are optional resolution hints from the row the
+ * user opened (search results and curated tools already know the repo); the
+ * backend uses them to pin the GitHub lookup instead of guessing from the
+ * package ID.
+ */
 export function MarketplaceGetAppDetail(
   packageName: string,
   source: string,
   githubToken?: string | null,
+  repoUrl?: string | null,
+  downloadUrl?: string | null,
 ): Promise<backend.MarketplaceAppDetail> {
   return call('marketplace_get_app_detail', {
-    packageName,
-    source,
+    downloadUrl: downloadUrl ?? null,
     githubToken: githubToken ?? null,
+    packageName,
+    repoUrl: repoUrl ?? null,
+    source,
   });
 }
 

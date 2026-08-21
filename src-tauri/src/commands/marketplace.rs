@@ -55,10 +55,13 @@ pub async fn marketplace_search(
     Ok(results)
 }
 #[tauri::command]
+#[allow(clippy::too_many_arguments)] // flat IPC surface; hints are optional
 pub async fn marketplace_get_app_detail(
     package_name: String,
     source: String,
     github_token: Option<String>,
+    repo_url: Option<String>,
+    download_url: Option<String>,
     http: State<'_, ManagedHttpClient>,
     cache: State<'_, ManagedMarketplaceCache>,
     token_store: State<'_, ManagedTokenStore>,
@@ -84,7 +87,15 @@ pub async fn marketplace_get_app_detail(
         }
     }
 
-    let detail = service::fetch_app_detail(client, &package_name, &source, &github_token).await?;
+    let detail = service::fetch_app_detail(
+        client,
+        &package_name,
+        &source,
+        &github_token,
+        repo_url.as_deref(),
+        download_url.as_deref(),
+    )
+    .await?;
 
     let mut cache = cache.0.lock().map_err(|_| "Marketplace cache lock poisoned".to_string())?;
     cache.insert_detail(detail_key, detail.clone());
@@ -189,14 +200,26 @@ pub async fn marketplace_install_apk(
     }
 
     let install_path = apk_path.clone();
-    let result = tokio::task::spawn_blocking(move || {
+    // `adb install` is not trustworthy on exit codes alone: several
+    // platform-tools releases exit 0 while stdout says `Failure [reason]`,
+    // which surfaced to the user as "downloaded but not installed". Success
+    // requires the literal `Success` line; any `Failure` text is an error
+    // carrying the device's own reason.
+    let output = tokio::task::spawn_blocking(move || {
         run_adb_for_serial(&app, serial.as_deref(), &["install", "-r", &install_path])
     })
     .await
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| e.to_string())??;
 
     let _ = tokio::fs::remove_file(apk_path_ref).await;
-    result
+
+    if output.contains("Failure") {
+        return Err(format!("Device rejected the install: {output}"));
+    }
+    if !output.contains("Success") {
+        return Err(format!("adb install did not report success (no device output): {output}"));
+    }
+    Ok(output)
 }
 
 #[tauri::command]

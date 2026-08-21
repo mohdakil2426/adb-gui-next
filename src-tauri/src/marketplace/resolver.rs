@@ -154,29 +154,38 @@ async fn search_github_repo_for_package(
     package_id: &str,
     token: &Option<String>,
 ) -> Option<String> {
-    let q = format!("\"{package_id}\" topic:android fork:false");
-    let search_url = format!(
-        "https://api.github.com/search/repositories?q={}&sort=stars&per_page=3",
-        urlencoding::encode(&q)
-    );
+    // Quoted IDs match only exact strings in name/description/readme; many
+    // apps (e.g. ReVanced Manager) never mention theirs, so fall back to the
+    // segments as words before giving up.
+    let queries = [
+        format!("\"{package_id}\" topic:android fork:false"),
+        format!("{} topic:android fork:false", package_id.split('.').collect::<Vec<_>>().join(" ")),
+    ];
 
-    let mut req = client.get(&search_url).header("User-Agent", "ADB-GUI-Next-Marketplace");
-    if let Some(tok) = token {
-        let tok_trimmed = tok.trim();
-        if !tok_trimmed.is_empty() {
-            req = req.header("Authorization", format!("Bearer {tok_trimmed}"));
+    for q in queries {
+        let search_url = format!(
+            "https://api.github.com/search/repositories?q={}&sort=stars&per_page=3",
+            urlencoding::encode(&q)
+        );
+
+        let mut req = client.get(&search_url).header("User-Agent", "ADB-GUI-Next-Marketplace");
+        if let Some(tok) = token {
+            let tok_trimmed = tok.trim();
+            if !tok_trimmed.is_empty() {
+                req = req.header("Authorization", format!("Bearer {tok_trimmed}"));
+            }
+        }
+
+        let resp = req.send().await.ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        let body = resp.json::<Value>().await.ok()?;
+        if let Some(full_name) = body["items"].as_array()?.first()?["full_name"].as_str() {
+            return Some(full_name.to_string());
         }
     }
-
-    let resp = req.send().await.ok()?;
-    if !resp.status().is_success() {
-        return None;
-    }
-    let body = resp.json::<Value>().await.ok()?;
-    let items = body["items"].as_array()?;
-    let first_item = items.first()?;
-    let full_name = first_item["full_name"].as_str()?;
-    Some(full_name.to_string())
+    None
 }
 
 #[cfg(test)]

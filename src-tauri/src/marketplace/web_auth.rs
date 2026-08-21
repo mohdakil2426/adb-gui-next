@@ -16,8 +16,6 @@ const DEFAULT_CLIENT_ID: &str = "Ov23linTY28VFpFjFiI9"; // Komi public fallback 
 #[derive(Debug, Deserialize)]
 struct TokenExchangeResponse {
     access_token: Option<String>,
-    token_type: Option<String>,
-    scope: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
 }
@@ -168,7 +166,6 @@ pub async fn run_web_auth_flow(
             }
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
                 tokio::time::sleep(Duration::from_millis(100)).await;
-                continue;
             }
             Err(e) => return Err(format!("Loopback accept failed: {e}")),
         }
