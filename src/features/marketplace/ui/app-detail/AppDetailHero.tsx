@@ -4,6 +4,7 @@ import {
   useMarketplaceDownloadStore,
 } from '@/features/marketplace/model/downloadStore';
 import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
+import { DownloadProgressStrip } from '@/features/marketplace/ui/DownloadProgressStrip';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Button } from '@/shared/ui/button';
 import { formatBytes } from '@/shared/utils/format';
@@ -83,6 +84,7 @@ export function AppDetailHero({
                 ? 'Installing…'
                 : `Install${sizeSuffix}`}
         </Button>
+        <DownloadProgressStrip packageName={packageName} />
         {canInstall || !blockedReason ? null : (
           <p className="@md:text-right text-caption text-muted-foreground">{blockedReason}</p>
         )}

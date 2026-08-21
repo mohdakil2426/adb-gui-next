@@ -5,6 +5,7 @@ import type { backend } from '@/desktop/models';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
+import { DownloadProgressStrip } from '@/features/marketplace/ui/DownloadProgressStrip';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/shared/ui/card';
@@ -104,11 +105,14 @@ export function CuratedPowerToolsGrid({ onSelectApp, target }: CuratedPowerTools
               </CardContent>
             </button>
 
-            <CardFooter className="mt-auto flex items-center justify-between border-border/40 border-t bg-surface-raised/20 p-3 pt-0">
-              <span className="truncate font-mono text-caption text-muted-foreground">
-                {app.version}
-              </span>
-              <AppInstallButton app={app} onSelect={onSelectApp} target={target} />
+            <CardFooter className="mt-auto flex flex-col gap-2 border-border/40 border-t bg-surface-raised/20 p-3 pt-0">
+              <div className="flex w-full items-center justify-between">
+                <span className="truncate font-mono text-caption text-muted-foreground">
+                  {app.version}
+                </span>
+                <AppInstallButton app={app} onSelect={onSelectApp} target={target} />
+              </div>
+              <DownloadProgressStrip packageName={app.packageName} />
             </CardFooter>
           </Card>
         ))}

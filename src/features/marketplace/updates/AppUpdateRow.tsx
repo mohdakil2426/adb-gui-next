@@ -1,5 +1,7 @@
 import { ArrowRight, CheckCircle2, Download, Loader2 } from 'lucide-react';
+import { useMarketplaceDownloadStore } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
+import { DownloadProgressStrip } from '@/features/marketplace/ui/DownloadProgressStrip';
 import { ProviderBadge } from '@/features/marketplace/ui/ProviderBadge';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
@@ -26,6 +28,10 @@ interface AppUpdateRowProps {
 export function AppUpdateRow({ item, onUpdate, target }: AppUpdateRowProps) {
   const isUpdating = item.status === 'updating';
   const isUpdated = item.status === 'updated';
+  const downloadProgress = useMarketplaceDownloadStore(
+    (state) => state.activeDownloads[item.packageName],
+  );
+  const isDownloading = Boolean(downloadProgress && downloadProgress.percentage < 100);
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-4 transition-colors hover:border-border hover:bg-surface-raised/70">
@@ -72,10 +78,15 @@ export function AppUpdateRow({ item, onUpdate, target }: AppUpdateRowProps) {
             type="button"
             variant={isUpdated ? 'outline' : 'default'}
           >
-            {isUpdating ? (
+            {isDownloading ? (
               <>
                 <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
-                Updating...
+                {Math.round(downloadProgress?.percentage ?? 0)}%
+              </>
+            ) : isUpdating ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
+                Installing…
               </>
             ) : isUpdated ? (
               <>
@@ -91,6 +102,8 @@ export function AppUpdateRow({ item, onUpdate, target }: AppUpdateRowProps) {
           </Button>
         </div>
       </div>
+
+      {isDownloading ? <DownloadProgressStrip packageName={item.packageName} /> : null}
 
       {item.changelogSnippet ? (
         <div className="rounded-md border border-border/40 bg-surface/50 p-2.5 text-caption text-muted-foreground">

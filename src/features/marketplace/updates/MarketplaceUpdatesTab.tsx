@@ -89,7 +89,9 @@ export function MarketplaceUpdatesTab({ target }: { target: InstallTarget }) {
     }
     const toastId = toast.loading(`Downloading and updating ${item.name}...`);
     try {
-      const apkPath = await MarketplaceDownloadApk(item.downloadUrl);
+      // packageName keys the throttled download-progress events, which is what
+      // feeds the per-row progress strip while the APK streams in.
+      const apkPath = await MarketplaceDownloadApk(item.downloadUrl, item.packageName);
       await MarketplaceInstallApk(apkPath, selectedSerial);
       setUpdateStates((prev) => ({ ...prev, [item.packageName]: 'updated' }));
       toast.success(`Successfully updated ${item.name} to ${item.latestVersion}`, { id: toastId });
