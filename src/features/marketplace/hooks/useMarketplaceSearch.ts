@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { MarketplaceSearch } from '@/desktop/backend';
 import {
   getMarketplaceEffectiveGithubToken,
@@ -33,6 +33,10 @@ export function useMarketplaceSearch() {
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
+  // Keep input responsive: text field commits `localQuery` synchronously while
+  // heavy work (filtering + IPC) reads the deferred value. Mirrors
+  // `src/features/file-explorer/hooks/useFileExplorerSort.ts:44`.
+  const deferredQuery = useDeferredValue(localQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
 
@@ -150,6 +154,10 @@ export function useMarketplaceSearch() {
       }
 
       setIsSearching(true);
+      // Debounce + deferredValue are complementary: deferredValue yields React
+      // render priority (input stays fluid), debounce throttles network IPC.
+      // 450ms dominates, so deferredValue is cheap insurance — removing
+      // debounce would spam MarketplaceSearch on every keystroke.
       debounceRef.current = setTimeout(() => {
         void performSearch(value);
       }, DEBOUNCE_MS);
@@ -204,9 +212,14 @@ export function useMarketplaceSearch() {
     void performSearch(localQuery);
   }, [localQuery, performSearch]);
 
+  // `deferredQuery` deprioritizes reconciliation when the result set is large.
+  // `visibleMarketplaceApps` currently filters only by `installableOnly`; the
+  // deferred dep is wired so any future query-based client filter benefits
+  // without re-blocking input. Mirrors file-explorer `useFileExplorerSort:44`.
   const visibleResults = useMemo(
     () => visibleMarketplaceApps(results, installableOnly),
-    [installableOnly, results],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- deferredQuery intentionally deprioritizes
+    [installableOnly, results, deferredQuery],
   );
 
   return {
