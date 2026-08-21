@@ -1,8 +1,11 @@
+import { m, useReducedMotion } from 'framer-motion';
 import { HardDrive } from 'lucide-react';
 import type { backend } from '@/desktop/models';
 import { formatBytes } from '@/shared/utils/format';
 
 const MAX_DISPLAY_CONSUMERS = 5;
+
+const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
 
 interface TopStorageConsumersChartProps {
   consumers: backend.StorageConsumerItem[];
@@ -13,13 +16,15 @@ export function TopStorageConsumersChart({
   consumers,
   onSelectApp,
 }: TopStorageConsumersChartProps) {
+  const shouldReduceMotion = useReducedMotion();
   const displayConsumers = consumers.slice(0, MAX_DISPLAY_CONSUMERS);
   const maxBytes = Math.max(...displayConsumers.map((c) => c.totalSize), 1);
+
   return (
     <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <HardDrive className="size-4 text-primary" />
+          <HardDrive aria-hidden="true" className="size-4 text-primary" />
           <h3 className="font-medium text-foreground text-label">Top Space Consumers</h3>
         </div>
         <div className="flex items-center gap-3 text-caption text-muted-foreground">
@@ -62,10 +67,17 @@ export function TopStorageConsumersChart({
             const cachePct = app.totalSize > 0 ? (app.cacheSize / app.totalSize) * 100 : 10;
 
             return (
-              <button
+              <m.button
+                animate={{ opacity: 1, x: 0 }}
                 className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
+                initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
                 key={pkgName || index}
                 onClick={() => onSelectApp?.(pkgName)}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.3, delay: 0.1 + index * 0.06, ease: EASE_STANDARD }
+                }
                 type="button"
               >
                 <div className="flex items-center justify-between text-body">
@@ -82,11 +94,18 @@ export function TopStorageConsumersChart({
                   </span>
                 </div>
 
-                {/* Segmented multi-tone bar */}
+                {/* Segmented multi-tone bar; the track width is static, only the segments draw in */}
                 <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
-                  <div
-                    className="flex h-full overflow-hidden rounded-full transition-[width] duration-300 ease-out"
+                  <m.div
+                    animate={{ opacity: 1 }}
+                    className="flex h-full overflow-hidden rounded-full"
+                    initial={shouldReduceMotion ? false : { opacity: 0 }}
                     style={{ width: `${Math.max(4, ratio)}%` }}
+                    transition={
+                      shouldReduceMotion
+                        ? { duration: 0 }
+                        : { duration: 0.4, delay: 0.15 + index * 0.06 }
+                    }
                   >
                     <div
                       className="h-full bg-primary transition-colors group-hover:bg-primary/90"
@@ -103,9 +122,9 @@ export function TopStorageConsumersChart({
                       style={{ width: `${cachePct}%` }}
                       title={`Cache: ${formatBytes(app.cacheSize)}`}
                     />
-                  </div>
+                  </m.div>
                 </div>
-              </button>
+              </m.button>
             );
           })
         )}

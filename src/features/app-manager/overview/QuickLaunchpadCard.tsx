@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'framer-motion';
 import { BatteryCharging, Camera, Code2, Folder, LayoutGrid, Play, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import { RunShellCommand } from '@/desktop/backend';
@@ -41,6 +42,7 @@ interface QuickLaunchpadCardProps {
 }
 
 export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) {
+  const shouldReduceMotion = useReducedMotion();
   const launchIntent = async (label: string, intentCmd: string) => {
     if (!selectedSerial) {
       toast.error('No device connected');
@@ -65,20 +67,30 @@ export function QuickLaunchpadCard({ selectedSerial }: QuickLaunchpadCardProps) 
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {LAUNCHPAD_ACTIONS.map((act) => {
+        {LAUNCHPAD_ACTIONS.map((act, index) => {
           const Icon = act.icon;
           return (
-            <Button
-              className="h-8 justify-start gap-2 border-border/80 bg-surface-raised/60 px-2.5 text-body text-foreground hover:bg-surface-raised"
+            <m.div
+              animate={{ opacity: 1, y: 0 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
               key={act.label}
-              onClick={() => launchIntent(act.label, act.cmd)}
-              size="sm"
-              type="button"
-              variant="outline"
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.28, delay: index * 0.04, ease: [0.2, 0, 0, 1] }
+              }
             >
-              <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate">{act.label}</span>
-            </Button>
+              <Button
+                className="h-8 w-full justify-start gap-2 border-border/80 bg-surface-raised/60 px-2.5 text-body text-foreground hover:bg-surface-raised"
+                onClick={() => launchIntent(act.label, act.cmd)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">{act.label}</span>
+              </Button>
+            </m.div>
           );
         })}
       </div>

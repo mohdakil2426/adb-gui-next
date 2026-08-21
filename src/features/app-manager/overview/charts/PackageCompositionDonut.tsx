@@ -1,35 +1,36 @@
-export interface PackageComposition {
-  disabled: number;
-  system: number;
-  total: number;
-  user: number;
-}
-
+import { m, useReducedMotion } from 'framer-motion';
+import { useState } from 'react';
 import { formatPercent, usageRatio } from '@/shared/utils/format';
 
 export interface PackageCompositionDonutProps {
-  composition?: PackageComposition | undefined;
   disabledCount?: number | undefined;
-  standalone?: boolean | undefined;
   systemCount?: number | undefined;
   totalCount?: number | undefined;
   userCount?: number | undefined;
 }
 
-const SIZE = 120;
-const STROKE = 18;
+const SIZE = 148;
+const STROKE = 16;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const GAP = 2;
+const GAP_DEGREES = 3;
 
+const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
+
+/**
+ * Interactive user / system / disabled composition donut. Hovering an arc (or
+ * a legend row) dims the rest and swaps the center readout to that slice's
+ * share; idle state shows the installed total.
+ */
 export function PackageCompositionDonut({
-  composition,
-  disabledCount = composition?.disabled ?? 0,
-  standalone = false,
-  systemCount = composition?.system ?? 0,
+  disabledCount = 0,
+  systemCount = 0,
   totalCount,
-  userCount = composition?.user ?? 0,
+  userCount = 0,
 }: PackageCompositionDonutProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+
   const slices = [
     {
       color: 'var(--chart-1)',
@@ -52,47 +53,28 @@ export function PackageCompositionDonut({
       key: 'disabled',
       label: 'Disabled / Frozen',
     },
-  ].filter((s) => s.count > 0);
+  ].filter((slice) => slice.count > 0);
 
-  const total = slices.reduce((sum, s) => sum + s.count, 0) || totalCount || 1;
-  const showGap = slices.length > 1;
-  let offset = 0;
+  const total = slices.reduce((sum, slice) => sum + slice.count, 0) || totalCount || 1;
+  const active = slices.find((slice) => slice.key === activeKey) ?? null;
 
-  if (standalone) {
-    if (slices.length === 0) {
-      return null;
-    }
-    return (
-      <svg
-        aria-label={slices.map((slice) => `${slice.label}: ${slice.count}`).join(', ')}
-        className="size-28 shrink-0 rotate-[-90deg]"
-        role="img"
-        viewBox={`0 0 ${SIZE} ${SIZE}`}
-      >
-        {slices.map((slice) => {
-          const length = (slice.count / total) * CIRCUMFERENCE;
-          const dash = showGap ? Math.max(0, length - GAP) : length;
-          const circle = (
-            <circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              fill="none"
-              key={slice.key}
-              r={RADIUS}
-              stroke={slice.color}
-              strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
-              strokeDashoffset={-offset}
-              strokeWidth={STROKE}
-            >
-              <title>{`${slice.label}: ${slice.count}`}</title>
-            </circle>
-          );
-          offset += length;
-          return circle;
-        })}
-      </svg>
-    );
+  if (slices.length === 0) {
+    return null;
   }
+
+  let offsetDegrees = 0;
+  const arcs = slices.map((slice) => {
+    const sweep = (slice.count / total) * 360;
+    const arc = {
+      dash: Math.max(0, ((sweep - (slices.length > 1 ? GAP_DEGREES : 0)) / 360) * CIRCUMFERENCE),
+      key: slice.key,
+      offsetDegrees,
+      slice,
+    };
+    offsetDegrees += sweep;
+    return arc;
+  });
+
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
       <div className="flex items-center justify-between">
@@ -103,56 +85,115 @@ export function PackageCompositionDonut({
       <div className="flex items-center gap-4">
         <div className="relative flex size-28 shrink-0 items-center justify-center">
           <svg
-            aria-label={`Package composition: ${userCount} user, ${systemCount} system`}
-            className="size-full rotate-[-90deg]"
+            aria-label={`Package composition: ${slices.map((slice) => `${slice.label} ${slice.count}`).join(', ')}`}
+            className="size-full -rotate-90"
             role="img"
             viewBox={`0 0 ${SIZE} ${SIZE}`}
           >
-            {slices.map((slice) => {
-              const length = (slice.count / total) * CIRCUMFERENCE;
-              const dash = showGap ? Math.max(0, length - GAP) : length;
-              const circle = (
-                <circle
-                  cx={SIZE / 2}
-                  cy={SIZE / 2}
-                  fill="none"
-                  key={slice.key}
-                  r={RADIUS}
-                  stroke={slice.color}
-                  strokeDasharray={`${dash} ${CIRCUMFERENCE - dash}`}
-                  strokeDashoffset={-offset}
-                  strokeWidth={STROKE}
-                />
-              );
-              offset += length;
-              return circle;
-            })}
+            <circle
+              className="stroke-secondary"
+              cx={SIZE / 2}
+              cy={SIZE / 2}
+              fill="none"
+              r={RADIUS}
+              strokeWidth={STROKE}
+            />
+            {arcs.map((arc, index) => (
+              <m.circle
+                animate={{ opacity: activeKey === null || activeKey === arc.key ? 1 : 0.25 }}
+                className="cursor-pointer transition-[stroke-width] duration-150"
+                cx={SIZE / 2}
+                cy={SIZE / 2}
+                fill="none"
+                initial={shouldReduceMotion ? false : { opacity: 0 }}
+                key={arc.key}
+                onPointerEnter={() => {
+                  setActiveKey(arc.key);
+                }}
+                onPointerLeave={() => {
+                  setActiveKey(null);
+                }}
+                r={RADIUS}
+                stroke={arc.slice.color}
+                strokeDasharray={`${arc.dash} ${CIRCUMFERENCE - arc.dash}`}
+                strokeDashoffset={-arc.offsetDegrees}
+                strokeLinecap="butt"
+                strokeWidth={activeKey === arc.key ? STROKE + 3 : STROKE}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { duration: 0.32, delay: 0.1 + index * 0.09, ease: EASE_STANDARD }
+                }
+              >
+                <title>{`${arc.slice.label}: ${arc.slice.count}`}</title>
+              </m.circle>
+            ))}
           </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="numeric font-semibold text-foreground text-headline">
-              {totalCount}
-            </span>
-            <span className="text-caption text-muted-foreground">apps</span>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
+          >
+            {active ? (
+              <m.span
+                animate={{ opacity: 1, y: 0 }}
+                className="numeric font-semibold text-foreground text-headline"
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+                key={active.key}
+                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15 }}
+              >
+                {formatPercent(usageRatio(active.count, total))}
+              </m.span>
+            ) : (
+              <>
+                <span className="numeric font-semibold text-foreground text-headline">{total}</span>
+                <span className="text-caption text-muted-foreground">apps</span>
+              </>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-1.5">
-          {slices.map((slice) => (
-            <div className="flex items-center justify-between text-body" key={slice.key}>
-              <div className="flex items-center gap-2">
+        {/* Legend rows double as hover controls for the arcs */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          {slices.map((slice, index) => (
+            <m.button
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center justify-between rounded-md px-1.5 py-1 text-body transition-colors hover:bg-surface-raised"
+              initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
+              key={slice.key}
+              onBlur={() => {
+                setActiveKey(null);
+              }}
+              onFocus={() => {
+                setActiveKey(slice.key);
+              }}
+              onPointerEnter={() => {
+                setActiveKey(slice.key);
+              }}
+              onPointerLeave={() => {
+                setActiveKey(null);
+              }}
+              tabIndex={0}
+              transition={
+                shouldReduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.28, delay: 0.15 + index * 0.06, ease: EASE_STANDARD }
+              }
+              type="button"
+            >
+              <span className="flex items-center gap-2">
                 <span
                   aria-hidden="true"
                   className={`size-2 shrink-0 rounded-full ${slice.dotClass}`}
                 />
                 <span className="text-muted-foreground">{slice.label}</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
+              </span>
+              <span className="flex items-baseline gap-1.5">
                 <span className="numeric font-medium text-foreground">{slice.count}</span>
                 <span className="numeric w-9 text-right text-caption text-muted-foreground">
                   {formatPercent(usageRatio(slice.count, total))}
                 </span>
-              </div>
-            </div>
+              </span>
+            </m.button>
           ))}
         </div>
       </div>
