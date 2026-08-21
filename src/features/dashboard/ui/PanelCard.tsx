@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -26,28 +27,36 @@ export function PanelCard({
   icon: Icon,
   title,
 }: PanelCardProps) {
+  const shouldReduceMotion = useReducedMotion();
   return (
-    <Card
-      className={cn(
-        '@container flex h-full flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-colors duration-150',
-        className,
-      )}
+    <m.div
+      className="flex h-full flex-col"
+      transition={{ duration: 0.15, ease: [0.2, 0, 0, 1] }}
+      whileHover={shouldReduceMotion ? { y: 0 } : { y: -2 }}
+      whileTap={shouldReduceMotion ? { scale: 1 } : { scale: 0.98 }}
     >
-      <CardHeader className="gap-0 px-4.5 pb-0.5">
-        <CardTitle
-          as="h2"
-          className="flex items-center gap-1.5 font-medium text-caption text-muted-foreground uppercase tracking-wider"
-        >
-          {Icon ? <Icon aria-hidden="true" className="size-3.5" /> : null}
-          {title}
-        </CardTitle>
-        {action ? <CardAction>{action}</CardAction> : null}
-      </CardHeader>
-      <CardContent
-        className={cn('flex flex-1 flex-col justify-between gap-3 px-4.5 pt-1', contentClassName)}
+      <Card
+        className={cn(
+          '@container flex h-full flex-1 flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-colors duration-150',
+          className,
+        )}
       >
-        {children}
-      </CardContent>
-    </Card>
+        <CardHeader className="gap-0 px-4.5 pb-0.5">
+          <CardTitle
+            as="h2"
+            className="flex items-center gap-1.5 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+          >
+            {Icon ? <Icon aria-hidden="true" className="size-3.5" /> : null}
+            {title}
+          </CardTitle>
+          {action ? <CardAction>{action}</CardAction> : null}
+        </CardHeader>
+        <CardContent
+          className={cn('flex flex-1 flex-col justify-between gap-3 px-4.5 pt-1', contentClassName)}
+        >
+          {children}
+        </CardContent>
+      </Card>
+    </m.div>
   );
 }

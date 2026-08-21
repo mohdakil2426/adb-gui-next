@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'framer-motion';
 import { Zap } from 'lucide-react';
 import { TONE_STROKE, TONE_TEXT, type Tone } from '@/features/dashboard/model/tone';
 import { cn } from '@/shared/utils/cn';
@@ -21,6 +22,7 @@ const PERCENT_SCALE = 100;
 
 /** Hand-drawn dual-arc radial gauge with charging aura. */
 export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) {
+  const shouldReduceMotion = useReducedMotion();
   const ratio = levelPct === null ? 0 : usageRatio(levelPct, PERCENT_SCALE);
   const filled = CIRCUMFERENCE * ratio;
   const innerFilled = isCharging ? INNER_CIRCUMFERENCE * 0.75 : 0;
@@ -30,7 +32,31 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
       : `Battery ${levelPct}%${isCharging ? ', charging' : ''}`;
 
   return (
-    <div className="relative flex size-30 shrink-0 items-center justify-center">
+    <m.div
+      animate={{ opacity: 1, scale: 1 }}
+      className="relative flex size-30 shrink-0 items-center justify-center"
+      initial={{ opacity: 0, scale: 0.96 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.25, ease: [0.2, 0, 0, 1] }}
+    >
+      {isCharging ? (
+        <m.div
+          animate={
+            shouldReduceMotion
+              ? { scale: 1, opacity: 0.1 }
+              : { scale: [1, 1.12, 1], opacity: [0.08, 0.18, 0.08] }
+          }
+          aria-hidden="true"
+          className={cn(
+            'absolute inset-0 rounded-full border border-current opacity-10',
+            TONE_TEXT[tone],
+          )}
+          transition={
+            shouldReduceMotion
+              ? { duration: 0 }
+              : { duration: 1.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
+          }
+        />
+      ) : null}
       <svg
         aria-label={label}
         className="size-30 -rotate-90"
@@ -49,25 +75,34 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
 
         {/* Main Level Arc */}
         {levelPct === null ? null : (
-          <circle
-            className={cn(
-              TONE_STROKE[tone],
-              'transition-[stroke-dasharray,stroke] duration-500 ease-out',
-            )}
+          <m.circle
+            animate={{ strokeDashoffset: CIRCUMFERENCE - filled }}
+            className={cn(TONE_STROKE[tone])}
             cx={CENTER}
             cy={CENTER}
             fill="none"
+            initial={{ strokeDashoffset: CIRCUMFERENCE }}
             r={RADIUS}
-            strokeDasharray={`${filled} ${CIRCUMFERENCE - filled}`}
             strokeLinecap="round"
             strokeWidth={STROKE}
+            style={{ strokeDasharray: CIRCUMFERENCE }}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 0.8, ease: [0.2, 0, 0, 1], delay: 0.1 }
+            }
           />
         )}
 
         {/* Inner Charging Aura Ring */}
         {isCharging ? (
-          <circle
-            className={cn(TONE_STROKE[tone], 'animate-pulse opacity-40')}
+          <m.circle
+            animate={
+              shouldReduceMotion
+                ? { scale: 1, opacity: 0.4 }
+                : { scale: [1, 1.08, 1], opacity: [0.5, 0.8, 0.5] }
+            }
+            className={cn(TONE_STROKE[tone], 'opacity-40')}
             cx={CENTER}
             cy={CENTER}
             fill="none"
@@ -76,26 +111,52 @@ export function BatteryGauge({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             strokeDashoffset={-INNER_CIRCUMFERENCE * 0.25}
             strokeLinecap="round"
             strokeWidth={2}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 1.6, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
+            }
           />
         ) : null}
       </svg>
 
-      <div aria-hidden="true" className="absolute flex select-none flex-col items-center gap-0.5">
-        <span className={cn('numeric font-semibold text-display tracking-tight', TONE_TEXT[tone])}>
+      <m.div
+        animate={{ opacity: 1 }}
+        aria-hidden="true"
+        className="absolute flex select-none flex-col items-center gap-0.5"
+        initial={{ opacity: 0 }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : { delay: 0.3, duration: 0.25, ease: [0.2, 0, 0, 1] }
+        }
+      >
+        <m.span
+          animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+          className={cn('numeric font-semibold text-display tracking-tight', TONE_TEXT[tone])}
+          initial={shouldReduceMotion ? { opacity: 0 } : { y: 4, opacity: 0 }}
+          key={levelPct ?? 'empty'}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: [0.2, 0, 0, 1] }
+          }
+        >
           {levelPct === null ? EMPTY_VALUE : formatPercent(ratio)}
-        </span>
+        </m.span>
         {isCharging ? (
-          <span
-            className={cn(
-              'flex animate-pulse items-center gap-1 font-medium text-[11px]',
-              TONE_TEXT[tone],
-            )}
+          <m.span
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: [1, 0.6, 1] }}
+            className={cn('flex items-center gap-1 font-medium text-[11px]', TONE_TEXT[tone])}
+            transition={
+              shouldReduceMotion
+                ? { duration: 0 }
+                : { duration: 1.2, repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut' }
+            }
           >
             <Zap className="size-3 fill-current" />
             Charging
-          </span>
+          </m.span>
         ) : null}
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

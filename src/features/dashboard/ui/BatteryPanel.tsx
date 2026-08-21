@@ -23,16 +23,17 @@ export function BatteryPanel({ battery, isLoading }: BatteryPanelProps) {
           <Skeleton className="h-4 w-40" />
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-4">
-          <BatteryGauge
-            isCharging={battery?.isCharging ?? false}
-            levelPct={battery?.levelPct ?? null}
-            tone={tone}
-          />
+        <div className="flex w-full flex-1 flex-col items-center justify-between gap-3">
+          <div className="flex flex-1 items-center justify-center py-0.5">
+            <BatteryGauge
+              isCharging={battery?.isCharging ?? false}
+              levelPct={battery?.levelPct ?? null}
+              tone={tone}
+            />
+          </div>
 
           {/* Electrical & Thermal Micro-Metrics Grid */}
-          <div className="grid w-full grid-cols-2 gap-2 pt-1">
-            {/* Temperature Chip */}
+          <div className="grid w-full grid-cols-2 gap-2 border-border/50 border-t pt-2">
             <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
               <Thermometer className="size-3.5 shrink-0 text-muted-foreground" />
               <div className="flex min-w-0 flex-col">

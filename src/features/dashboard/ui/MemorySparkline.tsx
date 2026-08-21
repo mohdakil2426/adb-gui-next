@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'framer-motion';
 import { useId, useMemo, useState } from 'react';
 import type { MemorySample } from '@/features/dashboard/model/memoryHistoryStore';
 import { formatBytes, formatPercent, usageRatio } from '@/shared/utils/format';
@@ -14,9 +15,9 @@ import { formatBytes, formatPercent, usageRatio } from '@/shared/utils/format';
  */
 
 const VIEW_W = 300;
-const VIEW_H = 64;
+const VIEW_H = 38;
 /** Keeps the 1.5px stroke from clipping at 0% and 100%. */
-const PAD_Y = 3;
+const PAD_Y = 2;
 
 const timeFormatter = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium' });
 
@@ -32,7 +33,20 @@ function buildPoints(samples: MemorySample[]): Point[] {
   if (samples.length === 0) {
     return [];
   }
-  const step = samples.length === 1 ? 0 : VIEW_W / (samples.length - 1);
+  if (samples.length === 1) {
+    const sample = samples[0];
+    if (!sample) {
+      return [];
+    }
+    const ratio = usageRatio(sample.usedBytes, sample.totalBytes);
+    const clamped = Math.min(1, Math.max(0, ratio));
+    const y = PAD_Y + (1 - clamped) * (VIEW_H - PAD_Y * 2);
+    return [
+      { at: sample.at, usedBytes: sample.usedBytes, ratio, x: 0, y },
+      { at: sample.at, usedBytes: sample.usedBytes, ratio, x: VIEW_W, y },
+    ];
+  }
+  const step = VIEW_W / (samples.length - 1);
   return samples.map((sample, index) => {
     const ratio = usageRatio(sample.usedBytes, sample.totalBytes);
     const clamped = Math.min(1, Math.max(0, ratio));
@@ -40,7 +54,7 @@ function buildPoints(samples: MemorySample[]): Point[] {
       at: sample.at,
       usedBytes: sample.usedBytes,
       ratio,
-      x: samples.length === 1 ? VIEW_W / 2 : index * step,
+      x: index * step,
       y: PAD_Y + (1 - clamped) * (VIEW_H - PAD_Y * 2),
     };
   });
@@ -48,6 +62,7 @@ function buildPoints(samples: MemorySample[]): Point[] {
 
 export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
   const gradientId = useId();
+  const shouldReduceMotion = useReducedMotion();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const points = useMemo(() => buildPoints(samples), [samples]);
 
@@ -63,13 +78,16 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
   const readout = active ?? latest;
 
   return (
-    <div className="flex flex-col gap-1">
+    <m.div
+      animate={{ opacity: 1 }}
+      className="flex flex-col gap-1"
+      initial={shouldReduceMotion ? false : { opacity: 0 }}
+      transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.3 }}
+    >
       <svg
         aria-label={`Memory usage over the last ${points.length} samples, currently ${formatPercent(latest?.ratio ?? 0)}`}
-        className="h-16 w-full"
-        onPointerLeave={() => {
-          setActiveIndex(null);
-        }}
+        className="h-9 w-full"
+        onPointerLeave={() => {}}
         onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
           if (bounds.width === 0) {
@@ -89,22 +107,39 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
             <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <polygon fill={`url(#${gradientId})`} points={area} />
-        <polyline
+        <m.polygon
+          animate={{ opacity: 1 }}
+          fill={`url(#${gradientId})`}
+          initial={shouldReduceMotion ? false : { opacity: 0 }}
+          points={area}
+          transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6 }}
+        />
+        <m.polyline
+          animate={{ pathLength: 1 }}
           fill="none"
+          initial={shouldReduceMotion ? false : { pathLength: 0 }}
           points={line}
           stroke="var(--chart-1)"
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={1.5}
+          transition={
+            shouldReduceMotion ? { duration: 0 } : { duration: 0.8, ease: [0.2, 0, 0, 1] }
+          }
           vectorEffect="non-scaling-stroke"
         />
         {active ? (
-          <circle
+          <m.circle
+            animate={{ scale: 1 }}
             cx={active.x}
             cy={active.y}
             fill="var(--chart-1)"
+            initial={shouldReduceMotion ? false : { scale: 0 }}
+            layout
             r={2.5}
+            transition={
+              shouldReduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 15 }
+            }
             vectorEffect="non-scaling-stroke"
           />
         ) : null}
@@ -114,6 +149,6 @@ export function MemorySparkline({ samples }: { samples: MemorySample[] }) {
           ? `${formatBytes(readout.usedBytes)} · ${formatPercent(readout.ratio)} · ${timeFormatter.format(readout.at)}`
           : null}
       </p>
-    </div>
+    </m.div>
   );
 }

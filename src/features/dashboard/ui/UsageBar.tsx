@@ -1,3 +1,4 @@
+import { m, useReducedMotion } from 'framer-motion';
 import { TONE_FILL, type Tone, usageTone } from '@/features/dashboard/model/tone';
 import { cn } from '@/shared/utils/cn';
 import { formatPercent } from '@/shared/utils/format';
@@ -19,6 +20,7 @@ const PERCENT_SCALE = 100;
 export function UsageBar({ label, ratio, tone }: UsageBarProps) {
   const clamped = Math.min(Math.max(ratio, 0), 1);
   const resolvedTone = tone ?? usageTone(clamped);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div
@@ -30,9 +32,11 @@ export function UsageBar({ label, ratio, tone }: UsageBarProps) {
       className="h-1.5 w-full overflow-hidden rounded-full bg-secondary"
       role="progressbar"
     >
-      <div
+      <m.div
+        animate={{ width: `${clamped * PERCENT_SCALE}%` }}
         className={cn('h-full rounded-full', TONE_FILL[resolvedTone])}
-        style={{ width: `${clamped * PERCENT_SCALE}%` }}
+        initial={shouldReduceMotion ? false : { width: 0 }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.6, ease: [0.2, 0, 0, 1] }}
       />
     </div>
   );
