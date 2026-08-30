@@ -85,13 +85,12 @@ pub fn is_apk_asset(name: &str) -> bool {
     }
 
     // Exclude test / runner / benchmark helper artifacts
-    if lower.contains("androidTest.apk")
-        || lower.contains("-androidTest")
+    if lower.contains("androidtest")
         || lower.contains("_test_runner")
+        || lower.contains("-test-runner")
     {
         return false;
     }
-
     true
 }
 
@@ -148,8 +147,11 @@ mod tests {
         assert!(!is_apk_asset("app.apk.sha256"));
         assert!(!is_apk_asset("alpine-keys.apk"));
         assert!(!is_apk_asset("app-androidTest.apk"));
+        assert!(!is_apk_asset("androidTest.apk"));
+        assert!(!is_apk_asset("app-androidtest-arm64.apk"));
+        assert!(!is_apk_asset("app_test_runner.apk"));
+        assert!(!is_apk_asset("app-test-runner.apk"));
     }
-
     #[test]
     fn test_classify_abi() {
         assert_eq!(classify_abi("app-arm64-v8a.apk").1, "arm64-v8a");
