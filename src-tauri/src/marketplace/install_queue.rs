@@ -6,7 +6,7 @@ use log::info;
 use reqwest::Client;
 use reqwest::redirect::Policy;
 use tauri::{AppHandle, Emitter};
-use tempfile::NamedTempFile;
+use tempfile::Builder;
 use tokio::io::AsyncWriteExt;
 
 use super::types::DownloadProgressPayload;
@@ -31,7 +31,11 @@ pub fn is_owned_marketplace_download(path: &Path) -> bool {
     let Ok(canonical_path) = path.canonicalize() else {
         return false;
     };
-    canonical_path.starts_with(&canonical_root)
+    if !canonical_path.starts_with(&canonical_root) {
+        return false;
+    }
+    let ext = canonical_path.extension().and_then(|s| s.to_str()).unwrap_or("");
+    ext.eq_ignore_ascii_case("apk") || ext.eq_ignore_ascii_case("apex")
 }
 
 /// Download an APK with chunked streaming and real-time progress events.
@@ -57,8 +61,16 @@ pub async fn download_apk_streaming(
 
     let total_bytes = response.content_length();
 
-    // Create a temp file in the dedicated marketplace download directory
-    let temp_file = NamedTempFile::new_in(marketplace_download_root()?)
+    // Create a temp file ending with .apk in the dedicated marketplace download directory
+    let safe_pkg: String = package_name
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '.' || *c == '-' || *c == '_')
+        .collect();
+    let prefix = if safe_pkg.is_empty() { "pkg-".to_string() } else { format!("{safe_pkg}-") };
+    let temp_file = Builder::new()
+        .prefix(&prefix)
+        .suffix(".apk")
+        .tempfile_in(marketplace_download_root()?)
         .map_err(|e| format!("Failed to create temp file: {e}"))?;
     let (_, file_path) =
         temp_file.keep().map_err(|e| format!("Failed to persist temp file: {e}"))?;

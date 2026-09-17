@@ -32,6 +32,7 @@ export async function installMarketplacePackage(
   const toastId = toast.loading(`Downloading ${appName}…`);
   try {
     const localPath = await MarketplaceDownloadApk(downloadUrl, packageName ?? appName);
+    toast.loading(`Installing ${appName} on ${target.serial}…`, { id: toastId });
     await MarketplaceInstallApk(localPath, target.serial);
     useLogStore.getState().addLog(`[Marketplace] Installed ${appName}`, 'success');
     toast.success(`${appName} installed`, { id: toastId, description: `Target: ${target.serial}` });

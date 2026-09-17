@@ -17,6 +17,7 @@ import {
   getMarketplaceEffectiveGithubToken,
   useMarketplaceStore,
 } from '@/features/marketplace/model/marketplaceStore';
+import { CopyButton } from '@/shared/components/CopyButton';
 import { Badge } from '@/shared/ui/badge';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -133,9 +134,17 @@ export function GithubAuthCard() {
               <p className="font-medium text-foreground">
                 Enter this code at github.com/login/device
               </p>
-              <p className="mt-1 select-all font-mono text-foreground text-title tracking-[0.2em]">
-                {githubDeviceChallenge.challenge.userCode}
-              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <span className="select-all font-mono text-foreground text-title tracking-[0.2em]">
+                  {githubDeviceChallenge.challenge.userCode}
+                </span>
+                <CopyButton
+                  aria-label="Copy code"
+                  className="size-7"
+                  label="Device code"
+                  value={githubDeviceChallenge.challenge.userCode}
+                />
+              </div>
               <p className="mt-1 text-caption">
                 Code expires in {Math.ceil(githubDeviceChallenge.challenge.expiresIn / 60)} min —
                 approve in browser to finish.

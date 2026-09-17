@@ -635,11 +635,11 @@ pkce/web_auth → SHA-256 S256 + localhost TcpListener callback (kept backend, h
 ManagedHttpClient  — tuned reqwest (pool 32, idle 180s, tcp_nodelay, http2 adaptive window) + Bearer injection from TokenStore
 ```
 
-UI: `features/marketplace/ui/MarketplaceSettings.tsx` now **single GitHub card** — `Signed in as … / Not signed in — one-click ready`, `Rate limit: remaining/limit`, `Sign in with GitHub` (device flow `user_code XXXX-XXXX` → `github.com/login/device`), `Sign out`, `Advanced: OAuth client ID (optional)` built-in fallback. Duplicate `Secure GitHub Login` / `Per-host PATs` / `SearchPreferences PAT` removed 2026-08-22 per user review. Backend `token_store/pkce/web_auth/host_tokens` kept for advanced/IPC.
+UI: `features/marketplace/sources/GithubAuthCard.tsx` now **single GitHub card** — `Signed in as … / Not signed in — one-click ready`, `Rate limit: remaining/limit`, `Sign in with GitHub` (device flow `user_code XXXX-XXXX` with 1-click `CopyButton` → `github.com/login/device`), `Sign out`, `Advanced: OAuth client ID (optional)` built-in fallback. Duplicate `Secure GitHub Login` / `Per-host PATs` / `SearchPreferences PAT` removed 2026-08-22 per user review. Backend `token_store/pkce/web_auth/host_tokens` kept for advanced/IPC.
 
 Plan: `docs/internal/reports/active/2026-08-21/2026-08-21-komi-github-backend-integration-plan.md` (implemented) + `closed/2026-08-20` audit.
 
-Install path: streaming `marketplace_download_apk(url, packageName?, downloadId?)` → throttled `marketplace:download-progress` events → owned-temp file → `marketplace_install_apk` (only paths under owned temp) → `adb -s SERIAL install`.
+Install path: streaming `marketplace_download_apk(url, packageName?, downloadId?)` → throttled `marketplace:download-progress` events → owned-temp file (`.apk` suffix) → `marketplace_install_apk` (only paths under owned temp ending in `.apk`/`.apex`) → `adb -s SERIAL install`.
 
 Provider detail fallback: `F-Droid` `get_detail` now tries `resolver::resolve_github_repo` → `github::get_detail` when F-Droid has no entry, so package-IDs from curated tools never 404. GitHub detail itself resolves any `identifier` via `resolve_github_repo_dynamic`, supports pre-release fallback (`/releases/latest` → first from `/releases`), dual-path README (`api /readme` → raw CDN across `master/main/HEAD` + `.github/README.md` etc.), and enriched markdown.
 

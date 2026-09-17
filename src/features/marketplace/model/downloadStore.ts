@@ -1,5 +1,5 @@
-import { listen } from '@tauri-apps/api/event';
 import { create } from 'zustand';
+import { EventsOn } from '@/desktop/runtime';
 
 export interface DownloadProgress {
   bytesDownloaded: number;
@@ -34,14 +34,14 @@ export const useMarketplaceDownloadStore = create<DownloadStoreState>((set) => (
     })),
 }));
 
-if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+if (typeof window !== 'undefined') {
   try {
-    void listen<DownloadProgress>('marketplace:download-progress', (event) => {
-      if (event.payload?.packageName) {
-        useMarketplaceDownloadStore.getState().setDownloadProgress(event.payload);
-        if (event.payload.percentage >= 100) {
+    EventsOn<DownloadProgress>('marketplace:download-progress', (payload) => {
+      if (payload?.packageName) {
+        useMarketplaceDownloadStore.getState().setDownloadProgress(payload);
+        if (payload.percentage >= 100) {
           setTimeout(() => {
-            useMarketplaceDownloadStore.getState().clearDownload(event.payload.packageName);
+            useMarketplaceDownloadStore.getState().clearDownload(payload.packageName);
           }, 2000);
         }
       }

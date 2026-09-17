@@ -82,6 +82,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
     };
   }, [githubToken, selectedApp, retryTrigger]);
 
+  const targetPackageName = detail?.packageName ?? selectedApp?.packageName ?? '';
   const displayName = detail?.name ?? selectedApp?.name ?? 'App';
   const effectiveDownloadUrl = detail?.downloadUrl ?? selectedApp?.downloadUrl;
   const downloadsLabel = useMemo(
@@ -95,7 +96,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
     }
     try {
       setPrimaryInstallState('running');
-      await installMarketplacePackage(displayName, effectiveDownloadUrl);
+      await installMarketplacePackage(displayName, effectiveDownloadUrl, null, targetPackageName);
       setPrimaryInstallState('done');
       setTimeout(() => {
         setPrimaryInstallState('idle');
@@ -108,7 +109,12 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
   const handleVersionInstall = async (versionName: string, downloadUrl: string) => {
     try {
       setActiveVersionName(versionName);
-      await installMarketplacePackage(`${displayName} ${versionName}`, downloadUrl);
+      await installMarketplacePackage(
+        `${displayName} ${versionName}`,
+        downloadUrl,
+        null,
+        targetPackageName,
+      );
     } finally {
       setActiveVersionName(null);
     }
@@ -143,7 +149,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
         onInstall={() => {
           void handlePrimaryInstall();
         }}
-        packageName={detail?.packageName ?? selectedApp.packageName}
+        packageName={targetPackageName}
         repoStars={detail?.repoStars}
         source={selectedApp.source}
       />

@@ -5,6 +5,7 @@ import { formatBytes } from '@/features/marketplace/model/downloadStore';
 import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { MarketplaceAppIcon } from '@/features/marketplace/ui/AppIcon';
 import { AppInstallButton } from '@/features/marketplace/ui/AppInstallButton';
+import { DownloadProgressStrip } from '@/features/marketplace/ui/DownloadProgressStrip';
 import { formatDownloadCount } from '@/features/marketplace/utils/install';
 import { Badge } from '@/shared/ui/badge';
 import { formatRating } from '@/shared/utils/format';
@@ -75,7 +76,10 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
         </div>
       </button>
 
-      <AppInstallButton app={app} onSelect={onSelect} target={target} />
+      <div className="flex flex-col items-end gap-1">
+        <AppInstallButton app={app} onSelect={onSelect} target={target} />
+        <DownloadProgressStrip className="w-28" packageName={app.packageName} />
+      </div>
     </div>
   );
 });
