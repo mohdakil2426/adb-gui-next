@@ -157,6 +157,7 @@ pub fn run() {
             commands::marketplace_search,
             commands::marketplace_get_app_detail,
             commands::marketplace_list_versions,
+            commands::marketplace_render_markdown,
             commands::marketplace_clear_cache,
             commands::marketplace_github_device_start,
             commands::marketplace_github_device_poll,
@@ -165,7 +166,6 @@ pub fn run() {
             // Debloater
             commands::marketplace_check_updates,
             commands::marketplace_get_overview_stats,
-            commands::marketplace_get_curated_tools,
             commands::marketplace_get_token_status,
             commands::marketplace_save_pat,
             commands::marketplace_logout,

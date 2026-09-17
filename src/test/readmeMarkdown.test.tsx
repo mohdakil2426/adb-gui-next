@@ -1,8 +1,16 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BrowserOpenURL } from '@/desktop/runtime';
 import { ReadmeMarkdown } from '@/features/marketplace/ui/app-detail/ReadmeMarkdown';
 
+vi.mock('@/desktop/runtime', () => ({
+  BrowserOpenURL: vi.fn(),
+}));
 describe('ReadmeMarkdown', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders headings and paragraphs correctly', () => {
     const md = '# Title\n\n## Subtitle\n\nParagraph text here.';
     render(<ReadmeMarkdown markdown={md} />);
@@ -88,5 +96,105 @@ describe('ReadmeMarkdown', () => {
 
     expect(screen.getByText('Ctrl+F')).toBeInTheDocument();
     expect(screen.getAllByText('2')).toHaveLength(2);
+  });
+
+  it('renders centered HTML blocks with linked badges and decodes HTML entities', () => {
+    const md = `<p align="center">
+<a href="https://example.com/docs"><img src="https://img.shields.io/badge/Status-Active-2563EB?style=flat&amp;logo=app" alt="App Status"></a>
+<a href="https://example.com/cn"><img src="https://img.shields.io/badge/Lang-CN-E85D75" alt="Chinese"></a>
+</p>`;
+    render(<ReadmeMarkdown markdown={md} />);
+
+    const statusBadge = screen.getByRole('img', { name: /app status/i });
+    expect(statusBadge).toHaveAttribute(
+      'src',
+      'https://img.shields.io/badge/Status-Active-2563EB?style=flat&logo=app',
+    );
+
+    const cnBadge = screen.getByRole('img', { name: /chinese/i });
+    expect(cnBadge).toHaveAttribute('src', 'https://img.shields.io/badge/Lang-CN-E85D75');
+
+    const docLink = screen.getByRole('link', { name: /app status/i });
+    expect(docLink).toHaveAttribute('href', 'https://example.com/docs');
+  });
+
+  it('renders centered HTML headings and HTML images with dimensions', () => {
+    const md = `<p align="center">
+<img src="https://raw.githubusercontent.com/org/repo/main/logo.png" width="96" alt="Haoleme Logo">
+</p>
+<h1 align="center">Haoleme</h1>`;
+    render(<ReadmeMarkdown markdown={md} />);
+
+    const logo = screen.getByRole('img', { name: /haoleme logo/i });
+    expect(logo).toHaveAttribute('src', 'https://raw.githubusercontent.com/org/repo/main/logo.png');
+    expect(logo).toHaveAttribute('width', '96');
+
+    const heading = screen.getByRole('heading', { level: 2, name: /haoleme/i });
+    expect(heading).toHaveClass('text-center');
+  });
+
+  it('renders interactive details and summary accordion disclosure', () => {
+    const md = `<details>
+<summary>Advanced Options</summary>
+Detailed configuration information here.
+</details>`;
+    render(<ReadmeMarkdown markdown={md} />);
+
+    expect(screen.getByText('Advanced Options')).toBeInTheDocument();
+    expect(screen.getByText('Detailed configuration information here.')).toBeInTheDocument();
+  });
+
+  it('renders ordered numbered lists with sequential numbers', () => {
+    const md = '1. Download the tool\n2. Connect via USB\n3. Execute payload';
+    render(<ReadmeMarkdown markdown={md} />);
+
+    expect(screen.getByText('1.')).toBeInTheDocument();
+    expect(screen.getByText('Download the tool')).toBeInTheDocument();
+    expect(screen.getByText('2.')).toBeInTheDocument();
+    expect(screen.getByText('Connect via USB')).toBeInTheDocument();
+    expect(screen.getByText('3.')).toBeInTheDocument();
+    expect(screen.getByText('Execute payload')).toBeInTheDocument();
+  });
+
+  it('intercepts external link clicks and calls BrowserOpenURL', () => {
+    const md = '[Website](https://example.com)';
+    render(<ReadmeMarkdown markdown={md} />);
+
+    const link = screen.getByRole('link', { name: /website/i });
+    fireEvent.click(link);
+
+    expect(BrowserOpenURL).toHaveBeenCalledWith('https://example.com');
+  });
+
+  it('renders pre-rendered comrak html when supplied and intercepts links', () => {
+    const html =
+      '<h2>Rendered by Comrak</h2><p>Description text</p><a href="https://example.org">External Documentation</a>';
+    render(<ReadmeMarkdown html={html} markdown="" />);
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: /rendered by comrak/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Description text')).toBeInTheDocument();
+
+    const link = screen.getByRole('link', { name: /external documentation/i });
+    fireEvent.click(link);
+    expect(BrowserOpenURL).toHaveBeenCalledWith('https://example.org');
+  });
+
+  it('copies code to clipboard when clicking pre element', () => {
+    const writeTextMock = vi.fn();
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    const html = '<pre><code>adb shell pm list packages</code></pre>';
+    render(<ReadmeMarkdown html={html} markdown="" />);
+
+    const pre = screen.getByText('adb shell pm list packages');
+    fireEvent.click(pre);
+
+    expect(writeTextMock).toHaveBeenCalledWith('adb shell pm list packages');
   });
 });

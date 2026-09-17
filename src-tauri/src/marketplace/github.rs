@@ -6,7 +6,7 @@ use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
 use super::assets::{is_apk_asset, rank_and_select_best_apk};
-use super::markdown::enrich_readme_markdown;
+use super::markdown::{enrich_readme_markdown, render_markdown_to_html};
 use super::resolver::resolve_github_repo_dynamic;
 use super::types::{MarketplaceApp, MarketplaceAppDetail, VersionInfo};
 use crate::CmdResult;
@@ -280,8 +280,8 @@ pub async fn get_detail(
             .collect()
     });
 
-    let readme_markdown = fetch_readme(client, &full_name, Some(default_branch), token).await;
-
+    let (readme_markdown, readme_html) =
+        fetch_readme(client, &full_name, Some(default_branch), token).await;
     Ok(MarketplaceAppDetail {
         name: repo["name"].as_str().unwrap_or(&full_name).to_string(),
         package_name: package_or_repo.to_string(),
@@ -305,6 +305,7 @@ pub async fn get_detail(
         repo_forks: repo["forks_count"].as_u64(),
         updated_at: repo["pushed_at"].as_str().map(|value| value.to_string()),
         readme_markdown,
+        readme_html,
         ..Default::default()
     })
 }
@@ -404,23 +405,24 @@ pub async fn fetch_readme(
     package_or_repo: &str,
     default_branch: Option<&str>,
     token: &Option<String>,
-) -> Option<String> {
+) -> (Option<String>, Option<String>) {
     let full_name = resolve_github_repo_dynamic(client, package_or_repo, None, None, token)
         .await
         .unwrap_or_else(|| package_or_repo.to_string());
 
     let parts: Vec<&str> = full_name.split('/').collect();
     if parts.len() != 2 {
-        return None;
+        return (None, None);
     }
     let (owner, repo) = (parts[0], parts[1]);
 
     // 1. Primary path: GitHub API
     let api_url = format!("https://api.github.com/repos/{full_name}/readme");
     if let Some(text) = fetch_readme_endpoint(client, &api_url, true, token).await {
-        return Some(enrich_readme_markdown(&text, owner, repo, default_branch));
+        let markdown = enrich_readme_markdown(&text, owner, repo, default_branch);
+        let html = render_markdown_to_html(&text, Some(owner), Some(repo), default_branch);
+        return (Some(markdown), Some(html));
     }
-
     // 2. Secondary path: Direct raw CDN fallback
     let branches = [default_branch.unwrap_or("HEAD"), "main", "master"];
     let files = [
@@ -437,14 +439,15 @@ pub async fn fetch_readme(
             let raw_url =
                 format!("https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{file}");
             if let Some(text) = fetch_readme_endpoint(client, &raw_url, false, token).await {
-                return Some(enrich_readme_markdown(&text, owner, repo, Some(branch)));
+                let markdown = enrich_readme_markdown(&text, owner, repo, Some(branch));
+                let html = render_markdown_to_html(&text, Some(owner), Some(repo), Some(branch));
+                return (Some(markdown), Some(html));
             }
         }
     }
 
-    None
+    (None, None)
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

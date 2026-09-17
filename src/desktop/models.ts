@@ -549,6 +549,7 @@ export namespace backend {
     name: string;
     packageName: string;
     rating: number | null;
+    readmeHtml: string | null;
     readmeMarkdown: string | null;
     repoForks: number | null;
     repoStars: number | null;

@@ -75,6 +75,7 @@ byteorder = "1.5.0"
 lz4_flex = "0.14.0"
 scraper = "0.27.0"
 tauri-plugin-single-instance = "2.4.3"
+comrak = { version = "0.55", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = [

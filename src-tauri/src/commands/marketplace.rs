@@ -5,10 +5,10 @@ use crate::marketplace::rate_limit::ManagedRateLimitStore;
 use crate::marketplace::service;
 use crate::marketplace::token_store::ManagedTokenStore;
 use crate::marketplace::{
-    AppUpdateCandidate, CuratedTool, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult,
-    ManagedHttpClient, MarketplaceApp, MarketplaceAppDetail, MarketplaceHostTokenEntry,
-    MarketplaceOverviewStats, MarketplaceRateLimitStatus, MarketplaceTokenStatus, SearchFilters,
-    VersionInfo, marketplace_check_updates as check_updates,
+    AppUpdateCandidate, GithubDeviceFlowChallenge, GithubDeviceFlowPollResult, ManagedHttpClient,
+    MarketplaceApp, MarketplaceAppDetail, MarketplaceHostTokenEntry, MarketplaceOverviewStats,
+    MarketplaceRateLimitStatus, MarketplaceTokenStatus, SearchFilters, VersionInfo,
+    marketplace_check_updates as check_updates,
 };
 use crate::payload::remote::validate_outbound_url;
 use log::info;
@@ -237,11 +237,6 @@ pub fn marketplace_get_overview_stats() -> MarketplaceOverviewStats {
     service::marketplace_get_overview_stats()
 }
 
-#[tauri::command]
-pub fn marketplace_get_curated_tools() -> Vec<CuratedTool> {
-    service::marketplace_get_curated_tools()
-}
-
 // ─── Komi-style token + rate-limit + host-token + curated feed ───────────
 
 #[tauri::command]
@@ -436,4 +431,19 @@ pub async fn marketplace_get_curated_feed(
         "",
     )
     .await
+}
+
+#[tauri::command]
+pub fn marketplace_render_markdown(
+    markdown: String,
+    owner: Option<String>,
+    repo: Option<String>,
+    default_branch: Option<String>,
+) -> String {
+    crate::marketplace::markdown::render_markdown_to_html(
+        &markdown,
+        owner.as_deref(),
+        repo.as_deref(),
+        default_branch.as_deref(),
+    )
 }

@@ -188,7 +188,7 @@ export function AppDetailView({ target }: { target: InstallTarget }) {
                     README
                   </h2>
                   <div className="rounded-lg border border-border bg-surface-raised p-3">
-                    <ReadmeMarkdown markdown={detail.readmeMarkdown} />
+                    <ReadmeMarkdown html={detail.readmeHtml} markdown={detail.readmeMarkdown} />
                   </div>
                 </section>
               ) : null}

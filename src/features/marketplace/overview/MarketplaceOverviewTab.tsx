@@ -1,13 +1,8 @@
 import { History, Search, TrendingUp } from 'lucide-react';
-import type { backend } from '@/desktop/models';
-import type { InstallTarget } from '@/features/marketplace/model/installTarget';
 import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
-import { CuratedPowerToolsGrid } from '@/features/marketplace/overview/CuratedPowerToolsGrid';
 import { CategoryDistributionMeter } from '@/features/marketplace/overview/charts/CategoryDistributionMeter';
 import { SourceCompositionDonut } from '@/features/marketplace/overview/charts/SourceCompositionDonut';
 import { Button } from '@/shared/ui/button';
-
-type MarketplaceApp = backend.MarketplaceApp;
 
 const QUICK_DISCOVERY_TAGS = [
   { label: 'Root & Magisk Modules', query: 'root' },
@@ -22,15 +17,9 @@ const QUICK_DISCOVERY_TAGS = [
 
 interface MarketplaceOverviewTabProps {
   onQuickSearch: (query: string) => void;
-  onSelectApp: (app: MarketplaceApp) => void;
-  target: InstallTarget;
 }
 
-export function MarketplaceOverviewTab({
-  onQuickSearch,
-  onSelectApp,
-  target,
-}: MarketplaceOverviewTabProps) {
+export function MarketplaceOverviewTab({ onQuickSearch }: MarketplaceOverviewTabProps) {
   const searchHistory = useMarketplaceStore((state) => state.searchHistory);
   const setActiveTab = useMarketplaceStore((state) => state.setActiveTab);
 
@@ -94,9 +83,6 @@ export function MarketplaceOverviewTab({
         <SourceCompositionDonut />
         <CategoryDistributionMeter />
       </div>
-
-      {/* Curated Power Tools Grid */}
-      <CuratedPowerToolsGrid onSelectApp={onSelectApp} target={target} />
     </div>
   );
 }

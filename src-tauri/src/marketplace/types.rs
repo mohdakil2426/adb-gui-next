@@ -73,6 +73,7 @@ pub struct MarketplaceAppDetail {
     pub downloads_count: Option<u64>,
     pub updated_at: Option<String>,
     pub readme_markdown: Option<String>,
+    pub readme_html: Option<String>,
 }
 
 // ─── Version entry ───────────────────────────────────────────────────────────
@@ -186,22 +187,6 @@ pub struct MarketplaceOverviewStats {
     pub dev_count: u32,
     pub media_count: u32,
     pub tools_count: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CuratedTool {
-    pub name: String,
-    pub package_name: String,
-    pub summary: String,
-    pub description: String,
-    pub source: String,
-    pub version: String,
-    pub repo_stars: Option<u32>,
-    pub rating: Option<f64>,
-    pub categories: Vec<String>,
-    pub download_url: Option<String>,
-    pub icon_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]

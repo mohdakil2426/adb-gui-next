@@ -16,7 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } = {}) {
   const activeTab = useMarketplaceStore((state) => state.activeTab);
   const setActiveTab = useMarketplaceStore((state) => state.setActiveTab);
-  const openDetail = useMarketplaceStore((state) => state.openDetail);
 
   const {
     localQuery,
@@ -52,7 +51,7 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
         <TabsList className="w-full">
           <TabsTrigger className="flex-1 gap-2" value="overview">
             <Sparkles className="size-4 text-primary" />
-            <span>Overview & Curated</span>
+            <span>Overview</span>
           </TabsTrigger>
 
           <TabsTrigger className="flex-1 gap-2" value="browse">
@@ -77,11 +76,7 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
         </TabsList>
 
         <TabsContent className="mt-0 flex-1 outline-none" value="overview">
-          <MarketplaceOverviewTab
-            onQuickSearch={handleQuickSearch}
-            onSelectApp={openDetail}
-            target={target}
-          />
+          <MarketplaceOverviewTab onQuickSearch={handleQuickSearch} />
         </TabsContent>
 
         <TabsContent className="mt-0 flex-1 outline-none" value="browse">

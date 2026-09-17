@@ -543,6 +543,20 @@ export function MarketplaceGetAppDetail(
   });
 }
 
+export function MarketplaceRenderMarkdown(
+  markdown: string,
+  owner?: string,
+  repo?: string,
+  defaultBranch?: string,
+): Promise<string> {
+  return call('marketplace_render_markdown', {
+    markdown,
+    owner: owner ?? null,
+    repo: repo ?? null,
+    defaultBranch: defaultBranch ?? null,
+  });
+}
+
 /** Clear backend marketplace caches. */
 export function MarketplaceClearCache(): Promise<string> {
   return call('marketplace_clear_cache');
@@ -876,10 +890,6 @@ export function MarketplaceCheckUpdates(
 
 export function MarketplaceGetOverviewStats(): Promise<backend.MarketplaceOverviewStats> {
   return call('marketplace_get_overview_stats');
-}
-
-export function MarketplaceGetCuratedTools(): Promise<backend.MarketplaceApp[]> {
-  return call('marketplace_get_curated_tools');
 }
 
 export function MarketplaceGetTokenStatus(): Promise<backend.MarketplaceTokenStatus> {
