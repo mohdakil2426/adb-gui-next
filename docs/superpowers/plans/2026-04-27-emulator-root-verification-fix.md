@@ -120,7 +120,8 @@ pub struct RootAvdResult {
 Add matching types to `src/lib/desktop/models.ts`:
 
 ```ts
-export type RootActivationStatus = 'patchInstalled' | 'verified' | 'verificationFailed';
+export type RootActivationStatus =
+  "patchInstalled" | "verified" | "verificationFailed";
 
 export interface RootVerificationResult {
   status: RootActivationStatus;
@@ -144,6 +145,7 @@ export interface RootAvdResult {
 ## Task 1: Backend DTOs And Command Surface
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/models.rs`
 - Modify: `src-tauri/src/commands/emulator.rs`
 - Modify: `src-tauri/src/lib.rs`
@@ -157,8 +159,8 @@ export interface RootAvdResult {
 Add this test to `src/test/tauriPermissions.test.ts`:
 
 ```ts
-it('allows the emulator root verification command', () => {
-  const permissions = readFileSync(permissionsFile, 'utf8');
+it("allows the emulator root verification command", () => {
+  const permissions = readFileSync(permissionsFile, "utf8");
 
   expect(permissions).toContain('"verify_avd_root"');
 });
@@ -214,9 +216,9 @@ In `src/lib/desktop/backend.ts`, add:
 /** Verify that a cold-booted AVD has working Magisk root. */
 export function VerifyAvdRoot(
   avdName: string,
-  serial: string,
+  serial: string
 ): Promise<backend.RootVerificationResult> {
-  return call('verify_avd_root', { avdName, serial });
+  return call("verify_avd_root", { avdName, serial });
 }
 ```
 
@@ -243,6 +245,7 @@ git commit -m "feat: add emulator root verification command contract"
 ## Task 2: Strict Shell Exit Marker Handling
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/root.rs`
 - Test: `src-tauri/src/emulator/root.rs`
 - Test: `src/test/rootAvdPipeline.test.ts`
@@ -266,11 +269,11 @@ This documents the parse behavior. The implementation change in the next step ma
 In `src/test/rootAvdPipeline.test.ts`, add:
 
 ```ts
-it('treats a missing checked-shell exit marker as a pipeline failure', () => {
-  const source = readFileSync(rootPipelineFile, 'utf8');
+it("treats a missing checked-shell exit marker as a pipeline failure", () => {
+  const source = readFileSync(rootPipelineFile, "utf8");
 
-  expect(source).toContain('Missing ADB shell exit marker');
-  expect(source).toContain('parse_exit_code(&output, EXIT_CODE_MARKER)');
+  expect(source).toContain("Missing ADB shell exit marker");
+  expect(source).toContain("parse_exit_code(&output, EXIT_CODE_MARKER)");
 });
 ```
 
@@ -332,6 +335,7 @@ git commit -m "fix: fail root pipeline when shell exit marker is missing"
 ## Task 3: Truthful Patch Result Instead Of Immediate Root Success
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/root.rs`
 - Modify: `src/components/emulator-manager/RootWizard.tsx`
 - Modify: `src/components/emulator-manager/RootResultStep.tsx`
@@ -344,11 +348,13 @@ git commit -m "fix: fail root pipeline when shell exit marker is missing"
 In `src/test/rootAvdPipeline.test.ts`, add:
 
 ```ts
-it('returns patch-installed status instead of verified-root status from root_avd', () => {
-  const source = readFileSync(rootPipelineFile, 'utf8');
+it("returns patch-installed status instead of verified-root status from root_avd", () => {
+  const source = readFileSync(rootPipelineFile, "utf8");
 
-  expect(source).toContain('activation_status: RootActivationStatus::PatchInstalled');
-  expect(source).toContain('Cold boot the emulator, then run verification');
+  expect(source).toContain(
+    "activation_status: RootActivationStatus::PatchInstalled"
+  );
+  expect(source).toContain("Cold boot the emulator, then run verification");
 });
 ```
 
@@ -421,19 +427,21 @@ In `src/test/RootWizard.test.tsx`, add a mock result:
 
 ```ts
 rootAvdMock.mockResolvedValue({
-  magiskVersion: '30.7',
-  patchedRamdiskPath: 'C:/Sdk/system-images/android-34/google_apis_playstore/x86_64/ramdisk.img',
+  magiskVersion: "30.7",
+  patchedRamdiskPath:
+    "C:/Sdk/system-images/android-34/google_apis_playstore/x86_64/ramdisk.img",
   managerInstalled: true,
-  activationStatus: 'patchInstalled',
-  message: 'Patched ramdisk installed. Cold boot the emulator, then run verification.',
+  activationStatus: "patchInstalled",
+  message:
+    "Patched ramdisk installed. Cold boot the emulator, then run verification.",
 });
 ```
 
 Then assert:
 
 ```ts
-expect(await screen.findByText('Patch Installed')).toBeInTheDocument();
-expect(screen.queryByText('Root Successful!')).not.toBeInTheDocument();
+expect(await screen.findByText("Patch Installed")).toBeInTheDocument();
+expect(screen.queryByText("Root Successful!")).not.toBeInTheDocument();
 ```
 
 - [ ] **Step 7: Run focused tests**
@@ -459,6 +467,7 @@ git commit -m "fix: distinguish patch installation from verified root"
 ## Task 4: Install Magisk Manager Before Shutdown
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/root.rs`
 - Test: `src/test/rootAvdPipeline.test.ts`
 
@@ -467,10 +476,12 @@ git commit -m "fix: distinguish patch installation from verified root"
 In `src/test/rootAvdPipeline.test.ts`, add:
 
 ```ts
-it('installs Magisk Manager before sending the emulator shutdown signal', () => {
-  const source = readFileSync(rootPipelineFile, 'utf8');
-  const install = source.indexOf('Step 7 — installing Magisk Manager APK before shutdown');
-  const shutdown = source.indexOf('setprop sys.powerctl shutdown');
+it("installs Magisk Manager before sending the emulator shutdown signal", () => {
+  const source = readFileSync(rootPipelineFile, "utf8");
+  const install = source.indexOf(
+    "Step 7 — installing Magisk Manager APK before shutdown"
+  );
+  const shutdown = source.indexOf("setprop sys.powerctl shutdown");
 
   expect(install).toBeGreaterThan(-1);
   expect(shutdown).toBeGreaterThan(-1);
@@ -542,6 +553,7 @@ git commit -m "fix: install Magisk Manager before emulator shutdown"
 ## Task 5: Backend Root Verification Implementation
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/root.rs`
 - Test: `src-tauri/src/emulator/root.rs`
 
@@ -689,6 +701,7 @@ git commit -m "feat: verify emulator root after cold boot"
 ## Task 6: Frontend Verification Flow
 
 **Files:**
+
 - Modify: `src/lib/emulatorManagerStore.ts`
 - Modify: `src/components/emulator-manager/RootWizard.tsx`
 - Modify: `src/components/emulator-manager/RootResultStep.tsx`
@@ -731,7 +744,13 @@ setRootVerifying: (isVerifying) =>
 In `RootWizard.tsx`, import `VerifyAvdRoot`:
 
 ```ts
-import { LaunchAvd, RootAvd, ScanAvdRootReadiness, StopAvd, VerifyAvdRoot } from '@/lib/desktop/backend';
+import {
+  LaunchAvd,
+  RootAvd,
+  ScanAvdRootReadiness,
+  StopAvd,
+  VerifyAvdRoot,
+} from "@/lib/desktop/backend";
 ```
 
 Add handler:
@@ -739,7 +758,9 @@ Add handler:
 ```ts
 async function handleVerifyRoot() {
   if (!avd.serial) {
-    toast.error('Emulator is not online yet. Wait for the cold boot to finish, then verify again.');
+    toast.error(
+      "Emulator is not online yet. Wait for the cold boot to finish, then verify again."
+    );
     return;
   }
 
@@ -747,10 +768,10 @@ async function handleVerifyRoot() {
   try {
     const verification = await VerifyAvdRoot(avd.name, avd.serial);
     setRootVerification(verification);
-    if (verification.status === 'verified') {
-      toast.success('Root verified: su returned uid 0');
+    if (verification.status === "verified") {
+      toast.success("Root verified: su returned uid 0");
     } else {
-      toast.error('Root not verified yet');
+      toast.error("Root not verified yet");
     }
   } catch (error) {
     toast.error(String(error));
@@ -792,7 +813,11 @@ Render a "Verify Root" button when `result?.activationStatus === 'patchInstalled
   disabled={isVerifying}
   onClick={onVerifyRoot}
 >
-  {isVerifying ? <Loader2 data-icon="inline-start" className="animate-spin" /> : <ShieldCheck data-icon="inline-start" />}
+  {isVerifying ? (
+    <Loader2 data-icon="inline-start" className="animate-spin" />
+  ) : (
+    <ShieldCheck data-icon="inline-start" />
+  )}
   Verify Root
 </Button>
 ```
@@ -800,7 +825,7 @@ Render a "Verify Root" button when `result?.activationStatus === 'patchInstalled
 Render verified success only when:
 
 ```ts
-const verified = verification?.status === 'verified';
+const verified = verification?.status === "verified";
 ```
 
 For verified state, use:
@@ -884,6 +909,7 @@ git commit -m "feat: add post-boot root verification UI"
 ## Task 7: rootAVD Parity Hardening For API 30+ Ramdisks
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/root.rs`
 - Test: `src/test/rootAvdPipeline.test.ts`
 
@@ -892,12 +918,12 @@ git commit -m "feat: add post-boot root verification UI"
 In `src/test/rootAvdPipeline.test.ts`, add:
 
 ```ts
-it('checks for API 30 plus multi-cpio ramdisk layout before direct patching', () => {
-  const source = readFileSync(rootPipelineFile, 'utf8');
+it("checks for API 30 plus multi-cpio ramdisk layout before direct patching", () => {
+  const source = readFileSync(rootPipelineFile, "utf8");
 
-  expect(source).toContain('detect_multi_cpio_ramdisk');
-  expect(source).toContain('TRAILER!!!');
-  expect(source).toContain('multi-CPIO ramdisk');
+  expect(source).toContain("detect_multi_cpio_ramdisk");
+  expect(source).toContain("TRAILER!!!");
+  expect(source).toContain("multi-CPIO ramdisk");
 });
 ```
 
@@ -956,13 +982,14 @@ git commit -m "fix: block unsafe multi-cpio ramdisk auto patching"
 ## Task 8: Manual Verification Report Template
 
 **Files:**
+
 - Create: `docs/reports/emulator-root-verification-manual-test.md`
 
 - [ ] **Step 1: Create report template**
 
 Create `docs/reports/emulator-root-verification-manual-test.md`:
 
-```markdown
+````markdown
 # Emulator Root Verification Manual Test Report
 
 Date:
@@ -975,11 +1002,11 @@ Verify that the Emulator Manager root workflow distinguishes "patch installed" f
 
 ## Test Matrix
 
-| AVD | API | ABI | Image Type | Magisk Version | Expected | Result | Notes |
-|---|---:|---|---|---|---|---|---|
-| Pixel API 29 | 29 | x86/x86_64 | google_apis_playstore | latest stable | Root verified after cold boot | Not run | |
-| Pixel API 30/31 | 30/31 | x86_64 | google_apis_playstore | latest stable | Auto pipeline blocks multi-CPIO or verifies root | Not run | |
-| Pixel API 34+ | 34+ | x86_64 | google_apis_playstore | Magisk 26+ | Patch installed, verify after cold boot | Not run | |
+| AVD             |   API | ABI        | Image Type            | Magisk Version | Expected                                         | Result  | Notes |
+| --------------- | ----: | ---------- | --------------------- | -------------- | ------------------------------------------------ | ------- | ----- |
+| Pixel API 29    |    29 | x86/x86_64 | google_apis_playstore | latest stable  | Root verified after cold boot                    | Not run |       |
+| Pixel API 30/31 | 30/31 | x86_64     | google_apis_playstore | latest stable  | Auto pipeline blocks multi-CPIO or verifies root | Not run |       |
+| Pixel API 34+   |   34+ | x86_64     | google_apis_playstore | Magisk 26+     | Patch installed, verify after cold boot          | Not run |       |
 
 ## Procedure
 
@@ -1002,6 +1029,7 @@ adb -s <serial> shell getprop sys.boot_completed
 adb -s <serial> shell pm list packages | grep -i magisk
 adb -s <serial> shell su -c id -u
 ```
+````
 
 ## Results
 
@@ -1025,20 +1053,22 @@ adb -s <serial> shell su -c id -u
 - `su -c id -u` output:
 - Magisk package:
 - Notes:
-```
+
+````
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add docs/reports/emulator-root-verification-manual-test.md
 git commit -m "docs: add emulator root verification manual test report"
-```
+````
 
 ---
 
 ## Task 9: Full Verification
 
 **Files:**
+
 - All touched files
 
 - [ ] **Step 1: Run frontend tests**

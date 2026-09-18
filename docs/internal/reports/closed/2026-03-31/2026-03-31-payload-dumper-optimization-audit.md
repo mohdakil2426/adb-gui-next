@@ -15,22 +15,22 @@ This audit compares our payload dumper implementation against the reference `pay
 
 ### Current Implementation Status
 
-| Feature | Our Implementation | Reference Implementation | Gap |
-|---------|-------------------|-------------------------|-----|
-| Local `.bin` extraction | ✅ Full | ✅ Full | None |
-| Local ZIP extraction | ✅ Streaming to temp | ✅ Streaming to temp | None |
-| Memory model | ✅ `Arc<Mmap>` zero-copy | ✅ `Arc<Mmap>` zero-copy | None |
-| Parallel extraction | ✅ `thread::scope` | ✅ `tokio::Semaphore` or sequential | None |
-| Sparse zero handling | ✅ Seek-only | ✅ Seek-only | None |
-| Position tracking | ✅ Skip redundant seeks | ✅ Skip redundant seeks | None |
-| Pre-allocation | ✅ `set_len` | ✅ `set_len` | None |
-| **Remote URL support** | ❌ Missing | ✅ HTTP range requests | **HIGH** |
-| **Prefetch mode** | ❌ Missing | ✅ Download-only-needed-ranges | **MEDIUM** |
-| **Differential OTA** | ❌ Missing | ✅ bsdiff/puffdiff/zucchini | **MEDIUM** |
-| **Per-operation progress** | ❌ Missing | ✅ Real-time callbacks | **LOW** |
-| **Cancellation support** | ❌ Missing | ✅ `is_cancelled()` trait | **LOW** |
-| **HTTP retry logic** | ❌ Missing | ✅ Exponential backoff | **LOW** |
-| **DNS customization** | ❌ Missing | ✅ Hickory DNS for static builds | **LOW** |
+| Feature                    | Our Implementation       | Reference Implementation            | Gap        |
+| -------------------------- | ------------------------ | ----------------------------------- | ---------- |
+| Local `.bin` extraction    | ✅ Full                  | ✅ Full                             | None       |
+| Local ZIP extraction       | ✅ Streaming to temp     | ✅ Streaming to temp                | None       |
+| Memory model               | ✅ `Arc<Mmap>` zero-copy | ✅ `Arc<Mmap>` zero-copy            | None       |
+| Parallel extraction        | ✅ `thread::scope`       | ✅ `tokio::Semaphore` or sequential | None       |
+| Sparse zero handling       | ✅ Seek-only             | ✅ Seek-only                        | None       |
+| Position tracking          | ✅ Skip redundant seeks  | ✅ Skip redundant seeks             | None       |
+| Pre-allocation             | ✅ `set_len`             | ✅ `set_len`                        | None       |
+| **Remote URL support**     | ❌ Missing               | ✅ HTTP range requests              | **HIGH**   |
+| **Prefetch mode**          | ❌ Missing               | ✅ Download-only-needed-ranges      | **MEDIUM** |
+| **Differential OTA**       | ❌ Missing               | ✅ bsdiff/puffdiff/zucchini         | **MEDIUM** |
+| **Per-operation progress** | ❌ Missing               | ✅ Real-time callbacks              | **LOW**    |
+| **Cancellation support**   | ❌ Missing               | ✅ `is_cancelled()` trait           | **LOW**    |
+| **HTTP retry logic**       | ❌ Missing               | ✅ Exponential backoff              | **LOW**    |
+| **DNS customization**      | ❌ Missing               | ✅ Hickory DNS for static builds    | **LOW**    |
 
 ---
 
@@ -39,6 +39,7 @@ This audit compares our payload dumper implementation against the reference `pay
 ### 1. Memory Model ✅ (Already Optimized)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/parser.rs
 pub(super) struct LoadedPayload {
@@ -49,6 +50,7 @@ pub(super) struct LoadedPayload {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Same pattern: Arc<Mmap> shared across threads
 pub struct LocalAsyncPayloadReader {
@@ -63,6 +65,7 @@ pub struct LocalAsyncPayloadReader {
 ### 2. Streaming ZIP Extraction ✅ (Already Optimized)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/zip.rs
 fn extract_payload_to_tempfile(zip_path: &Path) -> Result<PathBuf> {
@@ -74,6 +77,7 @@ fn extract_payload_to_tempfile(zip_path: &Path) -> Result<PathBuf> {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Same pattern: streaming to temp file
 let mut temp = tempfile::NamedTempFile::new()?;
@@ -87,6 +91,7 @@ tokio::io::copy(&mut entry, &mut temp).await?;
 ### 3. Parallel Extraction ✅ (Already Optimized)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 let results: Vec<_> = thread::scope(|s| {
@@ -97,6 +102,7 @@ let results: Vec<_> = thread::scope(|s| {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // src/cli/payload/extractor.rs
 let semaphore = Arc::new(Semaphore::new(thread_count));
@@ -113,11 +119,11 @@ futures::future::join_all(tasks).await;
 
 **Differences:**
 
-| Aspect | Our Approach | Reference Approach |
-|--------|--------------|---------------------|
-| Threading | `std::thread::scope` (OS threads) | `tokio::spawn` + `Semaphore` |
-| Concurrency control | Implicit (spawn all) | Explicit (`Semaphore::new(thread_count)`) |
-| Thread count | Spawn all partitions | Configurable via `-t` flag |
+| Aspect              | Our Approach                      | Reference Approach                        |
+| ------------------- | --------------------------------- | ----------------------------------------- |
+| Threading           | `std::thread::scope` (OS threads) | `tokio::spawn` + `Semaphore`              |
+| Concurrency control | Implicit (spawn all)              | Explicit (`Semaphore::new(thread_count)`) |
+| Thread count        | Spawn all partitions              | Configurable via `-t` flag                |
 
 **Recommendation:** Add configurable thread limit to prevent resource exhaustion when extracting many large partitions simultaneously:
 
@@ -138,6 +144,7 @@ pub fn extract_payload(
 ### 4. Sparse Zero Handling ✅ (Already Optimized)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 if is_zero {
@@ -147,6 +154,7 @@ if is_zero {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Same approach: sparse file handling
 async fn handle_zero_region_sparse(
@@ -166,6 +174,7 @@ async fn handle_zero_region_sparse(
 ### 5. Position Tracking ✅ (Already Optimized)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 let mut current_pos = 0u64;  // Tracks write head
@@ -178,6 +187,7 @@ if current_pos != start_offset {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Same pattern
 if ctx.current_pos != target_pos {
@@ -195,6 +205,7 @@ if ctx.current_pos != target_pos {
 ### 1. Remote URL Support 🔴 HIGH PRIORITY
 
 **Reference Implementation:**
+
 ```rust
 // src/http.rs
 pub struct HttpReader {
@@ -215,17 +226,20 @@ impl HttpReader {
 ```
 
 **Benefits:**
+
 - Extract partitions directly from OTA URLs without downloading full ZIP
 - Downloads only required data ranges (~50-100 MB instead of 3+ GB)
 - Critical for extracting single partitions from large OTA files
 
 **Implementation Complexity:** Medium
+
 - Requires `reqwest` crate with streaming support
 - Range request support check
 - Retry logic with exponential backoff
 - HTTP/2 keepalive for performance
 
 **Proposed Architecture:**
+
 ```rust
 // src-tauri/src/payload/http.rs (new)
 pub struct HttpPayloadReader {
@@ -240,7 +254,7 @@ impl HttpPayloadReader {
         // Check Accept-Ranges header
         // Get content-length
     }
-    
+
     pub async fn read_range(&self, offset: u64, length: u64) -> Result<Vec<u8>> {
         // HTTP range request
         // Retry on failure
@@ -253,6 +267,7 @@ impl HttpPayloadReader {
 ### 2. Prefetch Mode 🟡 MEDIUM PRIORITY
 
 **Reference Implementation:**
+
 ```rust
 // src/prefetch.rs
 pub async fn prefetch_and_dump_partition<D, E>(
@@ -264,26 +279,29 @@ pub async fn prefetch_and_dump_partition<D, E>(
 ) -> Result<()> {
     // Calculate min/max data offsets needed for this partition
     let range = calculate_partition_range(partition, data_offset)?;
-    
+
     // Download ONLY that range via HTTP
     download_partition_data(http_reader, &range, &paths.temp_path, ...).await?;
-    
+
     // Extract from local temp file
     dump_partition(partition, ...).await?;
 }
 ```
 
 **Benefits:**
+
 - For slow connections: download once, extract locally
 - Reduces network latency impact on per-operation reads
 - Better UX: single progress bar for download, then fast extraction
 
 **When to Use:**
+
 - Slow or high-latency network connections
 - Large payloads where per-operation HTTP overhead is significant
 - User has bandwidth but high latency
 
 **Proposed Frontend UX:**
+
 ```tsx
 // Add to ViewPayloadDumper.tsx
 const [prefetch, setPrefetch] = useState(false);
@@ -291,7 +309,7 @@ const [prefetch, setPrefetch] = useState(false);
 <Tooltip>
   <Checkbox checked={prefetch} onCheckedChange={setPrefetch} />
   Prefetch mode (download first, then extract)
-</Tooltip>
+</Tooltip>;
 ```
 
 ---
@@ -299,6 +317,7 @@ const [prefetch, setPrefetch] = useState(false);
 ### 3. Differential OTA Support 🟡 MEDIUM PRIORITY
 
 **Reference Implementation:**
+
 ```rust
 // src/payload/diff.rs
 pub async fn process_diff_operation(params: DiffOperationParams<'_>) -> Result<()> {
@@ -324,6 +343,7 @@ pub async fn process_diff_operation(params: DiffOperationParams<'_>) -> Result<(
 ```
 
 **Dependencies:**
+
 ```toml
 # Cargo.toml
 bsdiff-android = "0.0.2"  # Optional
@@ -331,11 +351,13 @@ lz4_flex = { version = "0.13", default-features = false, optional = true }
 ```
 
 **Use Case:**
+
 - Incremental OTA updates require old partition images
 - Users provide `--source-dir` with previous build's images
 - Significantly smaller OTA files (delta instead of full)
 
 **Proposed Rust Implementation:**
+
 ```rust
 // src-tauri/Cargo.toml
 [features]
@@ -353,6 +375,7 @@ pub fn process_diff_operation(
 ```
 
 **Proposed Frontend UX:**
+
 ```tsx
 // Add source directory selector for differential OTA
 <div>
@@ -369,10 +392,12 @@ pub fn process_diff_operation(
 ### 4. Per-Operation Progress 🟢 LOW PRIORITY
 
 **Current State:**
+
 - We emit `payload:progress` events per partition completion
 - Reference emits per-operation within partition extraction
 
 **Reference Implementation:**
+
 ```rust
 // src/payload/payload_dumper.rs
 pub trait ProgressReporter: Send + Sync {
@@ -384,6 +409,7 @@ pub trait ProgressReporter: Send + Sync {
 ```
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 progress(&partition.partition_name, index + 1, total_operations, completed);
@@ -399,6 +425,7 @@ progress(&partition.partition_name, index + 1, total_operations, completed);
 ### 5. Cancellation Support 🟢 LOW PRIORITY
 
 **Reference Implementation:**
+
 ```rust
 pub trait ProgressReporter: Send + Sync {
     // ...
@@ -415,6 +442,7 @@ for (i, op) in partition.operations.iter().enumerate() {
 ```
 
 **Proposed Implementation:**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 pub struct ExtractionContext {
@@ -425,7 +453,7 @@ impl ExtractionContext {
     pub fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::Relaxed)
     }
-    
+
     pub fn cancel(&self) {
         self.cancelled.store(true, Ordering::Relaxed);
     }
@@ -440,13 +468,14 @@ pub async fn cancel_extraction(context: State<'_, ExtractionContext>) -> CmdResu
 ```
 
 **Frontend Integration:**
+
 ```tsx
 // ViewPayloadDumper.tsx
 const cancelRef = useRef<AbortController>();
 
 const handleCancel = async () => {
-    await backend.cancelExtraction();
-    toast.info("Extraction cancelled");
+  await backend.cancelExtraction();
+  toast.info("Extraction cancelled");
 };
 ```
 
@@ -455,6 +484,7 @@ const handleCancel = async () => {
 ### 6. HTTP Retry Logic 🟢 LOW PRIORITY
 
 **Reference Implementation:**
+
 ```rust
 // src/http.rs
 const MAX_RETRIES: u32 = 3;
@@ -484,6 +514,7 @@ while retry_count < MAX_RETRIES {
 ### 1. Verification ✅ (Already Implemented)
 
 **Our Implementation:**
+
 ```rust
 // SHA-256 checksum verification
 if let Some(expected_hash) = operation.data_sha256_hash.as_ref() {
@@ -495,6 +526,7 @@ if let Some(expected_hash) = operation.data_sha256_hash.as_ref() {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Same verification approach
 // Plus optional `--no-verify` flag to skip verification
@@ -505,12 +537,14 @@ if let Some(expected_hash) = operation.data_sha256_hash.as_ref() {
 ### 2. Error Handling
 
 **Our Implementation:**
+
 ```rust
 // All errors bubble up to Tauri command
 // Frontend receives error message via CmdResult
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Per-operation warnings
 fn on_warning(&self, partition_name: &str, operation_index: usize, message: String);
@@ -532,6 +566,7 @@ match copy_with_buffer(&mut decoder, ctx.out_file, ctx.copy_buffer).await {
 ### 3. Large File Support
 
 **Both implementations handle:**
+
 - Files > 4 GB via `u64` offsets
 - Memory mapping for zero-copy reads
 - Streaming decompression to avoid buffering entire partitions
@@ -541,6 +576,7 @@ match copy_with_buffer(&mut decoder, ctx.out_file, ctx.copy_buffer).await {
 ## Proposed Implementation Roadmap
 
 ### Phase 1: Remote URL Support (HIGH)
+
 1. Add `reqwest` dependency with `stream` feature
 2. Create `HttpPayloadReader` with range request support
 3. Add URL detection and validation
@@ -548,18 +584,21 @@ match copy_with_buffer(&mut decoder, ctx.out_file, ctx.copy_buffer).await {
 5. Add frontend URL input support
 
 ### Phase 2: Prefetch Mode (MEDIUM)
+
 1. Add `tempfile` for intermediate storage
 2. Implement partition range calculation
 3. Create download-then-extract pipeline
 4. Add frontend prefetch toggle
 
 ### Phase 3: Differential OTA (MEDIUM)
+
 1. Add optional `bsdiff-android` and `lz4_flex` dependencies
 2. Implement source image handling
 3. Add operation type detection and routing
 4. Create source directory selector in frontend
 
 ### Phase 4: Polish (LOW)
+
 1. Add cancellation support
 2. Implement per-operation progress events
 3. Add warning collection for non-fatal errors
@@ -569,14 +608,14 @@ match copy_with_buffer(&mut decoder, ctx.out_file, ctx.copy_buffer).await {
 
 ## Performance Benchmarks (Reference Data)
 
-| Operation | Our Approach | Reference Approach | Notes |
-|-----------|--------------|-------------------|-------|
-| ZIP extraction | Streaming to temp | Streaming to temp | Identical |
-| Memory usage | ~O(1) + mmap | ~O(1) + mmap | Identical |
-| Parallel extraction | `thread::scope` | `tokio::spawn` + semaphore | Reference allows thread limiting |
-| Zero ops | Sparse (seek-only) | Sparse (seek-only) | Identical |
-| XZ/BZ2/Zstd decode | Streaming 256KB buf | Streaming 256KB buf | Identical |
-| Position tracking | Skip redundant seeks | Skip redundant seeks | Identical |
+| Operation           | Our Approach         | Reference Approach         | Notes                            |
+| ------------------- | -------------------- | -------------------------- | -------------------------------- |
+| ZIP extraction      | Streaming to temp    | Streaming to temp          | Identical                        |
+| Memory usage        | ~O(1) + mmap         | ~O(1) + mmap               | Identical                        |
+| Parallel extraction | `thread::scope`      | `tokio::spawn` + semaphore | Reference allows thread limiting |
+| Zero ops            | Sparse (seek-only)   | Sparse (seek-only)         | Identical                        |
+| XZ/BZ2/Zstd decode  | Streaming 256KB buf  | Streaming 256KB buf        | Identical                        |
+| Position tracking   | Skip redundant seeks | Skip redundant seeks       | Identical                        |
 
 ---
 
@@ -629,24 +668,24 @@ Explicit tab selection between "Local File" and "Remote URL" modes.
 
 ### UI Consistency Checklist
 
-| Element | Pattern | Reference |
-|---------|---------|-----------|
-| Tab switcher | `TabsList` + `TabsTrigger` | Use shadcn `Tabs` component |
-| URL input | `Input` with `X` clear button | Match `FileSelector` pattern |
-| Options | `Checkbox` with label | Use `CheckboxItem` shared component |
-| Connection status | `Card` with `Alert` icon | Match existing info banners |
-| Size display | `text-muted-foreground text-sm` | Match partition table sizing |
-| Drop zone | Reuse `DropZone` component | Already exists in project |
-| Buttons | `Button` with variant | Primary for Extract, Ghost for Cancel |
-| Progress | Existing partition progress bar | Reuse `payload:progress` event |
+| Element           | Pattern                         | Reference                             |
+| ----------------- | ------------------------------- | ------------------------------------- |
+| Tab switcher      | `TabsList` + `TabsTrigger`      | Use shadcn `Tabs` component           |
+| URL input         | `Input` with `X` clear button   | Match `FileSelector` pattern          |
+| Options           | `Checkbox` with label           | Use `CheckboxItem` shared component   |
+| Connection status | `Card` with `Alert` icon        | Match existing info banners           |
+| Size display      | `text-muted-foreground text-sm` | Match partition table sizing          |
+| Drop zone         | Reuse `DropZone` component      | Already exists in project             |
+| Buttons           | `Button` with variant           | Primary for Extract, Ghost for Cancel |
+| Progress          | Existing partition progress bar | Reuse `payload:progress` event        |
 
 ### Component Structure
 
 ```tsx
 // ViewPayloadDumper.tsx
-const [mode, setMode] = useState<'local' | 'remote'>('local');
+const [mode, setMode] = useState<"local" | "remote">("local");
 
-<Tabs value={mode} onValueChange={(v) => setMode(v as 'local' | 'remote')}>
+<Tabs value={mode} onValueChange={(v) => setMode(v as "local" | "remote")}>
   <TabsList>
     <TabsTrigger value="local">📁 Local File</TabsTrigger>
     <TabsTrigger value="remote">🌐 Remote URL</TabsTrigger>
@@ -659,7 +698,7 @@ const [mode, setMode] = useState<'local' | 'remote'>('local');
   <TabsContent value="remote">
     <RemoteUrlPanel />
   </TabsContent>
-</Tabs>
+</Tabs>;
 ```
 
 ### Remote URL Panel Implementation
@@ -667,27 +706,29 @@ const [mode, setMode] = useState<'local' | 'remote'>('local');
 ```tsx
 // components/RemoteUrlPanel.tsx
 function RemoteUrlPanel() {
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [prefetch, setPrefetch] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle');
+  const [connectionStatus, setConnectionStatus] = useState<
+    "idle" | "checking" | "ready" | "error"
+  >("idle");
   const [estimatedSize, setEstimatedSize] = useState<string | null>(null);
 
   // Check URL validity and range request support
   const checkUrl = async (url: string) => {
-    setConnectionStatus('checking');
+    setConnectionStatus("checking");
     try {
-      const response = await fetch(url, { method: 'HEAD' });
-      const supportsRanges = response.headers.get('Accept-Ranges') === 'bytes';
-      const contentLength = response.headers.get('Content-Length');
+      const response = await fetch(url, { method: "HEAD" });
+      const supportsRanges = response.headers.get("Accept-Ranges") === "bytes";
+      const contentLength = response.headers.get("Content-Length");
 
       if (supportsRanges) {
-        setConnectionStatus('ready');
-        setEstimatedSize(formatBytes(parseInt(contentLength || '0')));
+        setConnectionStatus("ready");
+        setEstimatedSize(formatBytes(parseInt(contentLength || "0")));
       } else {
-        setConnectionStatus('error');
+        setConnectionStatus("error");
       }
     } catch {
-      setConnectionStatus('error');
+      setConnectionStatus("error");
     }
   };
 
@@ -703,7 +744,7 @@ function RemoteUrlPanel() {
             onChange={(e) => setUrl(e.target.value)}
             className="flex-1"
           />
-          <Button variant="ghost" size="icon" onClick={() => setUrl('')}>
+          <Button variant="ghost" size="icon" onClick={() => setUrl("")}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -723,16 +764,16 @@ function RemoteUrlPanel() {
       </div>
 
       {/* Connection Status */}
-      {connectionStatus !== 'idle' && (
+      {connectionStatus !== "idle" && (
         <Card>
           <CardContent className="pt-4 space-y-2">
-            {connectionStatus === 'checking' && (
+            {connectionStatus === "checking" && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Checking connection...
               </div>
             )}
-            {connectionStatus === 'ready' && (
+            {connectionStatus === "ready" && (
               <>
                 <div className="flex items-center gap-2 text-success">
                   <CheckCircle2 className="h-4 w-4" />
@@ -745,7 +786,7 @@ function RemoteUrlPanel() {
                 )}
               </>
             )}
-            {connectionStatus === 'error' && (
+            {connectionStatus === "error" && (
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 Server does not support range requests
@@ -761,14 +802,14 @@ function RemoteUrlPanel() {
 
 ### Why Tab-Based is Best
 
-| Criterion | Tab-Based | Unified Input | Dual Zones |
-|-----------|-----------|---------------|-------------|
-| Explicit mode | ✅ Clear | ❌ Ambiguous | ✅ Clear |
-| Mode-specific options | ✅ Easy | ❌ Cluttered | ⚠️ Duplicate |
-| Future extensibility | ✅ Add tabs | ❌ Crowded | ❌ Limited |
-| Progress clarity | ✅ Separate | ❌ Mixed | ⚠️ Complex |
-| Error handling | ✅ Per-mode | ❌ Mixed | ⚠️ Two states |
-| UI consistency | ✅ Uses existing patterns | ✅ Minimal change | ❌ New pattern |
+| Criterion             | Tab-Based                 | Unified Input     | Dual Zones     |
+| --------------------- | ------------------------- | ----------------- | -------------- |
+| Explicit mode         | ✅ Clear                  | ❌ Ambiguous      | ✅ Clear       |
+| Mode-specific options | ✅ Easy                   | ❌ Cluttered      | ⚠️ Duplicate   |
+| Future extensibility  | ✅ Add tabs               | ❌ Crowded        | ❌ Limited     |
+| Progress clarity      | ✅ Separate               | ❌ Mixed          | ⚠️ Complex     |
+| Error handling        | ✅ Per-mode               | ❌ Mixed          | ⚠️ Two states  |
+| UI consistency        | ✅ Uses existing patterns | ✅ Minimal change | ❌ New pattern |
 
 ### Existing Patterns to Reuse
 
@@ -787,6 +828,7 @@ function RemoteUrlPanel() {
 Our payload dumper implementation is **architecturally sound** and matches the reference implementation's core performance characteristics:
 
 ✅ **Strengths:**
+
 - Zero-copy memory model with `Arc<Mmap>`
 - Streaming ZIP extraction (no RAM spike)
 - Parallel extraction across all CPU cores
@@ -794,11 +836,13 @@ Our payload dumper implementation is **architecturally sound** and matches the r
 - Position tracking to avoid redundant seeks
 
 🔴 **Primary Gap:** Remote URL extraction
+
 - Reference can extract from URLs with range requests
 - We require local files only
 - Impact: Users must download full OTA to extract single partition
 
 🟡 **Secondary Gaps:** Differential OTA, Prefetch mode
+
 - Both are specialized use cases
 - Differential OTA: Incremental updates only
 - Prefetch: Optimization for slow connections
@@ -809,19 +853,19 @@ The implementation is production-ready for local file extraction. Remote URL sup
 
 ## Dependency Comparison
 
-| Dependency | Our Project | Reference Project | Notes |
-|------------|-------------|-------------------|-------|
-| `tokio` | ✅ rt-multi-thread | ✅ rt-multi-thread, io-util, time, full | Both use async runtime |
-| `rayon` | ✅ 1.10 | ❌ Not used | We use `thread::scope`, reference uses `tokio::spawn` |
-| `memmap2` | ✅ 0.9 | ❌ Not used (async readers) | We use mmap, reference uses async file I/O |
-| `async-compression` | ❌ Not used | ✅ zstd, xz, bzip2, tokio | Reference has async decompression |
-| `reqwest` | ❌ Not used | ✅ Optional (remote_zip) | HTTP client for URL extraction |
-| `hickory-resolver` | ❌ Not used | ✅ Optional (hickory_dns) | Custom DNS for static builds |
-| `bsdiff-android` | ❌ Not used | ✅ Optional (diff_ota) | Differential OTA support |
-| `lz4_flex` | ❌ Not used | ✅ Optional (diff_ota) | LZ4 decompression for patches |
-| `indicatif` | ❌ Not used | ✅ Progress bars | CLI-only, not needed for GUI |
-| `ahash` | ❌ Not used | ✅ AHashMap/AHashSet | Faster hashing |
-| `once_cell` | ❌ Not used | ✅ Global state | Lazy initialization |
+| Dependency          | Our Project        | Reference Project                       | Notes                                                 |
+| ------------------- | ------------------ | --------------------------------------- | ----------------------------------------------------- |
+| `tokio`             | ✅ rt-multi-thread | ✅ rt-multi-thread, io-util, time, full | Both use async runtime                                |
+| `rayon`             | ✅ 1.10            | ❌ Not used                             | We use `thread::scope`, reference uses `tokio::spawn` |
+| `memmap2`           | ✅ 0.9             | ❌ Not used (async readers)             | We use mmap, reference uses async file I/O            |
+| `async-compression` | ❌ Not used        | ✅ zstd, xz, bzip2, tokio               | Reference has async decompression                     |
+| `reqwest`           | ❌ Not used        | ✅ Optional (remote_zip)                | HTTP client for URL extraction                        |
+| `hickory-resolver`  | ❌ Not used        | ✅ Optional (hickory_dns)               | Custom DNS for static builds                          |
+| `bsdiff-android`    | ❌ Not used        | ✅ Optional (diff_ota)                  | Differential OTA support                              |
+| `lz4_flex`          | ❌ Not used        | ✅ Optional (diff_ota)                  | LZ4 decompression for patches                         |
+| `indicatif`         | ❌ Not used        | ✅ Progress bars                        | CLI-only, not needed for GUI                          |
+| `ahash`             | ❌ Not used        | ✅ AHashMap/AHashSet                    | Faster hashing                                        |
+| `once_cell`         | ❌ Not used        | ✅ Global state                         | Lazy initialization                                   |
 
 ### Key Missing Dependencies for Feature Par
 
@@ -849,6 +893,7 @@ diff_ota = ["dep:bsdiff-android", "dep:lz4_flex"]
 ### Thread::scope vs Tokio::spawn_blocking
 
 **Our Implementation (thread::scope):**
+
 ```rust
 // src-tauri/src/payload/extractor.rs
 let results: Vec<_> = thread::scope(|s| {
@@ -859,6 +904,7 @@ let results: Vec<_> = thread::scope(|s| {
 ```
 
 **Reference Implementation (tokio::spawn + Semaphore):**
+
 ```rust
 // src/cli/payload/extractor.rs
 let semaphore = Arc::new(Semaphore::new(thread_count));
@@ -875,16 +921,17 @@ futures::future::join_all(tasks).await;
 
 **Analysis:**
 
-| Aspect | thread::scope | tokio::spawn + Semaphore |
-|--------|---------------|-------------------------|
-| Thread Model | OS threads | Async tasks on thread pool |
-| Concurrency Control | Spawn all, OS schedules | Semaphore limits concurrent tasks |
-| Memory Overhead | Stack per thread (~1MB each) | Green threads (~10KB each) |
-| Context Switch | Kernel-level | User-level (cheaper) |
-| Blocking Safety | Native (no runtime) | Requires spawn_blocking for sync code |
-| Best For | CPU-heavy, sync code | I/O-heavy, mixed async/sync |
+| Aspect              | thread::scope                | tokio::spawn + Semaphore              |
+| ------------------- | ---------------------------- | ------------------------------------- |
+| Thread Model        | OS threads                   | Async tasks on thread pool            |
+| Concurrency Control | Spawn all, OS schedules      | Semaphore limits concurrent tasks     |
+| Memory Overhead     | Stack per thread (~1MB each) | Green threads (~10KB each)            |
+| Context Switch      | Kernel-level                 | User-level (cheaper)                  |
+| Blocking Safety     | Native (no runtime)          | Requires spawn_blocking for sync code |
+| Best For            | CPU-heavy, sync code         | I/O-heavy, mixed async/sync           |
 
 **Recommendation for Tauri:**
+
 - Our `thread::scope` approach is **correct** for synchronous CPU-bound extraction
 - `block_in_place` is also valid in Tauri async context (we use this correctly)
 - Consider adding **configurable thread limiting** for resource-constrained systems:
@@ -917,6 +964,7 @@ pub fn extract_payload(
 ### Memory-Mapped File I/O (Our Advantage)
 
 **Our Implementation:**
+
 ```rust
 // src-tauri/src/payload/parser.rs
 fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
@@ -927,6 +975,7 @@ fn open_mmap(path: &Path) -> Result<Arc<Mmap>> {
 ```
 
 **Reference Implementation:**
+
 ```rust
 // Uses async readers instead of mmap
 pub struct LocalAsyncPayloadReader {
@@ -940,12 +989,14 @@ impl AsyncPayloadRead for LocalAsyncPayloadReader {
 ```
 
 **Why Our Approach is Better for Desktop Apps:**
+
 1. **Zero-copy reads** — mmap pages are served directly from OS page cache
 2. **No heap allocation** — Arc clone is 8 bytes regardless of payload size
 3. **Efficient parallel access** — all threads share same physical memory
 4. **OS handles paging** — no explicit buffering needed
 
 **When Reference's Async Approach is Better:**
+
 1. **Remote URLs** — HTTP range requests don't fit mmap model
 2. **Streaming sources** — stdin, network streams
 3. **Memory-constrained** — mmap can't be partially loaded
@@ -953,11 +1004,13 @@ impl AsyncPayloadRead for LocalAsyncPayloadReader {
 ### Streaming Decompression Buffer Sizing
 
 **Our Implementation:**
+
 ```rust
 const DECOMP_BUF_SIZE: usize = 256 * 1024;  // 256 KiB
 ```
 
 **Reference Implementation:**
+
 ```rust
 const BUFREADER_SIZE: usize = 256 * 1024;    // 256 KiB for decompression
 const COPY_BUFFER_SIZE: usize = 512 * 1024;  // 512 KiB for direct copy
@@ -965,6 +1018,7 @@ const ZERO_WRITE_CHUNK: usize = 2 * 1024 * 1024;  // 2 MB for zero writes
 ```
 
 **Recommendation:**
+
 - 256 KiB is optimal for L2 cache residency (most modern CPUs)
 - Consider 512 KiB for direct copy operations (Replace type)
 - Both implementations use correct sizes
@@ -1110,6 +1164,7 @@ lz4_flex = { version = "0.13", default-features = false, optional = true }
 ### Tauri Async Command Patterns
 
 **Current Pattern (Correct):**
+
 ```rust
 // src-tauri/src/commands/payload.rs
 #[tauri::command]
@@ -1130,14 +1185,15 @@ pub async fn extract_payload(
 
 **Why block_in_place over spawn_blocking:**
 
-| Aspect | block_in_place | spawn_blocking |
-|--------|---------------|----------------|
-| State<'_, T> | ✅ Works (borrows) | ❌ Requires 'static |
-| Thread reuse | ✅ Reuses current thread | ❌ Spawns new thread |
-| Overhead | Lower | Higher (thread pool) |
-| Use case | CPU-bound in async context | I/O-bound offloading |
+| Aspect       | block_in_place             | spawn_blocking       |
+| ------------ | -------------------------- | -------------------- |
+| State<'_, T> | ✅ Works (borrows)         | ❌ Requires 'static  |
+| Thread reuse | ✅ Reuses current thread   | ❌ Spawns new thread |
+| Overhead     | Lower                      | Higher (thread pool) |
+| Use case     | CPU-bound in async context | I/O-bound offloading |
 
 **When to use spawn_blocking instead:**
+
 ```rust
 // For I/O-bound operations that should not block the async thread
 #[tauri::command]
@@ -1152,6 +1208,7 @@ pub async fn download_from_url(url: String) -> CmdResult<Vec<u8>> {
 ### PayloadCache Thread Safety
 
 **Current Implementation:**
+
 ```rust
 // src-tauri/src/payload/zip.rs
 pub struct PayloadCache {
@@ -1165,11 +1222,13 @@ struct PayloadCacheInner {
 ```
 
 **Analysis:**
+
 - `Mutex<PayloadCacheInner>` is correct for thread-safe mutable state
 - `PayloadCache` is managed by Tauri's state system (`manage()` in `lib.rs`)
 - Each extraction call borrows `State<'_, PayloadCache>` — no 'static issues
 
 **Potential Improvement:**
+
 ```rust
 // Use parking_lot::Mutex for better performance
 use parking_lot::Mutex;  // Instead of std::sync::Mutex
@@ -1183,6 +1242,7 @@ pub struct PayloadCache {
 ### Parallel Extraction Thread Safety
 
 **Current Implementation (Correct):**
+
 ```rust
 // thread::scope ensures all threads complete before function returns
 let results: Vec<_> = thread::scope(|s| {
@@ -1196,6 +1256,7 @@ let results: Vec<_> = thread::scope(|s| {
 ```
 
 **Thread Safety Guarantees:**
+
 1. `Arc<Mmap>` is `Send + Sync` — safe to share across threads
 2. Each thread writes to its own output file — no shared mutable state
 3. `AppHandle` is `Clone + Send` — safe to clone into threads
@@ -1206,6 +1267,7 @@ let results: Vec<_> = thread::scope(|s| {
 ## Implementation Roadmap (Updated)
 
 ### Phase 1: Remote URL Support (HIGH)
+
 **Est. Effort:** 3-5 days
 
 1. Add `reqwest` dependency with `stream` feature
@@ -1215,6 +1277,7 @@ let results: Vec<_> = thread::scope(|s| {
 5. Implement progress reporting for downloads
 
 ### Phase 2: Project Structure Refactoring (MEDIUM)
+
 **Est. Effort:** 2-3 days
 
 1. Create `src-tauri/src/core/` module
@@ -1224,6 +1287,7 @@ let results: Vec<_> = thread::scope(|s| {
 5. Create `tests/` directory with integration tests
 
 ### Phase 3: Prefetch Mode (MEDIUM)
+
 **Est. Effort:** 2-3 days
 
 1. Add partition range calculation
@@ -1232,6 +1296,7 @@ let results: Vec<_> = thread::scope(|s| {
 4. Progress UI for download phase
 
 ### Phase 4: Differential OTA (MEDIUM)
+
 **Est. Effort:** 3-5 days
 
 1. Add `bsdiff-android` and `lz4_flex` dependencies
@@ -1240,6 +1305,7 @@ let results: Vec<_> = thread::scope(|s| {
 4. Add frontend source directory selector
 
 ### Phase 5: Polish (LOW)
+
 **Est. Effort:** 1-2 days
 
 1. Add cancellation support
@@ -1254,6 +1320,7 @@ let results: Vec<_> = thread::scope(|s| {
 Our payload dumper implementation is **architecturally sound** and matches the reference implementation's core performance characteristics:
 
 ✅ **Strengths:**
+
 - Zero-copy memory model with `Arc<Mmap>`
 - Streaming ZIP extraction (no RAM spike)
 - Parallel extraction across all CPU cores
@@ -1262,16 +1329,19 @@ Our payload dumper implementation is **architecturally sound** and matches the r
 - Correct use of `block_in_place` for Tauri async commands
 
 🔴 **Primary Gap:** Remote URL extraction
+
 - Reference can extract from URLs with range requests
 - We require local files only
 - Impact: Users must download full OTA to extract single partition
 
 🟡 **Secondary Gaps:** Differential OTA, Prefetch mode
+
 - Both are specialized use cases
 - Differential OTA: Incremental updates only
 - Prefetch: Optimization for slow connections
 
 📦 **Structure Improvement:** Refactor `helpers.rs` into `core/` module
+
 - Better separation of concerns
 - Easier to add features like HTTP support
 - Consistent with reference project's modular architecture

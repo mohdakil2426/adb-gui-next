@@ -6,7 +6,7 @@ name: CI
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     branches: [main]
 
@@ -134,7 +134,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           cache-on-failure: true
 
       - name: Install frontend deps (for tauri build scripts / clippy targets)
@@ -187,7 +187,7 @@ jobs:
             cpu: 64bit
             rust-target: x86_64-unknown-linux-gnu
             args: --target x86_64-unknown-linux-gnu --bundles deb,rpm,appimage
-            bundle-config: ''
+            bundle-config: ""
           - name: linux-arm
             platform: ubuntu-22.04-arm
             artifact-platform: linux
@@ -204,7 +204,7 @@ jobs:
             cpu: 64bit
             rust-target: x86_64-pc-windows-msvc
             args: --target x86_64-pc-windows-msvc --bundles nsis,msi
-            bundle-config: ''
+            bundle-config: ""
           - name: windows-32bit
             platform: windows-latest
             artifact-platform: windows
@@ -212,7 +212,7 @@ jobs:
             cpu: 32bit
             rust-target: i686-pc-windows-msvc
             args: --target i686-pc-windows-msvc --bundles nsis,msi
-            bundle-config: ''
+            bundle-config: ""
           - name: windows-arm
             platform: windows-latest
             artifact-platform: windows
@@ -221,7 +221,7 @@ jobs:
             rust-target: aarch64-pc-windows-msvc
             # Bundled Google platform-tools remain PE x86; need WOW64/x86 emulation on ARM Windows.
             args: --target aarch64-pc-windows-msvc --bundles nsis
-            bundle-config: ''
+            bundle-config: ""
 
     steps:
       # Bundled platform-tools are Git LFS; default checkout leaves pointers (not real PE/ELF).
@@ -271,7 +271,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           cache-on-failure: true
 
       - name: Setup bundled Linux tool permissions

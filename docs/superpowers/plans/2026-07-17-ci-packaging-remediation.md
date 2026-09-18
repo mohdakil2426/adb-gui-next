@@ -5,6 +5,7 @@
 **Goal:** Fix rustfmt CI failure; make workflows efficient and robust; **package/upload artifacts only on `main`**; other branches run quality only (format, lint, test, build frontend/Rust checks). Focus Windows + Linux; macOS optional for publish.
 
 **Status (2026-07-18):** Implemented and ready to commit.
+
 - `cargo fmt --all`; `format:check` green
 - `ci.yml`: quality (ubuntu) all branches; package matrix **main push only**
 - `publish.yml`: full preflight quality; Win/Linux always; macOS only if secrets present
@@ -56,8 +57,8 @@
 
 **Product rule (user):**
 
-| Branch / event | Quality (lint/test/format) | Tauri package + artifact upload |
-| --- | --- | --- |
-| Feature branches / PRs | Yes | **No** |
-| `main` push | Yes | **Yes** |
-| Publish workflow | Yes (preflight) | Yes (Win/Linux; macOS optional) |
+| Branch / event         | Quality (lint/test/format) | Tauri package + artifact upload |
+| ---------------------- | -------------------------- | ------------------------------- |
+| Feature branches / PRs | Yes                        | **No**                          |
+| `main` push            | Yes                        | **Yes**                         |
+| Publish workflow       | Yes (preflight)            | Yes (Win/Linux; macOS optional) |

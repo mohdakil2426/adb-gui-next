@@ -16,16 +16,16 @@ Integrate Universal Android Debloater (UAD) functionality into the existing App 
 
 ### 2.1 Core Concepts from UAD
 
-| Concept | UAD Implementation | Our Adaptation |
-|---|---|---|
-| **Debloat Lists** | Community JSON with ~4000+ packages, fetched from GitHub | Fetch same JSON, cache locally, bundle fallback |
-| **Package Metadata** | `id`, `list` (Aosp/Oem/Carrier/Google/Misc), `description`, `dependencies`, `neededBy`, `labels`, `removal` (Recommended/Advanced/Expert/Unsafe) | Map to our `DebloatPackageRow` DTO |
-| **Package States** | Enabled / Disabled / Uninstalled | Same — detected via `pm list packages` flags |
-| **Safety Tiers** | Recommended (safe), Advanced (some risk), Expert (functional loss), Unsafe (bootloop risk) | Color-coded badges + expert mode gate |
-| **Actions** | Uninstall (`pm uninstall --user 0`), Disable (`pm disable-user`), Restore (`cmd package install-existing`) | Same ADB commands via our existing `run_binary_command` |
-| **Multi-user** | Per-user `--user N` flag support | Phase 2 — start with user 0 |
-| **Export/Import** | Save/load selection as text file | Phase 2 |
-| **Disable Mode** | Toggle between uninstall vs disable | Include as a toggle in the UI |
+| Concept              | UAD Implementation                                                                                                                               | Our Adaptation                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| **Debloat Lists**    | Community JSON with ~4000+ packages, fetched from GitHub                                                                                         | Fetch same JSON, cache locally, bundle fallback         |
+| **Package Metadata** | `id`, `list` (Aosp/Oem/Carrier/Google/Misc), `description`, `dependencies`, `neededBy`, `labels`, `removal` (Recommended/Advanced/Expert/Unsafe) | Map to our `DebloatPackageRow` DTO                      |
+| **Package States**   | Enabled / Disabled / Uninstalled                                                                                                                 | Same — detected via `pm list packages` flags            |
+| **Safety Tiers**     | Recommended (safe), Advanced (some risk), Expert (functional loss), Unsafe (bootloop risk)                                                       | Color-coded badges + expert mode gate                   |
+| **Actions**          | Uninstall (`pm uninstall --user 0`), Disable (`pm disable-user`), Restore (`cmd package install-existing`)                                       | Same ADB commands via our existing `run_binary_command` |
+| **Multi-user**       | Per-user `--user N` flag support                                                                                                                 | Phase 2 — start with user 0                             |
+| **Export/Import**    | Save/load selection as text file                                                                                                                 | Phase 2                                                 |
+| **Disable Mode**     | Toggle between uninstall vs disable                                                                                                              | Include as a toggle in the UI                           |
 
 ### 2.2 UAD Data Format (uad_lists.json)
 
@@ -189,21 +189,21 @@ pm list users
 
 ### 3.5 Safety Tier Color Coding
 
-| Tier | Badge Color | Meaning |
-|---|---|---|
+| Tier        | Badge Color                          | Meaning                                  |
+| ----------- | ------------------------------------ | ---------------------------------------- |
 | Recommended | `bg-emerald-500/15 text-emerald-500` | Safe to remove, improves privacy/battery |
-| Advanced | `bg-amber-500/15 text-amber-500` | Some functionality loss possible |
-| Expert | `bg-orange-500/15 text-orange-500` | Significant functionality loss |
-| Unsafe | `bg-red-500/15 text-red-500` | Risk of bootloop, requires expert mode |
-| Unlisted | `bg-zinc-500/15 text-zinc-500` | Not in UAD database |
+| Advanced    | `bg-amber-500/15 text-amber-500`     | Some functionality loss possible         |
+| Expert      | `bg-orange-500/15 text-orange-500`   | Significant functionality loss           |
+| Unsafe      | `bg-red-500/15 text-red-500`         | Risk of bootloop, requires expert mode   |
+| Unlisted    | `bg-zinc-500/15 text-zinc-500`       | Not in UAD database                      |
 
 ### 3.6 Package State Indicators
 
-| State | Visual | Color |
-|---|---|---|
-| Enabled | Solid dot | `text-emerald-500` |
-| Disabled | Half dot | `text-amber-500` |
-| Uninstalled | Empty dot | `text-zinc-400` |
+| State       | Visual    | Color              |
+| ----------- | --------- | ------------------ |
+| Enabled     | Solid dot | `text-emerald-500` |
+| Disabled    | Half dot  | `text-amber-500`   |
+| Uninstalled | Empty dot | `text-zinc-400`    |
 
 ---
 
@@ -289,20 +289,22 @@ pub struct DebloatListStatus {
 
 ### 4.3 New Tauri Commands
 
-| Command | Signature | Description |
-|---|---|---|
-| `load_debloat_lists` | `() -> CmdResult<DebloatListStatus>` | Fetch UAD JSON from GitHub, cache locally, fallback to bundled |
-| `get_debloat_packages` | `() -> CmdResult<Vec<DebloatPackageRow>>` | Merge device packages with UAD metadata |
-| `debloat_packages` | `(packages, action) -> CmdResult<Vec<DebloatActionResult>>` | Apply uninstall/disable/restore |
-| `restore_packages` | `(packages) -> CmdResult<Vec<DebloatActionResult>>` | Restore previously removed packages |
+| Command                | Signature                                                   | Description                                                    |
+| ---------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- |
+| `load_debloat_lists`   | `() -> CmdResult<DebloatListStatus>`                        | Fetch UAD JSON from GitHub, cache locally, fallback to bundled |
+| `get_debloat_packages` | `() -> CmdResult<Vec<DebloatPackageRow>>`                   | Merge device packages with UAD metadata                        |
+| `debloat_packages`     | `(packages, action) -> CmdResult<Vec<DebloatActionResult>>` | Apply uninstall/disable/restore                                |
+| `restore_packages`     | `(packages) -> CmdResult<Vec<DebloatActionResult>>`         | Restore previously removed packages                            |
 
 ### 4.4 New Frontend Types
 
 ```typescript
 // models.ts additions
-export type DebloatList = 'Aosp' | 'Carrier' | 'Google' | 'Misc' | 'Oem' | 'Pending' | 'Unlisted';
-export type RemovalTier = 'Recommended' | 'Advanced' | 'Expert' | 'Unsafe' | 'Unlisted';
-export type PkgState = 'Enabled' | 'Disabled' | 'Uninstalled';
+export type DebloatList =
+  "Aosp" | "Carrier" | "Google" | "Misc" | "Oem" | "Pending" | "Unlisted";
+export type RemovalTier =
+  "Recommended" | "Advanced" | "Expert" | "Unsafe" | "Unlisted";
+export type PkgState = "Enabled" | "Disabled" | "Uninstalled";
 
 export interface DebloatPackageRow {
   name: string;
@@ -333,29 +335,29 @@ export interface DebloatActionResult {
 
 ### 5.1 New Files
 
-| File | Purpose |
-|---|---|
-| `src-tauri/src/debloat/mod.rs` | Types + list loading (remote, cache, bundled fallback) |
-| `src-tauri/src/debloat/sync.rs` | Device package sync + state detection |
-| `src-tauri/src/debloat/actions.rs` | Package state change commands |
-| `src-tauri/src/commands/debloat.rs` | Thin Tauri command wrappers |
-| `src-tauri/resources/uad_lists.json` | Bundled fallback UAD list (~824KB) |
-| `src/components/views/debloater/DebloaterTab.tsx` | Debloater tab component |
-| `src/components/views/debloater/InstallationTab.tsx` | Installation tab (refactored) |
-| `src/components/views/debloater/ReviewSelectionDialog.tsx` | Batch action review modal |
-| `src/components/views/debloater/DescriptionPanel.tsx` | Package info display panel |
-| `src/lib/debloatStore.ts` | Zustand store for debloat state |
+| File                                                       | Purpose                                                |
+| ---------------------------------------------------------- | ------------------------------------------------------ |
+| `src-tauri/src/debloat/mod.rs`                             | Types + list loading (remote, cache, bundled fallback) |
+| `src-tauri/src/debloat/sync.rs`                            | Device package sync + state detection                  |
+| `src-tauri/src/debloat/actions.rs`                         | Package state change commands                          |
+| `src-tauri/src/commands/debloat.rs`                        | Thin Tauri command wrappers                            |
+| `src-tauri/resources/uad_lists.json`                       | Bundled fallback UAD list (~824KB)                     |
+| `src/components/views/debloater/DebloaterTab.tsx`          | Debloater tab component                                |
+| `src/components/views/debloater/InstallationTab.tsx`       | Installation tab (refactored)                          |
+| `src/components/views/debloater/ReviewSelectionDialog.tsx` | Batch action review modal                              |
+| `src/components/views/debloater/DescriptionPanel.tsx`      | Package info display panel                             |
+| `src/lib/debloatStore.ts`                                  | Zustand store for debloat state                        |
 
 ### 5.2 Modified Files
 
-| File | Change |
-|---|---|
-| `src/components/views/ViewAppManager.tsx` | Rewrite: single Card + Tabs shell |
-| `src/lib/desktop/models.ts` | Add debloat DTOs |
-| `src/lib/desktop/backend.ts` | Add debloat command wrappers |
-| `src-tauri/src/commands/mod.rs` | Add `pub mod debloat;` |
-| `src-tauri/src/lib.rs` | Register new commands |
-| `src-tauri/permissions/autogenerated.toml` | Add debloat command permissions |
+| File                                       | Change                            |
+| ------------------------------------------ | --------------------------------- |
+| `src/components/views/ViewAppManager.tsx`  | Rewrite: single Card + Tabs shell |
+| `src/lib/desktop/models.ts`                | Add debloat DTOs                  |
+| `src/lib/desktop/backend.ts`               | Add debloat command wrappers      |
+| `src-tauri/src/commands/mod.rs`            | Add `pub mod debloat;`            |
+| `src-tauri/src/lib.rs`                     | Register new commands             |
+| `src-tauri/permissions/autogenerated.toml` | Add debloat command permissions   |
 
 ---
 
@@ -401,18 +403,28 @@ export interface DebloatActionResult {
 ```tsx
 <Card>
   <CardHeader>
-    <CardTitle><Package /> Applications</CardTitle>
+    <CardTitle>
+      <Package /> Applications
+    </CardTitle>
     <CardDescription>Manage, debloat, and install apps</CardDescription>
   </CardHeader>
   <CardContent className="p-0">
     <Tabs defaultValue="debloater">
       <TabsList variant="line" className="px-6">
-        <TabsTrigger value="debloater"><Shield /> Debloater</TabsTrigger>
-        <TabsTrigger value="installation"><Package /> Installation</TabsTrigger>
+        <TabsTrigger value="debloater">
+          <Shield /> Debloater
+        </TabsTrigger>
+        <TabsTrigger value="installation">
+          <Package /> Installation
+        </TabsTrigger>
       </TabsList>
       <div className="p-6">
-        <TabsContent value="debloater"><DebloaterTab /></TabsContent>
-        <TabsContent value="installation"><InstallationTab /></TabsContent>
+        <TabsContent value="debloater">
+          <DebloaterTab />
+        </TabsContent>
+        <TabsContent value="installation">
+          <InstallationTab />
+        </TabsContent>
       </div>
     </Tabs>
   </CardContent>
@@ -423,17 +435,17 @@ export interface DebloatActionResult {
 
 ## 8. Key Design Decisions
 
-| Decision | Rationale |
-|---|---|
-| UAD lists fetched at tab open, not app startup | Avoid blocking app launch |
-| Bundled fallback JSON | Works offline; ~824KB acceptable |
-| Disable mode as toggle, not default | Uninstall is more thorough |
-| Expert mode gates Unsafe packages | Prevents accidental bootloops |
-| No multi-user in Phase 1 | Simplifies; user 0 covers 95% |
-| Review dialog before batch apply | Safety checkpoint |
-| Separate Rust module (`debloat/`) | Isolated from `commands/apps.rs` |
-| Existing uninstall stays in Installation tab | Debloater = system; Installation = user apps |
-| Single Card + Tabs | Consistent with Emulator Manager Design 3 |
+| Decision                                       | Rationale                                    |
+| ---------------------------------------------- | -------------------------------------------- |
+| UAD lists fetched at tab open, not app startup | Avoid blocking app launch                    |
+| Bundled fallback JSON                          | Works offline; ~824KB acceptable             |
+| Disable mode as toggle, not default            | Uninstall is more thorough                   |
+| Expert mode gates Unsafe packages              | Prevents accidental bootloops                |
+| No multi-user in Phase 1                       | Simplifies; user 0 covers 95%                |
+| Review dialog before batch apply               | Safety checkpoint                            |
+| Separate Rust module (`debloat/`)              | Isolated from `commands/apps.rs`             |
+| Existing uninstall stays in Installation tab   | Debloater = system; Installation = user apps |
+| Single Card + Tabs                             | Consistent with Emulator Manager Design 3    |
 
 ---
 
@@ -480,12 +492,12 @@ New Tauri commands: `create_debloat_backup`, `list_debloat_backups`, `restore_de
 
 UAD generates different ADB commands based on Android version. We MUST do this to avoid breakage.
 
-| SDK   | Version | Uninstall                       | Disable                             | Restore                          |
-|-------|---------|---------------------------------|-------------------------------------|----------------------------------|
-| ≥23   | 6.0+    | `pm uninstall --user N`         | `pm disable-user` + `am force-stop` + `pm clear` | `cmd package install-existing`   |
-| 21-22 | 5.x     | `pm hide` + `pm clear`          | N/A                                 | `pm unhide`                      |
-| 19-20 | 4.4     | `pm block` + `pm clear`         | N/A                                 | `pm unblock` + `pm clear`        |
-| <19   | <4.4    | `pm uninstall` (no user flag)   | N/A                                 | N/A (not reversible)             |
+| SDK   | Version | Uninstall                     | Disable                                          | Restore                        |
+| ----- | ------- | ----------------------------- | ------------------------------------------------ | ------------------------------ |
+| ≥23   | 6.0+    | `pm uninstall --user N`       | `pm disable-user` + `am force-stop` + `pm clear` | `cmd package install-existing` |
+| 21-22 | 5.x     | `pm hide` + `pm clear`        | N/A                                              | `pm unhide`                    |
+| 19-20 | 4.4     | `pm block` + `pm clear`       | N/A                                              | `pm unblock` + `pm clear`      |
+| <19   | <4.4    | `pm uninstall` (no user flag) | N/A                                              | N/A (not reversible)           |
 
 Implementation: `resolve_debloat_command(sdk_version, action)` helper in Rust.
 
@@ -541,18 +553,18 @@ Save device-specific preferences (disable mode, multi-user, expert mode) so they
 
 ## 12. Feature Priority Matrix
 
-| # | Feature | Priority | Effort | Phase |
-|---|---------|----------|--------|-------|
-| 1 | Core debloater (list + uninstall + restore) | 🔴 Must | High | 1 |
-| 2 | SDK-aware commands | 🔴 Must | Low | 1 |
-| 3 | Backup/Restore system | 🔴 Must | Medium | 1 |
-| 4 | UAD list auto-update | 🟡 High | Low | 1 |
-| 5 | Disable mode toggle | 🟡 High | Low | 1 |
-| 6 | Review dialog with safety recap | 🟡 High | Medium | 1 |
-| 7 | Per-device settings persistence | 🟢 Nice | Low | 2 |
-| 8 | Multi-user mode | 🟢 Nice | Medium | 2 |
-| 9 | Export/Import profiles | 🟢 Nice | Low | 2 |
-| 10 | OEM auto-detect via `ro.product.brand` | 🟢 Nice | Low | 2 |
-| 11 | Batch presets (Privacy/Battery/Minimal) | 🔵 Future | Medium | 3 |
-| 12 | Custom community lists | 🔵 Future | Medium | 3 |
-| 13 | Undo history | 🔵 Future | Medium | 3 |
+| #   | Feature                                     | Priority  | Effort | Phase |
+| --- | ------------------------------------------- | --------- | ------ | ----- |
+| 1   | Core debloater (list + uninstall + restore) | 🔴 Must   | High   | 1     |
+| 2   | SDK-aware commands                          | 🔴 Must   | Low    | 1     |
+| 3   | Backup/Restore system                       | 🔴 Must   | Medium | 1     |
+| 4   | UAD list auto-update                        | 🟡 High   | Low    | 1     |
+| 5   | Disable mode toggle                         | 🟡 High   | Low    | 1     |
+| 6   | Review dialog with safety recap             | 🟡 High   | Medium | 1     |
+| 7   | Per-device settings persistence             | 🟢 Nice   | Low    | 2     |
+| 8   | Multi-user mode                             | 🟢 Nice   | Medium | 2     |
+| 9   | Export/Import profiles                      | 🟢 Nice   | Low    | 2     |
+| 10  | OEM auto-detect via `ro.product.brand`      | 🟢 Nice   | Low    | 2     |
+| 11  | Batch presets (Privacy/Battery/Minimal)     | 🔵 Future | Medium | 3     |
+| 12  | Custom community lists                      | 🔵 Future | Medium | 3     |
+| 13  | Undo history                                | 🔵 Future | Medium | 3     |

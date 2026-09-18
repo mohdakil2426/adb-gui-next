@@ -9,6 +9,7 @@
 ## 1. Executive Summary
 
 A comprehensive investigation into the `adb-gui-next` marketplace domain identified critical failure modes and performance bottlenecks:
+
 1. **GitHub 404 App Detail Crash**: Curated tools and update candidates store Android reverse-DNS package IDs (e.g., `com.pittvandewitt.viperfx`, `moe.shizuku.privileged.api`, `com.topjohnwu.magisk`). When opening app details under the GitHub source, the backend queried `https://api.github.com/repos/{package_id}`, resulting in `HTTP 404 Not Found` and leaving the frontend in a broken state.
 2. **Missing Releases for Pre-release Projects**: Projects publishing only pre-releases (e.g., Lawnchair 14 Beta) returned 404 on `/releases/latest`, stripping APK download links and rendering apps non-installable.
 3. **Termux Official APK Filter Bug**: `is_apk_asset` filtered out filenames containing `debug`. Official Termux GitHub releases (`termux-app_v0.118.1+github-debug_arm64-v8a.apk`) were systematically excluded.
@@ -81,11 +82,11 @@ By incorporating architectural patterns from [Komi Store](https://github.com/kur
 
 ## 3. Verification Matrix
 
-| Test Scenario | Expected Outcome | Status |
-|---|---|:---:|
-| ViPER4Android FX Detail Lookup | Package ID `com.pittvandewitt.viperfx` resolves to `v4a-re/ViPER4Android-FX`, loads v2.7.2.1 APK and README | Verified |
-| Shizuku / Magisk Detail Lookup | Package IDs resolve to `RikkaApps/Shizuku` and `topjohnwu/Magisk` with full README and assets | Verified |
-| Lawnchair 14 (Pre-release only) | Fallback to latest pre-release fetches `v14-beta2` APK and changelog | Verified |
-| Termux APK Recognition | `termux-app_v0.118.1+github-debug_arm64-v8a.apk` accepted as valid installable APK | Verified |
-| Markdown Relative Images | `./assets/banner.png` rendered as `https://raw.githubusercontent.com/...` | Verified |
-| Markdown Tables & Lists | Formatted cleanly with Tailwind typography | Verified |
+| Test Scenario                   | Expected Outcome                                                                                            |  Status  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------- | :------: |
+| ViPER4Android FX Detail Lookup  | Package ID `com.pittvandewitt.viperfx` resolves to `v4a-re/ViPER4Android-FX`, loads v2.7.2.1 APK and README | Verified |
+| Shizuku / Magisk Detail Lookup  | Package IDs resolve to `RikkaApps/Shizuku` and `topjohnwu/Magisk` with full README and assets               | Verified |
+| Lawnchair 14 (Pre-release only) | Fallback to latest pre-release fetches `v14-beta2` APK and changelog                                        | Verified |
+| Termux APK Recognition          | `termux-app_v0.118.1+github-debug_arm64-v8a.apk` accepted as valid installable APK                          | Verified |
+| Markdown Relative Images        | `./assets/banner.png` rendered as `https://raw.githubusercontent.com/...`                                   | Verified |
+| Markdown Tables & Lists         | Formatted cleanly with Tailwind typography                                                                  | Verified |

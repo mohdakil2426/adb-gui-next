@@ -34,20 +34,20 @@
 
 ADB GUI Next is a **native desktop application** (not a web product). It wraps Android platform tools and domain logic behind a modern React UI:
 
-| Capability | Summary |
-| --- | --- |
-| Device control | Discover ADB/fastboot devices, select target, view info, wireless ADB |
-| App Manager | 4-tab Hardware Cockpit: Telemetry Overview (SVG donut, Target SDK meter, storage sparklines, privacy matrix, launchpad), Virtualized Installed Apps (8-way sort, live chips, inline hover actions, floating batch bar), Sideload Studio (.apk/.apks/.xapk/.apkm pre-flight inspection + ADB flags cockpit), and UAD Debloater (safety chips, vendor filters, 1-click toggles, snapshots) + slide-out Deep Package Inspector Drawer |
-| File Explorer | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, host drop-in, in-app move, mutate, optional verified root mode |
-| Flasher | Fastboot flash, recovery sideload, wipe, A/B slot |
-| Utilities | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch |
-| Payload Dumper | Universal Android firmware extractor: CrAU v1/v2 payload.bin, Delta OTAs (BSDiff/Puffin/Brotli), liblp dynamic partitions (super.img unpack), Samsung .tar.md5 + LZ4, Xiaomi dat.br, OnePlus OPS, Oppo OFP, and live OEM Firmware Hub |
-| Marketplace | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth) |
-| Scrcpy | Download/manage official binaries, multi-device selection, presets catalog, live session detection, launch native mirror windows |
-| Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore |
-| Bottom panel | Logs + adb/fastboot shell (VS Code–style) |
-| Command palette | ⌘/Ctrl+K over navigation, device selection, shell/log actions, shortcut reference |
-| Status bar | Persistent ADB-server state, selected device, active long-running operation |
+| Capability       | Summary                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Device control   | Discover ADB/fastboot devices, select target, view info, wireless ADB                                                                                                                                                                                                                                                                                                                                                              |
+| App Manager      | 4-tab Hardware Cockpit: Telemetry Overview (SVG donut, Target SDK meter, storage sparklines, privacy matrix, launchpad), Virtualized Installed Apps (8-way sort, live chips, inline hover actions, floating batch bar), Sideload Studio (.apk/.apks/.xapk/.apkm pre-flight inspection + ADB flags cockpit), and UAD Debloater (safety chips, vendor filters, 1-click toggles, snapshots) + slide-out Deep Package Inspector Drawer |
+| File Explorer    | Dual-pane browse (Places + Root/Storage tree), Details list, push/pull, host drop-in, in-app move, mutate, optional verified root mode                                                                                                                                                                                                                                                                                             |
+| Flasher          | Fastboot flash, recovery sideload, wipe, A/B slot                                                                                                                                                                                                                                                                                                                                                                                  |
+| Utilities        | Reboot modes, host tools, Windows Google platform-tools/USB setup, bootloader vars, terminal/device manager launch                                                                                                                                                                                                                                                                                                                 |
+| Payload Dumper   | Universal Android firmware extractor: CrAU v1/v2 payload.bin, Delta OTAs (BSDiff/Puffin/Brotli), liblp dynamic partitions (super.img unpack), Samsung .tar.md5 + LZ4, Xiaomi dat.br, OnePlus OPS, Oppo OFP, and live OEM Firmware Hub                                                                                                                                                                                              |
+| Marketplace      | Discover/install APKs from F-Droid, GitHub, Aptoide (+ optional GitHub auth)                                                                                                                                                                                                                                                                                                                                                       |
+| Scrcpy           | Download/manage official binaries, multi-device selection, presets catalog, live session detection, launch native mirror windows                                                                                                                                                                                                                                                                                                   |
+| Emulator Manager | AVD list/launch/stop, Magisk root wizard, backup restore                                                                                                                                                                                                                                                                                                                                                                           |
+| Bottom panel     | Logs + adb/fastboot shell (VS Code–style)                                                                                                                                                                                                                                                                                                                                                                                          |
+| Command palette  | ⌘/Ctrl+K over navigation, device selection, shell/log actions, shortcut reference                                                                                                                                                                                                                                                                                                                                                  |
+| Status bar       | Persistent ADB-server state, selected device, active long-running operation                                                                                                                                                                                                                                                                                                                                                        |
 
 **Out of scope:** browser deployment, Next.js routing, Electron. **macOS:** implementation may exist; **builds/shipping paused** until explicitly unpaused (`docs/project_rules.md`).
 
@@ -174,18 +174,18 @@ UI event
 
 ## 4. Technology stack
 
-| Layer | Choices |
-| --- | --- |
-| UI | React 19, TypeScript 6, Vite 8, Tailwind CSS v4, shadcn/ui (Radix), Framer Motion, Sonner, next-themes |
-| Client state | Zustand 5 (UI + feature state), TanStack Query 5 (device list, AVD, device telemetry) |
-| Forms / schema | React Hook Form, Zod |
-| Lists / palette | `@tanstack/react-virtual`; `cmdk` powers the ⌘K command palette (`shared/ui/command.tsx`) |
-| Charts | **No charting library.** `MemorySparkline` (SVG polyline + gradient), `PackageCompositionDonut` (SVG `stroke-dasharray` arcs), `PartitionSizeChart` (CSS grid bars), `BatteryGauge`, `UsageBar` — all hand-rolled against the `chart-1..5` tokens. Recharts was removed: its `decimal.js-light` dependency assigns `Decimal.prototype.valueOf` at module-eval time, which throws under `freezePrototype: true` and crashed the whole view. See §14. |
-| Typography | Self-hosted variable **Inter** + **JetBrains Mono** woff2 in `public/fonts/` (OFL, licence files shipped). No Google Fonts link, no `fonts.gstatic.com` / `fonts.googleapis.com` in CSP |
-| Desktop bridge | `@tauri-apps/api` 2.11, plugins: dialog, opener, clipboard, log |
-| Backend | Rust edition 2024, Tauri 2, tokio, reqwest (rustls), memmap2, prost, rayon, zip/zstd/liblzma/… |
-| Package manager | Bun (`packageManager`: bun@1.3.13) |
-| Quality | Ultracite (Biome) FE; rustfmt + clippy; Vitest; Husky + lint-staged |
+| Layer           | Choices                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI              | React 19, TypeScript 6, Vite 8, Tailwind CSS v4, shadcn/ui (Radix), Framer Motion, Sonner, next-themes                                                                                                                                                                                                                                                                                                                                              |
+| Client state    | Zustand 5 (UI + feature state), TanStack Query 5 (device list, AVD, device telemetry)                                                                                                                                                                                                                                                                                                                                                               |
+| Forms / schema  | React Hook Form, Zod                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Lists / palette | `@tanstack/react-virtual`; `cmdk` powers the ⌘K command palette (`shared/ui/command.tsx`)                                                                                                                                                                                                                                                                                                                                                           |
+| Charts          | **No charting library.** `MemorySparkline` (SVG polyline + gradient), `PackageCompositionDonut` (SVG `stroke-dasharray` arcs), `PartitionSizeChart` (CSS grid bars), `BatteryGauge`, `UsageBar` — all hand-rolled against the `chart-1..5` tokens. Recharts was removed: its `decimal.js-light` dependency assigns `Decimal.prototype.valueOf` at module-eval time, which throws under `freezePrototype: true` and crashed the whole view. See §14. |
+| Typography      | Self-hosted variable **Inter** + **JetBrains Mono** woff2 in `public/fonts/` (OFL, licence files shipped). No Google Fonts link, no `fonts.gstatic.com` / `fonts.googleapis.com` in CSP                                                                                                                                                                                                                                                             |
+| Desktop bridge  | `@tauri-apps/api` 2.11, plugins: dialog, opener, clipboard, log                                                                                                                                                                                                                                                                                                                                                                                     |
+| Backend         | Rust edition 2024, Tauri 2, tokio, reqwest (rustls), memmap2, prost, rayon, zip/zstd/liblzma/…                                                                                                                                                                                                                                                                                                                                                      |
+| Package manager | Bun (`packageManager`: bun@1.3.13)                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Quality         | Ultracite (Biome) FE; rustfmt + clippy; Vitest; Husky + lint-staged                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ---
 
@@ -235,19 +235,19 @@ adb-gui-next/
 
 ### Hard boundaries
 
-| Concern | Correct location | Do not |
-| --- | --- | --- |
-| Bootstrap | `src/main.tsx`, `src/app/App.tsx` | Feature logic in bootstrap |
-| Shell / view switch | `src/app/shell/` | React Router / per-view device polls |
-| Feature UI | `src/features/<feature>/` | Legacy `components/views` |
-| Raw `invoke` / events | `src/desktop/*` only | Scatter in features |
-| shadcn primitives | `src/shared/ui/` | Hand-roll base controls |
-| Cross-feature stores | `src/shared/stores/` | App-wide state inside one feature |
-| Tauri commands | `src-tauri/src/commands/*.rs` | Fat handlers in domain |
-| Domain logic | `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `host_setup/`, `app_icons.rs` | Inline complex logic in commands |
-| `adb shell` invocation | `src-tauri/src/adb/` (`AdbClient`) | New `Command::new(adb)` / hand-rolled exit markers |
-| Shared process helpers | `helpers.rs` | Duplicate binary resolution / path sanitize |
-| FE tests | `src/test/` | Tests next to components |
+| Concern                | Correct location                                                                                            | Do not                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Bootstrap              | `src/main.tsx`, `src/app/App.tsx`                                                                           | Feature logic in bootstrap                         |
+| Shell / view switch    | `src/app/shell/`                                                                                            | React Router / per-view device polls               |
+| Feature UI             | `src/features/<feature>/`                                                                                   | Legacy `components/views`                          |
+| Raw `invoke` / events  | `src/desktop/*` only                                                                                        | Scatter in features                                |
+| shadcn primitives      | `src/shared/ui/`                                                                                            | Hand-roll base controls                            |
+| Cross-feature stores   | `src/shared/stores/`                                                                                        | App-wide state inside one feature                  |
+| Tauri commands         | `src-tauri/src/commands/*.rs`                                                                               | Fat handlers in domain                             |
+| Domain logic           | `payload/`, `marketplace/`, `scrcpy/`, `emulator/`, `debloat/`, `utilities/`, `host_setup/`, `app_icons.rs` | Inline complex logic in commands                   |
+| `adb shell` invocation | `src-tauri/src/adb/` (`AdbClient`)                                                                          | New `Command::new(adb)` / hand-rolled exit markers |
+| Shared process helpers | `helpers.rs`                                                                                                | Duplicate binary resolution / path sanitize        |
+| FE tests               | `src/test/`                                                                                                 | Tests next to components                           |
 
 ---
 
@@ -275,12 +275,12 @@ flowchart TD
   D --> O["useQuery allDevices 30s → deviceStore"]
 ```
 
-| File | Role |
-| --- | --- |
-| `src/main.tsx` | Mount only |
-| `src/app/App.tsx` | Global `QueryClient` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess, so refetch-on-focus and blind retries were removed; queries that need to be fresher opt in individually. |
-| `src/app/shell/MainLayout.tsx` | Shell, device poll, view state, palette state, layout chrome |
-| `src/shared/hooks/useAppReady.ts` | Gates the splash on `document.fonts.ready` + one frame, capped at 2 s (replaced a fixed 750 ms animation) |
+| File                              | Role                                                                                                                                                                                                                                                                                |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/main.tsx`                    | Mount only                                                                                                                                                                                                                                                                          |
+| `src/app/App.tsx`                 | Global `QueryClient` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess, so refetch-on-focus and blind retries were removed; queries that need to be fresher opt in individually. |
+| `src/app/shell/MainLayout.tsx`    | Shell, device poll, view state, palette state, layout chrome                                                                                                                                                                                                                        |
+| `src/shared/hooks/useAppReady.ts` | Gates the splash on `document.fonts.ready` + one frame, capped at 2 s (replaced a fixed 750 ms animation)                                                                                                                                                                           |
 
 ### 6.2 Navigation — no router
 
@@ -316,7 +316,7 @@ flowchart LR
   Map --> AB["About"]
 ```
 
-**Nav sections** live in `src/shared/commands/navigation.ts` (`NAV_SECTIONS`), not in `AppSidebar`. The same file holds `VIEW_META` — title, icon, description and palette keywords per view — which feeds the sidebar label, the `Header` title/breadcrumb and the palette's *Navigate* group, so a view is named exactly once.
+**Nav sections** live in `src/shared/commands/navigation.ts` (`NAV_SECTIONS`), not in `AppSidebar`. The same file holds `VIEW_META` — title, icon, description and palette keywords per view — which feeds the sidebar label, the `Header` title/breadcrumb and the palette's _Navigate_ group, so a view is named exactly once.
 
 Active view is **persisted** in `localStorage` (`adb-gui-next.activeView`) via `usePersistedActiveView` (not URL routing).
 
@@ -324,16 +324,16 @@ Active view is **persisted** in `localStorage` (`adb-gui-next.activeView`) via `
 
 `src/shared/commands/` is the action registry; `src/app/shell/CommandPalette.tsx` renders it over `cmdk` (`shared/ui/command.tsx`).
 
-| File | Owns |
-| --- | --- |
-| `registry.ts` | `buildCommands(ctx)` + `COMMAND_GROUPS` (`actions`, `navigate`, `devices`) |
-| `appCommands.ts` | Shell + view actions |
-| `deviceCommands.ts` | Device actions and device selection entries |
-| `navigation.ts` | `VIEW_META`, `NAV_SECTIONS`, `sectionForView` |
-| `shortcuts.ts` | `MOD_KEY`, `SHORTCUT_HELP` — the app's whole keyboard surface, rendered by the palette |
-| `types.ts` | `CommandAction`, `CommandContext`, `CommandGroupId` |
+| File                | Owns                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `registry.ts`       | `buildCommands(ctx)` + `COMMAND_GROUPS` (`actions`, `navigate`, `devices`)             |
+| `appCommands.ts`    | Shell + view actions                                                                   |
+| `deviceCommands.ts` | Device actions and device selection entries                                            |
+| `navigation.ts`     | `VIEW_META`, `NAV_SECTIONS`, `sectionForView`                                          |
+| `shortcuts.ts`      | `MOD_KEY`, `SHORTCUT_HELP` — the app's whole keyboard surface, rendered by the palette |
+| `types.ts`          | `CommandAction`, `CommandContext`, `CommandGroupId`                                    |
 
-Shortcut ownership is deliberately split: `useGlobalShortcuts` binds **only** ⌘/Ctrl+K, in the **capture** phase with `stopPropagation` so it wins over view-local Ctrl+K handlers (Marketplace search binds the same chord in the bubble phase). ⌘/Ctrl+B belongs to `shared/ui/sidebar`, and `Ctrl+\`` to `BottomPanel` (`ctrlKey` only — really Ctrl on macOS too). `SHORTCUT_HELP` is the user-visible index of all of them.
+Shortcut ownership is deliberately split: `useGlobalShortcuts` binds **only** ⌘/Ctrl+K, in the **capture** phase with `stopPropagation` so it wins over view-local Ctrl+K handlers (Marketplace search binds the same chord in the bubble phase). ⌘/Ctrl+B belongs to `shared/ui/sidebar`, and `Ctrl+\`` to `BottomPanel` (`ctrlKey`only — really Ctrl on macOS too).`SHORTCUT_HELP` is the user-visible index of all of them.
 
 ### 6.3 Feature module shape
 
@@ -346,17 +346,17 @@ src/features/<feature>/
 └── utils/                # Pure helpers
 ```
 
-| Feature | Entry | Primary state |
-| --- | --- | --- |
-| dashboard | `DashboardView.tsx` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` + `useDeviceTelemetry` |
-| app-manager | `AppManagerView.tsx` | `installationStore`, `debloatStore` (tabs) |
-| file-explorer | `FileExplorerView.tsx` | Local hooks + `localStorage` (path, tree collapsed, `fe.colWidths.v2`) |
-| marketplace | `MarketplaceView.tsx` | `marketplaceStore` + search/auth hooks |
-| flasher | `FlasherView.tsx` | Local hooks |
-| utilities | `UtilitiesView.tsx` | Local hooks |
-| payload-dumper | `PayloadDumperView.tsx` | `payloadDumperStore` + event hooks |
-| emulator | `EmulatorView.tsx` | `emulatorManagerStore` + Query AVD list |
-| about | `AboutView.tsx` | Stateless / opener |
+| Feature        | Entry                   | Primary state                                                                  |
+| -------------- | ----------------------- | ------------------------------------------------------------------------------ |
+| dashboard      | `DashboardView.tsx`     | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` + `useDeviceTelemetry` |
+| app-manager    | `AppManagerView.tsx`    | `installationStore`, `debloatStore` (tabs)                                     |
+| file-explorer  | `FileExplorerView.tsx`  | Local hooks + `localStorage` (path, tree collapsed, `fe.colWidths.v2`)         |
+| marketplace    | `MarketplaceView.tsx`   | `marketplaceStore` + search/auth hooks                                         |
+| flasher        | `FlasherView.tsx`       | Local hooks                                                                    |
+| utilities      | `UtilitiesView.tsx`     | Local hooks                                                                    |
+| payload-dumper | `PayloadDumperView.tsx` | `payloadDumperStore` + event hooks                                             |
+| emulator       | `EmulatorView.tsx`      | `emulatorManagerStore` + Query AVD list                                        |
+| about          | `AboutView.tsx`         | Stateless / opener                                                             |
 
 ### 6.4 State management
 
@@ -382,16 +382,16 @@ src/features/<feature>/
 └────────────────────────────────────────────────────────────┘
 ```
 
-| Store | Persisted? | Note |
-| --- | --- | --- |
-| `shared/stores/operationStore.ts` | **No** | Long-running operations rendered by `StatusBar`. Producer API (`startOperation` / `updateOperation` / `finishOperation`) is callable outside React. Currently wired from App Manager only (install, uninstall, debloat batch, backup restore); flasher / payload / emulator still report via toasts. |
-| `dashboard/model/memoryHistoryStore.ts` | **No** | Session-only RAM samples (max 60) behind the dashboard sparkline |
-| `payload-dumper/model/payloadProgressStore.ts` | **No** | High-frequency extraction progress, split out of the persisted `payloadDumperStore` — `zustand/persist` wraps every `setState` in a blocking `localStorage.setItem`, which dominated extraction jank |
-| `payload-dumper/model/payloadDumperStore.ts` | Yes (`partialize`) | Durable payload selections/settings only |
+| Store                                          | Persisted?         | Note                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `shared/stores/operationStore.ts`              | **No**             | Long-running operations rendered by `StatusBar`. Producer API (`startOperation` / `updateOperation` / `finishOperation`) is callable outside React. Currently wired from App Manager only (install, uninstall, debloat batch, backup restore); flasher / payload / emulator still report via toasts. |
+| `dashboard/model/memoryHistoryStore.ts`        | **No**             | Session-only RAM samples (max 60) behind the dashboard sparkline                                                                                                                                                                                                                                     |
+| `payload-dumper/model/payloadProgressStore.ts` | **No**             | High-frequency extraction progress, split out of the persisted `payloadDumperStore` — `zustand/persist` wraps every `setState` in a blocking `localStorage.setItem`, which dominated extraction jank                                                                                                 |
+| `payload-dumper/model/payloadDumperStore.ts`   | Yes (`partialize`) | Durable payload selections/settings only                                                                                                                                                                                                                                                             |
 
 **Rules of thumb**
 
-- **One global device *list* poll** — only `MainLayout`. Features must not add competing device-list intervals. Device-scoped reads (telemetry, AVDs) may own their own query as long as they are mounted-view scoped and do not duplicate `allDevices`.
+- **One global device _list_ poll** — only `MainLayout`. Features must not add competing device-list intervals. Device-scoped reads (telemetry, AVDs) may own their own query as long as they are mounted-view scoped and do not duplicate `allDevices`.
 - **Serial targeting** — features read `selectedSerial` from `deviceStore` and pass it into desktop wrappers.
 - **Marketplace search** is hook-orchestrated (debounce + stale-response protection), not primarily Query-driven.
 - **GitHub PAT / OAuth access tokens** are session-only (must not land in localStorage).
@@ -412,10 +412,10 @@ Tauri invoke failure
 
 All Tauri surface area is concentrated in `src/desktop/`.
 
-| Module | Responsibility |
-| --- | --- |
-| `backend.ts` | `core.invoke<T>(command, args)` wrappers + dialog helpers |
-| `models.ts` | TypeScript DTOs under `namespace backend` (camelCase) |
+| Module       | Responsibility                                                        |
+| ------------ | --------------------------------------------------------------------- |
+| `backend.ts` | `core.invoke<T>(command, args)` wrappers + dialog helpers             |
+| `models.ts`  | TypeScript DTOs under `namespace backend` (camelCase)                 |
 | `runtime.ts` | `EventsOn` / `EventsOff`, window-level `OnFileDrop`, `BrowserOpenURL` |
 
 ### Invoke pattern
@@ -427,15 +427,15 @@ function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
 }
 
 export function GetDevices(): Promise<backend.Device[]> {
-  return call('get_devices');
+  return call("get_devices");
 }
 
 export function ListFiles(
   path: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = 'normal',
+  accessMode: backend.FileAccessMode = "normal"
 ): Promise<backend.FileEntry[]> {
-  return call('list_files', { path, serial, accessMode });
+  return call("list_files", { path, serial, accessMode });
 }
 ```
 
@@ -444,17 +444,18 @@ export function ListFiles(
 
 ### Events (use `runtime.ts` only)
 
-| Event | Domain |
-| --- | --- |
-| `payload:progress` | Extraction progress |
-| `payload:load-progress` | Remote metadata / list load |
-| `root:progress` | Emulator Magisk root pipeline |
-| `scrcpy:download-progress` | Official scrcpy archive download |
-| `host-setup:progress` | Official Google platform-tools / USB driver download |
+| Event                           | Domain                                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `payload:progress`              | Extraction progress                                                                                          |
+| `payload:load-progress`         | Remote metadata / list load                                                                                  |
+| `root:progress`                 | Emulator Magisk root pipeline                                                                                |
+| `scrcpy:download-progress`      | Official scrcpy archive download                                                                             |
+| `host-setup:progress`           | Official Google platform-tools / USB driver download                                                         |
 | `marketplace:download-progress` | Marketplace APK streaming download (bytes, %, speed, ETA) — consumed by `marketplace/model/downloadStore.ts` |
-| `files:edit-pushed` | File Explorer editor save pushed back to the device |
-| `flasher:batch-progress` | Multi-partition flashing progress and status |
-| `flasher:sideload-progress` | Recovery ZIP streaming sideload percentage |
+| `files:edit-pushed`             | File Explorer editor save pushed back to the device                                                          |
+| `flasher:batch-progress`        | Multi-partition flashing progress and status                                                                 |
+| `flasher:sideload-progress`     | Recovery ZIP streaming sideload percentage                                                                   |
+
 ### Drag-and-drop
 
 Tauri drag/drop is **window-level**. Pattern:
@@ -552,24 +553,24 @@ flowchart TB
 
 ### 8.3 Command modules
 
-| Module | Responsibility |
-| --- | --- |
-| `commands/device.rs` | Device list, info, telemetry, mode; unified `get_all_devices` |
-| `commands/adb.rs` | Wireless ADB, host/shell runners, logcat snapshot, screenshot |
-| `commands/fastboot.rs` | Fastboot host runner, get bootloader vars |
-| `commands/flasher.rs` | Vitals, partition inspection, batch flashing, streaming sideload, wipe (thin over `flasher/`) |
-| `commands/utilities.rs` | Typed ADB server restart/kill + host tool versions (thin over `utilities/`) |
-| `commands/host_setup.rs` | Windows Google platform-tools + USB driver install (thin over `host_setup/`) |
-| `commands/files.rs` | Explorer list/push/pull/mutate + root verify + open-in-editor |
-| `commands/apps.rs` | Overview telemetry, batch install, packages lifecycle, icon batch (thin over `apps/`) |
-| `commands/apk_inspector.rs` | Binary AXML manifest parsing, batch parallel inspection via Rayon |
-| `commands/system.rs` | Open folder, terminal, device manager, host resources, unified CLI command executor |
-| `commands/payload.rs` | List/extract/remote/cancel tokens/SHA-256/presets (thin over `payload/`) |
-| `commands/marketplace.rs` | Search/detail/download/install/auth/dynamic updates/curated tools (thin over `marketplace/` — `marketplace_download_apk` now `fn(app, url, packageName?, downloadId?)` with streaming + progress events) |
-| `commands/scrcpy.rs` | Status/install/launch/command preview/profiles/bandwidth metrics/toolbar actions |
-| `commands/emulator.rs` | AVD lifecycle + root wizard IPC + real config.ini specs + virtual disk breakdown |
-| `commands/debloat.rs` | UAD data + actions + backups |
-Commands are **thin**. Blocking work uses `tokio::task::spawn_blocking` or `block_in_place` as appropriate.
+| Module                                                                                                      | Responsibility                                                                                                                                                                                           |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commands/device.rs`                                                                                        | Device list, info, telemetry, mode; unified `get_all_devices`                                                                                                                                            |
+| `commands/adb.rs`                                                                                           | Wireless ADB, host/shell runners, logcat snapshot, screenshot                                                                                                                                            |
+| `commands/fastboot.rs`                                                                                      | Fastboot host runner, get bootloader vars                                                                                                                                                                |
+| `commands/flasher.rs`                                                                                       | Vitals, partition inspection, batch flashing, streaming sideload, wipe (thin over `flasher/`)                                                                                                            |
+| `commands/utilities.rs`                                                                                     | Typed ADB server restart/kill + host tool versions (thin over `utilities/`)                                                                                                                              |
+| `commands/host_setup.rs`                                                                                    | Windows Google platform-tools + USB driver install (thin over `host_setup/`)                                                                                                                             |
+| `commands/files.rs`                                                                                         | Explorer list/push/pull/mutate + root verify + open-in-editor                                                                                                                                            |
+| `commands/apps.rs`                                                                                          | Overview telemetry, batch install, packages lifecycle, icon batch (thin over `apps/`)                                                                                                                    |
+| `commands/apk_inspector.rs`                                                                                 | Binary AXML manifest parsing, batch parallel inspection via Rayon                                                                                                                                        |
+| `commands/system.rs`                                                                                        | Open folder, terminal, device manager, host resources, unified CLI command executor                                                                                                                      |
+| `commands/payload.rs`                                                                                       | List/extract/remote/cancel tokens/SHA-256/presets (thin over `payload/`)                                                                                                                                 |
+| `commands/marketplace.rs`                                                                                   | Search/detail/download/install/auth/dynamic updates/curated tools (thin over `marketplace/` — `marketplace_download_apk` now `fn(app, url, packageName?, downloadId?)` with streaming + progress events) |
+| `commands/scrcpy.rs`                                                                                        | Status/install/launch/command preview/profiles/bandwidth metrics/toolbar actions                                                                                                                         |
+| `commands/emulator.rs`                                                                                      | AVD lifecycle + root wizard IPC + real config.ini specs + virtual disk breakdown                                                                                                                         |
+| `commands/debloat.rs`                                                                                       | UAD data + actions + backups                                                                                                                                                                             |
+| Commands are **thin**. Blocking work uses `tokio::task::spawn_blocking` or `block_in_place` as appropriate. |
 
 ### 8.3.1 ADB access layer (`src-tauri/src/adb/`)
 
@@ -582,20 +583,20 @@ adb/
 └── parse.rs      getprop · dumpsys battery · /proc/meminfo · df · ip addr · uptime · wifi parsers
 ```
 
-| Concern | Behaviour |
-| --- | --- |
-| Binary resolution | `resolve_binary_path` + `binary_working_directory` run **once per process** into a `OnceLock` (previously 4–8 syscalls before every spawn) |
-| Windows | `CREATE_NO_WINDOW` applied centrally |
-| `shell(cmd)` / `shell_checked(root, cmd)` | Appends `; echo <nonce-marker>0:$?`, parses it back, strips the bookkeeping line, and maps a non-zero **device** exit to `Err`. Host success ≠ device success. |
-| `shell_batch(&[cmd])` | Runs N device-shell commands in **one** `adb` process; each command's stdout and exit code are recovered independently via `<marker><index>:<code>`. A non-zero command does not fail the batch — inspect `CmdOutput::exit_code` (`None` = the marker never appeared, so neither output nor status is trustworthy). Only host-level failure returns `Err`. |
-| Marker safety | Per-batch nonce (pid + counter + nanos), not a fixed literal, so device output cannot forge a command boundary |
-| Sizing | The joined script travels as one argv entry — batches of tens of commands, not thousands |
+| Concern                                   | Behaviour                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Binary resolution                         | `resolve_binary_path` + `binary_working_directory` run **once per process** into a `OnceLock` (previously 4–8 syscalls before every spawn)                                                                                                                                                                                                                 |
+| Windows                                   | `CREATE_NO_WINDOW` applied centrally                                                                                                                                                                                                                                                                                                                       |
+| `shell(cmd)` / `shell_checked(root, cmd)` | Appends `; echo <nonce-marker>0:$?`, parses it back, strips the bookkeeping line, and maps a non-zero **device** exit to `Err`. Host success ≠ device success.                                                                                                                                                                                             |
+| `shell_batch(&[cmd])`                     | Runs N device-shell commands in **one** `adb` process; each command's stdout and exit code are recovered independently via `<marker><index>:<code>`. A non-zero command does not fail the batch — inspect `CmdOutput::exit_code` (`None` = the marker never appeared, so neither output nor status is trustworthy). Only host-level failure returns `Err`. |
+| Marker safety                             | Per-batch nonce (pid + counter + nanos), not a fixed literal, so device output cannot forge a command boundary                                                                                                                                                                                                                                             |
+| Sizing                                    | The joined script travels as one argv entry — batches of tens of commands, not thousands                                                                                                                                                                                                                                                                   |
 
 `get_device_telemetry` is the flagship consumer: **11 device commands in 1 `adb` process**, returning typed numbers (`DeviceTelemetry`) instead of the pre-formatted display strings of `get_device_info`. Both commands remain registered; the Dashboard uses telemetry (`useDeviceTelemetry` + `toLegacyDeviceInfo` to keep `deviceStore.deviceInfo` fed), and `get_device_info` has no remaining frontend caller.
 
 `helpers::adb_shell_checked` is retained as a forwarder so existing call sites (files, apps, debloat, emulator) did not have to change; new code should construct an `AdbClient` directly.
 
-**Storage volumes — why three `df` calls, not one.** `df` is invoked once *per path* (`/data`, `/storage/emulated`, `/sdcard`), still inside the same single batch. A combined `df -k a b c` was tried first and is wrong: `df`'s own "Mounted on" column can resolve to an unrelated bind mount — on a Pixel 7a it reported `/apex/com.android.art/bin/dex2oat64` — so the column cannot be trusted to say which path a row describes. Each row is therefore labelled by the path **we asked about**, with `df`'s literal text kept as `rawMount` for diagnostics only. `parse_df` then drops non-user-storage paths (`/apex`, `/system`, `/vendor`, `/proc`, tmpfs…) and de-duplicates by `(Filesystem, total size)` rather than by mount string, since one physical volume surfaces under several mounts. Human labels ("Internal storage", "Shared storage") are derived in the frontend, per the backend-returns-numbers convention.
+**Storage volumes — why three `df` calls, not one.** `df` is invoked once _per path_ (`/data`, `/storage/emulated`, `/sdcard`), still inside the same single batch. A combined `df -k a b c` was tried first and is wrong: `df`'s own "Mounted on" column can resolve to an unrelated bind mount — on a Pixel 7a it reported `/apex/com.android.art/bin/dex2oat64` — so the column cannot be trusted to say which path a row describes. Each row is therefore labelled by the path **we asked about**, with `df`'s literal text kept as `rawMount` for diagnostics only. `parse_df` then drops non-user-storage paths (`/apex`, `/system`, `/vendor`, `/proc`, tmpfs…) and de-duplicates by `(Filesystem, total size)` rather than by mount string, since one physical volume surfaces under several mounts. Human labels ("Internal storage", "Shared storage") are derived in the frontend, per the backend-returns-numbers convention.
 
 ### 8.4 Domain modules
 
@@ -674,13 +675,13 @@ Windows-only OS install of official Google platform-tools and the Google USB Dri
 
 ### 8.5 Shared helpers (`helpers.rs`)
 
-| Helper | Why it exists |
-| --- | --- |
-| `resolve_binary_path` | Packaged resources → dev `src-tauri/resources/{os}` → PATH |
-| `run_binary_command*` | Spawn fastboot/emulator/etc. with Windows `CREATE_NO_WINDOW` where needed |
-| `adb_shell_checked` | Compatibility forwarder into `adb::AdbClient::shell_checked` (the old `__ADB_GUI_EXIT_STATUS__` literal and its parser were deleted) |
-| `sanitize_filename` / `safe_image_file_name` | Safe extract basenames |
-| `validate_path_components` / `validate_safe_device_path` | Traversal + write-path allowlist |
+| Helper                                                   | Why it exists                                                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `resolve_binary_path`                                    | Packaged resources → dev `src-tauri/resources/{os}` → PATH                                                                           |
+| `run_binary_command*`                                    | Spawn fastboot/emulator/etc. with Windows `CREATE_NO_WINDOW` where needed                                                            |
+| `adb_shell_checked`                                      | Compatibility forwarder into `adb::AdbClient::shell_checked` (the old `__ADB_GUI_EXIT_STATUS__` literal and its parser were deleted) |
+| `sanitize_filename` / `safe_image_file_name`             | Safe extract basenames                                                                                                               |
+| `validate_path_components` / `validate_safe_device_path` | Traversal + write-path allowlist                                                                                                     |
 
 ### 8.6 Bundled resources
 
@@ -695,32 +696,33 @@ Wired via `tauri.windows.conf.json` / `tauri.linux.conf.json`.
 
 ### 8.7 IPC contract conventions
 
-| Topic | Convention |
-| --- | --- |
-| Return type | `CmdResult<T> = Result<T, String>` |
-| Field names | `#[serde(rename_all = "camelCase")]` on IPC structs |
-| Tagged enums | Tag **values** rename too (e.g. `latestStable`) — TS unions must match |
-| Permissions | Every command in `generate_handler!` **and** `permissions/autogenerated.toml` `commands.allow` |
-| Capability | `capabilities/default.json` → main window + plugin defaults + `allow-all` |
+| Topic        | Convention                                                                                     |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| Return type  | `CmdResult<T> = Result<T, String>`                                                             |
+| Field names  | `#[serde(rename_all = "camelCase")]` on IPC structs                                            |
+| Tagged enums | Tag **values** rename too (e.g. `latestStable`) — TS unions must match                         |
+| Permissions  | Every command in `generate_handler!` **and** `permissions/autogenerated.toml` `commands.allow` |
+| Capability   | `capabilities/default.json` → main window + plugin defaults + `allow-all`                      |
 
 ---
 
 ## 9. Feature map (end-to-end)
 
-| Area | Frontend | Store / state | Desktop | Rust |
-| --- | --- | --- | --- | --- |
-| Device / Dashboard | `features/dashboard` · `DeviceSwitcher` | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore` | `GetDevices`, `GetDeviceTelemetry`, wireless cmds | `commands/device`, `adb/`, `commands/adb` |
-| App Manager | `features/app-manager` | `installationStore`, `debloatStore` | `GetInstalledPackages`, `GetPackageDetails`, `PackageLifecycleOp`, `PullPackageApk`, `InstallPackage`, `InspectPackageFile`, `UninstallPackage` | `commands/apps`, `commands/apk_inspector`, `apps/telemetry.rs` (storage csv trims quotes; `StorageConsumerItem.packageName` filters to user packages only; `TopStorageConsumersChart` caps 5 + strips quotes) |
-| Debloat | `app-manager/debloater` | `debloatStore` | `GetDebloatData`, `DebloatPackages`, `CreateDebloatBackup`, `RestoreDebloatBackup`, `SaveDebloatDeviceSettings` | `debloat` domain |
-| File Explorer | `features/file-explorer` | hooks + localStorage (path, tree, column widths) | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop` | `files` + helpers |
-| Flasher | `features/flasher` | local | flash/boot/sideload/wipe | `flasher` |
-| Utilities | `features/utilities` | local | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup | `utilities` + `host_setup` domains |
-| Scrcpy | `features/scrcpy` | local + presets | `ScrcpyLaunch`, `ScrcpyStop`, `ScrcpyInstall`, `ScrcpyUninstall`, `ScrcpyStatus`, `ScrcpyCheckUpdate`, `ScrcpyPresets`, `ScrcpyActiveSessions`, `ScrcpyOpenToolbar`, `ScrcpyCloseToolbar`, `ScrcpySetToolbarMode`, `ScrcpySetToolbarSize`, `ScrcpySendKeyevent`, `ScrcpySendStatusbar`, `ScrcpyRotateDevice` | `scrcpy` domain + `scrcpy/toolbar` |
-| Payload Dumper & Hub | `features/payload-dumper` | `payloadDumperStore`, `payloadProgressStore`, TanStack Query `useFirmwareCatalog` | `ExtractPayload`, `ListPayloadPartitions`, `UnpackSuperImage`, `GetFirmwareCatalog`, `RefreshFirmwareCatalog`, `GetSupportedFirmwareBrands`, `ClearFirmwareCache`, `CancelPayloadExtraction` | `payload` domain (crau, lp, delta, samsung, xiaomi, ops, remote, io, verify) + `firmware` domain (Google, Nothing, Xiaomi, OnePlus, Samsung multi-feed scrapers & 24h two-tier cache) |
-| Marketplace | `features/marketplace` | `marketplaceStore` + `downloadStore` (SWR progress, 8 Hz throttled, auto-clear at 100% +2s) + search/auth hooks | `MarketplaceSearch`, `MarketplaceGetAppDetail(packageName, source, token)`, `MarketplaceDownloadApk(url, packageName?, downloadId?)` + `marketplace:download-progress`, `MarketplaceInstallApk` | `marketplace` domain (service, github, fdroid, aptoide, assets, resolver, markdown, cache SWR, install_queue streaming) |
-| Emulator | `features/emulator` | `emulatorManagerStore` | AVD + root wizard | `emulator` domain |
-| Logs / Shell | `app/shell/BottomPanel` (`LogsPanel`/`LogRow`, `ShellPanel`/`ShellInput`/`ShellTranscript`) | `logStore`, `shellStore` | shell/host cmds, `SaveLog` | `adb`, `fastboot`, `system` |
-| Palette / status | `app/shell/CommandPalette`, `StatusBar` | `shared/commands/*`, `operationStore` | none (delegates to existing wrappers) | — |
+| Area                 | Frontend                                                                                    | Store / state                                                                                                   | Desktop                                                                                                                                                                                                                                                                                                      | Rust                                                                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Device / Dashboard   | `features/dashboard` · `DeviceSwitcher`                                                     | `deviceStore`, `wirelessAdbStore`, `memoryHistoryStore`                                                         | `GetDevices`, `GetDeviceTelemetry`, wireless cmds                                                                                                                                                                                                                                                            | `commands/device`, `adb/`, `commands/adb`                                                                                                                                                                     |
+| App Manager          | `features/app-manager`                                                                      | `installationStore`, `debloatStore`                                                                             | `GetInstalledPackages`, `GetPackageDetails`, `PackageLifecycleOp`, `PullPackageApk`, `InstallPackage`, `InspectPackageFile`, `UninstallPackage`                                                                                                                                                              | `commands/apps`, `commands/apk_inspector`, `apps/telemetry.rs` (storage csv trims quotes; `StorageConsumerItem.packageName` filters to user packages only; `TopStorageConsumersChart` caps 5 + strips quotes) |
+| Debloat              | `app-manager/debloater`                                                                     | `debloatStore`                                                                                                  | `GetDebloatData`, `DebloatPackages`, `CreateDebloatBackup`, `RestoreDebloatBackup`, `SaveDebloatDeviceSettings`                                                                                                                                                                                              | `debloat` domain                                                                                                                                                                                              |
+| File Explorer        | `features/file-explorer`                                                                    | hooks + localStorage (path, tree, column widths)                                                                | list/push/pull/mutate/root, `HostPathKinds`, `OnFileDrop`                                                                                                                                                                                                                                                    | `files` + helpers                                                                                                                                                                                             |
+| Flasher              | `features/flasher`                                                                          | local                                                                                                           | flash/boot/sideload/wipe                                                                                                                                                                                                                                                                                     | `flasher`                                                                                                                                                                                                     |
+| Utilities            | `features/utilities`                                                                        | local                                                                                                           | reboot, typed server cmds, logcat/screenshot, wipe, Windows host setup                                                                                                                                                                                                                                       | `utilities` + `host_setup` domains                                                                                                                                                                            |
+| Scrcpy               | `features/scrcpy`                                                                           | local + presets                                                                                                 | `ScrcpyLaunch`, `ScrcpyStop`, `ScrcpyInstall`, `ScrcpyUninstall`, `ScrcpyStatus`, `ScrcpyCheckUpdate`, `ScrcpyPresets`, `ScrcpyActiveSessions`, `ScrcpyOpenToolbar`, `ScrcpyCloseToolbar`, `ScrcpySetToolbarMode`, `ScrcpySetToolbarSize`, `ScrcpySendKeyevent`, `ScrcpySendStatusbar`, `ScrcpyRotateDevice` | `scrcpy` domain + `scrcpy/toolbar`                                                                                                                                                                            |
+| Payload Dumper & Hub | `features/payload-dumper`                                                                   | `payloadDumperStore`, `payloadProgressStore`, TanStack Query `useFirmwareCatalog`                               | `ExtractPayload`, `ListPayloadPartitions`, `UnpackSuperImage`, `GetFirmwareCatalog`, `RefreshFirmwareCatalog`, `GetSupportedFirmwareBrands`, `ClearFirmwareCache`, `CancelPayloadExtraction`                                                                                                                 | `payload` domain (crau, lp, delta, samsung, xiaomi, ops, remote, io, verify) + `firmware` domain (Google, Nothing, Xiaomi, OnePlus, Samsung multi-feed scrapers & 24h two-tier cache)                         |
+| Marketplace          | `features/marketplace`                                                                      | `marketplaceStore` + `downloadStore` (SWR progress, 8 Hz throttled, auto-clear at 100% +2s) + search/auth hooks | `MarketplaceSearch`, `MarketplaceGetAppDetail(packageName, source, token)`, `MarketplaceDownloadApk(url, packageName?, downloadId?)` + `marketplace:download-progress`, `MarketplaceInstallApk`                                                                                                              | `marketplace` domain (service, github, fdroid, aptoide, assets, resolver, markdown, cache SWR, install_queue streaming)                                                                                       |
+| Emulator             | `features/emulator`                                                                         | `emulatorManagerStore`                                                                                          | AVD + root wizard                                                                                                                                                                                                                                                                                            | `emulator` domain                                                                                                                                                                                             |
+| Logs / Shell         | `app/shell/BottomPanel` (`LogsPanel`/`LogRow`, `ShellPanel`/`ShellInput`/`ShellTranscript`) | `logStore`, `shellStore`                                                                                        | shell/host cmds, `SaveLog`                                                                                                                                                                                                                                                                                   | `adb`, `fastboot`, `system`                                                                                                                                                                                   |
+| Palette / status     | `app/shell/CommandPalette`, `StatusBar`                                                     | `shared/commands/*`, `operationStore`                                                                           | none (delegates to existing wrappers)                                                                                                                                                                                                                                                                        | —                                                                                                                                                                                                             |
+
 ---
 
 ## 10. Cross-cutting data flows
@@ -857,28 +859,28 @@ The app is **viewport-locked**. Incorrect overflow breaks structural pinning and
 └───────────────────────────────────────────────────────────────┘
 ```
 
-| Rule | Detail |
-| --- | --- |
-| Outer boundary | `h-svh overflow-hidden`; `SidebarProvider` fills with `h-full` |
-| Column order in `SidebarInset` | Header → `ViewContent` → `StatusBar` → bottom-panel dock |
-| Header | Structural pin (`shrink-0`, `h-11`), not `position: sticky`. Visible title + breadcrumb come from `VIEW_META`; each view still renders its own `sr-only <h1>` |
-| StatusBar | Persistent 26 px footer: ADB server reachability, selected device + status, active operation from `operationStore` |
-| Bottom panel | Still `position: fixed`. When open, a `shrink-0` **dock spacer** of equal height is rendered in the flex column so `<main>` gets an honest height. **No `paddingBottom` compensation.** If the panel ever becomes a static flex child, delete the dock. |
-| Content width | `ViewContent` is **fluid** — the old 1280 px centred cap was removed (this is a maximised desktop app) |
-| Main scroll | Default `overflow-y-auto overflow-x-hidden`; File Explorer & Marketplace own internal scroll |
-| `min-w-0` | Required chain so truncating text works |
-| Bottom panel resize | **DOM-first** during drag; React state on mouseup only |
-| Toasts | Sonner top-right in `MainLayout` |
-| Design tokens | `src/styles/global.css` — palette, type scale, motion, z-index (no raw hex in components) |
+| Rule                           | Detail                                                                                                                                                                                                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Outer boundary                 | `h-svh overflow-hidden`; `SidebarProvider` fills with `h-full`                                                                                                                                                                                          |
+| Column order in `SidebarInset` | Header → `ViewContent` → `StatusBar` → bottom-panel dock                                                                                                                                                                                                |
+| Header                         | Structural pin (`shrink-0`, `h-11`), not `position: sticky`. Visible title + breadcrumb come from `VIEW_META`; each view still renders its own `sr-only <h1>`                                                                                           |
+| StatusBar                      | Persistent 26 px footer: ADB server reachability, selected device + status, active operation from `operationStore`                                                                                                                                      |
+| Bottom panel                   | Still `position: fixed`. When open, a `shrink-0` **dock spacer** of equal height is rendered in the flex column so `<main>` gets an honest height. **No `paddingBottom` compensation.** If the panel ever becomes a static flex child, delete the dock. |
+| Content width                  | `ViewContent` is **fluid** — the old 1280 px centred cap was removed (this is a maximised desktop app)                                                                                                                                                  |
+| Main scroll                    | Default `overflow-y-auto overflow-x-hidden`; File Explorer & Marketplace own internal scroll                                                                                                                                                            |
+| `min-w-0`                      | Required chain so truncating text works                                                                                                                                                                                                                 |
+| Bottom panel resize            | **DOM-first** during drag; React state on mouseup only                                                                                                                                                                                                  |
+| Toasts                         | Sonner top-right in `MainLayout`                                                                                                                                                                                                                        |
+| Design tokens                  | `src/styles/global.css` — palette, type scale, motion, z-index (no raw hex in components)                                                                                                                                                               |
 
 ### 12.1 Adaptivity — container queries, not viewport breakpoints
 
 The window is pinned to **`minWidth: 1024, minHeight: 720, resizable: true`** (`src-tauri/tauri.conf.json`). Two consequences drive the whole model:
 
 1. **`sm:` (640 px) and `md:` (768 px) can never evaluate false.** They are permanently-on conditionals that mislead the reader. There are zero left outside `src/shared/ui/` (vendored shadcn primitives retain their own mobile-drawer logic, which is inert here).
-2. **Content width does not track the viewport.** It tracks the *sidebar*, which collapses between `16rem` and `3rem` on `Ctrl+B`. At a fixed 1280 px window the content box is ~974 px or ~1182 px depending only on that toggle — something no viewport query can observe.
+2. **Content width does not track the viewport.** It tracks the _sidebar_, which collapses between `16rem` and `3rem` on `Ctrl+B`. At a fixed 1280 px window the content box is ~974 px or ~1182 px depending only on that toggle — something no viewport query can observe.
 
-So `ViewContent` marks the shared per-view content box `@container`, and views size against it with `@sm:`/`@lg:`/`@2xl:`/`@4xl:`. Marketplace and File Explorer add *nested* local containers where they split into panes, so a pane measures itself rather than the page.
+So `ViewContent` marks the shared per-view content box `@container`, and views size against it with `@sm:`/`@lg:`/`@2xl:`/`@4xl:`. Marketplace and File Explorer add _nested_ local containers where they split into panes, so a pane measures itself rather than the page.
 
 **Reference arithmetic** — the narrowest real content box is the 1024 px window with the sidebar expanded: `1024 − 256 (sidebar) − 40 (p-5) − 10 (scrollbar gutter) ≈ 718 px`. Size steps against that, not the window. Container scale (Tailwind 4.3.3 defaults): `@xs` 20rem · `@sm` 24rem · `@lg` 32rem · `@xl` 36rem · `@2xl` 42rem · `@4xl` 56rem.
 
@@ -890,19 +892,19 @@ Verify layout changes at 1024×720 sidebar-expanded **with the bottom panel open
 
 All tokens are declared in `src/styles/global.css`; raw values live once per theme in `:root` / `.dark`, derived values (`var()` / `color-mix()`) once in `:root`.
 
-| Token group | Content |
-| --- | --- |
-| Surface ladder | `canvas` < `surface` < `surface-raised` < `surface-overlay` |
-| Neutrals | Official shadcn Neutral: light `--background: oklch(1 0 0)`, dark `--background: oklch(0.145 0 0)`. `canvas`/`surface`/`surface-raised`/`surface-overlay` alias `background`/`card`/`secondary`/`popover`. |
-| Primary | Neutral black in light mode and neutral white in dark mode as `primary` / `primary-hover` / `primary-active` / `primary-muted`. Marks the primary action or active state. |
-| Status | `success` / `warning` / `destructive` / `info` (+ `-foreground`, `-muted`) — describe *device* state, never UI emphasis |
-| Charts | `chart-1..5` |
-| Terminal | `terminal-*` for the bottom panel |
-| Type scale | `display` 24 · `title` 17 · `body` **13** (base) · `label` 12 · `caption` 11 · `mono` 12 · `mono-sm` 11. Each ships its own line-height, tracking and weight. **11 px is the floor.** |
-| Numerics | `numeric` utility (`tabular-nums`) on any value that updates |
-| Motion | `--motion-instant/fast/base/slow` + `--motion-ease`; transform/opacity only, never `height`, never `all` |
-| Z-index | `--z-base/dropdown/sticky/drawer/modal/toast/tooltip` |
-| Fonts | `--font-sans` "Inter Variable", `--font-mono` "JetBrains Mono Variable" — self-hosted from `public/fonts/`, preloaded in `index.html` |
+| Token group    | Content                                                                                                                                                                                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Surface ladder | `canvas` < `surface` < `surface-raised` < `surface-overlay`                                                                                                                                                |
+| Neutrals       | Official shadcn Neutral: light `--background: oklch(1 0 0)`, dark `--background: oklch(0.145 0 0)`. `canvas`/`surface`/`surface-raised`/`surface-overlay` alias `background`/`card`/`secondary`/`popover`. |
+| Primary        | Neutral black in light mode and neutral white in dark mode as `primary` / `primary-hover` / `primary-active` / `primary-muted`. Marks the primary action or active state.                                  |
+| Status         | `success` / `warning` / `destructive` / `info` (+ `-foreground`, `-muted`) — describe _device_ state, never UI emphasis                                                                                    |
+| Charts         | `chart-1..5`                                                                                                                                                                                               |
+| Terminal       | `terminal-*` for the bottom panel                                                                                                                                                                          |
+| Type scale     | `display` 24 · `title` 17 · `body` **13** (base) · `label` 12 · `caption` 11 · `mono` 12 · `mono-sm` 11. Each ships its own line-height, tracking and weight. **11 px is the floor.**                      |
+| Numerics       | `numeric` utility (`tabular-nums`) on any value that updates                                                                                                                                               |
+| Motion         | `--motion-instant/fast/base/slow` + `--motion-ease`; transform/opacity only, never `height`, never `all`                                                                                                   |
+| Z-index        | `--z-base/dropdown/sticky/drawer/modal/toast/tooltip`                                                                                                                                                      |
+| Fonts          | `--font-sans` "Inter Variable", `--font-mono` "JetBrains Mono Variable" — self-hosted from `public/fonts/`, preloaded in `index.html`                                                                      |
 
 ---
 
@@ -910,14 +912,14 @@ All tokens are declared in `src/styles/global.css`; raw values live once per the
 
 ### Scripts model
 
-| Intent | Command |
-| --- | --- |
-| FE check | `bun run lint:web` (`ultracite check`) |
-| FE fix | `bun run format:web` (`ultracite fix`) |
-| Rust lint | `bun run lint:rust` (clippy `-D warnings`) |
-| Rust format | `bun run format:rust` / `format:rust:check` |
-| Combined | `bun run lint`, `bun run format`, `bun run format:check` |
-| Full gate | `bun run check` (format:check → clippy → vitest → cargo test → build) |
+| Intent      | Command                                                               |
+| ----------- | --------------------------------------------------------------------- |
+| FE check    | `bun run lint:web` (`ultracite check`)                                |
+| FE fix      | `bun run format:web` (`ultracite fix`)                                |
+| Rust lint   | `bun run lint:rust` (clippy `-D warnings`)                            |
+| Rust format | `bun run format:rust` / `format:rust:check`                           |
+| Combined    | `bun run lint`, `bun run format`, `bun run format:check`              |
+| Full gate   | `bun run check` (format:check → clippy → vitest → cargo test → build) |
 
 Full gate (`bun run check`) is for complete change sets, not mid-implementation checkpoints.
 
@@ -935,86 +937,86 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 
 ### CI (GitHub Actions)
 
-| Job | When | What |
-| --- | --- | --- |
-| `quality` | All branches + PRs | format:check, lint, FE tests, cargo test, vite build; package.json↔Cargo version match (Ubuntu) |
+| Job       | When               | What                                                                                                                                                 |
+| --------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `quality` | All branches + PRs | format:check, lint, FE tests, cargo test, vite build; package.json↔Cargo version match (Ubuntu)                                                      |
 | `package` | **main push only** | `tauri-action` builds Windows/Linux multi-arch; **user-facing** artifact names (`64bit` / `32bit` / `arm`); portable via `make-windows-portable.ps1` |
-| `publish` | Manual draft | Same names on draft `v{version}`; portable + `SHA256SUMS` finalized; macOS only if secrets (product still **paused**) |
+| `publish` | Manual draft       | Same names on draft `v{version}`; portable + `SHA256SUMS` finalized; macOS only if secrets (product still **paused**)                                |
 
 ### Rust lint bar
 
-- `Cargo.toml` `[lints]` — `unsafe_code = warn`; clippy `unwrap_used` / `expect_used` + pedantic cherry-picks  
-- `clippy.toml` — allow unwrap/expect in tests  
+- `Cargo.toml` `[lints]` — `unsafe_code = warn`; clippy `unwrap_used` / `expect_used` + pedantic cherry-picks
+- `clippy.toml` — allow unwrap/expect in tests
 
 ---
 
 ## 14. Architectural decisions
 
-| Decision | Rationale |
-| --- | --- |
-| Tauri 2 over Electron | Small installer (~30 MB class), Rust backend, OS webview |
-| **No charting library** | `freezePrototype: true` freezes `Object.prototype`, so any dependency that writes to a built-in prototype at import time throws `TypeError` in strict mode and takes down the whole view. Recharts → `decimal.js-light` does exactly that (`Decimal.prototype.valueOf = …`). Vet every new frontend dependency for module-eval prototype writes; hand-rolled SVG/CSS is preferred for the handful of charts this app needs. |
-| Container queries over viewport breakpoints | The window is never below 1024 px and the content box tracks the sidebar, not the viewport — see §12.1 |
-| No React Router | Single-window toolkit; view map is enough |
-| `desktop/` IPC facade | One typed boundary; ACL + models stay coherent |
-| Thin commands + fat domains | Testable domain logic; IPC stays boring |
-| Bundled platform-tools | Standalone installs without system ADB |
-| Ultracite (Biome) for FE | Single tool for format + lint; replaces ESLint/Prettier stack |
-| Zustand + selective Query | Client UI state local; only device/AVD need interval polls |
-| Device serial on commands | Multi-device safety for ADB/fastboot ops |
-| Events via `runtime.ts` | Consistent subscribe/dispose; no raw event scatter |
-| Payload streaming/mmap | Large firmware without loading whole images into RAM |
-| Cancel tokens required when used | Invalid token IDs error; never silent uncancellable runs |
-| Views code-split via `React.lazy` | Nine eagerly imported views put every feature in the entry chunk; splitting + hover preload keeps startup cheap without a perceptible click delay |
-| Self-hosted fonts | Offline-first desktop tool: no network round-trip before first paint, and CSP drops the Google Fonts allowances |
-| Single `AdbClient` for `adb` | Removes per-spawn path re-resolution and three duplicate exit-marker parsers; `shell_batch` collapses N device reads into one process |
-| Structured telemetry over display strings | `get_device_info` returned pre-formatted text nothing could chart; `get_device_telemetry` returns typed numbers and formats in the frontend |
-| Release profile `opt-level = 3` | The workload is CPU-bound (sha2, inflate/zstd/lzma, large memcpy). `opt-level = "s"` disabled loop vectorization and most unrolling, and every shipped artifact had been built with it. The separate `release-fast` profile was deleted as redundant. |
-| Marketplace SWR + verified-APK memo | `search` fresh 3m/stale 30m, `detail` fresh 10m/stale 60m, `verified_apks` positive 12h/negative 2h. Stale is returned rather than blocking, verified-APK skips repeated GitHub 403/429 scans. Borrowed stale-while-revalidate from Komi Store pattern. |
-| Marketplace ABI ranking | `assets::rank_and_select_best_apk` scores `arm64-v8a` 100 > `universal` 80 > generic 70 > `armeabi-v7a` 60 > `x86_64` 40 > `x86` 20; penalises stray `debug` (except `github-debug`), rewards `release`/`stable`. Fixes Termux `+github-debug` exclusion. |
-| Marketplace resolver | `resolver::resolve_github_repo_dynamic` handles package-ID → repo via URL parse → F-Droid `sourceCode` API → GitHub search `"<package_id>" topic:android`. Prevents 404 for curated tools (`com.pittvandewitt.viperfx` → `v4a-re/ViPER4Android-FX`) and feeds `service.rs` F-Droid fallback. |
-| Marketplace README enrichment | `markdown::enrich_readme_markdown` rewrites relative images → `raw.githubusercontent.com` + links → `github.com/blob`, flattens `<details>`, guards code-blocks; `github::fetch_readme` dual-path (API then raw CDN `master/main/HEAD` × 6 paths) + pre-release fallback fixes Lawnchair 14 beta. Frontend `ReadmeMarkdown.tsx` now GFM (tables with alignment, alerts `> [!NOTE]`, images, `kbd`, task lists, copyable code blocks). |
+| Decision                                    | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tauri 2 over Electron                       | Small installer (~30 MB class), Rust backend, OS webview                                                                                                                                                                                                                                                                                                                                                                              |
+| **No charting library**                     | `freezePrototype: true` freezes `Object.prototype`, so any dependency that writes to a built-in prototype at import time throws `TypeError` in strict mode and takes down the whole view. Recharts → `decimal.js-light` does exactly that (`Decimal.prototype.valueOf = …`). Vet every new frontend dependency for module-eval prototype writes; hand-rolled SVG/CSS is preferred for the handful of charts this app needs.           |
+| Container queries over viewport breakpoints | The window is never below 1024 px and the content box tracks the sidebar, not the viewport — see §12.1                                                                                                                                                                                                                                                                                                                                |
+| No React Router                             | Single-window toolkit; view map is enough                                                                                                                                                                                                                                                                                                                                                                                             |
+| `desktop/` IPC facade                       | One typed boundary; ACL + models stay coherent                                                                                                                                                                                                                                                                                                                                                                                        |
+| Thin commands + fat domains                 | Testable domain logic; IPC stays boring                                                                                                                                                                                                                                                                                                                                                                                               |
+| Bundled platform-tools                      | Standalone installs without system ADB                                                                                                                                                                                                                                                                                                                                                                                                |
+| Ultracite (Biome) for FE                    | Single tool for format + lint; replaces ESLint/Prettier stack                                                                                                                                                                                                                                                                                                                                                                         |
+| Zustand + selective Query                   | Client UI state local; only device/AVD need interval polls                                                                                                                                                                                                                                                                                                                                                                            |
+| Device serial on commands                   | Multi-device safety for ADB/fastboot ops                                                                                                                                                                                                                                                                                                                                                                                              |
+| Events via `runtime.ts`                     | Consistent subscribe/dispose; no raw event scatter                                                                                                                                                                                                                                                                                                                                                                                    |
+| Payload streaming/mmap                      | Large firmware without loading whole images into RAM                                                                                                                                                                                                                                                                                                                                                                                  |
+| Cancel tokens required when used            | Invalid token IDs error; never silent uncancellable runs                                                                                                                                                                                                                                                                                                                                                                              |
+| Views code-split via `React.lazy`           | Nine eagerly imported views put every feature in the entry chunk; splitting + hover preload keeps startup cheap without a perceptible click delay                                                                                                                                                                                                                                                                                     |
+| Self-hosted fonts                           | Offline-first desktop tool: no network round-trip before first paint, and CSP drops the Google Fonts allowances                                                                                                                                                                                                                                                                                                                       |
+| Single `AdbClient` for `adb`                | Removes per-spawn path re-resolution and three duplicate exit-marker parsers; `shell_batch` collapses N device reads into one process                                                                                                                                                                                                                                                                                                 |
+| Structured telemetry over display strings   | `get_device_info` returned pre-formatted text nothing could chart; `get_device_telemetry` returns typed numbers and formats in the frontend                                                                                                                                                                                                                                                                                           |
+| Release profile `opt-level = 3`             | The workload is CPU-bound (sha2, inflate/zstd/lzma, large memcpy). `opt-level = "s"` disabled loop vectorization and most unrolling, and every shipped artifact had been built with it. The separate `release-fast` profile was deleted as redundant.                                                                                                                                                                                 |
+| Marketplace SWR + verified-APK memo         | `search` fresh 3m/stale 30m, `detail` fresh 10m/stale 60m, `verified_apks` positive 12h/negative 2h. Stale is returned rather than blocking, verified-APK skips repeated GitHub 403/429 scans. Borrowed stale-while-revalidate from Komi Store pattern.                                                                                                                                                                               |
+| Marketplace ABI ranking                     | `assets::rank_and_select_best_apk` scores `arm64-v8a` 100 > `universal` 80 > generic 70 > `armeabi-v7a` 60 > `x86_64` 40 > `x86` 20; penalises stray `debug` (except `github-debug`), rewards `release`/`stable`. Fixes Termux `+github-debug` exclusion.                                                                                                                                                                             |
+| Marketplace resolver                        | `resolver::resolve_github_repo_dynamic` handles package-ID → repo via URL parse → F-Droid `sourceCode` API → GitHub search `"<package_id>" topic:android`. Prevents 404 for curated tools (`com.pittvandewitt.viperfx` → `v4a-re/ViPER4Android-FX`) and feeds `service.rs` F-Droid fallback.                                                                                                                                          |
+| Marketplace README enrichment               | `markdown::enrich_readme_markdown` rewrites relative images → `raw.githubusercontent.com` + links → `github.com/blob`, flattens `<details>`, guards code-blocks; `github::fetch_readme` dual-path (API then raw CDN `master/main/HEAD` × 6 paths) + pre-release fallback fixes Lawnchair 14 beta. Frontend `ReadmeMarkdown.tsx` now GFM (tables with alignment, alerts `> [!NOTE]`, images, `kbd`, task lists, copyable code blocks). |
 
 ---
 
 ## 15. Known limitations
 
-| Topic | Detail |
-| --- | --- |
-| macOS | Code/resources may exist; **builds paused** (not first-class until unpaused) |
-| Code signing | **Not used** — Windows Authenticode / notarization out of current ship policy |
-| Debloat multi-device | Commands accept explicit `serial` from FE (`-s`); always select device in UI when multiple attached |
-| Windows `cargo test` | Known Tauri-linked loader failure (`0xc0000139`); use `--no-run` locally; Linux CI executes tests |
-| Active view persistence | `localStorage` key `adb-gui-next.activeView` via `usePersistedActiveView` |
-| Single-instance | `tauri-plugin-single-instance` focuses existing main window |
-| ACL | Capabilities use `allow-device-read` + `allow-device-mutate` (split permissions) |
-| `OnFileDrop` single owner | Only one window handler active; pages must re-register carefully |
-| Delta OTA | Path exists but incremental/source-copy work remains limited; UI gets explicit error text |
-| ZIP64 remote CD extras | Central-directory ZIP64 size parse implemented + unit test enabled |
-| OPS stream decrypt | Full-file OPS/OFP path exists; pure stream/network OPS decrypt still deferred |
-| `get_device_info` | Still registered and permitted, but has **no frontend caller** — the Dashboard reads `get_device_telemetry` and derives the legacy shape via `dashboard/model/legacyDeviceInfo.ts`. Remove only after confirming nothing external depends on it. |
-| `operationStore` coverage | Only App Manager (install / uninstall / debloat batch / backup restore) registers operations. Flasher, payload extraction and AVD launch still report progress through their own UI + toasts. |
-| `--content-max-width` | Token still declared in `global.css` but no longer applied anywhere after the fluid-width change |
+| Topic                     | Detail                                                                                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| macOS                     | Code/resources may exist; **builds paused** (not first-class until unpaused)                                                                                                                                                                     |
+| Code signing              | **Not used** — Windows Authenticode / notarization out of current ship policy                                                                                                                                                                    |
+| Debloat multi-device      | Commands accept explicit `serial` from FE (`-s`); always select device in UI when multiple attached                                                                                                                                              |
+| Windows `cargo test`      | Known Tauri-linked loader failure (`0xc0000139`); use `--no-run` locally; Linux CI executes tests                                                                                                                                                |
+| Active view persistence   | `localStorage` key `adb-gui-next.activeView` via `usePersistedActiveView`                                                                                                                                                                        |
+| Single-instance           | `tauri-plugin-single-instance` focuses existing main window                                                                                                                                                                                      |
+| ACL                       | Capabilities use `allow-device-read` + `allow-device-mutate` (split permissions)                                                                                                                                                                 |
+| `OnFileDrop` single owner | Only one window handler active; pages must re-register carefully                                                                                                                                                                                 |
+| Delta OTA                 | Path exists but incremental/source-copy work remains limited; UI gets explicit error text                                                                                                                                                        |
+| ZIP64 remote CD extras    | Central-directory ZIP64 size parse implemented + unit test enabled                                                                                                                                                                               |
+| OPS stream decrypt        | Full-file OPS/OFP path exists; pure stream/network OPS decrypt still deferred                                                                                                                                                                    |
+| `get_device_info`         | Still registered and permitted, but has **no frontend caller** — the Dashboard reads `get_device_telemetry` and derives the legacy shape via `dashboard/model/legacyDeviceInfo.ts`. Remove only after confirming nothing external depends on it. |
+| `operationStore` coverage | Only App Manager (install / uninstall / debloat batch / backup restore) registers operations. Flasher, payload extraction and AVD launch still report progress through their own UI + toasts.                                                    |
+| `--content-max-width`     | Token still declared in `global.css` but no longer applied anywhere after the fluid-width change                                                                                                                                                 |
 
 ---
 
 ## 16. Where to change what
 
-| You want to… | Start here |
-| --- | --- |
-| Add a sidebar view | `viewConfig.tsx` (lazy renderer **and** preloader) + `shared/commands/navigation.ts` (`VIEW_META`, `NAV_SECTIONS`) + `src/features/<new>/` |
-| Add a command-palette action | `shared/commands/appCommands.ts` or `deviceCommands.ts` (registry composes them) |
-| Add a keyboard shortcut | `shared/hooks/useGlobalShortcuts.ts` + `shared/commands/shortcuts.ts` (`SHORTCUT_HELP` is the user-visible reference) |
-| Add a Tauri command | `commands/<mod>.rs` → `lib.rs` handler → `permissions/autogenerated.toml` → `desktop/backend.ts` + `models.ts` |
-| Talk to a device from Rust | `adb::AdbClient` (`shell` / `shell_checked` / `shell_batch`) — never a fresh `Command::new(adb)` |
-| Change device-list polling | `MainLayout.tsx` + `shared/utils/queries.ts` only |
-| Change dashboard telemetry cadence | `features/dashboard/hooks/useDeviceTelemetry.ts` |
-| Add domain extract format | `payload/` submodule + thin `commands/payload.rs` |
-| New marketplace provider | `marketplace/<provider>.rs` + `service.rs` (not command body) |
-| Emulator root behavior | `emulator/root.rs` + FE `RootWizard` via `runtime` events |
-| Shared UI primitive | `src/shared/ui/` (shadcn) |
-| Theme / color | `src/styles/global.css` tokens |
-| Layout bug (scroll/header) | `MainLayout` / `ViewContent` flex chain first |
+| You want to…                       | Start here                                                                                                                                 |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Add a sidebar view                 | `viewConfig.tsx` (lazy renderer **and** preloader) + `shared/commands/navigation.ts` (`VIEW_META`, `NAV_SECTIONS`) + `src/features/<new>/` |
+| Add a command-palette action       | `shared/commands/appCommands.ts` or `deviceCommands.ts` (registry composes them)                                                           |
+| Add a keyboard shortcut            | `shared/hooks/useGlobalShortcuts.ts` + `shared/commands/shortcuts.ts` (`SHORTCUT_HELP` is the user-visible reference)                      |
+| Add a Tauri command                | `commands/<mod>.rs` → `lib.rs` handler → `permissions/autogenerated.toml` → `desktop/backend.ts` + `models.ts`                             |
+| Talk to a device from Rust         | `adb::AdbClient` (`shell` / `shell_checked` / `shell_batch`) — never a fresh `Command::new(adb)`                                           |
+| Change device-list polling         | `MainLayout.tsx` + `shared/utils/queries.ts` only                                                                                          |
+| Change dashboard telemetry cadence | `features/dashboard/hooks/useDeviceTelemetry.ts`                                                                                           |
+| Add domain extract format          | `payload/` submodule + thin `commands/payload.rs`                                                                                          |
+| New marketplace provider           | `marketplace/<provider>.rs` + `service.rs` (not command body)                                                                              |
+| Emulator root behavior             | `emulator/root.rs` + FE `RootWizard` via `runtime` events                                                                                  |
+| Shared UI primitive                | `src/shared/ui/` (shadcn)                                                                                                                  |
+| Theme / color                      | `src/styles/global.css` tokens                                                                                                             |
+| Layout bug (scroll/header)         | `MainLayout` / `ViewContent` flex chain first                                                                                              |
 
 ---
 
@@ -1070,4 +1072,4 @@ Debloat
 
 ---
 
-*Update this file when boundaries, command surface, or shell layout change.*
+_Update this file when boundaries, command surface, or shell layout change._

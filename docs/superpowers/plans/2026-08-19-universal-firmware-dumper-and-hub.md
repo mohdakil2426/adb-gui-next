@@ -27,11 +27,13 @@
 ### Task 1: Native Rust `liblp` Dynamic Partition Parser & Sub-Unpacker
 
 **Files:**
+
 - Create: `src-tauri/src/payload/lp/mod.rs`
 - Modify: `src-tauri/src/payload/mod.rs`
 - Test: `src-tauri/src/payload/lp/mod.rs` (inline test module)
 
 **Interfaces:**
+
 - Consumes: `std::io::{Read, Seek, Write}`, `sha2::Sha256`, `byteorder::LittleEndian`
 - Produces: `LpMetadata`, `LpMetadataGeometry`, `LpMetadataHeader`, `LpMetadataPartition`, `LpMetadataExtent`, `unpack_super_image(super_path: &Path, output_dir: &Path) -> Result<Vec<(String, u64)>>`
 
@@ -45,6 +47,7 @@
 ### Task 2: Incremental & Delta OTA Differential Engine (`delta/`)
 
 **Files:**
+
 - Create: `src-tauri/src/payload/delta/engine.rs`
 - Create: `src-tauri/src/payload/delta/source_matcher.rs`
 - Modify: `src-tauri/src/payload/delta/mod.rs`
@@ -52,6 +55,7 @@
 - Modify: `src-tauri/src/payload/crau/parser.rs`
 
 **Interfaces:**
+
 - Consumes: `bsdiff_android::patch`, `puffdiff::puffpatch`, `brotli::Decompressor`, `sha2::Sha256`
 - Produces: `DeltaEngine::apply_operation`, `DeltaEngine::resolve_source_partition`, CrAU v1/v2 header support
 
@@ -66,11 +70,13 @@
 ### Task 3: Samsung Odin `.tar.md5` Streaming Unpacker & LZ4 Frame Decompressor
 
 **Files:**
+
 - Create: `src-tauri/src/payload/samsung/mod.rs`
 - Create: `src-tauri/src/payload/samsung/tar_md5.rs`
 - Modify: `src-tauri/src/payload/mod.rs`
 
 **Interfaces:**
+
 - Consumes: `tar::Archive`, `lz4_flex::frame::FrameDecoder`, `md5::Md5`
 - Produces: `SamsungTarMd5Extractor::unpack_stream(stream: R, output_dir: &Path) -> Result<Vec<(String, u64)>>`
 
@@ -84,11 +90,13 @@
 ### Task 4: Xiaomi `system.transfer.list` & Brotli `.new.dat.br` Reconstructor
 
 **Files:**
+
 - Create: `src-tauri/src/payload/xiaomi/mod.rs`
 - Create: `src-tauri/src/payload/xiaomi/dat_br.rs`
 - Modify: `src-tauri/src/payload/mod.rs`
 
 **Interfaces:**
+
 - Consumes: `brotli::Decompressor`, `std::io::{BufRead, Write, Seek}`
 - Produces: `TransferList::parse`, `XiaomiDatExtractor::extract`
 
@@ -102,11 +110,13 @@
 ### Task 5: Cross-Platform Native Sparse File IOCTL Manager
 
 **Files:**
+
 - Create: `src-tauri/src/payload/io/sparse_ioctl.rs`
 - Modify: `src-tauri/src/payload/io/mod.rs`
 - Modify: `src-tauri/src/payload/crau/extract.rs`
 
 **Interfaces:**
+
 - Consumes: `windows_sys` (`FSCTL_SET_SPARSE`, `FSCTL_SET_ZERO_DATA`) on Windows, `libc::fallocate` on Linux, `libc::fcntl` on macOS
 - Produces: `SparseFileExt::mark_sparse`, `SparseFileExt::punch_hole`
 
@@ -119,11 +129,13 @@
 ### Task 6: Storage Pre-Flight Validation & Resilient Cross-Device Move
 
 **Files:**
+
 - Create: `src-tauri/src/payload/storage_check.rs`
 - Modify: `src-tauri/src/payload/io/copy.rs`
 - Modify: `src-tauri/src/payload/transaction.rs`
 
 **Interfaces:**
+
 - Consumes: `windows_sys` / `statvfs` for free disk space, `dunce::canonicalize` for `MAX_PATH`
 - Produces: `validate_preflight_storage(output_dir, required_bytes) -> Result<()>`, `move_file_cross_device(src, dst) -> Result<()>`
 
@@ -137,6 +149,7 @@
 ### Task 7: Universal Firmware Hub Backend Models & Provider Traits
 
 **Files:**
+
 - Create: `src-tauri/src/firmware/mod.rs`
 - Create: `src-tauri/src/firmware/types.rs`
 - Create: `src-tauri/src/firmware/traits.rs`
@@ -145,6 +158,7 @@
 - Modify: `src-tauri/src/lib.rs`
 
 **Interfaces:**
+
 - Consumes: `serde`, `reqwest`, `tokio::sync::RwLock`
 - Produces: `FirmwareBrand`, `FirmwareDeviceModel`, `FirmwareBuild`, `FirmwareProvider` trait, `FirmwareHubService`
 
@@ -158,12 +172,14 @@
 ### Task 8: Google Pixel Scraper with Terms of Service Cookie Bypass
 
 **Files:**
+
 - Create: `src-tauri/src/firmware/providers/mod.rs`
 - Create: `src-tauri/src/firmware/providers/google.rs`
 - Create: `src-tauri/src/firmware/providers/nothing.rs`
 - Create: `src-tauri/src/firmware/providers/xiaomi.rs`
 
 **Interfaces:**
+
 - Consumes: `scraper::Html`, `scraper::Selector`, `reqwest::Client`
 - Produces: `GooglePixelScraper::scrape_catalog() -> Result<Vec<FirmwareDeviceModel>>`
 
@@ -178,12 +194,14 @@
 ### Task 9: Tauri IPC Commands & Engine Routing
 
 **Files:**
+
 - Create: `src-tauri/src/commands/firmware.rs`
 - Modify: `src-tauri/src/commands/payload.rs`
 - Modify: `src-tauri/src/commands/mod.rs`
 - Modify: `src-tauri/src/lib.rs`
 
 **Interfaces:**
+
 - Consumes: `FirmwareHubService`, `LpMetadata`
 - Produces: `get_firmware_catalog`, `refresh_firmware_catalog`, `get_supported_firmware_brands`, `clear_firmware_cache`, `unpack_super_image`
 
@@ -196,11 +214,13 @@
 ### Task 10: Universal Frontend Models & Desktop IPC Wrappers
 
 **Files:**
+
 - Modify: `src/features/payload-dumper/ui/marketplace/types.ts`
 - Modify: `src/desktop/models.ts`
 - Modify: `src/desktop/backend.ts`
 
 **Interfaces:**
+
 - Consumes: Tauri IPC invoke API
 - Produces: TypeScript types (`FirmwareBrand`, `FirmwareDeviceModel`, `FirmwareBuild`), IPC functions (`GetFirmwareCatalog`, `RefreshFirmwareCatalog`, `GetSupportedFirmwareBrands`)
 
@@ -213,6 +233,7 @@
 ### Task 11: Universal Firmware Hub UI & 1-Click Remote Extraction
 
 **Files:**
+
 - Create: `src/features/payload-dumper/ui/marketplace/useFirmwareCatalog.ts`
 - Modify: `src/features/payload-dumper/ui/marketplace/PayloadMarketplaceTab.tsx`
 - Modify: `src/features/payload-dumper/ui/marketplace/PixelModelCard.tsx` (Rename to `FirmwareDeviceCard.tsx`)
@@ -220,6 +241,7 @@
 - Delete: `src/features/payload-dumper/ui/marketplace/pixelCatalogData.ts`
 
 **Interfaces:**
+
 - Consumes: `useFirmwareCatalog`, `FirmwareDeviceModel`
 - Produces: Multi-brand Firmware Hub UI, 1-click **Remote Stream Extract** bridge
 
@@ -234,10 +256,12 @@
 ### Task 12: Dynamic Partitions Sub-Unpack UI Controls
 
 **Files:**
+
 - Modify: `src/features/payload-dumper/PayloadDumperView.tsx`
 - Modify: `src/features/payload-dumper/ui/PayloadLoadedPanel.tsx`
 
 **Interfaces:**
+
 - Consumes: `unpack_super_image` IPC command
 - Produces: 1-click "Unpack super.img" button and progress feedback in the UI
 
@@ -249,6 +273,7 @@
 ### Task 13: Full Suite Verification & Linting
 
 **Files:**
+
 - Entire workspace
 
 - [ ] **Step 1: Run `cargo test --lib` to ensure all Rust backend tests pass**
@@ -260,6 +285,7 @@
 ### Task 14: Real ROM Zip Extraction Test (`EvolutionX-15.0-marble`)
 
 **Files:**
+
 - Target: `C:\Users\akila\OneDrive\Desktop\AGN-Test\payloaddumper\EvolutionX-15.0-20260415-marble-10.16-Unofficial.zip`
 
 - [ ] **Step 1: Run backend test / standalone extraction against the real ROM zip**
@@ -270,6 +296,7 @@
 ### Task 15: Desktop App Launch & Computer-Use Manual Testing
 
 **Files:**
+
 - Desktop runtime
 
 - [ ] **Step 1: Launch Tauri desktop app in dev mode (`bun run tauri dev`)**

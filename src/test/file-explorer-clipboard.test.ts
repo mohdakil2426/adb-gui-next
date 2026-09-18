@@ -1,0 +1,90 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  canPasteHere,
+  PASTE_TOAST,
+  plannedDestinations,
+} from "@/features/file-explorer/utils/file-explorer-clipboard";
+import { destinationPath, joinRemoteDir } from "@/features/file-explorer/utils/file-explorer-paths";
+import { fileTypeLabel } from "@/features/file-explorer/utils/file-explorer-type-label";
+
+describe(joinRemoteDir, () => {
+  it("joins under root and under a trailing-slash folder", () => {
+    expect(joinRemoteDir("/", "hosts")).toBe("/hosts");
+    expect(joinRemoteDir("/sdcard/", "Download")).toBe("/sdcard/Download");
+    expect(joinRemoteDir("/sdcard/Download", "a.txt")).toBe("/sdcard/Download/a.txt");
+  });
+});
+
+describe(destinationPath, () => {
+  it("keeps the source basename", () => {
+    expect(destinationPath("/sdcard/Music/", "/sdcard/DCIM/a.mp3")).toBe("/sdcard/Music/a.mp3");
+  });
+});
+
+describe(canPasteHere, () => {
+  const clip = {
+    mode: "copy" as const,
+    serial: "device-a",
+    sources: ["/sdcard/DCIM/a.mp3"],
+  };
+
+  it("blocks empty and wrong device pastes", () => {
+    expect(canPasteHere(null, "/sdcard/Music/", "device-a")).toBe("empty");
+    expect(canPasteHere(clip, "/sdcard/Music/", "device-b")).toBe("wrong-device");
+    expect(canPasteHere(clip, "/sdcard/Music/", null)).toBe("wrong-device");
+  });
+
+  it("blocks same-folder pastes and allows valid cross-folder paste", () => {
+    expect(canPasteHere(clip, "/sdcard/DCIM/", "device-a")).toBe("same-folder-copy");
+    expect(canPasteHere({ ...clip, mode: "cut" }, "/sdcard/DCIM/", "device-a")).toBe(
+      "same-folder-cut"
+    );
+    expect(canPasteHere(clip, "/sdcard/Music/", "device-a")).toBe("ok");
+  });
+});
+
+describe(plannedDestinations, () => {
+  it("maps each source into the destination folder", () => {
+    expect(
+      plannedDestinations(
+        { mode: "copy", serial: "device-a", sources: ["/sdcard/DCIM/a.mp3"] },
+        "/sdcard/Music/"
+      )
+    ).toStrictEqual(["/sdcard/Music/a.mp3"]);
+  });
+});
+
+describe(PASTE_TOAST, () => {
+  it("covers every blocked paste reason", () => {
+    expect(PASTE_TOAST.empty).toBe("Nothing to paste");
+    expect(PASTE_TOAST["wrong-device"]).toBe("Clipboard is from another device");
+    expect(PASTE_TOAST["same-folder-cut"]).toBe("Cannot move items into the same folder");
+    expect(PASTE_TOAST["same-folder-copy"]).toBe("Items are already in this folder");
+  });
+});
+
+describe(fileTypeLabel, () => {
+  it("labels directories and standard document formats", () => {
+    expect(fileTypeLabel({ name: "Download", type: "Directory" })).toBe("Folder");
+    expect(fileTypeLabel({ name: "agnnn.txt", type: "File" })).toBe("Text Document");
+    expect(fileTypeLabel({ name: "mod.zip", type: "File" })).toBe("zip Archive");
+    expect(fileTypeLabel({ name: "config.xml", type: "File" })).toBe("XML File");
+    expect(fileTypeLabel({ name: "build.prop", type: "File" })).toBe("PROP File");
+  });
+
+  it("labels package, system, and disk image formats", () => {
+    expect(fileTypeLabel({ name: "app.apk", type: "File" })).toBe("Android Package");
+    expect(fileTypeLabel({ name: "hosts", type: "File" })).toBe("Hosts File");
+    expect(fileTypeLabel({ name: ".gitignore", type: "File" })).toBe("Git Ignore File");
+    expect(fileTypeLabel({ name: "Makefile", type: "File" })).toBe("Makefile");
+    expect(fileTypeLabel({ name: "boot.img", type: "File" })).toBe("Disk Image");
+  });
+
+  it("labels binary formats and fallback extensions", () => {
+    expect(fileTypeLabel({ name: "libfoo.so", type: "File" })).toBe("Shared Library");
+    expect(fileTypeLabel({ name: "classes.dex", type: "File" })).toBe("Dalvik Executable");
+    expect(fileTypeLabel({ name: "noext", type: "File" })).toBe("File");
+    expect(fileTypeLabel({ name: "weird.xyz", type: "File" })).toBe("XYZ File");
+  });
+});

@@ -26,15 +26,15 @@
 
 ## 1. Executive Summary
 
-| Symptom | Confirmed Root Cause | Severity |
-|---------|---------------------|----------|
-| ZIP extraction hangs / is very slow | Entire `payload.bin` loaded via `read_to_end` into a single `Vec<u8>` | 🔴 Critical |
-| 32 GB RAM → laptop shutdown (OOM) | `payload.bytes.clone()` inside every parallel thread spawned | 🔴 Critical |
-| Real-time progress bar shows nothing | Progress callback replaced by `&mut |_,_,_,_| {}` (no-op) inside threads | 🔴 Critical |
-| Slow partition extraction | Sync blocking I/O on Tokio thread; each op allocates full decoded `Vec<u8>` | 🟠 High |
-| No cancellation support | No way to abort an in-progress extraction | 🟡 Medium |
-| Memory not released after extraction | `PayloadCache::cached_bytes` holds 4–6 GB permanently | 🟡 Medium |
-| `'use client'` directive in TSX file | Vite/Tauri project incorrectly using Next.js directive | 🟢 Low |
+| Symptom                              | Confirmed Root Cause                                                        | Severity    |
+| ------------------------------------ | --------------------------------------------------------------------------- | ----------- |
+| ZIP extraction hangs / is very slow  | Entire `payload.bin` loaded via `read_to_end` into a single `Vec<u8>`       | 🔴 Critical |
+| 32 GB RAM → laptop shutdown (OOM)    | `payload.bytes.clone()` inside every parallel thread spawned                | 🔴 Critical |
+| Real-time progress bar shows nothing | Progress callback replaced by `&mut                                         | _,_,_,_     | {}` (no-op) inside threads | 🔴 Critical |
+| Slow partition extraction            | Sync blocking I/O on Tokio thread; each op allocates full decoded `Vec<u8>` | 🟠 High     |
+| No cancellation support              | No way to abort an in-progress extraction                                   | 🟡 Medium   |
+| Memory not released after extraction | `PayloadCache::cached_bytes` holds 4–6 GB permanently                       | 🟡 Medium   |
+| `'use client'` directive in TSX file | Vite/Tauri project incorrectly using Next.js directive                      | 🟢 Low      |
 
 **One-sentence summary:** The current implementation loads the entire payload (4–6 GB) into RAM **twice** — once in the ZIP cache, once per parallel thread clone — never sends progress events during parallel extraction, and uses blocking sync I/O inside an async Tauri command, causing a peak RAM usage of ~45 GB which exceeds the 32 GB physical RAM and triggers an OOM shutdown.
 
@@ -201,7 +201,7 @@ struct PayloadCacheInner {
 **Location:** `src/components/views/ViewPayloadDumper.tsx:1`
 
 ```tsx
-'use client';  // WRONG: this is Vite/Tauri, not Next.js
+"use client"; // WRONG: this is Vite/Tauri, not Next.js
 ```
 
 This violates the project rule: **"No `'use client'` directives"**.
@@ -212,13 +212,13 @@ This violates the project rule: **"No `'use client'` directives"**.
 
 For a typical Android OTA (Pixel 8 — `payload.bin` ≈ 4.5 GB):
 
-| Allocation | Current Code | With Phase 1 Fixes | With All Fixes |
-|------------|-------------|---------------------|----------------|
-| ZIP → payload extraction buffer | 4.5 GB (full `Vec`) | 4.5 GB (still in cache) | ~0 (streaming to temp file) |
-| `PayloadCache` resident bytes | 4.5 GB (cached permanently) | 4.5 GB (but shared via Arc) | ~16 KB (path only) |
-| Per-thread payload clone (8 threads) | 8 × 4.5 GB = **36 GB** | 0 (`Arc::clone`) | 0 (file handle per thread) |
-| Per-operation decode buffer | 50–400 MB × ops × threads | 50–400 MB (unchanged) | ~256 KB (BufReader) |
-| **Total peak RAM** | **~45 GB** → OOM | **~7 GB** | **~512 MB** |
+| Allocation                           | Current Code                | With Phase 1 Fixes          | With All Fixes              |
+| ------------------------------------ | --------------------------- | --------------------------- | --------------------------- |
+| ZIP → payload extraction buffer      | 4.5 GB (full `Vec`)         | 4.5 GB (still in cache)     | ~0 (streaming to temp file) |
+| `PayloadCache` resident bytes        | 4.5 GB (cached permanently) | 4.5 GB (but shared via Arc) | ~16 KB (path only)          |
+| Per-thread payload clone (8 threads) | 8 × 4.5 GB = **36 GB**      | 0 (`Arc::clone`)            | 0 (file handle per thread)  |
+| Per-operation decode buffer          | 50–400 MB × ops × threads   | 50–400 MB (unchanged)       | ~256 KB (BufReader)         |
+| **Total peak RAM**                   | **~45 GB** → OOM            | **~7 GB**                   | **~512 MB**                 |
 
 This is precisely why the laptop shuts down. Peak allocation far exceeds physical RAM, triggering OOM-killer or swap exhaustion.
 
@@ -301,14 +301,14 @@ s.spawn(|| {
 
 **Why this is ideal for our use case:**
 
-| Property | `Vec<u8>` | `Arc<Vec<u8>>` | `Arc<Mmap>` |
-|----------|-----------|----------------|-------------|
-| Initial load time (4 GB file) | ~8s (copy from disk) | ~8s (copy from disk) | ~0ms (no copy!) |
-| RAM usage | 4 GB | 4 GB (single copy) | ~0 (OS page cache) |
-| Thread sharing | Clone = 4 GB | Clone = 8 bytes | Clone = 8 bytes |
-| Random access | O(1) | O(1) | O(1) |
-| Larger-than-RAM files | ❌ OOM | ❌ OOM | ✅ OS pages |
-| Safety | ✅ Safe | ✅ Safe | ⚠️ unsafe block needed |
+| Property                      | `Vec<u8>`            | `Arc<Vec<u8>>`       | `Arc<Mmap>`            |
+| ----------------------------- | -------------------- | -------------------- | ---------------------- |
+| Initial load time (4 GB file) | ~8s (copy from disk) | ~8s (copy from disk) | ~0ms (no copy!)        |
+| RAM usage                     | 4 GB                 | 4 GB (single copy)   | ~0 (OS page cache)     |
+| Thread sharing                | Clone = 4 GB         | Clone = 8 bytes      | Clone = 8 bytes        |
+| Random access                 | O(1)                 | O(1)                 | O(1)                   |
+| Larger-than-RAM files         | ❌ OOM               | ❌ OOM               | ✅ OS pages            |
+| Safety                        | ✅ Safe              | ✅ Safe              | ⚠️ unsafe block needed |
 
 **Safety note:** `Mmap::map` requires an `unsafe` block because the compiler cannot guarantee the file won't be modified externally. For our use case (reading a user-selected `payload.bin` that is never written while mapped), this is **safe in practice**. Wrap the `unsafe` in a well-documented function:
 
@@ -458,6 +458,7 @@ useEffect(() => {
 ```
 
 **Key findings:**
+
 - `AppHandle` can be cloned freely — it is `Clone + Send + Sync`.
 - `app.emit()` is non-blocking and thread-safe — call from inside any `spawn_blocking` task.
 - The payload should be JSON-serializable (annotate with `#[derive(Serialize)]), use `serde_json::json!` for quick inline payloads.
@@ -535,22 +536,22 @@ out_file.set_len(partition_size).await?;  // sparse zero regions work correctly
 
 ### New Dependencies to Add
 
-| Crate | Version | Purpose | Priority |
-|-------|---------|---------|----------|
-| `memmap2` | `"0.9"` | Zero-copy mmap reading of payload.bin — eliminates all RAM clones | 🔴 Phase 1 |
-| `tempfile` | `"3"` | Safe temp file for ZIP extraction streaming | 🟠 Phase 1 |
-| `rayon` | `"1.10"` | CPU-parallel partition extraction with work-stealing | 🟠 Phase 1 |
-| `async-compression` | `"0.4"` (features: `tokio,xz,bzip2,zstd`) | Async streaming decompression — Phase 3 only | 🟡 Phase 3 |
+| Crate               | Version                                   | Purpose                                                           | Priority   |
+| ------------------- | ----------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| `memmap2`           | `"0.9"`                                   | Zero-copy mmap reading of payload.bin — eliminates all RAM clones | 🔴 Phase 1 |
+| `tempfile`          | `"3"`                                     | Safe temp file for ZIP extraction streaming                       | 🟠 Phase 1 |
+| `rayon`             | `"1.10"`                                  | CPU-parallel partition extraction with work-stealing              | 🟠 Phase 1 |
+| `async-compression` | `"0.4"` (features: `tokio,xz,bzip2,zstd`) | Async streaming decompression — Phase 3 only                      | 🟡 Phase 3 |
 
 ### Existing Dependencies to Keep
 
-| Crate | Status | Note |
-|-------|--------|------|
-| `xz2` | Keep | Still used for sync streaming decode (Phase 1-2); makes `async-compression` optional |
-| `bzip2` | Keep | Same as xz2 |
-| `zstd` | Keep | Same |
-| `zip` | Keep | Still used for ZIP archive navigation |
-| `sha2` | Keep | SHA-256 verification still valid |
+| Crate   | Status | Note                                                                                 |
+| ------- | ------ | ------------------------------------------------------------------------------------ |
+| `xz2`   | Keep   | Still used for sync streaming decode (Phase 1-2); makes `async-compression` optional |
+| `bzip2` | Keep   | Same as xz2                                                                          |
+| `zstd`  | Keep   | Same                                                                                 |
+| `zip`   | Keep   | Still used for ZIP archive navigation                                                |
+| `sha2`  | Keep   | SHA-256 verification still valid                                                     |
 
 ### `Cargo.toml` Changes
 
@@ -572,31 +573,31 @@ rayon = "1.10"
 
 > These are surgical changes — no architecture rewrite needed.
 
-| # | Fix | New Dep? | Impact | Effort |
-|---|-----|----------|--------|--------|
-| 1.1 | **`Arc<Mmap>` payload reader** — replace `Vec<u8>` with `memmap2::Mmap` wrapped in `Arc`. Single `unsafe` block, zero RAM for payload | `memmap2` | 🔴 OOM fix | Low |
-| 1.2 | **Fix progress callback** — forward `app_handle.clone()` into each thread, emit real events inside `extract_partition` | None | 🔴 Progress fix | Low |
-| 1.3 | **ZIP streaming to temp file** — stream ZIP entry to `tempfile::NamedTempFile`, cache path only | `tempfile` | 🔴 OOM + slow ZIP | Medium |
-| 1.4 | **`spawn_blocking` wrapper** — wrap `extract_payload` sync call in `tokio::task::spawn_blocking` | None | 🟠 Fixes runtime starvation | Trivial |
-| 1.5 | **Remove `'use client'`** from `ViewPayloadDumper.tsx` | None | 🟢 Rule compliance | Trivial |
+| #   | Fix                                                                                                                                   | New Dep?   | Impact                      | Effort  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------- | --------------------------- | ------- |
+| 1.1 | **`Arc<Mmap>` payload reader** — replace `Vec<u8>` with `memmap2::Mmap` wrapped in `Arc`. Single `unsafe` block, zero RAM for payload | `memmap2`  | 🔴 OOM fix                  | Low     |
+| 1.2 | **Fix progress callback** — forward `app_handle.clone()` into each thread, emit real events inside `extract_partition`                | None       | 🔴 Progress fix             | Low     |
+| 1.3 | **ZIP streaming to temp file** — stream ZIP entry to `tempfile::NamedTempFile`, cache path only                                       | `tempfile` | 🔴 OOM + slow ZIP           | Medium  |
+| 1.4 | **`spawn_blocking` wrapper** — wrap `extract_payload` sync call in `tokio::task::spawn_blocking`                                      | None       | 🟠 Fixes runtime starvation | Trivial |
+| 1.5 | **Remove `'use client'`** from `ViewPayloadDumper.tsx`                                                                                | None       | 🟢 Rule compliance          | Trivial |
 
 ### Phase 2 — Streaming Decompression (~2-3 days)
 
-| # | Fix | New Dep? | Impact | Effort |
-|---|-----|----------|--------|--------|
-| 2.1 | **Sync streaming decode** — replace `read_all()` pattern with `BufReader + 256KB stack buffer` write loop | None | 🟠 Per-op RAM: 500MB→256KB | Medium |
-| 2.2 | **Pre-allocate output files** — `file.set_len(partition_size)?` before operation loop | None | 🟡 Perf + sparse correctness | Low |
-| 2.3 | **Rayon parallel iteration** — replace `std::thread::scope` with `rayon::par_iter()` inside `spawn_blocking` | `rayon` | 🟡 Better load balancing | Low |
-| 2.4 | **Semaphore concurrency cap** — limit parallel partitions to `min(num_cpus, 4)` | None | 🟡 Prevents I/O thrashing | Low |
-| 2.5 | **Cancellation support** — `Arc<AtomicBool>` cancel flag, checked per operation | None | 🟡 UX improvement | Medium |
+| #   | Fix                                                                                                          | New Dep? | Impact                       | Effort |
+| --- | ------------------------------------------------------------------------------------------------------------ | -------- | ---------------------------- | ------ |
+| 2.1 | **Sync streaming decode** — replace `read_all()` pattern with `BufReader + 256KB stack buffer` write loop    | None     | 🟠 Per-op RAM: 500MB→256KB   | Medium |
+| 2.2 | **Pre-allocate output files** — `file.set_len(partition_size)?` before operation loop                        | None     | 🟡 Perf + sparse correctness | Low    |
+| 2.3 | **Rayon parallel iteration** — replace `std::thread::scope` with `rayon::par_iter()` inside `spawn_blocking` | `rayon`  | 🟡 Better load balancing     | Low    |
+| 2.4 | **Semaphore concurrency cap** — limit parallel partitions to `min(num_cpus, 4)`                              | None     | 🟡 Prevents I/O thrashing    | Low    |
+| 2.5 | **Cancellation support** — `Arc<AtomicBool>` cancel flag, checked per operation                              | None     | 🟡 UX improvement            | Medium |
 
 ### Phase 3 — Full Async Architecture (~1 week)
 
-| # | Fix | New Dep? | Impact | Effort |
-|---|-----|----------|--------|--------|
-| 3.1 | **`async-compression` decoders** — full async streaming with `async-compression` over `AsyncRead` file ranges | `async-compression` | 🟠 Perf + correctness | High |
-| 3.2 | **Tokio task per partition** — `tokio::spawn` + `Semaphore` replacing `thread::scope` | None | 🟡 Architecture | Medium |
-| 3.3 | **Tauri channel API** — use `tauri::ipc::Channel` for structured streaming progress instead of ad-hoc events | None | 🟡 Typed progress API | Medium |
+| #   | Fix                                                                                                           | New Dep?            | Impact                | Effort |
+| --- | ------------------------------------------------------------------------------------------------------------- | ------------------- | --------------------- | ------ |
+| 3.1 | **`async-compression` decoders** — full async streaming with `async-compression` over `AsyncRead` file ranges | `async-compression` | 🟠 Perf + correctness | High   |
+| 3.2 | **Tokio task per partition** — `tokio::spawn` + `Semaphore` replacing `thread::scope`                         | None                | 🟡 Architecture       | Medium |
+| 3.3 | **Tauri channel API** — use `tauri::ipc::Channel` for structured streaming progress instead of ad-hoc events  | None                | 🟡 Typed progress API | Medium |
 
 ---
 
@@ -605,6 +606,7 @@ rayon = "1.10"
 ### Fix 1.1 — `Arc<Mmap>` payload reader (eliminates ALL payload RAM)
 
 **File:** `src-tauri/Cargo.toml`
+
 ```toml
 memmap2 = "0.9"
 ```
@@ -728,6 +730,7 @@ let result = tokio::task::spawn_blocking(move || {
 ### Fix 1.3 — ZIP streaming to temp file
 
 **File:** `src-tauri/Cargo.toml`
+
 ```toml
 tempfile = "3"
 ```
@@ -919,6 +922,7 @@ if let Some(info) = &partition.new_partition_info {
 ### Fix 2.3 — Rayon parallel extraction (better than thread::scope)
 
 **File:** `src-tauri/Cargo.toml`
+
 ```toml
 rayon = "1.10"
 ```
@@ -987,20 +991,22 @@ for (index, op) in partition.operations.iter().enumerate() {
 const [extracting, setExtracting] = useState(false);
 
 const handleCancel = async () => {
-    try {
-        await cancelPayloadExtraction();  // new backend command
-        toast.info('Extraction cancelled');
-    } catch (e) {
-        toast.error(`Cancel failed: ${e}`);
-    }
+  try {
+    await cancelPayloadExtraction(); // new backend command
+    toast.info("Extraction cancelled");
+  } catch (e) {
+    toast.error(`Cancel failed: ${e}`);
+  }
 };
 
 // In JSX:
-{extracting && (
+{
+  extracting && (
     <Button variant="destructive" onClick={handleCancel}>
-        <X className="size-4 mr-2" /> Cancel
+      <X className="size-4 mr-2" /> Cancel
     </Button>
-)}
+  );
+}
 ```
 
 ### 9.3 Improvement: Per-Partition Progress with Operation Count
@@ -1008,14 +1014,14 @@ const handleCancel = async () => {
 ```tsx
 // Progress event payload from backend
 interface ProgressEvent {
-    partitionName: string;
-    current: number;   // current operation index
-    total: number;     // total operations count
-    completed: boolean;
+  partitionName: string;
+  current: number; // current operation index
+  total: number; // total operations count
+  completed: boolean;
 }
 
 // Update Zustand store with operation-level granularity
-updatePartitionProgress(partitionName, current / total * 100);
+updatePartitionProgress(partitionName, (current / total) * 100);
 ```
 
 ### 9.4 Improvement: Elapsed Time Display
@@ -1023,16 +1029,16 @@ updatePartitionProgress(partitionName, current / total * 100);
 ```tsx
 // Track extraction start time
 const extractionStartRef = useRef<number | null>(null);
-const [elapsed, setElapsed] = useState<string>('');
+const [elapsed, setElapsed] = useState<string>("");
 
 useEffect(() => {
-    if (!extracting) return;
-    extractionStartRef.current = Date.now();
-    const interval = setInterval(() => {
-        const secs = Math.floor((Date.now() - extractionStartRef.current!) / 1000);
-        setElapsed(`${Math.floor(secs / 60)}m ${secs % 60}s`);
-    }, 1000);
-    return () => clearInterval(interval);
+  if (!extracting) return;
+  extractionStartRef.current = Date.now();
+  const interval = setInterval(() => {
+    const secs = Math.floor((Date.now() - extractionStartRef.current!) / 1000);
+    setElapsed(`${Math.floor(secs / 60)}m ${secs % 60}s`);
+  }, 1000);
+  return () => clearInterval(interval);
 }, [extracting]);
 ```
 
@@ -1134,6 +1140,7 @@ pnpm check  # must pass all gates
 ```
 
 **Expected after Phase 1:**
+
 - RAM: ~45 GB → ~512 MB (mmap = no payload in RAM at all)
 - ZIP load: ~8s `read_to_end` → streaming to disk (IO-limited, but no RAM spike)
 - Progress: real-time per-operation events
@@ -1174,19 +1181,19 @@ pnpm check
 
 ## Dependency Summary Table
 
-| Crate | Current | Recommended | Reason |
-|-------|---------|-------------|--------|
-| `memmap2` | ❌ not used | ✅ Add (Phase 1) | Zero-copy mmap kills OOM entirely |
-| `tempfile` | ❌ not used | ✅ Add (Phase 1) | Safe streaming ZIP extraction |
-| `rayon` | ❌ not used | ✅ Add (Phase 2) | Better than thread::scope for CPU-bound parallel |
-| `async-compression` | ❌ not used | 🟡 Add (Phase 3) | Full async streaming decompression |
-| `xz2` | ✅ used | ✅ Keep | Phase 1-2 sync streaming still uses it |
-| `bzip2` | ✅ used | ✅ Keep | Same |
-| `zstd` | ✅ used | ✅ Keep | Same |
-| `sha2` | ✅ used | ✅ Keep | Verification unchanged |
-| `zip` | ✅ used | ✅ Keep | ZIP navigation still needed |
-| `anyhow` | ✅ used | ✅ Keep | Error handling |
+| Crate               | Current     | Recommended      | Reason                                           |
+| ------------------- | ----------- | ---------------- | ------------------------------------------------ |
+| `memmap2`           | ❌ not used | ✅ Add (Phase 1) | Zero-copy mmap kills OOM entirely                |
+| `tempfile`          | ❌ not used | ✅ Add (Phase 1) | Safe streaming ZIP extraction                    |
+| `rayon`             | ❌ not used | ✅ Add (Phase 2) | Better than thread::scope for CPU-bound parallel |
+| `async-compression` | ❌ not used | 🟡 Add (Phase 3) | Full async streaming decompression               |
+| `xz2`               | ✅ used     | ✅ Keep          | Phase 1-2 sync streaming still uses it           |
+| `bzip2`             | ✅ used     | ✅ Keep          | Same                                             |
+| `zstd`              | ✅ used     | ✅ Keep          | Same                                             |
+| `sha2`              | ✅ used     | ✅ Keep          | Verification unchanged                           |
+| `zip`               | ✅ used     | ✅ Keep          | ZIP navigation still needed                      |
+| `anyhow`            | ✅ used     | ✅ Keep          | Error handling                                   |
 
 ---
 
-*Report generated: 2026-03-22 | Research: web 2025-2026 + context7 docs (memmap2, tokio, async-compression) + rhythmcache/payload-dumper-rust*
+_Report generated: 2026-03-22 | Research: web 2025-2026 + context7 docs (memmap2, tokio, async-compression) + rhythmcache/payload-dumper-rust_

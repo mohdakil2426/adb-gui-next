@@ -14,18 +14,18 @@ This document is the design spec the implementation plan executes. User is unava
 
 Genymobile documents **prebuilt official release archives** as the first-class install path:
 
-| OS | Official asset (v4.1, 2026-07-12) | Notes |
-| --- | --- | --- |
-| Windows x64 | `scrcpy-win64-v{ver}.zip` | Primary first-class |
-| Windows x86 | `scrcpy-win32-v{ver}.zip` | Available; we can use for 32-bit hosts |
-| Linux x86_64 | `scrcpy-linux-x86_64-v{ver}.tar.gz` | Static build; official linux.md |
-| macOS aarch64 | `scrcpy-macos-aarch64-v{ver}.tar.gz` | Code path for future; builds paused |
-| macOS x86_64 | `scrcpy-macos-x86_64-v{ver}.tar.gz` | Same |
-| Server-only | `scrcpy-server-v{ver}` | Bundled inside the archives; do not vendor source |
+| OS            | Official asset (v4.1, 2026-07-12)    | Notes                                             |
+| ------------- | ------------------------------------ | ------------------------------------------------- |
+| Windows x64   | `scrcpy-win64-v{ver}.zip`            | Primary first-class                               |
+| Windows x86   | `scrcpy-win32-v{ver}.zip`            | Available; we can use for 32-bit hosts            |
+| Linux x86_64  | `scrcpy-linux-x86_64-v{ver}.tar.gz`  | Static build; official linux.md                   |
+| macOS aarch64 | `scrcpy-macos-aarch64-v{ver}.tar.gz` | Code path for future; builds paused               |
+| macOS x86_64  | `scrcpy-macos-x86_64-v{ver}.tar.gz`  | Same                                              |
+| Server-only   | `scrcpy-server-v{ver}`               | Bundled inside the archives; do not vendor source |
 
 **Not shipped by official releases:** Linux arm64, Windows arm64. For those hosts: fall back to PATH `scrcpy` if present; otherwise show an explicit “no official binary for this arch” state. Do not download random third-party builds (official README warning).
 
-**Rejected:** scoop / winget / apt / brew as the *app-managed* path. They require extra host tools, produce unversioned PATH collisions with our bundled ADB, and are not offline-after-first-download in app data. Package managers remain a *user* option; the app downloads the official zip/tarball itself.
+**Rejected:** scoop / winget / apt / brew as the _app-managed_ path. They require extra host tools, produce unversioned PATH collisions with our bundled ADB, and are not offline-after-first-download in app data. Package managers remain a _user_ option; the app downloads the official zip/tarball itself.
 
 **Checksums:** each release publishes `SHA256SUMS.txt` + `SHA256SUMS.txt.asc` (GPG, Romain Vimont). We **must** verify SHA-256 of the chosen asset against `SHA256SUMS.txt`. GPG verify is optional (no bundled keyring UX); SHA-256 is the required gate. Source: [verify-release.md](https://github.com/Genymobile/scrcpy/blob/master/doc/verify-release.md).
 
@@ -48,37 +48,37 @@ Genymobile documents **prebuilt official release archives** as the first-class i
 
 Catalog from official user docs + `scrcpy.1` (v4.x). UI exposes a curated subset; the domain maps 1:1 to argv.
 
-| UI | Flag |
-| --- | --- |
-| Serial | `-s` / `--serial` |
-| Max size | `-m` / `--max-size` |
-| Video bit rate | `-b` / `--video-bit-rate` |
-| Max FPS | `--max-fps` |
-| Video codec | `--video-codec` (`h264`/`h265`/`av1`/`vp8`/`vp9`) |
-| No audio | `--no-audio` |
-| Audio source | `--audio-source` |
-| Stay awake | `--stay-awake` (`-w`) |
-| Turn screen off | `--turn-screen-off` (`-S`) |
-| Show touches | `--show-touches` (`-t`) |
-| Fullscreen | `--fullscreen` (`-f`) |
-| Always on top | `--always-on-top` |
-| Borderless | `--window-borderless` |
-| Record path | `-r` / `--record` |
-| Record format | `--record-format` |
-| Keyboard | `--keyboard=` (`sdk`/`uhid`/`aoa`/`disabled`) |
-| Control off | `--no-control` (`-n`) |
+| UI              | Flag                                              |
+| --------------- | ------------------------------------------------- |
+| Serial          | `-s` / `--serial`                                 |
+| Max size        | `-m` / `--max-size`                               |
+| Video bit rate  | `-b` / `--video-bit-rate`                         |
+| Max FPS         | `--max-fps`                                       |
+| Video codec     | `--video-codec` (`h264`/`h265`/`av1`/`vp8`/`vp9`) |
+| No audio        | `--no-audio`                                      |
+| Audio source    | `--audio-source`                                  |
+| Stay awake      | `--stay-awake` (`-w`)                             |
+| Turn screen off | `--turn-screen-off` (`-S`)                        |
+| Show touches    | `--show-touches` (`-t`)                           |
+| Fullscreen      | `--fullscreen` (`-f`)                             |
+| Always on top   | `--always-on-top`                                 |
+| Borderless      | `--window-borderless`                             |
+| Record path     | `-r` / `--record`                                 |
+| Record format   | `--record-format`                                 |
+| Keyboard        | `--keyboard=` (`sdk`/`uhid`/`aoa`/`disabled`)     |
+| Control off     | `--no-control` (`-n`)                             |
 
 Everything else stays out of v1 UI (camera, V4L2, OTG, virtual display) — YAGNI.
 
 ### IPC (thin commands)
 
-| Command | Role |
-| --- | --- |
-| `scrcpy_status` | installed version, binary path, latest known tag (cached) |
-| `scrcpy_check_update` | GitHub latest + compare |
-| `scrcpy_install` | download+verify+extract (progress event) |
-| `scrcpy_launch` | spawn detached with flag DTO |
-| `scrcpy_list_editors` | n/a (file explorer) |
+| Command               | Role                                                      |
+| --------------------- | --------------------------------------------------------- |
+| `scrcpy_status`       | installed version, binary path, latest known tag (cached) |
+| `scrcpy_check_update` | GitHub latest + compare                                   |
+| `scrcpy_install`      | download+verify+extract (progress event)                  |
+| `scrcpy_launch`       | spawn detached with flag DTO                              |
+| `scrcpy_list_editors` | n/a (file explorer)                                       |
 
 Event: `scrcpy:download-progress` `{ received, total, stage }`.
 
@@ -126,11 +126,11 @@ Motion: keep `--motion-*` + `transform`/`opacity` only; `LazyMotion`/`m` already
 
 **Open in editor:** pull to owned temp (`{temp}/adb-gui-next-editors/`) then spawn:
 
-| OS | Preference order |
-| --- | --- |
-| Windows | `code` (PATH) → `notepad.exe` |
-| Linux | `code` → `xdg-open` (covers gedit/kate via desktop) |
-| macOS (future) | `code` → `open -t` (TextEdit) |
+| OS             | Preference order                                    |
+| -------------- | --------------------------------------------------- |
+| Windows        | `code` (PATH) → `notepad.exe`                       |
+| Linux          | `code` → `xdg-open` (covers gedit/kate via desktop) |
+| macOS (future) | `code` → `open -t` (TextEdit)                       |
 
 Allowlist extensions: `.sh .md .txt .toml .xml .bak .json .conf .prop .log .cfg .ini .yaml .yml .properties .rc .service`. Refuse archives/binaries. Snapshot serial **before** any host dialog. Reuse existing pull + `FileAccessMode`.
 
@@ -182,14 +182,14 @@ Current `ci.yml` already: `permissions: contents: read`, concurrency cancel, SHA
 
 Official shadcn Neutral (oklch chroma 0). User wants **true black** dark canvas:
 
-| Token | Light (shadcn Neutral) | Dark (true black Neutral) |
-| --- | --- | --- |
-| canvas | `oklch(1 0 0)` | `oklch(0 0 0)` |
-| surface | `oklch(1 0 0)` | `oklch(0.145 0 0)` |
-| surface-raised | `oklch(0.97 0 0)` | `oklch(0.205 0 0)` |
-| surface-overlay | `oklch(1 0 0)` | `oklch(0.269 0 0)` |
-| primary | `oklch(0.205 0 0)` | `oklch(0.985 0 0)` |
-| foreground | `oklch(0.145 0 0)` | `oklch(0.985 0 0)` |
+| Token           | Light (shadcn Neutral) | Dark (true black Neutral) |
+| --------------- | ---------------------- | ------------------------- |
+| canvas          | `oklch(1 0 0)`         | `oklch(0 0 0)`            |
+| surface         | `oklch(1 0 0)`         | `oklch(0.145 0 0)`        |
+| surface-raised  | `oklch(0.97 0 0)`      | `oklch(0.205 0 0)`        |
+| surface-overlay | `oklch(1 0 0)`         | `oklch(0.269 0 0)`        |
+| primary         | `oklch(0.205 0 0)`     | `oklch(0.985 0 0)`        |
+| foreground      | `oklch(0.145 0 0)`     | `oklch(0.985 0 0)`        |
 
 Status colours stay chromatic (device state). Tokens only in `global.css`. Rename palette comments from “Precision Instrument” to “Neutral”.
 
@@ -197,14 +197,14 @@ Status colours stay chromatic (device state). Tokens only in `global.css`. Renam
 
 ## J) FE logic that belongs in Rust
 
-| Found | Action |
-| --- | --- |
-| Marketplace GitHub release/readme shaping | Keep/move in `marketplace/github.rs` |
-| Scrcpy argv building | Rust domain, never FE string concat of flags beyond DTO |
-| Icon extraction | New `app_icons` domain |
-| Editor spawn + pull | Rust `commands/files` + small helper |
-| Dashboard formatting | Stays FE (`format.ts`) — already correct |
-| Debloat composition donut math | Tiny FE derived state — OK (pure from DTOs) |
+| Found                                     | Action                                                  |
+| ----------------------------------------- | ------------------------------------------------------- |
+| Marketplace GitHub release/readme shaping | Keep/move in `marketplace/github.rs`                    |
+| Scrcpy argv building                      | Rust domain, never FE string concat of flags beyond DTO |
+| Icon extraction                           | New `app_icons` domain                                  |
+| Editor spawn + pull                       | Rust `commands/files` + small helper                    |
+| Dashboard formatting                      | Stays FE (`format.ts`) — already correct                |
+| Debloat composition donut math            | Tiny FE derived state — OK (pure from DTOs)             |
 
 ---
 

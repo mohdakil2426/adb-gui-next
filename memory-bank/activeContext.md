@@ -2,28 +2,22 @@
 
 ## Current Focus
 
-**2026-08-21 — Dashboard "Instrument Deck" redesign + Applications overview upgrade (uncommitted per user request):**
+**2026-09-18 — Ultracite Oxlint/Oxfmt migration, Curated Tools complete removal, and repo-wide gate fixes:**
 
-- **Dashboard (`features/dashboard/`)** — full visual rebuild, same tokens:
-  - Global entrance cascade via `PanelCard delay` (hero → battery → memory → storage → security → actions → wireless → apps); reduced-motion aware.
-  - `BatteryGauge`: 128px tick-bezel radial + charging aura; `MicroScale` band meters for temperature/voltage (zone tints + scaleX fill).
-  - `MemorySparkline`: 25/50/75% gridlines, crosshair scrubber, live endpoint pulse; `MemoryPanel` % headline.
-  - `StoragePanel`: `StorageAllocationBar` stacked capacity map; volume rows carry matching legend dots (`model/storageColors.ts`).
-  - `SecurityPanel`: `PostureSpectrum` six-segment strip ("N of M nominal").
-  - New `AppsPanel` + interactive `AppsCompositionDonut` (hover-linked center readout) + Target SDK health meter; `hooks/useAppOverview.ts` shares the `appOverviewTelemetry` query key with App Manager.
-  - Fills animate **scaleX only** (doctor: no layout-property animation); `UsageBar` migrated too. `role="meter"` → `role="progressbar"` (prefer-tag-over-role).
-- **Applications overview (`features/app-manager/overview/`)** — same deck language:
-  - `AppMetricsHeroBanner` staggered cells; `PackageCompositionDonut` rewritten interactive (dead `standalone`/`composition` API removed — single call site verified).
-  - `TargetSdkDistributionMeter` + `DebloatSafetySpectrum`: raw emerald/sky/amber/rgb colors → success/info/warning tokens; staggered scaleX arcs/fills.
-  - `PermissionDensityMatrix`: token risk tones + per-category density mini-meters; dormant `userAppCount` prop now used in the caption.
-  - `TopStorageConsumersChart` / `QuickLaunchpadCard`: staggered entrances (test contracts preserved: ranks, quote-stripping, empty text).
-- **Docs updated:** `DESIGN.md` (Dashboard screen row, Charts list, new "Instrument Deck Choreography" pattern), `src/AGENTS.md` (charts paragraph, Dashboard invariant), this file.
+- **Marketplace Cleanup:**
+  - Completely removed `CuratedPowerToolsGrid.tsx` frontend component and its invocations.
+  - Removed dead `marketplace_get_curated_tools` Tauri command, backend service endpoint, test, and permissions entries.
+  - Updated `MarketplaceOverviewTab` to focus on discovery chips and dual telemetry charts.
+- **Linter & Formatter Upgrade (Ultracite Oxlint + Oxfmt):**
+  - Configured `oxfmt.config.ts` (`printWidth: 100`) and ignore patterns for docs, memory-bank, .github, .agents, and src-tauri.
+  - Configured `oxlint.config.ts` with matching ignore patterns.
+  - Removed deprecated `biome.jsonc`.
+  - Resolved all linter diagnostics (`eslint(no-empty-function)`, `unicorn(no-useless-undefined)`, `vitest(prefer-expect-resolves)`, `vitest(prefer-called-with)`) with zero rule suppressions.
+  - Resolved TypeScript strict typing in React effects, debloater, and payload stores.
+- **Quality Gates Status:**
+  - **Ultracite (Oxlint + Oxfmt):** 0 errors, all files formatted.
+  - **TypeScript (`tsc --noEmit`):** 0 errors.
+  - **Vitest:** 48 / 48 test files passed (324 / 324 tests).
+  - **Rust Backend (`cargo check`):** Dev profile compiles cleanly.
 
-## Quality Gates Status
-- **Ultracite (Biome):** 475 files checked, 0 errors, 0 warnings
-- **TypeScript:** `tsc --noEmit` passed (via `bun run build`)
-- **Vitest:** 48 / 48 files passed, 285 / 285 tests passed
-- **React Doctor:** 86/100 — zero findings in dashboard or app-manager files; remaining deductions are pre-existing marketplace debt (`authStore` unused exports, `ReadmeMarkdown` label, `useMarketplaceAuth` deps) and the pre-existing `pkgName || index` key fallback required by the missing-packageName test.
-- **No commits made** per user request (pre-existing work was committed first in 6 logical commits earlier this session).
-
-**Last updated:** 2026-08-21
+**Last updated:** 2026-09-18

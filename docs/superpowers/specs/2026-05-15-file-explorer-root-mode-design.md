@@ -19,7 +19,7 @@ Add an explicit root-access grant to File Explorer for rooted Android devices wi
 Frontend stores a boolean root grant:
 
 ```ts
-rootAccessGranted: boolean
+rootAccessGranted: boolean;
 ```
 
 The access mode is derived per operation:
@@ -35,7 +35,7 @@ This avoids the bogus global-mode data model where enabling the shield changed t
 The existing `FileAccessMode` IPC value stays useful at the backend boundary:
 
 ```ts
-type FileAccessMode = 'normal' | 'root'
+type FileAccessMode = "normal" | "root";
 ```
 
 The frontend must pass it per target path. Backend command behavior remains:

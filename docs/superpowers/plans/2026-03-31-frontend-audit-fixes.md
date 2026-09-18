@@ -20,6 +20,7 @@
 2. Wrap `renderActiveView()` return in `MainLayout.tsx` with `<ErrorBoundary key={activeView}>` so each view gets its own boundary and `key` forces remount on view switch.
 
 **Files to create/modify:**
+
 - `src/components/ErrorBoundary.tsx` (new)
 - `src/components/MainLayout.tsx` (wrap renderActiveView)
 
@@ -30,6 +31,7 @@
 ### C2. `any` Types in Event System
 
 **Problem:** `runtime.ts` uses 3 explicit `any` usages:
+
 - Line 5: `type EventCallback = (...data: any[]) => void;`
 - Line 54: `.listen(eventName, (event: any) => ...)`
 - Line 130: `.onDragDropEvent((event: any) => ...)`
@@ -44,6 +46,7 @@ Every event listener in the app flows through this untyped chain.
 4. Update callers to provide type params (ViewPayloadDumper already does inline typing)
 
 **Files to modify:**
+
 - `src/lib/desktop/runtime.ts` (3 `any` removals + generic signature)
 
 **Note:** `EventsOff` and `EventsOffAll` remain untyped (no payload involved) — no change needed.
@@ -64,6 +67,7 @@ Every event listener in the app flows through this untyped chain.
 4. Remove the duplicate definitions from both files
 
 **Files to create/modify:**
+
 - `src/styles/global.css` (add CSS variables)
 - `src/lib/deviceStatus.ts` (new — shared config)
 - `src/components/DeviceSwitcher.tsx` (import + remove inline config)
@@ -76,17 +80,21 @@ Every event listener in the app flows through this untyped chain.
 ### C4. `logStore.ts` — `undefined` Assigned to `number`-Typed Field
 
 **Problem:** Line 76:
+
 ```ts
 set({ isOpen, unreadCount: isOpen ? 0 : undefined } as Partial<LogStore>);
 ```
+
 `unreadCount` is typed as `number` but `undefined` is assigned when `isOpen` is false. The `as Partial<LogStore>` cast hides the type violation.
 
 **Fix:** Replace with a functional updater that preserves `unreadCount` when closing:
+
 ```ts
 set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
 ```
 
 **Files to modify:**
+
 - `src/lib/logStore.ts` (line 76)
 
 **Estimated effort:** ~5 min
@@ -100,6 +108,7 @@ set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
 **Fix:** Gradually replace manual icon sizing with `data-icon="inline-start"`. This is a mechanical refactor — each instance is independent. Prioritize the most visible views first (Dashboard, Flasher, AppManager).
 
 **Files to modify:**
+
 - All view components + shared components with `<Button>` containing icons
 
 **Estimated effort:** ~1-2 hours (mechanical, can be done incrementally)
@@ -117,6 +126,7 @@ set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
 **Fix:** Use a request ID / abort pattern. Increment a counter on each `loadFiles` call; in the `finally`, only apply results if the counter still matches.
 
 **Files to modify:**
+
 - `src/components/views/ViewFileExplorer.tsx` (loadFiles function)
 
 **Estimated effort:** ~30 min
@@ -130,6 +140,7 @@ set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
 **Fix:** Replace all `Loader2 className="animate-spin"` with `<Spinner data-icon="inline-start" />` or `<Spinner data-icon="inline-end" />` depending on context.
 
 **Files to modify:**
+
 - All views with loading buttons
 
 **Estimated effort:** ~1 hour
@@ -143,18 +154,21 @@ set((state) => ({ isOpen, unreadCount: isOpen ? 0 : state.unreadCount }));
 **Fix:** Use the unlisten function returned by `EventsOn` instead of calling `EventsOff`. This requires `EventsOn` to return the unlisten function (which it already does — `registerEventListener` returns `entry.dispose`).
 
 Current code:
+
 ```ts
 EventsOn('payload:progress', (data) => { ... });
 return () => { EventsOff('payload:progress'); };
 ```
 
 Fix:
+
 ```ts
 const unlisten = EventsOn('payload:progress', (data) => { ... });
 return unlisten;
 ```
 
 **Files to modify:**
+
 - `src/components/views/ViewPayloadDumper.tsx` (lines 108-125)
 
 **Estimated effort:** ~5 min
@@ -165,36 +179,36 @@ return unlisten;
 
 The following High issues are deferred to a future PR because they require deeper refactoring:
 
-| Issue | Reason |
-|-------|--------|
-| H2 (keyboard shortcut listener churn) | Needs refactoring to use refs — touches FileExplorer hotkeys |
-| H3 (DropZone global singleton race) | Architectural change to DropZone registration |
-| H4 (install loop not cancellable) | Needs AbortController integration across AppManager |
-| H5 (window resize not reactive) | Needs ResizeObserver — touches BottomPanel + MainLayout |
-| H6 (inline package filter counts) | Simple useMemo but low impact |
-| H7 (ViewFileExplorer is 1567 lines) | Major decomposition — separate PR |
-| H9 (force re-render hack) | Needs nicknameStore migration to Zustand |
-| H10 (stale closure in handleExtract) | Minor fix but touches extraction flow |
-| H12 (per-row ContextMenu) | Architectural change to context menu pattern |
-| H13-H15 (TypeScript cast issues) | Minor type safety improvements |
-| H17 (forms not using FieldGroup) | Requires form pattern migration |
-| H18-H22 (shadcn component replacements) | Incremental shadcn compliance |
-| H23-H25 (accessibility/security) | Important but separate concern |
+| Issue                                   | Reason                                                       |
+| --------------------------------------- | ------------------------------------------------------------ |
+| H2 (keyboard shortcut listener churn)   | Needs refactoring to use refs — touches FileExplorer hotkeys |
+| H3 (DropZone global singleton race)     | Architectural change to DropZone registration                |
+| H4 (install loop not cancellable)       | Needs AbortController integration across AppManager          |
+| H5 (window resize not reactive)         | Needs ResizeObserver — touches BottomPanel + MainLayout      |
+| H6 (inline package filter counts)       | Simple useMemo but low impact                                |
+| H7 (ViewFileExplorer is 1567 lines)     | Major decomposition — separate PR                            |
+| H9 (force re-render hack)               | Needs nicknameStore migration to Zustand                     |
+| H10 (stale closure in handleExtract)    | Minor fix but touches extraction flow                        |
+| H12 (per-row ContextMenu)               | Architectural change to context menu pattern                 |
+| H13-H15 (TypeScript cast issues)        | Minor type safety improvements                               |
+| H17 (forms not using FieldGroup)        | Requires form pattern migration                              |
+| H18-H22 (shadcn component replacements) | Incremental shadcn compliance                                |
+| H23-H25 (accessibility/security)        | Important but separate concern                               |
 
 ---
 
 ## Implementation Order
 
-| Step | Task | Effort |
-|------|------|--------|
-| 1 | C4 — Fix logStore.ts undefined type | 5 min |
-| 2 | H11 — Fix EventsOn/Off global nuke in PayloadDumper | 5 min |
-| 3 | C1 — Add ErrorBoundary component | 30 min |
-| 4 | C3+H8 — Extract shared STATUS_CONFIG with CSS variables | 30 min |
-| 5 | H1 — Add request sequencing to loadFiles | 30 min |
-| 6 | C2 — Type the event system in runtime.ts | 1 hour |
-| 7 | H16 — Replace Loader2 with Spinner | 1 hour |
-| 8 | C5 — Migrate icons to data-icon (if time permits) | 1-2 hours |
+| Step | Task                                                    | Effort    |
+| ---- | ------------------------------------------------------- | --------- |
+| 1    | C4 — Fix logStore.ts undefined type                     | 5 min     |
+| 2    | H11 — Fix EventsOn/Off global nuke in PayloadDumper     | 5 min     |
+| 3    | C1 — Add ErrorBoundary component                        | 30 min    |
+| 4    | C3+H8 — Extract shared STATUS_CONFIG with CSS variables | 30 min    |
+| 5    | H1 — Add request sequencing to loadFiles                | 30 min    |
+| 6    | C2 — Type the event system in runtime.ts                | 1 hour    |
+| 7    | H16 — Replace Loader2 with Spinner                      | 1 hour    |
+| 8    | C5 — Migrate icons to data-icon (if time permits)       | 1-2 hours |
 
 Steps 1-2 are trivial quick wins. Steps 3-5 are medium effort. Steps 6-8 are larger mechanical changes.
 
@@ -203,6 +217,7 @@ Steps 1-2 are trivial quick wins. Steps 3-5 are medium effort. Steps 6-8 are lar
 ## Pre-Commit Checklist
 
 After all changes:
+
 1. `pnpm format:check` — if fails, `pnpm format`
 2. `pnpm lint` — fix any ESLint/clippy errors
 3. `pnpm build` — fix any TypeScript errors

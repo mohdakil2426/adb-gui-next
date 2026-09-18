@@ -8,19 +8,19 @@
 
 ## 0. Measured baseline
 
-| Metric | Value | Source |
-| --- | --- | --- |
-| Frontend LOC | 23,597 across 199 files | `src/**/*.{ts,tsx}` excl. tests |
-| Rust LOC | 16,274 across 79 files | `src-tauri/src/**/*.rs` |
-| **Main JS chunk** | **565.86 kB** (152.25 kB gz) | `bun run build` |
-| Total JS | 1,077 kB (~304 kB gz) | 6 chunks |
-| CSS | 169.51 kB (26.19 kB gz) | single stylesheet |
-| Modules transformed | 2,652 | rolldown |
-| Code-split views | **0 of 9** | no `React.lazy` / `Suspense` in `src/` |
-| Artificial startup delay | **750 ms** + 500 ms fade | `MainLayout.tsx:31,168` |
-| Font delivery | **Google Fonts over network** | `index.html:10-15` |
-| Release opt-level | **`"s"` (size)** | `Cargo.toml:149` |
-| adb spawn sites | 112 | no batching abstraction |
+| Metric                   | Value                         | Source                                 |
+| ------------------------ | ----------------------------- | -------------------------------------- |
+| Frontend LOC             | 23,597 across 199 files       | `src/**/*.{ts,tsx}` excl. tests        |
+| Rust LOC                 | 16,274 across 79 files        | `src-tauri/src/**/*.rs`                |
+| **Main JS chunk**        | **565.86 kB** (152.25 kB gz)  | `bun run build`                        |
+| Total JS                 | 1,077 kB (~304 kB gz)         | 6 chunks                               |
+| CSS                      | 169.51 kB (26.19 kB gz)       | single stylesheet                      |
+| Modules transformed      | 2,652                         | rolldown                               |
+| Code-split views         | **0 of 9**                    | no `React.lazy` / `Suspense` in `src/` |
+| Artificial startup delay | **750 ms** + 500 ms fade      | `MainLayout.tsx:31,168`                |
+| Font delivery            | **Google Fonts over network** | `index.html:10-15`                     |
+| Release opt-level        | **`"s"` (size)**              | `Cargo.toml:149`                       |
+| adb spawn sites          | 112                           | no batching abstraction                |
 
 Two independently-derived headline numbers: the app ships **every one of its nine views in the initial bundle**, and it ships **size-optimised Rust for a CPU-bound firmware-extraction workload**.
 
@@ -39,12 +39,12 @@ These are ranked above performance because they can brick a user's device, abort
 
 Meanwhile `Wipe Data`, 200 px below it on the same screen and fully recoverable, sits behind a complete `AlertDialog` ("Are you absolutely sure?", `DangerZoneCard.tsx:38-67`).
 
-**Worse — flashes auto-fire on cable insertion.** Clicking Flash with no device attached *queues* the action and shows `Waiting for Device…`; the flash then executes the moment a fastboot device appears (`useFlasherActions.ts:102-129`, label at `FlasherView.tsx:166`). A destructive write triggered by plugging in a USB cable. File paths also persist to `localStorage` indefinitely (`useFlasherActions.ts:24-37`), so a stale path can be pre-loaded into that button days later.
+**Worse — flashes auto-fire on cable insertion.** Clicking Flash with no device attached _queues_ the action and shows `Waiting for Device…`; the flash then executes the moment a fastboot device appears (`useFlasherActions.ts:102-129`, label at `FlasherView.tsx:166`). A destructive write triggered by plugging in a USB cable. File paths also persist to `localStorage` indefinitely (`useFlasherActions.ts:24-37`), so a stale path can be pre-loaded into that button days later.
 
 **Confirmation coverage is inconsistent app-wide:**
 
-| Confirmed | Unconfirmed |
-| --- | --- |
+| Confirmed                          | Unconfirmed                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | Wipe ×2, uninstall ×2, file delete | **flash**, **sideload**, **slot switch**, `adb kill-server`, reboot→bootloader/recovery, AVD ramdisk restore, cache clear |
 
 Slot switching (`--set-active=a/b`) fires immediately (`FastbootUtilitiesPanel.tsx:102,113`); switching to an unpopulated slot is a soft-brick.
@@ -69,13 +69,13 @@ let raw_data = &mmap[data_offset + data_offset_op..data_end];             // UNC
 
 `overflow-checks` is off in release, so the second add **wraps** to a small value that passes the bounds check, and the slice index then panics. With `panic = "abort"` that is an immediate `SIGABRT` of the whole application, reachable from a URL the user pasted.
 
-The same overflow at `crau/extract.rs:265` lands *inside* bounds instead — no panic, but the extractor reads the wrong region and writes a **silently corrupt image**. Only optional L3/L4 SHA-256 catches it.
+The same overflow at `crau/extract.rs:265` lands _inside_ bounds instead — no panic, but the extractor reads the wrong region and writes a **silently corrupt image**. Only optional L3/L4 SHA-256 catches it.
 
 ### 1.4 >4 GB OTA ZIPs are broken; deflated payloads OOM
 
 Two independent ZIP central-directory parsers exist with divergent correctness. `http_zip.rs:153-196` reads `cd_offset` as a bare `u32` and never applies ZIP64 extra fields, so any ZIP ≥ 4 GiB — i.e. **most full OTA packages** — reads the `0xFFFFFFFF` sentinel and computes garbage. `factory.rs:321-352,422-463` implements ZIP64 correctly.
 
-Separately, `read_payload_from_zip` (`http_zip.rs:306-340`) downloads and inflates the *entire* member into two `Vec`s before returning a slice — and it is called from `list_remote_payload_partitions`, which only needs the first 1 MiB header. Merely **listing partitions** on a deflated 4 GB payload downloads 4 GB and allocates ~9 GB.
+Separately, `read_payload_from_zip` (`http_zip.rs:306-340`) downloads and inflates the _entire_ member into two `Vec`s before returning a slice — and it is called from `list_remote_payload_partitions`, which only needs the first 1 MiB header. Merely **listing partitions** on a deflated 4 GB payload downloads 4 GB and allocates ~9 GB.
 
 ### 1.5 `NonTemporalWriter` is broken on shipped targets
 
@@ -87,17 +87,17 @@ Separately, `read_payload_from_zip` (`http_zip.rs:306-340`) downloads and inflat
 
 ### 1.6 Other correctness issues
 
-| ID | Issue | Evidence |
-| --- | --- | --- |
-| M1 | `PayloadCache::default()` per call leaks a multi-GB temp file (no `Drop`, `cleanup()` never called) | `commands/payload.rs:408` |
-| M2 | Remote extraction has no `TransactionGuard` — failures leave partial images on disk | `remote/mod.rs:704-710,870-876` vs `crau/extract.rs:66,113` |
-| M8 | `get_device_id` returns `"unknown"` when `get-serialno` fails (the ordinary multi-device case) → **device A's package list served to device B**, and backups commingle | `debloat/sync.rs:41-45`, `cache.rs:22-24`, `backup.rs:40-43` |
+| ID  | Issue                                                                                                                                                                            | Evidence                                                       |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| M1  | `PayloadCache::default()` per call leaks a multi-GB temp file (no `Drop`, `cleanup()` never called)                                                                              | `commands/payload.rs:408`                                      |
+| M2  | Remote extraction has no `TransactionGuard` — failures leave partial images on disk                                                                                              | `remote/mod.rs:704-710,870-876` vs `crau/extract.rs:66,113`    |
+| M8  | `get_device_id` returns `"unknown"` when `get-serialno` fails (the ordinary multi-device case) → **device A's package list served to device B**, and backups commingle           | `debloat/sync.rs:41-45`, `cache.rs:22-24`, `backup.rs:40-43`   |
 | H11 | A GitHub 404 returns `Err` from `load_uad_lists`, **skipping both the local-cache and bundled fallbacks**. Also called twice per load; no `connect_timeout` → ~60 s hang offline | `debloat/lists.rs:65-84,126-133`; `commands/debloat.rs:95,106` |
-| H12 | Magisk APK `sha256` is parsed then **never verified**; its `magiskinit` is installed as `init`. Redirects unvalidated (default 10-hop policy) | `magisk_download.rs:131,202-227,60-64` |
-| M9 | Partial debloat failures report `new_state: Enabled` hardcoded even when the package **is** disabled | `debloat/actions.rs:150-157` |
-| M14 | Short REPLACE data silently truncates the image with no error | `remote/mod.rs:1015-1018`, `crau/extract.rs:397-399` |
-| M15 | Cancellation tokens leak on cancelled file-picker; `cancel_extraction` returns a spurious error after normal completion | `commands/payload.rs:557-586` |
-| — | Package names reach `adb shell pm` with **no validation** — a tampered backup file yields device-side shell injection | `debloat/actions.rs:150`, `commands/debloat.rs:266` |
+| H12 | Magisk APK `sha256` is parsed then **never verified**; its `magiskinit` is installed as `init`. Redirects unvalidated (default 10-hop policy)                                    | `magisk_download.rs:131,202-227,60-64`                         |
+| M9  | Partial debloat failures report `new_state: Enabled` hardcoded even when the package **is** disabled                                                                             | `debloat/actions.rs:150-157`                                   |
+| M14 | Short REPLACE data silently truncates the image with no error                                                                                                                    | `remote/mod.rs:1015-1018`, `crau/extract.rs:397-399`           |
+| M15 | Cancellation tokens leak on cancelled file-picker; `cancel_extraction` returns a spurious error after normal completion                                                          | `commands/payload.rs:557-586`                                  |
+| —   | Package names reach `adb shell pm` with **no validation** — a tampered backup file yields device-side shell injection                                                            | `debloat/actions.rs:150`, `commands/debloat.rs:266`            |
 
 ### 1.7 Payload dumper: total failure renders nothing
 
@@ -143,18 +143,18 @@ The damaging path is payload extraction: `usePayloadEvents.ts:28-73` subscribes 
 
 ### 2.6 Defeated memoisation and unstable identities
 
-| Issue | Evidence |
-| --- | --- |
-| `FileExplorerRow` unmemoised, **26 props**, mounts a full Radix `ContextMenu` per row | `FileExplorerRow.tsx:57`, `FileExplorerVirtualBody.tsx:165-190` |
-| Selection callbacks change identity on every selection change (blocks any future memo) | `useFileExplorerSelection.ts:89,110` |
-| `DirectoryTree.TreeRow` unmemoised + recursive + **loads files into a directory tree** | `DirectoryTree.tsx:98,116,131,233` |
-| `AppCard`/`AppListItem` are `memo`'d then handed a fresh closure per item | `MarketplaceView.tsx:110-112,122-124` |
-| `DropZone` re-registers the global drag-drop handler every render (array literal in deps) | `DropZone.tsx:70-131`, `ApkPickerPanel.tsx:38,43` |
-| `getNickname()` does sync `localStorage` + `JSON.parse` **in a render body**, inside `devices.map()` | `nicknameStore.ts:5-13`, `DeviceSwitcher.tsx:36,132` |
-| View model returns a **new 82-key object literal** every render; view spreads ~55 props + 3 inline object literals | `useFileExplorerViewModel.ts:401-483`, `FileExplorerView.tsx:36-73` |
-| `fe.treeWidth` written to `localStorage` **on every mousemove frame** while dragging | `useFileExplorerViewModel.ts:216-218` |
-| `shellStore.history` unbounded and unvirtualised (`adb logcat -d` = one multi-MB entry) | `shellStore.ts:34-36`, `ShellPanel.tsx:169` |
-| Three components subscribe to entire stores with no selector | `InstallationTab.tsx:65`, `RootWizard.tsx:44`, `RootManualStep.tsx:22` |
+| Issue                                                                                                              | Evidence                                                               |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| `FileExplorerRow` unmemoised, **26 props**, mounts a full Radix `ContextMenu` per row                              | `FileExplorerRow.tsx:57`, `FileExplorerVirtualBody.tsx:165-190`        |
+| Selection callbacks change identity on every selection change (blocks any future memo)                             | `useFileExplorerSelection.ts:89,110`                                   |
+| `DirectoryTree.TreeRow` unmemoised + recursive + **loads files into a directory tree**                             | `DirectoryTree.tsx:98,116,131,233`                                     |
+| `AppCard`/`AppListItem` are `memo`'d then handed a fresh closure per item                                          | `MarketplaceView.tsx:110-112,122-124`                                  |
+| `DropZone` re-registers the global drag-drop handler every render (array literal in deps)                          | `DropZone.tsx:70-131`, `ApkPickerPanel.tsx:38,43`                      |
+| `getNickname()` does sync `localStorage` + `JSON.parse` **in a render body**, inside `devices.map()`               | `nicknameStore.ts:5-13`, `DeviceSwitcher.tsx:36,132`                   |
+| View model returns a **new 82-key object literal** every render; view spreads ~55 props + 3 inline object literals | `useFileExplorerViewModel.ts:401-483`, `FileExplorerView.tsx:36-73`    |
+| `fe.treeWidth` written to `localStorage` **on every mousemove frame** while dragging                               | `useFileExplorerViewModel.ts:216-218`                                  |
+| `shellStore.history` unbounded and unvirtualised (`adb logcat -d` = one multi-MB entry)                            | `shellStore.ts:34-36`, `ShellPanel.tsx:169`                            |
+| Three components subscribe to entire stores with no selector                                                       | `InstallationTab.tsx:65`, `RootWizard.tsx:44`, `RootManualStep.tsx:22` |
 
 ---
 
@@ -176,14 +176,14 @@ The damaging path is payload extraction: `usePayloadEvents.ts:28-73` subscribes 
 
 ### 3.3 Hot-path waste
 
-| ID | Issue | Cost | Evidence |
-| --- | --- | --- | --- |
-| H1 | `payload.manifest.clone()` **inside the rayon loop** — a full `DeltaArchiveManifest` (10–50 MB) cloned per partition, and **never read** by the callee | 0.2–2 GB alloc+memcpy per extraction | `crau/extract.rs:106` (callee reads only `:265,268,271`) |
-| H3 | Progress emitted **per operation**; the 250 ms throttle gates only the ETA math, not `emit_progress` | 2,000–16,000 IPC events per extraction | `crau/extract.rs:410,427`; `remote/mod.rs:1024,1142`; `factory.rs:628` |
-| H5 | Remote prefetch issues **sequential** 1 MiB range requests — 4,096 round-trips for 4 GiB; caps throughput at `chunk/RTT` ≈ 25 MB/s | ~164 s pure latency at 40 ms RTT | `remote/mod.rs:565-591`, `factory.rs:575-591` |
-| H6 | `verify_sha256` **reopens and re-reads every output image** in a second full pass, with a redundant 64 KiB memcpy per chunk. The `hasher: Option<&mut Sha256>` parameter that would avoid this exists and is `None` at all 3 production call sites | +8 GiB of reads per typical extraction | `verify/output_file.rs:6-20`; `io/copy.rs:187` vs `extract.rs:352`, `remote/mod.rs:1012,1130` |
-| H4 | Remote extract paths run `par_iter()` + blocking IO directly in `async fn` — **pins a Tokio worker for minutes**. Local paths correctly use `block_in_place` | worker starvation | `commands/payload.rs:99-116` → `remote/mod.rs:659-702,822-868` |
-| M4 | OPS extractor spawns **one unbounded OS thread per partition**; cancellation checked only at partition start | 100 threads on a 100-entry OFP | `ops/extractor.rs:131-148` |
+| ID  | Issue                                                                                                                                                                                                                                              | Cost                                   | Evidence                                                                                      |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------- |
+| H1  | `payload.manifest.clone()` **inside the rayon loop** — a full `DeltaArchiveManifest` (10–50 MB) cloned per partition, and **never read** by the callee                                                                                             | 0.2–2 GB alloc+memcpy per extraction   | `crau/extract.rs:106` (callee reads only `:265,268,271`)                                      |
+| H3  | Progress emitted **per operation**; the 250 ms throttle gates only the ETA math, not `emit_progress`                                                                                                                                               | 2,000–16,000 IPC events per extraction | `crau/extract.rs:410,427`; `remote/mod.rs:1024,1142`; `factory.rs:628`                        |
+| H5  | Remote prefetch issues **sequential** 1 MiB range requests — 4,096 round-trips for 4 GiB; caps throughput at `chunk/RTT` ≈ 25 MB/s                                                                                                                 | ~164 s pure latency at 40 ms RTT       | `remote/mod.rs:565-591`, `factory.rs:575-591`                                                 |
+| H6  | `verify_sha256` **reopens and re-reads every output image** in a second full pass, with a redundant 64 KiB memcpy per chunk. The `hasher: Option<&mut Sha256>` parameter that would avoid this exists and is `None` at all 3 production call sites | +8 GiB of reads per typical extraction | `verify/output_file.rs:6-20`; `io/copy.rs:187` vs `extract.rs:352`, `remote/mod.rs:1012,1130` |
+| H4  | Remote extract paths run `par_iter()` + blocking IO directly in `async fn` — **pins a Tokio worker for minutes**. Local paths correctly use `block_in_place`                                                                                       | worker starvation                      | `commands/payload.rs:99-116` → `remote/mod.rs:659-702,822-868`                                |
+| M4  | OPS extractor spawns **one unbounded OS thread per partition**; cancellation checked only at partition start                                                                                                                                       | 100 threads on a 100-entry OFP         | `ops/extractor.rs:131-148`                                                                    |
 
 ### 3.4 There is no ADB abstraction — 112 spawn sites, zero batching
 
@@ -193,12 +193,12 @@ Every device interaction is `Command::new(adb).output()`. No batching, no persis
 
 The three worst consequences:
 
-| Path | Current | Achievable |
-| --- | --- | --- |
-| `get_device_info` — the most-hit command in the app | **12 sequential spawns**, 0.4–1.8 s (self-documented at `device.rs:112-114`) | 1–2 spawns |
-| Debloat restore | **400–500 spawns**, 12–100 s (`from_ref` on a batch-capable API) | 3–4 spawns |
-| Emulator root pipeline | ~35–40 sequential spawns per run | batched |
-| `list_avds` @ 5 s poll | ~48 spawns/minute while the view is open | ~8/min at 30 s |
+| Path                                                | Current                                                                      | Achievable     |
+| --------------------------------------------------- | ---------------------------------------------------------------------------- | -------------- |
+| `get_device_info` — the most-hit command in the app | **12 sequential spawns**, 0.4–1.8 s (self-documented at `device.rs:112-114`) | 1–2 spawns     |
+| Debloat restore                                     | **400–500 spawns**, 12–100 s (`from_ref` on a batch-capable API)             | 3–4 spawns     |
+| Emulator root pipeline                              | ~35–40 sequential spawns per run                                             | batched        |
+| `list_avds` @ 5 s poll                              | ~48 spawns/minute while the view is open                                     | ~8/min at 30 s |
 
 ### 3.5 Structural
 
@@ -215,11 +215,11 @@ Rewording any `bail!` silently changes behaviour. `payload/error.rs` exists but 
 
 ### 3.6 Security claims — verified
 
-| Claim | Verdict |
-| --- | --- |
-| Path traversal guards | ✅ **True and well tested** — `helpers.rs:115-158`, adversarial tests at `:415-507`; `debloat/backup.rs:124-149` is genuinely solid (3 independent layers) |
-| SSRF validation on every redirect hop | ⚠️ **Partially true.** Holds for `payload/remote/http.rs:129-159` and `commands/marketplace.rs:39-73`. **Gaps:** `magisk_download.rs:60-64,202-206` uses reqwest's default 10-hop policy unvalidated; `marketplace/mod.rs:26-33` likewise; DNS-rebinding TOCTOU is structural (validate resolves, reqwest re-resolves); blocklist omits `0.0.0.0/8`, `192.0.0.0/24`, `198.18.0.0/15`, `224.0.0.0/4`, `240.0.0.0/4`, NAT64 |
-| Marketplace install accepts only owned temp paths | ⚠️ **True, with a TOCTOU** — `marketplace.rs:229` validates the canonicalised path but `:238` installs the **original** string |
+| Claim                                             | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Path traversal guards                             | ✅ **True and well tested** — `helpers.rs:115-158`, adversarial tests at `:415-507`; `debloat/backup.rs:124-149` is genuinely solid (3 independent layers)                                                                                                                                                                                                                                                                |
+| SSRF validation on every redirect hop             | ⚠️ **Partially true.** Holds for `payload/remote/http.rs:129-159` and `commands/marketplace.rs:39-73`. **Gaps:** `magisk_download.rs:60-64,202-206` uses reqwest's default 10-hop policy unvalidated; `marketplace/mod.rs:26-33` likewise; DNS-rebinding TOCTOU is structural (validate resolves, reqwest re-resolves); blocklist omits `0.0.0.0/8`, `192.0.0.0/24`, `198.18.0.0/15`, `224.0.0.0/4`, `240.0.0.0/4`, NAT64 |
+| Marketplace install accepts only owned temp paths | ⚠️ **True, with a TOCTOU** — `marketplace.rs:229` validates the canonicalised path but `:238` installs the **original** string                                                                                                                                                                                                                                                                                            |
 
 ---
 
@@ -247,15 +247,15 @@ Every view's `<h1>` is `sr-only` (all nine confirmed), and the header renders no
 
 ### 4.5 Inconsistency inventory
 
-| Concept | Variants in the wild |
-| --- | --- |
-| Search input height | **5** — `h-7`, `h-8`, `h-9`, `h-9`, `h-11` |
-| Icon button size | **5** — 24, 28, 32, 36, 44 px |
-| Empty state | **3** independent implementations (`EmptyState`, `MarketplaceEmptyState`, inline in `FileExplorerTablePane`) |
-| Device switcher | **2** implementations with divergent a11y (`DeviceSwitcher.tsx:139` is a `div` with `aria-selected` and no `role`; `AvdSwitcher.tsx:129` correctly uses `<button>`) |
-| View root spacing | 3 different gaps; `pb-10` on 4 of 9; About overrides the global max-width |
-| Bottom panel styling | ~40 inline `style={{ … 'var(--terminal-*)' }}` objects — a **second, parallel styling system** that cannot be themed or overridden |
-| `--z-*` scale | Defined (7 tokens) and **ignored** in favour of ad-hoc `z-10/40/50/60` |
+| Concept              | Variants in the wild                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Search input height  | **5** — `h-7`, `h-8`, `h-9`, `h-9`, `h-11`                                                                                                                          |
+| Icon button size     | **5** — 24, 28, 32, 36, 44 px                                                                                                                                       |
+| Empty state          | **3** independent implementations (`EmptyState`, `MarketplaceEmptyState`, inline in `FileExplorerTablePane`)                                                        |
+| Device switcher      | **2** implementations with divergent a11y (`DeviceSwitcher.tsx:139` is a `div` with `aria-selected` and no `role`; `AvdSwitcher.tsx:129` correctly uses `<button>`) |
+| View root spacing    | 3 different gaps; `pb-10` on 4 of 9; About overrides the global max-width                                                                                           |
+| Bottom panel styling | ~40 inline `style={{ … 'var(--terminal-*)' }}` objects — a **second, parallel styling system** that cannot be themed or overridden                                  |
+| `--z-*` scale        | Defined (7 tokens) and **ignored** in favour of ad-hoc `z-10/40/50/60`                                                                                              |
 
 ### 4.6 Feedback & state
 
@@ -271,7 +271,7 @@ Every view's `<h1>` is `sr-only` (all nine confirmed), and the header renders no
 
 ## 5. What is genuinely good — preserve this
 
-1. **Token architecture.** 60+ semantic CSS variables, full light/dark parity, `oklch` throughout, `color-mix`-derived tints. Exactly 7 hard-coded colours in 23.6k lines. Keep the *architecture*; replace the values.
+1. **Token architecture.** 60+ semantic CSS variables, full light/dark parity, `oklch` throughout, `color-mix`-derived tints. Exactly 7 hard-coded colours in 23.6k lines. Keep the _architecture_; replace the values.
 2. **Device-status token family** — one source of truth for bg/fg/border per connection state via a single helper (`deviceStatus.ts:75-78`). Fix `recovery`/`adb` being visually identical; keep the pattern.
 3. **Bottom-panel resize** (`useBottomPanelResize.ts:21-66`) — DOM writes during drag, single commit on mouseup, RAF-throttled, cursor overlay, real keyboard resize, correct `role="separator"` ARIA. Genuinely well built.
 4. **File Explorer's error taxonomy** (`FileExplorerTablePane.tsx:131-152`) — three distinct actionable states, each with icon, headline, and next step. This is the model every other view should follow.
@@ -300,26 +300,26 @@ Every view's `<h1>` is `sr-only` (all nine confirmed), and the header renders no
 
 Ordered by impact ÷ effort, combined across both stacks.
 
-| # | Change | Expected effect | Effort |
-| --- | --- | --- | --- |
-| 1 | `[profile.release] opt-level = 3` | 20–40% on all CPU-bound extraction | 1 line |
-| 2 | Delete the SIMD copy module; use `copy_from_slice` | 10–30× on ARM writes; removes ~90 lines of `unsafe` | ~1 h |
-| 3 | Delete `payload.manifest.clone()` | 0.2–2 GB alloc removed per extraction | ~30 min |
-| 4 | Global query defaults (`staleTime: 30s`, `refetchOnWindowFocus: false`) + AVD `staleTime` | Stops subprocess spawns on every alt-tab | ~15 min |
-| 5 | `React.lazy` all 9 views + `Suspense` | 566 kB → est. 150–250 kB initial | ~1 h |
-| 6 | Un-subscribe `MainLayout` from `unreadCount`; hoist `renderContent`; memo `ViewContent` | Eliminates a full-app re-render per log line | ~1 h |
-| 7 | Throttle Rust progress emission to ~4/s (shared `AtomicU64`) | 2,000–16,000 IPC events → ~40 | ~1 h |
-| 8 | Virtualise `LogsPanel`; memo `LogRow`; hoist regex; pass `logCount` | 1,000 rows → ~30; removes 1,000 regex compiles/line | ~3 h |
-| 9 | Move payload progress to a non-persisted slice + rAF throttle | Removes a blocking `localStorage` write per progress event | ~4 h |
-| 10 | `AdbClient` + `shell_batch()` with a `OnceLock` binary path | `get_device_info` 12→2 spawns; debloat restore 400+→4; kills 3 duplicate parsers | 1–2 d |
-| 11 | Parallel range downloads (`buffered(8)`, 8 MiB) + `spawn_blocking` the remote extract | 4–8× on remote prefetch; frees a pinned Tokio worker | ~1 d |
-| 12 | Hash the writer's own mmap instead of a second read pass | Removes a full extra read over every output image | ~4 h |
-| 13 | `checked_add` + `mmap.get(..)` on all untrusted offsets | Closes a remote-triggerable process abort and a silent-corruption path | ~2 h |
-| 14 | Unify the two ZIP CD parsers on the ZIP64-aware one; stream-inflate | Fixes >4 GB OTA ZIPs and the OOM | ~1 d |
-| 15 | Typed `AppError` enum replacing `Result<T, String>` | Removes English-substring control flow; enables real FE error UX | 2–3 d |
+| #   | Change                                                                                    | Expected effect                                                                  | Effort  |
+| --- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------- |
+| 1   | `[profile.release] opt-level = 3`                                                         | 20–40% on all CPU-bound extraction                                               | 1 line  |
+| 2   | Delete the SIMD copy module; use `copy_from_slice`                                        | 10–30× on ARM writes; removes ~90 lines of `unsafe`                              | ~1 h    |
+| 3   | Delete `payload.manifest.clone()`                                                         | 0.2–2 GB alloc removed per extraction                                            | ~30 min |
+| 4   | Global query defaults (`staleTime: 30s`, `refetchOnWindowFocus: false`) + AVD `staleTime` | Stops subprocess spawns on every alt-tab                                         | ~15 min |
+| 5   | `React.lazy` all 9 views + `Suspense`                                                     | 566 kB → est. 150–250 kB initial                                                 | ~1 h    |
+| 6   | Un-subscribe `MainLayout` from `unreadCount`; hoist `renderContent`; memo `ViewContent`   | Eliminates a full-app re-render per log line                                     | ~1 h    |
+| 7   | Throttle Rust progress emission to ~4/s (shared `AtomicU64`)                              | 2,000–16,000 IPC events → ~40                                                    | ~1 h    |
+| 8   | Virtualise `LogsPanel`; memo `LogRow`; hoist regex; pass `logCount`                       | 1,000 rows → ~30; removes 1,000 regex compiles/line                              | ~3 h    |
+| 9   | Move payload progress to a non-persisted slice + rAF throttle                             | Removes a blocking `localStorage` write per progress event                       | ~4 h    |
+| 10  | `AdbClient` + `shell_batch()` with a `OnceLock` binary path                               | `get_device_info` 12→2 spawns; debloat restore 400+→4; kills 3 duplicate parsers | 1–2 d   |
+| 11  | Parallel range downloads (`buffered(8)`, 8 MiB) + `spawn_blocking` the remote extract     | 4–8× on remote prefetch; frees a pinned Tokio worker                             | ~1 d    |
+| 12  | Hash the writer's own mmap instead of a second read pass                                  | Removes a full extra read over every output image                                | ~4 h    |
+| 13  | `checked_add` + `mmap.get(..)` on all untrusted offsets                                   | Closes a remote-triggerable process abort and a silent-corruption path           | ~2 h    |
+| 14  | Unify the two ZIP CD parsers on the ZIP64-aware one; stream-inflate                       | Fixes >4 GB OTA ZIPs and the OOM                                                 | ~1 d    |
+| 15  | Typed `AppError` enum replacing `Result<T, String>`                                       | Removes English-substring control flow; enables real FE error UX                 | 2–3 d   |
 
 Items 1–9 are roughly two days of work and account for the bulk of the runtime improvement.
 
 ---
 
-*Findings are reproducible against `9494527`. Every `file:line` was verified by direct read, not inference.*
+_Findings are reproducible against `9494527`. Every `file:line` was verified by direct read, not inference._

@@ -1,0 +1,83 @@
+import path from "path-browserify";
+import { useCallback, useEffect, useRef } from "react";
+
+import type { backend } from "@/desktop/models";
+import type { FileEntry } from "@/features/file-explorer/model/file-explorer-types";
+import { isTextDeviceFile } from "@/features/file-explorer/utils/text-file-extensions";
+
+interface UseFileExplorerPathActionsOptions {
+  currentPath: string;
+  handleOpenInEditor: (file: FileEntry, target?: backend.DeviceEditorTarget) => Promise<void>;
+  loadFiles: (targetPath: string, pushToHistory?: boolean) => Promise<void>;
+  openDeleteDialog: (names: string[]) => void;
+  renamingName: string | null;
+  selectedNames: Set<string>;
+  setEditPathValue: (value: string) => void;
+  setIsEditingPath: (value: boolean) => void;
+  setSearchQuery: (value: string) => void;
+}
+
+export const useFileExplorerPathActions = (options: UseFileExplorerPathActionsOptions) => {
+  // Latest-options ref keeps these handlers identity-stable across renders so
+  // the memoized row list and toolbar are not invalidated by navigation state.
+  const optionsRef = useRef(options);
+  useEffect(() => {
+    optionsRef.current = options;
+  });
+
+  const handleRowDoubleClick = useCallback((file: FileEntry) => {
+    const { currentPath, handleOpenInEditor, loadFiles, renamingName } = optionsRef.current;
+    if (renamingName) {
+      return;
+    }
+    if (file.type === "Directory" || file.type === "Symlink") {
+      void loadFiles(`${path.posix.join(currentPath, file.name)}/`);
+      return;
+    }
+    if (isTextDeviceFile(file.name)) {
+      void handleOpenInEditor(file);
+    }
+  }, []);
+
+  /**
+   * Go **up** one directory. Named `handleBackClick` previously, which read as
+   * history-back and was wired to the toolbar's up-arrow — the behaviour was
+   * right, the name was not.
+   */
+  const handleNavigateUp = useCallback(() => {
+    const { currentPath, loadFiles } = optionsRef.current;
+    if (currentPath === "/") {
+      return;
+    }
+    void loadFiles(`${path.posix.join(currentPath, "..")}/`);
+  }, []);
+
+  const handlePathClick = useCallback(() => {
+    const { currentPath, setEditPathValue, setIsEditingPath } = optionsRef.current;
+    setEditPathValue(currentPath);
+    setIsEditingPath(true);
+  }, []);
+
+  const handleRefreshClick = useCallback(() => {
+    const { currentPath, loadFiles } = optionsRef.current;
+    void loadFiles(currentPath, false);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    optionsRef.current.setSearchQuery("");
+  }, []);
+
+  const handleDeleteFromSelection = useCallback(() => {
+    const { openDeleteDialog, selectedNames } = optionsRef.current;
+    openDeleteDialog([...selectedNames]);
+  }, []);
+
+  return {
+    handleClearSearch,
+    handleDeleteFromSelection,
+    handleNavigateUp,
+    handlePathClick,
+    handleRefreshClick,
+    handleRowDoubleClick,
+  };
+};

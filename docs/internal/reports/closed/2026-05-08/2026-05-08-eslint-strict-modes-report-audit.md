@@ -8,12 +8,14 @@
 ## Current State Analysis
 
 ### Current ESLint Config (`eslint.config.mjs`)
+
 - Uses `@eslint/js` recommended
 - Uses `typescript-eslint` recommended
 - Has `react-hooks` and `react-refresh` plugins
 - Uses `eslint-config-prettier` for formatting
 
 ### Current TypeScript Config (`tsconfig.json`)
+
 - Has `strict: true` ✅
 - Missing additional strict flags
 
@@ -25,14 +27,14 @@
 
 Replace `tseslint.configs.recommended` with stricter versions:
 
-| Config | Description | Recommendation |
-|--------|-------------|----------------|
-| `recommended` | Basic correctness | Current |
-| `recommended-type-checked` | Requires type info | **Add** |
-| `strict` | Opinionated strict rules | **Upgrade to** |
-| `strict-type-checked` | All strict + type aware | **Maximum** |
-| `stylistic` | Code style consistency | **Add** |
-| `stylistic-type-checked` | Style + type aware | **Add** |
+| Config                     | Description              | Recommendation |
+| -------------------------- | ------------------------ | -------------- |
+| `recommended`              | Basic correctness        | Current        |
+| `recommended-type-checked` | Requires type info       | **Add**        |
+| `strict`                   | Opinionated strict rules | **Upgrade to** |
+| `strict-type-checked`      | All strict + type aware  | **Maximum**    |
+| `stylistic`                | Code style consistency   | **Add**        |
+| `stylistic-type-checked`   | Style + type aware       | **Add**        |
 
 **Recommendation:** Use `strict-type-checked` + `stylistic-type-checked` for maximum enforcement.
 
@@ -45,32 +47,32 @@ Add to `tsconfig.json`:
   "compilerOptions": {
     // Already enabled
     "strict": true,
-    
+
     // Additional strict checks (NOT in "strict" umbrella)
-    "noUncheckedIndexedAccess": true,    // Array access returns T | undefined
-    "noImplicitReturns": true,          // All code paths must return
-    "noImplicitOverride": true,          // Require override keyword
-    "exactOptionalPropertyTypes": true,  // Optional props: T vs T | undefined
-    
+    "noUncheckedIndexedAccess": true, // Array access returns T | undefined
+    "noImplicitReturns": true, // All code paths must return
+    "noImplicitOverride": true, // Require override keyword
+    "exactOptionalPropertyTypes": true, // Optional props: T vs T | undefined
+
     // Module strictness
-    "verbatimModuleSyntax": true,         // Cannot use import type interchangeably
-    "isolatedModules": true,              // Each file must be standalone
-    
+    "verbatimModuleSyntax": true, // Cannot use import type interchangeably
+    "isolatedModules": true, // Each file must be standalone
+
     // Enable these existing flags (currently disabled)
-    "noUnusedLocals": true,               // Detect unused variables
-    "noUnusedParameters": true,          // Detect unused params
+    "noUnusedLocals": true, // Detect unused variables
+    "noUnusedParameters": true // Detect unused params
   }
 }
 ```
 
 ### 3. ESLint Rules to Upgrade to Error
 
-| Rule | Current | Recommended | Reason |
-|------|---------|--------------|--------|
-| `@typescript-eslint/no-unused-vars` | warn | error | Production grade |
-| `@typescript-eslint/no-explicit-any` | off | error | Type safety |
-| `@typescript-eslint/consistent-type-imports` | warn | error | Import consistency |
-| `react-hooks/exhaustive-deps` | warn | error | Missing dependencies |
+| Rule                                         | Current | Recommended | Reason               |
+| -------------------------------------------- | ------- | ----------- | -------------------- |
+| `@typescript-eslint/no-unused-vars`          | warn    | error       | Production grade     |
+| `@typescript-eslint/no-explicit-any`         | off     | error       | Type safety          |
+| `@typescript-eslint/consistent-type-imports` | warn    | error       | Import consistency   |
+| `react-hooks/exhaustive-deps`                | warn    | error       | Missing dependencies |
 
 ### 4. Additional Type-Aware Rules (Require parserOptions.project)
 
@@ -83,11 +85,11 @@ These rules require full type information and catch bugs that TypeScript alone d
     '@typescript-eslint/no-floating-promises': 'error',
     '@typescript-eslint/no-misused-promises': 'error',
     '@typescript-eslint/await-thenable': 'error',
-    
+
     // Null safety - enforces nullish coalescing
     '@typescript-eslint/prefer-nullish-coalescing': 'error',
     '@typescript-eslint/no-unnecessary-condition': 'error',
-    
+
     // Type safety
     '@typescript-eslint/no-unsafe-assignment': 'error',
     '@typescript-eslint/no-unsafe-call': 'error',
@@ -107,14 +109,14 @@ These rules require full type information and catch bugs that TypeScript alone d
     'react/jsx-boolean-value': ['error', 'never'],
     'react/jsx-no-leaked-render': 'error',
     'react/jsx-no-useless-fragment': 'error',
-    
+
     // Hooks
     'react-hooks/exhaustive-deps': 'error',
-    
+
     // Performance
     'react/no-array-index-key': 'error',
     'react/no-danger': 'warn',
-    
+
     // Accessibility (already good but can be stricter)
     'jsx-a11y/alt-text': 'error',
     'jsx-a11y/anchor-has-content': 'error',
@@ -184,12 +186,14 @@ These rules require full type information and catch bugs that TypeScript alone d
 ### Phase 1: Quick Wins (Low Risk)
 
 1. Upgrade warn → error for existing rules:
+
 ```javascript
 '@typescript-eslint/no-unused-vars': 'error',
 '@typescript-eslint/consistent-type-imports': 'error',
 ```
 
 2. Enable unused locals/params in tsconfig:
+
 ```json
 "noUnusedLocals": true,
 "noUnusedParameters": true,
@@ -209,11 +213,11 @@ These rules require full type information and catch bugs that TypeScript alone d
 
 ## Estimated Impact
 
-| Phase | Files Affected | Changes Needed |
-|-------|---------------|----------------|
-| Phase 1 | Few | Minor rule adjustments |
-| Phase 2 | Some | tsconfig + ESLint config |
-| Phase 3 | Many | Significant code changes |
+| Phase   | Files Affected | Changes Needed           |
+| ------- | -------------- | ------------------------ |
+| Phase 1 | Few            | Minor rule adjustments   |
+| Phase 2 | Some           | tsconfig + ESLint config |
+| Phase 3 | Many           | Significant code changes |
 
 **Warning:** Phase 3 will likely produce hundreds of lint errors. Plan for a gradual migration.
 
@@ -228,6 +232,7 @@ bun add -D eslint-config-airbnb-extended
 ```
 
 This provides:
+
 - 50+ strict import rules
 - 30+ strict React rules
 - 40+ strict TypeScript rules

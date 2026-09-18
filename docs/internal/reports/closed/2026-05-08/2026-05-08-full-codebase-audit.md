@@ -10,18 +10,18 @@
 
 This audit analyzed **90%+ of the project files** across 10 dimensions. The codebase demonstrates **strong production-ready foundations** with excellent patterns in Rust backend, state management, and component structure. However, **45+ issues** were identified across all areas that should be addressed before declaring full production readiness.
 
-| Dimension | Score | Status |
-|-----------|-------|--------|
-| UI/UX Consistency | 85% | Good - minor spacing/icon inconsistencies |
-| Component Architecture | 88% | Good - inline function issues |
-| State Management | 92% | Excellent - proper patterns |
-| Code Quality | 90% | Good - parameter naming issues |
-| Accessibility | 75% | Needs Work - 3 critical issues |
-| Rust Backend | 95% | Excellent - production grade |
-| Async/Await Patterns | 88% | Good - minor Promise handling |
-| Folder Structure | 95% | Excellent - well organized |
-| Testing Coverage | 40% | **CRITICAL** - Only 20% coverage |
-| Error Handling/Security | 82% | Good - some gaps in validation |
+| Dimension               | Score | Status                                    |
+| ----------------------- | ----- | ----------------------------------------- |
+| UI/UX Consistency       | 85%   | Good - minor spacing/icon inconsistencies |
+| Component Architecture  | 88%   | Good - inline function issues             |
+| State Management        | 92%   | Excellent - proper patterns               |
+| Code Quality            | 90%   | Good - parameter naming issues            |
+| Accessibility           | 75%   | Needs Work - 3 critical issues            |
+| Rust Backend            | 95%   | Excellent - production grade              |
+| Async/Await Patterns    | 88%   | Good - minor Promise handling             |
+| Folder Structure        | 95%   | Excellent - well organized                |
+| Testing Coverage        | 40%   | **CRITICAL** - Only 20% coverage          |
+| Error Handling/Security | 82%   | Good - some gaps in validation            |
 
 ---
 
@@ -53,43 +53,44 @@ This audit analyzed **90%+ of the project files** across 10 dimensions. The code
 
 **Pattern:** Per systemPatterns.md, use `size-*` not `h-* w-*`
 
-| File | Lines | Issue |
-|------|-------|-------|
-| `src/components/views/ViewFlasher.tsx` | 436, 479, 493, 508, 510, 512, 527, 551, 565, 584, 586, 588, 602, 618, 620 | Uses `h-5 w-5`, `h-4 w-4` |
+| File                                        | Lines                                                                           | Issue                     |
+| ------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------- |
+| `src/components/views/ViewFlasher.tsx`      | 436, 479, 493, 508, 510, 512, 527, 551, 565, 584, 586, 588, 602, 618, 620       | Uses `h-5 w-5`, `h-4 w-4` |
 | `src/components/views/ViewFileExplorer.tsx` | 947, 960, 973, 1022, 1024, 1049, 1065, 1078, 1109, 1114, 1118, 1134, 1136, 1158 | Uses `h-4 w-4`, `h-3 w-3` |
-| `src/components/views/ViewDashboard.tsx` | 191, 207, 209, 268, 270, 282, 284, 297, 306, 308, 321 | Uses `h-5 w-5`, `h-4 w-4` |
-| `src/components/views/ViewUtilities.tsx` | 244, 333, 430, 432, 470, 488 | Uses `h-5 w-5`, `h-4 w-4` |
+| `src/components/views/ViewDashboard.tsx`    | 191, 207, 209, 268, 270, 282, 284, 297, 306, 308, 321                           | Uses `h-5 w-5`, `h-4 w-4` |
+| `src/components/views/ViewUtilities.tsx`    | 244, 333, 430, 432, 470, 488                                                    | Uses `h-5 w-5`, `h-4 w-4` |
 
 **Recommended Fix:**
+
 ```typescript
 // Change from:
-className="h-5 w-5"
+className = "h-5 w-5";
 
 // To:
-className="size-5"
+className = "size-5";
 ```
 
 #### 1.2 Legacy Spacing Pattern: space-y-* (LOW Priority)
 
 **Pattern:** Per coding standards, use `gap-*` not `space-y-*`
 
-| File | Lines |
-|------|-------|
-| `src/components/views/ViewFileExplorer.tsx` | 1549 |
-| `src/components/emulator-manager/RootProgressStep.tsx` | 86 |
-| `src/components/marketplace/AppListItem.tsx` | 64 |
-| `src/components/marketplace/AppCard.tsx` | 67, 83 |
-| `src/components/marketplace/AppDetailView.tsx` | 202, 222, 223, 233, 243, 244, 292, 296 |
-| `src/components/payload-dumper/FileBannerDetails.tsx` | 152, 158, 160, 215, 217, 238, 240, 261, 263, 289, 291, 305, 307, 329, 331 |
+| File                                                   | Lines                                                                     |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `src/components/views/ViewFileExplorer.tsx`            | 1549                                                                      |
+| `src/components/emulator-manager/RootProgressStep.tsx` | 86                                                                        |
+| `src/components/marketplace/AppListItem.tsx`           | 64                                                                        |
+| `src/components/marketplace/AppCard.tsx`               | 67, 83                                                                    |
+| `src/components/marketplace/AppDetailView.tsx`         | 202, 222, 223, 233, 243, 244, 292, 296                                    |
+| `src/components/payload-dumper/FileBannerDetails.tsx`  | 152, 158, 160, 215, 217, 238, 240, 261, 263, 289, 291, 305, 307, 329, 331 |
 
 **Recommended Fix:** Find/replace `space-y-` with `gap-`
 
 #### 1.3 Minor Button Icon Sizing (LOW Priority)
 
-| File | Line | Current | Should Be |
-|------|------|--------|-----------|
-| `src/components/ActionButton.tsx` | 69 | `h-5 w-5` | `size-5` |
-| `src/components/CopyButton.tsx` | 48 | `h-3.5 w-3.5` | `size-3.5` |
+| File                              | Line | Current       | Should Be  |
+| --------------------------------- | ---- | ------------- | ---------- |
+| `src/components/ActionButton.tsx` | 69   | `h-5 w-5`     | `size-5`   |
+| `src/components/CopyButton.tsx`   | 48   | `h-3.5 w-3.5` | `size-3.5` |
 
 ### Positive Findings (UI/UX)
 
@@ -114,11 +115,13 @@ className="size-5"
 **Problem:** 76+ instances of inline arrow functions in JSX props create new function references on every render.
 
 **Examples:**
+
 - `src/components/views/ViewFileExplorer.tsx` lines 886, 927, 997, 1018, 1045, 1062, 1075, 1155
 - `src/components/views/ViewUtilities.tsx` lines 259, 270, 281, 292, 348, 359, 370, 388, 399
 - `src/components/views/ViewEmulatorManager.tsx` lines 210, 289, 298, 308, 317
 
 **Recommended Fix:**
+
 ```typescript
 // WRONG:
 <Button onClick={() => handleAction()} />
@@ -134,6 +137,7 @@ const handleAction = useCallback(() => {
 #### 2.2 Missing useCallback Dependencies (MEDIUM Priority)
 
 **Examples:**
+
 - `src/components/views/ViewDashboard.tsx` line 98: Missing `refreshInfo` in deps
 - `src/components/views/ViewEmulatorManager.tsx` line 377: Missing `appendActivity` in deps
 
@@ -142,6 +146,7 @@ const handleAction = useCallback(() => {
 #### 2.3 Duplicate Code Patterns (LOW Priority)
 
 **Areas with potential duplication:**
+
 - Action button rendering patterns across views
 - Empty state rendering variations
 - Loading spinner implementations
@@ -172,21 +177,22 @@ const handleAction = useCallback(() => {
 
 ```typescript
 // CURRENT (INSECURE):
-localStorage.setItem('github_token', token);
+localStorage.setItem("github_token", token);
 
 // SHOULD BE:
-import { store } from '@tauri-apps/plugin-store';
-await store.set('github_token', token); // Encrypted storage
+import { store } from "@tauri-apps/plugin-store";
+await store.set("github_token", token); // Encrypted storage
 ```
 
 #### 3.2 Polling Intervals as Magic Numbers (LOW Priority)
 
-| Location | Current | Should Be |
-|----------|---------|-----------|
-| `src/components/MainLayout.tsx` line 91 | `refetchInterval: 3000` | `DEVICE_POLL_INTERVAL` |
+| Location                                         | Current                 | Should Be                |
+| ------------------------------------------------ | ----------------------- | ------------------------ |
+| `src/components/MainLayout.tsx` line 91          | `refetchInterval: 3000` | `DEVICE_POLL_INTERVAL`   |
 | `src/components/ViewEmulatorManager.tsx` line 54 | `refetchInterval: 5000` | `EMULATOR_POLL_INTERVAL` |
 
 **Recommended Fix:** Extract to named constants
+
 ```typescript
 const DEVICE_POLL_INTERVAL = 3000;
 const EMULATOR_POLL_INTERVAL = 5000;
@@ -212,26 +218,26 @@ const ACTION_FEEDBACK_DURATION = 2000;
 
 **Location:** `src/lib/desktop/backend.ts` - 54 instances of `arg1`, `arg2`, `arg3`
 
-| Line | Function | Current | Should Be |
-|------|-----------|---------|-----------|
-| 43 | `ConnectWirelessAdb` | `arg1, arg2` | `ip, port` |
-| 55 | `ExtractPayload` | `arg1, arg2, arg3` | `payloadPath, outputDir, selectedPartitions` |
-| 69 | `FlashPartition` | `arg1, arg2` | `partition, imagePath` |
-| 103 | `InstallPackage` | `arg1` | `path` |
-| 174 | `Reboot` | `arg1` | `mode` |
-| 182 | `RunAdbHostCommand` | `arg1` | `command` |
-| 190 | `RunShellCommand` | `arg1` | `command` |
-| 342 | `UninstallPackage` | `arg1` | `packageName` |
+| Line | Function             | Current            | Should Be                                    |
+| ---- | -------------------- | ------------------ | -------------------------------------------- |
+| 43   | `ConnectWirelessAdb` | `arg1, arg2`       | `ip, port`                                   |
+| 55   | `ExtractPayload`     | `arg1, arg2, arg3` | `payloadPath, outputDir, selectedPartitions` |
+| 69   | `FlashPartition`     | `arg1, arg2`       | `partition, imagePath`                       |
+| 103  | `InstallPackage`     | `arg1`             | `path`                                       |
+| 174  | `Reboot`             | `arg1`             | `mode`                                       |
+| 182  | `RunAdbHostCommand`  | `arg1`             | `command`                                    |
+| 190  | `RunShellCommand`    | `arg1`             | `command`                                    |
+| 342  | `UninstallPackage`   | `arg1`             | `packageName`                                |
 
 **Recommended Fix:** Rename all parameters to semantic names
 
 #### 4.2 Hardcoded Magic Numbers (LOW Priority)
 
-| Location | Value | Should Be |
-|----------|-------|-----------|
-| Various | `2000` | `ACTION_FEEDBACK_DURATION` |
-| Various | `3000` | `DEVICE_POLL_INTERVAL` |
-| Various | `5000` | `EMULATOR_POLL_INTERVAL` |
+| Location | Value  | Should Be                  |
+| -------- | ------ | -------------------------- |
+| Various  | `2000` | `ACTION_FEEDBACK_DURATION` |
+| Various  | `3000` | `DEVICE_POLL_INTERVAL`     |
+| Various  | `5000` | `EMULATOR_POLL_INTERVAL`   |
 
 ### Positive Findings (Quality)
 
@@ -253,17 +259,18 @@ const ACTION_FEEDBACK_DURATION = 2000;
 
 #### 5.1 Missing aria-label on Icon Buttons (CRITICAL - Priority 1)
 
-| File | Line | Issue |
-|------|------|-------|
-| `src/components/ConnectedDevicesCard.tsx` | 40-51 | Refresh button has no `aria-label` |
-| `src/components/marketplace/SearchBar.tsx` | 72-74 | Recent searches button missing `aria-label` |
-| `src/components/DirectoryTree.tsx` | Various | Tree navigation icons missing aria-labels |
-| `src/components/views/ViewFileExplorer.tsx` | 881-889 | Tree collapse button missing `aria-label` |
-| `src/components/EmptyState.tsx` | 24 | Icon passed to EmptyState has no accessible name |
+| File                                        | Line    | Issue                                            |
+| ------------------------------------------- | ------- | ------------------------------------------------ |
+| `src/components/ConnectedDevicesCard.tsx`   | 40-51   | Refresh button has no `aria-label`               |
+| `src/components/marketplace/SearchBar.tsx`  | 72-74   | Recent searches button missing `aria-label`      |
+| `src/components/DirectoryTree.tsx`          | Various | Tree navigation icons missing aria-labels        |
+| `src/components/views/ViewFileExplorer.tsx` | 881-889 | Tree collapse button missing `aria-label`        |
+| `src/components/EmptyState.tsx`             | 24      | Icon passed to EmptyState has no accessible name |
 
 **WCAG Criteria:** 2.4.6 (Headings and Labels), 4.1.2 (Name, Role, Value)
 
 **Recommended Fix:**
+
 ```tsx
 <Button
   variant="ghost"
@@ -275,14 +282,15 @@ const ACTION_FEEDBACK_DURATION = 2000;
 
 #### 5.2 Using div[role="button"] Instead of button (CRITICAL - Priority 1)
 
-| File | Line | Issue |
-|------|------|-------|
-| `src/components/DeviceSwitcher.tsx` | 142-157 | Div with `role="button"` instead of native button |
-| `src/components/emulator-manager/AvdSwitcher.tsx` | 137 | Same issue |
+| File                                              | Line    | Issue                                             |
+| ------------------------------------------------- | ------- | ------------------------------------------------- |
+| `src/components/DeviceSwitcher.tsx`               | 142-157 | Div with `role="button"` instead of native button |
+| `src/components/emulator-manager/AvdSwitcher.tsx` | 137     | Same issue                                        |
 
 **WCAG Criterion:** 4.1.2 (Name, Role, Value)
 
 **Recommended Fix:**
+
 ```tsx
 // Replace:
 <div role="button" onClick={...}>
@@ -293,12 +301,12 @@ const ACTION_FEEDBACK_DURATION = 2000;
 
 #### 5.3 Inconsistent Heading Hierarchy (CRITICAL - Priority 1)
 
-| File | Current | Expected |
-|------|---------|----------|
-| `src/components/views/ViewAppManager.tsx` | `<h1>` (visible) | `<h1 className="sr-only">` |
-| `src/components/views/ViewPayloadDumper.tsx` | `<h1>` (visible) | `<h1 className="sr-only">` |
+| File                                           | Current          | Expected                   |
+| ---------------------------------------------- | ---------------- | -------------------------- |
+| `src/components/views/ViewAppManager.tsx`      | `<h1>` (visible) | `<h1 className="sr-only">` |
+| `src/components/views/ViewPayloadDumper.tsx`   | `<h1>` (visible) | `<h1 className="sr-only">` |
 | `src/components/views/ViewEmulatorManager.tsx` | `<h1>` (visible) | `<h1 className="sr-only">` |
-| `src/components/views/ViewAbout.tsx` | `<h1>` (visible) | `<h1 className="sr-only">` |
+| `src/components/views/ViewAbout.tsx`           | `<h1>` (visible) | `<h1 className="sr-only">` |
 
 **WCAG Criterion:** 1.3.1 (Info and Relationships)
 
@@ -306,34 +314,37 @@ const ACTION_FEEDBACK_DURATION = 2000;
 
 #### 5.4 Form Field Error Messages Missing aria-describedby (HIGH Priority - Priority 2)
 
-| File | Line | Issue |
-|------|------|-------|
+| File                                     | Line    | Issue                                                |
+| ---------------------------------------- | ------- | ---------------------------------------------------- |
 | `src/components/views/ViewDashboard.tsx` | 226-240 | IP input has error message but no `aria-describedby` |
-| `src/components/views/ViewDashboard.tsx` | 242-258 | Port input same issue |
+| `src/components/views/ViewDashboard.tsx` | 242-258 | Port input same issue                                |
 
 **WCAG Criteria:** 3.3.1 (Error Identification), 3.3.3 (Error Suggestion)
 
 **Recommended Fix:**
+
 ```tsx
 <Input
   id="dashboard-wireless-ip"
   aria-invalid={Boolean(errors.ip)}
   aria-describedby={errors.ip ? "ip-error" : undefined}
-/>
-{errors.ip && (
-  <FieldDescription id="ip-error" className="text-destructive">
-    {errors.ip.message}
-  </FieldDescription>
-)}
+/>;
+{
+  errors.ip && (
+    <FieldDescription id="ip-error" className="text-destructive">
+      {errors.ip.message}
+    </FieldDescription>
+  );
+}
 ```
 
 #### 5.5 Missing aria-live Regions for Dynamic Updates (HIGH Priority - Priority 2)
 
-| File | Line | Issue |
-|------|------|-------|
-| `src/components/BottomPanel.tsx` | 569 | Tab panel needs `aria-live` for log updates |
-| `src/components/DeviceSwitcher.tsx` | 133 | Device list updates not announced |
-| `src/components/ShellPanel.tsx` | 199 | Shell output needs live region |
+| File                                | Line | Issue                                       |
+| ----------------------------------- | ---- | ------------------------------------------- |
+| `src/components/BottomPanel.tsx`    | 569  | Tab panel needs `aria-live` for log updates |
+| `src/components/DeviceSwitcher.tsx` | 133  | Device list updates not announced           |
+| `src/components/ShellPanel.tsx`     | 199  | Shell output needs live region              |
 
 **WCAG Criterion:** 4.1.3 (Status Messages)
 
@@ -364,6 +375,7 @@ const ACTION_FEEDBACK_DURATION = 2000;
 **Issue:** 12 sequential ADB calls with only `debug!()` level logging
 
 **Recommended Fix:**
+
 ```rust
 info!("Collecting device properties for {}", serial);
 // Currently only debug!() logged
@@ -374,11 +386,13 @@ info!("Collecting device properties for {}", serial);
 **Location:** `src-tauri/src/commands/marketplace.rs` line 218
 
 **Issue:**
+
 ```rust
 info!("Downloading marketplace APK from {}", parsed.host_str().unwrap_or("unknown-host"));
 ```
 
 **Recommended Fix:**
+
 ```rust
 info!("Downloading marketplace APK from {}", parsed.host_str().unwrap_or_else(|| "unknown-host"));
 ```
@@ -401,25 +415,25 @@ info!("Downloading marketplace APK from {}", parsed.host_str().unwrap_or_else(||
 
 ## 7. Recommended Fix Priority Matrix
 
-| Priority | Issue | Files Affected | Est. Effort |
-|----------|-------|-----------------|-------------|
-| **P1-CRITICAL** | Add aria-labels to icon buttons | 5 files | 30 min |
-| **P1-CRITICAL** | Replace div[role="button"] with button | 2 files | 20 min |
-| **P1-CRITICAL** | Standardize h1 to sr-only pattern | 4 views | 15 min |
-| **P1-CRITICAL** | Create debloatStore.test.ts | New file | 2 hours |
-| **P1-CRITICAL** | Create shellStore.test.ts | New file | 1 hour |
-| **P1-CRITICAL** | Create logStore.test.ts | New file | 1 hour |
-| **P2-HIGH** | Add aria-describedby to form fields | 2 files | 30 min |
-| **P2-HIGH** | Add aria-live regions for dynamic content | 3 files | 20 min |
-| **P2-HIGH** | Move GitHub tokens to secure storage | 1 file | 1 hour |
-| **P2-HIGH** | Test ViewFileExplorer | New file | 3 hours |
-| **P2-HIGH** | Replace console.error in nicknameStore | 1 file | 15 min |
-| **P3-MEDIUM** | Rename arg1/arg2/arg3 in backend.ts | 1 file | 1 hour |
-| **P3-MEDIUM** | Replace h-*w-* with size-* for icons | 50+ locations | 2 hours |
-| **P3-MEDIUM** | Replace space-y-* with gap-* | 15 locations | 30 min |
-| **P3-MEDIUM** | Add device/package validation schemas | 1 file | 2 hours |
-| **P3-MEDIUM** | Move debloaterUtils to lib/ | 1 file | 15 min |
-| **P4-LOW** | Extract magic numbers to constants | Multiple | 1 hour |
+| Priority        | Issue                                     | Files Affected | Est. Effort |
+| --------------- | ----------------------------------------- | -------------- | ----------- |
+| **P1-CRITICAL** | Add aria-labels to icon buttons           | 5 files        | 30 min      |
+| **P1-CRITICAL** | Replace div[role="button"] with button    | 2 files        | 20 min      |
+| **P1-CRITICAL** | Standardize h1 to sr-only pattern         | 4 views        | 15 min      |
+| **P1-CRITICAL** | Create debloatStore.test.ts               | New file       | 2 hours     |
+| **P1-CRITICAL** | Create shellStore.test.ts                 | New file       | 1 hour      |
+| **P1-CRITICAL** | Create logStore.test.ts                   | New file       | 1 hour      |
+| **P2-HIGH**     | Add aria-describedby to form fields       | 2 files        | 30 min      |
+| **P2-HIGH**     | Add aria-live regions for dynamic content | 3 files        | 20 min      |
+| **P2-HIGH**     | Move GitHub tokens to secure storage      | 1 file         | 1 hour      |
+| **P2-HIGH**     | Test ViewFileExplorer                     | New file       | 3 hours     |
+| **P2-HIGH**     | Replace console.error in nicknameStore    | 1 file         | 15 min      |
+| **P3-MEDIUM**   | Rename arg1/arg2/arg3 in backend.ts       | 1 file         | 1 hour      |
+| **P3-MEDIUM**   | Replace h-_w-_ with size-* for icons      | 50+ locations  | 2 hours     |
+| **P3-MEDIUM**   | Replace space-y-* with gap-*              | 15 locations   | 30 min      |
+| **P3-MEDIUM**   | Add device/package validation schemas     | 1 file         | 2 hours     |
+| **P3-MEDIUM**   | Move debloaterUtils to lib/               | 1 file         | 15 min      |
+| **P4-LOW**      | Extract magic numbers to constants        | Multiple       | 1 hour      |
 
 ---
 
@@ -471,15 +485,16 @@ src/components/emulator-manager/*.tsx              # Replace space-y-* with gap-
 
 #### 9.1 Promise Chains Without Await (MEDIUM Priority)
 
-| File | Line | Issue | Severity |
-|------|------|-------|----------|
-| `src/lib/desktop/runtime.ts` | 60-81 | Event listener uses `.then()` without await - fires and forgets | Medium |
-| `src/lib/desktop/runtime.ts` | 160-184 | File drop registration uses `.then()` without await | Medium |
-| `src/components/DirectoryTree.tsx` | 81, 281, 326, 367 | Multiple `.then()` chains for tree expansion - works but could use await | Low |
+| File                               | Line              | Issue                                                                    | Severity |
+| ---------------------------------- | ----------------- | ------------------------------------------------------------------------ | -------- |
+| `src/lib/desktop/runtime.ts`       | 60-81             | Event listener uses `.then()` without await - fires and forgets          | Medium   |
+| `src/lib/desktop/runtime.ts`       | 160-184           | File drop registration uses `.then()` without await                      | Medium   |
+| `src/components/DirectoryTree.tsx` | 81, 281, 326, 367 | Multiple `.then()` chains for tree expansion - works but could use await | Low      |
 
 **Issue:** Some Promise chains don't properly handle rejections, and some fire-and-forget patterns may miss errors.
 
 **Recommended Fix:**
+
 ```typescript
 // Change from:
 registerEventListener(...).then(handleResult);
@@ -506,11 +521,11 @@ await registerEventListener(...).catch(handleError);
 
 #### 10.1 Test Files Using Relative Imports (LOW Priority)
 
-| File | Current Import | Should Be |
-|------|----------------|-----------|
+| File                                     | Current Import      | Should Be          |
+| ---------------------------------------- | ------------------- | ------------------ |
 | `src/test/ConnectedDevicesCard.test.tsx` | `../components/...` | `@/components/...` |
-| `src/test/payloadDumperStore.test.ts` | `../lib/...` | `@/lib/...` |
-| `src/test/errorHandler.test.ts` | `../lib/...` | `@/lib/...` |
+| `src/test/payloadDumperStore.test.ts`    | `../lib/...`        | `@/lib/...`        |
+| `src/test/errorHandler.test.ts`          | `../lib/...`        | `@/lib/...`        |
 
 #### 10.2 Utility Misplaced in Views (LOW Priority)
 
@@ -536,24 +551,24 @@ await registerEventListener(...).catch(handleError);
 
 ### Coverage Summary
 
-| Metric | Percentage |
-|--------|------------|
-| Statements | 20.72% |
-| Branches | 20.15% |
-| Functions | 23.51% |
-| Lines | 20.56% |
+| Metric     | Percentage |
+| ---------- | ---------- |
+| Statements | 20.72%     |
+| Branches   | 20.15%     |
+| Functions  | 23.51%     |
+| Lines      | 20.56%     |
 
 **Verdict:** Coverage is critically low at ~20%.
 
 ### Critical Gaps
 
-| Area | Coverage | Missing Tests |
-|------|----------|---------------|
-| **Stores** | 7-66% | nicknameStore, shellStore, debloatStore actions, logStore actions |
-| **Desktop Layer** | 3-18% | runtime.ts event handling, backend.ts wrapper functions |
-| **Views** | 0-30% | ViewFileExplorer, ViewPayloadDumper, ViewUtilities, ViewAbout |
-| **Hooks** | 0% | useMarketplaceAuth, useMarketplaceSearch, usePayloadActions |
-| **Components** | 0-70% | EmulatorRootTab, EmulatorRestoreTab, SearchBar, FilterBar |
+| Area              | Coverage | Missing Tests                                                     |
+| ----------------- | -------- | ----------------------------------------------------------------- |
+| **Stores**        | 7-66%    | nicknameStore, shellStore, debloatStore actions, logStore actions |
+| **Desktop Layer** | 3-18%    | runtime.ts event handling, backend.ts wrapper functions           |
+| **Views**         | 0-30%    | ViewFileExplorer, ViewPayloadDumper, ViewUtilities, ViewAbout     |
+| **Hooks**         | 0%       | useMarketplaceAuth, useMarketplaceSearch, usePayloadActions       |
+| **Components**    | 0-70%    | EmulatorRootTab, EmulatorRestoreTab, SearchBar, FilterBar         |
 
 ### Positive Findings
 
@@ -564,14 +579,14 @@ await registerEventListener(...).catch(handleError);
 
 ### Recommendations
 
-| Priority | Action | Files |
-|----------|--------|-------|
+| Priority        | Action                      | Files    |
+| --------------- | --------------------------- | -------- |
 | **P1-CRITICAL** | Create debloatStore.test.ts | New file |
-| **P1-CRITICAL** | Create shellStore.test.ts | New file |
-| **P1-CRITICAL** | Create logStore.test.ts | New file |
-| **P2-HIGH** | Test ViewFileExplorer | New file |
-| **P2-HIGH** | Test runtime.ts events | New file |
-| **P3-MEDIUM** | Add test fixtures file | New file |
+| **P1-CRITICAL** | Create shellStore.test.ts   | New file |
+| **P1-CRITICAL** | Create logStore.test.ts     | New file |
+| **P2-HIGH**     | Test ViewFileExplorer       | New file |
+| **P2-HIGH**     | Test runtime.ts events      | New file |
+| **P3-MEDIUM**   | Add test fixtures file      | New file |
 
 ---
 
@@ -584,29 +599,29 @@ await registerEventListener(...).catch(handleError);
 
 #### 12.1 Raw console.error (MEDIUM Priority)
 
-| File | Line | Issue |
-|------|------|-------|
-| `src/lib/nicknameStore.ts` | 8 | Uses `console.error` instead of logStore for localStorage parse errors |
+| File                       | Line | Issue                                                                  |
+| -------------------------- | ---- | ---------------------------------------------------------------------- |
+| `src/lib/nicknameStore.ts` | 8    | Uses `console.error` instead of logStore for localStorage parse errors |
 
 #### 12.2 Sensitive Data in Logs (LOW Priority)
 
 **Finding:** Device serial numbers and IP addresses are logged to the user-visible log panel.
 
-| Data Type | Logged | Location |
-|-----------|--------|----------|
-| Device Serial | Yes | Multiple views |
-| IP Addresses | Yes | ViewDashboard.tsx:117 |
-| Shell Commands | Yes | ViewUtilities.tsx:179 |
-| File Paths | Yes | ViewFlasher.tsx |
+| Data Type      | Logged | Location              |
+| -------------- | ------ | --------------------- |
+| Device Serial  | Yes    | Multiple views        |
+| IP Addresses   | Yes    | ViewDashboard.tsx:117 |
+| Shell Commands | Yes    | ViewUtilities.tsx:179 |
+| File Paths     | Yes    | ViewFlasher.tsx       |
 
 #### 12.3 Input Validation Gaps (MEDIUM Priority)
 
-| Validation | Status | Notes |
-|-----------|--------|-------|
-| Zod for forms | Good | wirelessAdb, partition, shell command schemas |
-| Device serial format | Missing | No validation |
-| Package names | Missing | Android package format not validated |
-| File paths | Missing | No path traversal check |
+| Validation           | Status  | Notes                                         |
+| -------------------- | ------- | --------------------------------------------- |
+| Zod for forms        | Good    | wirelessAdb, partition, shell command schemas |
+| Device serial format | Missing | No validation                                 |
+| Package names        | Missing | Android package format not validated          |
+| File paths           | Missing | No path traversal check                       |
 
 ### Positive Findings
 
@@ -633,4 +648,4 @@ This comprehensive audit identified **45+ distinct issues** across 10 dimensions
 
 ---
 
-*Report generated by 10 AI subagents analyzing 90%+ of project files against official documentation and best practices.*
+_Report generated by 10 AI subagents analyzing 90%+ of project files against official documentation and best practices._

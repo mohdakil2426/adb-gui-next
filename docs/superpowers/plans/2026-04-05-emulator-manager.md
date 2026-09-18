@@ -56,6 +56,7 @@
 ## Task 1: Backend Scaffold and AVD Discovery
 
 **Files:**
+
 - Create: `src-tauri/src/emulator/mod.rs`
 - Create: `src-tauri/src/emulator/models.rs`
 - Create: `src-tauri/src/emulator/sdk.rs`
@@ -286,6 +287,7 @@ git commit -m "feat: scaffold emulator discovery domain"
 ## Task 2: Runtime Commands, Backups, and Restore Planning
 
 **Files:**
+
 - Create: `src-tauri/src/emulator/runtime.rs`
 - Create: `src-tauri/src/emulator/backup.rs`
 - Create: `src-tauri/src/commands/emulator.rs`
@@ -572,6 +574,7 @@ git commit -m "feat: add emulator runtime and restore command surface"
 ## Task 3: Assisted Root Workflow Backend
 
 **Files:**
+
 - Create: `src-tauri/src/emulator/root.rs`
 - Modify: `src-tauri/src/emulator/models.rs`
 - Modify: `src-tauri/src/commands/emulator.rs`
@@ -767,6 +770,7 @@ git commit -m "feat: add assisted avd root workflow"
 ## Task 4: Frontend Data Layer
 
 **Files:**
+
 - Modify: `src/lib/desktop/models.ts`
 - Modify: `src/lib/desktop/backend.ts`
 - Modify: `src/lib/queries.ts`
@@ -777,28 +781,30 @@ git commit -m "feat: add assisted avd root workflow"
 
 ```ts
 // src/test/emulatorManagerStore.test.ts
-import { beforeEach, describe, expect, it } from 'vitest';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
+import { beforeEach, describe, expect, it } from "vitest";
+import { useEmulatorManagerStore } from "@/lib/emulatorManagerStore";
 
-describe('emulatorManagerStore', () => {
+describe("emulatorManagerStore", () => {
   beforeEach(() => {
     useEmulatorManagerStore.setState({
       selectedAvdName: null,
-      activeTab: 'overview',
+      activeTab: "overview",
       activity: [],
       rootSession: null,
       restorePlan: null,
     });
   });
 
-  it('tracks root preparation state until cleared', () => {
+  it("tracks root preparation state until cleared", () => {
     useEmulatorManagerStore.getState().setRootSession({
-      avdName: 'Pixel_8_API_34',
-      serial: 'emulator-5554',
-      instructions: ['Patch fake boot'],
+      avdName: "Pixel_8_API_34",
+      serial: "emulator-5554",
+      instructions: ["Patch fake boot"],
     });
 
-    expect(useEmulatorManagerStore.getState().rootSession?.serial).toBe('emulator-5554');
+    expect(useEmulatorManagerStore.getState().rootSession?.serial).toBe(
+      "emulator-5554"
+    );
     useEmulatorManagerStore.getState().clearRootSession();
     expect(useEmulatorManagerStore.getState().rootSession).toBeNull();
   });
@@ -825,7 +831,7 @@ export namespace backend {
     deviceName: string | null;
     ramdiskPath: string | null;
     hasBackups: boolean;
-    rootState: 'stock' | 'rooted' | 'modified' | 'unknown';
+    rootState: "stock" | "rooted" | "modified" | "unknown";
     isRunning: boolean;
     serial: string | null;
     warnings: string[];
@@ -876,40 +882,45 @@ export namespace backend {
 ```ts
 // src/lib/desktop/backend.ts
 export function ListAvds(): Promise<Array<backend.AvdSummary>> {
-  return call('list_avds');
+  return call("list_avds");
 }
 
-export function LaunchAvd(avdName: string, options: backend.EmulatorLaunchOptions): Promise<string> {
-  return call('launch_avd', { avdName, options });
+export function LaunchAvd(
+  avdName: string,
+  options: backend.EmulatorLaunchOptions
+): Promise<string> {
+  return call("launch_avd", { avdName, options });
 }
 
 export function StopAvd(serial: string): Promise<string> {
-  return call('stop_avd', { serial });
+  return call("stop_avd", { serial });
 }
 
-export function GetAvdRestorePlan(avdName: string): Promise<backend.RestorePlan> {
-  return call('get_avd_restore_plan', { avdName });
+export function GetAvdRestorePlan(
+  avdName: string
+): Promise<backend.RestorePlan> {
+  return call("get_avd_restore_plan", { avdName });
 }
 
 export function PrepareAvdRoot(
-  request: backend.RootPreparationRequest,
+  request: backend.RootPreparationRequest
 ): Promise<backend.RootPreparationResult> {
-  return call('prepare_avd_root', { request });
+  return call("prepare_avd_root", { request });
 }
 
 export function FinalizeAvdRoot(
-  request: backend.RootFinalizeRequest,
+  request: backend.RootFinalizeRequest
 ): Promise<backend.RootFinalizeResult> {
-  return call('finalize_avd_root', { request });
+  return call("finalize_avd_root", { request });
 }
 
 export function RestoreAvdBackups(avdName: string): Promise<string> {
-  return call('restore_avd_backups', { avdName });
+  return call("restore_avd_backups", { avdName });
 }
 
 export function SelectRootPackageFile(): Promise<string> {
   return selectFile({
-    filters: [{ name: 'Root packages', extensions: ['apk', 'zip'] }],
+    filters: [{ name: "Root packages", extensions: ["apk", "zip"] }],
   });
 }
 ```
@@ -917,11 +928,11 @@ export function SelectRootPackageFile(): Promise<string> {
 ```ts
 // src/lib/queries.ts
 export const queryKeys = {
-  devices: () => ['devices'] as const,
-  fastbootDevices: () => ['fastbootDevices'] as const,
-  allDevices: () => ['allDevices'] as const,
-  packages: () => ['packages'] as const,
-  avds: () => ['avds'] as const,
+  devices: () => ["devices"] as const,
+  fastbootDevices: () => ["fastbootDevices"] as const,
+  allDevices: () => ["allDevices"] as const,
+  packages: () => ["packages"] as const,
+  avds: () => ["avds"] as const,
 } as const;
 
 export const fetchAvds = () => ListAvds();
@@ -931,8 +942,8 @@ export const fetchAvds = () => ListAvds();
 
 ```ts
 // src/lib/emulatorManagerStore.ts
-import { create } from 'zustand';
-import type { backend } from '@/lib/desktop/models';
+import { create } from "zustand";
+import type { backend } from "@/lib/desktop/models";
 
 interface RootSessionState {
   avdName: string;
@@ -942,26 +953,26 @@ interface RootSessionState {
 
 interface ActivityItem {
   id: string;
-  level: 'info' | 'success' | 'warning' | 'error';
+  level: "info" | "success" | "warning" | "error";
   message: string;
 }
 
 interface EmulatorManagerState {
   selectedAvdName: string | null;
-  activeTab: 'overview' | 'launch' | 'root' | 'restore';
+  activeTab: "overview" | "launch" | "root" | "restore";
   activity: ActivityItem[];
   rootSession: RootSessionState | null;
   restorePlan: backend.RestorePlan | null;
   setSelectedAvdName: (name: string | null) => void;
-  setActiveTab: (tab: EmulatorManagerState['activeTab']) => void;
-  appendActivity: (item: Omit<ActivityItem, 'id'>) => void;
+  setActiveTab: (tab: EmulatorManagerState["activeTab"]) => void;
+  appendActivity: (item: Omit<ActivityItem, "id">) => void;
   setRootSession: (session: RootSessionState) => void;
   clearRootSession: () => void;
 }
 
 export const useEmulatorManagerStore = create<EmulatorManagerState>((set) => ({
   selectedAvdName: null,
-  activeTab: 'overview',
+  activeTab: "overview",
   activity: [],
   rootSession: null,
   restorePlan: null,
@@ -994,6 +1005,7 @@ git commit -m "feat: add emulator manager frontend data layer"
 ## Task 5: Navigation, View Shell, and Tabs
 
 **Files:**
+
 - Modify: `src/components/AppSidebar.tsx`
 - Modify: `src/components/MainLayout.tsx`
 - Create: `src/components/views/ViewEmulatorManager.tsx`
@@ -1010,19 +1022,19 @@ git commit -m "feat: add emulator manager frontend data layer"
 
 ```tsx
 // src/test/ViewEmulatorManager.test.tsx
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { ViewEmulatorManager } from '@/components/views/ViewEmulatorManager';
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { ViewEmulatorManager } from "@/components/views/ViewEmulatorManager";
 
-vi.mock('@/lib/queries', () => ({
-  queryKeys: { avds: () => ['avds'] },
+vi.mock("@/lib/queries", () => ({
+  queryKeys: { avds: () => ["avds"] },
   fetchAvds: vi.fn(async () => []),
 }));
 
-describe('ViewEmulatorManager', () => {
-  it('renders the page heading', () => {
+describe("ViewEmulatorManager", () => {
+  it("renders the page heading", () => {
     render(<ViewEmulatorManager />);
-    expect(screen.getByText('Emulator Manager')).toBeInTheDocument();
+    expect(screen.getByText("Emulator Manager")).toBeInTheDocument();
   });
 });
 ```
@@ -1077,29 +1089,32 @@ case VIEWS.EMULATOR:
 
 ```tsx
 // src/components/views/ViewEmulatorManager.tsx
-import { useEffect, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Bot } from 'lucide-react';
+import { useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Bot } from "lucide-react";
 import {
   FinalizeAvdRoot,
   GetAvdRestorePlan,
   LaunchAvd,
   PrepareAvdRoot,
   RestoreAvdBackups,
-} from '@/lib/desktop/backend';
-import type { backend } from '@/lib/desktop/models';
-import { queryKeys, fetchAvds } from '@/lib/queries';
-import { useEmulatorManagerStore } from '@/lib/emulatorManagerStore';
-import { AvdRoster } from '@/components/emulator-manager/AvdRoster';
-import { EmulatorHeaderCard } from '@/components/emulator-manager/EmulatorHeaderCard';
-import { EmulatorQuickActions } from '@/components/emulator-manager/EmulatorQuickActions';
-import { EmulatorLaunchTab } from '@/components/emulator-manager/EmulatorLaunchTab';
-import { EmulatorRootTab } from '@/components/emulator-manager/EmulatorRootTab';
-import { EmulatorRestoreTab } from '@/components/emulator-manager/EmulatorRestoreTab';
-import { EmulatorActivityCard } from '@/components/emulator-manager/EmulatorActivityCard';
+} from "@/lib/desktop/backend";
+import type { backend } from "@/lib/desktop/models";
+import { queryKeys, fetchAvds } from "@/lib/queries";
+import { useEmulatorManagerStore } from "@/lib/emulatorManagerStore";
+import { AvdRoster } from "@/components/emulator-manager/AvdRoster";
+import { EmulatorHeaderCard } from "@/components/emulator-manager/EmulatorHeaderCard";
+import { EmulatorQuickActions } from "@/components/emulator-manager/EmulatorQuickActions";
+import { EmulatorLaunchTab } from "@/components/emulator-manager/EmulatorLaunchTab";
+import { EmulatorRootTab } from "@/components/emulator-manager/EmulatorRootTab";
+import { EmulatorRestoreTab } from "@/components/emulator-manager/EmulatorRestoreTab";
+import { EmulatorActivityCard } from "@/components/emulator-manager/EmulatorActivityCard";
 
 export function ViewEmulatorManager() {
-  const { data: avds = [] } = useQuery({ queryKey: queryKeys.avds(), queryFn: fetchAvds });
+  const { data: avds = [] } = useQuery({
+    queryKey: queryKeys.avds(),
+    queryFn: fetchAvds,
+  });
   const {
     selectedAvdName,
     activeTab,
@@ -1119,7 +1134,7 @@ export function ViewEmulatorManager() {
 
   const selectedAvd = useMemo(
     () => avds.find((avd) => avd.name === selectedAvdName) ?? null,
-    [avds, selectedAvdName],
+    [avds, selectedAvdName]
   );
 
   useEffect(() => {
@@ -1132,7 +1147,10 @@ export function ViewEmulatorManager() {
   const handleLaunch = async (options: backend.EmulatorLaunchOptions) => {
     if (!selectedAvd) return;
     await LaunchAvd(selectedAvd.name, options);
-    appendActivity({ level: 'success', message: `Launched ${selectedAvd.name}` });
+    appendActivity({
+      level: "success",
+      message: `Launched ${selectedAvd.name}`,
+    });
   };
 
   const handlePrepareRoot = async (rootPackagePath: string) => {
@@ -1142,20 +1160,33 @@ export function ViewEmulatorManager() {
       serial: selectedAvd.serial,
       rootPackagePath,
     });
-    setRootSession({ avdName: selectedAvd.name, serial: selectedAvd.serial, instructions: result.instructions });
+    setRootSession({
+      avdName: selectedAvd.name,
+      serial: selectedAvd.serial,
+      instructions: result.instructions,
+    });
   };
 
   const handleFinalizeRoot = async () => {
     if (!rootSession) return;
-    const result = await FinalizeAvdRoot({ avdName: rootSession.avdName, serial: rootSession.serial });
-    appendActivity({ level: 'success', message: result.nextBootRecommendation });
+    const result = await FinalizeAvdRoot({
+      avdName: rootSession.avdName,
+      serial: rootSession.serial,
+    });
+    appendActivity({
+      level: "success",
+      message: result.nextBootRecommendation,
+    });
     clearRootSession();
   };
 
   const handleRestore = async () => {
     if (!selectedAvd) return;
     await RestoreAvdBackups(selectedAvd.name);
-    appendActivity({ level: 'warning', message: `Restored stock state for ${selectedAvd.name}` });
+    appendActivity({
+      level: "warning",
+      message: `Restored stock state for ${selectedAvd.name}`,
+    });
   };
 
   return (
@@ -1167,18 +1198,32 @@ export function ViewEmulatorManager() {
         <div>
           <h1 className="text-xl md:text-2xl font-bold">Emulator Manager</h1>
           <p className="text-sm text-muted-foreground">
-            Manage existing Android Studio virtual devices, launch presets, root, and restore flows.
+            Manage existing Android Studio virtual devices, launch presets,
+            root, and restore flows.
           </p>
         </div>
       </div>
       <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <AvdRoster avds={avds} selectedAvdName={selectedAvdName} onSelect={setSelectedAvdName} />
+        <AvdRoster
+          avds={avds}
+          selectedAvdName={selectedAvdName}
+          onSelect={setSelectedAvdName}
+        />
         <div className="flex min-w-0 flex-col gap-6">
           <EmulatorHeaderCard avd={selectedAvd} />
           <EmulatorQuickActions avd={selectedAvd} />
           <EmulatorLaunchTab avd={selectedAvd} onLaunch={handleLaunch} />
-          <EmulatorRootTab avd={selectedAvd} onPrepare={handlePrepareRoot} onFinalize={handleFinalizeRoot} instructions={rootSession?.instructions ?? []} />
-          <EmulatorRestoreTab avd={selectedAvd} restorePlan={restorePlan} onRestore={handleRestore} />
+          <EmulatorRootTab
+            avd={selectedAvd}
+            onPrepare={handlePrepareRoot}
+            onFinalize={handleFinalizeRoot}
+            instructions={rootSession?.instructions ?? []}
+          />
+          <EmulatorRestoreTab
+            avd={selectedAvd}
+            restorePlan={restorePlan}
+            onRestore={handleRestore}
+          />
           <EmulatorActivityCard />
         </div>
       </div>
@@ -1202,6 +1247,7 @@ git commit -m "feat: add emulator manager view and tab surface"
 ## Task 6: Verification and Project Docs
 
 **Files:**
+
 - Modify: `memory-bank/activeContext.md`
 - Modify: `memory-bank/progress.md`
 - Modify: `memory-bank/systemPatterns.md`
@@ -1236,16 +1282,19 @@ Expected: PASS for the new emulator unit tests. If the pre-existing Windows Taur
 
 ```md
 ## activeContext.md
+
 - Added Emulator Manager implementation status
 - New backend `emulator/` module and Advanced view
 - Rooting uses device-assisted fake-boot orchestration, not rootAVD as a dependency
 
 ## systemPatterns.md
+
 - Added emulator manager typed command surface
 - Added AVD discovery via emulator CLI + config parsing
 - Added backup/restore plan pattern for AVD ramdisk artifacts
 
 ## progress.md
+
 - Track emulator manager discovery, launch, root, and restore support
 ```
 

@@ -7,26 +7,26 @@
  * Usage: bun scripts/sync-cargo-version.mjs
  * Exit 0 if already in sync or after writing; 1 on error.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from "node:fs";
 
-const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
-const version = packageJson.version;
-if (typeof version !== 'string' || !/^\d+\.\d+\.\d+/.test(version)) {
+const packageJson = JSON.parse(readFileSync("package.json", "utf-8"));
+const { version } = packageJson;
+if (typeof version !== "string" || !/^\d+\.\d+\.\d+/u.test(version)) {
   console.error(`Invalid package.json version: ${version}`);
   process.exit(1);
 }
 
-const cargoPath = 'src-tauri/Cargo.toml';
-const cargo = readFileSync(cargoPath, 'utf8');
-const next = cargo.replace(/^version\s*=\s*"[^"]+"/m, `version = "${version}"`);
+const cargoPath = "src-tauri/Cargo.toml";
+const cargo = readFileSync(cargoPath, "utf-8");
+const next = cargo.replace(/^version\s*=\s*"[^"]+"/mu, `version = "${version}"`);
 if (next === cargo) {
-  const match = cargo.match(/^version\s*=\s*"([^"]+)"/m);
+  const match = cargo.match(/^version\s*=\s*"([^"]+)"/mu);
   if (match?.[1] === version) {
     console.log(`Cargo.toml already at ${version}`);
     process.exit(0);
   }
-  console.error('Could not find package version line in Cargo.toml');
+  console.error("Could not find package version line in Cargo.toml");
   process.exit(1);
 }
-writeFileSync(cargoPath, next, 'utf8');
+writeFileSync(cargoPath, next, "utf-8");
 console.log(`Cargo.toml version set to ${version}`);

@@ -15,6 +15,7 @@
 **Tech Stack:** Rust 2024 + Tauri 2 · React 19 · TypeScript · Vitest · Bun
 
 **Constraints:**
+
 - **No git commits**
 - Match existing style; AGENTS.md boundaries
 - Prefer tests for security pure functions
@@ -26,21 +27,22 @@
 
 ## File ownership map
 
-| Wave | Domain | Primary files |
-| --- | --- | --- |
-| A | Payload path/SSRF/transaction | `helpers.rs`, `payload/transaction.rs`, `payload/crau/extract.rs`, `payload/remote/mod.rs`, `payload/remote/http.rs`, `payload/ops/extractor.rs` |
-| B | Debloat safety | `debloat/sync.rs`, `debloat/actions.rs`, `debloat/backup.rs`, `debloat/cache.rs`, `commands/debloat.rs` |
-| C | File shell | `helpers.rs` (adb_shell_checked), `commands/files.rs` |
-| D | Magisk + marketplace install serial | `emulator/magisk_download.rs`, `commands/marketplace.rs`, `backend.ts`, `install.ts` |
-| E | FE multi-device + IPC + FE bugs | DebloaterTab, InstallationTab, FE history, DropZone, RootWizard, listStatus |
-| F | Shell a11y/perf/error | DeviceSwitcher, ConnectedDevicesCard, MainLayout, deviceStore, theme |
-| G | Config polish | permissions orphan, success-light theme, components.json aliases optional |
+| Wave | Domain                              | Primary files                                                                                                                                    |
+| ---- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A    | Payload path/SSRF/transaction       | `helpers.rs`, `payload/transaction.rs`, `payload/crau/extract.rs`, `payload/remote/mod.rs`, `payload/remote/http.rs`, `payload/ops/extractor.rs` |
+| B    | Debloat safety                      | `debloat/sync.rs`, `debloat/actions.rs`, `debloat/backup.rs`, `debloat/cache.rs`, `commands/debloat.rs`                                          |
+| C    | File shell                          | `helpers.rs` (adb_shell_checked), `commands/files.rs`                                                                                            |
+| D    | Magisk + marketplace install serial | `emulator/magisk_download.rs`, `commands/marketplace.rs`, `backend.ts`, `install.ts`                                                             |
+| E    | FE multi-device + IPC + FE bugs     | DebloaterTab, InstallationTab, FE history, DropZone, RootWizard, listStatus                                                                      |
+| F    | Shell a11y/perf/error               | DeviceSwitcher, ConnectedDevicesCard, MainLayout, deviceStore, theme                                                                             |
+| G    | Config polish                       | permissions orphan, success-light theme, components.json aliases optional                                                                        |
 
 ---
 
 ### Task 1: Shared basename sanitize + CrAU/remote/OPS path safety (C1, M7)
 
 **Files:**
+
 - Modify: `src-tauri/src/helpers.rs` (export/strengthen `sanitize_filename` or add `safe_image_file_name`)
 - Modify: `src-tauri/src/payload/crau/extract.rs`
 - Modify: `src-tauri/src/payload/remote/mod.rs` (all `format!("{}.img", partition_name)` joins)
@@ -57,6 +59,7 @@
 ### Task 2: TransactionGuard must not wipe user directories (C2)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/transaction.rs`
 - Test: add unit test if feasible
 
@@ -68,6 +71,7 @@
 ### Task 3: Remote HTTP SSRF redirect revalidation (H1, M5, M6 partial)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/remote/http.rs`
 - Test: unit tests for `is_blocked_ip` IPv4-mapped, `is_private_url`
 
@@ -82,6 +86,7 @@
 ### Task 4: Debloat destructive safety (H2, H3, H4, M15)
 
 **Files:**
+
 - Modify: `src-tauri/src/debloat/sync.rs`, `actions.rs` (or call sites), `backup.rs`, `cache.rs`
 - Modify: `src-tauri/src/commands/debloat.rs`
 - Modify: FE `DebloaterTab.tsx` for serial reload
@@ -98,6 +103,7 @@
 ### Task 5: File shell exit checking + list_files errors (H6, H7)
 
 **Files:**
+
 - Modify: `src-tauri/src/helpers.rs` — promote `adb_shell_checked` from emulator or shared helper
 - Modify: `src-tauri/src/commands/files.rs`
 - Reference: `src-tauri/src/emulator/root.rs` pattern
@@ -111,6 +117,7 @@
 ### Task 6: Magisk live fetch (H5, M10 partial)
 
 **Files:**
+
 - Modify: `src-tauri/src/emulator/magisk_download.rs`
 
 - [ ] Production path: fetch GitHub releases/latest (or releases API) with HTTPS
@@ -123,6 +130,7 @@
 ### Task 7: Marketplace install serial + install path (H9, M11 partial)
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/marketplace.rs`
 - Modify: `src/desktop/backend.ts`
 - Modify: `src/features/marketplace/utils/install.ts` + callers
@@ -137,6 +145,7 @@
 ### Task 8: IPC listStatus + ProgressEvent model (H8, M29)
 
 **Files:**
+
 - Modify: `src/desktop/backend.ts` DebloatData
 - Modify: `src/features/app-manager/debloater/ui/DebloaterTab.tsx`
 - Prefer: move DebloatData to `models.ts`
@@ -150,6 +159,7 @@
 ### Task 9: File Explorer history + serial snapshots + root grant (H10, M24, M25)
 
 **Files:**
+
 - Modify: `useFileExplorerMutations.ts`, `useFileExplorerLoader.ts`, `useFileExplorerTransfers.ts`, `useFileExplorerRootAccess.ts`
 
 - [ ] Mutations call `loadFiles(path, false)`
@@ -162,6 +172,7 @@
 ### Task 10: Drop hit-test on drop (M23)
 
 **Files:**
+
 - Modify: `src/shared/components/DropZone.tsx`
 - Modify: `src/features/flasher/hooks/useFlasherDropTargets.ts`
 
@@ -172,6 +183,7 @@
 ### Task 11: RootWizard EventsOn + cold boot errors (M26, M28; cancel note)
 
 **Files:**
+
 - Modify: `src/features/emulator/ui/RootWizard.tsx`
 
 - [ ] Use `EventsOn` from `@/desktop/runtime` for `root:progress`
@@ -183,6 +195,7 @@
 ### Task 12: InstallationTab loop + device poll errors + store thrash (H13, H14, M33)
 
 **Files:**
+
 - Modify: `InstallationTab.tsx`, `MainLayout.tsx`, `deviceStore.ts`, `queries.ts` optional
 
 - [ ] Installation: set loadedSerial even on error; don't loop on empty list
@@ -194,6 +207,7 @@
 ### Task 13: A11y DeviceSwitcher + ConnectedDevices + theme (H11, M36, M37)
 
 **Files:**
+
 - Modify: `DeviceSwitcher.tsx`, `ConnectedDevicesCard.tsx`, `global.css`, `deviceStatus.ts` if needed
 
 - [ ] Fix nested button structure
@@ -205,6 +219,7 @@
 ### Task 14: Config cleanup (M19, M34 docs optional, orphan permission)
 
 **Files:**
+
 - Modify: `src-tauri/permissions/autogenerated.toml` remove `marketplace_get_trending` if unused
 - Modify: `AGENTS.md` poll 3s → 30s (docs only if editing)
 
@@ -216,6 +231,7 @@
 ### Task 15: Delta TokenGuard + invalid cancel token (M8 partial, M14)
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/payload.rs`
 
 - [ ] TokenGuard on delta extract like extract_payload
@@ -248,10 +264,10 @@
 
 ## Execution order
 
-1. Tasks 1–3 (payload safety) parallel with 4–5 (debloat + files) if careful on helpers.rs  
-2. Tasks 6–8 backend/IPC  
-3. Tasks 9–13 FE  
-4. Tasks 14–15 polish  
-5. Task 16 verify  
+1. Tasks 1–3 (payload safety) parallel with 4–5 (debloat + files) if careful on helpers.rs
+2. Tasks 6–8 backend/IPC
+3. Tasks 9–13 FE
+4. Tasks 14–15 polish
+5. Task 16 verify
 
 **No commits at any step.**

@@ -27,15 +27,15 @@
 
 ADB GUI Next is **already ~85% macOS-compatible** out of the box. The Tauri 2 framework, React frontend, and most Rust backend code are cross-platform. The remaining ~15% falls into these categories:
 
-| Category | Effort | Details |
-|---|---|---|
-| **Bundled platform tools** | Medium | Download macOS ADB/fastboot binaries, place in `src-tauri/resources/darwin/` |
-| **Rust `cfg` additions** | Low | Add `#[cfg(target_os = "macos")]` branches in 4 files |
-| **`fix-path-env-rs` crate** | Low | Add to `Cargo.toml` + initialize in `lib.rs` |
-| **Tauri bundle config** | Low | Add `bundle.macOS` section to `tauri.conf.json` |
-| **Entitlements plist** | Low | Create `src-tauri/Entitlements.plist` |
-| **Code signing setup** | Medium | Configure signing identity + notarization credentials (optional for first release) |
-| **GitHub Actions workflow** | Medium | Add macOS build job — this is how we build on Windows |
+| Category                    | Effort | Details                                                                            |
+| --------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| **Bundled platform tools**  | Medium | Download macOS ADB/fastboot binaries, place in `src-tauri/resources/darwin/`       |
+| **Rust `cfg` additions**    | Low    | Add `#[cfg(target_os = "macos")]` branches in 4 files                              |
+| **`fix-path-env-rs` crate** | Low    | Add to `Cargo.toml` + initialize in `lib.rs`                                       |
+| **Tauri bundle config**     | Low    | Add `bundle.macOS` section to `tauri.conf.json`                                    |
+| **Entitlements plist**      | Low    | Create `src-tauri/Entitlements.plist`                                              |
+| **Code signing setup**      | Medium | Configure signing identity + notarization credentials (optional for first release) |
+| **GitHub Actions workflow** | Medium | Add macOS build job — this is how we build on Windows                              |
 
 **No frontend changes are needed.** The React 19 + Vite + Tailwind stack is fully platform-agnostic.
 
@@ -67,33 +67,33 @@ Windows machine                    GitHub Actions (macos-latest runner)
 
 ### 2.1 What Already Works on macOS
 
-| Component | Status | Notes |
-|---|---|---|
-| Tauri 2 framework | Ready | `tauri = "2.11.1"` — full macOS support |
-| `tauri.conf.json` targets | Ready | `"targets": "all"` includes macOS `app` + `dmg` |
-| macOS icon | Ready | `icons/icon.icns` already present |
-| Frontend (React/Vite) | Ready | Zero platform-specific code |
-| Most Rust dependencies | Ready | All crates are cross-platform |
-| `helpers.rs` executable bit | Ready | `ensure_executable_if_needed()` handles `#[cfg(target_family = "unix")]` |
-| `helpers.rs` binary naming | Ready | `binary_name()` uses `cfg!(target_os = "windows")` fallback |
-| `sdk.rs` emulator binary | Ready | Uses `#[cfg(not(target_os = "windows"))]` for non-Windows |
-| Payload mmap flush | Ready | Has `#[cfg(windows)]` and `#[cfg(unix)]` branches |
-| AVD home resolution | Ready | Falls back to `$HOME/.android/avd` on Unix |
+| Component                   | Status | Notes                                                                    |
+| --------------------------- | ------ | ------------------------------------------------------------------------ |
+| Tauri 2 framework           | Ready  | `tauri = "2.11.1"` — full macOS support                                  |
+| `tauri.conf.json` targets   | Ready  | `"targets": "all"` includes macOS `app` + `dmg`                          |
+| macOS icon                  | Ready  | `icons/icon.icns` already present                                        |
+| Frontend (React/Vite)       | Ready  | Zero platform-specific code                                              |
+| Most Rust dependencies      | Ready  | All crates are cross-platform                                            |
+| `helpers.rs` executable bit | Ready  | `ensure_executable_if_needed()` handles `#[cfg(target_family = "unix")]` |
+| `helpers.rs` binary naming  | Ready  | `binary_name()` uses `cfg!(target_os = "windows")` fallback              |
+| `sdk.rs` emulator binary    | Ready  | Uses `#[cfg(not(target_os = "windows"))]` for non-Windows                |
+| Payload mmap flush          | Ready  | Has `#[cfg(windows)]` and `#[cfg(unix)]` branches                        |
+| AVD home resolution         | Ready  | Falls back to `$HOME/.android/avd` on Unix                               |
 
 ### 2.2 What's Missing
 
-| Component | Gap | File(s) |
-|---|---|---|
-| Bundled ADB/fastboot for macOS | `resources/darwin/` directory doesn't exist | `src-tauri/resources/` |
-| PATH resolution for GUI apps | macOS GUI apps don't inherit shell `$PATH` | `src-tauri/Cargo.toml`, `src-tauri/src/lib.rs` |
-| `launch_device_manager()` | Windows-only (`devmgmt.msc`) | `src-tauri/src/commands/system.rs:16-26` |
-| `launch_terminal()` | No macOS branch (only Windows + Linux) | `src-tauri/src/commands/system.rs:29-48` |
-| `CREATE_NO_WINDOW` flag | Windows-only, macOS needs no equivalent | `src-tauri/src/helpers.rs`, `src-tauri/src/emulator/runtime.rs` |
-| `resolve_binary_path()` OS dir | Maps to `"linux"` for non-Windows | `src-tauri/src/helpers.rs:158` |
-| `binary_working_directory()` OS dir | Maps to `"linux"` for non-Windows | `src-tauri/src/helpers.rs:194` |
-| Tauri bundle macOS config | No `bundle.macOS` section | `src-tauri/tauri.conf.json` |
-| Entitlements plist | Not created | `src-tauri/Entitlements.plist` (new) |
-| GitHub Actions workflow | Not created | `.github/workflows/release.yml` (new) — handles all macOS build steps |
+| Component                           | Gap                                         | File(s)                                                               |
+| ----------------------------------- | ------------------------------------------- | --------------------------------------------------------------------- |
+| Bundled ADB/fastboot for macOS      | `resources/darwin/` directory doesn't exist | `src-tauri/resources/`                                                |
+| PATH resolution for GUI apps        | macOS GUI apps don't inherit shell `$PATH`  | `src-tauri/Cargo.toml`, `src-tauri/src/lib.rs`                        |
+| `launch_device_manager()`           | Windows-only (`devmgmt.msc`)                | `src-tauri/src/commands/system.rs:16-26`                              |
+| `launch_terminal()`                 | No macOS branch (only Windows + Linux)      | `src-tauri/src/commands/system.rs:29-48`                              |
+| `CREATE_NO_WINDOW` flag             | Windows-only, macOS needs no equivalent     | `src-tauri/src/helpers.rs`, `src-tauri/src/emulator/runtime.rs`       |
+| `resolve_binary_path()` OS dir      | Maps to `"linux"` for non-Windows           | `src-tauri/src/helpers.rs:158`                                        |
+| `binary_working_directory()` OS dir | Maps to `"linux"` for non-Windows           | `src-tauri/src/helpers.rs:194`                                        |
+| Tauri bundle macOS config           | No `bundle.macOS` section                   | `src-tauri/tauri.conf.json`                                           |
+| Entitlements plist                  | Not created                                 | `src-tauri/Entitlements.plist` (new)                                  |
+| GitHub Actions workflow             | Not created                                 | `.github/workflows/release.yml` (new) — handles all macOS build steps |
 
 ---
 
@@ -102,6 +102,7 @@ Windows machine                    GitHub Actions (macos-latest runner)
 ### 3.1 Why You Can't Build macOS on Windows
 
 Apple's toolchain is macOS-only. The macOS build requires:
+
 - **`ld64` linker** — only ships with Xcode on macOS
 - **macOS SDK headers** — only available on macOS
 - **Code signing infrastructure** — macOS Keychain + `codesign` binary
@@ -136,6 +137,7 @@ Step 3: Windows (your machine)
 ### 3.3 Triggering the Build
 
 **Manual trigger (recommended for development):**
+
 1. Push your code to GitHub
 2. Go to your repo → **Actions** → **Release** workflow
 3. Click **"Run workflow"** → select branch → click **"Run workflow"**
@@ -143,26 +145,27 @@ Step 3: Windows (your machine)
 5. Download the `.dmg` from the release artifacts
 
 **Automatic trigger (for releases):**
+
 - Push a git tag matching `v*` (e.g., `git tag v0.3.0 && git push origin v0.3.0`)
 - The workflow runs automatically
 
 ### 3.4 GitHub Actions Runner Details
 
-| Property | Value |
-|---|---|
-| Runner image | `macos-latest` (Apple Silicon M1) |
-| Xcode | Pre-installed (latest stable) |
-| Rust | Installed by workflow step |
-| Free minutes | 2,000/month (public repo) / 500/month (private repo) |
-| Estimated build time | 10-15 minutes |
+| Property             | Value                                                |
+| -------------------- | ---------------------------------------------------- |
+| Runner image         | `macos-latest` (Apple Silicon M1)                    |
+| Xcode                | Pre-installed (latest stable)                        |
+| Rust                 | Installed by workflow step                           |
+| Free minutes         | 2,000/month (public repo) / 500/month (private repo) |
+| Estimated build time | 10-15 minutes                                        |
 
 ### 3.5 Architecture Support
 
-| Architecture | Target Triple | How Built |
-|---|---|---|
-| Apple Silicon (M1/M2/M3/M4) | `aarch64-apple-darwin` | Native on M1 runner |
-| Intel (x86-64) | `x86_64-apple-darwin` | Cross-compiled from M1 (Rosetta 2 linker) |
-| Universal (fat binary) | `universal-apple-darwin` | Tauri builds both + merges with `lipo` |
+| Architecture                | Target Triple            | How Built                                 |
+| --------------------------- | ------------------------ | ----------------------------------------- |
+| Apple Silicon (M1/M2/M3/M4) | `aarch64-apple-darwin`   | Native on M1 runner                       |
+| Intel (x86-64)              | `x86_64-apple-darwin`    | Cross-compiled from M1 (Rosetta 2 linker) |
+| Universal (fat binary)      | `universal-apple-darwin` | Tauri builds both + merges with `lipo`    |
 
 We use **`universal-apple-darwin`** — one `.dmg` that runs natively on both Intel and Apple Silicon Macs.
 
@@ -206,11 +209,13 @@ pub fn run() {
 ### 4.3 `src-tauri/src/helpers.rs` — Add `"darwin"` OS directory
 
 **Current code (line 158):**
+
 ```rust
 let os_dir = if cfg!(target_os = "windows") { "windows" } else { "linux" };
 ```
 
 **Change to:**
+
 ```rust
 let os_dir = if cfg!(target_os = "windows") {
     "windows"
@@ -222,6 +227,7 @@ let os_dir = if cfg!(target_os = "windows") {
 ```
 
 This affects two functions:
+
 - `resolve_binary_path()` (line 158)
 - `binary_working_directory()` (line 194)
 
@@ -234,6 +240,7 @@ Both need the same change.
 **Current:** Only has `#[cfg(target_os = "windows")]` block, does nothing on other platforms.
 
 **Change to:**
+
 ```rust
 #[tauri::command]
 pub fn launch_device_manager() -> CmdResult<()> {
@@ -268,6 +275,7 @@ pub fn launch_device_manager() -> CmdResult<()> {
 **Current:** Has Windows and Linux branches, no macOS.
 
 **Change to:**
+
 ```rust
 #[tauri::command]
 pub fn launch_terminal() -> CmdResult<()> {
@@ -310,6 +318,7 @@ The `CREATE_NO_WINDOW` flag is already gated behind `#[cfg(target_os = "windows"
 ### 4.6 `src-tauri/src/emulator/sdk.rs` — No changes needed
 
 The emulator binary resolution already uses:
+
 ```rust
 #[cfg(target_os = "windows")]
 let binary_name = "emulator.exe";
@@ -400,6 +409,7 @@ rm -rf platform-tools platform-tools-latest-darwin.zip
 ### 5.6 ADB on macOS Ventura+ Gotcha
 
 On macOS 13+ (Ventura), some users report `ADB server didn't ACK` errors. The fix is:
+
 ```bash
 export ADB_LIBUSB=1
 ```
@@ -439,12 +449,12 @@ Add this inside the existing `"bundle"` object:
 }
 ```
 
-| Field | Value | Purpose |
-|---|---|---|
-| `minimumSystemVersion` | `"11.0"` | macOS Big Sur minimum (Apple Silicon native requirement) |
-| `entitlements` | `"./Entitlements.plist"` | Required for WebView JIT to work after notarization |
-| `signingIdentity` | `"-"` | Ad-hoc signing for development; replace with real identity for distribution |
-| `dmg.windowSize` | `{660, 400}` | DMG installer window dimensions |
+| Field                  | Value                    | Purpose                                                                     |
+| ---------------------- | ------------------------ | --------------------------------------------------------------------------- |
+| `minimumSystemVersion` | `"11.0"`                 | macOS Big Sur minimum (Apple Silicon native requirement)                    |
+| `entitlements`         | `"./Entitlements.plist"` | Required for WebView JIT to work after notarization                         |
+| `signingIdentity`      | `"-"`                    | Ad-hoc signing for development; replace with real identity for distribution |
+| `dmg.windowSize`       | `{660, 400}`             | DMG installer window dimensions                                             |
 
 ### 6.2 `src-tauri/Entitlements.plist` — Create new file
 
@@ -487,6 +497,7 @@ Only needed if the app requires macOS privacy permissions (camera, microphone, f
 ```
 
 Then reference it in `tauri.conf.json`:
+
 ```json
 "macOS": {
   "infoPlist": "./Info.plist"
@@ -528,25 +539,28 @@ For distribution outside the Mac App Store:
 Required for Gatekeeper to trust the app on first launch.
 
 **Option A: Apple ID + App-Specific Password** (simpler)
-| Env Var | Value |
-|---|---|
-| `APPLE_SIGNING_IDENTITY` | `Developer ID Application: Name (TEAMID)` |
-| `APPLE_ID` | Apple account email |
-| `APPLE_PASSWORD` | App-specific password (generate at appleid.apple.com) |
-| `APPLE_TEAM_ID` | 10-character Team ID from developer.apple.com |
+
+| Env Var                  | Value                                                 |
+| ------------------------ | ----------------------------------------------------- |
+| `APPLE_SIGNING_IDENTITY` | `Developer ID Application: Name (TEAMID)`             |
+| `APPLE_ID`               | Apple account email                                   |
+| `APPLE_PASSWORD`         | App-specific password (generate at appleid.apple.com) |
+| `APPLE_TEAM_ID`          | 10-character Team ID from developer.apple.com         |
 
 **Option B: App Store Connect API Key** (recommended for CI)
-| Env Var | Value |
-|---|---|
-| `APPLE_API_ISSUER` | Issuer ID from App Store Connect |
-| `APPLE_API_KEY` | Key ID |
-| `APPLE_API_KEY_PATH` | Path to `.p8` private key file |
+
+| Env Var              | Value                            |
+| -------------------- | -------------------------------- |
+| `APPLE_API_ISSUER`   | Issuer ID from App Store Connect |
+| `APPLE_API_KEY`      | Key ID                           |
+| `APPLE_API_KEY_PATH` | Path to `.p8` private key file   |
 
 Tauri's bundler handles notarization automatically when these env vars are set during `tauri build`.
 
 ### 7.4 Mac App Store Distribution
 
 For App Store submission:
+
 - Use `--bundles app` (not `dmg`)
 - Set `minimumSystemVersion` to `"12.0"` or higher
 - Add `com.apple.security.app-sandbox` entitlement
@@ -568,12 +582,12 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
-  workflow_dispatch:  # Manual trigger from GitHub Actions UI
+    tags: ["v*"]
+  workflow_dispatch: # Manual trigger from GitHub Actions UI
 
 jobs:
   build-macos:
-    runs-on: macos-latest  # Apple Silicon M1 runner
+    runs-on: macos-latest # Apple Silicon M1 runner
     permissions:
       contents: write
     steps:
@@ -592,7 +606,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Install frontend dependencies
         run: bun install
@@ -603,16 +617,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
-          releaseName: 'AdbGuiNext v__VERSION__'
-          releaseBody: 'See the assets to download this version.'
+          releaseName: "AdbGuiNext v__VERSION__"
+          releaseBody: "See the assets to download this version."
           releaseDraft: true
           prerelease: false
-          args: '--target universal-apple-darwin'
+          args: "--target universal-apple-darwin"
 ```
 
 ### 8.2 How to Trigger
 
 **Manual (development/testing):**
+
 1. Push code to GitHub
 2. Go to repo → **Actions** → **Release** → **Run workflow**
 3. Select branch → click **Run workflow**
@@ -620,6 +635,7 @@ jobs:
 5. Download `.dmg` from the release artifacts
 
 **Automatic (releases):**
+
 ```bash
 git tag v0.3.0 && git push origin v0.3.0
 ```
@@ -652,14 +668,14 @@ codesign -dv --verbose=4 target/universal-apple-darwin/release/bundle/macos/AdbG
 
 For Gatekeeper-trusted builds (no "unidentified developer" warning), add these GitHub secrets and uncomment the env vars in the workflow:
 
-| Secret | Description | How to Create |
-|---|---|---|
-| `APPLE_CERTIFICATE` | Base64-encoded `.p12` certificate | Export from Keychain Access → `openssl base64 -A -in cert.p12` |
-| `APPLE_CERTIFICATE_PASSWORD` | Password set during `.p12` export | Your choice during export |
-| `APPLE_SIGNING_IDENTITY` | e.g., `Developer ID Application: Name (TEAMID)` | From Keychain Access certificate name |
-| `APPLE_TEAM_ID` | 10-character Team ID | From developer.apple.com/account |
-| `APPLE_ID` | Apple account email | Your Apple ID |
-| `APPLE_PASSWORD` | App-specific password | Generate at appleid.apple.com → App-Specific Passwords |
+| Secret                       | Description                                     | How to Create                                                  |
+| ---------------------------- | ----------------------------------------------- | -------------------------------------------------------------- |
+| `APPLE_CERTIFICATE`          | Base64-encoded `.p12` certificate               | Export from Keychain Access → `openssl base64 -A -in cert.p12` |
+| `APPLE_CERTIFICATE_PASSWORD` | Password set during `.p12` export               | Your choice during export                                      |
+| `APPLE_SIGNING_IDENTITY`     | e.g., `Developer ID Application: Name (TEAMID)` | From Keychain Access certificate name                          |
+| `APPLE_TEAM_ID`              | 10-character Team ID                            | From developer.apple.com/account                               |
+| `APPLE_ID`                   | Apple account email                             | Your Apple ID                                                  |
+| `APPLE_PASSWORD`             | App-specific password                           | Generate at appleid.apple.com → App-Specific Passwords         |
 
 **Requires:** Apple Developer Program enrollment ($99/year).
 
@@ -671,32 +687,32 @@ For Gatekeeper-trusted builds (no "unidentified developer" warning), add these G
 
 ### 9.1 What to Test on macOS
 
-| Area | Test | Expected |
-|---|---|---|
-| App launch | Open `.app` from Finder | No crash, WebView renders |
-| ADB detection | Connect Android device via USB | Device appears in dashboard |
-| ADB commands | Run `adb devices` via Utilities | Output matches terminal |
-| Fastboot | Boot device to fastboot mode | Device detected |
-| File Explorer | Browse `/sdcard` | Files listed correctly |
-| App Manager | List installed packages | Packages shown |
-| Payload Dumper | Extract from `payload.bin` | Partitions extracted |
-| Emulator | List AVDs, launch emulator | AVD starts (if SDK installed) |
-| Wireless ADB | Pair + connect | Connection established |
-| Terminal launch | Click "Open Terminal" | Terminal opens at correct directory |
-| File dialog | Select payload file | Native macOS file picker |
-| Dark mode | Toggle theme | Theme switches correctly |
-| Resize | Resize window | Layout adapts, no overflow |
+| Area            | Test                            | Expected                            |
+| --------------- | ------------------------------- | ----------------------------------- |
+| App launch      | Open `.app` from Finder         | No crash, WebView renders           |
+| ADB detection   | Connect Android device via USB  | Device appears in dashboard         |
+| ADB commands    | Run `adb devices` via Utilities | Output matches terminal             |
+| Fastboot        | Boot device to fastboot mode    | Device detected                     |
+| File Explorer   | Browse `/sdcard`                | Files listed correctly              |
+| App Manager     | List installed packages         | Packages shown                      |
+| Payload Dumper  | Extract from `payload.bin`      | Partitions extracted                |
+| Emulator        | List AVDs, launch emulator      | AVD starts (if SDK installed)       |
+| Wireless ADB    | Pair + connect                  | Connection established              |
+| Terminal launch | Click "Open Terminal"           | Terminal opens at correct directory |
+| File dialog     | Select payload file             | Native macOS file picker            |
+| Dark mode       | Toggle theme                    | Theme switches correctly            |
+| Resize          | Resize window                   | Layout adapts, no overflow          |
 
 ### 9.2 Known macOS Quirks to Watch For
 
-| Issue | Cause | Mitigation |
-|---|---|---|
-| ADB not found | `$PATH` not inherited by GUI app | `fix-path-env-rs` resolves this |
-| ADB server doesn't ACK | macOS Ventura+ USB stack change | `ADB_LIBUSB=1` env var (user-side) |
-| Gatekeeper blocks app | Not notarized | Sign + notarize, or user right-clicks → Open |
-| Emulator not found | No Android SDK installed | User must install Android Studio or SDK command-line tools |
-| AVD not found | `ANDROID_AVD_HOME` not set | Defaults to `$HOME/.android/avd` — should work |
-| File picker shows wrong location | No default path | Existing dialog code handles this |
+| Issue                            | Cause                            | Mitigation                                                 |
+| -------------------------------- | -------------------------------- | ---------------------------------------------------------- |
+| ADB not found                    | `$PATH` not inherited by GUI app | `fix-path-env-rs` resolves this                            |
+| ADB server doesn't ACK           | macOS Ventura+ USB stack change  | `ADB_LIBUSB=1` env var (user-side)                         |
+| Gatekeeper blocks app            | Not notarized                    | Sign + notarize, or user right-clicks → Open               |
+| Emulator not found               | No Android SDK installed         | User must install Android Studio or SDK command-line tools |
+| AVD not found                    | `ANDROID_AVD_HOME` not set       | Defaults to `$HOME/.android/avd` — should work             |
+| File picker shows wrong location | No default path                  | Existing dialog code handles this                          |
 
 ### 9.3 Manual Testing on Apple Silicon (Intel binary)
 
@@ -711,34 +727,34 @@ arch -x86_64 open AdbGuiNext.app
 
 ### 10.1 Low Risk (Straightforward)
 
-| Item | Risk | Notes |
-|---|---|---|
-| `fix-path-env-rs` addition | Low | Well-maintained Tauri ecosystem crate, single function call |
-| `darwin` OS directory in helpers | Low | Simple string addition, existing pattern |
-| macOS `launch_terminal()` | Low | Standard `open -a Terminal` pattern |
-| `Entitlements.plist` | Low | Standard Tauri template, well-documented |
-| Bundle config additions | Low | JSON addition, Tauri validates schema |
-| Download platform-tools-darwin | Low | Official Google binaries, universal architecture |
+| Item                             | Risk | Notes                                                       |
+| -------------------------------- | ---- | ----------------------------------------------------------- |
+| `fix-path-env-rs` addition       | Low  | Well-maintained Tauri ecosystem crate, single function call |
+| `darwin` OS directory in helpers | Low  | Simple string addition, existing pattern                    |
+| macOS `launch_terminal()`        | Low  | Standard `open -a Terminal` pattern                         |
+| `Entitlements.plist`             | Low  | Standard Tauri template, well-documented                    |
+| Bundle config additions          | Low  | JSON addition, Tauri validates schema                       |
+| Download platform-tools-darwin   | Low  | Official Google binaries, universal architecture            |
 
 ### 10.2 Medium Risk (Requires Verification)
 
-| Item | Risk | Notes |
-|---|---|---|
-| Code signing + notarization | Medium | Requires Apple Developer account ($99/yr), certificate management |
-| CI/CD workflow | Medium | Needs proper secrets configuration, runner availability |
-| Emulator on Apple Silicon | Medium | ARM64 AVD images required; x86 images won't run natively |
-| ADB USB permissions | Low-Medium | macOS doesn't need drivers, but Ventura+ may need `ADB_LIBUSB=1` |
+| Item                        | Risk       | Notes                                                             |
+| --------------------------- | ---------- | ----------------------------------------------------------------- |
+| Code signing + notarization | Medium     | Requires Apple Developer account ($99/yr), certificate management |
+| CI/CD workflow              | Medium     | Needs proper secrets configuration, runner availability           |
+| Emulator on Apple Silicon   | Medium     | ARM64 AVD images required; x86 images won't run natively          |
+| ADB USB permissions         | Low-Medium | macOS doesn't need drivers, but Ventura+ may need `ADB_LIBUSB=1`  |
 
 ### 10.3 Platform-Specific Feature Gaps
 
-| Feature | macOS Status | Notes |
-|---|---|---|
-| Device Manager launch | Different | macOS uses "System Information" instead of `devmgmt.msc` |
-| Bundled emulator | Not bundled | Same as Windows/Linux — requires user SDK install |
-| Payload extraction | Works | Cross-platform Rust code |
-| Marketplace | Works | HTTP-based, platform-agnostic |
-| Debloater | Works | ADB shell commands, platform-agnostic |
-| Flasher | Works | Fastboot commands, platform-agnostic |
+| Feature               | macOS Status | Notes                                                    |
+| --------------------- | ------------ | -------------------------------------------------------- |
+| Device Manager launch | Different    | macOS uses "System Information" instead of `devmgmt.msc` |
+| Bundled emulator      | Not bundled  | Same as Windows/Linux — requires user SDK install        |
+| Payload extraction    | Works        | Cross-platform Rust code                                 |
+| Marketplace           | Works        | HTTP-based, platform-agnostic                            |
+| Debloater             | Works        | ADB shell commands, platform-agnostic                    |
+| Flasher               | Works        | Fastboot commands, platform-agnostic                     |
 
 ---
 
@@ -783,62 +799,62 @@ arch -x86_64 open AdbGuiNext.app
 
 ### Tauri 2 Documentation
 
-| Resource | URL |
-|---|---|
-| Prerequisites | https://v2.tauri.app/start/prerequisites/ |
+| Resource                 | URL                                                       |
+| ------------------------ | --------------------------------------------------------- |
+| Prerequisites            | https://v2.tauri.app/start/prerequisites/                 |
 | macOS Application Bundle | https://v2.tauri.app/distribute/macos-application-bundle/ |
-| DMG Bundle | https://v2.tauri.app/distribute/dmg/ |
-| macOS Code Signing | https://v2.tauri.app/distribute/sign/macos/ |
-| Configuration Reference | https://v2.tauri.app/reference/config/ |
-| CLI Reference | https://v2.tauri.app/reference/cli |
-| App Store Distribution | https://v2.tauri.app/distribute/app-store/ |
+| DMG Bundle               | https://v2.tauri.app/distribute/dmg/                      |
+| macOS Code Signing       | https://v2.tauri.app/distribute/sign/macos/               |
+| Configuration Reference  | https://v2.tauri.app/reference/config/                    |
+| CLI Reference            | https://v2.tauri.app/reference/cli                        |
+| App Store Distribution   | https://v2.tauri.app/distribute/app-store/                |
 
 ### Apple Documentation
 
-| Resource | URL |
-|---|---|
-| Entitlements | https://developer.apple.com/documentation/bundleresources/entitlements |
-| Info.plist Keys | https://developer.apple.com/documentation/bundleresources/information_property_list |
-| Code Signing Guide | https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/ |
-| Notarization | https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution |
+| Resource           | URL                                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------------------ |
+| Entitlements       | https://developer.apple.com/documentation/bundleresources/entitlements                           |
+| Info.plist Keys    | https://developer.apple.com/documentation/bundleresources/information_property_list              |
+| Code Signing Guide | https://developer.apple.com/library/archive/documentation/Security/Conceptual/CodeSigningGuide/  |
+| Notarization       | https://developer.apple.com/documentation/security/notarizing_macos_software_before_distribution |
 
 ### Google / Android
 
-| Resource | URL |
-|---|---|
-| Platform Tools (macOS) | https://dl.google.com/android/repository/platform-tools-latest-darwin.zip |
-| Platform Tools Release Notes | https://developer.android.com/tools/releases/platform-tools |
-| Command Line Tools (macOS) | https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip |
+| Resource                     | URL                                                                               |
+| ---------------------------- | --------------------------------------------------------------------------------- |
+| Platform Tools (macOS)       | https://dl.google.com/android/repository/platform-tools-latest-darwin.zip         |
+| Platform Tools Release Notes | https://developer.android.com/tools/releases/platform-tools                       |
+| Command Line Tools (macOS)   | https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip |
 
 ### Crates
 
-| Crate | URL |
-|---|---|
+| Crate           | URL                                           |
+| --------------- | --------------------------------------------- |
 | fix-path-env-rs | https://github.com/tauri-apps/fix-path-env-rs |
-| tauri-action | https://github.com/tauri-apps/tauri-action |
+| tauri-action    | https://github.com/tauri-apps/tauri-action    |
 
 ### Community Resources
 
-| Resource | URL |
-|---|---|
+| Resource                          | URL                                                                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Shipping Tauri v2 to macOS (blog) | https://dev.to/0xmassi/shipping-a-production-macos-app-with-tauri-20-code-signing-notarization-and-homebrew-mc3 |
-| Code Signing Guide (blog) | https://dev.to/tomtomdu73/ship-your-tauri-v2-app-like-a-pro-code-signing-for-macos-and-windows-part-12-3o9n |
+| Code Signing Guide (blog)         | https://dev.to/tomtomdu73/ship-your-tauri-v2-app-like-a-pro-code-signing-for-macos-and-windows-part-12-3o9n     |
 
 ---
 
 ## Summary of File Changes
 
-| File | Change Type | Lines Affected | Done On |
-|---|---|---|---|
-| `src-tauri/Cargo.toml` | Add dependency | +1 line | Windows |
-| `src-tauri/src/lib.rs` | Add function call | +1 line | Windows |
-| `src-tauri/src/helpers.rs` | Modify 2 functions | ~6 lines changed | Windows |
-| `src-tauri/src/commands/system.rs` | Add 2 cfg branches | ~15 lines added | Windows |
-| `src-tauri/tauri.conf.json` | Add macOS config | ~8 lines added | Windows |
-| `src-tauri/Entitlements.plist` | New file | ~15 lines | Windows |
-| `src-tauri/resources/darwin/*` | New directory | 11 binary files | Windows |
-| `.github/workflows/release.yml` | New file (required) | ~50 lines | Windows |
-| `AGENTS.md` | Update (optional) | ~2 lines | Windows |
+| File                               | Change Type         | Lines Affected   | Done On |
+| ---------------------------------- | ------------------- | ---------------- | ------- |
+| `src-tauri/Cargo.toml`             | Add dependency      | +1 line          | Windows |
+| `src-tauri/src/lib.rs`             | Add function call   | +1 line          | Windows |
+| `src-tauri/src/helpers.rs`         | Modify 2 functions  | ~6 lines changed | Windows |
+| `src-tauri/src/commands/system.rs` | Add 2 cfg branches  | ~15 lines added  | Windows |
+| `src-tauri/tauri.conf.json`        | Add macOS config    | ~8 lines added   | Windows |
+| `src-tauri/Entitlements.plist`     | New file            | ~15 lines        | Windows |
+| `src-tauri/resources/darwin/*`     | New directory       | 11 binary files  | Windows |
+| `.github/workflows/release.yml`    | New file (required) | ~50 lines        | Windows |
+| `AGENTS.md`                        | Update (optional)   | ~2 lines         | Windows |
 
 **Total: ~100 lines of code + 11 binary files — all done on Windows.**
 The actual macOS build happens on GitHub Actions `macos-latest` runner (Apple Silicon M1), producing a `.dmg` you download from the GitHub Release page.

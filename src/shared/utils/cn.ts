@@ -1,5 +1,6 @@
-import { type ClassValue, clsx } from 'clsx';
-import { extendTailwindMerge } from 'tailwind-merge';
+import { clsx } from "clsx";
+import type { ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
 
 /**
  * The app's type scale (`text-display` … `text-mono-sm`, declared in
@@ -11,11 +12,13 @@ import { extendTailwindMerge } from 'tailwind-merge';
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      'font-size': [{ text: ['display', 'title', 'body', 'label', 'caption', 'mono', 'mono-sm'] }],
+      "font-size": [
+        {
+          text: ["display", "title", "body", "label", "caption", "mono", "mono-sm"],
+        },
+      ],
     },
   },
 });
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export const cn = (...inputs: ClassValue[]): string => twMerge(clsx(inputs));

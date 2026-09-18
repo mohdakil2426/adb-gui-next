@@ -22,16 +22,19 @@ The Emulator Manager is **architecturally sound** but has **4 compounding bugs**
 ### Root Cause
 
 `avd::list_avds()` calls:
+
 ```rust
 let roster_output = run_binary_command(app, "emulator", &["-list-avds"])?;
 ```
 
 `resolve_binary_path()` uses a three-tier lookup:
+
 1. Tauri resource dir (`src-tauri/resources/`)
 2. Repo `resources/` folder
 3. System `PATH`
 
 **On this machine:**
+
 - `emulator` is NOT in `src-tauri/resources/` (only `adb`, `fastboot` are bundled)
 - `emulator` is NOT in system PATH (`where.exe emulator` → "Could not find files")
 - `ANDROID_HOME` and `ANDROID_SDK_ROOT` are **not set** as env vars
@@ -48,12 +51,12 @@ The emulator binary must be resolved from the Android SDK, NOT from the Tauri re
 // sdk.rs
 pub fn resolve_emulator_binary(env: &EmulatorEnv) -> Option<PathBuf> {
     let sdk_roots = sdk_roots_from_env(env);
-    
+
     #[cfg(target_os = "windows")]
     let names = ["emulator.exe"];
     #[cfg(not(target_os = "windows"))]
     let names = ["emulator"];
-    
+
     for root in &sdk_roots {
         for name in &names {
             let candidate = root.join("emulator").join(name);
@@ -73,7 +76,7 @@ pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
     let env = sdk::current_env();
     let emulator_bin = sdk::resolve_emulator_binary(&env)
         .ok_or_else(|| "Android emulator binary not found. Install Android Studio or add the SDK emulator/ folder to PATH.".to_string())?;
-    
+
     let output = std::process::Command::new(&emulator_bin)
         .arg("-list-avds")
         .output()
@@ -92,6 +95,7 @@ pub fn list_avds(app: &AppHandle) -> CmdResult<Vec<AvdSummary>> {
 ### Root Cause
 
 `config.ini` on this machine has:
+
 ```
 image.sysdir.1=system-images\android-31\google_apis_playstore\x86_64\
 ```
@@ -99,6 +103,7 @@ image.sysdir.1=system-images\android-31\google_apis_playstore\x86_64\
 Note: **backslashes**, not forward slashes.
 
 `parse_api_level()` in `avd.rs`:
+
 ```rust
 fn parse_api_level(path: &str) -> Option<u32> {
     path.split(['/', '\\'])          // ✅ splits on BOTH — this is correct!
@@ -110,6 +115,7 @@ fn parse_api_level(path: &str) -> Option<u32> {
 Wait — this IS correct. It splits on both `'/'` and `'\\'`. But there's a subtle bug:
 
 The `image_sysdir` value from the config is:
+
 ```
 system-images\android-31\google_apis_playstore\x86_64\
 ```
@@ -117,6 +123,7 @@ system-images\android-31\google_apis_playstore\x86_64\
 After trim: `system-images\android-31\google_apis_playstore\x86_64`
 
 `parse_config_ini()` does:
+
 ```rust
 image_sysdir: image_sysdir.clone(),
 api_level: image_sysdir.as_deref().and_then(parse_api_level),
@@ -129,12 +136,14 @@ And `parse_api_level` is called on `"system-images\\android-31\\google_apis_play
 **Actual bug:** `.trim()` in `parse_ini_map` should work, but if Android Studio writes the value with trailing space or a non-standard character, `parse_api_level` might fail. **Verified safe on this AVD** — `api_level` should resolve to `31`.
 
 **However**, `resolve_ramdisk_path()` will fail because:
+
 - `image_sysdir` = `system-images\android-31\google_apis_playstore\x86_64\`
 - `sdk_roots` = `[C:\Users\akila\AppData\Local\Android\Sdk]` (from LOCALAPPDATA)
 - Candidate path = `C:\Users\akila\AppData\Local\Android\Sdk\system-images\android-31\google_apis_playstore\x86_64\ramdisk.img`
 - But the path separator mismatch: joining a Windows-native `PathBuf` with a mixed-slash relative path via `.join()` may produce a broken path on Windows.
 
 **Fix:** Normalize the sysdir value before joining:
+
 ```rust
 let relative = raw.trim_end_matches(['/', '\\']).replace('/', "\\");
 ```
@@ -146,17 +155,20 @@ let relative = raw.trim_end_matches(['/', '\\']).replace('/', "\\");
 ### Root Cause
 
 `runtime_avd_names()` in `runtime.rs`:
+
 1. Calls `adb devices` to get `emulator-5554 device`
 2. For each emulator serial, calls `adb -s emulator-5554 emu avd name`
 3. `parse_emu_avd_name_output()` looks for first non-empty, non-`"OK"` line
 
 **Actual output of `adb -s emulator-5554 emu avd name`:**
+
 ```
 Medium_Phone
 OK
 ```
 
 `parse_emu_avd_name_output()`:
+
 ```rust
 output.lines()
     .map(str::trim)
@@ -167,11 +179,13 @@ output.lines()
 This should return `"Medium_Phone"` — **correct**.
 
 But then `map_runtime_avd_names()` returns a `HashMap<AVD_name, serial>`:
+
 ```
 { "Medium_Phone" => "emulator-5554" }
 ```
 
 In `list_avds()`, for each name from `emulator -list-avds`:
+
 ```rust
 let serial = runtime_avd_names.get(name).cloned();
 ```
@@ -189,18 +203,20 @@ This lookup uses `name` = `"Medium_Phone"` against key `"Medium_Phone"` — **ex
 ### Root Cause
 
 In `ViewEmulatorManager.tsx`:
+
 ```typescript
 try {
-    const plan = await GetAvdRestorePlan(selectedAvd.name);
-    if (!cancelled) setRestorePlan(plan);
+  const plan = await GetAvdRestorePlan(selectedAvd.name);
+  if (!cancelled) setRestorePlan(plan);
 } catch {
-    if (!cancelled) setRestorePlan(null);  // ← silently swallowed!
+  if (!cancelled) setRestorePlan(null); // ← silently swallowed!
 }
 ```
 
 When `ramdiskPath` is null OR when the `emulator` binary is not found (causing `list_avds` to fail), `GetAvdRestorePlan` throws. The error is caught and swallowed — `restorePlan` stays null and the Restore tab shows nothing. No toast, no warning, no hint to the user.
 
 **Fix:** Propagate the error to activity log:
+
 ```typescript
 } catch (error) {
     if (!cancelled) {
@@ -217,6 +233,7 @@ When `ramdiskPath` is null OR when the `emulator` binary is not found (causing `
 ### Root Cause
 
 `runtime::launch_avd()`:
+
 ```rust
 command.spawn().map_err(|error| error.to_string())?;
 Ok(format!("Launched {avd_name}"))
@@ -225,6 +242,7 @@ Ok(format!("Launched {avd_name}"))
 `spawn()` only errors if the **process failed to start** (binary not found, permission denied). If the emulator starts but immediately crashes (wrong API, missing HAXM, etc.), the error is invisible. The frontend shows "Launched Medium_Phone" with a success toast even if the emulator window closes in 2 seconds.
 
 **Fix:** Use a short `wait_with_output()` timeout (1-2 seconds) to detect immediate crashes:
+
 ```rust
 let mut child = command.spawn().map_err(|e| e.to_string())?;
 // Give it 1s to detect immediate startup failures
@@ -272,14 +290,14 @@ pub fn list_avds_from_ini_files(avd_home: &Path) -> CmdResult<Vec<String>> {
 
 ## Summary Table
 
-| # | Severity | Location | Bug | Impact |
-|---|----------|----------|-----|--------|
-| 1 | 🔴 Critical | `avd.rs::list_avds()` | `emulator` binary not found via `resolve_binary_path()` — not in bundled resources, not in PATH | Empty roster; running emulator not shown |
-| 2 | 🟠 Medium | `avd.rs::resolve_ramdisk_path()` | Windows backslash sysdir path joining may produce broken paths | `ramdiskPath` is null, warnings appear, root/restore features broken |
-| 3 | 🟡 Medium | `runtime.rs::runtime_avd_names()` | N+1 sequential ADB calls; blocks for ~1s per emulator serial | Slow AVD list refresh (5s polling × N serials) |
-| 4 | 🟡 Low | `ViewEmulatorManager.tsx` | `GetAvdRestorePlan` errors silently swallowed | Restore tab shows nothing, no user guidance |
-| 5 | 🟡 Low | `runtime.rs::launch_avd()` | `spawn()` cannot detect immediate emulator crash | False success toast; emulator may have died |
-| 6 | 🟠 Medium | `avd.rs::list_avds()` | Uses `emulator -list-avds` as primary discovery; should scan `.ini` files directly | Hard dependency on `emulator` binary for basic enumeration |
+| #   | Severity    | Location                          | Bug                                                                                             | Impact                                                               |
+| --- | ----------- | --------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| 1   | 🔴 Critical | `avd.rs::list_avds()`             | `emulator` binary not found via `resolve_binary_path()` — not in bundled resources, not in PATH | Empty roster; running emulator not shown                             |
+| 2   | 🟠 Medium   | `avd.rs::resolve_ramdisk_path()`  | Windows backslash sysdir path joining may produce broken paths                                  | `ramdiskPath` is null, warnings appear, root/restore features broken |
+| 3   | 🟡 Medium   | `runtime.rs::runtime_avd_names()` | N+1 sequential ADB calls; blocks for ~1s per emulator serial                                    | Slow AVD list refresh (5s polling × N serials)                       |
+| 4   | 🟡 Low      | `ViewEmulatorManager.tsx`         | `GetAvdRestorePlan` errors silently swallowed                                                   | Restore tab shows nothing, no user guidance                          |
+| 5   | 🟡 Low      | `runtime.rs::launch_avd()`        | `spawn()` cannot detect immediate emulator crash                                                | False success toast; emulator may have died                          |
+| 6   | 🟠 Medium   | `avd.rs::list_avds()`             | Uses `emulator -list-avds` as primary discovery; should scan `.ini` files directly              | Hard dependency on `emulator` binary for basic enumeration           |
 
 ---
 

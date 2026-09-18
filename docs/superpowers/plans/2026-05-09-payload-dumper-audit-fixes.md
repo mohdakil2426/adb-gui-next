@@ -15,6 +15,7 @@
 ### Task 1: Implement SHA-256 Verification in OPS Extractor
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/extractor.rs:280-290`
 
 - [ ] **Step 1: Read the current SHA-256 stub code**
@@ -94,6 +95,7 @@ After: Bail with descriptive error on mismatch. Closes Issue #13."
 ### Task 2: Fix ZIP Memory Spike — Mmap Only Payload Region
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/remote.rs:340-353`
 - Modify: `src-tauri/src/payload/http_zip.rs` (if needed for `find_payload_in_zip`)
 
@@ -178,6 +180,7 @@ the payload region. Closes Issue #14."
 ### Task 3: Fix Race Condition in handlePayloadDrop and handleExtract
 
 **Files:**
+
 - Modify: `src/lib/payload-dumper/usePayloadActions.ts:212-226, 285-356`
 
 - [ ] **Step 1: Read current handlePayloadDrop and handleExtract code**
@@ -221,10 +224,14 @@ Update the guard inside `handlePayloadDrop` to use the ref:
 ```typescript
 const handlePayloadDrop = useCallback(
   async (paths: string[]) => {
-    if (statusRef.current === 'extracting' || statusRef.current === 'loading-partitions') return;
+    if (
+      statusRef.current === "extracting" ||
+      statusRef.current === "loading-partitions"
+    )
+      return;
     // ...
   },
-  [statusRef, setPayloadPath, loadPartitions],
+  [statusRef, setPayloadPath, loadPartitions]
 );
 ```
 
@@ -266,6 +273,7 @@ Closes Issue #2."
 ### Task 4: Improve OPS Decrypt Error Message
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/ops_parser.rs:90-111`
 
 - [ ] **Step 1: Read current decrypt error code**
@@ -342,6 +350,7 @@ Closes Issue #15."
 ### Task 5: Handle set_len Errors Properly
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs:186`
 - Modify: `src-tauri/src/payload/remote.rs:395`
 
@@ -394,12 +403,14 @@ Closes Issue #16."
 ### Task 6: Deduplicate stream_copy and extract_partition
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/payload/remote.rs`
 
 - [ ] **Step 1: Identify duplicated code**
 
 Both `extractor.rs` and `remote.rs` have:
+
 - `stream_copy` function (or equivalent copy loop)
 - `extract_partition` logic (data offset computation, operation handling, sparse handling)
 
@@ -469,6 +480,7 @@ Closes Issue #9."
 ### Task 7: Define PayloadError Enum
 
 **Files:**
+
 - Create: `src-tauri/src/payload/error.rs`
 - Modify: `src-tauri/src/payload/mod.rs`
 - Modify: `src-tauri/src/commands/payload.rs` (update command returns)
@@ -557,6 +569,7 @@ Closes Issue #11."
 ### Task 8: Replace thread::scope with rayon
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs:151-226`
 - Modify: `src-tauri/src/payload/remote.rs:379-430`
 
@@ -668,6 +681,7 @@ Closes Issue #19."
 ### Task 9: Add HTTP Concurrency Limit
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/remote.rs:302-324` (download chunks)
 - Modify: `src-tauri/src/payload/http.rs:210-248` (range requests)
 
@@ -745,6 +759,7 @@ Closes Issues #17 and #18."
 ### Task 10: Merge remote_zip Feature Flag
 
 **Files:**
+
 - Modify: `src-tauri/Cargo.toml` (features section)
 - Modify: `src-tauri/src/payload/mod.rs` (remove `#[cfg(feature)]` gates)
 - Modify: `src-tauri/src/commands/payload.rs` (remove `#[cfg(feature)]` gates)
@@ -803,6 +818,7 @@ Closes Issue #10."
 ### Task 11: Add 500ms Debounce to URL Check Button
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/PayloadSourceTabs.tsx`
 
 - [ ] **Step 1: Read current URL check code**
@@ -855,6 +871,7 @@ Closes Issue #5."
 ### Task 12: Show Loading/Error for Silent Metadata Failure
 
 **Files:**
+
 - Modify: `src/lib/payload-dumper/usePayloadActions.ts:178-187`
 
 - [ ] **Step 1: Read current fire-and-forget metadata call**
@@ -894,6 +911,7 @@ Closes Issue #6."
 ### Task 13: Fix Missing Dependency Array
 
 **Files:**
+
 - Modify: `src/lib/payload-dumper/usePayloadActions.ts:204`
 
 - [ ] **Step 1: Read current dependency array**
@@ -929,6 +947,7 @@ Confirmed Issue #3 is not present or already fixed."
 ### Task 14: Convert Sets to Arrays Defensively
 
 **Files:**
+
 - Modify: `src/lib/payloadDumperStore.ts:92-94, 166-172, 175-195`
 
 - [ ] **Step 1: Read current Set usage**
@@ -986,6 +1005,7 @@ Closes Issue #1 (downgraded to Low per audit review)."
 ### Task 15: Combine Partition Filtering into Single Pass
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/PartitionTable.tsx:37-42`
 
 - [ ] **Step 1: Read current double-iteration code**
@@ -993,7 +1013,7 @@ Closes Issue #1 (downgraded to Low per audit review)."
 ```typescript
 // PartitionTable.tsx:37-42:
 const toExtractCount = partitions.filter(
-  (p) => p.selected && !completedPartitions.has(p.name),
+  (p) => p.selected && !completedPartitions.has(p.name)
 ).length;
 const toExtractSize = partitions
   .filter((p) => p.selected && !completedPartitions.has(p.name))
@@ -1053,13 +1073,14 @@ Closes Issue #4."
 ### Task 16: Extract Magic String Array to Constant
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/PayloadSourceTabs.tsx:69`
 
 - [ ] **Step 1: Read current magic string**
 
 ```typescript
 // PayloadSourceTabs.tsx:69:
-accept: ['.bin', '.zip', '.ops', '.ofp']
+accept: [".bin", ".zip", ".ops", ".ofp"];
 ```
 
 - [ ] **Step 2: Define constant and use it**
@@ -1067,7 +1088,7 @@ accept: ['.bin', '.zip', '.ops', '.ofp']
 Add at top of file:
 
 ```typescript
-const ACCEPTED_PAYLOAD_EXTENSIONS = ['.bin', '.zip', '.ops', '.ofp'] as const;
+const ACCEPTED_PAYLOAD_EXTENSIONS = [".bin", ".zip", ".ops", ".ofp"] as const;
 type AcceptedExtension = (typeof ACCEPTED_PAYLOAD_EXTENSIONS)[number];
 ```
 
@@ -1077,7 +1098,7 @@ Replace the inline array with the constant.
 
 ```typescript
 function isAcceptedExtension(filename: string): boolean {
-  const ext = filename.toLowerCase().slice(filename.lastIndexOf('.'));
+  const ext = filename.toLowerCase().slice(filename.lastIndexOf("."));
   return (ACCEPTED_PAYLOAD_EXTENSIONS as readonly string[]).includes(ext);
 }
 ```
@@ -1098,6 +1119,7 @@ Closes Issue #7."
 ### Task 17: Handle Partial Extraction in ExtractionStatusCard
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/ExtractionStatusCard.tsx:27`
 
 - [ ] **Step 1: Read current null return**
@@ -1141,6 +1163,7 @@ Closes Issue #8."
 ### Task 18: Add Doc Comments to Tauri Commands
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/payload.rs` (all 8 commands)
 
 - [ ] **Step 1: Add #[doc = "..."] to each command**
@@ -1186,6 +1209,7 @@ Closes Issue #12."
 ### Task 19: Implement Output Verification System
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs` (add post-extraction verify)
 - Modify: `src-tauri/src/payload/ops/extractor.rs` (add post-extraction verify)
 - New: `src-tauri/src/payload/verify.rs` (shared verification logic)
@@ -1283,6 +1307,7 @@ Closes Proposal #1."
 ### Task 20: Implement Input Validation
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/parser.rs` (add magic validation)
 - Modify: `src-tauri/src/payload/ops/detect.rs` (add password ZIP detection)
 
@@ -1337,6 +1362,7 @@ Closes Proposal #2."
 ### Task 21: Implement Real-time Statistics
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs` (add timing/progress tracking)
 - Modify: `src/lib/payload-dumper/usePayloadEvents.ts` (log stats on complete)
 
@@ -1401,6 +1427,7 @@ Closes Proposal #4."
 ### Task 22: Implement Graceful Interruption
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs` (add interrupt flag)
 - Modify: `src-tauri/src/payload/remote.rs` (add interrupt flag)
 - New: `src-tauri/src/payload/interrupt.rs` (shared interrupt handling)
@@ -1468,6 +1495,7 @@ Closes Proposal #6."
 ### Task 23: Implement Delta OTA Support (SOURCE_COPY + SOURCE_BSDIFF)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs` (add delta operations)
 - Modify: `src-tauri/src/payload/ops/extractor.rs` (add delta operations)
 - Create: `src-tauri/src/payload/delta.rs` (new delta operations module)
@@ -1596,9 +1624,9 @@ export async function ExtractDeltaPayload(
   payloadPath: string,
   outputDir: string,
   sourceDir: string,
-  selectedPartitions: string[],
+  selectedPartitions: string[]
 ): Promise<ExtractPayloadResult> {
-  return core.invoke('extract_delta_payload', {
+  return core.invoke("extract_delta_payload", {
     payloadPath,
     outputDir,
     sourceDir,
@@ -1652,35 +1680,35 @@ Closes Proposal #3."
 
 ### Files Created in This Plan
 
-| File | Purpose |
-|------|---------|
-| `src-tauri/src/payload/copy.rs` | Shared `stream_copy` utility (Task 6) |
-| `src-tauri/src/payload/error.rs` | `PayloadError` enum (Task 7) |
-| `src-tauri/src/payload/verify.rs` | Post-extraction SHA-256 + plausibility checks (Task 19) |
-| `src-tauri/src/payload/interrupt.rs` | Graceful interruption flag (Task 22) |
-| `src-tauri/src/payload/delta.rs` | SOURCE_COPY + SOURCE_BSDIFF operations (Task 23) |
+| File                                 | Purpose                                                 |
+| ------------------------------------ | ------------------------------------------------------- |
+| `src-tauri/src/payload/copy.rs`      | Shared `stream_copy` utility (Task 6)                   |
+| `src-tauri/src/payload/error.rs`     | `PayloadError` enum (Task 7)                            |
+| `src-tauri/src/payload/verify.rs`    | Post-extraction SHA-256 + plausibility checks (Task 19) |
+| `src-tauri/src/payload/interrupt.rs` | Graceful interruption flag (Task 22)                    |
+| `src-tauri/src/payload/delta.rs`     | SOURCE_COPY + SOURCE_BSDIFF operations (Task 23)        |
 
 ### Files Modified in This Plan
 
-| File | Tasks |
-|------|-------|
-| `src-tauri/src/payload/ops/extractor.rs` | 1, 5, 19, 23 |
-| `src-tauri/src/payload/remote.rs` | 2, 5, 6, 8, 9, 22 |
-| `src-tauri/src/payload/extractor.rs` | 5, 6, 8, 19, 21, 22, 23 |
-| `src-tauri/src/payload/http.rs` | 9 |
-| `src-tauri/src/payload/ops/ops_parser.rs` | 4 |
-| `src-tauri/src/payload/ops/detect.rs` | 20 |
-| `src-tauri/src/payload/parser.rs` | 20 |
-| `src-tauri/src/payload/mod.rs` | 6, 7, 19, 22, 23 |
-| `src-tauri/src/commands/payload.rs` | 7, 10, 23 |
-| `src-tauri/Cargo.toml` | 7, 10, 23 |
-| `src/lib/payload-dumper/usePayloadActions.ts` | 3, 12, 13 |
-| `src/lib/payloadDumperStore.ts` | 14 |
-| `src/components/payload-dumper/PartitionTable.tsx` | 15 |
-| `src/components/payload-dumper/PayloadSourceTabs.tsx` | 11, 16 |
-| `src/components/payload-dumper/ExtractionStatusCard.tsx` | 17 |
-| `src/lib/desktop/backend.ts` | 23 |
-| `src/lib/desktop/models.ts` | 23 |
+| File                                                     | Tasks                   |
+| -------------------------------------------------------- | ----------------------- |
+| `src-tauri/src/payload/ops/extractor.rs`                 | 1, 5, 19, 23            |
+| `src-tauri/src/payload/remote.rs`                        | 2, 5, 6, 8, 9, 22       |
+| `src-tauri/src/payload/extractor.rs`                     | 5, 6, 8, 19, 21, 22, 23 |
+| `src-tauri/src/payload/http.rs`                          | 9                       |
+| `src-tauri/src/payload/ops/ops_parser.rs`                | 4                       |
+| `src-tauri/src/payload/ops/detect.rs`                    | 20                      |
+| `src-tauri/src/payload/parser.rs`                        | 20                      |
+| `src-tauri/src/payload/mod.rs`                           | 6, 7, 19, 22, 23        |
+| `src-tauri/src/commands/payload.rs`                      | 7, 10, 23               |
+| `src-tauri/Cargo.toml`                                   | 7, 10, 23               |
+| `src/lib/payload-dumper/usePayloadActions.ts`            | 3, 12, 13               |
+| `src/lib/payloadDumperStore.ts`                          | 14                      |
+| `src/components/payload-dumper/PartitionTable.tsx`       | 15                      |
+| `src/components/payload-dumper/PayloadSourceTabs.tsx`    | 11, 16                  |
+| `src/components/payload-dumper/ExtractionStatusCard.tsx` | 17                      |
+| `src/lib/desktop/backend.ts`                             | 23                      |
+| `src/lib/desktop/models.ts`                              | 23                      |
 
 ---
 

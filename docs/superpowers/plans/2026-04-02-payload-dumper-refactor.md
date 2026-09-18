@@ -14,23 +14,23 @@
 
 ### New Files (10)
 
-| File | Responsibility | Lines (est.) |
-|------|---------------|-------------|
-| `src/lib/payload-dumper/usePayloadEvents.ts` | Subscribe to `payload:progress` Tauri events, update store | ~25 |
-| `src/lib/payload-dumper/usePayloadActions.ts` | All handler functions (check URL, load partitions, extract, reset, etc.) | ~180 |
-| `src/components/payload-dumper/ExtractionProgressBar.tsx` | Progress bar with percentage display | ~30 |
-| `src/components/payload-dumper/LoadingState.tsx` | Loading spinner stage indicator | ~30 |
-| `src/components/payload-dumper/FileBanner.tsx` | File info banner with action buttons | ~80 |
-| `src/components/payload-dumper/PartitionRow.tsx` | Single partition row (checkbox, name, progress, size) | ~60 |
-| `src/components/payload-dumper/PartitionTable.tsx` | Summary bar + table header + row iteration | ~80 |
-| `src/components/payload-dumper/ActionFooter.tsx` | Reset + Extract buttons with dynamic labels | ~50 |
-| `src/components/payload-dumper/PayloadSourceTabs.tsx` | Local/Remote tabs with DropZone + RemoteUrlPanel | ~50 |
-| `src/components/payload-dumper/ExtractionStatusCard.tsx` | Success/error outcome card with file list | ~70 |
+| File                                                      | Responsibility                                                           | Lines (est.) |
+| --------------------------------------------------------- | ------------------------------------------------------------------------ | ------------ |
+| `src/lib/payload-dumper/usePayloadEvents.ts`              | Subscribe to `payload:progress` Tauri events, update store               | ~25          |
+| `src/lib/payload-dumper/usePayloadActions.ts`             | All handler functions (check URL, load partitions, extract, reset, etc.) | ~180         |
+| `src/components/payload-dumper/ExtractionProgressBar.tsx` | Progress bar with percentage display                                     | ~30          |
+| `src/components/payload-dumper/LoadingState.tsx`          | Loading spinner stage indicator                                          | ~30          |
+| `src/components/payload-dumper/FileBanner.tsx`            | File info banner with action buttons                                     | ~80          |
+| `src/components/payload-dumper/PartitionRow.tsx`          | Single partition row (checkbox, name, progress, size)                    | ~60          |
+| `src/components/payload-dumper/PartitionTable.tsx`        | Summary bar + table header + row iteration                               | ~80          |
+| `src/components/payload-dumper/ActionFooter.tsx`          | Reset + Extract buttons with dynamic labels                              | ~50          |
+| `src/components/payload-dumper/PayloadSourceTabs.tsx`     | Local/Remote tabs with DropZone + RemoteUrlPanel                         | ~50          |
+| `src/components/payload-dumper/ExtractionStatusCard.tsx`  | Success/error outcome card with file list                                | ~70          |
 
 ### Modified Files (1)
 
-| File | Change |
-|------|--------|
+| File                                         | Change                                                         |
+| -------------------------------------------- | -------------------------------------------------------------- |
 | `src/components/views/ViewPayloadDumper.tsx` | Reduce from 957 → ~150 lines by importing hooks and components |
 
 ### Unchanged Files (for reference)
@@ -49,6 +49,7 @@
 ## Task 1: Create `usePayloadEvents` Hook
 
 **Files:**
+
 - Create: `src/lib/payload-dumper/usePayloadEvents.ts`
 
 **Purpose:** Extract the `EventsOn('payload:progress')` event listener from `ViewPayloadDumper.tsx` (lines 114-129) into a dedicated hook. This hook subscribes to real-time progress events from the Rust backend and updates the Zustand store.
@@ -58,9 +59,9 @@
 Create `src/lib/payload-dumper/usePayloadEvents.ts`:
 
 ```typescript
-import { useEffect } from 'react';
-import { EventsOn } from '@/lib/desktop/runtime';
-import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
+import { useEffect } from "react";
+import { EventsOn } from "@/lib/desktop/runtime";
+import { usePayloadDumperStore } from "@/lib/payloadDumperStore";
 
 /**
  * Subscribes to 'payload:progress' Tauri events from the Rust backend.
@@ -70,18 +71,24 @@ import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
  * Call it once in the component that owns the extraction lifecycle.
  */
 export function usePayloadEvents(): void {
-  const { updatePartitionProgress, markPartitionCompleted } = usePayloadDumperStore();
+  const { updatePartitionProgress, markPartitionCompleted } =
+    usePayloadDumperStore();
 
   useEffect(() => {
     const unlisten = EventsOn(
-      'payload:progress',
-      (data: { partitionName: string; current: number; total: number; completed: boolean }) => {
+      "payload:progress",
+      (data: {
+        partitionName: string;
+        current: number;
+        total: number;
+        completed: boolean;
+      }) => {
         updatePartitionProgress(data.partitionName, data.current, data.total);
 
         if (data.completed) {
           markPartitionCompleted(data.partitionName);
         }
-      },
+      }
     );
 
     return unlisten;
@@ -106,11 +113,13 @@ git commit -m "refactor(payload-dumper): extract usePayloadEvents hook for progr
 ## Task 2: Create `usePayloadActions` Hook
 
 **Files:**
+
 - Create: `src/lib/payload-dumper/usePayloadActions.ts`
 
 **Purpose:** Extract all handler functions from `ViewPayloadDumper.tsx` into a single hook. This hook orchestrates backend commands, manages local UI state, and returns callable methods. It receives local state (`mode`, `remoteUrl`, `prefetch`, etc.) as options and returns all action handlers.
 
 **Key design decisions:**
+
 - `cancelLoadingRef` is created inside this hook and returned — the component doesn't need to manage it
 - The hook receives `mode`, `remoteUrl`, `prefetch`, `connectionStatus`, `setConnectionStatus`, `setEstimatedSize` as options
 - All handlers use `useCallback` with stable dependencies
@@ -121,12 +130,12 @@ git commit -m "refactor(payload-dumper): extract usePayloadEvents hook for progr
 Create `src/lib/payload-dumper/usePayloadActions.ts`:
 
 ```typescript
-import { useCallback, useRef } from 'react';
-import { toast } from 'sonner';
-import { useLogStore } from '@/lib/logStore';
-import { usePayloadDumperStore } from '@/lib/payloadDumperStore';
-import { handleError, handleSuccess } from '@/lib/errorHandler';
-import { debugLog } from '@/lib/debug';
+import { useCallback, useRef } from "react";
+import { toast } from "sonner";
+import { useLogStore } from "@/lib/logStore";
+import { usePayloadDumperStore } from "@/lib/payloadDumperStore";
+import { handleError, handleSuccess } from "@/lib/errorHandler";
+import { debugLog } from "@/lib/debug";
 import {
   SelectPayloadFile,
   SelectOutputDirectory,
@@ -136,18 +145,18 @@ import {
   CleanupPayloadCache,
   CheckRemotePayload,
   ListRemotePayloadPartitions,
-} from '@/lib/desktop/backend';
-import type { ConnectionStatus } from '@/components/RemoteUrlPanel';
-import { formatBytesNum } from '@/lib/utils';
+} from "@/lib/desktop/backend";
+import type { ConnectionStatus } from "@/components/RemoteUrlPanel";
+import { formatBytesNum } from "@/lib/utils";
 
 interface UsePayloadActionsOptions {
-  mode: 'local' | 'remote';
+  mode: "local" | "remote";
   remoteUrl: string;
   prefetch: boolean;
   connectionStatus: ConnectionStatus;
   setConnectionStatus: (status: ConnectionStatus) => void;
   setEstimatedSize: (size: string | null) => void;
-  setMode: (mode: 'local' | 'remote') => void;
+  setMode: (mode: "local" | "remote") => void;
   setRemoteUrl: (url: string) => void;
   setPrefetch: (prefetch: boolean) => void;
   status: string;
@@ -166,7 +175,9 @@ interface PayloadActions {
   handleReset: () => void;
 }
 
-export function usePayloadActions(options: UsePayloadActionsOptions): PayloadActions {
+export function usePayloadActions(
+  options: UsePayloadActionsOptions
+): PayloadActions {
   const {
     mode,
     remoteUrl,
@@ -207,64 +218,79 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     async (path: string) => {
       if (!path) return;
 
-      setStatus('loading-partitions');
-      setErrorMessage('');
-      useLogStore.getState().addLog('Loading partitions from payload...', 'info');
+      setStatus("loading-partitions");
+      setErrorMessage("");
+      useLogStore
+        .getState()
+        .addLog("Loading partitions from payload...", "info");
 
       try {
         debugLog(`Loading partitions from: ${path}`);
         const partitionList = await ListPayloadPartitionsWithDetails(path);
         if (partitionList && partitionList.length > 0) {
-          const currentCompleted = usePayloadDumperStore.getState().completedPartitions;
+          const currentCompleted =
+            usePayloadDumperStore.getState().completedPartitions;
 
           setPartitions(
             partitionList.map((p) => ({
               name: p.name,
               size: p.size,
               selected: !currentCompleted.has(p.name),
-            })),
+            }))
           );
-          setStatus('ready');
+          setStatus("ready");
           toast.success(`Found ${partitionList.length} partitions`);
-          handleSuccess('Load Partitions', `Found ${partitionList.length} partitions`);
+          handleSuccess(
+            "Load Partitions",
+            `Found ${partitionList.length} partitions`
+          );
         } else {
-          setErrorMessage('No partitions found in payload');
-          setStatus('error');
-          useLogStore.getState().addLog('No partitions found in payload', 'error');
+          setErrorMessage("No partitions found in payload");
+          setStatus("error");
+          useLogStore
+            .getState()
+            .addLog("No partitions found in payload", "error");
         }
       } catch (error) {
         setErrorMessage(String(error));
-        setStatus('error');
-        handleError('Load Partitions', error);
+        setStatus("error");
+        handleError("Load Partitions", error);
       }
     },
-    [setStatus, setErrorMessage, setPartitions],
+    [setStatus, setErrorMessage, setPartitions]
   );
 
   // Handle remote URL connection check
   const handleCheckUrl = useCallback(async () => {
     if (!remoteUrl.trim()) return;
 
-    setConnectionStatus('checking');
+    setConnectionStatus("checking");
     setEstimatedSize(null);
 
     try {
       debugLog(`Checking remote URL: ${remoteUrl}`);
       const info = await CheckRemotePayload(remoteUrl.trim());
       if (info.supportsRanges) {
-        setConnectionStatus('ready');
+        setConnectionStatus("ready");
         setEstimatedSize(formatBytesNum(info.contentLength));
-        toast.success('URL verified - range requests supported');
-        useLogStore.getState().addLog(`URL verified: ${formatBytesNum(info.contentLength)}`, 'info');
+        toast.success("URL verified - range requests supported");
+        useLogStore
+          .getState()
+          .addLog(
+            `URL verified: ${formatBytesNum(info.contentLength)}`,
+            "info"
+          );
       } else {
-        setConnectionStatus('error');
-        toast.error('Server does not support range requests');
-        useLogStore.getState().addLog('Server does not support range requests', 'error');
+        setConnectionStatus("error");
+        toast.error("Server does not support range requests");
+        useLogStore
+          .getState()
+          .addLog("Server does not support range requests", "error");
       }
     } catch (error) {
-      setConnectionStatus('error');
+      setConnectionStatus("error");
       toast.error(`Failed to check URL: ${error}`);
-      handleError('Check Remote URL', error);
+      handleError("Check Remote URL", error);
     }
   }, [remoteUrl, setConnectionStatus, setEstimatedSize]);
 
@@ -273,17 +299,21 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     if (!remoteUrl.trim()) return;
 
     cancelLoadingRef.current = false;
-    setStatus('loading-partitions');
-    setErrorMessage('');
-    useLogStore.getState().addLog('Loading partitions from remote URL...', 'info');
+    setStatus("loading-partitions");
+    setErrorMessage("");
+    useLogStore
+      .getState()
+      .addLog("Loading partitions from remote URL...", "info");
 
     try {
       debugLog(`Loading remote partitions from: ${remoteUrl}`);
       const partitionList = await ListRemotePayloadPartitions(remoteUrl.trim());
 
       if (cancelLoadingRef.current) {
-        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
-        setStatus('idle');
+        useLogStore
+          .getState()
+          .addLog("Loading partitions cancelled by user", "info");
+        setStatus("idle");
         return;
       }
 
@@ -294,24 +324,31 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
             name: p.name,
             size: p.size,
             selected: true,
-          })),
+          }))
         );
-        setStatus('ready');
+        setStatus("ready");
         toast.success(`Found ${partitionList.length} partitions`);
-        handleSuccess('Load Remote Partitions', `Found ${partitionList.length} partitions`);
+        handleSuccess(
+          "Load Remote Partitions",
+          `Found ${partitionList.length} partitions`
+        );
       } else {
-        setErrorMessage('No partitions found in remote payload');
-        setStatus('error');
-        useLogStore.getState().addLog('No partitions found in remote payload', 'error');
+        setErrorMessage("No partitions found in remote payload");
+        setStatus("error");
+        useLogStore
+          .getState()
+          .addLog("No partitions found in remote payload", "error");
       }
     } catch (error) {
       if (cancelLoadingRef.current) {
-        useLogStore.getState().addLog('Loading partitions cancelled by user', 'info');
+        useLogStore
+          .getState()
+          .addLog("Loading partitions cancelled by user", "info");
         return;
       }
       setErrorMessage(String(error));
-      setStatus('error');
-      handleError('Load Remote Partitions', error);
+      setStatus("error");
+      handleError("Load Remote Partitions", error);
     } finally {
       cancelLoadingRef.current = false;
     }
@@ -320,76 +357,78 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
   // Cancel loading partitions from remote URL
   const handleCancelLoadPartitions = useCallback(() => {
     cancelLoadingRef.current = true;
-    setStatus('idle');
-    useLogStore.getState().addLog('Cancelling partition loading...', 'info');
+    setStatus("idle");
+    useLogStore.getState().addLog("Cancelling partition loading...", "info");
   }, [setStatus]);
 
   // Handle payload file dropped via DropZone
   const handlePayloadDrop = useCallback(
     async (paths: string[]) => {
-      if (status === 'extracting' || status === 'loading-partitions') return;
+      if (status === "extracting" || status === "loading-partitions") return;
       if (paths.length === 0) return;
 
       const filePath = paths[0];
       await CleanupPayloadCache();
       setPayloadPath(filePath);
-      toast.success('Payload file selected');
-      useLogStore.getState().addLog(`Selected payload: ${filePath}`, 'info');
+      toast.success("Payload file selected");
+      useLogStore.getState().addLog(`Selected payload: ${filePath}`, "info");
       await loadPartitions(filePath);
     },
-    [status, setPayloadPath, loadPartitions],
+    [status, setPayloadPath, loadPartitions]
   );
 
   const handleSelectPayload = useCallback(async () => {
     try {
-      debugLog('Selecting payload file');
+      debugLog("Selecting payload file");
       const path = await SelectPayloadFile();
       if (path) {
         await CleanupPayloadCache();
         setPayloadPath(path);
-        toast.success('Payload file selected');
-        useLogStore.getState().addLog(`Selected payload: ${path}`, 'info');
+        toast.success("Payload file selected");
+        useLogStore.getState().addLog(`Selected payload: ${path}`, "info");
         await loadPartitions(path);
       }
     } catch (error) {
-      handleError('Select Payload File', error);
+      handleError("Select Payload File", error);
     }
   }, [setPayloadPath, loadPartitions]);
 
   const handleSelectOutput = useCallback(async () => {
     try {
-      debugLog('Selecting output directory');
+      debugLog("Selecting output directory");
       const path = await SelectOutputDirectory();
       if (path) {
         setOutputPath(path);
-        toast.success('Output directory selected');
-        useLogStore.getState().addLog(`Selected output directory: ${path}`, 'info');
+        toast.success("Output directory selected");
+        useLogStore
+          .getState()
+          .addLog(`Selected output directory: ${path}`, "info");
       }
     } catch (error) {
-      handleError('Select Output Directory', error);
+      handleError("Select Output Directory", error);
     }
   }, [setOutputPath]);
 
   const handleOpenOutputFolder = useCallback(async () => {
     const effectiveOutputPath = outputDir || outputPath;
     if (!effectiveOutputPath) {
-      toast.error('No output folder to open');
+      toast.error("No output folder to open");
       return;
     }
     try {
       debugLog(`Opening folder: ${effectiveOutputPath}`);
       await OpenFolder(effectiveOutputPath);
     } catch (error) {
-      handleError('Open Output Folder', error);
+      handleError("Open Output Folder", error);
     }
   }, [outputDir, outputPath]);
 
   const handleRefreshPartitions = useCallback(async () => {
     if (!payloadPath) return;
     if (
-      mode === 'remote' ||
-      payloadPath.startsWith('http://') ||
-      payloadPath.startsWith('https://')
+      mode === "remote" ||
+      payloadPath.startsWith("http://") ||
+      payloadPath.startsWith("https://")
     ) {
       await loadRemotePartitions();
     } else {
@@ -399,7 +438,7 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
 
   const handleExtract = useCallback(async () => {
     if (!payloadPath) {
-      toast.error('Please select a payload file');
+      toast.error("Please select a payload file");
       return;
     }
 
@@ -410,19 +449,26 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
     if (partitionsToExtract.length === 0) {
       const selectedCount = partitions.filter((p) => p.selected).length;
       if (selectedCount > 0 && completedPartitions.size > 0) {
-        toast.info('All selected partitions have already been extracted');
+        toast.info("All selected partitions have already been extracted");
       } else {
-        toast.error('Please select at least one partition');
+        toast.error("Please select at least one partition");
       }
       return;
     }
 
-    setStatus('extracting');
-    setErrorMessage('');
+    setStatus("extracting");
+    setErrorMessage("");
     setExtractingPartitions(new Set(partitionsToExtract));
 
-    const toastId = toast.loading(`Extracting ${partitionsToExtract.length} partition(s)...`);
-    useLogStore.getState().addLog(`Starting extraction of ${partitionsToExtract.length} partitions...`, 'info');
+    const toastId = toast.loading(
+      `Extracting ${partitionsToExtract.length} partition(s)...`
+    );
+    useLogStore
+      .getState()
+      .addLog(
+        `Starting extraction of ${partitionsToExtract.length} partitions...`,
+        "info"
+      );
 
     try {
       const targetOutputPath = outputDir || outputPath;
@@ -430,57 +476,85 @@ export function usePayloadActions(options: UsePayloadActionsOptions): PayloadAct
         payloadPath,
         targetOutputPath,
         partitionsToExtract,
-        mode === 'remote' ? prefetch : undefined,
+        mode === "remote" ? prefetch : undefined
       );
 
       if (result.success) {
         const newFiles = result.extractedFiles || [];
-        setExtractedFiles([...usePayloadDumperStore.getState().extractedFiles, ...newFiles]);
-        setOutputDir(result.outputDir || '');
-        setStatus('success');
+        setExtractedFiles([
+          ...usePayloadDumperStore.getState().extractedFiles,
+          ...newFiles,
+        ]);
+        setOutputDir(result.outputDir || "");
+        setStatus("success");
 
-        const newCompleted = newFiles.map((f) => f.replace('.img', ''));
+        const newCompleted = newFiles.map((f) => f.replace(".img", ""));
         addCompletedPartitions(newCompleted);
         setExtractingPartitions(new Set());
         clearPartitionProgress();
 
-        toast.success(`Extraction complete! ${newFiles.length} files extracted`, { id: toastId });
-        useLogStore.getState().addLog(
-          `Extraction complete: ${newFiles.length} files to ${result.outputDir}`,
-          'success',
+        toast.success(
+          `Extraction complete! ${newFiles.length} files extracted`,
+          { id: toastId }
         );
+        useLogStore
+          .getState()
+          .addLog(
+            `Extraction complete: ${newFiles.length} files to ${result.outputDir}`,
+            "success"
+          );
       } else {
-        setErrorMessage(result.error || 'Unknown error');
-        setStatus('error');
+        setErrorMessage(result.error || "Unknown error");
+        setStatus("error");
         setExtractingPartitions(new Set());
         clearPartitionProgress();
         toast.error(`Extraction failed: ${result.error}`, { id: toastId });
-        useLogStore.getState().addLog(`Extraction failed: ${result.error}`, 'error');
+        useLogStore
+          .getState()
+          .addLog(`Extraction failed: ${result.error}`, "error");
       }
     } catch (error) {
       setErrorMessage(String(error));
-      setStatus('error');
+      setStatus("error");
       setExtractingPartitions(new Set());
       clearPartitionProgress();
       toast.error(`Extraction failed: ${error}`, { id: toastId });
-      useLogStore.getState().addLog(`Extraction failed: ${error}`, 'error');
+      useLogStore.getState().addLog(`Extraction failed: ${error}`, "error");
     }
   }, [
-    payloadPath, partitions, completedPartitions, outputDir, outputPath,
-    mode, prefetch, setStatus, setErrorMessage, setExtractingPartitions,
-    setExtractedFiles, setOutputDir, addCompletedPartitions, clearPartitionProgress,
+    payloadPath,
+    partitions,
+    completedPartitions,
+    outputDir,
+    outputPath,
+    mode,
+    prefetch,
+    setStatus,
+    setErrorMessage,
+    setExtractingPartitions,
+    setExtractedFiles,
+    setOutputDir,
+    addCompletedPartitions,
+    clearPartitionProgress,
   ]);
 
   const handleReset = useCallback(() => {
     reset();
-    setMode('local');
-    setRemoteUrl('');
+    setMode("local");
+    setRemoteUrl("");
     setPrefetch(false);
-    setConnectionStatus('idle');
+    setConnectionStatus("idle");
     setEstimatedSize(null);
     cancelLoadingRef.current = false;
-    useLogStore.getState().addLog('Payload Dumper reset', 'info');
-  }, [reset, setMode, setRemoteUrl, setPrefetch, setConnectionStatus, setEstimatedSize]);
+    useLogStore.getState().addLog("Payload Dumper reset", "info");
+  }, [
+    reset,
+    setMode,
+    setRemoteUrl,
+    setPrefetch,
+    setConnectionStatus,
+    setEstimatedSize,
+  ]);
 
   return {
     handleCheckUrl,
@@ -514,6 +588,7 @@ git commit -m "refactor(payload-dumper): extract usePayloadActions hook for back
 ## Task 3: Create `ExtractionProgressBar` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/ExtractionProgressBar.tsx`
 
 **Purpose:** Extract the progress bar component from `ViewPayloadDumper.tsx` (lines 44-72). Shows a shadcn `Progress` bar with percentage text. Used both for overall extraction and per-partition progress.
@@ -580,6 +655,7 @@ git commit -m "refactor(payload-dumper): extract ExtractionProgressBar component
 ## Task 4: Create `LoadingState` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/LoadingState.tsx`
 
 **Purpose:** Extract the loading state UI from `ViewPayloadDumper.tsx` (lines 544-565). Shows a centered spinner with contextual message based on mode and file type.
@@ -650,11 +726,13 @@ git commit -m "refactor(payload-dumper): extract LoadingState component"
 ## Task 5: Create `PartitionRow` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/PartitionRow.tsx`
 
 **Purpose:** Extract a single partition row from `ViewPayloadDumper.tsx` (lines 719-820). Each row shows checkbox/completed indicator, partition name with icon, optional progress bar, and size. Uses `React.memo` for performance since there can be 50+ rows.
 
 **Key design decisions:**
+
 - `React.memo` prevents re-renders when other rows update
 - Grid columns match the table header via `showProgress` prop
 - Accessibility: `role="checkbox"`, `aria-checked`, `aria-disabled`, `tabIndex`, `onKeyDown`
@@ -798,11 +876,13 @@ git commit -m "refactor(payload-dumper): extract PartitionRow component with Rea
 ## Task 6: Create `PartitionTable` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/PartitionTable.tsx`
 
 **Purpose:** Extract the partition table (summary bar + header + row iteration) from `ViewPayloadDumper.tsx` (lines 680-825). Manages adaptive columns and iterates over partitions. Includes the "Select All / Deselect All" toggle button.
 
 **Key design decisions:**
+
 - Receives pre-computed values (`isExtractionActive`, `partitionProgress` map) from parent
 - Uses `PartitionRow` component from Task 5
 - Summary bar shows selected count, extracted count, and size to extract
@@ -939,11 +1019,13 @@ git commit -m "refactor(payload-dumper): extract PartitionTable component with s
 ## Task 7: Create `FileBanner` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/FileBanner.tsx`
 
 **Purpose:** Extract the file info banner from `ViewPayloadDumper.tsx` (lines 570-677). Shows file name/URL, partition count, total size, output path, and action buttons (change payload, refresh, select output, open folder).
 
 **Key design decisions:**
+
 - All action callbacks are passed from parent (no backend calls inside)
 - Detects remote vs local mode via `isRemote` prop
 - Output path shows green text when auto-detected (`outputDir` without `outputPath`)
@@ -1123,6 +1205,7 @@ git commit -m "refactor(payload-dumper): extract FileBanner component"
 ## Task 8: Create `ActionFooter` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/ActionFooter.tsx`
 
 **Purpose:** Extract the action footer from `ViewPayloadDumper.tsx` (lines 828-865). Contains Reset and Extract buttons with dynamic labels based on extraction state.
@@ -1226,6 +1309,7 @@ git commit -m "refactor(payload-dumper): extract ActionFooter component"
 ## Task 9: Create `PayloadSourceTabs` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/PayloadSourceTabs.tsx`
 
 **Purpose:** Extract the Local/Remote tabs from `ViewPayloadDumper.tsx` (lines 482-543). Contains `DropZone` for local files and `RemoteUrlPanel` for remote URLs.
@@ -1364,6 +1448,7 @@ git commit -m "refactor(payload-dumper): extract PayloadSourceTabs component"
 ## Task 10: Create `ExtractionStatusCard` Component
 
 **Files:**
+
 - Create: `src/components/payload-dumper/ExtractionStatusCard.tsx`
 
 **Purpose:** Extract the success/error status card from `ViewPayloadDumper.tsx` (lines 870-954). Shows extraction results with file list and open folder button.
@@ -1505,9 +1590,11 @@ git commit -m "refactor(payload-dumper): extract ExtractionStatusCard component"
 ## Task 11: Refactor `ViewPayloadDumper.tsx` to Use Hooks and Components
 
 **Files:**
+
 - Modify: `src/components/views/ViewPayloadDumper.tsx`
 
 **Purpose:** Replace the 957-line monolithic component with a slim ~150-line container that:
+
 1. Imports and calls `usePayloadEvents()` and `usePayloadActions()` hooks
 2. Imports all extracted sub-components
 3. Computes derived values and passes them as props
@@ -1726,6 +1813,7 @@ git commit -m "refactor(payload-dumper): integrate hooks and sub-components, red
 ## Task 12: Add Barrel Exports
 
 **Files:**
+
 - Create: `src/components/payload-dumper/index.ts`
 - Create: `src/lib/payload-dumper/index.ts`
 
@@ -1736,14 +1824,14 @@ git commit -m "refactor(payload-dumper): integrate hooks and sub-components, red
 Create `src/components/payload-dumper/index.ts`:
 
 ```typescript
-export { PayloadSourceTabs } from './PayloadSourceTabs';
-export { LoadingState } from './LoadingState';
-export { FileBanner } from './FileBanner';
-export { PartitionTable } from './PartitionTable';
-export { PartitionRow } from './PartitionRow';
-export { ExtractionProgressBar } from './ExtractionProgressBar';
-export { ActionFooter } from './ActionFooter';
-export { ExtractionStatusCard } from './ExtractionStatusCard';
+export { PayloadSourceTabs } from "./PayloadSourceTabs";
+export { LoadingState } from "./LoadingState";
+export { FileBanner } from "./FileBanner";
+export { PartitionTable } from "./PartitionTable";
+export { PartitionRow } from "./PartitionRow";
+export { ExtractionProgressBar } from "./ExtractionProgressBar";
+export { ActionFooter } from "./ActionFooter";
+export { ExtractionStatusCard } from "./ExtractionStatusCard";
 ```
 
 - [ ] **Step 2: Create hook barrel export**
@@ -1751,8 +1839,8 @@ export { ExtractionStatusCard } from './ExtractionStatusCard';
 Create `src/lib/payload-dumper/index.ts`:
 
 ```typescript
-export { usePayloadEvents } from './usePayloadEvents';
-export { usePayloadActions } from './usePayloadActions';
+export { usePayloadEvents } from "./usePayloadEvents";
+export { usePayloadActions } from "./usePayloadActions";
 ```
 
 - [ ] **Step 3: Run quality gates**
@@ -1776,21 +1864,21 @@ git commit -m "refactor(payload-dumper): add barrel exports for clean imports"
 
 ### 1. Spec Coverage Check
 
-| Original Plan Requirement | Task |
-|--------------------------|------|
-| Create `usePayloadEvents.ts` | Task 1 |
-| Create `usePayloadActions.ts` | Task 2 |
-| Extract `ExtractionProgressBar` | Task 3 |
-| Extract `ExtractionStatusCard` | Task 10 |
-| Extract `ActionFooter` | Task 8 |
-| Extract `PartitionRow` | Task 5 |
-| Extract `PartitionTable` | Task 6 |
-| Extract `PayloadSourceTabs` | Task 9 |
-| Refactor `ViewPayloadDumper.tsx` | Task 11 |
-| File info banner extraction | Task 7 |
-| Loading state extraction | Task 4 |
-| `cancelLoadingRef` handling | Task 2 (inside hook) |
-| Barrel exports | Task 12 |
+| Original Plan Requirement        | Task                 |
+| -------------------------------- | -------------------- |
+| Create `usePayloadEvents.ts`     | Task 1               |
+| Create `usePayloadActions.ts`    | Task 2               |
+| Extract `ExtractionProgressBar`  | Task 3               |
+| Extract `ExtractionStatusCard`   | Task 10              |
+| Extract `ActionFooter`           | Task 8               |
+| Extract `PartitionRow`           | Task 5               |
+| Extract `PartitionTable`         | Task 6               |
+| Extract `PayloadSourceTabs`      | Task 9               |
+| Refactor `ViewPayloadDumper.tsx` | Task 11              |
+| File info banner extraction      | Task 7               |
+| Loading state extraction         | Task 4               |
+| `cancelLoadingRef` handling      | Task 2 (inside hook) |
+| Barrel exports                   | Task 12              |
 
 ### 2. Placeholder Scan
 

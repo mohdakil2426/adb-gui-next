@@ -51,6 +51,7 @@ adb_shell(app, serial, &format!(
 ```
 
 **Problem:** `magiskboot decompress` is designed for single-format decompression (e.g., `.gz` → raw). But AVD ramdisk files can be:
+
 - **LZ4-legacy** (most x86_64 AVDs) — magic `02214c18`
 - **GZIP** (older AVDs) — magic `1f8b0800`
 - **Raw CPIO** (rare)
@@ -91,9 +92,11 @@ let config_content = "KEEPVERITY=true\nKEEPFORCEENCRYPT=true\nRECOVERYMODE=false
 ```
 
 **Problem:** rootAVD includes a `SHA1=<hash>` line in the config for stock ramdisks (see `patching_ramdisk()` line 1687):
+
 ```bash
 [ ! -z $SHA1 ] && echo "SHA1=$SHA1" >> config
 ```
+
 Where `SHA1` is computed via `magiskboot sha1 ramdisk.cpio`. This hash is used by Magisk during boot to verify the ramdisk integrity. If missing, some Magisk versions may silently skip init replacement.
 
 **Impact:** 🟡 Medium — may cause boot-time verification failures on certain Magisk versions.
@@ -107,12 +110,15 @@ Where `SHA1` is computed via `magiskboot sha1 ramdisk.cpio`. This hash is used b
 **Location:** `root.rs:415-424`
 
 The patch command includes `magiskinit`, `magisk64.xz`, `magisk32.xz`, but **never includes `stub.xz`**. rootAVD checks for `stub.apk` (line 1702-1705):
+
 ```bash
 if $STUBAPK; then
     $BASEDIR/magiskboot compress=xz stub.apk stub.xz
 fi
 ```
+
 And adds it to the CPIO:
+
 ```bash
 "$SKIPSTUB add 0644 overlay.d/sbin/stub.xz stub.xz"
 ```
@@ -122,6 +128,7 @@ And adds it to the CPIO:
 **Impact:** 🔴 Critical for Magisk v25+ — init may fail to launch the Magisk daemon.
 
 **Fix:** If `MagiskPackageContents::stub_apk` is `Some(path)`:
+
 1. Push `stub.apk` to the workdir
 2. Compress: `magiskboot compress=xz stub.apk stub.xz`
 3. Add to CPIO: `add 0644 overlay.d/sbin/stub.xz stub.xz`
@@ -138,12 +145,13 @@ LaunchAvd(avd.name, {
   writableSystem: false,
   coldBoot: true,
   noSnapshotLoad: true,
-  noSnapshotSave: false,  // ← BUG: should be true
+  noSnapshotSave: false, // ← BUG: should be true
   noBootAnim: false,
-})
+});
 ```
 
 **Problem:** After rooting, when the user clicks "Cold Boot Emulator" in the result step, the emulator is launched with `noSnapshotSave: false`. This means:
+
 1. The emulator cold boots with the patched ramdisk ✓
 2. Magisk initializes ✓
 3. **The emulator saves a snapshot of the Magisk-enabled state** ✗
@@ -188,6 +196,7 @@ fn adb_shell(app: &AppHandle, serial: &str, cmd: &str) -> CmdResult<String> {
 ```
 
 **Problem:** `run_binary_command_allow_output_on_failure` returns `Ok(output)` even when the command fails with a non-zero exit code. This means:
+
 - `magiskboot decompress` failing silently → patch proceeds on empty/corrupt CPIO
 - `magiskboot cpio ... patch` failing → no actual init replacement
 - `magiskboot compress=xz` failing → no compressed binaries in overlay
@@ -207,6 +216,7 @@ rootAVD checks `$?` after every critical command. We don't.
 **Problem:** When the user cold boots after rooting, if a **previous Quick Boot snapshot** exists, the emulator may still attempt to load it despite `-no-snapshot-load`. Some emulator versions have bugs where the snapshot partially loads. The safest approach (used by rootAVD) is to **shut down the AVD** before replacing the ramdisk and then cold boot.
 
 But our pipeline replaces the ramdisk **while the emulator is running** and then tells the user to cold boot. This creates a window where:
+
 1. The running emulator may re-save a snapshot with the old ramdisk
 2. The snapshot file may contain cached ramdisk data that conflicts with the patched version
 
@@ -221,6 +231,7 @@ But our pipeline replaces the ramdisk **while the emulator is running** and then
 **Location:** `root.rs:352-357` — decompress step
 
 **Problem:** On API 30+ AVDs, the ramdisk may contain **multiple concatenated CPIO archives** separated by `TRAILER!!!` markers. rootAVD has explicit logic for this (`decompress_ramdisk()` lines 1471-1558):
+
 ```bash
 if [[ $API -ge 30 ]]; then
     COUNT=`strings -t d $RDF | grep TRAILER\!\! | wc -l`
@@ -247,6 +258,7 @@ let config_content = "KEEPVERITY=true\nKEEPFORCEENCRYPT=true\nRECOVERYMODE=false
 ```
 
 **Problem:** rootAVD dynamically determines these values:
+
 - `KEEPVERITY`: `true` if system-as-root (most modern AVDs), `false` otherwise
 - `KEEPFORCEENCRYPT`: `true` if data is encrypted, `false` otherwise
 - `RECOVERYMODE`: `true` only for API 28
@@ -278,6 +290,7 @@ For AVDs, hardcoding `true/true/false` is actually **correct for most cases** (A
 **Location:** `AvdSwitcher.tsx:173-181`
 
 The switcher shows `Running` or `Stopped` but doesn't differentiate between:
+
 - **Cold Boot** (fresh boot with no snapshot) — root applies
 - **Normal Boot** (quick boot from snapshot) — root may NOT apply if snap was saved pre-root
 
@@ -300,6 +313,7 @@ Based on the analysis, the **primary root cause** is a combination of:
 4. **BUG-07 (no error checking)**: Because we use `allow_output_on_failure`, none of these failures are caught. The pipeline reports "Done" when in reality every step after decompress was operating on garbage.
 
 **Combined Effect**: The pipeline runs to completion, reports success, but the output `ramdiskpatched.img` is either:
+
 - Incorrectly compressed (won't decompress at boot)
 - Missing critical Magisk components (stub.xz, correct init)
 - A corrupt CPIO that the kernel can't mount
@@ -310,35 +324,36 @@ Based on the analysis, the **primary root cause** is a combination of:
 
 ### Priority 1 — Critical (Must fix for root to work)
 
-| # | Bug | Fix | Effort |
-|---|-----|-----|--------|
-| 1 | BUG-01 | Detect compression before decompress; verify decompress succeeded (check output file size > 0) | Medium |
-| 2 | BUG-02 | Detect original compression via magic bytes; recompress with the same method | Medium |
-| 3 | BUG-04 | Push stub.apk, compress to stub.xz, add to CPIO | Small |
-| 4 | BUG-07 | Add exit-code checking to all critical ADB shell commands | Medium |
+| #   | Bug    | Fix                                                                                            | Effort |
+| --- | ------ | ---------------------------------------------------------------------------------------------- | ------ |
+| 1   | BUG-01 | Detect compression before decompress; verify decompress succeeded (check output file size > 0) | Medium |
+| 2   | BUG-02 | Detect original compression via magic bytes; recompress with the same method                   | Medium |
+| 3   | BUG-04 | Push stub.apk, compress to stub.xz, add to CPIO                                                | Small  |
+| 4   | BUG-07 | Add exit-code checking to all critical ADB shell commands                                      | Medium |
 
 ### Priority 2 — High (Reliability & UX)
 
-| # | Bug | Fix | Effort |
-|---|-----|-----|--------|
-| 5 | BUG-05 | Set `noSnapshotSave: true` in post-root cold boot | Trivial |
-| 6 | BUG-06 | Add `sys.boot_completed` polling before starting root pipeline | Small |
-| 7 | BUG-08 | Stop emulator after writing patched ramdisk, before cold boot | Small |
-| 8 | BUG-03 | Add SHA1 hash to config file | Small |
+| #   | Bug    | Fix                                                            | Effort  |
+| --- | ------ | -------------------------------------------------------------- | ------- |
+| 5   | BUG-05 | Set `noSnapshotSave: true` in post-root cold boot              | Trivial |
+| 6   | BUG-06 | Add `sys.boot_completed` polling before starting root pipeline | Small   |
+| 7   | BUG-08 | Stop emulator after writing patched ramdisk, before cold boot  | Small   |
+| 8   | BUG-03 | Add SHA1 hash to config file                                   | Small   |
 
 ### Priority 3 — Nice-to-have
 
-| # | Bug | Fix | Effort |
-|---|-----|-----|--------|
-| 9 | BUG-09 | Verify multi-CPIO handling on API 30+; add split/merge if needed | Large |
-| 10 | BUG-10 | Dynamic config based on API level | Trivial |
-| 11 | BUG-12 | AvdSwitcher boot state badge | Medium |
+| #   | Bug    | Fix                                                              | Effort  |
+| --- | ------ | ---------------------------------------------------------------- | ------- |
+| 9   | BUG-09 | Verify multi-CPIO handling on API 30+; add split/merge if needed | Large   |
+| 10  | BUG-10 | Dynamic config based on API level                                | Trivial |
+| 11  | BUG-12 | AvdSwitcher boot state badge                                     | Medium  |
 
 ---
 
 ## 5. AvdSwitcher Boot State UI Enhancement
 
 ### Goal
+
 Show users whether their emulator is in a state where root will take effect.
 
 ### Backend: Detect Boot Mode
@@ -361,9 +376,11 @@ pub fn detect_boot_mode(app: &AppHandle, serial: &str) -> EmulatorBootMode {
 ```
 
 **Practical approach**: The simplest reliable method is to check the emulator console:
+
 ```
 adb -s <serial> emu avd snapshot list
 ```
+
 If the output shows a snapshot was loaded, it's Normal Boot. If not, it's Cold Boot.
 
 Alternative: Check `getprop ro.boot.hardware.revision` or look for the emulator's snapshot load log in `logcat`.
@@ -371,10 +388,11 @@ Alternative: Check `getprop ro.boot.hardware.revision` or look for the emulator'
 ### Frontend: AvdSwitcher Badge
 
 Add boot mode to `AvdSummary`:
+
 ```typescript
 export interface AvdSummary {
   // ... existing fields
-  bootMode?: 'cold' | 'normal' | 'unknown';
+  bootMode?: "cold" | "normal" | "unknown";
 }
 ```
 
@@ -394,12 +412,13 @@ Display in the AvdSwitcher pill:
 ```
 
 Badge colors:
-| Boot Mode | Badge | Color |
-|-----------|-------|-------|
-| Cold Boot | `Cold Boot` | `bg-blue-500/15 text-blue-700` |
-| Normal | `Normal` | `bg-amber-500/15 text-amber-700` |
-| Stopped | (no mode badge) | — |
-| Unknown | `Running` | (current green) |
+
+| Boot Mode | Badge           | Color                            |
+| --------- | --------------- | -------------------------------- |
+| Cold Boot | `Cold Boot`     | `bg-blue-500/15 text-blue-700`   |
+| Normal    | `Normal`        | `bg-amber-500/15 text-amber-700` |
+| Stopped   | (no mode badge) | —                                |
+| Unknown   | `Running`       | (current green)                  |
 
 ---
 
@@ -407,17 +426,17 @@ Badge colors:
 
 Before the root pipeline starts, verify ALL of these:
 
-| Check | How | Fail Action |
-|-------|-----|-------------|
-| AVD selected | `avd != null` | Block: "Select an AVD" |
-| AVD running | `avd.isRunning && avd.serial` | Block: "Launch emulator first" |
-| ADB online | `is_serial_online(serial)` | Block: "Emulator not accessible via ADB" |
-| Boot completed | `getprop sys.boot_completed == 1` | Wait with spinner: "Waiting for boot…" |
-| Ramdisk exists | `ramdisk_path.exists()` | Error: "System image not installed" |
-| Ramdisk writable | `fs::metadata(ramdisk_path).permissions().readonly() == false` | Error: "Ramdisk is read-only" |
-| Ramdisk not shared | Check if multiple AVDs reference same `image.sysdir` | Warn: "Shared system image — all AVDs affected" |
-| Package valid | Extension check + zip integrity | Error: "Invalid package file" |
-| Disk space | Check temp dir has ≥ 200MB free | Error: "Not enough disk space" |
+| Check              | How                                                            | Fail Action                                     |
+| ------------------ | -------------------------------------------------------------- | ----------------------------------------------- |
+| AVD selected       | `avd != null`                                                  | Block: "Select an AVD"                          |
+| AVD running        | `avd.isRunning && avd.serial`                                  | Block: "Launch emulator first"                  |
+| ADB online         | `is_serial_online(serial)`                                     | Block: "Emulator not accessible via ADB"        |
+| Boot completed     | `getprop sys.boot_completed == 1`                              | Wait with spinner: "Waiting for boot…"          |
+| Ramdisk exists     | `ramdisk_path.exists()`                                        | Error: "System image not installed"             |
+| Ramdisk writable   | `fs::metadata(ramdisk_path).permissions().readonly() == false` | Error: "Ramdisk is read-only"                   |
+| Ramdisk not shared | Check if multiple AVDs reference same `image.sysdir`           | Warn: "Shared system image — all AVDs affected" |
+| Package valid      | Extension check + zip integrity                                | Error: "Invalid package file"                   |
+| Disk space         | Check temp dir has ≥ 200MB free                                | Error: "Not enough disk space"                  |
 
 ### Implementation
 
@@ -452,18 +471,18 @@ pub fn verify_root(app: &AppHandle, serial: &str) -> CmdResult<RootVerification>
     let su = adb_shell(app, serial, "su -c 'id -u'")
         .map(|o| o.trim() == "0")
         .unwrap_or(false);
-    
+
     let ver = adb_shell(app, serial, "su -c 'magisk -v'")
         .ok()
         .map(|o| o.trim().to_string());
-    
+
     let daemon = adb_shell(app, serial, "su -c 'magisk --daemon'")
         .is_ok();
-    
+
     let manager = adb_shell(app, serial, "pm list packages magisk")
         .map(|o| !o.trim().is_empty())
         .unwrap_or(false);
-    
+
     Ok(RootVerification { su_available: su, magisk_version: ver, daemon_running: daemon, manager_installed: manager })
 }
 ```
@@ -481,7 +500,7 @@ This should be triggered **after a cold boot**, not immediately after patching (
    - Store the detected method (lz4_legacy/gzip)
    - Use detected method for recompression
 
-2. **BUG-01**: Validate decompress output  
+2. **BUG-01**: Validate decompress output
    - After `magiskboot decompress`, check: `adb shell stat -c%s {workdir}/ramdisk.cpio`
    - If size is 0 or command failed, abort with clear error
 
@@ -513,29 +532,29 @@ This should be triggered **after a cold boot**, not immediately after patching (
 
 ## Appendix A: rootAVD vs. Our Pipeline — Step-by-Step Comparison
 
-| Step | rootAVD (reference) | Our pipeline | Match? |
-|------|---------------------|--------------|--------|
-| Detect compression | `compress_method()` reads magic bytes | ❌ Not done | ❌ |
-| Decompress ramdisk | `magiskboot decompress` with known format | `magiskboot decompress` blind | ⚠️ |
-| Multi-CPIO split | Explicit split/merge for API ≥ 30 | Not handled | ❌ |
-| Test patch status | `magiskboot cpio test; echo $?` | ✅ Done | ✅ |
-| Compute SHA1 | `magiskboot sha1 ramdisk.cpio` | ❌ Not done | ❌ |
-| Write config | KEEPVERITY/KEEPFORCEENCRYPT/SHA1 | KEEPVERITY/KEEPFORCEENCRYPT only | ⚠️ |
-| Compress magisk64.xz | `magiskboot compress=xz` | ✅ Done | ✅ |
-| Compress magisk32.xz | `magiskboot compress=xz` (conditional) | ✅ Done | ✅ |
-| Compress stub.xz | `magiskboot compress=xz stub.apk stub.xz` | ❌ Not done | ❌ |
-| Create overlay dirs | `mkdir 0750 overlay.d` + `overlay.d/sbin` | ✅ Done | ✅ |
-| Add init → magiskinit | `add 0750 init magiskinit` | ✅ Done | ✅ |
-| Add magisk64.xz | `add 0644 overlay.d/sbin/magisk64.xz` | ✅ Done | ✅ |
-| Add magisk32.xz | `add 0644 overlay.d/sbin/magisk32.xz` (conditional) | ✅ Done | ✅ |
-| Add stub.xz | `add 0644 overlay.d/sbin/stub.xz` (conditional) | ❌ Missing | ❌ |
-| Patch | `patch` | ✅ Done | ✅ |
-| Backup | `backup ramdisk.cpio.orig` | ✅ Done | ✅ |
-| Add .backup/.magisk | `mkdir 000 .backup` + `add 000 .backup/.magisk config` | ✅ Done | ✅ |
-| Compress CPIO (if flagged) | `cpio compress` if status & 4 | ✅ Done | ✅ |
-| Recompress to ramdisk | `compress=$METHOD ramdisk.cpio out.img` | ❌ Hardcoded lz4_legacy | ❌ |
-| Verify output | Check file exists + size | ✅ Done (partial) | ⚠️ |
-| Shutdown AVD | `setprop sys.powerctl shutdown` | ❌ Not done | ❌ |
+| Step                       | rootAVD (reference)                                    | Our pipeline                     | Match? |
+| -------------------------- | ------------------------------------------------------ | -------------------------------- | ------ |
+| Detect compression         | `compress_method()` reads magic bytes                  | ❌ Not done                      | ❌     |
+| Decompress ramdisk         | `magiskboot decompress` with known format              | `magiskboot decompress` blind    | ⚠️     |
+| Multi-CPIO split           | Explicit split/merge for API ≥ 30                      | Not handled                      | ❌     |
+| Test patch status          | `magiskboot cpio test; echo $?`                        | ✅ Done                          | ✅     |
+| Compute SHA1               | `magiskboot sha1 ramdisk.cpio`                         | ❌ Not done                      | ❌     |
+| Write config               | KEEPVERITY/KEEPFORCEENCRYPT/SHA1                       | KEEPVERITY/KEEPFORCEENCRYPT only | ⚠️     |
+| Compress magisk64.xz       | `magiskboot compress=xz`                               | ✅ Done                          | ✅     |
+| Compress magisk32.xz       | `magiskboot compress=xz` (conditional)                 | ✅ Done                          | ✅     |
+| Compress stub.xz           | `magiskboot compress=xz stub.apk stub.xz`              | ❌ Not done                      | ❌     |
+| Create overlay dirs        | `mkdir 0750 overlay.d` + `overlay.d/sbin`              | ✅ Done                          | ✅     |
+| Add init → magiskinit      | `add 0750 init magiskinit`                             | ✅ Done                          | ✅     |
+| Add magisk64.xz            | `add 0644 overlay.d/sbin/magisk64.xz`                  | ✅ Done                          | ✅     |
+| Add magisk32.xz            | `add 0644 overlay.d/sbin/magisk32.xz` (conditional)    | ✅ Done                          | ✅     |
+| Add stub.xz                | `add 0644 overlay.d/sbin/stub.xz` (conditional)        | ❌ Missing                       | ❌     |
+| Patch                      | `patch`                                                | ✅ Done                          | ✅     |
+| Backup                     | `backup ramdisk.cpio.orig`                             | ✅ Done                          | ✅     |
+| Add .backup/.magisk        | `mkdir 000 .backup` + `add 000 .backup/.magisk config` | ✅ Done                          | ✅     |
+| Compress CPIO (if flagged) | `cpio compress` if status & 4                          | ✅ Done                          | ✅     |
+| Recompress to ramdisk      | `compress=$METHOD ramdisk.cpio out.img`                | ❌ Hardcoded lz4_legacy          | ❌     |
+| Verify output              | Check file exists + size                               | ✅ Done (partial)                | ⚠️     |
+| Shutdown AVD               | `setprop sys.powerctl shutdown`                        | ❌ Not done                      | ❌     |
 
 **Score: 10/18 steps correct, 3 partially correct, 5 missing.**
 
@@ -543,21 +562,23 @@ This should be triggered **after a cold boot**, not immediately after patching (
 
 ## Appendix B: Compression Detection — Magic Bytes Reference
 
-| Format | First 4 bytes (hex) | `magiskboot` method string |
-|--------|--------------------|----|
-| LZ4-legacy | `02 21 4c 18` | `lz4_legacy` |
-| LZ4-block  | `04 22 4d 18` | `lz4_lg` |
-| GZIP | `1f 8b 08 00` | `gzip` |
-| XZ | `fd 37 7a 58` | `xz` |
-| Raw CPIO (070701) | `30 37 30 37` | (no compression) |
-| ZStd | `28 b5 2f fd` | `zstd` |
+| Format            | First 4 bytes (hex) | `magiskboot` method string |
+| ----------------- | ------------------- | -------------------------- |
+| LZ4-legacy        | `02 21 4c 18`       | `lz4_legacy`               |
+| LZ4-block         | `04 22 4d 18`       | `lz4_lg`                   |
+| GZIP              | `1f 8b 08 00`       | `gzip`                     |
+| XZ                | `fd 37 7a 58`       | `xz`                       |
+| Raw CPIO (070701) | `30 37 30 37`       | (no compression)           |
+| ZStd              | `28 b5 2f fd`       | `zstd`                     |
 
 Detection command (via ADB):
+
 ```bash
 adb shell "xxd -p -l4 /data/local/tmp/adb-gui-root/ramdisk.img"
 ```
 
 If `xxd` is not available (some stripped Android shells), use:
+
 ```bash
 adb shell "od -A n -t x1 -N 4 /data/local/tmp/adb-gui-root/ramdisk.img | tr -d ' '"
 ```
@@ -582,7 +603,7 @@ fn patch_ramdisk_in_emulator(
     let decompress_out = adb_shell_checked(app, serial, &format!(
         "{mb} decompress {ROOT_WORKDIR}/ramdisk.img {ROOT_WORKDIR}/ramdisk.cpio"
     ))?;
-    
+
     // Verify CPIO was created and is non-empty
     verify_file_exists(app, serial, &format!("{ROOT_WORKDIR}/ramdisk.cpio"))?;
 
@@ -590,7 +611,7 @@ fn patch_ramdisk_in_emulator(
     let status = adb_shell_exit_code(app, serial, &format!(
         "{mb} cpio {ROOT_WORKDIR}/ramdisk.cpio test"
     ))?;
-    
+
     if status == 2 {
         return Err("Ramdisk was patched by an unsupported tool. Restore stock first.".into());
     }
@@ -616,7 +637,7 @@ fn patch_ramdisk_in_emulator(
     // 6. Compress magisk binaries
     let is_64bit = magisk_package::is_64bit_abi(&pkg.abi_dir);
     let has_magisk32 = pkg.magisk32.is_some();
-    
+
     if is_64bit {
         adb_shell_checked(app, serial, &format!(
             "{mb} compress=xz {ROOT_WORKDIR}/magisk64 {ROOT_WORKDIR}/magisk64.xz"
@@ -685,7 +706,7 @@ fn detect_compression_method(app: &AppHandle, serial: &str) -> CmdResult<String>
     let hex = adb_shell(app, serial, &format!(
         "xxd -p -l4 {ROOT_WORKDIR}/ramdisk.img || od -A n -t x1 -N 4 {ROOT_WORKDIR}/ramdisk.img | tr -d ' '"
     ))?.trim().to_lowercase().replace(" ", "");
-    
+
     match hex.get(..8).unwrap_or("") {
         "02214c18" => Ok("lz4_legacy".to_string()),
         "1f8b0800" | "1f8b08" => Ok("gzip".to_string()),
@@ -698,7 +719,7 @@ fn detect_compression_method(app: &AppHandle, serial: &str) -> CmdResult<String>
 fn adb_shell_checked(app: &AppHandle, serial: &str, cmd: &str) -> CmdResult<String> {
     let wrapped = format!("{cmd}; echo MAGISK_EXIT:$?");
     let output = adb_shell(app, serial, &wrapped)?;
-    
+
     if let Some(code) = parse_exit_code(&output, "MAGISK_EXIT:") {
         if code != 0 {
             return Err(format!("Command failed (exit {code}): {cmd}\nOutput: {output}"));

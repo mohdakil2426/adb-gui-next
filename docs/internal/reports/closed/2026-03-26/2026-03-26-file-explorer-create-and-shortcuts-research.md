@@ -38,6 +38,7 @@ This document covers the complete design for adding two new operations to the AD
 - **Create Folder** — create a new directory on the connected Android device
 
 These features are exposed via three entry points:
+
 1. Native keyboard shortcuts (`Ctrl+N` / `Ctrl+Shift+N`)
 2. Toolbar buttons (`FilePlus2` / `FolderPlus` icons)
 3. Right-click context menu on empty space in the file list
@@ -50,46 +51,46 @@ The UX model is **inline phantom row** creation — consistent with the existing
 
 ### File Explorer Capabilities (as of 2026-03-26)
 
-| Capability | Status | Implementation |
-|---|---|---|
-| List files/directories | ✅ | `list_files` Rust command → `ListFiles` TS wrapper |
-| Navigate (double-click, tree, address bar) | ✅ | `loadFiles()` in `ViewFileExplorer.tsx` |
-| Push file/folder from host → device | ✅ | `push_file` Rust command → `PushFile` TS wrapper |
-| Pull file/folder device → host | ✅ | `pull_file` Rust command → `PullFile` TS wrapper |
-| Inline rename | ✅ | `rename_file` Rust command → `RenameFile` TS wrapper; `F2` / right-click |
-| Bulk delete | ✅ | `delete_files` Rust command → `DeleteFiles` TS wrapper; `Delete` key / right-click |
-| Explicit multi-select mode | ✅ | `isMultiSelectMode` state gate; `Ctrl+Click`, `Ctrl+A`, right-click → Select |
-| Right-click context menu | ✅ | shadcn `ContextMenu` per row |
-| **Create file on device** | ❌ | **Missing** |
-| **Create folder on device** | ❌ | **Missing** |
-| **Keyboard: New File / New Folder** | ❌ | **Missing** |
+| Capability                                 | Status | Implementation                                                                     |
+| ------------------------------------------ | ------ | ---------------------------------------------------------------------------------- |
+| List files/directories                     | ✅     | `list_files` Rust command → `ListFiles` TS wrapper                                 |
+| Navigate (double-click, tree, address bar) | ✅     | `loadFiles()` in `ViewFileExplorer.tsx`                                            |
+| Push file/folder from host → device        | ✅     | `push_file` Rust command → `PushFile` TS wrapper                                   |
+| Pull file/folder device → host             | ✅     | `pull_file` Rust command → `PullFile` TS wrapper                                   |
+| Inline rename                              | ✅     | `rename_file` Rust command → `RenameFile` TS wrapper; `F2` / right-click           |
+| Bulk delete                                | ✅     | `delete_files` Rust command → `DeleteFiles` TS wrapper; `Delete` key / right-click |
+| Explicit multi-select mode                 | ✅     | `isMultiSelectMode` state gate; `Ctrl+Click`, `Ctrl+A`, right-click → Select       |
+| Right-click context menu                   | ✅     | shadcn `ContextMenu` per row                                                       |
+| **Create file on device**                  | ❌     | **Missing**                                                                        |
+| **Create folder on device**                | ❌     | **Missing**                                                                        |
+| **Keyboard: New File / New Folder**        | ❌     | **Missing**                                                                        |
 
 ### Existing Keyboard Shortcuts in File Explorer
 
-| Shortcut | Action |
-|---|---|
-| `Ctrl+Click` | Toggle row selection, enter multi-select mode |
-| `Ctrl+A` | Select all, enter multi-select mode |
-| `F2` | Inline rename (requires 1 item selected) |
-| `Delete` | Open delete dialog (requires ≥1 item selected) |
-| `Escape` | Cancel rename → then clear selection |
+| Shortcut     | Action                                         |
+| ------------ | ---------------------------------------------- |
+| `Ctrl+Click` | Toggle row selection, enter multi-select mode  |
+| `Ctrl+A`     | Select all, enter multi-select mode            |
+| `F2`         | Inline rename (requires 1 item selected)       |
+| `Delete`     | Open delete dialog (requires ≥1 item selected) |
+| `Escape`     | Cancel rename → then clear selection           |
 
 ### Existing Global Shortcuts (not File Explorer specific)
 
-| Shortcut | Action | Location |
-|---|---|---|
-| `Ctrl+B` | Toggle sidebar | `SidebarProvider` (shadcn) |
-| `` Ctrl+` `` | Toggle bottom panel | `MainLayout.tsx` |
+| Shortcut     | Action              | Location                   |
+| ------------ | ------------------- | -------------------------- |
+| `Ctrl+B`     | Toggle sidebar      | `SidebarProvider` (shadcn) |
+| `` Ctrl+` `` | Toggle bottom panel | `MainLayout.tsx`           |
 
 ### Existing Rust Commands in `files.rs`
 
-| Command | Shell Call | Pattern |
-|---|---|---|
-| `list_files` | `adb shell ls -lA '<path>'` | Read-only |
-| `push_file` | `adb push <local> <remote>` | Host → Device |
-| `pull_file` | `adb pull -a <remote> <local>` | Device → Host |
-| `delete_files` | `adb shell rm -rf 'p1' 'p2'` | Destructive, bulk |
-| `rename_file` | `adb shell mv 'old' 'new'` | In-place mutation |
+| Command        | Shell Call                     | Pattern           |
+| -------------- | ------------------------------ | ----------------- |
+| `list_files`   | `adb shell ls -lA '<path>'`    | Read-only         |
+| `push_file`    | `adb push <local> <remote>`    | Host → Device     |
+| `pull_file`    | `adb pull -a <remote> <local>` | Device → Host     |
+| `delete_files` | `adb shell rm -rf 'p1' 'p2'`   | Destructive, bulk |
+| `rename_file`  | `adb shell mv 'old' 'new'`     | In-place mutation |
 
 ---
 
@@ -113,15 +114,15 @@ adb shell mkdir -p '/sdcard/Download/NewFolder'
 
 ### Risk Table
 
-| Risk | Severity | Mitigation |
-|---|---|---|
-| Name validation (empty, forbidden chars, `.`/`..`) | Low | Reuse existing `FORBIDDEN_CHARS` regex from rename |
-| Spaces/special chars in paths | Low | Already solved with single-quote escaping in all Rust commands |
-| `touch` silently succeeds on existing file | Medium | No destructive effect — `touch` only updates mtime; treat as success |
-| `mkdir -p` silently succeeds if dir exists | Low | No destructive effect; treat as success |
-| Permission denied on target directory | Low | `run_binary_command` propagates error string → toast + log |
-| Two simultaneous inline-edit modes (rename + create) | Medium | Strict mutual exclusion in state machine (see §13) |
-| Tauri DLL crash on `cargo test` (Windows) | Low | Pre-existing known issue; not introduced by this feature |
+| Risk                                                 | Severity | Mitigation                                                           |
+| ---------------------------------------------------- | -------- | -------------------------------------------------------------------- |
+| Name validation (empty, forbidden chars, `.`/`..`)   | Low      | Reuse existing `FORBIDDEN_CHARS` regex from rename                   |
+| Spaces/special chars in paths                        | Low      | Already solved with single-quote escaping in all Rust commands       |
+| `touch` silently succeeds on existing file           | Medium   | No destructive effect — `touch` only updates mtime; treat as success |
+| `mkdir -p` silently succeeds if dir exists           | Low      | No destructive effect; treat as success                              |
+| Permission denied on target directory                | Low      | `run_binary_command` propagates error string → toast + log           |
+| Two simultaneous inline-edit modes (rename + create) | Medium   | Strict mutual exclusion in state machine (see §13)                   |
+| Tauri DLL crash on `cargo test` (Windows)            | Low      | Pre-existing known issue; not introduced by this feature             |
 
 ---
 
@@ -129,18 +130,19 @@ adb shell mkdir -p '/sdcard/Download/NewFolder'
 
 ### Platform Standards for File Manager Shortcuts
 
-| Action | Windows | macOS | Linux (Nautilus/Dolphin) |
-|---|---|---|---|
-| **New Folder** | `Ctrl+Shift+N` | `Cmd+Shift+N` | `Ctrl+Shift+N` |
-| **New File** | *No universal standard* | `Cmd+N` (app-specific) | *No universal standard* |
-| Rename | `F2` | `Return` | `F2` |
-| Delete | `Delete` | `Cmd+Backspace` | `Delete` |
-| Select All | `Ctrl+A` | `Cmd+A` | `Ctrl+A` |
-| Go Up One Level | `Alt+Up` | `Cmd+Up` | `Alt+Up` |
+| Action          | Windows                 | macOS                  | Linux (Nautilus/Dolphin) |
+| --------------- | ----------------------- | ---------------------- | ------------------------ |
+| **New Folder**  | `Ctrl+Shift+N`          | `Cmd+Shift+N`          | `Ctrl+Shift+N`           |
+| **New File**    | _No universal standard_ | `Cmd+N` (app-specific) | _No universal standard_  |
+| Rename          | `F2`                    | `Return`               | `F2`                     |
+| Delete          | `Delete`                | `Cmd+Backspace`        | `Delete`                 |
+| Select All      | `Ctrl+A`                | `Cmd+A`                | `Ctrl+A`                 |
+| Go Up One Level | `Alt+Up`                | `Cmd+Up`               | `Alt+Up`                 |
 
 ### Key Finding
 
 > **"New File" has no universal standard** on any platform. We adopt `Ctrl+N` (the VS Code convention for "new document") because:
+>
 > - Users of this developer-focused app are highly likely to know VS Code
 > - `Ctrl+N` is the most semantically natural shortcut ("N" = New)
 > - It has zero collision risk in our current shortcut map
@@ -149,15 +151,15 @@ adb shell mkdir -p '/sdcard/Download/NewFolder'
 
 ```typescript
 // Ctrl on Windows/Linux, Cmd on macOS — identical to Ctrl+A already in use
-const isMod = e.ctrlKey || e.metaKey;  // metaKey = Cmd on macOS
+const isMod = e.ctrlKey || e.metaKey; // metaKey = Cmd on macOS
 ```
 
 ### Collision Audit
 
 | Proposed Shortcut | Collides With | Safe? |
-|---|---|---|
-| `Ctrl+N` | Nothing | ✅ |
-| `Ctrl+Shift+N` | Nothing | ✅ |
+| ----------------- | ------------- | ----- |
+| `Ctrl+N`          | Nothing       | ✅    |
+| `Ctrl+Shift+N`    | Nothing       | ✅    |
 
 ---
 
@@ -166,18 +168,19 @@ const isMod = e.ctrlKey || e.metaKey;  // metaKey = Cmd on macOS
 ### Approach A — Inline Phantom Row (Chosen)
 
 **Flow:**
+
 1. User triggers via keyboard / toolbar / context menu.
 2. A phantom row appears at the **top** of the file list with an `<Input>` pre-focused.
 3. User types the name (e.g., `notes.txt` or `Backup`).
 4. `Enter` → invoke backend → refresh directory.
 5. `Escape` or blur → cancel, remove phantom row.
 
-| | |
-|---|---|
-| ✅ Consistent with existing inline rename pattern | ❌ Custom UI state not in `fileList` |
-| ✅ No modal — feels native and fast | ❌ Must be mutually exclusive with rename |
-| ✅ Extension included naturally in the typed name | |
-| ✅ Matches VS Code, Windows Explorer, macOS Finder, Nautilus | |
+|                                                              |                                           |
+| ------------------------------------------------------------ | ----------------------------------------- |
+| ✅ Consistent with existing inline rename pattern            | ❌ Custom UI state not in `fileList`      |
+| ✅ No modal — feels native and fast                          | ❌ Must be mutually exclusive with rename |
+| ✅ Extension included naturally in the typed name            |                                           |
+| ✅ Matches VS Code, Windows Explorer, macOS Finder, Nautilus |                                           |
 
 ---
 
@@ -185,11 +188,11 @@ const isMod = e.ctrlKey || e.metaKey;  // metaKey = Cmd on macOS
 
 Open a shadcn `Dialog` with an `Input` and a confirm button.
 
-| | |
-|---|---|
-| ✅ Simpler state management | ❌ Extra modal click to dismiss |
-| ✅ Already have pattern in codebase | ❌ Not what any native file manager does |
-| | ❌ Interrupts flow more than inline editing |
+|                                     |                                             |
+| ----------------------------------- | ------------------------------------------- |
+| ✅ Simpler state management         | ❌ Extra modal click to dismiss             |
+| ✅ Already have pattern in codebase | ❌ Not what any native file manager does    |
+|                                     | ❌ Interrupts flow more than inline editing |
 
 **Rejected.** Approach A is strictly better for power users.
 
@@ -199,10 +202,10 @@ Open a shadcn `Dialog` with an `Input` and a confirm button.
 
 Right-click on empty area of file list → context menu with "New File / New Folder".
 
-| | |
-|---|---|
-| ✅ Discoverable for new users | ❌ Doesn't satisfy keyboard shortcut requirement |
-| ✅ No extra toolbar buttons | ❌ Harder to implement (must detect right-click on non-row area) |
+|                               |                                                                  |
+| ----------------------------- | ---------------------------------------------------------------- |
+| ✅ Discoverable for new users | ❌ Doesn't satisfy keyboard shortcut requirement                 |
+| ✅ No extra toolbar buttons   | ❌ Harder to implement (must detect right-click on non-row area) |
 
 **Not rejected entirely** — kept as a **third entry point** that calls the same inline creation flow as Approach A.
 
@@ -270,6 +273,7 @@ pub fn create_directory(app: AppHandle, path: String) -> CmdResult<String> {
 ```
 
 **Notes:**
+
 - Both follow `CmdResult<T> = Result<T, String>` — mandatory for all Tauri commands.
 - Single-quote path escaping (`'${path.replace("'", "'\\''")}`) is the established pattern.
 - `mkdir -p` is safe to call even if the directory already exists.
@@ -299,7 +303,7 @@ Add two new wrappers following the `RenameFile` / `DeleteFiles` pattern:
  * @param path - Full absolute path on the device (e.g. /sdcard/Download/notes.txt)
  */
 export async function CreateFile(path: string): Promise<string> {
-  return core.invoke<string>('create_file', { path });
+  return core.invoke<string>("create_file", { path });
 }
 
 /**
@@ -307,7 +311,7 @@ export async function CreateFile(path: string): Promise<string> {
  * @param path - Full absolute path on the device (e.g. /sdcard/Download/NewFolder)
  */
 export async function CreateDirectory(path: string): Promise<string> {
-  return core.invoke<string>('create_directory', { path });
+  return core.invoke<string>("create_directory", { path });
 }
 ```
 
@@ -320,8 +324,8 @@ Both commands return `string`, no new DTOs required.
 #### 8a. New Imports
 
 ```typescript
-import { CreateFile, CreateDirectory } from '../../lib/desktop/backend';
-import { FilePlus2, FolderPlus } from 'lucide-react';
+import { CreateFile, CreateDirectory } from "../../lib/desktop/backend";
+import { FilePlus2, FolderPlus } from "lucide-react";
 ```
 
 > lucide-react `^0.577.0` includes both `FilePlus2` and `FolderPlus`.
@@ -330,34 +334,38 @@ import { FilePlus2, FolderPlus } from 'lucide-react';
 
 ```typescript
 // ── Create (new file / new folder) ──────────────────────────────────────────
-type CreatingType = 'file' | 'folder' | null;
+type CreatingType = "file" | "folder" | null;
 const [creatingType, setCreatingType] = useState<CreatingType>(null);
-const [createName, setCreateName] = useState('');
-const [createError, setCreateError] = useState('');
+const [createName, setCreateName] = useState("");
+const [createError, setCreateError] = useState("");
 const [isCreating, setIsCreating] = useState(false);
 ```
 
 #### 8c. Updated `isBusy`
 
 ```typescript
-const isBusy = isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
+const isBusy =
+  isLoading || isPushing || isPulling || isDeleting || isRenaming || isCreating;
 ```
 
 #### 8d. `startCreate` Function
 
 ```typescript
-const startCreate = useCallback((type: 'file' | 'folder') => {
-  // Mutual exclusion: cancel any active rename
-  if (renamingName) handleRenameCancel();
-  setCreatingType(type);
-  setCreateName('');
-  setCreateError('');
-}, [renamingName, handleRenameCancel]);
+const startCreate = useCallback(
+  (type: "file" | "folder") => {
+    // Mutual exclusion: cancel any active rename
+    if (renamingName) handleRenameCancel();
+    setCreatingType(type);
+    setCreateName("");
+    setCreateError("");
+  },
+  [renamingName, handleRenameCancel]
+);
 
 const cancelCreate = useCallback(() => {
   setCreatingType(null);
-  setCreateName('');
-  setCreateError('');
+  setCreateName("");
+  setCreateError("");
 }, []);
 ```
 
@@ -369,7 +377,7 @@ const RESERVED_NAMES = /^\.\.?$/; // rejects "." and ".."
 const handleCreateChange = (val: string) => {
   setCreateName(val);
   if (!val.trim()) {
-    setCreateError('Name cannot be empty');
+    setCreateError("Name cannot be empty");
     return;
   }
   if (FORBIDDEN_CHARS.test(val)) {
@@ -377,10 +385,10 @@ const handleCreateChange = (val: string) => {
     return;
   }
   if (RESERVED_NAMES.test(val.trim())) {
-    setCreateError('Reserved name: use a different name');
+    setCreateError("Reserved name: use a different name");
     return;
   }
-  setCreateError('');
+  setCreateError("");
 };
 ```
 
@@ -395,19 +403,22 @@ const handleCreateConfirm = useCallback(async () => {
   const fullPath = path.posix.join(currentPath, trimmed);
   setIsCreating(true);
   try {
-    if (creatingType === 'file') {
+    if (creatingType === "file") {
       await CreateFile(fullPath);
       toast.success(`Created file "${trimmed}"`);
-      useLogStore.getState().addLog(`Created file: ${fullPath}`, 'success');
+      useLogStore.getState().addLog(`Created file: ${fullPath}`, "success");
     } else {
       await CreateDirectory(fullPath);
       toast.success(`Created folder "${trimmed}"`);
-      useLogStore.getState().addLog(`Created folder: ${fullPath}`, 'success');
+      useLogStore.getState().addLog(`Created folder: ${fullPath}`, "success");
     }
     setCreatingType(null);
     loadFiles(currentPath);
   } catch (error) {
-    handleError(creatingType === 'file' ? 'Create File' : 'Create Folder', error);
+    handleError(
+      creatingType === "file" ? "Create File" : "Create Folder",
+      error
+    );
   } finally {
     setIsCreating(false);
   }
@@ -420,17 +431,17 @@ In the existing `onKey` handler (inside the `useEffect`), add **before** the `is
 
 ```typescript
 // New File: Ctrl+N / Cmd+N
-if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'n') {
+if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === "n") {
   e.preventDefault();
-  startCreate('file');
+  startCreate("file");
   return;
 }
 
 // New Folder: Ctrl+Shift+N / Cmd+Shift+N
 // Note: e.key === 'N' (uppercase) when Shift is held — browser standard
-if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "N") {
   e.preventDefault();
-  startCreate('folder');
+  startCreate("folder");
   return;
 }
 ```
@@ -438,10 +449,11 @@ if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
 Also extend the `Escape` handler to cancel creation:
 
 ```typescript
-if (e.key === 'Escape') {
+if (e.key === "Escape") {
   if (renamingName) {
     handleRenameCancel();
-  } else if (creatingType) {   // ← ADD THIS BRANCH
+  } else if (creatingType) {
+    // ← ADD THIS BRANCH
     cancelCreate();
   } else if (!isInput && selectedNames.size > 0) {
     clearSelection();
@@ -455,8 +467,8 @@ Also extend `loadFiles` to cancel creation on navigation (already resets rename)
 ```typescript
 // In loadFiles(), after setRenamingName(null):
 setCreatingType(null);
-setCreateName('');
-setCreateError('');
+setCreateName("");
+setCreateError("");
 ```
 
 #### 8h. Phantom Row (in the `<TableBody>`)
@@ -464,61 +476,73 @@ setCreateError('');
 Insert **before** the `fileList.map(...)` call:
 
 ```tsx
-{/* Phantom row for inline creation — appears at top of list */}
-{creatingType !== null && (
-  <TableRow>
-    {isMultiSelectMode && <TableCell className="pl-3 pr-0 w-10" />}
-    <TableCell className="w-10 pr-0">
-      {creatingType === 'folder' ? (
-        <Folder className="h-4 w-4 text-muted-foreground" />
-      ) : (
-        <File className="h-4 w-4 text-muted-foreground" />
-      )}
-    </TableCell>
-    <TableCell colSpan={4}>
-      <div className="flex items-center gap-2">
-        <Input
-          value={createName}
-          onChange={(e) => handleCreateChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void handleCreateConfirm();
-            }
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              cancelCreate();
-            }
-          }}
-          onBlur={cancelCreate}
-          placeholder={creatingType === 'folder' ? 'New folder name' : 'filename.ext'}
-          className="h-6 text-sm font-mono max-w-xs"
-          aria-label={creatingType === 'folder' ? 'New folder name' : 'New file name'}
-          autoFocus
-          disabled={isCreating}
-        />
-        {createError && (
-          <span className="text-destructive text-xs shrink-0">{createError}</span>
+{
+  /* Phantom row for inline creation — appears at top of list */
+}
+{
+  creatingType !== null && (
+    <TableRow>
+      {isMultiSelectMode && <TableCell className="pl-3 pr-0 w-10" />}
+      <TableCell className="w-10 pr-0">
+        {creatingType === "folder" ? (
+          <Folder className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <File className="h-4 w-4 text-muted-foreground" />
         )}
-        {isCreating && <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-muted-foreground" />}
-      </div>
-    </TableCell>
-  </TableRow>
-)}
+      </TableCell>
+      <TableCell colSpan={4}>
+        <div className="flex items-center gap-2">
+          <Input
+            value={createName}
+            onChange={(e) => handleCreateChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void handleCreateConfirm();
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                cancelCreate();
+              }
+            }}
+            onBlur={cancelCreate}
+            placeholder={
+              creatingType === "folder" ? "New folder name" : "filename.ext"
+            }
+            className="h-6 text-sm font-mono max-w-xs"
+            aria-label={
+              creatingType === "folder" ? "New folder name" : "New file name"
+            }
+            autoFocus
+            disabled={isCreating}
+          />
+          {createError && (
+            <span className="text-destructive text-xs shrink-0">
+              {createError}
+            </span>
+          )}
+          {isCreating && (
+            <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-muted-foreground" />
+          )}
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
 ```
 
 ---
 
 ## 9. Validation Rules
 
-| Rule | File | Folder | Enforcement |
-|---|---|---|---|
-| Name cannot be empty or whitespace-only | ✅ | ✅ | `!val.trim()` |
-| Forbidden characters: `/ \ : * ? " < > \|` | ✅ | ✅ | Existing `FORBIDDEN_CHARS` regex |
-| Reserved names: `.` and `..` | ✅ | ✅ | `/^\.\.?$/` regex |
-| Name must be confirmed with `Enter` | ✅ | ✅ | `onKeyDown` |
-| Extension required | ❌ (user's choice) | N/A | Not enforced — YAGNI |
-| Max name length | ❌ (device enforces) | ❌ | Android enforces 255 bytes — no FE check |
+| Rule                                       | File                 | Folder | Enforcement                              |
+| ------------------------------------------ | -------------------- | ------ | ---------------------------------------- |
+| Name cannot be empty or whitespace-only    | ✅                   | ✅     | `!val.trim()`                            |
+| Forbidden characters: `/ \ : * ? " < > \|` | ✅                   | ✅     | Existing `FORBIDDEN_CHARS` regex         |
+| Reserved names: `.` and `..`               | ✅                   | ✅     | `/^\.\.?$/` regex                        |
+| Name must be confirmed with `Enter`        | ✅                   | ✅     | `onKeyDown`                              |
+| Extension required                         | ❌ (user's choice)   | N/A    | Not enforced — YAGNI                     |
+| Max name length                            | ❌ (device enforces) | ❌     | Android enforces 255 bytes — no FE check |
 
 ---
 
@@ -526,24 +550,25 @@ Insert **before** the `fileList.map(...)` call:
 
 ### Complete Updated Shortcut Map for File Explorer
 
-| Shortcut | Platform | Action | Scope |
-|---|---|---|---|
-| `Ctrl+N` | Win / Linux | New File (inline create) | File Explorer only |
-| `Cmd+N` | macOS | New File (inline create) | File Explorer only |
-| `Ctrl+Shift+N` | Win / Linux | New Folder (inline create) | File Explorer only |
-| `Cmd+Shift+N` | macOS | New Folder (inline create) | File Explorer only |
-| `Ctrl+A` / `Cmd+A` | All | Select all items | File Explorer only |
-| `Ctrl+Click` / `Cmd+Click` | All | Toggle item selection | File Explorer only |
-| `F2` | All | Inline rename (1 item selected) | File Explorer only |
-| `Delete` | All | Open delete dialog | File Explorer only |
-| `Escape` | All | Cancel create → cancel rename → clear selection | File Explorer only |
-| `Ctrl+B` | Win / Linux | Toggle sidebar | Global |
-| `Cmd+B` | macOS | Toggle sidebar | Global |
-| `` Ctrl+` `` | All | Toggle bottom panel | Global |
+| Shortcut                   | Platform    | Action                                          | Scope              |
+| -------------------------- | ----------- | ----------------------------------------------- | ------------------ |
+| `Ctrl+N`                   | Win / Linux | New File (inline create)                        | File Explorer only |
+| `Cmd+N`                    | macOS       | New File (inline create)                        | File Explorer only |
+| `Ctrl+Shift+N`             | Win / Linux | New Folder (inline create)                      | File Explorer only |
+| `Cmd+Shift+N`              | macOS       | New Folder (inline create)                      | File Explorer only |
+| `Ctrl+A` / `Cmd+A`         | All         | Select all items                                | File Explorer only |
+| `Ctrl+Click` / `Cmd+Click` | All         | Toggle item selection                           | File Explorer only |
+| `F2`                       | All         | Inline rename (1 item selected)                 | File Explorer only |
+| `Delete`                   | All         | Open delete dialog                              | File Explorer only |
+| `Escape`                   | All         | Cancel create → cancel rename → clear selection | File Explorer only |
+| `Ctrl+B`                   | Win / Linux | Toggle sidebar                                  | Global             |
+| `Cmd+B`                    | macOS       | Toggle sidebar                                  | Global             |
+| `` Ctrl+` ``               | All         | Toggle bottom panel                             | Global             |
 
 ### Implementation Note: Shift+Key Case
 
 When `shiftKey` is held, `e.key` reports the **shifted character**:
+
 - `e.key === 'N'` (uppercase) when `Shift+N` is pressed on all platforms
 - This is browser-standard KeyboardEvent behavior
 - No special detection needed — `e.shiftKey && e.key === 'N'` is sufficient
@@ -563,20 +588,20 @@ Wrap the entire `<ScrollArea>` content in a second `<ContextMenu>` that fires wh
 ```tsx
 <ContextMenu>
   <ContextMenuTrigger asChild>
-    <ScrollArea className="flex-1">
-      {/* existing content */}
-    </ScrollArea>
+    <ScrollArea className="flex-1">{/* existing content */}</ScrollArea>
   </ContextMenuTrigger>
   <ContextMenuContent>
-    <ContextMenuItem onClick={() => startCreate('file')} disabled={isBusy}>
+    <ContextMenuItem onClick={() => startCreate("file")} disabled={isBusy}>
       <FilePlus2 className="h-4 w-4 shrink-0" />
       New File
       <span className="ml-auto text-xs text-muted-foreground">Ctrl+N</span>
     </ContextMenuItem>
-    <ContextMenuItem onClick={() => startCreate('folder')} disabled={isBusy}>
+    <ContextMenuItem onClick={() => startCreate("folder")} disabled={isBusy}>
       <FolderPlus className="h-4 w-4 shrink-0" />
       New Folder
-      <span className="ml-auto text-xs text-muted-foreground">Ctrl+Shift+N</span>
+      <span className="ml-auto text-xs text-muted-foreground">
+        Ctrl+Shift+N
+      </span>
     </ContextMenuItem>
   </ContextMenuContent>
 </ContextMenu>
@@ -635,47 +660,47 @@ isCreating: boolean                      — true while the Tauri command is in 
 
 ### Mutual Exclusion
 
-| Active State | Can Enter Create? | Can Enter Rename? |
-|---|---|---|
-| `creatingType !== null` | N/A | ❌ cancel create first |
-| `renamingName !== null` | ❌ cancel rename first | N/A |
-| Neither | ✅ | ✅ |
+| Active State            | Can Enter Create?      | Can Enter Rename?      |
+| ----------------------- | ---------------------- | ---------------------- |
+| `creatingType !== null` | N/A                    | ❌ cancel create first |
+| `renamingName !== null` | ❌ cancel rename first | N/A                    |
+| Neither                 | ✅                     | ✅                     |
 
 `startCreate()` always calls `handleRenameCancel()` before setting `creatingType`.  
 `startRename()` implicitly resets `creatingType` via `setCreatingType(null)` (to be added).
 
 ### Activation Triggers
 
-| Trigger | Action |
-|---|---|
-| `Ctrl+N` / `Cmd+N` keyboard | `startCreate('file')` |
+| Trigger                                 | Action                  |
+| --------------------------------------- | ----------------------- |
+| `Ctrl+N` / `Cmd+N` keyboard             | `startCreate('file')`   |
 | `Ctrl+Shift+N` / `Cmd+Shift+N` keyboard | `startCreate('folder')` |
-| Toolbar `FilePlus2` button | `startCreate('file')` |
-| Toolbar `FolderPlus` button | `startCreate('folder')` |
-| Empty-area context menu → New File | `startCreate('file')` |
-| Empty-area context menu → New Folder | `startCreate('folder')` |
+| Toolbar `FilePlus2` button              | `startCreate('file')`   |
+| Toolbar `FolderPlus` button             | `startCreate('folder')` |
+| Empty-area context menu → New File      | `startCreate('file')`   |
+| Empty-area context menu → New Folder    | `startCreate('folder')` |
 
 ### Deactivation Triggers
 
-| Trigger | Action |
-|---|---|
-| `Enter` key in Input (valid name) | Submit → `handleCreateConfirm()` → `setCreatingType(null)` |
-| `Enter` key (invalid name) | No-op (error shown) |
-| `Escape` key | `cancelCreate()` |
-| `onBlur` on Input | `cancelCreate()` |
-| Navigate to new directory (`loadFiles`) | Reset all create state |
-| `Escape` key (no active rename) | `cancelCreate()` if `creatingType !== null` |
+| Trigger                                 | Action                                                     |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `Enter` key in Input (valid name)       | Submit → `handleCreateConfirm()` → `setCreatingType(null)` |
+| `Enter` key (invalid name)              | No-op (error shown)                                        |
+| `Escape` key                            | `cancelCreate()`                                           |
+| `onBlur` on Input                       | `cancelCreate()`                                           |
+| Navigate to new directory (`loadFiles`) | Reset all create state                                     |
+| `Escape` key (no active rename)         | `cancelCreate()` if `creatingType !== null`                |
 
 ---
 
 ## 14. Affected Files
 
-| File | Type of Change | Estimated Lines Added |
-|---|---|---|
-| `src-tauri/src/commands/files.rs` | +2 Tauri commands | ~22 |
-| `src-tauri/src/lib.rs` | Register 2 new commands | ~2 |
-| `src/lib/desktop/backend.ts` | +2 TS wrappers | ~14 |
-| `src/components/views/ViewFileExplorer.tsx` | +state, handlers, phantom row, keyboard, toolbar, context menu | ~115 |
+| File                                        | Type of Change                                                 | Estimated Lines Added |
+| ------------------------------------------- | -------------------------------------------------------------- | --------------------- |
+| `src-tauri/src/commands/files.rs`           | +2 Tauri commands                                              | ~22                   |
+| `src-tauri/src/lib.rs`                      | Register 2 new commands                                        | ~2                    |
+| `src/lib/desktop/backend.ts`                | +2 TS wrappers                                                 | ~14                   |
+| `src/components/views/ViewFileExplorer.tsx` | +state, handlers, phantom row, keyboard, toolbar, context menu | ~115                  |
 
 **Total:** ~153 lines  
 **New files created:** None  
@@ -686,34 +711,34 @@ isCreating: boolean                      — true while the Tauri command is in 
 
 ## 15. Non-Functional Requirements
 
-| Requirement | Assumption / Approach |
-|---|---|
-| **Performance** | Negligible — two ADB shell one-liners; same latency as rename/delete |
-| **Security** | Same single-quote path escaping used for all existing ADB commands |
-| **Reliability** | All errors propagated via `CmdResult<T>` → `toast.error()` + `handleError()` |
-| **Accessibility** | Phantom `<Input>` has `autoFocus`, `aria-label`, and proper keyboard navigation |
-| **Maintainability** | No new abstractions, no new patterns — pure extension of existing code |
-| **Backwards Compatibility** | No existing behavior changes |
-| **Scope** | Shortcuts are File Explorer-scoped (`activeView === 'files'` guard already in place) |
+| Requirement                 | Assumption / Approach                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------ |
+| **Performance**             | Negligible — two ADB shell one-liners; same latency as rename/delete                 |
+| **Security**                | Same single-quote path escaping used for all existing ADB commands                   |
+| **Reliability**             | All errors propagated via `CmdResult<T>` → `toast.error()` + `handleError()`         |
+| **Accessibility**           | Phantom `<Input>` has `autoFocus`, `aria-label`, and proper keyboard navigation      |
+| **Maintainability**         | No new abstractions, no new patterns — pure extension of existing code               |
+| **Backwards Compatibility** | No existing behavior changes                                                         |
+| **Scope**                   | Shortcuts are File Explorer-scoped (`activeView === 'files'` guard already in place) |
 
 ---
 
 ## 16. Decision Log
 
-| # | Decision | Alternatives Considered | Rationale |
-|---|---|---|---|
-| 1 | **Inline phantom row** (not dialog) | Dialog modal | Consistent with existing inline rename; native-feeling; zero extra clicks |
-| 2 | **`Ctrl+N`** for New File | `Ctrl+Shift+F`, `Alt+N`, `Ctrl+T` | VS Code standard for "new"; no collision; most discoverable |
-| 3 | **`Ctrl+Shift+N`** for New Folder | `Ctrl+D`, `Ctrl+F`, `Ctrl+M` | Platform-native on Windows Explorer, macOS Finder, Nautilus/Dolphin |
-| 4 | **`touch`** for file creation | `echo -n > file`, `printf '' > file` | POSIX-standard; available on all Android; no assumption about content |
-| 5 | **`mkdir -p`** for folder creation | `mkdir` | `-p` prevents error when intermediate dirs exist; safer |
-| 6 | **Empty files only** | File templates | YAGNI — templates are a Phase 2 concern |
-| 7 | **Phantom row at top of list** | At bottom, at sorted position | Most discoverable; confirmed best practice by VS Code, Explorer, Finder |
-| 8 | **3 entry points** | Single entry point | Keyboard-first, mouse-first, and explorer-style users all covered |
-| 9 | **Mutual exclusion with rename** | Allow both simultaneously | Simultaneous inline edits cause ambiguous state and broken UX |
-| 10 | **No "." / ".." names** | Allow and let device reject | Fail-fast in FE is better UX than backend error for obvious invalids |
-| 11 | **`onBlur` cancels creation** | `onBlur` submits | Consistent with existing rename behavior; prevents accidental creation |
-| 12 | **Context menu on empty space** — table-level wrapper | Row-level only | Gives right-click discoverability; Radix nested ContextMenu handles the scoping correctly |
+| #   | Decision                                              | Alternatives Considered              | Rationale                                                                                 |
+| --- | ----------------------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| 1   | **Inline phantom row** (not dialog)                   | Dialog modal                         | Consistent with existing inline rename; native-feeling; zero extra clicks                 |
+| 2   | **`Ctrl+N`** for New File                             | `Ctrl+Shift+F`, `Alt+N`, `Ctrl+T`    | VS Code standard for "new"; no collision; most discoverable                               |
+| 3   | **`Ctrl+Shift+N`** for New Folder                     | `Ctrl+D`, `Ctrl+F`, `Ctrl+M`         | Platform-native on Windows Explorer, macOS Finder, Nautilus/Dolphin                       |
+| 4   | **`touch`** for file creation                         | `echo -n > file`, `printf '' > file` | POSIX-standard; available on all Android; no assumption about content                     |
+| 5   | **`mkdir -p`** for folder creation                    | `mkdir`                              | `-p` prevents error when intermediate dirs exist; safer                                   |
+| 6   | **Empty files only**                                  | File templates                       | YAGNI — templates are a Phase 2 concern                                                   |
+| 7   | **Phantom row at top of list**                        | At bottom, at sorted position        | Most discoverable; confirmed best practice by VS Code, Explorer, Finder                   |
+| 8   | **3 entry points**                                    | Single entry point                   | Keyboard-first, mouse-first, and explorer-style users all covered                         |
+| 9   | **Mutual exclusion with rename**                      | Allow both simultaneously            | Simultaneous inline edits cause ambiguous state and broken UX                             |
+| 10  | **No "." / ".." names**                               | Allow and let device reject          | Fail-fast in FE is better UX than backend error for obvious invalids                      |
+| 11  | **`onBlur` cancels creation**                         | `onBlur` submits                     | Consistent with existing rename behavior; prevents accidental creation                    |
+| 12  | **Context menu on empty space** — table-level wrapper | Row-level only                       | Gives right-click discoverability; Radix nested ContextMenu handles the scoping correctly |
 
 ---
 
@@ -763,19 +788,19 @@ isCreating: boolean                      — true while the Tauri command is in 
 
 ## 18. Effort Estimate
 
-| Task | Estimated Time |
-|---|---|
-| Rust backend (2 commands + registration) | 15 min |
-| `backend.ts` wrappers | 5 min |
-| State variables + `isBusy` update | 5 min |
-| `startCreate` / `cancelCreate` / `handleCreateChange` / `handleCreateConfirm` | 20 min |
-| `loadFiles` create state reset | 5 min |
-| Keyboard shortcut handlers | 10 min |
-| Phantom row UI | 20 min |
-| Toolbar buttons + Separator | 10 min |
-| Table-level context menu | 15 min |
-| Quality gates (`pnpm check` + manual test) | 30 min |
-| **Total** | **~2 hours 15 min** |
+| Task                                                                          | Estimated Time      |
+| ----------------------------------------------------------------------------- | ------------------- |
+| Rust backend (2 commands + registration)                                      | 15 min              |
+| `backend.ts` wrappers                                                         | 5 min               |
+| State variables + `isBusy` update                                             | 5 min               |
+| `startCreate` / `cancelCreate` / `handleCreateChange` / `handleCreateConfirm` | 20 min              |
+| `loadFiles` create state reset                                                | 5 min               |
+| Keyboard shortcut handlers                                                    | 10 min              |
+| Phantom row UI                                                                | 20 min              |
+| Toolbar buttons + Separator                                                   | 10 min              |
+| Table-level context menu                                                      | 15 min              |
+| Quality gates (`pnpm check` + manual test)                                    | 30 min              |
+| **Total**                                                                     | **~2 hours 15 min** |
 
 ---
 
@@ -809,6 +834,6 @@ macOS: Replace Ctrl with Cmd (⌘)
 
 ---
 
-*Document created: 2026-03-26*  
-*Feature target: v0.2.0*  
-*Author: Design session via brainstorming skill*
+_Document created: 2026-03-26_  
+_Feature target: v0.2.0_  
+_Author: Design session via brainstorming skill_

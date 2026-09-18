@@ -1,9 +1,10 @@
-import type { LucideIcon } from 'lucide-react';
-import type { ViewType } from '@/app/shell/viewConfig';
-import type { backend } from '@/desktop/models';
+import type { LucideIcon } from "lucide-react";
+
+import type { ViewType } from "@/app/shell/view-config";
+import type { backend } from "@/desktop/models";
 
 /** Palette sections, rendered in this order. */
-export type CommandGroupId = 'actions' | 'navigate' | 'devices';
+export type CommandGroupId = "actions" | "navigate" | "devices";
 
 export interface CommandAvailability {
   enabled: boolean;
@@ -17,9 +18,10 @@ export const AVAILABLE: CommandAvailability = { enabled: true, reason: null };
  * Marks an action unavailable **with a reason**. Unavailable actions stay
  * visible and say why they are blocked — a smart gate, not a dead end.
  */
-export function blocked(reason: string): CommandAvailability {
-  return { enabled: false, reason };
-}
+export const blocked = (reason: string): CommandAvailability => ({
+  enabled: false,
+  reason,
+});
 
 /** Shell capabilities an action may reach for. All are stable references. */
 export interface CommandShell {
@@ -31,7 +33,7 @@ export interface CommandShell {
   setActiveView: (view: ViewType) => void;
   setTheme: (theme: string) => void;
   showShortcuts: () => void;
-  togglePanel: (tab: 'logs' | 'shell') => void;
+  togglePanel: (tab: "logs" | "shell") => void;
   toggleSidebar: () => void;
 }
 
@@ -62,6 +64,5 @@ export interface CommandAction {
 }
 
 /** Display name for a serial: nickname when set, otherwise the raw serial. */
-export function deviceLabel(nicknames: Record<string, string>, serial: string): string {
-  return nicknames[serial] ?? serial;
-}
+export const deviceLabel = (nicknames: Record<string, string>, serial: string): string =>
+  nicknames[serial] ?? serial;

@@ -21,18 +21,18 @@ The `ConnectedDevicesCard` component is duplicated across **3 views** (Dashboard
 
 ### ConnectedDevicesCard Usage
 
-| View | Query Key | Fetch Function | Interval | What It Shows |
-|------|-----------|----------------|----------|---------------|
-| Dashboard | `['devices']` | `fetchDevices` (ADB only) | 3s | ADB devices |
-| Flasher | `['allDevices']` | `fetchAllDevices` (ADB + fastboot) | 4s | ADB + fastboot |
-| Utilities | `['allDevices']` | `fetchAllDevices` (ADB + fastboot) | 3s | ADB + fastboot (derived mode) |
+| View      | Query Key        | Fetch Function                     | Interval | What It Shows                 |
+| --------- | ---------------- | ---------------------------------- | -------- | ----------------------------- |
+| Dashboard | `['devices']`    | `fetchDevices` (ADB only)          | 3s       | ADB devices                   |
+| Flasher   | `['allDevices']` | `fetchAllDevices` (ADB + fastboot) | 4s       | ADB + fastboot                |
+| Utilities | `['allDevices']` | `fetchAllDevices` (ADB + fastboot) | 3s       | ADB + fastboot (derived mode) |
 
 ### Device Store (`deviceStore.ts`)
 
 ```ts
 interface DeviceState {
-  devices: Device[];       // currently unused by views (they use useQuery)
-  deviceInfo: DeviceInfo;  // used only by Dashboard
+  devices: Device[]; // currently unused by views (they use useQuery)
+  deviceInfo: DeviceInfo; // used only by Dashboard
   lastUpdated: number;
   // ⚠️ NO selectedDevice concept exists
 }
@@ -113,13 +113,13 @@ src/components/DeviceSwitcher.tsx
 
 ### Trade-offs
 
-| Dimension | Rating | Notes |
-|-----------|--------|-------|
-| **Complexity** | 🟢 Low | 1 new component, 1 store field, remove 2 card usages |
-| **Extensibility** | 🟢 High | Easy to add edit nickname, device info tooltip later |
-| **Risk** | 🟢 Low | Popover is isolated; existing views barely change |
-| **Maintenance** | 🟢 Low | Single polling source, no per-view duplication |
-| **Visual footprint** | 🟢 Minimal | ~32px pill in header, doesn't eat view space |
+| Dimension            | Rating     | Notes                                                |
+| -------------------- | ---------- | ---------------------------------------------------- |
+| **Complexity**       | 🟢 Low     | 1 new component, 1 store field, remove 2 card usages |
+| **Extensibility**    | 🟢 High    | Easy to add edit nickname, device info tooltip later |
+| **Risk**             | 🟢 Low     | Popover is isolated; existing views barely change    |
+| **Maintenance**      | 🟢 Low     | Single polling source, no per-view duplication       |
+| **Visual footprint** | 🟢 Minimal | ~32px pill in header, doesn't eat view space         |
 
 ---
 
@@ -155,13 +155,13 @@ A shadcn `Select` component (native dropdown) in the header, similar to a branch
 
 ### Trade-offs
 
-| Dimension | Rating | Notes |
-|-----------|--------|-------|
-| **Complexity** | 🟢 Low | shadcn Select is a primitive — minimal custom code |
-| **Extensibility** | 🟡 Medium | Select items are text-only — hard to add edit/nickname/badge |
-| **Risk** | 🟢 Low | Standard pattern, predictable behavior |
-| **Maintenance** | 🟢 Low | Same centralized polling as Approach A |
-| **Visual footprint** | 🟡 Medium | Select has fixed min-width, may look wide at 1024px |
+| Dimension            | Rating    | Notes                                                        |
+| -------------------- | --------- | ------------------------------------------------------------ |
+| **Complexity**       | 🟢 Low    | shadcn Select is a primitive — minimal custom code           |
+| **Extensibility**    | 🟡 Medium | Select items are text-only — hard to add edit/nickname/badge |
+| **Risk**             | 🟢 Low    | Standard pattern, predictable behavior                       |
+| **Maintenance**      | 🟢 Low    | Same centralized polling as Approach A                       |
+| **Visual footprint** | 🟡 Medium | Select has fixed min-width, may look wide at 1024px          |
 
 ### Limitations
 
@@ -222,13 +222,13 @@ Move device status into the **AppSidebar footer** (below the theme toggle). Alwa
 
 ### Trade-offs
 
-| Dimension | Rating | Notes |
-|-----------|--------|-------|
-| **Complexity** | 🟡 Medium | Sidebar footer needs custom layout + icon-mode adaptation |
-| **Extensibility** | 🟡 Medium | Sidebar real estate is limited; dropdown might feel cramped |
-| **Risk** | 🟡 Medium | Sidebar icon mode is tricky — tooltip-only is less discoverable |
-| **Maintenance** | 🟡 Medium | Device switcher logic tied to sidebar state (collapsed/expanded) |
-| **Visual footprint** | 🟢 Minimal | Uses existing sidebar space — no header changes needed |
+| Dimension            | Rating     | Notes                                                            |
+| -------------------- | ---------- | ---------------------------------------------------------------- |
+| **Complexity**       | 🟡 Medium  | Sidebar footer needs custom layout + icon-mode adaptation        |
+| **Extensibility**    | 🟡 Medium  | Sidebar real estate is limited; dropdown might feel cramped      |
+| **Risk**             | 🟡 Medium  | Sidebar icon mode is tricky — tooltip-only is less discoverable  |
+| **Maintenance**      | 🟡 Medium  | Device switcher logic tied to sidebar state (collapsed/expanded) |
+| **Visual footprint** | 🟢 Minimal | Uses existing sidebar space — no header changes needed           |
 
 ### Limitations
 
@@ -241,22 +241,23 @@ Move device status into the **AppSidebar footer** (below the theme toggle). Alwa
 
 ## Comparison Matrix
 
-| Criterion | A: Header Pill + Popover | B: Header Select | C: Sidebar Footer |
-|-----------|:---:|:---:|:---:|
-| Global visibility | ✅ Always | ✅ Always | ⚠️ Hidden when collapsed |
-| Rich device rows | ✅ Nickname + badge + edit | ❌ Text only | ⚠️ Limited space |
-| Multi-device switch | ✅ Radio-style click | ✅ Native select | ✅ Click in panel |
-| Native-app feel | ✅ Premium pill | ⚠️ Form-field feel | ✅ VS Code sidebar style |
-| Implementation effort | ~3 hours | ~2 hours | ~4 hours |
-| Header height impact | None (inline) | None (inline) | None (no header change) |
-| Works at 1024px min | ✅ Pill compresses | ⚠️ Select may overflow | ✅ Sidebar adapts |
-| Future `-s serial` ready | ✅ Store has selectedDevice | ✅ Same | ✅ Same |
+| Criterion                |  A: Header Pill + Popover   |    B: Header Select    |    C: Sidebar Footer     |
+| ------------------------ | :-------------------------: | :--------------------: | :----------------------: |
+| Global visibility        |          ✅ Always          |       ✅ Always        | ⚠️ Hidden when collapsed |
+| Rich device rows         | ✅ Nickname + badge + edit  |      ❌ Text only      |     ⚠️ Limited space     |
+| Multi-device switch      |    ✅ Radio-style click     |    ✅ Native select    |    ✅ Click in panel     |
+| Native-app feel          |       ✅ Premium pill       |   ⚠️ Form-field feel   | ✅ VS Code sidebar style |
+| Implementation effort    |          ~3 hours           |        ~2 hours        |         ~4 hours         |
+| Header height impact     |        None (inline)        |     None (inline)      | None (no header change)  |
+| Works at 1024px min      |     ✅ Pill compresses      | ⚠️ Select may overflow |    ✅ Sidebar adapts     |
+| Future `-s serial` ready | ✅ Store has selectedDevice |        ✅ Same         |         ✅ Same          |
 
 ---
 
 ## Recommendation: Approach A — Header Pill + Popover
 
 **Why:**
+
 1. **Always visible** — device status on every screen, every sidebar state
 2. **Rich popover** — room for nickname, badge, edit button, refresh
 3. **Minimal footprint** — 32px pill in the header, no vertical space wasted
@@ -289,7 +290,7 @@ After (1 global poll):
 ```ts
 interface DeviceState {
   devices: Device[];
-  selectedSerial: string | null;  // NEW — which device is "active"
+  selectedSerial: string | null; // NEW — which device is "active"
   deviceInfo: DeviceInfo | null;
   setDevices: (devices: Device[]) => void;
   setSelectedSerial: (serial: string | null) => void;
@@ -298,6 +299,7 @@ interface DeviceState {
 ```
 
 **Auto-select logic:**
+
 - 1 device → auto-select it
 - Device disconnects + was selected → clear selection
 - New device connects + nothing selected → auto-select it
@@ -313,13 +315,13 @@ interface DeviceState {
 
 ## Decision Log
 
-| # | Decision | Alternatives | Reason |
-|---|----------|-------------|--------|
-| 1 | Keep ConnectedDevicesCard in Dashboard only | Remove entirely | Dashboard is the "home" — user expects device overview there |
-| 2 | Centralize polling in MainLayout | Keep per-view polling | DRY, single source of truth, less ADB spam |
-| 3 | Use `fetchAllDevices` globally | `fetchDevices` (ADB only) | Flasher/Utilities need fastboot devices too |
-| 4 | Add `selectedSerial` to deviceStore | Context, URL param | Zustand is already the pattern; no router exists |
-| 5 | No `-s serial` backend changes yet | Wire it now | YAGNI — store prep is enough; backend changes are separate |
+| #   | Decision                                    | Alternatives              | Reason                                                       |
+| --- | ------------------------------------------- | ------------------------- | ------------------------------------------------------------ |
+| 1   | Keep ConnectedDevicesCard in Dashboard only | Remove entirely           | Dashboard is the "home" — user expects device overview there |
+| 2   | Centralize polling in MainLayout            | Keep per-view polling     | DRY, single source of truth, less ADB spam                   |
+| 3   | Use `fetchAllDevices` globally              | `fetchDevices` (ADB only) | Flasher/Utilities need fastboot devices too                  |
+| 4   | Add `selectedSerial` to deviceStore         | Context, URL param        | Zustand is already the pattern; no router exists             |
+| 5   | No `-s serial` backend changes yet          | Wire it now               | YAGNI — store prep is enough; backend changes are separate   |
 
 ---
 

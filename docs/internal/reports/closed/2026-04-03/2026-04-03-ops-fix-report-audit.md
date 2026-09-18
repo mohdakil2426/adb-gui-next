@@ -17,6 +17,7 @@ Our Rust code converted the mbox bytes into packed u32 values via `u32::from_le_
 **File:** `crypto.rs` → `try_decrypt_ops_xml()`
 
 The decrypted XML starts with UTF-8 BOM bytes (`EF BB BF`). Two issues:
+
 - `std::str::from_utf8(&decrypted)` failed on the **entire** aligned buffer (padding bytes after actual XML are invalid UTF-8)
 - The fallback `String::from_utf8(decrypted)` also failed for the same reason
 
@@ -52,29 +53,29 @@ The decrypted XML string started with `\u{FEFF}` (BOM) which could cause XML par
 
 Test with **instantnoodlep_15_I.13_200411.ops** (OnePlus 8 Pro, 5.60 GB):
 
-| Metric | Result |
-|--------|--------|
-| Footer parsed | ✅ magic=0x7CEF, project=19811, xml_len=102624 |
-| Decryption | ✅ mbox5 produces valid `<?xml ...>` |
-| Partitions found | **62** (was 4 before fix) |
-| Total size | 6,008,700,564 bytes (5.60 GB) |
-| Encrypted partitions | 2 (SAHARA: prog_firehose_ddr.elf, prog_firehose_lite.elf) |
+| Metric                 | Result                                                           |
+| ---------------------- | ---------------------------------------------------------------- |
+| Footer parsed          | ✅ magic=0x7CEF, project=19811, xml_len=102624                   |
+| Decryption             | ✅ mbox5 produces valid `<?xml ...>`                             |
+| Partitions found       | **62** (was 4 before fix)                                        |
+| Total size             | 6,008,700,564 bytes (5.60 GB)                                    |
+| Encrypted partitions   | 2 (SAHARA: prog_firehose_ddr.elf, prog_firehose_lite.elf)        |
 | Sparse images detected | 7 (modemdump, op2, super, metadata, userdata, oneplus_in, modem) |
-| Sections | SAHARA, UFS_PROVISION, Program0-Program5 |
+| Sections               | SAHARA, UFS_PROVISION, Program0-Program5                         |
 
 ## Python Port Assessment
 
-> *Is it easy to port opscrypto.py to Rust?*
+> _Is it easy to port opscrypto.py to Rust?_
 
 **Mostly yes, but with these gotchas:**
 
-| Aspect | Difficulty | Notes |
-|--------|-----------|-------|
-| S-box cipher (`key_update`, `key_custom`) | **Hard** | Python's dynamic typing (bytes ↔ integers) makes the algorithm deceptive. `asbox[i]` looks like array indexing but the semantics differ based on whether `asbox` is a list of bytes or u32 values. Operator precedence in the return statement is also tricky. |
-| Footer parsing | Easy | Straightforward binary struct parsing |
-| XML parsing | Easy | `quick-xml` handles it well |
-| Sparse image un-sparsing | Easy | Binary format, well-documented |
-| OFP-QC/MTK crypto | Medium | Standard AES-CFB, but the key derivation with `keyshuffle` and `mtk_shuffle` has nibble-swap tricks |
-| File I/O (mmap) | Easy | `memmap2` is a drop-in replacement |
+| Aspect                                    | Difficulty | Notes                                                                                                                                                                                                                                                          |
+| ----------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-box cipher (`key_update`, `key_custom`) | **Hard**   | Python's dynamic typing (bytes ↔ integers) makes the algorithm deceptive. `asbox[i]` looks like array indexing but the semantics differ based on whether `asbox` is a list of bytes or u32 values. Operator precedence in the return statement is also tricky. |
+| Footer parsing                            | Easy       | Straightforward binary struct parsing                                                                                                                                                                                                                          |
+| XML parsing                               | Easy       | `quick-xml` handles it well                                                                                                                                                                                                                                    |
+| Sparse image un-sparsing                  | Easy       | Binary format, well-documented                                                                                                                                                                                                                                 |
+| OFP-QC/MTK crypto                         | Medium     | Standard AES-CFB, but the key derivation with `keyshuffle` and `mtk_shuffle` has nibble-swap tricks                                                                                                                                                            |
+| File I/O (mmap)                           | Easy       | `memmap2` is a drop-in replacement                                                                                                                                                                                                                             |
 
 **Key lesson:** When porting Python crypto code, always verify that array indexing semantics match. Python lists of `int` values don't pack — `[0x60, 0x8a]` is NOT equivalent to `from_le_bytes([0x60, 0x8a, ...])`.

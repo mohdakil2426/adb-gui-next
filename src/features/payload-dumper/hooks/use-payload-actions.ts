@@ -1,0 +1,307 @@
+import { useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
+
+import {
+  CleanupPayloadCache,
+  OpenFolder,
+  SelectOutputDirectory,
+  SelectPayloadFile,
+} from "@/desktop/backend";
+import {
+  runExtractPayload,
+  runResetPayloadDumper,
+} from "@/features/payload-dumper/hooks/payload-extraction-actions";
+import {
+  checkRemoteUrl,
+  loadLocalPartitions,
+  loadRemotePartitions as runLoadRemotePartitions,
+} from "@/features/payload-dumper/hooks/payload-partition-loaders";
+import type { ExtractionStatus } from "@/features/payload-dumper/model/payload-dumper-store";
+import { usePayloadDumperStore } from "@/features/payload-dumper/model/payload-dumper-store";
+import { usePayloadProgressStore } from "@/features/payload-dumper/model/payload-progress-store";
+import type { ConnectionStatus } from "@/shared/components/remote-url-panel";
+import { useLogStore } from "@/shared/stores/log-store";
+import { debugLog } from "@/shared/utils/debug";
+import { handleError } from "@/shared/utils/error-handler";
+
+interface UsePayloadActionsOptions {
+  mode: "local" | "remote";
+  prefetch: boolean;
+  remoteUrl: string;
+  setConnectionStatus: (status: ConnectionStatus) => void;
+  setEstimatedSize: (size: string | null) => void;
+  setMode: (mode: "local" | "remote") => void;
+  setPrefetch: (prefetch: boolean) => void;
+  setRemoteUrl: (url: string) => void;
+  status: ExtractionStatus;
+}
+interface PayloadActions {
+  handleCancelLoadPartitions: () => void;
+  handleCheckUrl: () => void;
+  handleExtract: () => Promise<void>;
+  handleOpenOutputFolder: () => Promise<void>;
+  handlePayloadDrop: (paths: string[]) => Promise<void>;
+  handleRefreshPartitions: () => Promise<void>;
+  handleReset: () => void;
+  handleSelectOutput: () => Promise<void>;
+  handleSelectPayload: () => Promise<void>;
+  loadRemotePartitions: (targetUrl?: string) => Promise<void>;
+}
+export const usePayloadActions = (options: UsePayloadActionsOptions): PayloadActions => {
+  const {
+    mode,
+    remoteUrl,
+    prefetch,
+    setConnectionStatus,
+    setEstimatedSize,
+    setMode,
+    setRemoteUrl,
+    setPrefetch,
+    status,
+  } = options;
+  const payloadPath = usePayloadDumperStore((state) => state.payloadPath);
+  const outputPath = usePayloadDumperStore((state) => state.outputPath);
+  const partitions = usePayloadDumperStore((state) => state.partitions);
+  const outputDir = usePayloadDumperStore((state) => state.outputDir);
+  const completedPartitions = usePayloadProgressStore((state) => state.completedPartitions);
+  const setPayloadPath = usePayloadDumperStore((state) => state.setPayloadPath);
+  const setOutputPath = usePayloadDumperStore((state) => state.setOutputPath);
+  const setPartitions = usePayloadDumperStore((state) => state.setPartitions);
+  const setStatus = usePayloadDumperStore((state) => state.setStatus);
+  const setExtractedFiles = usePayloadDumperStore((state) => state.setExtractedFiles);
+  const setErrorMessage = usePayloadDumperStore((state) => state.setErrorMessage);
+  const setOutputDir = usePayloadDumperStore((state) => state.setOutputDir);
+  const setExtractingPartitions = usePayloadProgressStore((state) => state.setExtractingPartitions);
+  const addCompletedPartitions = usePayloadDumperStore((state) => state.addCompletedPartitions);
+  const clearPartitionProgress = usePayloadProgressStore((state) => state.clearPartitionProgress);
+  const clearTransientPartitionStatuses = usePayloadProgressStore(
+    (state) => state.clearTransientPartitionStatuses
+  );
+  const failActivePartitions = usePayloadProgressStore((state) => state.failActivePartitions);
+  const setRemoteMetadata = usePayloadDumperStore((state) => state.setRemoteMetadata);
+  const setExtractionStats = usePayloadDumperStore((state) => state.setExtractionStats);
+  const setCancelTokenId = usePayloadDumperStore((state) => state.setCancelTokenId);
+  const beginLoadProgress = usePayloadDumperStore((state) => state.beginLoadProgress);
+  const clearLoadProgress = usePayloadDumperStore((state) => state.clearLoadProgress);
+  const reset = usePayloadDumperStore((state) => state.reset);
+  const cancelLoadingRef = useRef(false);
+  const checkUrlRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (checkUrlRef.current) {
+        clearTimeout(checkUrlRef.current);
+      }
+    },
+    []
+  );
+  const loadPartitions = useCallback(
+    async (path: string) => {
+      await loadLocalPartitions(path, {
+        setErrorMessage,
+        setPartitions,
+        setPayloadPath,
+        setRemoteMetadata,
+        setStatus,
+      });
+    },
+    [setErrorMessage, setPartitions, setPayloadPath, setRemoteMetadata, setStatus]
+  );
+  const handleCheckUrl = useCallback(() => {
+    if (!remoteUrl.trim()) {
+      return;
+    }
+    if (checkUrlRef.current) {
+      clearTimeout(checkUrlRef.current);
+    }
+    checkUrlRef.current = setTimeout(() => {
+      debugLog(`Checking remote URL: ${remoteUrl}`);
+      void checkRemoteUrl(remoteUrl, setConnectionStatus, setEstimatedSize);
+    }, 500);
+  }, [remoteUrl, setConnectionStatus, setEstimatedSize]);
+  const loadRemotePartitions = useCallback(
+    async (overrideUrl?: string) => {
+      const urlToLoad = (overrideUrl ?? remoteUrl).trim();
+      if (!urlToLoad) {
+        return;
+      }
+      cancelLoadingRef.current = false;
+      await runLoadRemotePartitions(
+        urlToLoad,
+        {
+          beginLoadProgress,
+          clearLoadProgress,
+          setErrorMessage,
+          setPartitions,
+          setPayloadPath,
+          setRemoteMetadata,
+          setStatus,
+        },
+        () => cancelLoadingRef.current,
+        () => {
+          cancelLoadingRef.current = false;
+        }
+      );
+    },
+    [
+      remoteUrl,
+      setPartitions,
+      setPayloadPath,
+      setStatus,
+      setErrorMessage,
+      setRemoteMetadata,
+      beginLoadProgress,
+      clearLoadProgress,
+    ]
+  );
+  const handleCancelLoadPartitions = useCallback(() => {
+    cancelLoadingRef.current = true;
+    setStatus("idle");
+    clearLoadProgress();
+    toast.info("Stopped loading partitions.");
+    useLogStore.getState().addLog("Cancelling partition loading...", "info");
+  }, [setStatus, clearLoadProgress]);
+  const handlePayloadDrop = useCallback(
+    async (paths: string[]) => {
+      if (status === "extracting" || status === "loading-partitions") {
+        return;
+      }
+      if (paths.length === 0) {
+        return;
+      }
+      const [filePath] = paths;
+      if (!filePath) {
+        return;
+      }
+      await CleanupPayloadCache();
+      setPayloadPath(filePath);
+      toast.success("Payload file selected");
+      useLogStore.getState().addLog(`Selected payload: ${filePath}`, "info");
+      await loadPartitions(filePath);
+    },
+    [status, setPayloadPath, loadPartitions]
+  );
+  const handleSelectPayload = useCallback(async () => {
+    try {
+      debugLog("Selecting payload file");
+      const path = await SelectPayloadFile();
+      if (path) {
+        await CleanupPayloadCache();
+        setPayloadPath(path);
+        toast.success("Payload file selected");
+        useLogStore.getState().addLog(`Selected payload: ${path}`, "info");
+        await loadPartitions(path);
+      }
+    } catch (error) {
+      handleError("Select Payload File", error);
+    }
+  }, [setPayloadPath, loadPartitions]);
+  const handleSelectOutput = useCallback(async () => {
+    try {
+      debugLog("Selecting output directory");
+      const path = await SelectOutputDirectory();
+      if (path) {
+        setOutputPath(path);
+        toast.success("Output directory selected");
+        useLogStore.getState().addLog(`Selected output directory: ${path}`, "info");
+      }
+    } catch (error) {
+      handleError("Select Output Directory", error);
+    }
+  }, [setOutputPath]);
+  const handleOpenOutputFolder = useCallback(async () => {
+    const effectiveOutputPath = outputDir || outputPath;
+    if (!effectiveOutputPath) {
+      toast.error("No output folder to open");
+      return;
+    }
+    try {
+      debugLog(`Opening folder: ${effectiveOutputPath}`);
+      await OpenFolder(effectiveOutputPath);
+    } catch (error) {
+      handleError("Open Output Folder", error);
+    }
+  }, [outputDir, outputPath]);
+  const handleRefreshPartitions = useCallback(async () => {
+    if (!payloadPath) {
+      return;
+    }
+    await (mode === "remote" ||
+    payloadPath.startsWith("http://") ||
+    payloadPath.startsWith("https://")
+      ? loadRemotePartitions()
+      : loadPartitions(payloadPath));
+  }, [payloadPath, mode, loadRemotePartitions, loadPartitions]);
+  const handleExtract = useCallback(async () => {
+    await runExtractPayload({
+      addCompletedPartitions,
+      clearPartitionProgress,
+      clearTransientPartitionStatuses,
+      completedPartitions,
+      failActivePartitions,
+      mode,
+      outputDir,
+      outputPath,
+      partitions,
+      payloadPath,
+      prefetch,
+      setCancelTokenId,
+      setErrorMessage,
+      setExtractedFiles,
+      setExtractingPartitions,
+      setExtractionStats,
+      setOutputDir,
+      setStatus,
+    });
+  }, [
+    payloadPath,
+    partitions,
+    completedPartitions,
+    outputDir,
+    outputPath,
+    mode,
+    prefetch,
+    setStatus,
+    setErrorMessage,
+    setExtractingPartitions,
+    setExtractedFiles,
+    setOutputDir,
+    setExtractionStats,
+    addCompletedPartitions,
+    clearPartitionProgress,
+    clearTransientPartitionStatuses,
+    failActivePartitions,
+    setCancelTokenId,
+  ]);
+  const handleReset = useCallback(() => {
+    runResetPayloadDumper(
+      reset,
+      setMode,
+      setRemoteUrl,
+      setPrefetch,
+      setConnectionStatus,
+      setEstimatedSize,
+      setRemoteMetadata,
+      cancelLoadingRef
+    );
+  }, [
+    reset,
+    setMode,
+    setRemoteUrl,
+    setPrefetch,
+    setConnectionStatus,
+    setEstimatedSize,
+    setRemoteMetadata,
+  ]);
+  return {
+    handleCancelLoadPartitions,
+    handleCheckUrl,
+    handleExtract,
+    handleOpenOutputFolder,
+    handlePayloadDrop,
+    handleRefreshPartitions,
+    handleReset,
+    handleSelectOutput,
+    handleSelectPayload,
+    loadRemotePartitions,
+  };
+};

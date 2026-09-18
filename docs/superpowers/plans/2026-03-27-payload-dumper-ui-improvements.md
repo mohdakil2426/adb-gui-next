@@ -7,32 +7,36 @@
 ## Current State Analysis
 
 Based on two screenshot states:
+
 1. **ZIP selected, partitions loading** — spinner on button, actions visible but useless
 2. **Partitions loaded** — full table with empty Progress column, actions at bottom
 
 ### Pain Points Identified
 
-| # | Issue | Severity | Where |
-|---|-------|----------|-------|
-| 1 | **Empty PROGRESS column** — takes ~30% of each row's width but shows nothing until extraction starts. Looks broken. | High | Partition table |
-| 2 | **No loading feedback for ZIP extraction** — small spinner embedded inside the file button is easy to miss. ZIP extraction can take 10-30s for large OTAs (~5 GB). User has no idea what's happening. | High | Loading state |
-| 3 | **"Select Partitions" button text during loading** — confusing. It says "Select Partitions" while partitions are being loaded. | Medium | Actions |
-| 4 | **Actions at the bottom require scrolling** — 11+ partitions push Reset/Extract below the fold. User has to scroll past everything to actually extract. | Medium | Actions |
-| 5 | **No file metadata at a glance** — the user can't see the ROM name, total payload size, or partition count without scanning the entire UI. | Low | File info |
-| 6 | **Reset takes 50% width** — rarely used but takes equal space as the primary Extract action. | Low | Actions |
-| 7 | **Path hints are raw absolute paths** — long Windows paths like `C:\Users\akila\OneDrive\Desktop\...` are hard to scan. | Low | Path hints |
+| #   | Issue                                                                                                                                                                                                 | Severity | Where           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------- |
+| 1   | **Empty PROGRESS column** — takes ~30% of each row's width but shows nothing until extraction starts. Looks broken.                                                                                   | High     | Partition table |
+| 2   | **No loading feedback for ZIP extraction** — small spinner embedded inside the file button is easy to miss. ZIP extraction can take 10-30s for large OTAs (~5 GB). User has no idea what's happening. | High     | Loading state   |
+| 3   | **"Select Partitions" button text during loading** — confusing. It says "Select Partitions" while partitions are being loaded.                                                                        | Medium   | Actions         |
+| 4   | **Actions at the bottom require scrolling** — 11+ partitions push Reset/Extract below the fold. User has to scroll past everything to actually extract.                                               | Medium   | Actions         |
+| 5   | **No file metadata at a glance** — the user can't see the ROM name, total payload size, or partition count without scanning the entire UI.                                                            | Low      | File info       |
+| 6   | **Reset takes 50% width** — rarely used but takes equal space as the primary Extract action.                                                                                                          | Low      | Actions         |
+| 7   | **Path hints are raw absolute paths** — long Windows paths like `C:\Users\akila\OneDrive\Desktop\...` are hard to scan.                                                                               | Low      | Path hints      |
 
 ---
 
 ## Recommendation 1: Adaptive Partition Table (Hide Progress Until Needed)
 
 ### Problem
+
 The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid allocation. Before extraction, every row has an empty gap between the partition name and size — it looks broken and wastes ~30% of horizontal space.
 
 ### Solution
+
 **Show a 3-column table (checkbox + name + size) by default. Dynamically switch to 4-column (+ progress) only when extraction starts.** This makes the pre-extraction table compact and focused, then expands naturally when progress data exists.
 
 ### Before (Current)
+
 ```
 +----------------------------------------------------------------+
 |  [ ]  |  PARTITION    |       PROGRESS       |    SIZE          |
@@ -45,7 +49,9 @@ The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid all
 ```
 
 ### After (Proposed)
+
 **Pre-extraction — compact 3-column:**
+
 ```
 +--------------------------------------------------+
 |  [ ]  |  PARTITION                      |  SIZE   |
@@ -58,6 +64,7 @@ The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid all
 ```
 
 **During extraction — expanded 4-column with progress:**
+
 ```
 +----------------------------------------------------------------+
 |  [ ]  |  PARTITION    |       PROGRESS       |    SIZE          |
@@ -69,6 +76,7 @@ The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid all
 ```
 
 ### Implementation
+
 - Compute `isExtractionActive = status === 'extracting' || completedPartitions.size > 0`
 - Toggle grid template:
   - Default: `grid-cols-[28px_1fr_80px]`
@@ -76,6 +84,7 @@ The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid all
 - Conditionally render the progress column header and cell
 
 ### Effort: Low (~30 min)
+
 ### Impact: High — cleaner table, no wasted space, better visual density
 
 ---
@@ -83,12 +92,15 @@ The PROGRESS column is always visible with a fixed `minmax(120px, 1fr)` grid all
 ## Recommendation 2: Loading Overlay with Stage Indicator
 
 ### Problem
+
 When a ZIP file is selected, the backend extracts payload.bin from the ZIP before parsing partitions. This can take **10-30 seconds** for large OTA files. Currently, the only feedback is a tiny spinner icon embedded inside the file button — extremely easy to miss. The user sees actions like "Select Partitions" which are meaningless during loading.
 
 ### Solution
+
 **Replace the content area with a centered loading overlay that shows what's happening stage-by-stage.** Show the stage name, a progress indicator, and the filename being processed. This eliminates confusion and gives the user confidence the app hasn't frozen.
 
 ### Before (Current — loading state)
+
 ```
 +- Extraction Setup ------------------------------------------+
 |  INPUT & OUTPUT                                              |
@@ -102,6 +114,7 @@ When a ZIP file is selected, the backend extracts payload.bin from the ZIP befor
 ```
 
 ### After (Proposed — loading state)
+
 ```
 +- Extraction Setup ------------------------------------------+
 |                                                              |
@@ -120,13 +133,15 @@ When a ZIP file is selected, the backend extracts payload.bin from the ZIP befor
 ```
 
 ### Stage Messages
-| Status | Message | Icon |
-|--------|---------|------|
+
+| Status                             | Message                          | Icon             |
+| ---------------------------------- | -------------------------------- | ---------------- |
 | `loading-partitions` + `.zip` file | "Extracting payload from ZIP..." | Loader2 spinning |
-| `loading-partitions` + `.bin` file | "Parsing partition manifest..." | Loader2 spinning |
-| `ready` | (show normal UI) | — |
+| `loading-partitions` + `.bin` file | "Parsing partition manifest..."  | Loader2 spinning |
+| `ready`                            | (show normal UI)                 | —                |
 
 ### Implementation
+
 - Detect `status === 'loading-partitions'` AND `!partitions.length`
 - Show a centered loading card inside `<CardContent>` instead of the Input/Output + Actions sections
 - Display the stage message based on file extension
@@ -134,6 +149,7 @@ When a ZIP file is selected, the backend extracts payload.bin from the ZIP befor
 - Hide Actions entirely during loading (they're useless)
 
 ### Effort: Medium (~1 hour)
+
 ### Impact: High — eliminates the biggest UX confusion point
 
 ---
@@ -141,14 +157,18 @@ When a ZIP file is selected, the backend extracts payload.bin from the ZIP befor
 ## Recommendation 3: Sticky Extract Bar + File Info Banner
 
 ### Problem
+
 Two issues combined:
+
 1. **Actions at the bottom** — with 11+ partitions the table takes most of the viewport. The Extract button (the most important action) is pushed below the fold. Users must scroll past everything to click Extract.
 2. **No quick file overview** — the user can't see at a glance what file is loaded, how many partitions exist, or the total size without reading the full UI.
 
 ### Solution
+
 **Replace the separate "Input & Output" section and "Actions" section with a compact file info banner at the top and a sticky action bar at the bottom of the card.** This keeps the primary action always visible and gives instant context about the loaded file.
 
 ### Before (Current)
+
 ```
 +- Extraction Setup ------------------------------------------+
 |  INPUT & OUTPUT                             (section header) |
@@ -170,6 +190,7 @@ Two issues combined:
 ```
 
 ### After (Proposed)
+
 ```
 +- Extraction Setup ------------------------------------------+
 |  +----------------------------------------------------------+|
@@ -194,6 +215,7 @@ Two issues combined:
 ```
 
 ### Key Changes
+
 1. **File Info Banner** (replaces "Input & Output" section):
    - Compact card/banner at top with filename, partition count, total size
    - Output/refresh/open buttons inline as icon buttons on the right
@@ -211,6 +233,7 @@ Two issues combined:
    - During extraction: footer becomes a progress summary bar
 
 ### Implementation
+
 - Restructure `<CardContent>` into 3 zones: banner -> table -> footer
 - The banner is a `bg-muted/30 rounded-lg p-3` section
 - Footer uses `border-t pt-4` with `flex justify-between items-center`
@@ -218,6 +241,7 @@ Two issues combined:
 - Reset becomes `variant="ghost" size="sm"` aligned left
 
 ### Effort: Medium (~1.5 hours)
+
 ### Impact: High — most important action is always visible, cleaner info hierarchy
 
 ---
@@ -226,11 +250,11 @@ Two issues combined:
 
 **Apply all three.** They address different layers and don't conflict:
 
-| # | What | Addresses |
-|---|------|-----------|
-| 1 | Adaptive table columns | Wasted space, visual noise |
-| 2 | Loading overlay | User confusion during ZIP processing |
-| 3 | Sticky bar + file banner | Scrolling issue, information hierarchy |
+| #   | What                     | Addresses                              |
+| --- | ------------------------ | -------------------------------------- |
+| 1   | Adaptive table columns   | Wasted space, visual noise             |
+| 2   | Loading overlay          | User confusion during ZIP processing   |
+| 3   | Sticky bar + file banner | Scrolling issue, information hierarchy |
 
 ### Suggested Implementation Order
 
@@ -244,4 +268,4 @@ Phase 3: Recommendation 2 (Loading overlay)        -- 1 hr, polish for edge case
 
 ---
 
-*Generated: 2026-03-27*
+_Generated: 2026-03-27_

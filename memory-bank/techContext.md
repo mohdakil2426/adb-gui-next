@@ -20,15 +20,15 @@ Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**libl
 
 ## Tooling
 
-| Tool | Role |
-| --- | --- |
-| Ultracite (Biome) | FE lint + format |
-| rustfmt / clippy | Rust format / lint (`-D warnings` in CI) |
-| Vitest | FE tests in `src/test/` |
-| Husky + lint-staged | Pre-commit staged fix only |
-| GitHub Actions | path-filtered quality split; package on main; publish draft |
-| tauri-action | Official installer build + release asset upload |
-| `bun run version:sync` | Sync Cargo.toml version from package.json |
+| Tool                   | Role                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| Ultracite (Biome)      | FE lint + format                                            |
+| rustfmt / clippy       | Rust format / lint (`-D warnings` in CI)                    |
+| Vitest                 | FE tests in `src/test/`                                     |
+| Husky + lint-staged    | Pre-commit staged fix only                                  |
+| GitHub Actions         | path-filtered quality split; package on main; publish draft |
+| tauri-action           | Official installer build + release asset upload             |
+| `bun run version:sync` | Sync Cargo.toml version from package.json                   |
 
 Commands: see `docs/project_rules.md` (source of truth for gates). Do not re-add removed aliases (`fix`, `lint:web:fix`, `check:fast`, `release:verify`).
 
@@ -65,11 +65,11 @@ Full design: `docs/architecture.md`.
 
 ## Versioning (official Tauri)
 
-| Source | Role |
-| --- | --- |
-| `package.json` `version` | **App SoT** |
-| `tauri.conf.json` `version` | `"../package.json"` |
-| `Cargo.toml` `version` | Must match; `bun run version:sync` |
+| Source                      | Role                               |
+| --------------------------- | ---------------------------------- |
+| `package.json` `version`    | **App SoT**                        |
+| `tauri.conf.json` `version` | `"../package.json"`                |
+| `Cargo.toml` `version`      | Must match; `bun run version:sync` |
 
 ## Packaging facts agents forget
 

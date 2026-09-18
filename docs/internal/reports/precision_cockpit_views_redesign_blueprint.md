@@ -54,6 +54,7 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.1. Screen 1: Marketplace (`src/features/marketplace/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `MarketplaceHeroBanner`
   - Total available packages, Target device compatibility indicator (`Android 14 · API 34 · arm64-v8a`), Active source repositories (`F-Droid`, `GitHub Releases`, `IzzyOnDroid`), Rate limit status, Sync button.
 - **Tabs:**
@@ -84,6 +85,7 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.2. Screen 2: Flasher (`src/features/flasher/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `FlasherCockpitHero`
   - Connection mode (`FASTBOOT` / `FASTBOOTD` / `SIDELOAD` / `ADB`), Bootloader Lock State (`LOCKED` 🔒 / `UNLOCKED` 🔓), Active Slot (`Slot _a` / `Slot _b`), Product Board Name, Fastboot Protocol Version, Battery Level Safety Guard (>50%).
 - **Tabs:**
@@ -125,6 +127,7 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.3. Screen 3: Payload Dumper (`src/features/payload-dumper/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `PayloadDumperHeroBanner`
   - Loaded Payload File / URL name, Format badge (Standard `payload.bin`, Factory ZIP, OTA ZIP, OPS/OFP), Total Payload Size, Total Partitions Count, Target Android Version / Build Fingerprint, Compression Ratio, Extraction Destination Directory with 1-click folder reveal.
 - **Tabs:**
@@ -147,6 +150,7 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.4. Screen 4: Utilities (`src/features/utilities/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `UtilitiesCockpitHero`
   - ADB Server version & status (Running / Restarting / Stopped), Host Platform-tools version, Connected Device Serial & Mode (`device` / `recovery` / `sideload` / `fastboot` / `offline`), Fastboot binary path status, Quick Restart Server button.
 - **Tabs:**
@@ -180,16 +184,17 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.5. Screen 5: Scrcpy (`src/features/scrcpy/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `ScrcpyCockpitHero`
   - Scrcpy Engine Version & Binary Status (Installed / Needs Update / Downloading), Active Mirroring Sessions Count badge with live pulsating dot, Connected Device Targets, Connection Transport (`USB 3.0` / `Wireless TCP 5555`), Quick "Launch Mirror" / "Stop All" primary action.
 - **Tabs:**
   1. `Overview & Quick Mirror` (`ScrcpyOverviewTab`)
      - **Target Device Selector**: Multi-device support with visual device tiles, nickname display, battery level, resolution, and connection type (USB vs Wireless).
      - **1-Click Quality Presets Cockpit (4 Hero Cards)**:
-       - ⚡ *High Performance / Gaming*: 60 FPS, 16 Mbps, Low Latency, H.265/HEVC, Audio Passthrough
-       - 💼 *Productivity & Work*: Native Resolution, 12 Mbps, Stay Awake, Clipboard Auto-Sync, Physical Keyboard forwarding
-       - 🔋 *Battery Saver / Ultra-Light*: 1080p, 4 Mbps, 30 FPS, Turn Screen Off on launch
-       - 🎙️ *Content Creator / Recording*: Max Resolution, 24 Mbps, H.265, Audio Forward, Auto-Record to MP4/MKV
+       - ⚡ _High Performance / Gaming_: 60 FPS, 16 Mbps, Low Latency, H.265/HEVC, Audio Passthrough
+       - 💼 _Productivity & Work_: Native Resolution, 12 Mbps, Stay Awake, Clipboard Auto-Sync, Physical Keyboard forwarding
+       - 🔋 _Battery Saver / Ultra-Light_: 1080p, 4 Mbps, 30 FPS, Turn Screen Off on launch
+       - 🎙️ _Content Creator / Recording_: Max Resolution, 24 Mbps, H.265, Audio Forward, Auto-Record to MP4/MKV
      - **Scrcpy Keyboard Shortcuts Cheat-Sheet Cockpit**: Interactive visual guide of all Scrcpy shortcuts (`MOD+F`, `MOD+H`, `MOD+B`, `MOD+S`, `MOD+O`, `MOD+N`, `MOD+P`, `MOD+R`).
      - **Active Session Controller**: Shows active mirroring sessions with per-device Stop button and Floating Toolbar toggle.
   2. `Display & Video Engine` (`ScrcpyDisplayTab`)
@@ -208,6 +213,7 @@ This transformation elevates all remaining secondary screens into first-class **
 ### 2.6. Screen 6: Emulator (`src/features/emulator/`)
 
 #### Layout & Tab Hierarchy
+
 - **Header Banner:** `EmulatorCockpitHero`
   - Selected AVD Name with OS Avatar, Android API Level & OS Version (`Android 14.0 · API 34`), CPU Architecture & ABI (`x86_64` / `arm64-v8a`), VM State Badge (`RUNNING` 🟢 / `STOPPED` ⚪ / `COLD BOOT NEEDED` 🟡), Display Resolution, Root Status, Primary 1-Click Launch / Force Stop Action.
 - **Tabs:**

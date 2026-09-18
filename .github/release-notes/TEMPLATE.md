@@ -21,13 +21,13 @@ Verify with `SHA256SUMS.txt`.
 
 ## Platform support
 
-| Platform | Status |
-| --- | --- |
-| Windows x86_64 | First-class |
-| Windows i686 / aarch64 | Shipped when CI matrix includes them |
-| Linux x86_64 | First-class |
-| Linux aarch64 | App builds; bundled platform-tools may be PATH-only |
-| macOS | Builds paused by product policy |
+| Platform               | Status                                              |
+| ---------------------- | --------------------------------------------------- |
+| Windows x86_64         | First-class                                         |
+| Windows i686 / aarch64 | Shipped when CI matrix includes them                |
+| Linux x86_64           | First-class                                         |
+| Linux aarch64          | App builds; bundled platform-tools may be PATH-only |
+| macOS                  | Builds paused by product policy                     |
 
 ## Notes
 

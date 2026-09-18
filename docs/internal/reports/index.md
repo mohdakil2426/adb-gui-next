@@ -20,8 +20,8 @@ Browse by date under `docs/internal/reports/closed/`. Treat closed files as hist
 
 ## Superpowers (not reports)
 
-| Path | Naming |
-| --- | --- |
+| Path                      | Naming                         |
+| ------------------------- | ------------------------------ |
 | `docs/superpowers/plans/` | `YYYY-MM-DD-<feature-name>.md` |
 | `docs/superpowers/specs/` | `YYYY-MM-DD-<topic>-design.md` |
 

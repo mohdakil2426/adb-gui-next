@@ -5,6 +5,7 @@
 **Context:** Replicate `kurikomi-labs/komi-store` GitHub fetch + auth in ADB GUI Next (Tauri 2 + Rust + React). First commit `d218d2c` done; all following changes remain uncommitted working tree.
 
 **Completed:**
+
 - `token_store.rs` keyring (Windows Credential Manager) + `gh auth token` fallback verified via `gh api user` (mohdakil2426, 68 public repos)
 - `rate_limit.rs` X-RateLimit-* tracking + `should_fallback_to_github` + `ManagedRateLimitStore`
 - `pkce.rs` S256 + `web_auth.rs` localhost TcpListener PKCE loop + `open::that` browser open
@@ -27,18 +28,18 @@ Bring Komi's proven GitHub stack into ADB GUI Next **without** requiring a hoste
 
 ### Komi fetch map → our mapping
 
-| Komi | Our Rust |
-|---|---|
-| `HttpClientFactory.createGitHubHttpClient(TokenStore→Bearer)` | `ManagedHttpClient::github_client(tokenStore)` + `defaultRequest Authorization` |
-| `TokenStore KSafe` | `token_store.rs` with `keyring` (service `com.astrixforge.adbguinext`, key `github_token`) |
-| `HostTokenRepository KSafe host_tokens_v1` | `host_tokens.rs` |
-| `RateLimitInterceptor + BackendRateLimitTracker` | `rate_limit.rs` parsing `X-RateLimit-*`, `SharedFlow` → `marketplace:rate-limit` event |
-| `MirrorRewriter + ProxyManager` | `proxy.rs` + `install_queue` already has mirror rewrite for downloads |
+| Komi                                                                | Our Rust                                                                                                                              |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `HttpClientFactory.createGitHubHttpClient(TokenStore→Bearer)`       | `ManagedHttpClient::github_client(tokenStore)` + `defaultRequest Authorization`                                                       |
+| `TokenStore KSafe`                                                  | `token_store.rs` with `keyring` (service `com.astrixforge.adbguinext`, key `github_token`)                                            |
+| `HostTokenRepository KSafe host_tokens_v1`                          | `host_tokens.rs`                                                                                                                      |
+| `RateLimitInterceptor + BackendRateLimitTracker`                    | `rate_limit.rs` parsing `X-RateLimit-*`, `SharedFlow` → `marketplace:rate-limit` event                                                |
+| `MirrorRewriter + ProxyManager`                                     | `proxy.rs` + `install_queue` already has mirror rewrite for downloads                                                                 |
 | `BackendApiClient v1/` (categories, search, repo, releases, readme) | `backend.rs` local emulation: categories → GitHub search `stars:>N pushed:>=` + curated JSON; search → `service.rs` + verified assets |
-| `HomeRepository offline mirror → cache → live verified` | same in `backend.rs::fetch_trending_cached_or_live()` |
-| `SearchRepository Backend→GitHub fallback` | `service.rs` already does SWR; add `backend::search_with_fallback()` |
-| `DetailsRepository cache→backend→GitHub` | keep, add `fetch_readme` dual-path already done |
-| `DefaultDownloadOrchestrator 3-concurrent + MultiSourceDownloader` | extend `install_queue.rs` with queue gate + SHA-256 verify if needed |
+| `HomeRepository offline mirror → cache → live verified`             | same in `backend.rs::fetch_trending_cached_or_live()`                                                                                 |
+| `SearchRepository Backend→GitHub fallback`                          | `service.rs` already does SWR; add `backend::search_with_fallback()`                                                                  |
+| `DetailsRepository cache→backend→GitHub`                            | keep, add `fetch_readme` dual-path already done                                                                                       |
+| `DefaultDownloadOrchestrator 3-concurrent + MultiSourceDownloader`  | extend `install_queue.rs` with queue gate + SHA-256 verify if needed                                                                  |
 
 ---
 
@@ -47,6 +48,7 @@ Bring Komi's proven GitHub stack into ADB GUI Next **without** requiring a hoste
 ### Device Flow (already partial in `auth.rs`)
 
 Keep `start_device_flow(client_id, scope)` + `poll_device_flow`. Enhance to:
+
 - `client_id` default from `GITHUB_CLIENT_ID` env → fallback `Ov23linTY28VFpFjFiI9` (Komi's public) → user setting.
 - `TokenStore::save(token)` stamps `savedAtEpochMillis = now` (like Komi).
 - Frontend: `GithubDeviceFlowDialog` with `user_code` copy, `verification_uri_complete` open via `opener`, countdown `expires_in` + polling interval + `slow_down` handling (+5s cap 15s).
@@ -121,21 +123,27 @@ Frontend stores: `authStore.ts` (Zustand `tokenStatus`, `isLoggedIn`) + `useMark
 ## 6. Phases
 
 **Phase 0 - Docs & Scaffolding (this file)**
+
 - Create `active/2026-08-21/...-plan.md` (here), update `docs/architecture.md §8/10` stub for backend emulation.
 
 **Phase 1 - TokenStore + HostTokens + RateLimit**
+
 - Add `keyring = "3"` + `sha2` deps, implement `token_store.rs`, `host_tokens.rs`, `rate_limit.rs`, wire in `lib.rs` `.manage`.
 
 **Phase 2 - Backend Emulator**
+
 - Implement `backend.rs` with offline-mirror + verified search + fallback logic, integrate with `service.rs` `fetch_search_apps` to use backend first.
 
 **Phase 3 - WebAuth PKCE Loop**
+
 - Add `pkce.rs` (SHA-256 base64url), `web_auth.rs` (TcpListener callback), command `marketplace_github_web_auth_flow`.
 
 **Phase 4 - IPC + UI**
+
 - `desktop/backend.ts` wrappers, `models.ts` DTOs, `features/marketplace/auth/` UI (login dialog with 3 tabs: Web, Device, PAT).
 
 **Phase 5 - Verification**
+
 - `bun run lint:web`, `cargo test --no-run`, new Vitest for auth, update `docs/architecture.md` + `src/AGENTS.md` + `src-tauri/AGENTS.md` realtime (no commits per request).
 
 ---

@@ -1,7 +1,7 @@
-const isDebug = import.meta.env.DEV || localStorage.getItem('debug') === 'true';
+const isDebug = import.meta.env.DEV || localStorage.getItem("debug") === "true";
 
-export function debugLog(...args: unknown[]): void {
+export const debugLog = (...args: unknown[]): void => {
   if (isDebug) {
-    console.log('[DEBUG]', ...args);
+    console.log("[DEBUG]", ...args);
   }
-}
+};

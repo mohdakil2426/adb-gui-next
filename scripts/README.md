@@ -8,13 +8,13 @@ App versioning uses official Tauri: `src-tauri/tauri.conf.json` → `"version": 
 
 ## Inventory
 
-| Script | Purpose | When |
-| --- | --- | --- |
-| [`make-windows-portable.ps1`](./make-windows-portable.ps1) | Build Windows **portable zip** after a Tauri release build | CI/publish (Windows jobs) or local after `tauri build` |
-| [`sync-cargo-version.mjs`](./sync-cargo-version.mjs) | Set `Cargo.toml` version from `package.json` (app SoT) | Before release: `bun run version:sync` |
-| [`download-darwin-tools.ps1`](./download-darwin-tools.ps1) | Download Google platform-tools into `src-tauri/resources/darwin/` | macOS tools refresh (macOS product builds remain paused by policy) |
-| [`emulator-root-diagnostics.ps1`](./emulator-root-diagnostics.ps1) | Collect emulator root status into a markdown report | Manual debug when Emulator Root misbehaves |
-| [`emulator-root-e2e.ps1`](./emulator-root-e2e.ps1) | End-to-end AVD root test via upstream rootAVD | Manual QA of root pipeline on a real AVD |
+| Script                                                             | Purpose                                                           | When                                                               |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| [`make-windows-portable.ps1`](./make-windows-portable.ps1)         | Build Windows **portable zip** after a Tauri release build        | CI/publish (Windows jobs) or local after `tauri build`             |
+| [`sync-cargo-version.mjs`](./sync-cargo-version.mjs)               | Set `Cargo.toml` version from `package.json` (app SoT)            | Before release: `bun run version:sync`                             |
+| [`download-darwin-tools.ps1`](./download-darwin-tools.ps1)         | Download Google platform-tools into `src-tauri/resources/darwin/` | macOS tools refresh (macOS product builds remain paused by policy) |
+| [`emulator-root-diagnostics.ps1`](./emulator-root-diagnostics.ps1) | Collect emulator root status into a markdown report               | Manual debug when Emulator Root misbehaves                         |
+| [`emulator-root-e2e.ps1`](./emulator-root-e2e.ps1)                 | End-to-end AVD root test via upstream rootAVD                     | Manual QA of root pipeline on a real AVD                           |
 
 ---
 
@@ -30,12 +30,12 @@ Tauri has **no official portable bundle type**. This script packages:
 
 **Requires (after a successful Windows build):**
 
-| Parameter | Example |
-| --- | --- |
-| `-Version` | `0.2.5` |
-| `-Arch` | `x86_64` \| `i686` \| `aarch64` (matches tauri-action `[arch]`) |
-| `-TargetTriple` | `x86_64-pc-windows-msvc` |
-| `-OutputZip` | path to `…-portable.zip` |
+| Parameter       | Example                                                         |
+| --------------- | --------------------------------------------------------------- |
+| `-Version`      | `0.2.5`                                                         |
+| `-Arch`         | `x86_64` \| `i686` \| `aarch64` (matches tauri-action `[arch]`) |
+| `-TargetTriple` | `x86_64-pc-windows-msvc`                                        |
+| `-OutputZip`    | path to `…-portable.zip`                                        |
 
 Validates PE arch of the app and bundled `adb.exe` before zipping.
 
@@ -80,10 +80,10 @@ These scripts use a **real local Android SDK + AVD**. They are not run by defaul
 
 **Read-oriented:** runs adb probes against a booted emulator and writes a markdown report (default under `docs/reports/`).
 
-| Parameter | Default |
-| --- | --- |
-| `-Serial` | `emulator-5554` |
-| `-AvdName` | `Medium_Phone` |
+| Parameter     | Default                                     |
+| ------------- | ------------------------------------------- |
+| `-Serial`     | `emulator-5554`                             |
+| `-AvdName`    | `Medium_Phone`                              |
 | `-OutputPath` | auto timestamped path under `docs/reports/` |
 
 ```powershell
@@ -96,10 +96,10 @@ Use when the in-app Emulator Root wizard fails and you need a snapshot of device
 
 **Write / destructive on the AVD image path:** restores stock ramdisk from `.backup`, cold-boots the AVD, runs upstream **rootAVD** (`docs/refrences/github-repos/rootAVD` or equivalent local path), then checks Magisk-related outcome.
 
-| Parameter | Default |
-| --- | --- |
-| `-Serial` | `emulator-5554` |
-| `-AvdName` | `Medium_Phone` |
+| Parameter  | Default         |
+| ---------- | --------------- |
+| `-Serial`  | `emulator-5554` |
+| `-AvdName` | `Medium_Phone`  |
 
 **Needs:** Android SDK emulator, AVD with ramdisk backup, rootAVD scripts, network/SDK layout as expected by the script.
 

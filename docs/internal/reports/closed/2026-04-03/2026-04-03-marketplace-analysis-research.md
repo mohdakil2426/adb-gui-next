@@ -23,15 +23,15 @@
 
 The marketplace has **4 critical bugs** causing providers to fail silently, resulting in only Aptoide returning results. The root causes are:
 
-| # | Bug | Provider | Severity |
-|---|-----|----------|----------|
-| 1 | **F-Droid response key mismatch** — code expects `hits`, API returns `apps` | F-Droid | 🔴 Critical |
-| 2 | **IzzyOnDroid search endpoint doesn't exist** — `?search=` param returns HTTP 400 | IzzyOnDroid | 🔴 Critical |
-| 3 | **GitHub query uses `+` literal instead of spaces** — GitHub treats `+` as URL-encoded space in `q=`, but `urlencoding::encode()` double-encodes it, producing 0 results | GitHub | 🔴 Critical |
-| 4 | **GitHub trending query also broken** — same `+` encoding issue means empty home page | GitHub | 🟡 High |
-| 5 | **All errors silently swallowed** — no per-provider error feedback to frontend | All | 🟡 High |
-| 6 | **F-Droid detail API has no name/description** — `/api/v1/packages/` returns only version info | F-Droid | 🟠 Medium |
-| 7 | **No GitHub PAT support** — rate-limited after ~10 unauthenticated calls/minute | GitHub | 🟠 Medium |
+| #   | Bug                                                                                                                                                                      | Provider    | Severity    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ----------- |
+| 1   | **F-Droid response key mismatch** — code expects `hits`, API returns `apps`                                                                                              | F-Droid     | 🔴 Critical |
+| 2   | **IzzyOnDroid search endpoint doesn't exist** — `?search=` param returns HTTP 400                                                                                        | IzzyOnDroid | 🔴 Critical |
+| 3   | **GitHub query uses `+` literal instead of spaces** — GitHub treats `+` as URL-encoded space in `q=`, but `urlencoding::encode()` double-encodes it, producing 0 results | GitHub      | 🔴 Critical |
+| 4   | **GitHub trending query also broken** — same `+` encoding issue means empty home page                                                                                    | GitHub      | 🟡 High     |
+| 5   | **All errors silently swallowed** — no per-provider error feedback to frontend                                                                                           | All         | 🟡 High     |
+| 6   | **F-Droid detail API has no name/description** — `/api/v1/packages/` returns only version info                                                                           | F-Droid     | 🟠 Medium   |
+| 7   | **No GitHub PAT support** — rate-limited after ~10 unauthenticated calls/minute                                                                                          | GitHub      | 🟠 Medium   |
 
 ---
 
@@ -42,6 +42,7 @@ The marketplace has **4 critical bugs** causing providers to fail silently, resu
 **File**: `src-tauri/src/marketplace/fdroid.rs:10-13`
 
 **Problem**: The Rust struct expects a `hits` field:
+
 ```rust
 #[derive(Deserialize, Debug)]
 struct FdroidSearchResponse {
@@ -51,9 +52,11 @@ struct FdroidSearchResponse {
 ```
 
 **Actual API Response** (verified live at `https://search.f-droid.org/api/search_apps?q=newpipe&lang=en`):
+
 ```json
 {
-  "apps": [   // ✅ KEY IS "apps", NOT "hits"
+  "apps": [
+    // ✅ KEY IS "apps", NOT "hits"
     {
       "name": "NewPipe",
       "summary": "Lightweight YouTube frontend",
@@ -65,6 +68,7 @@ struct FdroidSearchResponse {
 ```
 
 **Root Cause**: The F-Droid search API was likely using Meilisearch (which uses `hits`) at some point, but now uses a simpler `apps` wrapper. The field names in the response objects also differ:
+
 - No `packageName` → must be extracted from `url` field
 - No `suggestedVersionName` or `suggestedVersionCode` → not in search results
 - `icon` is a full URL, not a relative path
@@ -78,6 +82,7 @@ struct FdroidSearchResponse {
 **File**: `src-tauri/src/marketplace/izzy.rs:9-11`
 
 **Problem**: The code calls a search endpoint that **does not exist**:
+
 ```rust
 let url = format!(
     "https://apt.izzysoft.de/fdroid/api/v1/packages?search={}",  // ❌ Returns HTTP 400
@@ -88,11 +93,13 @@ let url = format!(
 **Verified**: Live test of `https://apt.izzysoft.de/fdroid/api/v1/packages?search=newpipe` returns **HTTP 400** (Bad Request).
 
 **Reality**: IzzyOnDroid has NO search API. The available endpoints are:
+
 - `GET /fdroid/api/v1/packages/<packageName>` — lookup by exact package name
 - `GET /fdroid/api/v1/names/<packageName>` — get display name
 - `GET /fdroid/api/v1/shield/<packageName>` — shields.io badge data
 
 **Solution Options**:
+
 1. **Cross-reference approach**: Use F-Droid search results to find apps, then check if they exist in IzzyOnDroid by querying `/api/v1/packages/<packageName>`
 2. **Local index approach**: Download and cache the IzzyOnDroid `index-v1.jar` and search locally (like F-Droid clients do)
 3. **Web scraping approach**: Parse `https://apt.izzysoft.de/fdroid/index/apk/` (fragile, not recommended)
@@ -106,6 +113,7 @@ let url = format!(
 **File**: `src-tauri/src/marketplace/github.rs:43-48`
 
 **Problem**: Double-encoding and `+` concatenation produces malformed queries:
+
 ```rust
 let q = format!(
     "{}+topic:android+fork:false+NOT+topic:library+archived:false",
@@ -117,6 +125,7 @@ let url = format!(
 ```
 
 When `query = "newpipe"`, the resulting URL is:
+
 ```
 q=newpipe+topic:android+fork:false+NOT+topic:library+archived:false
 ```
@@ -124,9 +133,11 @@ q=newpipe+topic:android+fork:false+NOT+topic:library+archived:false
 **Verified**: This exact URL returns `{"total_count":0,"items":[]}` — **ZERO results**.
 
 But using `%20` (space) instead of `+` as separator:
+
 ```
 q=newpipe%20topic:android%20fork:false
 ```
+
 Returns `{"total_count":14,"items":[...]}` — **14 results** including the real NewPipe!
 
 **Root Cause**: The GitHub Search API treats the `q` parameter value differently than standard URL query parameters. The `+` signs between qualifiers must be URL-encoded spaces (`%20`), not literal `+` characters. Using `urlencoding::encode()` on the user query AND concatenating with `+` creates a broken query.
@@ -142,6 +153,7 @@ Returns `{"total_count":14,"items":[...]}` — **14 results** including the real
 **File**: `src-tauri/src/marketplace/github.rs:228-229`
 
 **Problem**: Same `+` encoding issue:
+
 ```rust
 let q = "topic:android+topic:app+fork:false+archived:false+stars:>100";
 ```
@@ -160,7 +172,7 @@ While this specific query happens to work **sometimes** (without a user-provided
 
 ```rust
 // GitHub fails with rate limit → returns vec![] silently
-// IzzyOnDroid fails with HTTP 400 → returns vec![] silently  
+// IzzyOnDroid fails with HTTP 400 → returns vec![] silently
 // F-Droid deserializes wrong key → returns vec![] silently
 // Only Aptoide works → user sees only Aptoide results
 ```
@@ -174,13 +186,14 @@ While this specific query happens to work **sometimes** (without a user-provided
 **File**: `src-tauri/src/marketplace/fdroid.rs:96-152`
 
 **Problem**: The `/api/v1/packages/<pkg>` endpoint returns ONLY version data:
+
 ```json
 {
   "packageName": "org.schabi.newpipe",
   "suggestedVersionCode": 1009,
   "packages": [
-    {"versionName": "0.28.4", "versionCode": 1009},
-    {"versionName": "0.28.3", "versionCode": 1008}
+    { "versionName": "0.28.4", "versionCode": 1009 },
+    { "versionName": "0.28.3", "versionCode": 1008 }
   ]
 }
 ```
@@ -195,48 +208,48 @@ No `name`, `description`, `summary`, `license`, `authorName`, `icon`, `screensho
 
 ### F-Droid
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| Search endpoint | ✅ Works | `https://search.f-droid.org/api/search_apps?q=X&lang=en` |
-| Response format | ❌ **Mismatched** | Code expects `hits[]`, API returns `apps[]` |
-| Search response fields | ❌ **Different** | API returns `name`, `summary`, `icon`, `url` — no `packageName`, no `suggestedVersionCode` |
-| Detail endpoint | ⚠️ Minimal | `/api/v1/packages/<pkg>` returns only version list |
-| Icon URLs | ⚠️ Changed | Now full URLs from `ftp.fau.de`, not relative paths |
-| Download URL | ⚠️ Needs extraction | Package name must be parsed from `url` field |
-| Rate limits | ✅ None apparent | Public API, no auth needed |
+| Aspect                 | Status              | Details                                                                                    |
+| ---------------------- | ------------------- | ------------------------------------------------------------------------------------------ |
+| Search endpoint        | ✅ Works            | `https://search.f-droid.org/api/search_apps?q=X&lang=en`                                   |
+| Response format        | ❌ **Mismatched**   | Code expects `hits[]`, API returns `apps[]`                                                |
+| Search response fields | ❌ **Different**    | API returns `name`, `summary`, `icon`, `url` — no `packageName`, no `suggestedVersionCode` |
+| Detail endpoint        | ⚠️ Minimal          | `/api/v1/packages/<pkg>` returns only version list                                         |
+| Icon URLs              | ⚠️ Changed          | Now full URLs from `ftp.fau.de`, not relative paths                                        |
+| Download URL           | ⚠️ Needs extraction | Package name must be parsed from `url` field                                               |
+| Rate limits            | ✅ None apparent    | Public API, no auth needed                                                                 |
 
 ### IzzyOnDroid
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| Search endpoint | ❌ **Does NOT exist** | `?search=` param returns HTTP 400 |
-| Package lookup | ✅ Works | `/api/v1/packages/<pkg>` works for exact names |
-| Response format | ⚠️ Different from F-Droid | `versionCode` is string, not int |
-| Full metadata | ❌ Not available | API only returns version info, no name/description |
-| Alternative | 📝 Proposed | Cross-reference with F-Droid search results |
+| Aspect          | Status                    | Details                                            |
+| --------------- | ------------------------- | -------------------------------------------------- |
+| Search endpoint | ❌ **Does NOT exist**     | `?search=` param returns HTTP 400                  |
+| Package lookup  | ✅ Works                  | `/api/v1/packages/<pkg>` works for exact names     |
+| Response format | ⚠️ Different from F-Droid | `versionCode` is string, not int                   |
+| Full metadata   | ❌ Not available          | API only returns version info, no name/description |
+| Alternative     | 📝 Proposed               | Cross-reference with F-Droid search results        |
 
 ### GitHub
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| Search endpoint | ✅ Works | `/search/repositories?q=...` |
-| Query encoding | ❌ **Broken** | `+` literal vs `%20` space bug |
-| Rate limits | ⚠️ Strict | 10 req/min unauthenticated, 30 req/min with PAT |
-| PAT support | ❌ Missing | No way for user to configure token |
-| Trending query | ⚠️ Too restrictive | `topic:app` filters out most Android apps |
-| APK detection | ✅ Works | `is_apk_asset()` filter is correct |
-| Releases API | ✅ Works | `/repos/{owner}/{repo}/releases` |
+| Aspect          | Status             | Details                                         |
+| --------------- | ------------------ | ----------------------------------------------- |
+| Search endpoint | ✅ Works           | `/search/repositories?q=...`                    |
+| Query encoding  | ❌ **Broken**      | `+` literal vs `%20` space bug                  |
+| Rate limits     | ⚠️ Strict          | 10 req/min unauthenticated, 30 req/min with PAT |
+| PAT support     | ❌ Missing         | No way for user to configure token              |
+| Trending query  | ⚠️ Too restrictive | `topic:app` filters out most Android apps       |
+| APK detection   | ✅ Works           | `is_apk_asset()` filter is correct              |
+| Releases API    | ✅ Works           | `/repos/{owner}/{repo}/releases`                |
 
 ### Aptoide
 
-| Aspect | Status | Details |
-|--------|--------|---------|
-| Search endpoint | ✅ Works | `ws75.aptoide.com/api/7/apps/search` |
-| Response format | ✅ Correct | Code correctly parses the response |
-| Detail endpoint | ✅ Works | `/api/7/app/getMeta` |
-| Malware filter | ⚠️ Too strict | Only `TRUSTED` rank → many valid apps filtered |
-| OBB filter | ✅ Correct | Skips split APKs properly |
-| Missing summary | 🟠 Bug | Search response has no `summary` field → blank descriptions |
+| Aspect          | Status        | Details                                                     |
+| --------------- | ------------- | ----------------------------------------------------------- |
+| Search endpoint | ✅ Works      | `ws75.aptoide.com/api/7/apps/search`                        |
+| Response format | ✅ Correct    | Code correctly parses the response                          |
+| Detail endpoint | ✅ Works      | `/api/7/app/getMeta`                                        |
+| Malware filter  | ⚠️ Too strict | Only `TRUSTED` rank → many valid apps filtered              |
+| OBB filter      | ✅ Correct    | Skips split APKs properly                                   |
+| Missing summary | 🟠 Bug        | Search response has no `summary` field → blank descriptions |
 
 ---
 
@@ -259,11 +272,11 @@ From analyzing **OpenHub-Store/GitHub-Store** (10.1k ⭐) via Context7:
 
 ### Their Home Screen Categories
 
-| Category | Query Pattern |
-|----------|--------------|
-| **Trending** | `topic:android` sorted by stars, time-filtered |
-| **Hot Release** | `topic:android` sorted by updated, recent pushes |
-| **Most Popular** | `topic:android` sorted by stars, all time |
+| Category         | Query Pattern                                    |
+| ---------------- | ------------------------------------------------ |
+| **Trending**     | `topic:android` sorted by stars, time-filtered   |
+| **Hot Release**  | `topic:android` sorted by updated, recent pushes |
+| **Most Popular** | `topic:android` sorted by stars, all time        |
 
 ### Their Asset Detection
 
@@ -286,6 +299,7 @@ Add a **Settings icon** (gear ⚙️) to the top-right of the search card, openi
 ### 2. Per-Provider Status Indicators
 
 When searching, show small status badges next to each provider filter chip:
+
 - ✅ Green = returned results
 - ⚠️ Yellow = rate limited / error
 - 🔄 Spinning = still loading
@@ -400,6 +414,7 @@ struct FdroidSearchApp {
 **File**: `src-tauri/src/marketplace/izzy.rs`
 
 Since IzzyOnDroid has no search endpoint, implement cross-referencing:
+
 1. Take the search results from F-Droid
 2. For each result, check if the package exists on IzzyOnDroid: `GET /api/v1/packages/<pkg>`
 3. If it exists, add an IzzyOnDroid result with the Izzy download URL
@@ -453,6 +468,7 @@ let q = "topic:android fork:false archived:false stars:>50 pushed:>2025-01-01";
 **Files**: `types.rs`, `commands/marketplace.rs`, `models.ts`
 
 Add a new response type:
+
 ```rust
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -482,6 +498,7 @@ pub struct ProviderStatus {
 #### Fix 3.2 — Settings Dialog Component
 
 Create `src/components/marketplace/MarketplaceSettings.tsx`:
+
 - Dialog with tabs: Providers, GitHub, Preferences, Cache
 - GitHub PAT input with show/hide toggle
 - Save to localStorage with `marketplace_` prefix
@@ -504,6 +521,7 @@ GET https://search.f-droid.org/api/search_apps?q={query}&lang=en
 ```
 
 Response:
+
 ```json
 {
   "apps": [
@@ -524,13 +542,12 @@ GET https://f-droid.org/api/v1/packages/{packageName}
 ```
 
 Response (minimal — no name/description):
+
 ```json
 {
   "packageName": "org.schabi.newpipe",
   "suggestedVersionCode": 1009,
-  "packages": [
-    {"versionName": "0.28.4", "versionCode": 1009}
-  ]
+  "packages": [{ "versionName": "0.28.4", "versionCode": 1009 }]
 }
 ```
 
@@ -541,13 +558,12 @@ GET https://apt.izzysoft.de/fdroid/api/v1/packages/{packageName}
 ```
 
 Response (minimal — versionCode is STRING not int):
+
 ```json
 {
   "packageName": "org.schabi.newpipe",
   "suggestedVersionCode": "1009",
-  "packages": [
-    {"versionCode": "1009", "versionName": "0.28.4"}
-  ]
+  "packages": [{ "versionCode": "1009", "versionName": "0.28.4" }]
 }
 ```
 
@@ -561,6 +577,7 @@ GET https://api.github.com/search/repositories
 ```
 
 Headers:
+
 ```
 Accept: application/vnd.github+json
 X-GitHub-Api-Version: 2022-11-28
@@ -594,16 +611,16 @@ GET https://ws75.aptoide.com/api/7/app/getMeta
 
 ## Appendix: Test Results
 
-| Test | Provider | URL | Result |
-|------|----------|-----|--------|
-| F-Droid search "newpipe" | F-Droid | `search.f-droid.org/api/search_apps?q=newpipe&lang=en` | ✅ 8 apps (key: `apps`, NOT `hits`) |
-| IzzyOnDroid search | IzzyOnDroid | `apt.izzysoft.de/fdroid/api/v1/packages?search=newpipe` | ❌ HTTP 400 |
-| IzzyOnDroid package lookup | IzzyOnDroid | `apt.izzysoft.de/fdroid/api/v1/packages/org.schabi.newpipe` | ✅ Works (versionCode as string) |
-| GitHub search (broken `+`) | GitHub | `q=newpipe+topic:android+fork:false...` | ❌ 0 results |
-| GitHub search (fixed `%20`) | GitHub | `q=newpipe%20topic:android%20fork:false` | ✅ 14 results |
-| GitHub trending (current) | GitHub | `q=topic:android+topic:app+fork:false+stars:>100` | ⚠️ 207 results (too restrictive) |
-| Aptoide search | Aptoide | `ws75.aptoide.com/api/7/apps/search?query=whatsapp` | ✅ 1000 results |
-| F-Droid detail | F-Droid | `f-droid.org/api/v1/packages/org.schabi.newpipe` | ⚠️ Only version info, no metadata |
+| Test                        | Provider    | URL                                                         | Result                              |
+| --------------------------- | ----------- | ----------------------------------------------------------- | ----------------------------------- |
+| F-Droid search "newpipe"    | F-Droid     | `search.f-droid.org/api/search_apps?q=newpipe&lang=en`      | ✅ 8 apps (key: `apps`, NOT `hits`) |
+| IzzyOnDroid search          | IzzyOnDroid | `apt.izzysoft.de/fdroid/api/v1/packages?search=newpipe`     | ❌ HTTP 400                         |
+| IzzyOnDroid package lookup  | IzzyOnDroid | `apt.izzysoft.de/fdroid/api/v1/packages/org.schabi.newpipe` | ✅ Works (versionCode as string)    |
+| GitHub search (broken `+`)  | GitHub      | `q=newpipe+topic:android+fork:false...`                     | ❌ 0 results                        |
+| GitHub search (fixed `%20`) | GitHub      | `q=newpipe%20topic:android%20fork:false`                    | ✅ 14 results                       |
+| GitHub trending (current)   | GitHub      | `q=topic:android+topic:app+fork:false+stars:>100`           | ⚠️ 207 results (too restrictive)    |
+| Aptoide search              | Aptoide     | `ws75.aptoide.com/api/7/apps/search?query=whatsapp`         | ✅ 1000 results                     |
+| F-Droid detail              | F-Droid     | `f-droid.org/api/v1/packages/org.schabi.newpipe`            | ⚠️ Only version info, no metadata   |
 
 ---
 

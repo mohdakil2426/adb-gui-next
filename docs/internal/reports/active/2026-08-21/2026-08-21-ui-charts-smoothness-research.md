@@ -9,15 +9,15 @@
 
 ## 0. Execution Log
 
-| Time (UTC) | Actor | Event | Details |
-|---|---|---|---|
-| 2026-08-21 03:49 | main | Initialized goal & report | Todo 4-phase plan, dispatched 5 audit subagents |
-| 2026-08-21 04:40 | User | Reported crashes in `marketplace` & `apps` + requested smooth animations | **RCA:** `recharts` prototype conflict with `freezePrototype: true`. |
-| 2026-08-21 05:00 | main | Resolved crashes | Reverted to hand-rolled pure SVG, uninstalled `recharts`. `apps` and `marketplace` views restored crash-free. |
-| 2026-08-21 05:30 | main | Smooth Dashboard Animations | Added fluid framer-motion animations across Battery, Memory, and Storage. |
-| 2026-08-21 05:40 | User | Requested matching Memory & Storage cards with Battery card (adding more info to fill all empty gaps) | Added 2x2 micro-metrics chip grids to both Memory and Storage panels. |
-| 2026-08-21 05:55 | User | Reported height inconsistency across cards | **Height & Baseline Equalization:** Updated `PanelCard` with `className="flex h-full flex-col"` + `<Card className="flex h-full flex-1 flex-col justify-between...">` and `<CardContent className="flex flex-1 flex-col justify-between...">`. Compacted `MemorySparkline` (h-9 SVG) and streamlined `StoragePanel` volume rows. All 3 cards now have identical outer heights, equal top section heights (~110-120px), and bottom 2x2 grids anchored on the exact same baseline. |
-| 2026-08-21 06:00 | main | Full Quality Gates Passed | Ultracite (466 files 0 errors), TypeScript (`tsc` 0 errors), Vite Build (clean in 2.92s), Vitest (48/48 files passed, 285/285 tests passed), Cargo check (0 errors). |
+| Time (UTC)       | Actor | Event                                                                                                 | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------- | ----- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-21 03:49 | main  | Initialized goal & report                                                                             | Todo 4-phase plan, dispatched 5 audit subagents                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-08-21 04:40 | User  | Reported crashes in `marketplace` & `apps` + requested smooth animations                              | **RCA:** `recharts` prototype conflict with `freezePrototype: true`.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-08-21 05:00 | main  | Resolved crashes                                                                                      | Reverted to hand-rolled pure SVG, uninstalled `recharts`. `apps` and `marketplace` views restored crash-free.                                                                                                                                                                                                                                                                                                                                                                    |
+| 2026-08-21 05:30 | main  | Smooth Dashboard Animations                                                                           | Added fluid framer-motion animations across Battery, Memory, and Storage.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-08-21 05:40 | User  | Requested matching Memory & Storage cards with Battery card (adding more info to fill all empty gaps) | Added 2x2 micro-metrics chip grids to both Memory and Storage panels.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-08-21 05:55 | User  | Reported height inconsistency across cards                                                            | **Height & Baseline Equalization:** Updated `PanelCard` with `className="flex h-full flex-col"` + `<Card className="flex h-full flex-1 flex-col justify-between...">` and `<CardContent className="flex flex-1 flex-col justify-between...">`. Compacted `MemorySparkline` (h-9 SVG) and streamlined `StoragePanel` volume rows. All 3 cards now have identical outer heights, equal top section heights (~110-120px), and bottom 2x2 grids anchored on the exact same baseline. |
+| 2026-08-21 06:00 | main  | Full Quality Gates Passed                                                                             | Ultracite (466 files 0 errors), TypeScript (`tsc` 0 errors), Vite Build (clean in 2.92s), Vitest (48/48 files passed, 285/285 tests passed), Cargo check (0 errors).                                                                                                                                                                                                                                                                                                             |
 
 ---
 
@@ -44,6 +44,7 @@ All three cards in the `TRIO_GRID_CLASS` row (`Battery`, `Memory`, `Storage`) ar
 ```
 
 ### 1.1 Card Structural Invariants
+
 1. **Container Stretch (`PanelCard.tsx`):**
    - `<m.div className="flex h-full flex-col">` fills the CSS Grid row height 100%.
    - `<Card className="flex h-full flex-1 flex-col justify-between...">` fills the `<m.div>` 100%.
@@ -61,12 +62,12 @@ All three cards in the `TRIO_GRID_CLASS` row (`Battery`, `Memory`, `Storage`) ar
 
 ## 2. Validation Results
 
-| Check | Command | Result |
-|---|---|---|
-| Linting | `bunx ultracite check` | **466 files checked, 0 errors, 0 warnings** |
-| TypeScript | `tsc --noEmit` | **0 type errors** |
-| Vite Build | `bun run build` | **3435 modules transformed, built in 2.92s** |
-| Vitest Unit Tests | `bun run test` | **48 / 48 test files passed, 285 / 285 tests passed (100%)** |
-| Rust Backend | `cargo check` | **0 errors, 1 pre-existing warning** |
+| Check             | Command                | Result                                                       |
+| ----------------- | ---------------------- | ------------------------------------------------------------ |
+| Linting           | `bunx ultracite check` | **466 files checked, 0 errors, 0 warnings**                  |
+| TypeScript        | `tsc --noEmit`         | **0 type errors**                                            |
+| Vite Build        | `bun run build`        | **3435 modules transformed, built in 2.92s**                 |
+| Vitest Unit Tests | `bun run test`         | **48 / 48 test files passed, 285 / 285 tests passed (100%)** |
+| Rust Backend      | `cargo check`          | **0 errors, 1 pre-existing warning**                         |
 
 **Zero commits made** per user request. Working directory clean and verified.

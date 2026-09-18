@@ -18,13 +18,13 @@
 
 **Hard constraints:**
 
-| Constraint | Rule |
-| --- | --- |
-| Features | No behavior removal; preserve selection, sort, tree expand, marketplace OAuth poll, payload banner expand, shell/logs resize |
-| Commits | **None** during execution unless user explicitly requests |
+| Constraint      | Rule                                                                                                                                                                              |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Features        | No behavior removal; preserve selection, sort, tree expand, marketplace OAuth poll, payload banner expand, shell/logs resize                                                      |
+| Commits         | **None** during execution unless user explicitly requests                                                                                                                         |
 | False positives | Do not `// eslint-disable` / silence rules; change code so doctor is clean **or** document that a flag is product-required and resolve via structure (use the file, not suppress) |
-| Testing | After each task cluster: focused Vitest + `bun run lint:web`; after major UI clusters: **orca** smoke (below) |
-| Execution | **Subagents** — one task (or tightly related pair) per subagent; orchestrator reviews before next |
+| Testing         | After each task cluster: focused Vitest + `bun run lint:web`; after major UI clusters: **orca** smoke (below)                                                                     |
+| Execution       | **Subagents** — one task (or tightly related pair) per subagent; orchestrator reviews before next                                                                                 |
 
 ---
 
@@ -32,11 +32,11 @@
 
 ### Orchestrator responsibilities
 
-1. Run Task 0 baseline; write issue list to a working note in the report folder (optional append to active report).  
-2. For each Task N: spawn **subagent** (`general-purpose` or `execute` capability) with the exact task body + constraints.  
-3. Review diff: no commits, no drive-by refactors, tests green.  
-4. If UI surface touched: run **orca smoke script** for that surface.  
-5. Re-run `npx react-doctor@latest . --verbose` after every 1–2 tasks; track score.  
+1. Run Task 0 baseline; write issue list to a working note in the report folder (optional append to active report).
+2. For each Task N: spawn **subagent** (`general-purpose` or `execute` capability) with the exact task body + constraints.
+3. Review diff: no commits, no drive-by refactors, tests green.
+4. If UI surface touched: run **orca smoke script** for that surface.
+5. Re-run `npx react-doctor@latest . --verbose` after every 1–2 tasks; track score.
 6. Stop on regressions; fix before continuing.
 
 ### Orca CLI smoke (mandatory for UI-impacting tasks)
@@ -75,14 +75,14 @@ ORCA snapshot --json
 
 **Smoke checklist (after UI batches):**
 
-| Surface | Actions |
-| --- | --- |
-| Shell | App loads; sidebar switches Dashboard → Files → Payload → Emulator → About |
-| Bottom panel | Ctrl+`` ` `` open/close; resize handle focus + ArrowUp/Down; Logs filter + Shell tab |
-| File Explorer | List loads; multi-select; sort column; tree expand; root shield toggle (no crash) |
-| Marketplace | Open settings / auth UI if visible; no console hang after leave |
-| Payload | Load local or empty state; expand FileBanner details without jank |
-| Theme | Toggle light/dark once; no crash |
+| Surface       | Actions                                                                              |
+| ------------- | ------------------------------------------------------------------------------------ |
+| Shell         | App loads; sidebar switches Dashboard → Files → Payload → Emulator → About           |
+| Bottom panel  | Ctrl+`` ` `` open/close; resize handle focus + ArrowUp/Down; Logs filter + Shell tab |
+| File Explorer | List loads; multi-select; sort column; tree expand; root shield toggle (no crash)    |
+| Marketplace   | Open settings / auth UI if visible; no console hang after leave                      |
+| Payload       | Load local or empty state; expand FileBanner details without jank                    |
+| Theme         | Toggle light/dark once; no crash                                                     |
 
 **After each orca smoke:** `ORCA worktree set --worktree active --comment "doctor T<N> done; smoke OK" --json`
 
@@ -90,24 +90,24 @@ ORCA snapshot --json
 
 ## File map (expected touches)
 
-| Area | Paths |
-| --- | --- |
-| Doctor baseline | temp diagnostics folder from latest run; update report if needed |
-| Impure updaters | `src/features/file-explorer/hooks/useFileExplorerSelection.ts`, `useFileExplorerSort.ts`, `src/shared/components/DirectoryTree.tsx` |
-| Marketplace timer | `src/features/marketplace/hooks/useMarketplaceAuth.ts` |
-| Layout animation | `src/features/payload-dumper/ui/FileBanner.tsx` |
-| Buttons / main | About, FE toolbar, FileBanner*, `ViewContent.tsx` |
-| Keys | LogsPanel, ShellPanel, RootProgressStep, AppDetailView, field.tsx |
-| Motion | LoadingScreen, ViewContent, FileBanner, ActionButton (+ optional LazyMotion root) |
-| Theme first paint | `ThemeToggle.tsx`, possibly `sidebar.tsx` cookie/state read |
-| Context / perf | `toggle-group.tsx`, `payloadDumperStore.ts`, `queries.ts` |
-| Shell panel dead state | `ShellPanel.tsx` |
-| Module-scope helpers | AboutView, EmulatorRestoreTab, MarketplaceSettings, AttributionFooter |
-| WirelessAdb props | `WirelessAdbCard.tsx` |
-| Unused inventory | `src/shared/ui/{avatar,command,radio-group,slider,toggle}.tsx` + `platform.ts` `isWindows` |
-| Already done (verify) | BottomPanel*, package.json deps, FileExplorer view-model |
-| Tests | `src/test/*` matching surfaces; add focused tests when logic changes |
-| Verification cmds | `bun run lint:web`, `bun run test`, `npx react-doctor@latest . --verbose` |
+| Area                   | Paths                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Doctor baseline        | temp diagnostics folder from latest run; update report if needed                                                                    |
+| Impure updaters        | `src/features/file-explorer/hooks/useFileExplorerSelection.ts`, `useFileExplorerSort.ts`, `src/shared/components/DirectoryTree.tsx` |
+| Marketplace timer      | `src/features/marketplace/hooks/useMarketplaceAuth.ts`                                                                              |
+| Layout animation       | `src/features/payload-dumper/ui/FileBanner.tsx`                                                                                     |
+| Buttons / main         | About, FE toolbar, FileBanner*, `ViewContent.tsx`                                                                                   |
+| Keys                   | LogsPanel, ShellPanel, RootProgressStep, AppDetailView, field.tsx                                                                   |
+| Motion                 | LoadingScreen, ViewContent, FileBanner, ActionButton (+ optional LazyMotion root)                                                   |
+| Theme first paint      | `ThemeToggle.tsx`, possibly `sidebar.tsx` cookie/state read                                                                         |
+| Context / perf         | `toggle-group.tsx`, `payloadDumperStore.ts`, `queries.ts`                                                                           |
+| Shell panel dead state | `ShellPanel.tsx`                                                                                                                    |
+| Module-scope helpers   | AboutView, EmulatorRestoreTab, MarketplaceSettings, AttributionFooter                                                               |
+| WirelessAdb props      | `WirelessAdbCard.tsx`                                                                                                               |
+| Unused inventory       | `src/shared/ui/{avatar,command,radio-group,slider,toggle}.tsx` + `platform.ts` `isWindows`                                          |
+| Already done (verify)  | BottomPanel*, package.json deps, FileExplorer view-model                                                                            |
+| Tests                  | `src/test/*` matching surfaces; add focused tests when logic changes                                                                |
+| Verification cmds      | `bun run lint:web`, `bun run test`, `npx react-doctor@latest . --verbose`                                                           |
 
 ---
 
@@ -235,13 +235,13 @@ Preferred approach (clearer):
 const handleSortColumn = useCallback(
   (field: SortField) => {
     if (sortField === field) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
       return;
     }
     setSortField(field);
-    setSortDir('asc');
+    setSortDir("asc");
   },
-  [sortField],
+  [sortField]
 );
 ```
 
@@ -513,12 +513,12 @@ bun vitest run src/test/BottomPanel.test.tsx src/test/shellStore.test.ts
 - [ ] **Step 1: LazyMotion pattern**
 
 ```tsx
-import { LazyMotion, domAnimation, m } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from "framer-motion";
 
 // Once near app shell:
 <LazyMotion features={domAnimation} strict>
   {children}
-</LazyMotion>
+</LazyMotion>;
 
 // Replace motion.div with m.div in leaf components; stop importing { motion }
 ```
@@ -622,14 +622,14 @@ bun vitest run src/test/ViewDashboard.test.tsx
 
 Doctor flags unused modules. **100 requires zero unused-file/export hits.** Product rule for this plan:
 
-| Module | Decision for score 100 |
-| --- | --- |
-| `src/shared/ui/avatar.tsx` | **Delete** if zero imports; else wire one real UI use |
-| `src/shared/ui/slider.tsx` | **Delete** if zero imports |
-| `src/shared/ui/radio-group.tsx` | **Delete** if zero imports |
-| `src/shared/ui/toggle.tsx` | **Delete** only if nothing imports it (toggle-group may use variants only — verify) |
-| `src/shared/ui/command.tsx` | Grep entire repo; **delete** if unused, **or** restore one legitimate cmdk surface with `shouldFilter={false}` rules if product needs search palette |
-| `src/shared/utils/platform.ts` `isWindows` | Remove export **or** use it where Windows-only UI exists |
+| Module                                     | Decision for score 100                                                                                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/ui/avatar.tsx`                 | **Delete** if zero imports; else wire one real UI use                                                                                                |
+| `src/shared/ui/slider.tsx`                 | **Delete** if zero imports                                                                                                                           |
+| `src/shared/ui/radio-group.tsx`            | **Delete** if zero imports                                                                                                                           |
+| `src/shared/ui/toggle.tsx`                 | **Delete** only if nothing imports it (toggle-group may use variants only — verify)                                                                  |
+| `src/shared/ui/command.tsx`                | Grep entire repo; **delete** if unused, **or** restore one legitimate cmdk surface with `shouldFilter={false}` rules if product needs search palette |
+| `src/shared/utils/platform.ts` `isWindows` | Remove export **or** use it where Windows-only UI exists                                                                                             |
 
 - [ ] **Step 1: Grep each path for imports**
 
@@ -667,7 +667,7 @@ npx --yes react-doctor@latest . --verbose
 // If installs must be serial for device stability, keep serial but structure so doctor is happy
 // only if sequential is required for adb — document and use a for-loop without false parallelization
 // Prefer: Promise.all only for independent work; for adb install batch, serial may be CORRECT.
-// If doctor still flags serial adb installs, extract helper `async function installAllSerial(paths)` 
+// If doctor still flags serial adb installs, extract helper `async function installAllSerial(paths)`
 // and verify if rule still fires; if required serial, leave serial and re-check doctor version behavior.
 ```
 
@@ -700,22 +700,22 @@ npx --yes react-doctor@latest . --verbose
 
 Expected:
 
-- lint clean  
-- tests all pass  
-- build succeeds  
+- lint clean
+- tests all pass
+- build succeeds
 - doctor **100/100** and **0 issues** (paste score line into report)
 
 - [ ] **Step 2: Orca / Computer Use full smoke**
 
-| # | Action | Pass criteria |
-|---|--------|----------------|
-| 1 | App starts (`tauri dev` or Vite) | Window/page visible |
-| 2 | Navigate all 9 sidebar views | No crash/blank main |
-| 3 | Bottom panel open/resize/filter | Resize keyboard works; filter works |
-| 4 | File Explorer list/select/sort/tree | No selection glitch |
-| 5 | Theme toggle | Both themes render |
-| 6 | Payload banner expand | No layout thrash/crash |
-| 7 | Marketplace open settings | No stuck timers after leave |
+| #   | Action                              | Pass criteria                       |
+| --- | ----------------------------------- | ----------------------------------- |
+| 1   | App starts (`tauri dev` or Vite)    | Window/page visible                 |
+| 2   | Navigate all 9 sidebar views        | No crash/blank main                 |
+| 3   | Bottom panel open/resize/filter     | Resize keyboard works; filter works |
+| 4   | File Explorer list/select/sort/tree | No selection glitch                 |
+| 5   | Theme toggle                        | Both themes render                  |
+| 6   | Payload banner expand               | No layout thrash/crash              |
+| 7   | Marketplace open settings           | No stuck timers after leave         |
 
 - [ ] **Step 3: Update memory-bank** (only if user asked in execution phase)
 
@@ -727,56 +727,56 @@ Set React Doctor backlog to **closed** only after 100 proven.
 
 ## Subagent dispatch matrix (for execute phase)
 
-| Task | Subagent focus | Parallel? |
-| --- | --- | --- |
-| 0 | Orchestrator only | — |
-| 1–3 | FE impure updaters (can be 3 sequential agents; 1+2 parallel OK if no file clash) | 1 \|\| 2; then 3 |
-| 4 | Marketplace auth | alone |
-| 5 | FileBanner motion | alone |
-| 6 | Orchestrator gate | — |
-| 7 | a11y buttons/main | alone |
-| 8 | keys | alone |
-| 9 | motion/perf | alone |
-| 10 | theme | alone |
-| 11 | module-scope / WirelessAdb | alone |
-| 12 | unused files | alone (careful) |
-| 13 | leftovers | alone |
-| 14 | Orchestrator + orca | — |
+| Task | Subagent focus                                                                    | Parallel?        |
+| ---- | --------------------------------------------------------------------------------- | ---------------- |
+| 0    | Orchestrator only                                                                 | —                |
+| 1–3  | FE impure updaters (can be 3 sequential agents; 1+2 parallel OK if no file clash) | 1 \|\| 2; then 3 |
+| 4    | Marketplace auth                                                                  | alone            |
+| 5    | FileBanner motion                                                                 | alone            |
+| 6    | Orchestrator gate                                                                 | —                |
+| 7    | a11y buttons/main                                                                 | alone            |
+| 8    | keys                                                                              | alone            |
+| 9    | motion/perf                                                                       | alone            |
+| 10   | theme                                                                             | alone            |
+| 11   | module-scope / WirelessAdb                                                        | alone            |
+| 12   | unused files                                                                      | alone (careful)  |
+| 13   | leftovers                                                                         | alone            |
+| 14   | Orchestrator + orca                                                               | —                |
 
 ---
 
 ## Risk register
 
-| Risk | Mitigation |
-| --- | --- |
-| Serial APK install “optimized” into parallel | Keep serial for device safety |
-| Deleting shadcn file still needed later | Grep first; prefer delete only if zero imports |
-| LazyMotion breaks animations | One provider; visual smoke |
-| Theme store change flashes worse | Compare before/after; use sync external store |
-| Orca cannot see Tauri webview | Use Computer Use on desktop window or Vite-only smoke for DOM surfaces |
+| Risk                                         | Mitigation                                                             |
+| -------------------------------------------- | ---------------------------------------------------------------------- |
+| Serial APK install “optimized” into parallel | Keep serial for device safety                                          |
+| Deleting shadcn file still needed later      | Grep first; prefer delete only if zero imports                         |
+| LazyMotion breaks animations                 | One provider; visual smoke                                             |
+| Theme store change flashes worse             | Compare before/after; use sync external store                          |
+| Orca cannot see Tauri webview                | Use Computer Use on desktop window or Vite-only smoke for DOM surfaces |
 
 ---
 
 ## Success criteria
 
-1. `npx react-doctor@latest . --verbose` → **100/100**, **0 issues** (command output saved).  
-2. `bun run lint:web`, `bun run test`, `bun run build` green.  
-3. Orca/Computer Use smoke checklist all pass.  
-4. **No commits** unless user requests.  
+1. `npx react-doctor@latest . --verbose` → **100/100**, **0 issues** (command output saved).
+2. `bun run lint:web`, `bun run test`, `bun run build` green.
+3. Orca/Computer Use smoke checklist all pass.
+4. **No commits** unless user requests.
 5. No rule suppressions; no feature regressions.
 
 ---
 
 ## Self-review (plan author)
 
-| Check | Status |
-| --- | --- |
-| Spec: score 100 without breaking features | Covered Tasks 1–14 + orca |
-| Subagents | Execution model + matrix |
-| Orca testing | Preflight, dev servers, smoke table |
-| No commits | Explicit every task |
-| Placeholder scan | No TBD; concrete paths/commands |
-| Top-3 already done | Task 0 baseline handles |
+| Check                                     | Status                              |
+| ----------------------------------------- | ----------------------------------- |
+| Spec: score 100 without breaking features | Covered Tasks 1–14 + orca           |
+| Subagents                                 | Execution model + matrix            |
+| Orca testing                              | Preflight, dev servers, smoke table |
+| No commits                                | Explicit every task                 |
+| Placeholder scan                          | No TBD; concrete paths/commands     |
+| Top-3 already done                        | Task 0 baseline handles             |
 
 ---
 

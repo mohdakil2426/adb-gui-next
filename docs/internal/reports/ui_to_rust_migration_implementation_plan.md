@@ -1,4 +1,5 @@
 # UI to Rust Backend Logic Migration: Implementation Plan
+
 **Date:** 2026-08-18  
 **Architecture:** Tauri 2 (Rust 2024 + Tokio) + React 19 (TypeScript, Zustand, TanStack Query, Tailwind v4, shadcn)
 
@@ -16,6 +17,7 @@
 ## 2. Phased Subagent-Driven Execution Plan
 
 ### Phase 1: Rust Backend Domain Modules & Tauri IPC Commands
+
 1. **Module `src-tauri/src/apps/` & `src-tauri/src/commands/apps.rs`**:
    - Create `apps/mod.rs`, `apps/telemetry.rs`, `apps/install.rs`.
    - `get_app_overview_telemetry`: Query `dumpsys diskstats` / `dumpsys package`, calculate true composition, SDK compliance distribution, and dangerous permissions.
@@ -51,6 +53,7 @@
 ---
 
 ### Phase 2: Desktop IPC & TypeScript DTO Models (`src/desktop/`)
+
 1. Update `src/desktop/models.ts`:
    - Add new DTOs: `AppOverviewTelemetry`, `FastbootVitals`, `DiagnosticItem`, `PartitionTargetInfo`, `ScrcpyCommandPreview`, `ScrcpyQualityProfile`, `BandwidthMetrics`, `AvdHardwareDetails`, `AvdDiskBreakdown`, `HostHardwareCapacity`, `AppUpdateCandidate`, `MarketplaceOverviewStats`, `CliExecutionResult`.
    - Tighten string types to string literal unions matching Serde enums.
@@ -62,6 +65,7 @@
 ---
 
 ### Phase 3: Frontend Feature Migrations & UI Wire-Up (`src/features/*`)
+
 1. **App Manager & Debloater**:
    - Update `AppOverviewTab.tsx`, `AppMetricsHeroBanner.tsx`, `TopStorageConsumersChart.tsx`, `TargetSdkDistributionMeter.tsx`, `PermissionDensityMatrix.tsx` to consume `GetAppOverviewTelemetry`.
    - Update `InstalledAppsTab.tsx` and `InstalledPackageList.tsx` to use real `apkSizeBytes` and `targetSdk`.
@@ -91,6 +95,7 @@
 ---
 
 ### Phase 4: Quality Gates & Verification
+
 1. `cargo check --manifest-path src-tauri/Cargo.toml`
 2. `cargo test --manifest-path src-tauri/Cargo.toml --no-run`
 3. `bun run check` (TypeScript typecheck)

@@ -15,35 +15,35 @@ Both need significant improvements in UI, UX, and correctness.
 
 ### 1. TerminalLogPanel — Architecture & UI Problems
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **Right-side drawer layout** | 🔴 High | Positioned as a right sidebar panel. VS Code puts terminals at the **bottom**. A right drawer compresses the main content horizontally, which is far worse for usability. |
-| **No log level filtering** | 🔴 High | No way to filter by `info`, `error`, `success`, `warning`. VS Code terminal has output channels + filter dropdown. |
-| **Hardcoded dark-only colors** | 🔴 High | Uses `bg-zinc-950`, `text-zinc-100`, `text-zinc-400` — these are hardcoded dark mode colors that break in light theme. Should use semantic tokens. |
-| **No search capability** | 🟡 Medium | Can't search through logs. VS Code has `Ctrl+F` search in terminal output. |
-| **No log count badge** | 🟡 Medium | The toggle button doesn't show how many unread logs exist. |
-| **Uses `navigator.clipboard`** | 🟡 Medium | Line 68 uses browser clipboard API instead of the Tauri clipboard plugin that's already installed (`@tauri-apps/plugin-clipboard-manager`). Inconsistent. |
-| **No virtualization** | 🟡 Medium | All log entries render in DOM. With hundreds of logs, this causes jank. |
-| **No max log limit** | 🟡 Medium | [logStore.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/logStore.ts) appends forever with no cap. Memory leak for long sessions. |
-| **No auto-scroll lock** | 🟡 Medium | Always auto-scrolls to bottom. No way to pause scrolling while reading older logs. |
-| **No individual log actions** | 🟢 Low | Can't copy a single log entry, no right-click context menu. |
-| **Timestamp format** | 🟢 Low | `toLocaleTimeString()` varies by locale. Should be consistent `HH:MM:SS.mmm`. |
+| Issue                          | Severity  | Details                                                                                                                                                                   |
+| ------------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Right-side drawer layout**   | 🔴 High   | Positioned as a right sidebar panel. VS Code puts terminals at the **bottom**. A right drawer compresses the main content horizontally, which is far worse for usability. |
+| **No log level filtering**     | 🔴 High   | No way to filter by `info`, `error`, `success`, `warning`. VS Code terminal has output channels + filter dropdown.                                                        |
+| **Hardcoded dark-only colors** | 🔴 High   | Uses `bg-zinc-950`, `text-zinc-100`, `text-zinc-400` — these are hardcoded dark mode colors that break in light theme. Should use semantic tokens.                        |
+| **No search capability**       | 🟡 Medium | Can't search through logs. VS Code has `Ctrl+F` search in terminal output.                                                                                                |
+| **No log count badge**         | 🟡 Medium | The toggle button doesn't show how many unread logs exist.                                                                                                                |
+| **Uses `navigator.clipboard`** | 🟡 Medium | Line 68 uses browser clipboard API instead of the Tauri clipboard plugin that's already installed (`@tauri-apps/plugin-clipboard-manager`). Inconsistent.                 |
+| **No virtualization**          | 🟡 Medium | All log entries render in DOM. With hundreds of logs, this causes jank.                                                                                                   |
+| **No max log limit**           | 🟡 Medium | [logStore.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/logStore.ts) appends forever with no cap. Memory leak for long sessions.       |
+| **No auto-scroll lock**        | 🟡 Medium | Always auto-scrolls to bottom. No way to pause scrolling while reading older logs.                                                                                        |
+| **No individual log actions**  | 🟢 Low    | Can't copy a single log entry, no right-click context menu.                                                                                                               |
+| **Timestamp format**           | 🟢 Low    | `toLocaleTimeString()` varies by locale. Should be consistent `HH:MM:SS.mmm`.                                                                                             |
 
 ### 2. ViewShell — Interactive Terminal Problems
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **Not a real terminal** | 🔴 High | It's an input box + scroll area, not a terminal emulator. Feels clunky. |
-| **Wrapped in Card** | 🔴 High | Uses `Card`/`CardHeader`/`CardContent` which adds unnecessary padding and borders. A terminal should be immersive. |
+| Issue                      | Severity  | Details                                                                                                                                                                                                                                      |
+| -------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Not a real terminal**    | 🔴 High   | It's an input box + scroll area, not a terminal emulator. Feels clunky.                                                                                                                                                                      |
+| **Wrapped in Card**        | 🔴 High   | Uses `Card`/`CardHeader`/`CardContent` which adds unnecessary padding and borders. A terminal should be immersive.                                                                                                                           |
 | **State lifted to parent** | 🟡 Medium | `shellHistory` and `shellCommandHistory` are managed in [MainLayout.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/MainLayout.tsx) and passed as props. This unnecessarily couples the components. |
-| **No tab completion** | 🟢 Low | No autocomplete support for common commands. |
-| **No ANSI color support** | 🟢 Low | Command output is plain text, no ANSI escape rendering. |
+| **No tab completion**      | 🟢 Low    | No autocomplete support for common commands.                                                                                                                                                                                                 |
+| **No ANSI color support**  | 🟢 Low    | Command output is plain text, no ANSI escape rendering.                                                                                                                                                                                      |
 
 ### 3. MainLayout Integration Issues
 
-| Issue | Severity | Details |
-|-------|----------|---------|
-| **`'use client'` directive** | 🔴 High | Line 1 of [MainLayout.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/MainLayout.tsx) has `'use client'` — this is a Next.js artifact, invalid in Vite/Tauri. |
+| Issue                           | Severity  | Details                                                                                                                                                                                                                                |
+| ------------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`'use client'` directive**    | 🔴 High   | Line 1 of [MainLayout.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/MainLayout.tsx) has `'use client'` — this is a Next.js artifact, invalid in Vite/Tauri.                                 |
 | **Shell state owned by layout** | 🟡 Medium | `shellHistory` + `shellCommandHistory` are `useState` in [MainLayout](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/MainLayout.tsx#72-415) — should be in a Zustand store or local to ViewShell. |
 
 ---
@@ -53,12 +53,14 @@ Both need significant improvements in UI, UX, and correctness.
 VS Code's integrated terminal is the gold standard. Here's what makes it excellent:
 
 ### Layout
+
 - **Bottom panel** (not right sidebar) — doesn't compress horizontal content
 - **Resizable** with drag handle at the top edge
 - **Tabs** for multiple terminal instances
 - **Panel bar** with dropdown: Terminal, Output, Problems, Debug Console
 
 ### Terminal UI Elements (mapped to our app)
+
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ [Tab Bar]  OUTPUT ▾  │ Filter │ 🔍 Search │ ↕ Maximize │ ⊟ Panel │ ✕ │
@@ -73,6 +75,7 @@ VS Code's integrated terminal is the gold standard. Here's what makes it excelle
 ```
 
 ### Key Features to Adopt
+
 1. **Bottom panel position** — standard IDE layout
 2. **Panel tabs** — "Logs" tab + "Shell" tab (merge the two UIs)
 3. **Filter dropdown** — filter by log level (All, Info, Error, Warning, Success)
@@ -124,23 +127,23 @@ src/components/
 
 ### Feature Matrix
 
-| Feature | Current | Proposed |
-|---------|---------|----------|
-| Position | Right drawer | Bottom panel |
-| Tabs | None | Logs + Shell |
-| Filter | None | Level dropdown (All/Info/Error/Warning/Success) |
-| Search | None | Ctrl+F quick search with highlight |
-| Resize | Horizontal drag | Vertical drag (top edge) |
-| Maximize | None | Double-click tab bar or button |
-| Auto-scroll | Always on | Toggle button (follow output) |
-| Log limit | Unlimited | Ring buffer (1000 entries max) |
-| Virtualization | None | Virtual list for 1000+ entries |
-| Theme | Hardcoded dark | Semantic tokens (light/dark) |
-| Clipboard | navigator.clipboard | Tauri clipboard plugin |
-| Timestamp | Locale-dependent | Fixed `HH:MM:SS.mmm` |
-| Badge (unread) | None | Count badge on toggle button |
-| Shell integration | Separate view | Tab in bottom panel |
-| Word wrap | Always on | Toggle |
+| Feature           | Current             | Proposed                                        |
+| ----------------- | ------------------- | ----------------------------------------------- |
+| Position          | Right drawer        | Bottom panel                                    |
+| Tabs              | None                | Logs + Shell                                    |
+| Filter            | None                | Level dropdown (All/Info/Error/Warning/Success) |
+| Search            | None                | Ctrl+F quick search with highlight              |
+| Resize            | Horizontal drag     | Vertical drag (top edge)                        |
+| Maximize          | None                | Double-click tab bar or button                  |
+| Auto-scroll       | Always on           | Toggle button (follow output)                   |
+| Log limit         | Unlimited           | Ring buffer (1000 entries max)                  |
+| Virtualization    | None                | Virtual list for 1000+ entries                  |
+| Theme             | Hardcoded dark      | Semantic tokens (light/dark)                    |
+| Clipboard         | navigator.clipboard | Tauri clipboard plugin                          |
+| Timestamp         | Locale-dependent    | Fixed `HH:MM:SS.mmm`                            |
+| Badge (unread)    | None                | Count badge on toggle button                    |
+| Shell integration | Separate view       | Tab in bottom panel                             |
+| Word wrap         | Always on           | Toggle                                          |
 
 ---
 
@@ -234,6 +237,7 @@ Add new CSS variables for terminal theming:
 ## 📋 Implementation Order (Phased)
 
 ### Phase 1 — Quick Wins (No layout change)
+
 1. ✅ Fix hardcoded dark colors → semantic tokens
 2. ✅ Fix `navigator.clipboard` → Tauri clipboard plugin
 3. ✅ Add max log limit (1000)
@@ -242,12 +246,14 @@ Add new CSS variables for terminal theming:
 6. ✅ Move shell state out of MainLayout into store
 
 ### Phase 2 — Bottom Panel Layout
+
 1. Create `BottomPanel.tsx` with vertical resize
 2. Move log panel from right drawer to bottom panel
 3. Add tab bar (Logs + Shell)
 4. Integrate Shell into bottom panel tab
 
 ### Phase 3 — VS Code Features
+
 1. Log level filter dropdown
 2. Search with highlight
 3. Auto-scroll toggle (Follow Output)
@@ -255,6 +261,7 @@ Add new CSS variables for terminal theming:
 5. Unread count badge
 
 ### Phase 4 — Performance
+
 1. Virtual list (react-window or @tanstack/virtual)
 2. Log entry memoization
 3. Debounced search filtering

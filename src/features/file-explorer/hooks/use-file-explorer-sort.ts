@@ -1,0 +1,71 @@
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+
+import type {
+  FileEntry,
+  SortDir,
+  SortField,
+} from "@/features/file-explorer/model/file-explorer-types";
+import { sortEntries } from "@/features/file-explorer/utils/file-explorer-sorting";
+
+interface UseFileExplorerSortOptions {
+  fileList: FileEntry[];
+  searchQuery: string;
+}
+
+interface UseFileExplorerSortResult {
+  handleSortColumn: (field: SortField) => void;
+  sortDir: SortDir;
+  sortField: SortField;
+  visibleList: FileEntry[];
+}
+
+export const useFileExplorerSort = (
+  options: UseFileExplorerSortOptions
+): UseFileExplorerSortResult => {
+  const { fileList, searchQuery } = options;
+  const [sortField, setSortField] = useState<SortField>(() => {
+    const saved = localStorage.getItem("fe.sortField");
+    return saved === "name" || saved === "size" || saved === "date" || saved === "type"
+      ? saved
+      : "name";
+  });
+  const [sortDir, setSortDir] = useState<SortDir>(() => {
+    const saved = localStorage.getItem("fe.sortDir");
+    return (saved as SortDir) || "asc";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("fe.sortField", sortField);
+  }, [sortField]);
+
+  useEffect(() => {
+    localStorage.setItem("fe.sortDir", sortDir);
+  }, [sortDir]);
+
+  const deferredQuery = useDeferredValue(searchQuery);
+  const visibleList = useMemo(
+    () =>
+      sortEntries(
+        deferredQuery
+          ? fileList.filter((file) => file.name.toLowerCase().includes(deferredQuery.toLowerCase()))
+          : fileList,
+        sortField,
+        sortDir
+      ),
+    [fileList, deferredQuery, sortField, sortDir]
+  );
+
+  const handleSortColumn = useCallback(
+    (field: SortField) => {
+      if (sortField === field) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return;
+      }
+      setSortField(field);
+      setSortDir("asc");
+    },
+    [sortField]
+  );
+
+  return { handleSortColumn, sortDir, sortField, visibleList };
+};

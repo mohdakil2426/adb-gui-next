@@ -1,4 +1,5 @@
 # File Explorer — Multi-Select, Delete & Rename
+
 **Design Document · Brainstorm Output**
 _ADB GUI Next · 2026-03-26_
 
@@ -6,32 +7,33 @@ _ADB GUI Next · 2026-03-26_
 
 ## Understanding Summary
 
-| Item | Detail |
-|------|--------|
-| **What** | Multi-selection, delete (bulk), rename (single) in ViewFileExplorer |
-| **Why** | File management is incomplete — users can push/pull but can't clean up or rename on-device |
-| **Who** | Android power users, ROM flashers, QA engineers |
-| **Key constraints** | ADB `rm -rf` + `mv`; no undo; paths need quoting; no batch rename |
-| **Non-goals** | Cut/copy/paste, batch rename, drag-drop, recycle bin / undo |
+| Item                | Detail                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| **What**            | Multi-selection, delete (bulk), rename (single) in ViewFileExplorer                        |
+| **Why**             | File management is incomplete — users can push/pull but can't clean up or rename on-device |
+| **Who**             | Android power users, ROM flashers, QA engineers                                            |
+| **Key constraints** | ADB `rm -rf` + `mv`; no undo; paths need quoting; no batch rename                          |
+| **Non-goals**       | Cut/copy/paste, batch rename, drag-drop, recycle bin / undo                                |
 
 ---
 
 ## Assumptions
 
-| ID | Assumption |
-|----|-----------|
-| A1 | Rename = same directory, new name only (no cross-dir move) |
-| A2 | Delete uses `adb shell rm -rf` for all types — files, dirs, symlinks |
-| A3 | Ctrl+Click multi-select is P0; Shift+Click range is P1 |
-| A4 | Right-click ContextMenu is the primary rename discovery path |
-| A5 | Two new Rust commands needed: `delete_files`, `rename_file` |
-| A6 | `SelectionSummaryBar` shared component reused for the selection bar |
+| ID  | Assumption                                                           |
+| --- | -------------------------------------------------------------------- |
+| A1  | Rename = same directory, new name only (no cross-dir move)           |
+| A2  | Delete uses `adb shell rm -rf` for all types — files, dirs, symlinks |
+| A3  | Ctrl+Click multi-select is P0; Shift+Click range is P1               |
+| A4  | Right-click ContextMenu is the primary rename discovery path         |
+| A5  | Two new Rust commands needed: `delete_files`, `rename_file`          |
+| A6  | `SelectionSummaryBar` shared component reused for the selection bar  |
 
 ---
 
 ## Design Approaches Considered
 
 ### Option A — Checkbox-first (RECOMMENDED)
+
 Add a leading checkbox column to the table. Each row has a checkbox.
 Header checkbox = select all / deselect all (indeterminate state).
 Click = single select; Ctrl+Click = multi; Shift+Click = range.
@@ -41,12 +43,14 @@ Context menu opens on right-click with Rename + Delete.
 **Cons:** Adds one column — slightly reduces name column width.
 
 ### Option B — Click-to-toggle (no checkboxes)
+
 Click selects/deselects without checkboxes. Selected rows show bold border.
 
 **Pros:** Cleaner visually.
 **Cons:** Not discoverable. Users don't know they can multi-select. No "select all" header affordance.
 
 ### Option C — Toolbar-only actions
+
 No checkboxes, no context menu. Actions only in toolbar buttons.
 
 **Cons:** Violates desktop file manager conventions. Rejected.
@@ -187,8 +191,8 @@ const [isDeleting, setIsDeleting] = useState(false);
 const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 const [renameTarget, setRenameTarget] = useState<FileEntry | null>(null);
-const [renameValue, setRenameValue] = useState('');
-const [renameError, setRenameError] = useState('');
+const [renameValue, setRenameValue] = useState("");
+const [renameError, setRenameError] = useState("");
 ```
 
 ### New Handlers
@@ -225,8 +229,8 @@ handleConfirmRename()
       fileList.length > 0 && selectedNames.size === fileList.length
         ? true
         : selectedNames.size > 0
-        ? 'indeterminate'
-        : false
+          ? "indeterminate"
+          : false
     }
     onCheckedChange={handleSelectAll}
     aria-label="Select all"
@@ -239,27 +243,29 @@ handleConfirmRename()
 Reuse the existing shared component:
 
 ```tsx
-{selectedNames.size > 0 && (
-  <SelectionSummaryBar
-    count={selectedNames.size}
-    label={selectedNames.size === 1 ? 'item selected' : 'items selected'}
-    onClear={() => {
-      setSelectedNames(new Set());
-      setLastClickedName(null);
-    }}
-    actions={
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={handleDeleteClick}
-        disabled={isDeleting}
-      >
-        <Trash2 className="h-4 w-4 shrink-0" />
-        <span className="hidden sm:inline">Delete</span>
-      </Button>
-    }
-  />
-)}
+{
+  selectedNames.size > 0 && (
+    <SelectionSummaryBar
+      count={selectedNames.size}
+      label={selectedNames.size === 1 ? "item selected" : "items selected"}
+      onClear={() => {
+        setSelectedNames(new Set());
+        setLastClickedName(null);
+      }}
+      actions={
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDeleteClick}
+          disabled={isDeleting}
+        >
+          <Trash2 className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Delete</span>
+        </Button>
+      }
+    />
+  );
+}
 ```
 
 ### ContextMenu on TableRow
@@ -269,7 +275,7 @@ Reuse the existing shared component:
   <ContextMenuTrigger asChild>
     <TableRow
       key={file.name}
-      data-state={selectedNames.has(file.name) ? 'selected' : ''}
+      data-state={selectedNames.has(file.name) ? "selected" : ""}
       onClick={(e) => handleRowClick(file, e)}
       className="cursor-pointer"
     >
@@ -288,11 +294,13 @@ Reuse the existing shared component:
     )}
     <ContextMenuItem
       disabled={selectedNames.size > 1}
-      onClick={() => handleRenameOpen(
-        selectedNames.size === 1
-          ? fileList.find(f => selectedNames.has(f.name))!
-          : file
-      )}
+      onClick={() =>
+        handleRenameOpen(
+          selectedNames.size === 1
+            ? fileList.find((f) => selectedNames.has(f.name))!
+            : file
+        )
+      }
     >
       <Pencil className="h-4 w-4 shrink-0" />
       Rename
@@ -302,13 +310,10 @@ Reuse the existing shared component:
       onClick={handleDeleteClick}
     >
       <Trash2 className="h-4 w-4 shrink-0" />
-      {selectedNames.size > 1 ? `Delete ${selectedNames.size} items` : 'Delete'}
+      {selectedNames.size > 1 ? `Delete ${selectedNames.size} items` : "Delete"}
     </ContextMenuItem>
     <ContextMenuSeparator />
-    <ContextMenuItem
-      disabled={selectedNames.size !== 1}
-      onClick={handlePull}
-    >
+    <ContextMenuItem disabled={selectedNames.size !== 1} onClick={handlePull}>
       <Download className="h-4 w-4 shrink-0" />
       Export
     </ContextMenuItem>
@@ -358,11 +363,11 @@ pub fn rename_file(app: AppHandle, old_path: String, new_path: String) -> CmdRes
 
 ```ts
 export function DeleteFiles(paths: string[]): Promise<string> {
-  return call('delete_files', { paths });
+  return call("delete_files", { paths });
 }
 
 export function RenameFile(oldPath: string, newPath: string): Promise<string> {
-  return call('rename_file', { oldPath, newPath });
+  return call("rename_file", { oldPath, newPath });
 }
 ```
 
@@ -408,69 +413,70 @@ Right-click → Rename (or F2 with 1 item selected)
 
 ## Error Handling
 
-| Scenario | Handling |
-|---------|---------|
-| Partial delete failure | Rust returns error string → toast.error with output |
-| Rename to existing name | `mv` fails → Rust error → toast.error |
-| Rename empty or invalid | Frontend disabled Rename button + inline error text |
-| Delete protected file | `rm -rf` fails → Rust returns stderr → toast.error |
-| Device disconnect mid-op | ADB error → categorize → toast.error + refresh |
+| Scenario                 | Handling                                            |
+| ------------------------ | --------------------------------------------------- |
+| Partial delete failure   | Rust returns error string → toast.error with output |
+| Rename to existing name  | `mv` fails → Rust error → toast.error               |
+| Rename empty or invalid  | Frontend disabled Rename button + inline error text |
+| Delete protected file    | `rm -rf` fails → Rust returns stderr → toast.error  |
+| Device disconnect mid-op | ADB error → categorize → toast.error + refresh      |
 
 ---
 
 ## Keyboard Shortcuts (Phase 2)
 
-| Key | Action |
-|-----|--------|
-| `Ctrl+A` | Select all |
-| `F2` | Open rename (when exactly 1 selected) |
-| `Delete` | Open delete confirmation (when ≥1 selected) |
-| `Escape` | Clear selection |
-| `Shift+Click` | Range select from last clicked |
+| Key           | Action                                      |
+| ------------- | ------------------------------------------- |
+| `Ctrl+A`      | Select all                                  |
+| `F2`          | Open rename (when exactly 1 selected)       |
+| `Delete`      | Open delete confirmation (when ≥1 selected) |
+| `Escape`      | Clear selection                             |
+| `Shift+Click` | Range select from last clicked              |
 
 ---
 
 ## Disabled State Logic
 
-| Condition | Export | Rename (menu) | Delete |
-|-----------|--------|---------------|--------|
-| 0 selected | Disabled | Disabled | Hidden |
-| 1 selected | Enabled | Enabled | Shown |
-| 2+ selected | Disabled + tooltip | Disabled | Shown (count) |
+| Condition   | Export             | Rename (menu) | Delete        |
+| ----------- | ------------------ | ------------- | ------------- |
+| 0 selected  | Disabled           | Disabled      | Hidden        |
+| 1 selected  | Enabled            | Enabled       | Shown         |
+| 2+ selected | Disabled + tooltip | Disabled      | Shown (count) |
 
 ---
 
 ## Shadcn Components Needed
 
-| Component | Already installed? | Action if missing |
-|-----------|-------------------|-------------------|
-| `Checkbox` | Check `ui/checkbox.tsx` | `pnpm dlx shadcn add checkbox` |
-| `ContextMenu` | Check `ui/context-menu.tsx` | `pnpm dlx shadcn add context-menu` |
-| `AlertDialog` | ✅ Yes | None |
-| `Dialog` | ✅ Yes | None |
-| `SelectionSummaryBar` | ✅ Yes (shared) | None |
+| Component             | Already installed?          | Action if missing                  |
+| --------------------- | --------------------------- | ---------------------------------- |
+| `Checkbox`            | Check `ui/checkbox.tsx`     | `pnpm dlx shadcn add checkbox`     |
+| `ContextMenu`         | Check `ui/context-menu.tsx` | `pnpm dlx shadcn add context-menu` |
+| `AlertDialog`         | ✅ Yes                      | None                               |
+| `Dialog`              | ✅ Yes                      | None                               |
+| `SelectionSummaryBar` | ✅ Yes (shared)             | None                               |
 
 ---
 
 ## Decision Log
 
-| # | Decision | Alternatives | Reason |
-|---|---------|-------------|--------|
-| D1 | `Set<string>` keyed on `file.name` | Array, index | O(1) lookup; easy toggle; file names are unique per dir |
-| D2 | Single `rm -rf` call with all paths | N separate calls | Fewer ADB round-trips |
-| D3 | Rename via Dialog (not inline cell editing) | Inline edit | Safer; no accidental rename; easier to validate |
-| D4 | ContextMenu on TableRow | Toolbar-only | Standard desktop right-click pattern, discoverable |
-| D5 | Reuse `SelectionSummaryBar` | Custom bar | DRY — already used in AppManager |
-| D6 | Export disabled at 2+ selected | Enable for all | Pull needs a single defined remote path |
-| D7 | Max 5 items listed in delete dialog | List all | Prevents overflow on large selections |
-| D8 | `rm -rf` for all types | Separate rm / rmdir | Handles files + dirs + symlinks uniformly |
-| D9 | Plain click = single-select (clears others) | Plain click = toggle | Matches Windows Explorer muscle memory |
+| #   | Decision                                    | Alternatives         | Reason                                                  |
+| --- | ------------------------------------------- | -------------------- | ------------------------------------------------------- |
+| D1  | `Set<string>` keyed on `file.name`          | Array, index         | O(1) lookup; easy toggle; file names are unique per dir |
+| D2  | Single `rm -rf` call with all paths         | N separate calls     | Fewer ADB round-trips                                   |
+| D3  | Rename via Dialog (not inline cell editing) | Inline edit          | Safer; no accidental rename; easier to validate         |
+| D4  | ContextMenu on TableRow                     | Toolbar-only         | Standard desktop right-click pattern, discoverable      |
+| D5  | Reuse `SelectionSummaryBar`                 | Custom bar           | DRY — already used in AppManager                        |
+| D6  | Export disabled at 2+ selected              | Enable for all       | Pull needs a single defined remote path                 |
+| D7  | Max 5 items listed in delete dialog         | List all             | Prevents overflow on large selections                   |
+| D8  | `rm -rf` for all types                      | Separate rm / rmdir  | Handles files + dirs + symlinks uniformly               |
+| D9  | Plain click = single-select (clears others) | Plain click = toggle | Matches Windows Explorer muscle memory                  |
 
 ---
 
 ## Implementation Phases
 
 ### Phase 1 — Core (implement together)
+
 1. Check + install `Checkbox` and `ContextMenu` shadcn components
 2. Rust: `delete_files` + `rename_file` commands in `commands/files.rs`
 3. Register commands in `lib.rs`
@@ -484,6 +490,7 @@ Right-click → Rename (or F2 with 1 item selected)
 11. Update `isBusy` and `isPullDisabled` to use `selectedNames`
 
 ### Phase 2 — Keyboard & Polish
+
 1. `Del` key → delete confirmation
 2. `F2` key → rename dialog
 3. `Ctrl+A` → select all

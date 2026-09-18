@@ -20,10 +20,12 @@
 **Fix:** Compute SHA-256 during the stream_copy decompress loop, compare against expected hash at end. Add `hasher: &mut Sha256` parameter to `stream_copy`.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs:296-304`
 - `src-tauri/src/payload/copy.rs`
 
 **Steps:**
+
 1. Modify `stream_copy` in `copy.rs` to accept `&mut Sha256` hasher
 2. Accumulate digest during copy
 3. Replace compressed-byte verification with output verification
@@ -42,10 +44,12 @@
 **Fix:** Create `NonTemporalWriter` wrapper that issues `mmap`-based writes bypassing CPU cache for >1MB operations.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs:175`
 - `src-tauri/src/payload/write.rs` (new)
 
 **Steps:**
+
 1. Create `src-tauri/src/payload/write.rs` with `NonTemporalWriter`
 2. Use `memmap2::MmapMut` for pre-allocation + `msync` for batched writes
 3. Replace `BufWriter::with_capacity(1024 * 1024)` with `NonTemporalWriter`
@@ -64,9 +68,11 @@
 **Fix:** Pre-pass to merge consecutive extents within each operation before writing.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs:332-363`
 
 **Steps:**
+
 1. Add `coalesce_extents()` function
 2. Merge adjacent extents in `destination_extents` loop
 3. Replace per-extent seek with per-coalesced-block seek
@@ -85,10 +91,12 @@
 **Fix:** Replace `thread::scope(|s| { s.spawn(...) })` with `par_iter()` from rayon.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs:156-235`
 - `src-tauri/src/payload/remote.rs:379-430`
 
 **Steps:**
+
 1. Ensure `rayon = "1.12.0"` is in Cargo.toml (it is)
 2. Replace `thread::scope` with `partitions.par_iter().map(...).collect()`
 3. Handle `Send + Sync` requirements for closures
@@ -105,9 +113,11 @@
 **Fix:** Use `coalesced_extents.par_iter()` for parallel extent processing within a partition.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs:330-370`
 
 **Steps:**
+
 1. After coalescing, use `coalesced.par_iter().map(...)` to process extents in parallel
 2. Use `Mutex` for output file writes (disjoint regions)
 3. Verify `Send + Sync` for progress callback
@@ -123,9 +133,11 @@
 **Fix:** Use `std::simd` or `crossbeam` for SIMD-accelerated copy.
 
 **Files:**
+
 - `src-tauri/src/payload/copy.rs`
 
 **Steps:**
+
 1. Add `simd` feature to Cargo.toml: `simd = { version = "0.8", features = ["std"] }`
 2. Replace scalar loop with `std::simd::StdHash` style copy or use `copy_from_slice` which LLVM auto-vectorizes
 3. Benchmark before/after with `std::time::Instant`
@@ -141,9 +153,11 @@
 **Fix:** Detect at startup: AVX-512 → AVX2 → SSE2 → Scalar fallback.
 
 **Files:**
+
 - `src-tauri/src/payload/copy.rs`
 
 **Steps:**
+
 1. Add `cpu_features()` function using `is_x86_feature_detected!`
 2. Select SIMD path at runtime
 3. Add `OTARIPPER_DEBUG_CPU=1` equivalent for debugging
@@ -159,10 +173,12 @@
 **Fix:** Add `ExtractionStats` to `ExtractPayloadResult` and track per-operation timing.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs`
 - `src-tauri/src/payload/ops/extractor.rs`
 
 **Steps:**
+
 1. Create `ExtractionStats` with fields: `total_bytes_written`, `duration_ms`, `decompression_time_ms`, `operations_count`, `throughput_mbps`
 2. Record `Instant` at start/end of each operation
 3. Return stats in `ExtractPayloadResult`
@@ -179,9 +195,11 @@
 **Fix:** Add Tauri command that parses manifest and returns structure diagnostics.
 
 **Files:**
+
 - `src-tauri/src/commands/payload.rs`
 
 **Steps:**
+
 1. Add `diagnose_payload(path: String) -> Result<PayloadDiagnostics>`
 2. Return: partition count, total size, compression types, hash info, any warnings
 3. Wire to frontend `ViewPayloadDumper` "Diagnostics" button
@@ -197,10 +215,12 @@
 **Fix:** Wrap extraction in a transaction guard. Delete output directory on any error.
 
 **Files:**
+
 - `src-tauri/src/payload/extractor.rs`
 - `src-tauri/src/payload/remote.rs`
 
 **Steps:**
+
 1. Create `TransactionGuard` that records created files
 2. On `Drop` with error flag, delete all recorded files
 3. Apply to both local and remote extraction paths
@@ -219,10 +239,12 @@
 **Fix:** Use `futures::stream::buffer_unordered(4)` for concurrent range requests.
 
 **Files:**
+
 - `src-tauri/src/payload/http.rs`
 - `src-tauri/src/payload/remote.rs`
 
 **Steps:**
+
 1. Add `read_ranges_parallel()` function to `HttpPayloadReader`
 2. Use `Semaphore(4)` with `buffer_unordered` for 4 concurrent range requests
 3. Apply to direct extraction mode
@@ -239,10 +261,12 @@
 **Fix:** Use `MmapOptions::new().offset(entry_offset).len(entry_size)` to map ZIP entry directly.
 
 **Files:**
+
 - `src-tauri/src/payload/zip.rs`
 - `src-tauri/src/payload/http_zip.rs`
 
 **Steps:**
+
 1. Add `mmap_zip_entry(path, entry_offset, entry_size)` function
 2. Replace temp-file extraction with direct mmap for STORED entries
 3. Fall back to temp file for compressed entries
@@ -259,9 +283,11 @@
 **Fix:** Display `ExtractionStats` in `ExtractionStatusCard` after completion.
 
 **Files:**
+
 - `src/components/payload-dumper/ExtractionStatusCard.tsx`
 
 **Steps:**
+
 1. Add stats display to `ExtractionStatusCard`
 2. Show: duration, throughput, bytes written
 3. Format as "Extracted in Xs (Y MB/s)"
@@ -271,21 +297,21 @@
 
 ## Summary of Tasks
 
-| Phase | Task | Priority | Effort | Gap |
-|-------|------|----------|--------|-----|
-| 0 | SHA-256 output verification | Critical | Low | Correctness |
-| 1 | Non-temporal stores | High | Medium | Performance |
-| 2 | Extent coalescing | High | Medium | Performance |
-| 3 | Rayon partition parallelism | High | High | Performance |
-| 3.2 | Rayon intra-partition parallelism | High | High | Performance |
-| 4 | SIMD copy | Medium | High | Performance |
-| 4.2 | CPU detection | Medium | Medium | Performance |
-| 5 | ExtractionStats tracking | Medium | Low | Observability |
-| 6 | Diagnose command | Low | Low | UX |
-| 7 | Transaction cleanup | Medium | Medium | Reliability |
-| 8 | HTTP pipelining | Medium | Medium | Performance |
-| 9 | Zero-copy ZIP mmap | Medium | Medium | Performance |
-| 10 | Stats UI display | Low | Low | UX |
+| Phase | Task                              | Priority | Effort | Gap           |
+| ----- | --------------------------------- | -------- | ------ | ------------- |
+| 0     | SHA-256 output verification       | Critical | Low    | Correctness   |
+| 1     | Non-temporal stores               | High     | Medium | Performance   |
+| 2     | Extent coalescing                 | High     | Medium | Performance   |
+| 3     | Rayon partition parallelism       | High     | High   | Performance   |
+| 3.2   | Rayon intra-partition parallelism | High     | High   | Performance   |
+| 4     | SIMD copy                         | Medium   | High   | Performance   |
+| 4.2   | CPU detection                     | Medium   | Medium | Performance   |
+| 5     | ExtractionStats tracking          | Medium   | Low    | Observability |
+| 6     | Diagnose command                  | Low      | Low    | UX            |
+| 7     | Transaction cleanup               | Medium   | Medium | Reliability   |
+| 8     | HTTP pipelining                   | Medium   | Medium | Performance   |
+| 9     | Zero-copy ZIP mmap                | Medium   | Medium | Performance   |
+| 10    | Stats UI display                  | Low      | Low    | UX            |
 
 ---
 

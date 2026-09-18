@@ -1,6 +1,7 @@
-import type { QueryClient } from '@tanstack/react-query';
-import { GetAllDevices, GetInstalledPackages, ListAvds } from '@/desktop/backend';
-import type { backend } from '@/desktop/models';
+import type { QueryClient } from "@tanstack/react-query";
+
+import { GetAllDevices, GetInstalledPackages, ListAvds } from "@/desktop/backend";
+import type { backend } from "@/desktop/models";
 
 type Device = backend.Device;
 type AvdSummary = backend.AvdSummary;
@@ -9,32 +10,32 @@ type AvdSummary = backend.AvdSummary;
 // Query key factory — single source of truth for all TanStack Query keys.
 // ---------------------------------------------------------------------------
 export const queryKeys = {
-  devices: () => ['devices'] as const,
-  fastbootDevices: () => ['fastbootDevices'] as const,
-  allDevices: () => ['allDevices'] as const,
-  packages: () => ['packages'] as const,
-  avds: () => ['avds'] as const,
-  deviceInfo: (serial: string) => ['deviceInfo', serial] as const,
+  allDevices: () => ["allDevices"] as const,
+  avds: () => ["avds"] as const,
+  debloat: {
+    lists: ["debloat", "lists"] as const,
+    packages: (serial: string) => ["debloat", "packages", serial] as const,
+  },
+  deviceInfo: (serial: string) => ["deviceInfo", serial] as const,
+  devices: () => ["devices"] as const,
   emulator: {
-    list: ['emulator', 'list'] as const,
-    restorePlan: (avdName: string) => ['emulator', 'restorePlan', avdName] as const,
+    list: ["emulator", "list"] as const,
+    restorePlan: (avdName: string) => ["emulator", "restorePlan", avdName] as const,
   },
-  scrcpy: {
-    status: ['scrcpy', 'status'] as const,
-    activeSessions: ['scrcpy', 'activeSessions'] as const,
-    presets: ['scrcpy', 'presets'] as const,
-  },
+  fastbootDevices: () => ["fastbootDevices"] as const,
   hostSetup: {
-    status: ['hostSetup', 'status'] as const,
+    status: ["hostSetup", "status"] as const,
   },
   marketplace: {
-    search: (query: string, filters: object) => ['marketplace', 'search', query, filters] as const,
-    trending: ['marketplace', 'trending'] as const,
-    appDetail: (appId: string) => ['marketplace', 'appDetail', appId] as const,
+    appDetail: (appId: string) => ["marketplace", "appDetail", appId] as const,
+    search: (query: string, filters: object) => ["marketplace", "search", query, filters] as const,
+    trending: ["marketplace", "trending"] as const,
   },
-  debloat: {
-    packages: (serial: string) => ['debloat', 'packages', serial] as const,
-    lists: ['debloat', 'lists'] as const,
+  packages: () => ["packages"] as const,
+  scrcpy: {
+    activeSessions: ["scrcpy", "activeSessions"] as const,
+    presets: ["scrcpy", "presets"] as const,
+    status: ["scrcpy", "status"] as const,
   },
 } as const;
 
@@ -42,19 +43,19 @@ export const queryKeys = {
 // staleTime constants — in milliseconds
 // ---------------------------------------------------------------------------
 export const STALE_TIME = {
+  ALL_DEVICES: 30 * 1000,
+  DEBOLOAT_LISTS: 60 * 60 * 1000,
+  DEBOLOAT_PACKAGES: 30 * 1000,
   /** Global default applied in `App.tsx`. */
   DEFAULT: 30 * 1000,
   DEVICES: 30 * 1000,
-  FASTBOOT_DEVICES: 30 * 1000,
-  ALL_DEVICES: 30 * 1000,
-  PACKAGES: 30 * 1000,
+  DEVICE_INFO: 30 * 1000,
   EMULATOR_LIST: 30 * 1000,
+  FASTBOOT_DEVICES: 30 * 1000,
+  MARKETPLACE_DETAIL: 5 * 60 * 1000,
   MARKETPLACE_SEARCH: 5 * 60 * 1000,
   MARKETPLACE_TRENDING: 10 * 60 * 1000,
-  MARKETPLACE_DETAIL: 5 * 60 * 1000,
-  DEBOLOAT_LISTS: 60 * 60 * 1000,
-  DEBOLOAT_PACKAGES: 30 * 1000,
-  DEVICE_INFO: 30 * 1000,
+  PACKAGES: 30 * 1000,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -69,9 +70,9 @@ export const fetchAllDevices = async (): Promise<Device[]> => {
     return [];
   }
   return devices.map((d) => ({
+    connectionType: d.connectionType ?? "adb",
     serial: d.serial,
-    status: d.status || 'device',
-    connectionType: d.connectionType ?? 'adb',
+    status: d.status || "device",
   }));
 };
 

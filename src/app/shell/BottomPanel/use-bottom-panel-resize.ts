@@ -1,0 +1,105 @@
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+const MIN_HEIGHT = 120;
+const MAX_HEIGHT_RATIO = 0.7;
+
+interface ResizeOptions {
+  setPanelHeight: (height: number) => void;
+  viewportHeight: number;
+}
+
+export const useBottomPanelResize = ({ viewportHeight, setPanelHeight }: ResizeOptions) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
+  const rafRef = useRef<number>(0);
+  const [showCursorOverlay, setShowCursorOverlay] = useState(false);
+
+  // ── Fluid resize: DOM-first, commit-last ─────────────────────────────────────
+  // During drag: height updated via direct DOM style — NO React re-renders.
+  // On mouseup: single Zustand commit — one React re-render to sync.
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizingRef.current = true;
+    setShowCursorOverlay(true);
+    // Hint to GPU: this element's height will animate
+    if (panelRef.current) {
+      Object.assign(panelRef.current.style, {
+        userSelect: "none",
+        willChange: "height",
+      });
+    }
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    if (!isResizingRef.current) {
+      return;
+    }
+    isResizingRef.current = false;
+    cancelAnimationFrame(rafRef.current);
+    setShowCursorOverlay(false);
+    // Commit the final height to the store — single re-render after drag ends
+    if (panelRef.current) {
+      Object.assign(panelRef.current.style, { userSelect: "", willChange: "" });
+      const finalHeight = Number.parseFloat(panelRef.current.style.height);
+      if (!Number.isNaN(finalHeight)) {
+        setPanelHeight(finalHeight);
+      }
+    }
+  }, [setPanelHeight]);
+
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizingRef.current) {
+        return;
+      }
+      // RAF throttle: skip frames the browser can't render anyway
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        const maxHeight = viewportHeight * MAX_HEIGHT_RATIO;
+        const rawHeight = viewportHeight - e.clientY;
+        const clampedHeight = Math.max(MIN_HEIGHT, Math.min(maxHeight, rawHeight));
+        // Direct DOM write — bypasses React render pipeline entirely
+        if (panelRef.current) {
+          panelRef.current.style.height = `${clampedHeight}px`;
+        }
+      });
+    },
+    [viewportHeight]
+  );
+
+  // Register once — stable refs mean no listener churn
+  useEffect(() => {
+    window.addEventListener("mousemove", resize, { passive: true });
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+  const adjustHeightBy = useCallback(
+    (deltaPx: number) => {
+      const maxHeight = viewportHeight * MAX_HEIGHT_RATIO;
+      const current =
+        panelRef.current === null
+          ? MIN_HEIGHT
+          : Number.parseFloat(panelRef.current.style.height) ||
+            panelRef.current.getBoundingClientRect().height;
+      const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, current + deltaPx));
+      if (panelRef.current) {
+        panelRef.current.style.height = `${next}px`;
+      }
+      setPanelHeight(next);
+    },
+    [setPanelHeight, viewportHeight]
+  );
+
+  return {
+    MAX_HEIGHT_RATIO,
+    adjustHeightBy,
+    panelRef,
+    showCursorOverlay,
+    startResizing,
+  };
+};

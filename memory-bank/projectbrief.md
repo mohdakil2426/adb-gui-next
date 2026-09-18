@@ -18,11 +18,11 @@ ADB GUI Next is a Tauri 2 desktop app for ADB, fastboot, firmware extract, deblo
 
 ## Platforms
 
-| Platform | Status |
-| --- | --- |
+| Platform                        | Status                                                    |
+| ------------------------------- | --------------------------------------------------------- |
 | Windows x86_64 / i686 / aarch64 | First-class / shipped (see project_rules for tools notes) |
-| Linux x86_64 / aarch64 | First-class / shipped (arm uses PATH tools) |
-| macOS | Code may exist; **builds paused** (not first-class) |
+| Linux x86_64 / aarch64          | First-class / shipped (arm uses PATH tools)               |
+| macOS                           | Code may exist; **builds paused** (not first-class)       |
 
 ## Major feature areas
 

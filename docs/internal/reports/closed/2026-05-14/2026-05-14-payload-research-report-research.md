@@ -4,7 +4,7 @@
 
 **Date**: 2026-05-10  
 **Analyst**: OpenCode (Multi-Subagent Parallel Research)  
-**Scope**: 4 implementations, 10 parallel research agents, 24 Rust source files, 10 React components  
+**Scope**: 4 implementations, 10 parallel research agents, 24 Rust source files, 10 React components
 
 ---
 
@@ -39,13 +39,13 @@ This report presents a comprehensive deep-dive analysis of Android OTA (Over-The
 
 ### Key Findings
 
-| Dimension | Our Finding |
-|-----------|-------------|
+| Dimension                | Our Finding                                                                                                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **SHA-256 Verification** | Recently fixed critical bug: we were hashing decompressed bytes instead of raw compressed bytes. Reference repos are split: otaripper hashes compressed, Go tools hash both compressed AND decompressed, payload-dumper-rust skips per-op verification. |
-| **Performance** | Our implementation achieves ~1-2 GB/s with SIMD-accelerated copy and mmap I/O. otaripper leads at 2.8 GB/s with AVX-512. Go is bottlenecked by pure Go XZ (6x slower than CGO). |
-| **Feature Breadth** | We are the most feature-rich: 5 CrAU compression types + 3 proprietary formats (OPS/OFP-QC/OFP-MTK) + remote HTTP extraction + ZIP streaming + sparse unsparsing. |
-| **Architecture** | Zero-copy `Arc<Mmap>` + `rayon` parallelism + `NonTemporalWriter` with `msync`. Clean separation between domain modules and command handlers. |
-| **Critical Gaps** | No post-extraction output hash verification (compressed blob verified, but not the written `.img` file). Delta OTA extraction is broken (`source_dir` parameter ignored). No cancellation during extraction. No true sparse file output. |
+| **Performance**          | Our implementation achieves ~1-2 GB/s with SIMD-accelerated copy and mmap I/O. otaripper leads at 2.8 GB/s with AVX-512. Go is bottlenecked by pure Go XZ (6x slower than CGO).                                                                         |
+| **Feature Breadth**      | We are the most feature-rich: 5 CrAU compression types + 3 proprietary formats (OPS/OFP-QC/OFP-MTK) + remote HTTP extraction + ZIP streaming + sparse unsparsing.                                                                                       |
+| **Architecture**         | Zero-copy `Arc<Mmap>` + `rayon` parallelism + `NonTemporalWriter` with `msync`. Clean separation between domain modules and command handlers.                                                                                                           |
+| **Critical Gaps**        | No post-extraction output hash verification (compressed blob verified, but not the written `.img` file). Delta OTA extraction is broken (`source_dir` parameter ignored). No cancellation during extraction. No true sparse file output.                |
 
 ### Critical Bug Fixed During Analysis
 
@@ -75,28 +75,29 @@ src/cmd/simd.rs      — Platform-specific SIMD execution paths
 
 #### 2.1.2 Compression Handling
 
-| Format | Operation Type | Library |
-|--------|---------------|---------|
-| XZ/LZMA | `REPLACE_XZ` (type 8) | `liblzma` 0.4.6 |
-| BZ2 | `REPLACE_BZ` (type 1) | `bzip2` 0.6.1 |
-| Zstd | `ZSTD` (type 14) | `zip` crate with `zstd` |
-| None | `REPLACE` (type 0) | Direct copy |
-| Zero | `ZERO` (type 6) | N/A |
-| Discard | `DISCARD` (type 7) | N/A |
+| Format  | Operation Type        | Library                 |
+| ------- | --------------------- | ----------------------- |
+| XZ/LZMA | `REPLACE_XZ` (type 8) | `liblzma` 0.4.6         |
+| BZ2     | `REPLACE_BZ` (type 1) | `bzip2` 0.6.1           |
+| Zstd    | `ZSTD` (type 14)      | `zip` crate with `zstd` |
+| None    | `REPLACE` (type 0)    | Direct copy             |
+| Zero    | `ZERO` (type 6)       | N/A                     |
+| Discard | `DISCARD` (type 7)    | N/A                     |
 
 **Not supported**: All delta/incremental operations (`MOVE`, `BSDIFF`, `SOURCE_COPY`, `SOURCE_BSDIFF`, `BROTLI_BSDIFF`, `PUFFDIFF`, `ZUCCHINI`, `LZ4DIFF_*`).
 
 #### 2.1.3 SHA-256 Verification (Three-Layer)
 
-| Layer | Always Enabled? | Description |
-|-------|-----------------|-------------|
-| Layer 1: Input | Yes | Protobuf structure validation, manifest consistency, extent boundary verification |
-| Layer 2: Operations | Default | Data hash verification (if present), decompression integrity |
-| Layer 3: Output | Default | Final SHA-256 verification of extracted partition |
+| Layer               | Always Enabled? | Description                                                                       |
+| ------------------- | --------------- | --------------------------------------------------------------------------------- |
+| Layer 1: Input      | Yes             | Protobuf structure validation, manifest consistency, extent boundary verification |
+| Layer 2: Operations | Default         | Data hash verification (if present), decompression integrity                      |
+| Layer 3: Output     | Default         | Final SHA-256 verification of extracted partition                                 |
 
 **Key behavior**: Computes SHA-256 of the **decompressed/output image**, NOT the compressed input data. For large partitions (>256 MiB), inline hashing during extraction (no double-pass).
 
 **Verification modes**:
+
 - Default: Input + Ops + Output
 - Strict: Input + Ops + Enforced Output
 - No Verify: Input only
@@ -106,14 +107,15 @@ src/cmd/simd.rs      — Platform-specific SIMD execution paths
 
 **Benchmarks** (3GB system partition):
 
-| Implementation | Throughput |
-|---------------|------------|
-| otaripper (AVX-512) | 2.8 GB/s |
-| otaripper (AVX2) | 1.9 GB/s |
-| payload-dumper-go | 1.0 GB/s |
-| payload_dumper (Python) | 0.4 GB/s |
+| Implementation          | Throughput |
+| ----------------------- | ---------- |
+| otaripper (AVX-512)     | 2.8 GB/s   |
+| otaripper (AVX2)        | 1.9 GB/s   |
+| payload-dumper-go       | 1.0 GB/s   |
+| payload_dumper (Python) | 0.4 GB/s   |
 
 **Optimizations**:
+
 - Memory-mapped I/O (`memmap2`) for zero-copy reads
 - Zero-copy ZIP mapping (v2.3) — direct mmap of STORED ZIP contents
 - Thread-local buffer pool (1 MiB `COPY_BUFFER` per Rayon worker)
@@ -174,14 +176,14 @@ src/
 
 #### 2.2.2 Feature Flags (Modular Build System)
 
-| Feature | Purpose |
-|---------|---------|
-| `default` | Local .bin/.zip + remote HTTP + prefetch + metadata |
-| `local_zip` | ZIP file support |
-| `remote_zip` | HTTP/HTTPS URL support |
-| `prefetch` | Download all data before extraction |
-| `diff_ota` | Incremental OTA support (experimental) |
-| `hickory_dns` | Built-in DNS resolver for static builds |
+| Feature       | Purpose                                             |
+| ------------- | --------------------------------------------------- |
+| `default`     | Local .bin/.zip + remote HTTP + prefetch + metadata |
+| `local_zip`   | ZIP file support                                    |
+| `remote_zip`  | HTTP/HTTPS URL support                              |
+| `prefetch`    | Download all data before extraction                 |
+| `diff_ota`    | Incremental OTA support (experimental)              |
+| `hickory_dns` | Built-in DNS resolver for static builds             |
 
 #### 2.2.3 Async Runtime
 
@@ -193,25 +195,26 @@ src/
 
 Supports ALL operation types including delta:
 
-| Type | Enum Value |
-|------|-----------|
-| Replace | 0 |
-| ReplaceXz | 8 |
-| ReplaceBz | 1 |
-| Zstd | 14 |
-| Zero | 6 |
-| Discard | 7 |
-| Move | 2 |
-| SourceCopy | 4 |
-| SourceBsdiff | 5 |
-| Bsdiff | 3 |
-| BrotliBsdiff | 10 |
-| Puffdiff | 9 |
-| Lz4diffBsdiff | 12 |
-| Lz4diffPuffdiff | 13 |
-| Zucchini | 11 |
+| Type            | Enum Value |
+| --------------- | ---------- |
+| Replace         | 0          |
+| ReplaceXz       | 8          |
+| ReplaceBz       | 1          |
+| Zstd            | 14         |
+| Zero            | 6          |
+| Discard         | 7          |
+| Move            | 2          |
+| SourceCopy      | 4          |
+| SourceBsdiff    | 5          |
+| Bsdiff          | 3          |
+| BrotliBsdiff    | 10         |
+| Puffdiff        | 9          |
+| Lz4diffBsdiff   | 12         |
+| Lz4diffPuffdiff | 13         |
+| Zucchini        | 11         |
 
 **Buffer sizes**:
+
 - `BUFREADER_SIZE = 256 KB` for decompression streams
 - `COPY_BUFFER_SIZE = 512 KB` for direct copy
 
@@ -259,21 +262,21 @@ Worker Pool (goroutines) — Parallel decompression per partition
 
 #### 2.3.2 Compression Handling
 
-| Compression | Go Library | CGO? | Notes |
-|-------------|------------|------|-------|
-| XZ (LZMA) | `github.com/ulikunitz/xz` | Optional via `github.com/spencercw/go-xz` | Pure Go 6x slower than CGO |
-| BZ2 | Various | No | Less common |
-| Zstd | `github.com/klauspost/compress/zstd` | No | Excellent performance |
-| None (RAW) | Direct copy | — | |
+| Compression | Go Library                           | CGO?                                      | Notes                      |
+| ----------- | ------------------------------------ | ----------------------------------------- | -------------------------- |
+| XZ (LZMA)   | `github.com/ulikunitz/xz`            | Optional via `github.com/spencercw/go-xz` | Pure Go 6x slower than CGO |
+| BZ2         | Various                              | No                                        | Less common                |
+| Zstd        | `github.com/klauspost/compress/zstd` | No                                        | Excellent performance      |
+| None (RAW)  | Direct copy                          | —                                         |                            |
 
 **Critical performance decision**: CGO XZ vs pure Go XZ = 6x throughput difference.
 
 #### 2.3.3 SHA-256 Verification (Double-Layer)
 
-| Level | What is Verified | When |
-|-------|-----------------|------|
+| Level          | What is Verified         | When                                            |
+| -------------- | ------------------------ | ----------------------------------------------- |
 | Operation Hash | Raw compressed data blob | Immediately after reading, BEFORE decompression |
-| Partition Hash | Fully decompressed data | AFTER all operations complete |
+| Partition Hash | Fully decompressed data  | AFTER all operations complete                   |
 
 This is the most paranoid approach: verifies both compressed blob integrity AND decompression correctness.
 
@@ -281,22 +284,22 @@ This is the most paranoid approach: verifies both compressed blob integrity AND 
 
 Test: MacBook Pro 16-inch 2021 (Apple M1 Max, 64GB), 2.31GB payload.bin
 
-| Metric | Value |
-|--------|-------|
-| Total payload size | 2.31 GB |
-| Number of partitions | 27 |
-| Extraction time | ~63 seconds |
-| CPU utilization | 145% (parallel workers) |
-| User time | 87.93s |
-| System time | 3.51s |
+| Metric               | Value                   |
+| -------------------- | ----------------------- |
+| Total payload size   | 2.31 GB                 |
+| Number of partitions | 27                      |
+| Extraction time      | ~63 seconds             |
+| CPU utilization      | 145% (parallel workers) |
+| User time            | 87.93s                  |
+| System time          | 3.51s                   |
 
 #### 2.3.5 Delta OTA Support
 
-| Implementation | Delta Support |
-|----------------|----------------|
-| ssut/payload-dumper-go | Not supported (Issue #44) |
-| xishang0128/payload-dumper-go | Supported (`extract-diff` command) |
-| rajmani7584/Payload-Dumper-Android | Detection only, can't extract |
+| Implementation                     | Delta Support                      |
+| ---------------------------------- | ---------------------------------- |
+| ssut/payload-dumper-go             | Not supported (Issue #44)          |
+| xishang0128/payload-dumper-go      | Supported (`extract-diff` command) |
+| rajmani7584/Payload-Dumper-Android | Detection only, can't extract      |
 
 The xishang0128 fork implements delta extraction requiring base partition files from previous OTA.
 
@@ -343,6 +346,7 @@ Offset 24..:  manifest protobuf bytes
 ```
 
 **Bounds checks**:
+
 - Minimum 24 bytes
 - Magic validation
 - Version == 2
@@ -363,26 +367,28 @@ partitions_to_extract.par_iter().map(|partition| { ... })
 
 #### 3.1.3 Compression Detection (lines 286-305)
 
-| Type | Handler | Notes |
-|------|---------|-------|
-| `Replace` | Direct slice | No compression |
-| `Zero` | Seek only | No data read |
-| `ReplaceXz` | `XzDecoder::new_multi_decoder()` | Handles concatenated XZ streams |
-| `ReplaceBz` | `BzDecoder::new()` | |
-| `Zstd` | `zstd::stream::read::Decoder::new()` | |
-| All others | `anyhow::bail!` | Unsupported |
+| Type        | Handler                              | Notes                           |
+| ----------- | ------------------------------------ | ------------------------------- |
+| `Replace`   | Direct slice                         | No compression                  |
+| `Zero`      | Seek only                            | No data read                    |
+| `ReplaceXz` | `XzDecoder::new_multi_decoder()`     | Handles concatenated XZ streams |
+| `ReplaceBz` | `BzDecoder::new()`                   |                                 |
+| `Zstd`      | `zstd::stream::read::Decoder::new()` |                                 |
+| All others  | `anyhow::bail!`                      | Unsupported                     |
 
 **Buffer**: `DECOMP_BUF_SIZE = 256 KiB` (stack-allocated array, L2-cache sweet spot)
 
 #### 3.1.4 SHA-256 Verification (The Fix)
 
 **Lines 254-255**: Initialize hasher if `data_sha256_hash` is present and non-empty:
+
 ```rust
 let mut hasher: Option<Sha256> =
     operation.data_sha256_hash.as_ref().filter(|h| !h.is_empty()).map(|_| Sha256::new());
 ```
 
 **Lines 312-315**: Hash raw compressed bytes BEFORE decompression:
+
 ```rust
 let compressed_hash = hasher.as_mut().map(|h| {
     h.update(raw_data);           // Hash the COMPRESSED blob
@@ -391,6 +397,7 @@ let compressed_hash = hasher.as_mut().map(|h| {
 ```
 
 **Lines 408-422**: Verify AFTER all extents processed:
+
 ```rust
 if let (Some(actual), Some(expected)) =
     (compressed_hash, operation.data_sha256_hash.as_ref())
@@ -407,6 +414,7 @@ if let (Some(actual), Some(expected)) =
 **Extent structure**: `start_block` + `num_blocks`, translated to byte offsets via `block_size` (default 4096).
 
 **Key behaviors**:
+
 - `checked_mul` with overflow error on all block arithmetic
 - RAW Replace coalesces contiguous extents (lines 356-389)
 - Gap handling via explicit `seek` between extents
@@ -415,6 +423,7 @@ if let (Some(actual), Some(expected)) =
 #### 3.1.6 Error Handling
 
 **At partition level** (lines 210-218):
+
 ```rust
 for result in results {
     match result {
@@ -430,6 +439,7 @@ for result in results {
 On first error: `guard.abort()` cleans up all files + output directory.
 
 **Specific errors**:
+
 - Missing destination extent
 - Data exceeds file
 - Unsupported operation type
@@ -446,14 +456,14 @@ On first error: `guard.abort()` cleans up all files + output directory.
 
 #### 3.1.8 Memory Management
 
-| Component | Strategy | Size |
-|-----------|----------|------|
-| Payload file | `Arc<Mmap>` — OS page cache | Zero heap |
-| Decompression | Streaming with 256 KiB stack buffer | Stack |
-| Output write | `memmap2::MmapMut` + `msync` flush | Pre-allocated |
-| NonTemporalWriter | Pre-allocated via `set_len`, grows via remap | Variable |
-| Hash state | `Sha256` on stack | 64 bytes |
-| Manifest | Per-thread `prost` struct clone | ~KB |
+| Component         | Strategy                                     | Size          |
+| ----------------- | -------------------------------------------- | ------------- |
+| Payload file      | `Arc<Mmap>` — OS page cache                  | Zero heap     |
+| Decompression     | Streaming with 256 KiB stack buffer          | Stack         |
+| Output write      | `memmap2::MmapMut` + `msync` flush           | Pre-allocated |
+| NonTemporalWriter | Pre-allocated via `set_len`, grows via remap | Variable      |
+| Hash state        | `Sha256` on stack                            | 64 bytes      |
+| Manifest          | Per-thread `prost` struct clone              | ~KB           |
 
 **Peak RAM**: Effectively zero for payload data (OS page cache handles it).
 
@@ -468,27 +478,30 @@ On first error: `guard.abort()` cleans up all files + output directory.
 
 5-stage detection ordered by specificity:
 
-| Stage | Check | Format |
-|-------|-------|--------|
-| 1 | `data[..4] == b"CrAU"` | `PayloadBin` |
-| 2 | `data[..2] == b"PK"` | `ZipOfp` |
-| 3 | `0x7CEF` magic at `filesize - 0x200 + 0x10` | `Ops` |
-| 4 | `0x7CEF` magic at `filesize - 0x1000 + 0x10` | `OfpQualcomm` |
-| 5 | MTK brute-force on first 16 bytes | `OfpMediaTek` |
+| Stage | Check                                        | Format        |
+| ----- | -------------------------------------------- | ------------- |
+| 1     | `data[..4] == b"CrAU"`                       | `PayloadBin`  |
+| 2     | `data[..2] == b"PK"`                         | `ZipOfp`      |
+| 3     | `0x7CEF` magic at `filesize - 0x200 + 0x10`  | `Ops`         |
+| 4     | `0x7CEF` magic at `filesize - 0x1000 + 0x10` | `OfpQualcomm` |
+| 5     | MTK brute-force on first 16 bytes            | `OfpMediaTek` |
 
 #### 3.2.2 AES-CFB Decryption (`ops/crypto.rs`)
 
 **OPS Custom S-Box Cipher** (NOT standard AES):
+
 - Fixed key + 3 mbox variants (mbox4/5/6) for different OnePlus device eras
 - 10 rounds of S-box substitution via `gsbox()`
 - Decrypt mode: `rkey[j] = input_word` (inverse of encryption)
 
 **OFP-QC AES-128-CFB**:
+
 - Standard AES-128-CFB via `cfb-mode` crate
 - Two-layer obfuscation: `deobfuscate()` + `keyshuffle()`
 - 6+ known key sets in hardcoded table
 
 **OFP-MTK AES-128-CFB**:
+
 - Same AES-128-CFB with `mtk_shuffle` pre-processing
 - `mtk_shuffle`: XOR + nibble swap
 - 8 hardcoded key sets
@@ -497,12 +510,12 @@ On first error: `guard.abort()` cleans up all files + output directory.
 
 Handles Android sparse image format (magic: `0xED26FF3A`):
 
-| Chunk Type | Value | Handler |
-|------------|-------|---------|
-| Raw | 0xCAC1 | Copy data directly |
-| Fill | 0xCAC2 | Repeat 4-byte pattern |
-| Don't Care | 0xCAC3 | Seek past region |
-| CRC32 | 0xCAC4 | Skip 4 bytes (no verification) |
+| Chunk Type | Value  | Handler                        |
+| ---------- | ------ | ------------------------------ |
+| Raw        | 0xCAC1 | Copy data directly             |
+| Fill       | 0xCAC2 | Repeat 4-byte pattern          |
+| Don't Care | 0xCAC3 | Seek past region               |
+| CRC32      | 0xCAC4 | Skip 4 bytes (no verification) |
 
 **Buffer strategy**: Reusable buffer of `blk_sz.min(256 KB)` allocated once and reused.
 
@@ -513,6 +526,7 @@ Handles Android sparse image format (magic: `0xED26FF3A`):
 **Parallelization**: Uses `thread::scope` (not rayon) for per-partition parallelism.
 
 **Four extraction paths**:
+
 1. OPS encrypted (SAHARA): Full S-box cipher decryption
 2. OFP-QC partial encryption: AES-CFB first 256 KB, then plaintext
 3. OFP-MTK partial encryption: Same as OFP-QC
@@ -537,6 +551,7 @@ pub fn stream_copy(
 ```
 
 **Algorithm**:
+
 - Fixed-size buffer passed from caller (not owned internally)
 - Loop reads `min(buf.len(), remaining)` bytes
 - Writes immediately with `write_all`
@@ -550,6 +565,7 @@ pub fn stream_copy(
 **Strategies**: Scalar → SSE2 (16B) → AVX2 (32B) → AVX512 (64B, detected but falls back to AVX2)
 
 **Runtime detection**:
+
 ```rust
 pub fn detect_copy_strategy() -> CopyStrategy {
     if is_x86_feature_detected!("avx512f") { Avx512 }
@@ -562,6 +578,7 @@ pub fn detect_copy_strategy() -> CopyStrategy {
 #### 3.3.3 `NonTemporalWriter` (`write.rs`)
 
 **Architecture**:
+
 ```rust
 pub struct NonTemporalWriter {
     file: File,           // Kept alive for set_len compatibility
@@ -574,6 +591,7 @@ pub struct NonTemporalWriter {
 **Pre-allocation**: `file.set_len(size)?` before mmap creation.
 
 **Dynamic remap on overflow** (lines 111-125):
+
 1. Flush pending writes
 2. Create anonymous placeholder mmap BEFORE dropping old mapping (prevents fd reuse race)
 3. Drop old mmap
@@ -581,6 +599,7 @@ pub struct NonTemporalWriter {
 5. Create new mapping
 
 **Flush strategy**:
+
 - Unix: `madvise(MADV_SEQUENTIAL)` + `msync(MS_SYNC)`
 - Windows: `mmap.flush()`
 
@@ -589,6 +608,7 @@ pub struct NonTemporalWriter {
 #### 3.3.4 `TransactionGuard` (`transaction.rs`)
 
 **Drop implementation** (lines 50-64):
+
 ```rust
 impl Drop for TransactionGuard {
     fn drop(&mut self) {
@@ -614,10 +634,12 @@ impl Drop for TransactionGuard {
 **File**: `src-tauri/src/payload/parser.rs`
 
 **Version handling**:
+
 - `major_version`: Implicitly 2 (checked in header)
 - `minor_version`: Field 12 in manifest, determines supported operation types
 
 **Operation type version requirements**:
+
 - Type 0-3: original (all versions)
 - Type 4-5: minor version >= 2
 - Type 6-7: minor version >= 4
@@ -626,6 +648,7 @@ impl Drop for TransactionGuard {
 - Type 14: minor version >= 9
 
 **Protobuf structure**:
+
 - `DeltaArchiveManifest` — root message
 - `PartitionUpdate` — per-partition info with `operations: Vec<InstallOperation>`
 - `InstallOperation` — `type`, `data_offset`, `data_length`, `src_extents`, `dst_extents`, `data_sha256_hash`
@@ -637,24 +660,25 @@ impl Drop for TransactionGuard {
 
 **10 UI Components**:
 
-| Component | Purpose |
-|-----------|---------|
-| `ViewPayloadDumper` | Root orchestrator, 3-state rendering |
-| `PayloadSourceTabs` | Tabbed source picker (Local vs Remote) |
-| `DropZone` | Drag-and-drop + browse, Tauri `onDragDropEvent` |
-| `RemoteUrlPanel` | URL input, validation, prefetch toggle |
-| `LoadingState` | Spinner with contextual message |
-| `FileBanner` | Summary bar: filename, partitions, output dir |
-| `FileBannerDetails` | Collapsible metadata panel |
-| `PartitionTable` | Selectable table with progress |
-| `PartitionRow` | Memoized per-partition row |
-| `ExtractionProgressBar` | shadcn Progress with color coding |
-| `ActionFooter` | Reset + Extract buttons |
-| `ExtractionStatusCard` | Success/error result card |
+| Component               | Purpose                                         |
+| ----------------------- | ----------------------------------------------- |
+| `ViewPayloadDumper`     | Root orchestrator, 3-state rendering            |
+| `PayloadSourceTabs`     | Tabbed source picker (Local vs Remote)          |
+| `DropZone`              | Drag-and-drop + browse, Tauri `onDragDropEvent` |
+| `RemoteUrlPanel`        | URL input, validation, prefetch toggle          |
+| `LoadingState`          | Spinner with contextual message                 |
+| `FileBanner`            | Summary bar: filename, partitions, output dir   |
+| `FileBannerDetails`     | Collapsible metadata panel                      |
+| `PartitionTable`        | Selectable table with progress                  |
+| `PartitionRow`          | Memoized per-partition row                      |
+| `ExtractionProgressBar` | shadcn Progress with color coding               |
+| `ActionFooter`          | Reset + Extract buttons                         |
+| `ExtractionStatusCard`  | Success/error result card                       |
 
 **State Management**: Zustand with `persist` middleware (localStorage for `activeMode`, `remoteUrl`, `outputPath`).
 
 **Rust Commands**: 10 commands via `backend.ts`:
+
 - `SelectPayloadFile`, `SelectOutputDirectory`
 - `ListPayloadPartitionsWithDetails`, `ExtractPayload`
 - `CleanupPayloadCache`, `CheckRemotePayload`
@@ -669,137 +693,137 @@ impl Drop for TransactionGuard {
 
 ### 4.1 Compression Handling
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| XZ | `xz2` | `xz2` | pure Go (6x slower) or CGO | `xz2::read::XzDecoder::new_multi_decoder` |
-| BZ2 | `bzip2` | `bzip2` | Yes | `bzip2::read::BzDecoder` |
-| Zstd | `zip` + `zstd` | `zstd` | `klauspost/compress` | `zstd::stream::read::Decoder` |
-| Raw/Replace | Yes | Yes | Yes | Yes |
-| Zero | Yes | Yes | Yes | Yes (seek only) |
-| Discard | Yes | Yes | Partial | No (treated as Zero) |
-| Delta ops | No | Yes (all types) | Yes (fork) | Partial (unused) |
-| Brotli/Puffdiff | No | Yes | No | No |
-| Buffer size | Dynamic (SIMD) | 256 KB decomp, 512 KB copy | Configurable | 256 KiB stack |
+| Feature         | otaripper      | payload-dumper-rust        | Go                         | adb-gui-next (ours)                       |
+| --------------- | -------------- | -------------------------- | -------------------------- | ----------------------------------------- |
+| XZ              | `xz2`          | `xz2`                      | pure Go (6x slower) or CGO | `xz2::read::XzDecoder::new_multi_decoder` |
+| BZ2             | `bzip2`        | `bzip2`                    | Yes                        | `bzip2::read::BzDecoder`                  |
+| Zstd            | `zip` + `zstd` | `zstd`                     | `klauspost/compress`       | `zstd::stream::read::Decoder`             |
+| Raw/Replace     | Yes            | Yes                        | Yes                        | Yes                                       |
+| Zero            | Yes            | Yes                        | Yes                        | Yes (seek only)                           |
+| Discard         | Yes            | Yes                        | Partial                    | No (treated as Zero)                      |
+| Delta ops       | No             | Yes (all types)            | Yes (fork)                 | Partial (unused)                          |
+| Brotli/Puffdiff | No             | Yes                        | No                         | No                                        |
+| Buffer size     | Dynamic (SIMD) | 256 KB decomp, 512 KB copy | Configurable               | 256 KiB stack                             |
 
 ### 4.2 SHA-256 Verification
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| What is hashed | Decompressed output | Raw compressed | **Both** compressed + decompressed | Raw compressed |
-| Verification timing | Per operation | Per operation | Per operation (2-pass) | Per operation, after extents |
-| Mismatch handling | Log warning, continue | Error, abort | Error, abort | `anyhow::bail!` |
-| Output file hash | Layer 3 (optional) | No | No | `verify.rs` exists but **unused** |
+| Feature             | otaripper             | payload-dumper-rust | Go                                 | adb-gui-next (ours)               |
+| ------------------- | --------------------- | ------------------- | ---------------------------------- | --------------------------------- |
+| What is hashed      | Decompressed output   | Raw compressed      | **Both** compressed + decompressed | Raw compressed                    |
+| Verification timing | Per operation         | Per operation       | Per operation (2-pass)             | Per operation, after extents      |
+| Mismatch handling   | Log warning, continue | Error, abort        | Error, abort                       | `anyhow::bail!`                   |
+| Output file hash    | Layer 3 (optional)    | No                  | No                                 | `verify.rs` exists but **unused** |
 
 ### 4.3 Memory Architecture
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Read model | mmap zero-copy | Async range reads | Buffered | `Arc<Mmap>` zero-copy |
-| Write model | mmap | File writes | `bufio.Writer` | `MmapMut` + msync |
-| Buffer sizes | SIMD-optimized | 256/512 KB | Configurable | 256 KiB stack |
-| Arc clone | Yes | `Arc<HttpPayloadReader>` | N/A | `Arc::clone(&payload.mmap)` — 8 bytes |
-| Memory per thread | Minimal | Tokio task stack | Go runtime | 256 KiB stack buffer |
-| Peak RAM | ~0 | ~256 KB x ops | Buffer size | Zero (OS page cache) |
+| Feature           | otaripper      | payload-dumper-rust      | Go             | adb-gui-next (ours)                   |
+| ----------------- | -------------- | ------------------------ | -------------- | ------------------------------------- |
+| Read model        | mmap zero-copy | Async range reads        | Buffered       | `Arc<Mmap>` zero-copy                 |
+| Write model       | mmap           | File writes              | `bufio.Writer` | `MmapMut` + msync                     |
+| Buffer sizes      | SIMD-optimized | 256/512 KB               | Configurable   | 256 KiB stack                         |
+| Arc clone         | Yes            | `Arc<HttpPayloadReader>` | N/A            | `Arc::clone(&payload.mmap)` — 8 bytes |
+| Memory per thread | Minimal        | Tokio task stack         | Go runtime     | 256 KiB stack buffer                  |
+| Peak RAM          | ~0             | ~256 KB x ops            | Buffer size    | Zero (OS page cache)                  |
 
 ### 4.4 Parallelism
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Level | Partition | Operation (async) | Operation (goroutine) | Partition (rayon) |
-| Threading | `rayon` | Tokio | Go scheduler | `rayon` |
-| Cancellation | `AbortHandle` | Tokio `select!` | Context | None |
-| Thread pool | `rayon::ThreadPool` | Tokio multi-thread | GOMAXPROCS | Global rayon pool |
+| Feature      | otaripper           | payload-dumper-rust | Go                    | adb-gui-next (ours) |
+| ------------ | ------------------- | ------------------- | --------------------- | ------------------- |
+| Level        | Partition           | Operation (async)   | Operation (goroutine) | Partition (rayon)   |
+| Threading    | `rayon`             | Tokio               | Go scheduler          | `rayon`             |
+| Cancellation | `AbortHandle`       | Tokio `select!`     | Context               | None                |
+| Thread pool  | `rayon::ThreadPool` | Tokio multi-thread  | GOMAXPROCS            | Global rayon pool   |
 
 ### 4.5 Performance
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| SIMD | AVX-512 > AVX2 > SSE2 | None | None | SSE2, AVX2 (AVX512 detected but falls back) |
-| Non-temporal writes | Yes | No | No | Yes (msync) |
-| Flush strategy | `msync(MS_SYNC)` | `fsync` | `bufio.Flush` | `msync` (Unix) / `mmap.flush` (Windows) |
-| Throughput | **2.8 GB/s** | ~1 GB/s | ~1 GB/s (CGO), 0.15 GB/s (pure) | ~1-2 GB/s |
-| Sparse handling | Yes | No | No | Yes (unsparse post-extraction) |
+| Feature             | otaripper             | payload-dumper-rust | Go                              | adb-gui-next (ours)                         |
+| ------------------- | --------------------- | ------------------- | ------------------------------- | ------------------------------------------- |
+| SIMD                | AVX-512 > AVX2 > SSE2 | None                | None                            | SSE2, AVX2 (AVX512 detected but falls back) |
+| Non-temporal writes | Yes                   | No                  | No                              | Yes (msync)                                 |
+| Flush strategy      | `msync(MS_SYNC)`      | `fsync`             | `bufio.Flush`                   | `msync` (Unix) / `mmap.flush` (Windows)     |
+| Throughput          | **2.8 GB/s**          | ~1 GB/s             | ~1 GB/s (CGO), 0.15 GB/s (pure) | ~1-2 GB/s                                   |
+| Sparse handling     | Yes                   | No                  | No                              | Yes (unsparse post-extraction)              |
 
 ### 4.6 Edge Case Handling
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Zero ops | Yes | Yes | Yes | Yes (seek) |
-| Discard ops | Yes | Yes | Partial | No (treated as Zero) |
-| Truncated streams | Length check | stream_copy | Checksum mismatch | `UnexpectedEof` |
-| Overflow arithmetic | Checked | Checked | Checked | `checked_mul` |
-| Sparse file output | Yes | No | No | No (pre-allocated dense) |
-| Remap/growth | Dynamic mmap | No | N/A | Yes (`NonTemporalWriter::remap`) |
-| Extent coalescing | Yes | Yes | Yes | Yes (RAW Replace) |
+| Feature             | otaripper    | payload-dumper-rust | Go                | adb-gui-next (ours)              |
+| ------------------- | ------------ | ------------------- | ----------------- | -------------------------------- |
+| Zero ops            | Yes          | Yes                 | Yes               | Yes (seek)                       |
+| Discard ops         | Yes          | Yes                 | Partial           | No (treated as Zero)             |
+| Truncated streams   | Length check | stream_copy         | Checksum mismatch | `UnexpectedEof`                  |
+| Overflow arithmetic | Checked      | Checked             | Checked           | `checked_mul`                    |
+| Sparse file output  | Yes          | No                  | No                | No (pre-allocated dense)         |
+| Remap/growth        | Dynamic mmap | No                  | N/A               | Yes (`NonTemporalWriter::remap`) |
+| Extent coalescing   | Yes          | Yes                 | Yes               | Yes (RAW Replace)                |
 
 ### 4.7 Error Handling & Transaction Safety
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Rollback on failure | Yes | Yes | Yes | Yes (`TransactionGuard::abort`) |
-| Ctrl+C / SIGINT | Signal handler | Tokio cancel | `os/signal` | Not handled |
-| Partial file cleanup | Yes | Yes | Yes | Yes |
-| Atomic commit | Yes | Yes | Yes | Yes (`guard.commit`) |
-| Panic safety | Yes (Drop) | Yes | Yes (defer) | Yes (Drop) |
+| Feature              | otaripper      | payload-dumper-rust | Go          | adb-gui-next (ours)             |
+| -------------------- | -------------- | ------------------- | ----------- | ------------------------------- |
+| Rollback on failure  | Yes            | Yes                 | Yes         | Yes (`TransactionGuard::abort`) |
+| Ctrl+C / SIGINT      | Signal handler | Tokio cancel        | `os/signal` | Not handled                     |
+| Partial file cleanup | Yes            | Yes                 | Yes         | Yes                             |
+| Atomic commit        | Yes            | Yes                 | Yes         | Yes (`guard.commit`)            |
+| Panic safety         | Yes (Drop)     | Yes                 | Yes (defer) | Yes (Drop)                      |
 
 ### 4.8 Supported Operation Types
 
-| Type | otaripper | payload-dumper-rust | Go | adb-gui-next (CrAU) | adb-gui-next (OPS/OFP) |
-|------|-----------|---------------------|-----|---------------------|------------------------|
-| Replace | Yes | Yes | Yes | Yes | N/A |
-| ReplaceXz | Yes | Yes | Yes | Yes | N/A |
-| ReplaceBz | Yes | Yes | Yes | Yes | N/A |
-| Zstd | Yes | Yes | Yes | Yes | N/A |
-| Zero | Yes | Yes | Yes | Yes | N/A |
-| Discard | Yes | Yes | Partial | No | N/A |
-| SourceCopy (delta) | No | Yes | Yes (fork) | Unused | N/A |
-| SourcePatch (delta) | No | Yes | Yes (fork) | No | N/A |
-| OPS format | No | No | No | No | Yes (S-box cipher) |
-| OFP-QC | No | No | No | No | Yes (AES-128-CFB) |
-| OFP-MTK | No | No | No | No | Yes (AES-128-CFB + mtk_shuffle) |
-| Sparse image | Yes | No | No | No | Yes |
+| Type                | otaripper | payload-dumper-rust | Go         | adb-gui-next (CrAU) | adb-gui-next (OPS/OFP)          |
+| ------------------- | --------- | ------------------- | ---------- | ------------------- | ------------------------------- |
+| Replace             | Yes       | Yes                 | Yes        | Yes                 | N/A                             |
+| ReplaceXz           | Yes       | Yes                 | Yes        | Yes                 | N/A                             |
+| ReplaceBz           | Yes       | Yes                 | Yes        | Yes                 | N/A                             |
+| Zstd                | Yes       | Yes                 | Yes        | Yes                 | N/A                             |
+| Zero                | Yes       | Yes                 | Yes        | Yes                 | N/A                             |
+| Discard             | Yes       | Yes                 | Partial    | No                  | N/A                             |
+| SourceCopy (delta)  | No        | Yes                 | Yes (fork) | Unused              | N/A                             |
+| SourcePatch (delta) | No        | Yes                 | Yes (fork) | No                  | N/A                             |
+| OPS format          | No        | No                  | No         | No                  | Yes (S-box cipher)              |
+| OFP-QC              | No        | No                  | No         | No                  | Yes (AES-128-CFB)               |
+| OFP-MTK             | No        | No                  | No         | No                  | Yes (AES-128-CFB + mtk_shuffle) |
+| Sparse image        | Yes       | No                  | No         | No                  | Yes                             |
 
 ### 4.9 Platform Support
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Windows | Yes | Yes | Yes | Yes |
-| Linux | Yes | Yes | Yes | Yes |
-| macOS | Yes | Yes | Yes | Limited |
-| ARM32/64 | Yes | Yes | Yes | Yes |
-| Android/Termux | No | No | Yes | No |
+| Feature        | otaripper | payload-dumper-rust | Go  | adb-gui-next (ours) |
+| -------------- | --------- | ------------------- | --- | ------------------- |
+| Windows        | Yes       | Yes                 | Yes | Yes                 |
+| Linux          | Yes       | Yes                 | Yes | Yes                 |
+| macOS          | Yes       | Yes                 | Yes | Limited             |
+| ARM32/64       | Yes       | Yes                 | Yes | Yes                 |
+| Android/Termux | No        | No                  | Yes | No                  |
 
 ### 4.10 Testing
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Unit tests | Yes | Yes | Yes | Yes (15 modules, 20+ tests) |
-| Integration tests | Yes | Yes | Yes | Yes (synthetic payloads) |
-| Property tests | No | No | No | No |
-| Fuzzing | No | No | No | No |
-| Test payloads | Bundled | CI fixtures | Various | Synthetic generation |
+| Feature           | otaripper | payload-dumper-rust | Go      | adb-gui-next (ours)         |
+| ----------------- | --------- | ------------------- | ------- | --------------------------- |
+| Unit tests        | Yes       | Yes                 | Yes     | Yes (15 modules, 20+ tests) |
+| Integration tests | Yes       | Yes                 | Yes     | Yes (synthetic payloads)    |
+| Property tests    | No        | No                  | No      | No                          |
+| Fuzzing           | No        | No                  | No      | No                          |
+| Test payloads     | Bundled   | CI fixtures         | Various | Synthetic generation        |
 
 ### 4.11 Output File Verification
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Post-extraction SHA-256 | Layer 3 (optional) | No | No | `verify_sha256` defined but **unused** |
-| Partition integrity | No | No | No | No |
-| Sparse detection | No | No | No | Yes (`is_sparse`) |
-| Auto unsparse | No | No | No | Yes (`try_unsparse`) |
-| OPS SHA-256 | No | No | No | Yes (post-extraction) |
+| Feature                 | otaripper          | payload-dumper-rust | Go  | adb-gui-next (ours)                    |
+| ----------------------- | ------------------ | ------------------- | --- | -------------------------------------- |
+| Post-extraction SHA-256 | Layer 3 (optional) | No                  | No  | `verify_sha256` defined but **unused** |
+| Partition integrity     | No                 | No                  | No  | No                                     |
+| Sparse detection        | No                 | No                  | No  | Yes (`is_sparse`)                      |
+| Auto unsparse           | No                 | No                  | No  | Yes (`try_unsparse`)                   |
+| OPS SHA-256             | No                 | No                  | No  | Yes (post-extraction)                  |
 
 ### 4.12 UX/CLI Features
 
-| Feature | otaripper | payload-dumper-rust | Go | adb-gui-next (ours) |
-|---------|-----------|---------------------|-----|---------------------|
-| Progress reporting | Yes | TUI | Yes | Tauri events + React UI |
-| Partition filtering | Yes | Yes | Yes | Yes (selectable table) |
-| Remote URL | No | No | No | Yes (HTTP ranges + ZIP) |
-| ZIP handling | Zero-copy mmap | Yes | Yes | Yes (`PayloadCache`) |
-| Diagnostics | No | Yes | No | Yes (`DiagnosePayload`) |
-| Delta OTA | No | Yes | Yes (fork) | Partial (broken) |
-| GUI | CLI | TUI | CLI | Desktop GUI (Tauri/React) |
+| Feature             | otaripper      | payload-dumper-rust | Go         | adb-gui-next (ours)       |
+| ------------------- | -------------- | ------------------- | ---------- | ------------------------- |
+| Progress reporting  | Yes            | TUI                 | Yes        | Tauri events + React UI   |
+| Partition filtering | Yes            | Yes                 | Yes        | Yes (selectable table)    |
+| Remote URL          | No             | No                  | No         | Yes (HTTP ranges + ZIP)   |
+| ZIP handling        | Zero-copy mmap | Yes                 | Yes        | Yes (`PayloadCache`)      |
+| Diagnostics         | No             | Yes                 | No         | Yes (`DiagnosePayload`)   |
+| Delta OTA           | No             | Yes                 | Yes (fork) | Partial (broken)          |
+| GUI                 | CLI            | TUI                 | CLI        | Desktop GUI (Tauri/React) |
 
 ---
 
@@ -808,6 +832,7 @@ impl Drop for TransactionGuard {
 ### 5.1 HIGH Priority
 
 #### BUG-001: No Output Image Hash Verification
+
 **What**: We verify the compressed blob hash but NEVER verify the written `.img` file contents. If decompression produces incorrect output, or if a write fails partially, extraction proceeds silently.
 
 **Where**: `extractor.rs:254-255` (hasher initialized), `extractor.rs:350` (hasher=None in stream_copy), `verify.rs` (function exists but unused)
@@ -817,6 +842,7 @@ impl Drop for TransactionGuard {
 **Fix**: After extraction completes, compute SHA-256 of each output file and compare against `new_partition_info.hash` if available in manifest.
 
 #### BUG-002: OPS Output Hash Uses In-Memory Buffer
+
 **What**: `ops/extractor.rs:307-323` hashes the in-memory buffer before writing to disk. If the write fails or sparse unsparsing corrupts data, verification doesn't catch it.
 
 **Where**: `ops/extractor.rs:306-317`
@@ -826,6 +852,7 @@ impl Drop for TransactionGuard {
 **Fix**: After `writer.flush()`, re-read the file from disk and compute SHA-256.
 
 #### BUG-003: `extract_delta_payload` Ignores Source Directory
+
 **What**: `commands/payload.rs:295-304` accepts `source_dir` but never uses it. `extract_payload` is called without source-path awareness. Delta operations require reading source extents.
 
 **Where**: `commands/payload.rs:295-304`, `payload/delta.rs` (unused)
@@ -835,6 +862,7 @@ impl Drop for TransactionGuard {
 **Fix**: Implement source extent reading in `extractor.rs` using the existing `delta.rs` helpers.
 
 #### BUG-004: `try_unsparse` Reads Entire File Into Memory
+
 **What**: `ops/extractor.rs:346` calls `std::fs::read(path)` — loads entire partition into RAM. A 4 GB `super.img` consumes 4 GB RAM.
 
 **Where**: `ops/extractor.rs:345-362`
@@ -846,6 +874,7 @@ impl Drop for TransactionGuard {
 ### 5.2 MEDIUM Priority
 
 #### BUG-005: Manifest Memory Exhaustion DoS
+
 **What**: `parser.rs:47-52` reads `manifest_len` from header and allocates that much memory. A malicious payload could report 10 GB manifest and exhaust memory before bounds check at line 68.
 
 **Where**: `src-tauri/src/payload/parser.rs:47-75`
@@ -855,6 +884,7 @@ impl Drop for TransactionGuard {
 **Fix**: Add explicit manifest size cap (e.g., 100 MB) before allocation.
 
 #### BUG-006: RAW Replace Coalescing Boundary Risk
+
 **What**: Coalescing loop at `extractor.rs:363-388` uses moving `decoded_offset` cursor. Boundary check could underflow with corrupted extent offsets.
 
 **Where**: `extractor.rs:376-388`
@@ -864,6 +894,7 @@ impl Drop for TransactionGuard {
 **Fix**: Use saturating arithmetic consistently.
 
 #### BUG-007: `stream_copy` Hasher Parameter Never Used
+
 **What**: `copy.rs:143-171` hasher parameter is fully implemented but `None` is always passed. Dead code path.
 
 **Where**: `copy.rs:148-169`, `extractor.rs:350`, `remote.rs:680,789`
@@ -875,6 +906,7 @@ impl Drop for TransactionGuard {
 ### 5.3 LOW Priority
 
 #### BUG-008: Dual Parallelism Models
+
 **What**: CrAU uses `rayon::par_iter()`, OPS/OFP uses `thread::scope()`. Different thread pools, inconsistent resource usage.
 
 **Where**: `extractor.rs:160-161` vs `ops/extractor.rs:118`
@@ -888,42 +920,50 @@ impl Drop for TransactionGuard {
 ## 6. Edge Cases Analysis
 
 ### 6.1 Truncated Payloads (HIGH)
+
 **Scenario**: Payload file is truncated mid-stream.
 **Current behavior**: mmap succeeds but data reads may panic or return zeros. `stream_copy` returns `UnexpectedEof`.
 **Gap**: No explicit EOF validation before decompression. Error doesn't distinguish truncation from manifest error.
 **Fix**: Add `raw_data.len() < expected` check with specific message.
 
 ### 6.2 Corrupted Manifests (HIGH)
+
 **Scenario**: Protobuf manifest is corrupt.
 **Current behavior**: `prost::Message::decode` may panic. Negative `data_offset` causes panic at line 263.
 **Fix**: Wrap decode in catch, validate offsets before use.
 
 ### 6.3 Overlapping/Duplicate Extents (MEDIUM)
+
 **Scenario**: Manifest contains extents writing to same block.
 **Current behavior**: Second write silently overwrites first.
 **Fix**: Track written ranges, detect overlaps.
 
 ### 6.4 Zero-Size Operations (MEDIUM)
+
 **Scenario**: Operation with `data_length = 0` and no extents.
 **Current behavior**: Skipped without validation.
 **Fix**: Warn on zero-length non-Zero operations.
 
 ### 6.5 Very Large Partitions (>4 GB) (MEDIUM)
+
 **Scenario**: 32-bit system with large partition.
 **Current behavior**: `file.set_len(size)` with `u64` may overflow `usize`.
 **Fix**: Add `usize::MAX` checks in remap.
 
 ### 6.6 ZIP64 Support (MEDIUM)
+
 **Scenario**: ZIP file exceeds 4 GB.
 **Current behavior**: `http_zip.rs` uses `u32` for offsets.
 **Fix**: Use `u64` consistently, check for ZIP64 extra fields.
 
 ### 6.7 Malformed Sparse Images (MEDIUM — SECURITY)
+
 **Scenario**: Sparse image declares chunk larger than file.
 **Current behavior**: `cursor.read_exact()` hangs or fails.
 **Fix**: Validate `chunk_bytes <= remaining_file_size`.
 
 ### 6.8 Mixed Compression Within Partition (LOW)
+
 **Scenario**: Partition has operations of different compression types.
 **Current behavior**: Single decoder built once, would break.
 **Fix**: Move decoder creation inside per-operation loop.
@@ -934,43 +974,43 @@ impl Drop for TransactionGuard {
 
 ### 7.1 CRITICAL
 
-| Feature | Why It Matters | Where to Implement |
-|---------|---------------|-------------------|
-| Delta/Incremental OTA Support | ~30% of official OTAs are delta | `payload/delta.rs` + `extractor.rs` |
-| Post-Extraction Output Hash Verification | Verify written `.img` integrity | `extractor.rs` post-loop + `verify.rs` |
-| Graceful Cancellation | User can stop extraction mid-way | `CancellationToken` + UI cancel button |
+| Feature                                  | Why It Matters                   | Where to Implement                     |
+| ---------------------------------------- | -------------------------------- | -------------------------------------- |
+| Delta/Incremental OTA Support            | ~30% of official OTAs are delta  | `payload/delta.rs` + `extractor.rs`    |
+| Post-Extraction Output Hash Verification | Verify written `.img` integrity  | `extractor.rs` post-loop + `verify.rs` |
+| Graceful Cancellation                    | User can stop extraction mid-way | `CancellationToken` + UI cancel button |
 
 ### 7.2 HIGH
 
-| Feature | Why It Matters | Where to Implement |
-|---------|---------------|-------------------|
-| Move Operation Type | AOSP standard operation | `extractor.rs` operation match |
-| Per-Operation Byte Progress | Better UX for large partitions | `extractor.rs` progress events |
-| Partition Hash Reporting | User can verify extracted files | `ExtractPayloadResult` |
-| Strict Verification Mode | Verify BOTH compressed and output hash | `extract_payload` parameter |
-| Cancel Button | UI affordance for cancellation | `ActionFooter.tsx` |
+| Feature                     | Why It Matters                         | Where to Implement             |
+| --------------------------- | -------------------------------------- | ------------------------------ |
+| Move Operation Type         | AOSP standard operation                | `extractor.rs` operation match |
+| Per-Operation Byte Progress | Better UX for large partitions         | `extractor.rs` progress events |
+| Partition Hash Reporting    | User can verify extracted files        | `ExtractPayloadResult`         |
+| Strict Verification Mode    | Verify BOTH compressed and output hash | `extract_payload` parameter    |
+| Cancel Button               | UI affordance for cancellation         | `ActionFooter.tsx`             |
 
 ### 7.3 MEDIUM
 
-| Feature | Why It Matters | Where to Implement |
-|---------|---------------|-------------------|
-| True Sparse File Output | Reduce disk space for sparse partitions | `NonTemporalWriter` + platform APIs |
-| Brotli/Puffdiff/Zucchini/Lz4diff | Newer AOSP compression types | `extractor.rs` decompression match |
-| Zero-Copy ZIP Memory Mapping | 2x performance improvement (otaripper v2.3) | `remote.rs` prefetch |
-| AVX-512 SIMD Acceleration | 2x copy throughput | `copy.rs` |
-| Parallel Within Large Partition | Better utilization for single large partition | `extractor.rs` op splitting |
-| Performance Statistics | User-visible throughput metrics | `PerfStats` struct |
+| Feature                          | Why It Matters                                | Where to Implement                  |
+| -------------------------------- | --------------------------------------------- | ----------------------------------- |
+| True Sparse File Output          | Reduce disk space for sparse partitions       | `NonTemporalWriter` + platform APIs |
+| Brotli/Puffdiff/Zucchini/Lz4diff | Newer AOSP compression types                  | `extractor.rs` decompression match  |
+| Zero-Copy ZIP Memory Mapping     | 2x performance improvement (otaripper v2.3)   | `remote.rs` prefetch                |
+| AVX-512 SIMD Acceleration        | 2x copy throughput                            | `copy.rs`                           |
+| Parallel Within Large Partition  | Better utilization for single large partition | `extractor.rs` op splitting         |
+| Performance Statistics           | User-visible throughput metrics               | `PerfStats` struct                  |
 
 ### 7.4 LOW
 
-| Feature | Why It Matters | Where to Implement |
-|---------|---------------|-------------------|
-| Dynamic Partition Group Display | Better UI organization | `PartitionTable.tsx` |
-| Extraction History | Track past extractions | `payloadDumperStore.ts` + localStorage |
-| Partition Comparison Tool | Compare two OTAs | New command + view |
-| Partition Search/Filter | Easier navigation in large payloads | `PartitionTable.tsx` |
-| Preview Partition Type | Know sparse/compressed before extract | `PartitionRow.tsx` |
-| Selective Operation Extraction | Fine-grained control | `extract_payload` parameter |
+| Feature                         | Why It Matters                        | Where to Implement                     |
+| ------------------------------- | ------------------------------------- | -------------------------------------- |
+| Dynamic Partition Group Display | Better UI organization                | `PartitionTable.tsx`                   |
+| Extraction History              | Track past extractions                | `payloadDumperStore.ts` + localStorage |
+| Partition Comparison Tool       | Compare two OTAs                      | New command + view                     |
+| Partition Search/Filter         | Easier navigation in large payloads   | `PartitionTable.tsx`                   |
+| Preview Partition Type          | Know sparse/compressed before extract | `PartitionRow.tsx`                     |
+| Selective Operation Extraction  | Fine-grained control                  | `extract_payload` parameter            |
 
 ---
 
@@ -978,35 +1018,35 @@ impl Drop for TransactionGuard {
 
 ### 8.1 Throughput Comparison
 
-| Implementation | Throughput | Bottleneck |
-|---------------|------------|------------|
-| otaripper (AVX-512) | 2.8 GB/s | Disk I/O |
-| otaripper (AVX2) | 1.9 GB/s | Disk I/O |
-| adb-gui-next (ours) | ~1-2 GB/s | Decompression + SIMD copy |
-| payload-dumper-rust | ~1 GB/s | Async overhead |
-| payload-dumper-go (CGO) | ~1 GB/s | CGO boundary |
-| payload-dumper-go (pure) | ~0.15 GB/s | Pure Go XZ |
+| Implementation           | Throughput | Bottleneck                |
+| ------------------------ | ---------- | ------------------------- |
+| otaripper (AVX-512)      | 2.8 GB/s   | Disk I/O                  |
+| otaripper (AVX2)         | 1.9 GB/s   | Disk I/O                  |
+| adb-gui-next (ours)      | ~1-2 GB/s  | Decompression + SIMD copy |
+| payload-dumper-rust      | ~1 GB/s    | Async overhead            |
+| payload-dumper-go (CGO)  | ~1 GB/s    | CGO boundary              |
+| payload-dumper-go (pure) | ~0.15 GB/s | Pure Go XZ                |
 
 ### 8.2 Performance Factors
 
-| Factor | Impact | Our Status |
-|--------|--------|------------|
-| Storage type | NVMe > SATA > HDD | Depends on user hardware |
-| Compression type | Raw > Zstd > BZ2 > XZ | All supported |
-| CPU SIMD | AVX-512 > AVX2 > SSE2 > Scalar | AVX2 implemented, AVX512 detected but falls back |
-| Parallelism | Partition-level vs operation-level | Partition-level only |
-| Memory model | mmap zero-copy > buffered | Zero-copy (Arc<Mmap>) |
-| Buffer size | 256 KB - 1 MB optimal | 256 KiB (unbenchmarked) |
+| Factor           | Impact                             | Our Status                                       |
+| ---------------- | ---------------------------------- | ------------------------------------------------ |
+| Storage type     | NVMe > SATA > HDD                  | Depends on user hardware                         |
+| Compression type | Raw > Zstd > BZ2 > XZ              | All supported                                    |
+| CPU SIMD         | AVX-512 > AVX2 > SSE2 > Scalar     | AVX2 implemented, AVX512 detected but falls back |
+| Parallelism      | Partition-level vs operation-level | Partition-level only                             |
+| Memory model     | mmap zero-copy > buffered          | Zero-copy (Arc<Mmap>)                            |
+| Buffer size      | 256 KB - 1 MB optimal              | 256 KiB (unbenchmarked)                          |
 
 ### 8.3 Optimization Opportunities
 
-| Optimization | Expected Benefit | Effort | Priority |
-|--------------|-----------------|--------|----------|
-| Zero-copy ZIP mmap (otaripper v2.3) | 2x reduction in SSD writes | High | High |
-| AVX-512 copy implementation | 2x copy throughput | Medium | Medium |
-| Parallel within large partition | Better CPU utilization | High | Medium |
-| Buffer size auto-tuning | Optimal decompression throughput | Low | Low |
-| Async I/O for remote | Pipelined HTTP + decompression | High | Medium |
+| Optimization                        | Expected Benefit                 | Effort | Priority |
+| ----------------------------------- | -------------------------------- | ------ | -------- |
+| Zero-copy ZIP mmap (otaripper v2.3) | 2x reduction in SSD writes       | High   | High     |
+| AVX-512 copy implementation         | 2x copy throughput               | Medium | Medium   |
+| Parallel within large partition     | Better CPU utilization           | High   | Medium   |
+| Buffer size auto-tuning             | Optimal decompression throughput | Low    | Low      |
+| Async I/O for remote                | Pipelined HTTP + decompression   | High   | Medium   |
 
 ---
 
@@ -1014,18 +1054,18 @@ impl Drop for TransactionGuard {
 
 ### 9.1 MEDIUM Priority
 
-| Issue | Description | Location | Fix |
-|-------|-------------|----------|-----|
-| Manifest memory exhaustion | Malicious payload with huge manifest_len | `parser.rs:47-75` | Add 100 MB cap |
-| Integer overflow in MTK parser | `start_offset`/`total_length` unchecked | `ops/ofp_mtk.rs:127-128` | Add `checked_mul` |
-| XML entity expansion | Large entity expansions in OPS XML | `ops_parser.rs:114-183` | Set entity limit |
-| Invalid sparse images | Chunk size exceeds file | `ops/sparse.rs:55-99` | Validate before read |
+| Issue                          | Description                              | Location                 | Fix                  |
+| ------------------------------ | ---------------------------------------- | ------------------------ | -------------------- |
+| Manifest memory exhaustion     | Malicious payload with huge manifest_len | `parser.rs:47-75`        | Add 100 MB cap       |
+| Integer overflow in MTK parser | `start_offset`/`total_length` unchecked  | `ops/ofp_mtk.rs:127-128` | Add `checked_mul`    |
+| XML entity expansion           | Large entity expansions in OPS XML       | `ops_parser.rs:114-183`  | Set entity limit     |
+| Invalid sparse images          | Chunk size exceeds file                  | `ops/sparse.rs:55-99`    | Validate before read |
 
 ### 9.2 LOW Priority
 
-| Issue | Description | Location | Fix |
-|-------|-------------|----------|-----|
-| SSRF IPv6 bypass | Mapped IPv4 in IPv6 literal | `http.rs:49-55` | Test mapped addresses |
+| Issue                       | Description                           | Location                | Fix                           |
+| --------------------------- | ------------------------------------- | ----------------------- | ----------------------------- |
+| SSRF IPv6 bypass            | Mapped IPv4 in IPv6 literal           | `http.rs:49-55`         | Test mapped addresses         |
 | Path traversal double-check | Verify `sanitize_filename` robustness | `ops_parser.rs:289-295` | Add test for `..//etc/passwd` |
 
 ---
@@ -1034,26 +1074,26 @@ impl Drop for TransactionGuard {
 
 ### 10.1 HIGH Priority
 
-| Gap | Why It Matters | Fix |
-|-----|---------------|-----|
-| No real payload fixtures | Can't test real-world extraction | Add sample payload.bin files |
-| No end-to-end extraction tests | Integration gaps | Write tests extracting known outputs |
+| Gap                            | Why It Matters                   | Fix                                  |
+| ------------------------------ | -------------------------------- | ------------------------------------ |
+| No real payload fixtures       | Can't test real-world extraction | Add sample payload.bin files         |
+| No end-to-end extraction tests | Integration gaps                 | Write tests extracting known outputs |
 
 ### 10.2 MEDIUM Priority
 
-| Gap | Why It Matters | Fix |
-|-----|---------------|-----|
-| No property-based tests | Random operation sequences | Use `proptest` |
-| No fuzzing | Malformed payload crashes | Use `cargo-fuzz` |
-| Missing edge case tests | Empty partitions, overlapping extents, truncated streams | Add synthetic manifest tests |
-| No OPS/OFP integration tests | Full pipeline untested | Add sample OPS/OFP files |
+| Gap                          | Why It Matters                                           | Fix                          |
+| ---------------------------- | -------------------------------------------------------- | ---------------------------- |
+| No property-based tests      | Random operation sequences                               | Use `proptest`               |
+| No fuzzing                   | Malformed payload crashes                                | Use `cargo-fuzz`             |
+| Missing edge case tests      | Empty partitions, overlapping extents, truncated streams | Add synthetic manifest tests |
+| No OPS/OFP integration tests | Full pipeline untested                                   | Add sample OPS/OFP files     |
 
 ### 10.3 LOW Priority
 
-| Gap | Why It Matters | Fix |
-|-----|---------------|-----|
-| No benchmark suite | Can't measure optimizations | Add `criterion` benchmarks |
-| No performance regression tests | Unknown performance impact of changes | Add CI benchmarks |
+| Gap                             | Why It Matters                        | Fix                        |
+| ------------------------------- | ------------------------------------- | -------------------------- |
+| No benchmark suite              | Can't measure optimizations           | Add `criterion` benchmarks |
+| No performance regression tests | Unknown performance impact of changes | Add CI benchmarks          |
 
 ---
 
@@ -1158,7 +1198,7 @@ while ei + 1 < extents.len() {
     let next = &extents[ei + 1];
     let next_start = next.start_block.unwrap_or_default() * block_size as u64;
     let next_size = next.num_blocks.unwrap_or_default() as usize * block_size as usize;
-    
+
     // Must be contiguous in BOTH destination and source
     if next_start == coal_pos && decoded_offset + coal_size + next_size <= raw_data.len() {
         coal_size += next_size;
@@ -1172,19 +1212,19 @@ while ei + 1 < extents.len() {
 
 ## Document Metadata
 
-| Field | Value |
-|-------|-------|
-| **Report Version** | 1.0 |
-| **Date** | 2026-05-10 |
-| **Analyst** | OpenCode Multi-Agent System |
-| **Subagents Used** | 10 parallel research agents |
-| **Files Analyzed** | 24 Rust source files, 10 React components |
-| **Reference Repos** | otaripper, payload-dumper-rust, Payload-Dumper-Android |
-| **Bugs Found** | 8 (3 HIGH, 4 MEDIUM, 1 LOW) |
-| **Edge Cases** | 8 identified |
-| **Missing Features** | 20+ identified |
-| **Recommendations** | 20 prioritized |
+| Field                | Value                                                  |
+| -------------------- | ------------------------------------------------------ |
+| **Report Version**   | 1.0                                                    |
+| **Date**             | 2026-05-10                                             |
+| **Analyst**          | OpenCode Multi-Agent System                            |
+| **Subagents Used**   | 10 parallel research agents                            |
+| **Files Analyzed**   | 24 Rust source files, 10 React components              |
+| **Reference Repos**  | otaripper, payload-dumper-rust, Payload-Dumper-Android |
+| **Bugs Found**       | 8 (3 HIGH, 4 MEDIUM, 1 LOW)                            |
+| **Edge Cases**       | 8 identified                                           |
+| **Missing Features** | 20+ identified                                         |
+| **Recommendations**  | 20 prioritized                                         |
 
 ---
 
-*End of Report*
+_End of Report_

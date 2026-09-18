@@ -8,12 +8,12 @@
 
 The Utilities page functions correctly — commands execute, logs record, toasts appear. But the **on-button UX feedback is nearly invisible**:
 
-| Action | What the user sees now | What the user expects |
-|--------|----------------------|----------------------|
-| Click "Reboot System" | Button briefly disabled → toast in corner → button back to idle | Press feedback → button shows "command sent" → confirmation |
-| Click "Restart ADB Server" | Spinner on button → toast appears | ✅ Good — but inconsistent with power buttons |
-| Click "Set Active Slot A" | Spinner on button → toast | ✅ Good |
-| Click "Reboot" while no device connected | Button greyed, no explanation | Tooltip explaining "No ADB device connected" |
+| Action                                   | What the user sees now                                          | What the user expects                                       |
+| ---------------------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| Click "Reboot System"                    | Button briefly disabled → toast in corner → button back to idle | Press feedback → button shows "command sent" → confirmation |
+| Click "Restart ADB Server"               | Spinner on button → toast appears                               | ✅ Good — but inconsistent with power buttons               |
+| Click "Set Active Slot A"                | Spinner on button → toast                                       | ✅ Good                                                     |
+| Click "Reboot" while no device connected | Button greyed, no explanation                                   | Tooltip explaining "No ADB device connected"                |
 
 ### Root Cause Analysis
 
@@ -33,25 +33,25 @@ The Utilities page functions correctly — commands execute, logs record, toasts
 
 These guide every decision below:
 
-| Principle | Implication |
-|-----------|-------------|
-| **Lightweight** | CSS + existing `framer-motion` v12 only — zero new dependencies |
-| **Fast** | All animations ≤ 300ms — nothing should feel sluggish |
-| **Consistent** | Match existing patterns (DropZone glow, destructive button glow, LoadingButton spinner) |
-| **Functional** | Every animation communicates state — no decoration-only effects |
-| **Accessible** | Respect `prefers-reduced-motion`; `framer-motion` handles this via `MotionConfig` |
+| Principle       | Implication                                                                             |
+| --------------- | --------------------------------------------------------------------------------------- |
+| **Lightweight** | CSS + existing `framer-motion` v12 only — zero new dependencies                         |
+| **Fast**        | All animations ≤ 300ms — nothing should feel sluggish                                   |
+| **Consistent**  | Match existing patterns (DropZone glow, destructive button glow, LoadingButton spinner) |
+| **Functional**  | Every animation communicates state — no decoration-only effects                         |
+| **Accessible**  | Respect `prefers-reduced-motion`; `framer-motion` handles this via `MotionConfig`       |
 
 ---
 
 ## 3. Available Tools (Already Installed)
 
-| Tool | Version | Used For |
-|------|---------|----------|
-| `framer-motion` | 12.38.0 | `whileTap`, `AnimatePresence`, icon transitions |
-| `tw-animate-css` | 1.4.0 | `animate-in`, `fade-in`, `zoom-in-95` utilities |
-| `sonner` | 2.0.7 | `toast.promise`, `toast.loading` → `toast.success` |
-| Tailwind CSS | 4.2.2 | `active:scale`, `transition-*`, `duration-*` |
-| `lucide-react` | 1.7.0 | `Check`, `Loader2`, existing icons |
+| Tool             | Version | Used For                                           |
+| ---------------- | ------- | -------------------------------------------------- |
+| `framer-motion`  | 12.38.0 | `whileTap`, `AnimatePresence`, icon transitions    |
+| `tw-animate-css` | 1.4.0   | `animate-in`, `fade-in`, `zoom-in-95` utilities    |
+| `sonner`         | 2.0.7   | `toast.promise`, `toast.loading` → `toast.success` |
+| Tailwind CSS     | 4.2.2   | `active:scale`, `transition-*`, `duration-*`       |
+| `lucide-react`   | 1.7.0   | `Check`, `Loader2`, existing icons                 |
 
 **No new packages needed.**
 
@@ -123,7 +123,9 @@ const handleReboot = async (mode: string, modeId: RebootMode) => {
   setLoadingAction(modeId);
   try {
     await Reboot(mode);
-    useLogStore.getState().addLog(`Rebooting to ${modeId || 'system'}...`, 'info');
+    useLogStore
+      .getState()
+      .addLog(`Rebooting to ${modeId || "system"}...`, "info");
     toast.info(`Rebooting device...`);
     // Show "sent" state for 2 seconds
     setSentAction(modeId);
@@ -140,24 +142,42 @@ const handleReboot = async (mode: string, modeId: RebootMode) => {
 
 ```tsx
 // idle → loading → sent (with AnimatePresence for smooth icon transitions)
-<Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 ...">
+<Button
+  variant="outline"
+  className="h-20 flex flex-col items-center justify-center gap-2 ..."
+>
   <AnimatePresence mode="wait">
-    {sentAction === 'system' ? (
-      <motion.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 25 }}>
+    {sentAction === "system" ? (
+      <motion.div
+        key="check"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+      >
         <Check className="h-5 w-5 text-success" />
       </motion.div>
-    ) : isActionLoading('system') ? (
-      <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    ) : isActionLoading("system") ? (
+      <motion.div
+        key="spin"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <Loader2 className="h-5 w-5 animate-spin" />
       </motion.div>
     ) : (
-      <motion.div key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div
+        key="icon"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
         <Power className="h-5 w-5" />
       </motion.div>
     )}
   </AnimatePresence>
-  {sentAction === 'system' ? 'Sent!' : 'Reboot System'}
+  {sentAction === "system" ? "Sent!" : "Reboot System"}
 </Button>
 ```
 
@@ -228,13 +248,18 @@ const handleReboot = async (mode: string, modeId: RebootMode) => {
   const toastId = toast.loading(`Sending reboot command...`);
   try {
     await Reboot(mode);
-    toast.success(`Reboot to ${modeId || 'system'} initiated`, { id: toastId });
-    useLogStore.getState().addLog(`Rebooting to ${modeId || 'system'}...`, 'info');
+    toast.success(`Reboot to ${modeId || "system"} initiated`, { id: toastId });
+    useLogStore
+      .getState()
+      .addLog(`Rebooting to ${modeId || "system"}...`, "info");
     setSentAction(modeId);
     setTimeout(() => setSentAction(null), 2000);
   } catch (error) {
-    toast.error('Reboot command failed', { id: toastId, description: String(error) });
-    useLogStore.getState().addLog(`Reboot failed: ${error}`, 'error');
+    toast.error("Reboot command failed", {
+      id: toastId,
+      description: String(error),
+    });
+    useLogStore.getState().addLog(`Reboot failed: ${error}`, "error");
   }
   setLoadingAction(null);
   void refetchDevices();
@@ -257,14 +282,14 @@ interface ActionButtonProps {
   actionId: string;
   icon: LucideIcon;
   label: string;
-  sentLabel?: string;   // defaults to "Sent!"
+  sentLabel?: string; // defaults to "Sent!"
   loadingAction: string | null;
   sentAction: string | null;
   onClick: () => void;
   disabled?: boolean;
-  disabledReason?: string;  // tooltip text
-  variant?: 'outline' | 'secondary' | 'destructive';
-  tall?: boolean;       // h-20 for power buttons, default h-9 for inline
+  disabledReason?: string; // tooltip text
+  variant?: "outline" | "secondary" | "destructive";
+  tall?: boolean; // h-20 for power buttons, default h-9 for inline
   className?: string;
 }
 ```
@@ -278,15 +303,15 @@ This keeps the ViewUtilities file clean and makes the pattern reusable for ViewF
 
 ## 5. Implementation Order
 
-| Step | Change | Estimated Effort | Files Changed |
-|------|--------|-----------------|---------------|
-| **1** | Press feedback (CSS `active:scale`) | 5 min | `ViewUtilities.tsx` |
-| **2** | Consistent Loader2 on power buttons | 10 min | `ViewUtilities.tsx` |
-| **3** | Extract `ActionButton` component | 25 min | New: `ActionButton.tsx`, `ViewUtilities.tsx` |
-| **4** | "Command Sent" state + AnimatePresence icon | 30 min | `ActionButton.tsx`, `ViewUtilities.tsx` |
-| **5** | Success border glow | 5 min | `ActionButton.tsx` |
-| **6** | Disabled tooltips | 15 min | `ActionButton.tsx` |
-| **7** | Upgrade toast patterns | 5 min | `ViewUtilities.tsx` |
+| Step  | Change                                      | Estimated Effort | Files Changed                                |
+| ----- | ------------------------------------------- | ---------------- | -------------------------------------------- |
+| **1** | Press feedback (CSS `active:scale`)         | 5 min            | `ViewUtilities.tsx`                          |
+| **2** | Consistent Loader2 on power buttons         | 10 min           | `ViewUtilities.tsx`                          |
+| **3** | Extract `ActionButton` component            | 25 min           | New: `ActionButton.tsx`, `ViewUtilities.tsx` |
+| **4** | "Command Sent" state + AnimatePresence icon | 30 min           | `ActionButton.tsx`, `ViewUtilities.tsx`      |
+| **5** | Success border glow                         | 5 min            | `ActionButton.tsx`                           |
+| **6** | Disabled tooltips                           | 15 min           | `ActionButton.tsx`                           |
+| **7** | Upgrade toast patterns                      | 5 min            | `ViewUtilities.tsx`                          |
 
 **Total: ~1.5 hours**
 
@@ -322,13 +347,13 @@ Every action button in the Utilities view will have this 4-state lifecycle:
 
 ### Visual Summary Per State
 
-| State | Icon | Label | Border | Background | Effect |
-|-------|------|-------|--------|------------|--------|
-| **Idle** | Original (Power/Zap/etc) | Original text | Default | Default | Hover lift |
-| **Loading** | `Loader2 animate-spin` | Original text | Default | Default | Disabled |
-| **Sent** | `Check text-success` | "Sent!" | `ring-success/50` | Default | Green glow 2s |
-| **Error** | Original | Original text | Default | Default | Toast shows error |
-| **Disabled** | Original (dimmed) | Original text | Default | Default | Tooltip on hover |
+| State        | Icon                     | Label         | Border            | Background | Effect            |
+| ------------ | ------------------------ | ------------- | ----------------- | ---------- | ----------------- |
+| **Idle**     | Original (Power/Zap/etc) | Original text | Default           | Default    | Hover lift        |
+| **Loading**  | `Loader2 animate-spin`   | Original text | Default           | Default    | Disabled          |
+| **Sent**     | `Check text-success`     | "Sent!"       | `ring-success/50` | Default    | Green glow 2s     |
+| **Error**    | Original                 | Original text | Default           | Default    | Toast shows error |
+| **Disabled** | Original (dimmed)        | Original text | Default           | Default    | Tooltip on hover  |
 
 ---
 
@@ -336,32 +361,32 @@ Every action button in the Utilities view will have this 4-state lifecycle:
 
 These changes maintain full alignment with existing project patterns:
 
-| Existing Pattern | Where Used Now | How Utilities Aligns |
-|-----------------|----------------|---------------------|
-| `Loader2 animate-spin` for loading | Server Control, Flasher, AppManager | ✅ Added to all power buttons |
-| `toast.loading → toast.success(id)` | `handleRestartServer`, Flasher | ✅ Applied to `handleReboot` |
-| `active:scale` press effect | None explicitly, but standard Tailwind | ✅ Added as `active:scale-[0.97]` |
-| `AnimatePresence` | MainLayout view transitions | ✅ Used for icon state transitions |
-| `cn()` conditional classes | Universal | ✅ Used for success glow ring |
-| `buttonVariants` shadow glow | Destructive buttons | ✅ Success variant uses same `color-mix` pattern |
-| `Tooltip` on buttons | All icon buttons per system patterns | ✅ Added for disabled state context |
-| `handleError` utility | Flasher, AppManager | ✅ Can adopt in error paths |
-| `SectionHeader` component | Already used in Utilities | ✅ No change needed |
-| `LoadingButton` component | Not used in Utilities | ⚠️ `ActionButton` is more purpose-built for fire-and-forget commands with sent state |
+| Existing Pattern                    | Where Used Now                         | How Utilities Aligns                                                                 |
+| ----------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
+| `Loader2 animate-spin` for loading  | Server Control, Flasher, AppManager    | ✅ Added to all power buttons                                                        |
+| `toast.loading → toast.success(id)` | `handleRestartServer`, Flasher         | ✅ Applied to `handleReboot`                                                         |
+| `active:scale` press effect         | None explicitly, but standard Tailwind | ✅ Added as `active:scale-[0.97]`                                                    |
+| `AnimatePresence`                   | MainLayout view transitions            | ✅ Used for icon state transitions                                                   |
+| `cn()` conditional classes          | Universal                              | ✅ Used for success glow ring                                                        |
+| `buttonVariants` shadow glow        | Destructive buttons                    | ✅ Success variant uses same `color-mix` pattern                                     |
+| `Tooltip` on buttons                | All icon buttons per system patterns   | ✅ Added for disabled state context                                                  |
+| `handleError` utility               | Flasher, AppManager                    | ✅ Can adopt in error paths                                                          |
+| `SectionHeader` component           | Already used in Utilities              | ✅ No change needed                                                                  |
+| `LoadingButton` component           | Not used in Utilities                  | ⚠️ `ActionButton` is more purpose-built for fire-and-forget commands with sent state |
 
 ---
 
 ## 8. What NOT to Do
 
-| Anti-Pattern | Why |
-|-------------|-----|
-| ❌ CSS `@keyframes` for button pulse loops | Distracting, battery-wasting, decorative-only |
-| ❌ `canvas-confetti` on success | Way too heavy for a utility command |
-| ❌ Full-page transition overlay | Overkill — toast + button state is enough |
-| ❌ Sound effects | Desktop app — unexpected and annoying |
-| ❌ Skeleton loading states | Commands return instantly — no content to skeleton |
-| ❌ New npm package for animations | `framer-motion` already handles everything |
-| ❌ Per-view `animate-in` classes | Violates system pattern — MainLayout's `motion.div` handles view transitions |
+| Anti-Pattern                               | Why                                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| ❌ CSS `@keyframes` for button pulse loops | Distracting, battery-wasting, decorative-only                                |
+| ❌ `canvas-confetti` on success            | Way too heavy for a utility command                                          |
+| ❌ Full-page transition overlay            | Overkill — toast + button state is enough                                    |
+| ❌ Sound effects                           | Desktop app — unexpected and annoying                                        |
+| ❌ Skeleton loading states                 | Commands return instantly — no content to skeleton                           |
+| ❌ New npm package for animations          | `framer-motion` already handles everything                                   |
+| ❌ Per-view `animate-in` classes           | Violates system pattern — MainLayout's `motion.div` handles view transitions |
 
 ---
 
@@ -371,7 +396,9 @@ These changes maintain full alignment with existing project patterns:
 - For CSS-only animations (`active:scale`, `transition-*`), add a media query if needed:
   ```css
   @media (prefers-reduced-motion: reduce) {
-    .active\:scale-\[0\.97\]:active { transform: none; }
+    .active\:scale-\[0\.97\]:active {
+      transform: none;
+    }
   }
   ```
 - Disabled button tooltips use `<span tabIndex={0}>` wrapper for keyboard accessibility
@@ -381,10 +408,10 @@ These changes maintain full alignment with existing project patterns:
 
 ## 10. File Change Summary
 
-| File | Change Type | Description |
-|------|------------|-------------|
-| `src/components/ActionButton.tsx` | **NEW** | Reusable 4-state button with press/loading/sent/disabled |
-| `src/components/views/ViewUtilities.tsx` | **MODIFY** | Use `ActionButton`, add `sentAction` state, upgrade toast patterns |
-| `src/styles/global.css` | **OPTIONAL** | `prefers-reduced-motion` fallback if desired |
+| File                                     | Change Type  | Description                                                        |
+| ---------------------------------------- | ------------ | ------------------------------------------------------------------ |
+| `src/components/ActionButton.tsx`        | **NEW**      | Reusable 4-state button with press/loading/sent/disabled           |
+| `src/components/views/ViewUtilities.tsx` | **MODIFY**   | Use `ActionButton`, add `sentAction` state, upgrade toast patterns |
+| `src/styles/global.css`                  | **OPTIONAL** | `prefers-reduced-motion` fallback if desired                       |
 
 **Zero new dependencies. Zero new npm packages.**

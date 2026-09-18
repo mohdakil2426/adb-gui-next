@@ -6,17 +6,17 @@
 
 The current sidebar is a **custom-built `<aside>` element** (~150 lines of JSX) with:
 
-| Feature | Current Implementation | Problem |
-|---------|----------------------|---------|
-| **Container** | Raw `<aside>` with manual Tailwind | No semantic sidebar structure, no accessibility attributes |
-| **Collapse** | `useState(isCollapsed)` + manual width toggle | Re-invents what shadcn `Sidebar` does natively with `collapsible="icon"` |
-| **Active indicator** | Framer Motion `layoutId="activeIndicator"` | Over-engineered — shadcn `SidebarMenuButton isActive` handles this with CSS data attributes |
-| **Tooltips** | Manual `<Tooltip>` wrapping each nav item | shadcn `SidebarMenuButton tooltip={label}` does this automatically in icon mode |
-| **Collapse toggle** | Floating circular button (`absolute -right-4`) | Looks custom/hacky — shadcn provides `<SidebarTrigger>` and `<SidebarRail>` |
-| **Header** | Custom logo + title + theme toggle | Good content, but wrapped in manual positioning divs |
-| **Footer** | None | Missing — no quick actions, version info, or utility buttons at bottom |
-| **Keyboard shortcut** | None for sidebar | shadcn provides `Ctrl+B` toggle out of the box |
-| **Mobile support** | None | shadcn `Sidebar` includes mobile sheet/drawer automatically |
+| Feature               | Current Implementation                         | Problem                                                                                     |
+| --------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Container**         | Raw `<aside>` with manual Tailwind             | No semantic sidebar structure, no accessibility attributes                                  |
+| **Collapse**          | `useState(isCollapsed)` + manual width toggle  | Re-invents what shadcn `Sidebar` does natively with `collapsible="icon"`                    |
+| **Active indicator**  | Framer Motion `layoutId="activeIndicator"`     | Over-engineered — shadcn `SidebarMenuButton isActive` handles this with CSS data attributes |
+| **Tooltips**          | Manual `<Tooltip>` wrapping each nav item      | shadcn `SidebarMenuButton tooltip={label}` does this automatically in icon mode             |
+| **Collapse toggle**   | Floating circular button (`absolute -right-4`) | Looks custom/hacky — shadcn provides `<SidebarTrigger>` and `<SidebarRail>`                 |
+| **Header**            | Custom logo + title + theme toggle             | Good content, but wrapped in manual positioning divs                                        |
+| **Footer**            | None                                           | Missing — no quick actions, version info, or utility buttons at bottom                      |
+| **Keyboard shortcut** | None for sidebar                               | shadcn provides `Ctrl+B` toggle out of the box                                              |
+| **Mobile support**    | None                                           | shadcn `Sidebar` includes mobile sheet/drawer automatically                                 |
 
 ### Key Pain Points
 
@@ -34,6 +34,7 @@ The current sidebar is a **custom-built `<aside>` element** (~150 lines of JSX) 
 ### Best Matching Block: **`sidebar-07`** (collapses to icons)
 
 This is the **perfect match** for your use case because:
+
 - ✅ Desktop app with icon-based collapsed state (not off-canvas)
 - ✅ Tooltip labels when collapsed
 - ✅ SidebarRail for drag-to-resize edge
@@ -81,6 +82,7 @@ npx shadcn@latest add sidebar
 ```
 
 This installs `sidebar.tsx` in `src/components/ui/` with all sub-components:
+
 - `SidebarProvider`, `Sidebar`, `SidebarTrigger`, `SidebarRail`
 - `SidebarHeader`, `SidebarContent`, `SidebarFooter`
 - `SidebarGroup`, `SidebarGroupLabel`, `SidebarGroupContent`
@@ -89,6 +91,7 @@ This installs `sidebar.tsx` in `src/components/ui/` with all sub-components:
 - `useSidebar` hook
 
 Also need `collapsible` if not already installed:
+
 ```bash
 npx shadcn@latest add collapsible
 ```
@@ -99,47 +102,61 @@ New file: `src/components/AppSidebar.tsx`
 
 ```tsx
 import {
-  LayoutDashboard, Box, FolderOpen, Terminal,
-  Settings, Info, Package,
-} from 'lucide-react';
+  LayoutDashboard,
+  Box,
+  FolderOpen,
+  Terminal,
+  Settings,
+  Info,
+  Package,
+} from "lucide-react";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarHeader,
-  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarGroup, SidebarGroupLabel, SidebarGroupContent,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarRail,
-} from '@/components/ui/sidebar';
-import { ThemeToggle } from './ThemeToggle';
+} from "@/components/ui/sidebar";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Grouped navigation for professional look
 const NAV_GROUPS = [
   {
-    label: 'Main',
+    label: "Main",
     items: [
-      { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { id: 'apps',      icon: Box,             label: 'Applications' },
-      { id: 'files',     icon: FolderOpen,       label: 'File Explorer' },
+      { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { id: "apps", icon: Box, label: "Applications" },
+      { id: "files", icon: FolderOpen, label: "File Explorer" },
     ],
   },
   {
-    label: 'Advanced',
+    label: "Advanced",
     items: [
-      { id: 'flasher',  icon: Terminal, label: 'Flasher' },
-      { id: 'utils',    icon: Settings, label: 'Utilities' },
-      { id: 'payload',  icon: Package,  label: 'Payload Dumper' },
+      { id: "flasher", icon: Terminal, label: "Flasher" },
+      { id: "utils", icon: Settings, label: "Utilities" },
+      { id: "payload", icon: Package, label: "Payload Dumper" },
     ],
   },
 ];
 
-const FOOTER_ITEMS = [
-  { id: 'about', icon: Info, label: 'About' },
-];
+const FOOTER_ITEMS = [{ id: "about", icon: Info, label: "About" }];
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeView: string;
   onViewChange: (view: string) => void;
 }
 
-export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarProps) {
+export function AppSidebar({
+  activeView,
+  onViewChange,
+  ...props
+}: AppSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -147,11 +164,17 @@ export function AppSidebar({ activeView, onViewChange, ...props }: AppSidebarPro
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" className="pointer-events-none">
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <img src="/logo.png" alt="Logo" className="size-5 object-contain" />
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="size-5 object-contain"
+                />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">ADB GUI Next</span>
-                <span className="truncate text-xs text-muted-foreground">Desktop Toolkit</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  Desktop Toolkit
+                </span>
               </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -256,17 +279,18 @@ export function MainLayout() {
 
 Instead of a flat list of 7 items, group them semantically:
 
-| Group | Items | Why |
-|-------|-------|-----|
-| **Main** | Dashboard, Applications, File Explorer | Daily-use features |
-| **Advanced** | Flasher, Utilities, Payload Dumper | Power-user features |
-| **Footer** | About, Theme Toggle | Utility items pinned to bottom |
+| Group        | Items                                  | Why                            |
+| ------------ | -------------------------------------- | ------------------------------ |
+| **Main**     | Dashboard, Applications, File Explorer | Daily-use features             |
+| **Advanced** | Flasher, Utilities, Payload Dumper     | Power-user features            |
+| **Footer**   | About, Theme Toggle                    | Utility items pinned to bottom |
 
 This is a **huge UX win** — separates beginner and advanced workflows visually.
 
 ### 2. SidebarRail for Drag-to-Collapse
 
 Replace the floating circle button with `<SidebarRail />`:
+
 - Invisible drag edge on the sidebar border
 - Click or drag to toggle collapse
 - Professional look (VS Code, JetBrains style)
@@ -279,6 +303,7 @@ shadcn sidebar has this **built-in**. Zero extra code. Users expect this from de
 ### 4. Sticky Header with `SidebarTrigger`
 
 Add a thin header bar above content with:
+
 - `SidebarTrigger` (hamburger icon) — alternative collapse trigger
 - Current view title (breadcrumb or plain text)
 - Toolbar buttons (Device Manager, Terminal, Shell, Logs) — **move from floating absolute position to this header**
@@ -299,6 +324,7 @@ This produces `data-[active=true]:bg-sidebar-accent` automatically — no animat
 ### 6. Collapsible Icon Mode Behavior
 
 When collapsed (`collapsible="icon"`):
+
 - Only icons visible
 - Hovering shows tooltip with label (automatic via `tooltip` prop)
 - Group labels hidden via `group-data-[collapsible=icon]:hidden`
@@ -313,33 +339,34 @@ Show app version `v0.1.0` under the logo text. When collapsed, hidden. Small det
 
 ## 🔄 What Gets Removed
 
-| Removed Code | Replacement |
-|--------------|-------------|
-| `useState(isCollapsed)` + manual width | `SidebarProvider` manages state automatically |
-| Floating collapse button (absolute -right-4) | `SidebarRail` + `SidebarTrigger` |
-| Manual `<Tooltip>` wrapping per nav item | `SidebarMenuButton tooltip={label}` |
-| Framer Motion `layoutId="activeIndicator"` | `SidebarMenuButton isActive` CSS data attribute |
-| Custom gradient hover effects | `SidebarMenuButton` built-in hover states |
-| Custom width animation CSS | `--sidebar-width` / `--sidebar-collapsed-width` (already in global.css!) |
-| ~150 lines of sidebar JSX in MainLayout | `<AppSidebar />` single component reference |
+| Removed Code                                 | Replacement                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------ |
+| `useState(isCollapsed)` + manual width       | `SidebarProvider` manages state automatically                            |
+| Floating collapse button (absolute -right-4) | `SidebarRail` + `SidebarTrigger`                                         |
+| Manual `<Tooltip>` wrapping per nav item     | `SidebarMenuButton tooltip={label}`                                      |
+| Framer Motion `layoutId="activeIndicator"`   | `SidebarMenuButton isActive` CSS data attribute                          |
+| Custom gradient hover effects                | `SidebarMenuButton` built-in hover states                                |
+| Custom width animation CSS                   | `--sidebar-width` / `--sidebar-collapsed-width` (already in global.css!) |
+| ~150 lines of sidebar JSX in MainLayout      | `<AppSidebar />` single component reference                              |
 
 ---
 
 ## 📋 Files Changed
 
-| File | Action |
-|------|--------|
-| `src/components/ui/sidebar.tsx` | **NEW** — installed via `npx shadcn@latest add sidebar` |
-| `src/components/ui/collapsible.tsx` | **NEW** — dependency of sidebar |
-| `src/components/AppSidebar.tsx` | **NEW** — extracted sidebar component |
-| `src/components/MainLayout.tsx` | **MODIFIED** — simplified to use SidebarProvider/SidebarInset |
-| `src/styles/global.css` | **NO CHANGE** — already has all `--sidebar-*` tokens! |
+| File                                | Action                                                        |
+| ----------------------------------- | ------------------------------------------------------------- |
+| `src/components/ui/sidebar.tsx`     | **NEW** — installed via `npx shadcn@latest add sidebar`       |
+| `src/components/ui/collapsible.tsx` | **NEW** — dependency of sidebar                               |
+| `src/components/AppSidebar.tsx`     | **NEW** — extracted sidebar component                         |
+| `src/components/MainLayout.tsx`     | **MODIFIED** — simplified to use SidebarProvider/SidebarInset |
+| `src/styles/global.css`             | **NO CHANGE** — already has all `--sidebar-*` tokens!         |
 
 ---
 
 ## 🎨 Visual Comparison
 
 ### Before (Current)
+
 - Flat list of 7 items, no visual grouping
 - Custom floating collapse button overlapping content
 - Logo area takes ~80px height
@@ -349,6 +376,7 @@ Show app version `v0.1.0` under the logo text. When collapsed, hidden. Small det
 - Toolbar buttons float with `position: absolute` over content
 
 ### After (shadcn Sidebar)
+
 - **Grouped navigation** (Main / Advanced) with labels
 - **SidebarRail** — invisible edge for toggling, no visual clutter
 - **Compact header** with logo icon + text (auto-shrinks in icon mode)
@@ -363,6 +391,7 @@ Show app version `v0.1.0` under the logo text. When collapsed, hidden. Small det
 ## ⚠️ Migration Notes
 
 > [!WARNING]
+>
 > - Remove `'use client'` from copied shadcn examples (this is Vite/Tauri, not Next.js)
 > - The sidebar component uses `@radix-ui/react-slot` — already in your deps via existing shadcn components
 > - `class-variance-authority` is a new dependency (used by sidebar internally)
@@ -375,14 +404,14 @@ Show app version `v0.1.0` under the logo text. When collapsed, hidden. Small det
 
 ## 🏁 Summary
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Sidebar LOC in MainLayout | ~150 lines | ~5 lines (`<AppSidebar />`) |
-| Total MainLayout LOC | 426 lines | ~200 lines |
-| Accessibility | None | Full ARIA, keyboard nav |
-| Collapse mechanism | Custom useState + width | `SidebarProvider` + `collapsible="icon"` |
-| Tooltip handling | Manual per item | Automatic via `tooltip` prop |
-| Nav grouping | Flat list | Grouped (Main / Advanced) |
-| Keyboard shortcut | None | `Ctrl+B` built-in |
-| Mobile support | None | Automatic sheet/drawer |
-| Dependencies added | 0 | `class-variance-authority`, `@radix-ui/react-slot` (may already exist) |
+| Metric                    | Before                  | After                                                                  |
+| ------------------------- | ----------------------- | ---------------------------------------------------------------------- |
+| Sidebar LOC in MainLayout | ~150 lines              | ~5 lines (`<AppSidebar />`)                                            |
+| Total MainLayout LOC      | 426 lines               | ~200 lines                                                             |
+| Accessibility             | None                    | Full ARIA, keyboard nav                                                |
+| Collapse mechanism        | Custom useState + width | `SidebarProvider` + `collapsible="icon"`                               |
+| Tooltip handling          | Manual per item         | Automatic via `tooltip` prop                                           |
+| Nav grouping              | Flat list               | Grouped (Main / Advanced)                                              |
+| Keyboard shortcut         | None                    | `Ctrl+B` built-in                                                      |
+| Mobile support            | None                    | Automatic sheet/drawer                                                 |
+| Dependencies added        | 0                       | `class-variance-authority`, `@radix-ui/react-slot` (may already exist) |

@@ -19,17 +19,17 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 
 | Feature              | Description                                                                        |
 | -------------------- | ---------------------------------------------------------------------------------- |
-| **Dashboard**        | Live telemetry — identity, battery, memory, storage, network, extra build facts |
-| **App Manager**      | Install/uninstall APK/APKS; cached launcher icons for visible rows              |
-| **Debloater**        | Universal Android Debloater (UAD) — safety tiers, backups, restore              |
+| **Dashboard**        | Live telemetry — identity, battery, memory, storage, network, extra build facts    |
+| **App Manager**      | Install/uninstall APK/APKS; cached launcher icons for visible rows                 |
+| **Debloater**        | Universal Android Debloater (UAD) — safety tiers, backups, restore                 |
 | **File Explorer**    | Browse (including hidden names), push/pull, host drop-in, in-app move, host editor |
-| **Flasher**          | Fastboot flash, recovery sideload, wipe, A/B slots                              |
-| **Utilities**        | Power menus, ADB server control, bootloader vars, logcat snapshot               |
-| **Scrcpy**           | Official binary download + native mirror window for the selected serial         |
-| **Payload Dumper**   | Extract partitions from OTA `payload.bin`, ZIP, OPS, and OFP files              |
-| **Marketplace**      | F-Droid, GitHub (all APK releases + README), Aptoide — install via Rust         |
-| **Emulator Manager** | List, launch, stop AVDs with Magisk root wizard                                 |
-| **Shell + Logs**     | Interactive adb/fastboot shell and a filterable log panel                       |
+| **Flasher**          | Fastboot flash, recovery sideload, wipe, A/B slots                                 |
+| **Utilities**        | Power menus, ADB server control, bootloader vars, logcat snapshot                  |
+| **Scrcpy**           | Official binary download + native mirror window for the selected serial            |
+| **Payload Dumper**   | Extract partitions from OTA `payload.bin`, ZIP, OPS, and OFP files                 |
+| **Marketplace**      | F-Droid, GitHub (all APK releases + README), Aptoide — install via Rust            |
+| **Emulator Manager** | List, launch, stop AVDs with Magisk root wizard                                    |
+| **Shell + Logs**     | Interactive adb/fastboot shell and a filterable log panel                          |
 
 ### Highlights
 
@@ -357,32 +357,32 @@ High-level system design, layer boundaries, feature map, IPC conventions, and di
 
 ## 🛠️ Development
 
-| Command                       | Description                                              |
-| ----------------------------- | -------------------------------------------------------- |
-| `bun run tauri dev`           | Dev server + Tauri window                                |
-| `bun run build`               | TypeScript + Vite bundle                                 |
-| `bun run test`                | Run frontend tests (Vitest)                              |
-| `bun run lint:web`            | Ultracite/Biome check (frontend)                         |
-| `bun run lint:rust`           | cargo clippy (`-D warnings`)                             |
-| `bun run lint`                | Frontend check + Rust clippy                             |
-| `bun run format`              | Ultracite fix (frontend) + cargo fmt (Rust)              |
-| `bun run format:check`        | Ultracite check + rustfmt check                          |
+| Command                       | Description                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `bun run tauri dev`           | Dev server + Tauri window                                      |
+| `bun run build`               | TypeScript + Vite bundle                                       |
+| `bun run test`                | Run frontend tests (Vitest)                                    |
+| `bun run lint:web`            | Ultracite/Biome check (frontend)                               |
+| `bun run lint:rust`           | cargo clippy (`-D warnings`)                                   |
+| `bun run lint`                | Frontend check + Rust clippy                                   |
+| `bun run format`              | Ultracite fix (frontend) + cargo fmt (Rust)                    |
+| `bun run format:check`        | Ultracite check + rustfmt check                                |
 | `bun run check`               | Full gate: format:check → clippy → vitest → cargo test → build |
-| `bun run tauri build --debug` | Debug build with installer                               |
-| `bun run tauri build`         | Release build                                            |
+| `bun run tauri build --debug` | Debug build with installer                                     |
+| `bun run tauri build`         | Release build                                                  |
 
 ---
 
 ## 🖥️ Platform Support
 
-| Platform | Status | What to download |
-| -------- | ------ | ---------------- |
-| **Windows (64-bit)** | ✅ First-class | Installer (`…-windows-64bit-setup.exe`), MSI, portable zip |
-| **Windows (32-bit)** | ✅ Shipped | Installer / MSI / portable (`…-windows-32bit-…`) |
-| **Windows (ARM)** | ✅ Shipped | Installer + portable (`…-windows-arm-…`); bundled adb is x86 (needs emulation) |
-| **Linux (64-bit)** | ✅ First-class | AppImage / DEB / RPM (`…-linux-64bit-…`) + bundled tools |
-| **Linux (ARM)** | ✅ Shipped | AppImage / DEB / RPM (`…-linux-arm-…`); use system **PATH** adb/fastboot |
-| **macOS** | ⏸ Builds paused | Code may exist; not first-class until unpaused |
+| Platform             | Status          | What to download                                                               |
+| -------------------- | --------------- | ------------------------------------------------------------------------------ |
+| **Windows (64-bit)** | ✅ First-class  | Installer (`…-windows-64bit-setup.exe`), MSI, portable zip                     |
+| **Windows (32-bit)** | ✅ Shipped      | Installer / MSI / portable (`…-windows-32bit-…`)                               |
+| **Windows (ARM)**    | ✅ Shipped      | Installer + portable (`…-windows-arm-…`); bundled adb is x86 (needs emulation) |
+| **Linux (64-bit)**   | ✅ First-class  | AppImage / DEB / RPM (`…-linux-64bit-…`) + bundled tools                       |
+| **Linux (ARM)**      | ✅ Shipped      | AppImage / DEB / RPM (`…-linux-arm-…`); use system **PATH** adb/fastboot       |
+| **macOS**            | ⏸ Builds paused | Code may exist; not first-class until unpaused                                 |
 
 **Not sure which Windows file?** Choose **Windows (64-bit) Installer** on almost all PCs. Use **Windows (ARM)** only on Snapdragon / “Windows on ARM” devices.
 

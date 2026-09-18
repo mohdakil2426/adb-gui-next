@@ -22,33 +22,33 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 
 ## Routing table
 
-| Task | Required guidance |
-| --- | --- |
-| Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
-| Cross-module design / data flow / IPC map | `docs/architecture.md` |
-| Visual design, theme, type, shared UI taste | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
-| Entire frontend (`src/**`) | `src/AGENTS.md` |
-| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`) |
-| FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
-| Living session context (not architecture) | `memory-bank/` — read before non-trivial work; verify against code |
+| Task                                         | Required guidance                                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Workflow, reports, hard stops, quality gates | `docs/project_rules.md`                                                                                              |
+| Cross-module design / data flow / IPC map    | `docs/architecture.md`                                                                                               |
+| Visual design, theme, type, shared UI taste  | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
+| Entire frontend (`src/**`)                   | `src/AGENTS.md`                                                                                                      |
+| Entire Rust backend (`src-tauri/**`)         | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`)                                            |
+| FE lint standards (Ultracite)                | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md`                                             |
+| Living session context (not architecture)    | `memory-bank/` — read before non-trivial work; verify against code                                                   |
 
 ## Project map
 
-| Path | Owns |
-| --- | --- |
-| `src/` | Full React/Vite client (see `src/AGENTS.md`) |
-| `src/main.tsx`, `src/app/` | Bootstrap, shell, MainLayout, view map, BottomPanel |
-| `src/desktop/` | Only raw Tauri invoke / events / file-drop / models |
-| `src/features/` | Product views and feature-local state |
-| `src/shared/` | Cross-feature components, stores, shadcn, shared utils |
-| `src/styles/` | Theme tokens (`global.css`) |
-| `DESIGN.md` | UI system (taste, tokens, components) — UI tasks only |
-| `src/test/` | All Vitest frontend tests |
-| `src-tauri/` | Rust lib, thin commands, domains, bundled platform-tools |
-| `docs/architecture.md` | Cross-module architecture reference |
-| `docs/project_rules.md` | Workflow, reports, hard stops |
-| `docs/internal/reports/` | Audits / research / validation write-ups |
-| `package.json` / `biome.jsonc` | Scripts, lint-staged, Ultracite config |
+| Path                           | Owns                                                     |
+| ------------------------------ | -------------------------------------------------------- |
+| `src/`                         | Full React/Vite client (see `src/AGENTS.md`)             |
+| `src/main.tsx`, `src/app/`     | Bootstrap, shell, MainLayout, view map, BottomPanel      |
+| `src/desktop/`                 | Only raw Tauri invoke / events / file-drop / models      |
+| `src/features/`                | Product views and feature-local state                    |
+| `src/shared/`                  | Cross-feature components, stores, shadcn, shared utils   |
+| `src/styles/`                  | Theme tokens (`global.css`)                              |
+| `DESIGN.md`                    | UI system (taste, tokens, components) — UI tasks only    |
+| `src/test/`                    | All Vitest frontend tests                                |
+| `src-tauri/`                   | Rust lib, thin commands, domains, bundled platform-tools |
+| `docs/architecture.md`         | Cross-module architecture reference                      |
+| `docs/project_rules.md`        | Workflow, reports, hard stops                            |
+| `docs/internal/reports/`       | Audits / research / validation write-ups                 |
+| `package.json` / `biome.jsonc` | Scripts, lint-staged, Ultracite config                   |
 
 ## Non-negotiable cross-module boundaries
 
@@ -59,7 +59,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 - **One global device poll** in `MainLayout` (30s). Do not add per-view device polling.
 - **Feature code** under `src/features/<feature>/`. **shadcn** under `src/shared/ui/`. **Theme tokens** in `src/styles/global.css` (no hard-coded colors in components).
 - **IPC DTOs** live in `src/desktop/models.ts` and match Rust `camelCase` serde.
-- **New production deps** only with clear user-visible payoff; prefer existing stack. **Vet frontend deps for module-eval prototype writes** — `freezePrototype: true` makes any `SomeBuiltin.prototype.x = …` at import time a `TypeError` that kills the view, and it reproduces *only* in the webview (never in `vite build`, Vitest, or the browser preview). This is why there is no charting library.
+- **New production deps** only with clear user-visible payoff; prefer existing stack. **Vet frontend deps for module-eval prototype writes** — `freezePrototype: true` makes any `SomeBuiltin.prototype.x = …` at import time a `TypeError` that kills the view, and it reproduces _only_ in the webview (never in `vite build`, Vitest, or the browser preview). This is why there is no charting library.
 - **Container queries, not viewport breakpoints.** Window `minWidth` is 1024, so `sm:`/`md:` can never evaluate false; content width tracks the sidebar, not the viewport. See `docs/architecture.md` §12.1.
 - **React Doctor:** target **100/100**. FE correctness rules live in `src/AGENTS.md` (pure updaters, effect cleanup, LazyMotion, no height anim, no dead unused UI / suppressions). Multi-APK install stays **serial**.
 
@@ -162,14 +162,17 @@ Write code that is **accessible, performant, type-safe, and maintainable**. Focu
 ### Framework-Specific Guidance
 
 **Next.js:**
+
 - Use Next.js `<Image>` component for images
 - Use `next/head` or App Router metadata API for head elements
 - Use Server Components for async data fetching instead of async Client Components
 
 **React 19+:**
+
 - Use ref as a prop instead of `React.forwardRef`
 
 **Solid/Svelte/Vue/Qwik:**
+
 - Use `class` and `for` attributes (not `className` or `htmlFor`)
 
 ---

@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -33,7 +33,8 @@
     ".claude",
     "memory-bank",
     "docs",
-    ".clinerules"
+    ".clinerules",
+    "src/test"
   ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

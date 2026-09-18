@@ -14,14 +14,15 @@
 
 This plan is derived from deep multi-agent research. All reference documents live in `docs/reports/active/`:
 
-| Report | Purpose | Size |
-|--------|---------|------|
-| **`PAYLOAD_RESEARCH_REPORT.md`** | Deep-dive analysis of 4 implementations (otaripper, payload-dumper-rust, Go tools, ours). Bugs, edge cases, architecture comparisons, performance benchmarks, security audit. | ~47 KB |
-| **`ULTIMATE_DUMPER_ROADMAP.md`** | Side-by-side feature matrix, architecture blueprint, code patterns (current vs target), summary of what makes "the best" dumper. | ~29 KB |
-| **`payload-dumper-comprehensive-audit.md`** | Prior audit of our payload dumper with findings and recommendations. | ~21 KB |
-| **`payload-dumper-otaripper-comparison.md`** | Focused otaripper vs our implementation comparison. | ~12 KB |
+| Report                                       | Purpose                                                                                                                                                                       | Size   |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| **`PAYLOAD_RESEARCH_REPORT.md`**             | Deep-dive analysis of 4 implementations (otaripper, payload-dumper-rust, Go tools, ours). Bugs, edge cases, architecture comparisons, performance benchmarks, security audit. | ~47 KB |
+| **`ULTIMATE_DUMPER_ROADMAP.md`**             | Side-by-side feature matrix, architecture blueprint, code patterns (current vs target), summary of what makes "the best" dumper.                                              | ~29 KB |
+| **`payload-dumper-comprehensive-audit.md`**  | Prior audit of our payload dumper with findings and recommendations.                                                                                                          | ~21 KB |
+| **`payload-dumper-otaripper-comparison.md`** | Focused otaripper vs our implementation comparison.                                                                                                                           | ~12 KB |
 
 **Key findings from research:**
+
 - **Critical bug fixed**: SHA-256 was hashing decompressed bytes instead of raw compressed bytes (AOSP standard)
 - **8 bugs discovered**: 3 HIGH, 4 MEDIUM, 1 LOW (detailed in PAYLOAD_RESEARCH_REPORT.md §5)
 - **20+ missing features identified** (detailed in PAYLOAD_RESEARCH_REPORT.md §7)
@@ -34,68 +35,69 @@ This plan is derived from deep multi-agent research. All reference documents liv
 
 ### Backend (Rust — src-tauri/src/)
 
-| File | Responsibility | Status |
-|------|---------------|--------|
-| `payload/parser.rs` | CrAU header parsing, manifest bounds validation | **Modify** |
-| `payload/extractor.rs` | Core extraction engine, 4-layer verification, delta ops | **Modify** |
-| `payload/copy.rs` | SIMD copy engine (SSE2/AVX2/AVX-512) | **Modify** |
-| `payload/write.rs` | NonTemporalWriter, true sparse output, non-temporal stores | **Modify** |
-| `payload/verify.rs` | 4-layer verification engine (currently dead code) | **Modify** |
-| `payload/transaction.rs` | TransactionGuard (unchanged, keep as-is) | Read-only |
-| `payload/delta.rs` | Delta OTA applicator (currently unused) | **Modify** |
-| `payload/remote.rs` | Remote HTTP, ZIP streaming, zero-copy ZIP mmap | **Modify** |
-| `payload/http_zip.rs` | ZIP64 support, EOCD parser | **Modify** |
-| `payload/ops/extractor.rs` | OPS/OFP extraction, streaming unsparse, disk hash verify | **Modify** |
-| `payload/ops/sparse.rs` | Sparse image expansion (streaming) | **Modify** |
-| `payload/ops/crypto.rs` | AES/S-box ciphers (unchanged) | Read-only |
-| `payload/ops/detect.rs` | Format detection (unchanged) | Read-only |
-| `payload/ops/ops_parser.rs` | XML parsing with entity limit | **Modify** |
-| `payload/ops/ofp_qc.rs` | OFP-QC parser (unchanged) | Read-only |
-| `payload/ops/ofp_mtk.rs` | OFP-MTK parser with overflow checks | **Modify** |
-| `commands/payload.rs` | Tauri commands: extract, list, diagnose, delta | **Modify** |
-| `lib.rs` | Module registration, feature flags | **Modify** |
-| `Cargo.toml` | New deps: `brotli`, `mimalloc`, `ctrlc`, `tokio` (optional) | **Modify** |
+| File                        | Responsibility                                              | Status     |
+| --------------------------- | ----------------------------------------------------------- | ---------- |
+| `payload/parser.rs`         | CrAU header parsing, manifest bounds validation             | **Modify** |
+| `payload/extractor.rs`      | Core extraction engine, 4-layer verification, delta ops     | **Modify** |
+| `payload/copy.rs`           | SIMD copy engine (SSE2/AVX2/AVX-512)                        | **Modify** |
+| `payload/write.rs`          | NonTemporalWriter, true sparse output, non-temporal stores  | **Modify** |
+| `payload/verify.rs`         | 4-layer verification engine (currently dead code)           | **Modify** |
+| `payload/transaction.rs`    | TransactionGuard (unchanged, keep as-is)                    | Read-only  |
+| `payload/delta.rs`          | Delta OTA applicator (currently unused)                     | **Modify** |
+| `payload/remote.rs`         | Remote HTTP, ZIP streaming, zero-copy ZIP mmap              | **Modify** |
+| `payload/http_zip.rs`       | ZIP64 support, EOCD parser                                  | **Modify** |
+| `payload/ops/extractor.rs`  | OPS/OFP extraction, streaming unsparse, disk hash verify    | **Modify** |
+| `payload/ops/sparse.rs`     | Sparse image expansion (streaming)                          | **Modify** |
+| `payload/ops/crypto.rs`     | AES/S-box ciphers (unchanged)                               | Read-only  |
+| `payload/ops/detect.rs`     | Format detection (unchanged)                                | Read-only  |
+| `payload/ops/ops_parser.rs` | XML parsing with entity limit                               | **Modify** |
+| `payload/ops/ofp_qc.rs`     | OFP-QC parser (unchanged)                                   | Read-only  |
+| `payload/ops/ofp_mtk.rs`    | OFP-MTK parser with overflow checks                         | **Modify** |
+| `commands/payload.rs`       | Tauri commands: extract, list, diagnose, delta              | **Modify** |
+| `lib.rs`                    | Module registration, feature flags                          | **Modify** |
+| `Cargo.toml`                | New deps: `brotli`, `mimalloc`, `ctrlc`, `tokio` (optional) | **Modify** |
 
 ### Frontend (React + TypeScript — src/)
 
-| File | Responsibility | Status |
-|------|---------------|--------|
-| `components/views/ViewPayloadDumper.tsx` | Root orchestrator, cancel integration | **Modify** |
-| `components/payload-dumper/ActionFooter.tsx` | Extract + Cancel buttons | **Modify** |
-| `components/payload-dumper/PartitionTable.tsx` | Search/filter, dynamic groups | **Modify** |
-| `components/payload-dumper/PartitionRow.tsx` | Per-byte progress, type badges | **Modify** |
-| `components/payload-dumper/ExtractionProgressBar.tsx` | MB/s, ETA, bytes display | **Modify** |
-| `components/payload-dumper/ExtractionStatusCard.tsx` | Stats, hash reporting | **Modify** |
-| `lib/payloadDumperStore.ts` | Zustand: history, per-byte progress, cancel state | **Modify** |
-| `lib/desktop/backend.ts` | New commands: cancel, verify mode, stats | **Modify** |
-| `lib/desktop/models.ts` | New DTOs: ExtractionStats, VerifyMode, CancelToken | **Modify** |
-| `hooks/usePayloadEvents.ts` | Handle new event types: bytes, stats, cancelled | **Modify** |
+| File                                                  | Responsibility                                     | Status     |
+| ----------------------------------------------------- | -------------------------------------------------- | ---------- |
+| `components/views/ViewPayloadDumper.tsx`              | Root orchestrator, cancel integration              | **Modify** |
+| `components/payload-dumper/ActionFooter.tsx`          | Extract + Cancel buttons                           | **Modify** |
+| `components/payload-dumper/PartitionTable.tsx`        | Search/filter, dynamic groups                      | **Modify** |
+| `components/payload-dumper/PartitionRow.tsx`          | Per-byte progress, type badges                     | **Modify** |
+| `components/payload-dumper/ExtractionProgressBar.tsx` | MB/s, ETA, bytes display                           | **Modify** |
+| `components/payload-dumper/ExtractionStatusCard.tsx`  | Stats, hash reporting                              | **Modify** |
+| `lib/payloadDumperStore.ts`                           | Zustand: history, per-byte progress, cancel state  | **Modify** |
+| `lib/desktop/backend.ts`                              | New commands: cancel, verify mode, stats           | **Modify** |
+| `lib/desktop/models.ts`                               | New DTOs: ExtractionStats, VerifyMode, CancelToken | **Modify** |
+| `hooks/usePayloadEvents.ts`                           | Handle new event types: bytes, stats, cancelled    | **Modify** |
 
 ### Tests
 
-| File | Responsibility | Status |
-|------|---------------|--------|
-| `src-tauri/src/payload/tests.rs` | Existing tests + new edge cases | **Modify** |
-| `src-tauri/tests/fixtures/` | Real payload fixtures (add .bin/.ops files) | **Create** |
-| `src-tauri/tests/proptest.rs` | Property-based tests for manifests/extents | **Create** |
-| `src-tauri/benches/` | Criterion benchmarks for SIMD/buffer sizes | **Create** |
-| `src-tauri/fuzz/` | cargo-fuzz target for malformed payloads | **Create** |
+| File                             | Responsibility                              | Status     |
+| -------------------------------- | ------------------------------------------- | ---------- |
+| `src-tauri/src/payload/tests.rs` | Existing tests + new edge cases             | **Modify** |
+| `src-tauri/tests/fixtures/`      | Real payload fixtures (add .bin/.ops files) | **Create** |
+| `src-tauri/tests/proptest.rs`    | Property-based tests for manifests/extents  | **Create** |
+| `src-tauri/benches/`             | Criterion benchmarks for SIMD/buffer sizes  | **Create** |
+| `src-tauri/fuzz/`                | cargo-fuzz target for malformed payloads    | **Create** |
 
 ---
 
 ## Research Sources (Analyzed)
 
-| Repository | Language | Stars | Key Strengths |
-|-----------|----------|-------|--------------|
-| [otaripper](https://github.com/syedinsaf/otaripper) | Rust | 200+ | 2.8 GB/s AVX-512, 3-layer verification, zero-copy ZIP mmap |
-| [payload-dumper-rust](https://github.com/rhythmcache/payload-dumper-rust) | Rust | 60+ | All 15 AOSP ops, Tokio async, feature flags, Bubble Tea TUI |
-| [payload-dumper-go](https://github.com/ssut/payload-dumper-go) | Go | 3000+ | Double-hash verification, goroutine parallelism, Android support |
+| Repository                                                                | Language | Stars | Key Strengths                                                    |
+| ------------------------------------------------------------------------- | -------- | ----- | ---------------------------------------------------------------- |
+| [otaripper](https://github.com/syedinsaf/otaripper)                       | Rust     | 200+  | 2.8 GB/s AVX-512, 3-layer verification, zero-copy ZIP mmap       |
+| [payload-dumper-rust](https://github.com/rhythmcache/payload-dumper-rust) | Rust     | 60+   | All 15 AOSP ops, Tokio async, feature flags, Bubble Tea TUI      |
+| [payload-dumper-go](https://github.com/ssut/payload-dumper-go)            | Go       | 3000+ | Double-hash verification, goroutine parallelism, Android support |
 
 ---
 
 ## 7 Implementation Phases
 
 ### Phase 1: Foundation — Bug Fixes & Security (Week 1-2)
+
 **Goal:** Zero known bugs, zero security issues.
 
 ---
@@ -103,6 +105,7 @@ This plan is derived from deep multi-agent research. All reference documents liv
 #### Task 1.1: Manifest Size Cap (DOS Protection)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/parser.rs`
 - Test: `src-tauri/src/payload/tests.rs`
 
@@ -117,7 +120,7 @@ fn test_manifest_size_cap_rejects_huge_manifest() {
     header.extend_from_slice(&2u64.to_be_bytes()); // version 2
     header.extend_from_slice(&(10_000_000_000u64).to_be_bytes()); // 10 GB manifest
     header.extend_from_slice(&0u32.to_be_bytes()); // metadata sig length
-    
+
     let result = parse_header(&header);
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();
@@ -165,6 +168,7 @@ git commit -m "fix(parser): add 100MB manifest size cap for DOS protection"
 #### Task 1.2: Fix OPS Hash Verification (Disk vs Memory)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/extractor.rs`
 - Test: `src-tauri/src/payload/ops/test_ops_decrypt.rs` (or new test file)
 
@@ -219,6 +223,7 @@ git commit -m "fix(ops): verify SHA-256 from disk after flush, not memory"
 #### Task 1.3: Fix `try_unsparse` Memory Exhaustion
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/extractor.rs`
 - Test: `src-tauri/src/payload/ops/tests.rs`
 
@@ -227,11 +232,13 @@ git commit -m "fix(ops): verify SHA-256 from disk after flush, not memory"
 - [x] **Step 1: Replace `fs::read` with streaming**
 
 Current code:
+
 ```rust
 let data = std::fs::read(path)?; // BAD: loads entire file
 ```
 
 Replace with:
+
 ```rust
 // Stream from input file, write to output file
 let input_file = std::fs::File::open(path)?;
@@ -270,6 +277,7 @@ git commit -m "fix(sparse): streaming unsparse to avoid RAM exhaustion"
 #### Task 1.4: Add Integer Overflow Checks to MTK Parser
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/ofp_mtk.rs`
 
 **Context:** `start_offset` and `total_length` read as `u64` without overflow checks before use.
@@ -295,6 +303,7 @@ git commit -m "fix(ofp-mtk): add checked_mul overflow protection"
 #### Task 1.5: XML Entity Expansion Limit
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/ops/ops_parser.rs`
 
 - [x] **Step 1: Configure quick_xml reader**
@@ -321,6 +330,7 @@ git commit -m "fix(ops-parser): enforce XML entity limits"
 ---
 
 ### Phase 2: 4-Layer Verification Engine (Week 2-3)
+
 **Goal:** Most correct verifier in existence.
 
 ---
@@ -328,10 +338,12 @@ git commit -m "fix(ops-parser): enforce XML entity limits"
 #### Task 2.1: Design Verification Engine
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/verify.rs`
 - Modify: `src-tauri/src/payload/extractor.rs`
 
 **Architecture:**
+
 ```rust
 pub enum VerifyMode {
     NoVerify,      // Layer 1 only (input validation)
@@ -377,6 +389,7 @@ git commit -m "feat(verify): add 4-layer verification engine with VerifyMode"
 #### Task 2.2: Layer 3 — Decompressed Stream Hash
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/payload/copy.rs`
 
@@ -385,6 +398,7 @@ git commit -m "feat(verify): add 4-layer verification engine with VerifyMode"
 - [x] **Step 1: Wire hasher in compressed ops**
 
 For compressed operations (XZ/BZ2/Zstd), when `verify_mode >= Standard`:
+
 ```rust
 let mut decompressed_hasher = Sha256::new();
 stream_copy(
@@ -415,12 +429,14 @@ git commit -m "feat(verify): add Layer 3 decompressed stream hashing"
 #### Task 2.3: Layer 4 — Output File Hash
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/payload/verify.rs`
 
 - [x] **Step 1: Compute file hash after extraction**
 
 After `extract_partition` returns successfully:
+
 ```rust
 if verify_mode >= Strict {
     let file_hash = compute_file_sha256(&output_path)?;
@@ -463,6 +479,7 @@ git commit -m "feat(verify): add Layer 4 output file hash verification"
 ---
 
 ### Phase 3: Performance — AVX-512 & Zero-Copy (Week 3-4)
+
 **Goal:** Match otaripper's 2.8 GB/s.
 
 ---
@@ -470,6 +487,7 @@ git commit -m "feat(verify): add Layer 4 output file hash verification"
 #### Task 3.1: AVX-512 Copy Path
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/copy.rs`
 - Test: `src-tauri/src/payload/tests.rs`
 
@@ -531,6 +549,7 @@ git commit -m "perf(copy): implement AVX-512 64-byte SIMD copy path"
 #### Task 3.2: Non-Temporal SIMD Stores
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/write.rs`
 
 - [x] **Step 1: Add non-temporal write path**
@@ -574,6 +593,7 @@ git commit -m "perf(write): add non-temporal AVX2 stores for large writes"
 #### Task 3.3: Zero-Copy ZIP mmap
 
 **Files:**
+
 - Create: `src-tauri/src/payload/zip_mmap.rs`
 - Modify: `src-tauri/src/payload/remote.rs`
 
@@ -583,14 +603,14 @@ git commit -m "perf(write): add non-temporal AVX2 stores for large writes"
 pub fn mmap_zip_payload(zip_path: &Path) -> Result<Arc<Mmap>> {
     let file = File::open(zip_path)?;
     let mmap = unsafe { Mmap::map(&file)? };
-    
+
     // Find payload.bin entry in ZIP central directory
     let eocd = find_eocd(&mmap)?;
     let cd_offset = eocd.central_directory_offset as usize;
-    
+
     // Scan central directory for payload.bin
     let entry = find_entry(&mmap[cd_offset..], "payload.bin")?;
-    
+
     if entry.compression_method == 0 { // STORED
         // Direct slice into mmap
         let payload_offset = entry.local_header_offset + 30 + entry.name_len;
@@ -631,6 +651,7 @@ git commit -m "perf(zip): zero-copy mmap for STORED ZIP entries"
 ---
 
 ### Phase 4: Delta OTA & Full Op Support (Week 4-6)
+
 **Goal:** Support 100% of AOSP operation types.
 
 ---
@@ -638,6 +659,7 @@ git commit -m "perf(zip): zero-copy mmap for STORED ZIP entries"
 #### Task 4.1: Implement `Type::Move`
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 
 **Context:** Move copies data from source extent to destination extent within the same partition. No payload data involved.
@@ -648,20 +670,20 @@ git commit -m "perf(zip): zero-copy mmap for STORED ZIP entries"
 Type::Move => {
     let src_extents = operation.src_extents.as_slice();
     let dst_extents = operation.dst_extents.as_slice();
-    
+
     // Read from source extents, write to destination extents
     for (src, dst) in src_extents.iter().zip(dst_extents.iter()) {
         let src_offset = src.start_block.unwrap_or_default() * block_size as u64;
         let dst_offset = dst.start_block.unwrap_or_default() * block_size as u64;
         let len = dst.num_blocks.unwrap_or_default() as usize * block_size as usize;
-        
+
         // Read from already-written portion of output
         // This requires the output to be seekable
         let mut buf = vec![0u8; len.min(256 * 1024)];
         let mut remaining = len;
         let mut src_pos = src_offset;
         let mut dst_pos = dst_offset;
-        
+
         while remaining > 0 {
             let to_copy = buf.len().min(remaining);
             // Read from source position
@@ -704,6 +726,7 @@ git commit -m "feat(extractor): implement Move operation type"
 #### Task 4.2: Implement Delta OTA (`SourceCopy`)
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/delta.rs`
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/commands/payload.rs`
@@ -711,6 +734,7 @@ git commit -m "feat(extractor): implement Move operation type"
 - [x] **Step 1: Wire up `source_dir` parameter**
 
 In `commands/payload.rs`:
+
 ```rust
 #[tauri::command]
 async fn extract_delta_payload(
@@ -721,7 +745,7 @@ async fn extract_delta_payload(
 ) -> Result<ExtractPayloadResult, String> {
     let source_dir = PathBuf::from(source_dir);
     let output_dir = PathBuf::from(output_dir);
-    
+
     let payload = load_payload(&payload_path)?;
     let result = extract_payload_with_source(
         &payload,
@@ -762,15 +786,15 @@ fn apply_source_copy(
 ) -> Result<()> {
     let src_extents = operation.src_extents.as_slice();
     let dst_extents = operation.dst_extents.as_slice();
-    
+
     for (src, dst) in src_extents.iter().zip(dst_extents.iter()) {
         let src_offset = src.start_block.unwrap_or_default() * block_size;
         let dst_offset = dst.start_block.unwrap_or_default() * block_size;
         let len = dst.num_blocks.unwrap_or_default() as usize * block_size as usize;
-        
+
         source_file.seek(SeekFrom::Start(src_offset))?;
         writer.seek(SeekFrom::Start(dst_offset))?;
-        
+
         let mut buf = [0u8; 256 * 1024];
         let mut remaining = len;
         while remaining > 0 {
@@ -797,6 +821,7 @@ git commit -m "feat(delta): implement SourceCopy delta operation"
 #### Task 4.3: Add Brotli Decompression
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/Cargo.toml`
 
@@ -827,6 +852,7 @@ git commit -m "feat(compression): add Brotli decompression support"
 ---
 
 ### Phase 5: Async & Cancellation (Week 6-7)
+
 **Goal:** Non-blocking extraction, cancellable at any point.
 
 ---
@@ -834,6 +860,7 @@ git commit -m "feat(compression): add Brotli decompression support"
 #### Task 5.1: Cancellation Token
 
 **Files:**
+
 - Create: `src-tauri/src/payload/cancel.rs`
 - Modify: `src-tauri/src/payload/extractor.rs`
 
@@ -851,15 +878,15 @@ impl CancellationToken {
     pub fn new() -> Self {
         Self { cancelled: Arc::new(AtomicBool::new(false)) }
     }
-    
+
     pub fn cancel(&self) {
         self.cancelled.store(true, Ordering::Relaxed);
     }
-    
+
     pub fn is_cancelled(&self) -> bool {
         self.cancelled.load(Ordering::Relaxed)
     }
-    
+
     pub fn check(&self) -> Result<()> {
         if self.is_cancelled() {
             anyhow::bail!("extraction cancelled by user");
@@ -872,6 +899,7 @@ impl CancellationToken {
 - [x] **Step 2: Check token at boundaries**
 
 In `extract_partition`, before each operation:
+
 ```rust
 for (index, operation) in partition.operations.iter().enumerate() {
     if let Some(token) = cancel_token {
@@ -893,6 +921,7 @@ git commit -m "feat(cancel): add CancellationToken for graceful abort"
 #### Task 5.2: Frontend Cancel Button
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/ActionFooter.tsx`
 - Modify: `src/lib/payloadDumperStore.ts`
 - Modify: `src/lib/desktop/backend.ts`
@@ -910,12 +939,14 @@ fn cancel_extraction(token_id: String) {
 
 ```tsx
 // ActionFooter.tsx
-{status === 'extracting' && (
-  <Button variant="destructive" onClick={handleCancel}>
-    <StopCircle className="mr-2 size-4" />
-    Cancel
-  </Button>
-)}
+{
+  status === "extracting" && (
+    <Button variant="destructive" onClick={handleCancel}>
+      <StopCircle className="mr-2 size-4" />
+      Cancel
+    </Button>
+  );
+}
 ```
 
 - [x] **Step 3: Handle cancelled state**
@@ -923,9 +954,9 @@ fn cancel_extraction(token_id: String) {
 ```ts
 // payloadDumperStore.ts
 cancelExtraction: () => {
-  set({ status: 'cancelling' });
-  invoke('cancel_extraction', { tokenId: get().cancelTokenId });
-}
+  set({ status: "cancelling" });
+  invoke("cancel_extraction", { tokenId: get().cancelTokenId });
+};
 ```
 
 - [x] **Step 4: Commit**
@@ -938,6 +969,7 @@ git commit -m "feat(ui): add cancel button and cancellation support"
 ---
 
 ### Phase 6: Frontend Improvements (Week 7-8)
+
 **Goal:** Best-in-class UX.
 
 ---
@@ -945,6 +977,7 @@ git commit -m "feat(ui): add cancel button and cancellation support"
 #### Task 6.1: Per-Byte Progress Events
 
 **Files:**
+
 - Modify: `src-tauri/src/payload/extractor.rs`
 - Modify: `src-tauri/src/payload/copy.rs`
 - Modify: `src/lib/desktop/models.ts`
@@ -1009,8 +1042,12 @@ let eta = if throughput > 0.0 {
 <div className="flex flex-col gap-1">
   <Progress value={percentage} />
   <div className="flex justify-between text-xs text-muted-foreground">
-    <span>{formatBytes(bytesWritten)} / {formatBytes(totalBytes)}</span>
-    <span>{throughput.toFixed(1)} MB/s · ETA {formatDuration(eta)}</span>
+    <span>
+      {formatBytes(bytesWritten)} / {formatBytes(totalBytes)}
+    </span>
+    <span>
+      {throughput.toFixed(1)} MB/s · ETA {formatDuration(eta)}
+    </span>
   </div>
 </div>
 ```
@@ -1027,6 +1064,7 @@ git commit -m "feat(progress): per-byte progress with throughput and ETA"
 #### Task 6.2: Extraction History
 
 **Files:**
+
 - Modify: `src/lib/payloadDumperStore.ts`
 - Modify: `src/components/views/ViewPayloadDumper.tsx`
 - Create: `src/components/payload-dumper/ExtractionHistory.tsx`
@@ -1042,7 +1080,7 @@ interface ExtractionRecord {
   partitions: string[];
   duration: number;
   totalBytes: number;
-  status: 'success' | 'error' | 'cancelled';
+  status: "success" | "error" | "cancelled";
   error?: string;
 }
 
@@ -1059,11 +1097,12 @@ export const usePayloadDumperStore = create<PayloadDumperStore>()(
     (set, get) => ({
       // ...
       history: [],
-      addToHistory: (record) => set({ history: [record, ...get().history].slice(0, 50) }),
+      addToHistory: (record) =>
+        set({ history: [record, ...get().history].slice(0, 50) }),
       clearHistory: () => set({ history: [] }),
     }),
     {
-      name: 'payload-dumper-storage',
+      name: "payload-dumper-storage",
       partialize: (state) => ({
         activeMode: state.activeMode,
         remoteUrl: state.remoteUrl,
@@ -1081,7 +1120,7 @@ export const usePayloadDumperStore = create<PayloadDumperStore>()(
 // ExtractionHistory.tsx
 export function ExtractionHistory() {
   const { history, clearHistory } = usePayloadDumperStore();
-  
+
   return (
     <Card>
       <CardHeader>
@@ -1094,8 +1133,9 @@ export function ExtractionHistory() {
             <div className="flex-1">
               <div className="text-sm font-medium">{record.payloadPath}</div>
               <div className="text-xs text-muted-foreground">
-                {formatDate(record.timestamp)} · {record.partitions.length} partitions
-                · {formatDuration(record.duration)} · {formatBytes(record.totalBytes)}
+                {formatDate(record.timestamp)} · {record.partitions.length}{" "}
+                partitions · {formatDuration(record.duration)} ·{" "}
+                {formatBytes(record.totalBytes)}
               </div>
             </div>
           </div>
@@ -1118,6 +1158,7 @@ git commit -m "feat(ui): add extraction history with localStorage persistence"
 #### Task 6.3: Partition Search/Filter
 
 **Files:**
+
 - Modify: `src/components/payload-dumper/PartitionTable.tsx`
 - Modify: `src/components/payload-dumper/PartitionRow.tsx`
 
@@ -1125,9 +1166,9 @@ git commit -m "feat(ui): add extraction history with localStorage persistence"
 
 ```tsx
 // PartitionTable.tsx
-const [searchQuery, setSearchQuery] = useState('');
+const [searchQuery, setSearchQuery] = useState("");
 
-const filteredPartitions = partitions.filter(p =>
+const filteredPartitions = partitions.filter((p) =>
   p.name.toLowerCase().includes(searchQuery.toLowerCase())
 );
 
@@ -1166,6 +1207,7 @@ git commit -m "feat(ui): partition search/filter and type badges"
 ---
 
 ### Phase 7: Testing & Hardening (Week 8-10)
+
 **Goal:** Unbreakable, measurable, documented.
 
 ---
@@ -1173,6 +1215,7 @@ git commit -m "feat(ui): partition search/filter and type badges"
 #### Task 7.1: Property-Based Tests
 
 **Files:**
+
 - Create: `src-tauri/tests/proptest.rs`
 - Modify: `src-tauri/Cargo.toml`
 
@@ -1197,14 +1240,14 @@ proptest! {
     ) {
         let start_offset = start_block.checked_mul(block_size);
         let extent_size = num_blocks.checked_mul(block_size);
-        
+
         // Either both succeed or we get None (handled gracefully)
         if start_offset.is_some() && extent_size.is_some() {
             let end = start_offset.unwrap().checked_add(extent_size.unwrap());
             prop_assert!(end.is_some());
         }
     }
-    
+
     #[test]
     fn test_coalescing_maintains_total_size(
         extents in prop::collection::vec(
@@ -1216,13 +1259,13 @@ proptest! {
         let total_size: u64 = extents.iter()
             .map(|(_, num)| num * block_size)
             .sum();
-        
+
         // After coalescing, total size should be preserved
         let coalesced = coalesce_extents(&extents, block_size);
         let coalesced_size: u64 = coalesced.iter()
             .map(|(_, num)| num * block_size)
             .sum();
-        
+
         prop_assert_eq!(total_size, coalesced_size);
     }
 }
@@ -1240,6 +1283,7 @@ git commit -m "test(proptest): add property-based tests for extents and arithmet
 #### Task 7.2: Fuzzing Target
 
 **Files:**
+
 - Create: `src-tauri/fuzz/Cargo.toml`
 - Create: `src-tauri/fuzz/fuzz_targets/parse_header.rs`
 
@@ -1280,6 +1324,7 @@ git commit -m "test(fuzz): add cargo-fuzz target for header parsing"
 #### Task 7.3: Criterion Benchmarks
 
 **Files:**
+
 - Create: `src-tauri/benches/copy_benchmark.rs`
 - Modify: `src-tauri/Cargo.toml`
 
@@ -1304,12 +1349,12 @@ use payload::copy::{detect_copy_strategy, copy_raw_slice};
 fn bench_copy_strategies(c: &mut Criterion) {
     let sizes = [1_024, 65_536, 1_048_576, 16_777_216];
     let strategy = detect_copy_strategy();
-    
+
     let mut group = c.benchmark_group("copy");
     for size in sizes {
         let src = vec![0u8; size];
         let mut dst = vec![0u8; size];
-        
+
         group.bench_with_input(
             BenchmarkId::new(format!("{:?}", strategy), size),
             &size,
@@ -1346,15 +1391,15 @@ git commit -m "test(bench): add Criterion benchmark for SIMD copy strategies"
 
 ## Summary Table
 
-| Phase | Tasks | Duration | Parallelizable |
-|-------|-------|----------|----------------|
-| 1: Foundation | 5 tasks | 2 weeks | Yes (independent bug fixes) |
-| 2: Verification | 3 tasks | 1.5 weeks | Partially |
-| 3: Performance | 3 tasks | 2 weeks | Yes (SIMD, ZIP, non-temp) |
-| 4: Delta Ops | 3 tasks | 2 weeks | Yes (each op type) |
-| 5: Async/Cancel | 2 tasks | 1 week | Yes (backend + frontend) |
-| 6: Frontend | 3 tasks | 1 week | Yes (independent UI features) |
-| 7: Testing | 3 tasks | 2 weeks | Yes (proptest, fuzz, bench) |
+| Phase           | Tasks   | Duration  | Parallelizable                |
+| --------------- | ------- | --------- | ----------------------------- |
+| 1: Foundation   | 5 tasks | 2 weeks   | Yes (independent bug fixes)   |
+| 2: Verification | 3 tasks | 1.5 weeks | Partially                     |
+| 3: Performance  | 3 tasks | 2 weeks   | Yes (SIMD, ZIP, non-temp)     |
+| 4: Delta Ops    | 3 tasks | 2 weeks   | Yes (each op type)            |
+| 5: Async/Cancel | 2 tasks | 1 week    | Yes (backend + frontend)      |
+| 6: Frontend     | 3 tasks | 1 week    | Yes (independent UI features) |
+| 7: Testing      | 3 tasks | 2 weeks   | Yes (proptest, fuzz, bench)   |
 
 **Total: 11.5 weeks** (solo, sequential)
 **Total: 6-8 weeks** (with parallel execution)
@@ -1366,10 +1411,11 @@ git commit -m "test(bench): add Criterion benchmark for SIMD copy strategies"
 Phase 1 (bugs) → Phase 2 (verification) → Phase 3 (performance) → Phase 4 (delta)
 
 **Fastest wins (do first):**
+
 1. Manifest size cap — 2 hours, prevents DOS
 2. Output hash verification — 1 day, critical correctness
 3. AVX-512 copy — 1 day, 2x performance boost
 4. Cancellation token — 1 day, essential UX
 5. Per-byte progress — 1 day, visible improvement
 
-*End of Plan*
+_End of Plan_

@@ -47,11 +47,11 @@ fully transparent to the existing Payload Dumper UI.
 
 ## Supported Formats
 
-| Format | Extension | Encryption | Manufacturer | Era |
-|--------|-----------|------------|--------------|-----|
-| **OPS** | `.ops` | Custom S-box cipher (NOT AES) | OnePlus | OnePlus 7/7T/8/8T/9 |
-| **OFP-QC** | `.ofp` | AES-128-CFB | Oppo (Qualcomm) | Find X, Reno, A-series |
-| **OFP-MTK** | `.ofp` | AES-128-CFB + mtk_shuffle | Oppo (MediaTek) | A-series (MediaTek SoC) |
+| Format      | Extension | Encryption                    | Manufacturer    | Era                     |
+| ----------- | --------- | ----------------------------- | --------------- | ----------------------- |
+| **OPS**     | `.ops`    | Custom S-box cipher (NOT AES) | OnePlus         | OnePlus 7/7T/8/8T/9     |
+| **OFP-QC**  | `.ofp`    | AES-128-CFB                   | Oppo (Qualcomm) | Find X, Reno, A-series  |
+| **OFP-MTK** | `.ofp`    | AES-128-CFB + mtk_shuffle     | Oppo (MediaTek) | A-series (MediaTek SoC) |
 
 ---
 
@@ -87,14 +87,14 @@ extractor.rs
 
 ### External Crates
 
-| Crate | Version | Purpose |
-|-------|---------|---------|
-| `aes` | 0.8 | AES-128 block cipher (OFP decryption) |
-| `cfb-mode` | 0.8 | CFB stream cipher mode |
-| `md-5` | 0.10 | MD5 digest (OFP key derivation) |
-| `quick-xml` | 0.37 | XML parsing (OPS/OFP-QC manifests) |
-| `memmap2` | 0.9 | Memory-mapped file I/O |
-| `sha2` | 0.10 | SHA-256 verification |
+| Crate       | Version | Purpose                               |
+| ----------- | ------- | ------------------------------------- |
+| `aes`       | 0.8     | AES-128 block cipher (OFP decryption) |
+| `cfb-mode`  | 0.8     | CFB stream cipher mode                |
+| `md-5`      | 0.10    | MD5 digest (OFP key derivation)       |
+| `quick-xml` | 0.37    | XML parsing (OPS/OFP-QC manifests)    |
+| `memmap2`   | 0.9     | Memory-mapped file I/O                |
+| `sha2`      | 0.10    | SHA-256 verification                  |
 
 ---
 
@@ -207,11 +207,11 @@ The OPS cipher is **NOT** standard AES. It is a custom block cipher based on:
 
 There are 3 known mbox key schedules:
 
-| Variant | Label | Prefix (first 4 bytes) | Device Era |
-|---------|-------|------------------------|------------|
-| `Mbox5` | `mbox5` | `60 8a 3f 2d` | OnePlus 7/7T — most common |
-| `Mbox6` | `mbox6` | `AA 69 82 9E` | OnePlus 8/8T |
-| `Mbox4` | `mbox4` | `C4 5D 05 71` | OnePlus 7 (older) |
+| Variant | Label   | Prefix (first 4 bytes) | Device Era                 |
+| ------- | ------- | ---------------------- | -------------------------- |
+| `Mbox5` | `mbox5` | `60 8a 3f 2d`          | OnePlus 7/7T — most common |
+| `Mbox6` | `mbox6` | `AA 69 82 9E`          | OnePlus 8/8T               |
+| `Mbox4` | `mbox4` | `C4 5D 05 71`          | OnePlus 7 (older)          |
 
 The parser **brute-forces** all 3 variants (in order: mbox5 → mbox6 → mbox4) and picks the
 one that produces valid XML:
@@ -466,12 +466,12 @@ Chunk (12+ bytes each):
 
 ### Chunk Types
 
-| Type | Value | Data | Action |
-|------|-------|------|--------|
-| Raw | `0xCAC1` | `chunk_sz × blk_sz` bytes | Copy directly |
-| Fill | `0xCAC2` | 4-byte pattern | Write pattern repeated `chunk_sz × blk_sz` times |
-| Don't Care | `0xCAC3` | None | Seek past (leave zeros) |
-| CRC32 | `0xCAC4` | 4-byte CRC | Skip (not verified) |
+| Type       | Value    | Data                      | Action                                           |
+| ---------- | -------- | ------------------------- | ------------------------------------------------ |
+| Raw        | `0xCAC1` | `chunk_sz × blk_sz` bytes | Copy directly                                    |
+| Fill       | `0xCAC2` | 4-byte pattern            | Write pattern repeated `chunk_sz × blk_sz` times |
+| Don't Care | `0xCAC3` | None                      | Seek past (leave zeros)                          |
+| CRC32      | `0xCAC4` | 4-byte CRC                | Skip (not verified)                              |
 
 ### Un-Sparse Flow
 
@@ -511,13 +511,13 @@ User selects .ops/.ofp file
 
 ### Partition Processing by Type
 
-| Format + Section | Processing |
-|------------------|------------|
-| OPS + SAHARA | Full decrypt with `ops_decrypt(data, variant)` |
-| OPS + Program/UFS | Raw copy (no encryption) |
-| OFP-QC + encrypted | Decrypt first `encrypted_length` bytes with AES-CFB, copy rest |
+| Format + Section    | Processing                                                     |
+| ------------------- | -------------------------------------------------------------- |
+| OPS + SAHARA        | Full decrypt with `ops_decrypt(data, variant)`                 |
+| OPS + Program/UFS   | Raw copy (no encryption)                                       |
+| OFP-QC + encrypted  | Decrypt first `encrypted_length` bytes with AES-CFB, copy rest |
 | OFP-MTK + encrypted | Decrypt first `encrypted_length` bytes with AES-CFB, copy rest |
-| Any + sparse flag | Post-extract un-sparse |
+| Any + sparse flag   | Post-extract un-sparse                                         |
 
 ### Memory Model
 
@@ -553,7 +553,7 @@ The file picker and drop zone accept `.ops` and `.ofp` extensions:
 ```typescript
 // In PayloadDumper view
 const filters = [
-  { name: 'Firmware', extensions: ['bin', 'zip', 'ops', 'ofp'] },
+  { name: "Firmware", extensions: ["bin", "zip", "ops", "ofp"] },
 ];
 ```
 
@@ -566,13 +566,14 @@ The existing `ListPayloadPartitionsWithDetails` call routes automatically:
 export async function ListPayloadPartitionsWithDetails(
   path: string
 ): Promise<PartitionDetail[]> {
-  return core.invoke('list_payload_partitions_with_details', {
+  return core.invoke("list_payload_partitions_with_details", {
     payloadPath: path,
   });
 }
 ```
 
 On the Rust side, `commands/payload.rs` checks:
+
 ```rust
 if ops::extractor::should_use_ops_pipeline(file_path) {
     return ops::list_ops_partitions(file_path);
@@ -595,19 +596,19 @@ A dedicated `get_ops_metadata` command surfaces format-specific metadata:
 
 ```typescript
 export async function GetOpsMetadata(path: string): Promise<OpsMetadata> {
-  return core.invoke('get_ops_metadata', { path });
+  return core.invoke("get_ops_metadata", { path });
 }
 
 interface OpsMetadata {
-  format: string;        // "ops", "ofp-qc", "ofp-mtk"
-  projectId?: string;    // e.g. "19811"
+  format: string; // "ops", "ofp-qc", "ofp-mtk"
+  projectId?: string; // e.g. "19811"
   firmwareName?: string; // e.g. "instantnoodlep_15_I.13_200411"
-  cpu?: string;          // e.g. "SM8250"
-  flashType?: string;    // e.g. "ufs"
-  encryption: string;    // e.g. "custom-aes(mbox5)"
+  cpu?: string; // e.g. "SM8250"
+  flashType?: string; // e.g. "ufs"
+  encryption: string; // e.g. "custom-aes(mbox5)"
   totalPartitions: number;
   totalSize: number;
-  sections: string[];    // e.g. ["SAHARA", "Program0/boot_a", ...]
+  sections: string[]; // e.g. ["SAHARA", "Program0/boot_a", ...]
 }
 ```
 
@@ -626,6 +627,7 @@ cargo run --example test_ops_decrypt --manifest-path src-tauri/Cargo.toml
 ```
 
 The test binary (`src-tauri/examples/test_ops_decrypt.rs`):
+
 1. Opens a real `.ops` file from `docs/refrences/oppo_decrypt-master/`
 2. Parses the footer and validates magic
 3. Tries all 3 mbox variants for XML decryption
@@ -640,6 +642,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
 Unit tests cover:
+
 - `crypto.rs`: mbox array construction, gsbox lookup, OPS key constant verification
 - `ops_parser.rs`: filename sanitization, XML parsing for `<File>` and `<Image>` elements
 - `sparse.rs`: sparse magic detection
@@ -649,17 +652,17 @@ Unit tests cover:
 
 Tested with `instantnoodlep_15_I.13_200411.ops` (OnePlus 8 Pro, 5.60 GB):
 
-| Metric | Result |
-|--------|--------|
-| Footer magic | ✅ 0x7CEF |
-| Project ID | ✅ 19811 |
-| XML decryption | ✅ mbox5 variant |
-| Total partitions | ✅ 62 |
-| SAHARA (encrypted) | ✅ 2 partitions |
-| UFS_PROVISION | ✅ 2 partitions |
-| Program sections | ✅ 58 partitions across Program0-Program5 |
-| Sparse detection | ✅ 7 sparse images (modemdump, op2, super, metadata, userdata, oneplus_in, modem) |
-| Total size | ✅ 6,008,700,564 bytes (5.60 GB) |
+| Metric             | Result                                                                            |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Footer magic       | ✅ 0x7CEF                                                                         |
+| Project ID         | ✅ 19811                                                                          |
+| XML decryption     | ✅ mbox5 variant                                                                  |
+| Total partitions   | ✅ 62                                                                             |
+| SAHARA (encrypted) | ✅ 2 partitions                                                                   |
+| UFS_PROVISION      | ✅ 2 partitions                                                                   |
+| Program sections   | ✅ 58 partitions across Program0-Program5                                         |
+| Sparse detection   | ✅ 7 sparse images (modemdump, op2, super, metadata, userdata, oneplus_in, modem) |
+| Total size         | ✅ 6,008,700,564 bytes (5.60 GB)                                                  |
 
 ---
 
@@ -668,12 +671,14 @@ Tested with `instantnoodlep_15_I.13_200411.ops` (OnePlus 8 Pro, 5.60 GB):
 ### 1. Treating mbox as packed u32 arrays
 
 **WRONG:**
+
 ```rust
 // This packs 4 bytes into one u32 — completely wrong!
 let asbox_val = u32::from_le_bytes([0x60, 0x8a, 0x3f, 0x2d]); // = 0x2D3F8A60
 ```
 
 **CORRECT:**
+
 ```rust
 // Each entry is a single byte value (0-255)
 let mbox: [u32; 62] = ...;
@@ -688,12 +693,14 @@ with `0x2D3F8A60`.
 ### 2. Only parsing `<File>` elements
 
 **WRONG:**
+
 ```rust
 // This only finds SAHARA + UFS_PROVISION entries (~4 partitions)
 if tag == "File" { parse_file_element(...) }
 ```
 
 **CORRECT:**
+
 ```rust
 // Must also handle <Image> elements inside <program> tags
 if tag == "File" { parse_file_element(...) }
@@ -708,11 +715,13 @@ means you only find 4 of 62 partitions.
 ### 3. Computing XML offset from config_offset
 
 **WRONG:**
+
 ```rust
 let xml_start = footer.config_offset as usize * 0x200;
 ```
 
 **CORRECT:**
+
 ```rust
 let padding = if xml_length % 0x200 != 0 { 0x200 - (xml_length % 0x200) } else { 0 };
 let aligned = xml_length + padding;
@@ -725,12 +734,14 @@ directly can produce wrong offsets for certain firmware versions.
 ### 4. Validating entire decrypted buffer as UTF-8
 
 **WRONG:**
+
 ```rust
 // Fails because sector-aligned padding contains invalid UTF-8 bytes
 let xml = std::str::from_utf8(&decrypted)?;
 ```
 
 **CORRECT:**
+
 ```rust
 // Check only the header for XML marker, return lossy conversion
 let header = &decrypted[..256.min(decrypted.len())];
@@ -745,6 +756,7 @@ the remaining padding bytes are encrypted garbage that doesn't decode as valid U
 ### 5. Confusing mtk_shuffle and mtk_shuffle2
 
 **WRONG:**
+
 ```rust
 // These are NOT interchangeable
 mtk_shuffle(key, data);   // swap_nibble THEN XOR
@@ -757,12 +769,14 @@ produces wrong keys, and decryption fails silently (no crash, just wrong output)
 ### 6. Missing the sbox residual fallback
 
 **WRONG:**
+
 ```rust
 // Only using mbox for key_update in residual processing
 rkey = key_update(rkey, &mbox);
 ```
 
 **CORRECT:**
+
 ```rust
 // Residual bytes use the FULL sbox array (2048 entries), not mbox
 let sbox_arr = sbox_as_u32_array();  // [u32; 2048]
@@ -775,11 +789,13 @@ rkey = key_update(rkey, &sbox_arr);
 ### 7. Using wrong sbox array size
 
 **WRONG:**
+
 ```rust
 fn sbox_as_u32_array() -> [u32; 512] {  // Too small!
 ```
 
 **CORRECT:**
+
 ```rust
 fn sbox_as_u32_array() -> [u32; 2048] {  // One u32 per byte of sbox.bin
 ```
@@ -791,6 +807,7 @@ panics or wrong round counts.
 ### 8. Trying to stream-convert sparse images
 
 **WRONG:**
+
 ```rust
 // Cannot convert sparse during extraction — needs random access
 while let Some(chunk) = read_next_chunk() {
@@ -799,6 +816,7 @@ while let Some(chunk) = read_next_chunk() {
 ```
 
 **CORRECT:**
+
 ```rust
 // Write sparse file first, then convert in a separate pass
 writer.write_all(&data)?;
@@ -855,4 +873,4 @@ If extraction produces wrong output:
 
 ---
 
-*Last Updated: 2026-04-03*
+_Last Updated: 2026-04-03_

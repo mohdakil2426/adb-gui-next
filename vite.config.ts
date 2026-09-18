@@ -1,86 +1,74 @@
-import path from 'node:path';
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import path from "node:path";
+
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig(() => ({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, './src'),
-      path: 'path-browserify',
-    },
-  },
-  // Prevent Vite from obscuring Rust errors
-  clearScreen: false,
-  // Expose TAURI_ENV_* variables to frontend via import.meta.env
-  envPrefix: ['VITE_', 'TAURI_ENV_*'],
-  server: {
-    port: 1420,
-    strictPort: true,
-    host,
-    hmr: host
-      ? {
-          protocol: 'ws',
-          host,
-          port: 1421,
-        }
-      : undefined,
-    watch: {
-      ignored: [
-        '**/src-tauri/**',
-        '**/docs/**',
-        '**/.agent/**',
-        '**/.agents/**',
-        '**/.claude/**',
-        '**/memory-bank/**',
-        '**/.clinerules',
-      ],
-    },
-  },
   build: {
-    // Tauri uses Chromium on Windows and WebKit on macOS/Linux
-    target: process.env.TAURI_ENV_PLATFORM === 'windows' ? 'chrome105' : 'safari13',
-    // Don't minify debug builds — easier to debug; minify release builds with Oxc (Vite 8 default)
-    minify: process.env.TAURI_ENV_DEBUG ? false : ('oxc' as const),
-    // Produce sourcemaps for debug builds
-    sourcemap: !!process.env.TAURI_ENV_DEBUG,
-    // Raise warning limit — vendor chunks split below keeps individual chunks small
     chunkSizeWarningLimit: 600,
+    minify: process.env.TAURI_ENV_DEBUG ? false : ("oxc" as const),
     rollupOptions: {
       output: {
-        // Split large vendors into cacheable chunks (function form required by Rollup types)
         manualChunks(id: string) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('/react/') || id.includes('/react@')) {
-              return 'react-vendor';
+          if (id.includes("node_modules")) {
+            if (id.includes("react-dom") || id.includes("/react/") || id.includes("/react@")) {
+              return "react-vendor";
             }
-            if (id.includes('framer-motion')) {
-              return 'motion';
+            if (id.includes("framer-motion")) {
+              return "motion";
             }
-            if (id.includes('@tauri-apps')) {
-              return 'tauri';
+            if (id.includes("@tauri-apps")) {
+              return "tauri";
             }
-            // Isolate recharts (when added by ChartAddScout) into its own
-            // chunk — avoids collision with `@tanstack/query` vs
-            // `@tanstack/virtual` (both match `@tanstack`) and keeps the
-            // heavy charting dep cacheable separately. Checked: `recharts`
-            // absent in `package.json` at time of this edit, but chunk is
-            // wired proactively for when `ChartAddScout` adds it.
-            if (id.includes('recharts') || id.includes('decimal.js-light')) {
-              return 'recharts';
+            if (id.includes("recharts") || id.includes("decimal.js-light")) {
+              return "recharts";
             }
-            if (id.includes('@tanstack')) {
-              return 'query';
+            if (id.includes("@tanstack")) {
+              return "query";
             }
-            if (id.includes('@radix-ui') || id.includes('radix-ui')) {
-              return 'radix';
+            if (id.includes("@radix-ui") || id.includes("radix-ui")) {
+              return "radix";
             }
           }
         },
       },
+    },
+    sourcemap: !process.env.TAURI_ENV_DEBUG,
+    target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari13",
+  },
+  clearScreen: false,
+  envPrefix: ["VITE_", "TAURI_ENV_*"],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@": path.resolve(import.meta.dirname, "./src"),
+      path: "path-browserify",
+    },
+  },
+  server: {
+    hmr: host
+      ? {
+          host,
+          port: 1421,
+          protocol: "ws",
+        }
+      : undefined,
+    host,
+    port: 1420,
+    strictPort: true,
+    watch: {
+      ignored: [
+        "**/src-tauri/**",
+        "**/docs/**",
+        "**/.agent/**",
+        "**/.agents/**",
+        "**/.claude/**",
+        "**/memory-bank/**",
+        "**/.clinerules",
+      ],
     },
   },
 }));

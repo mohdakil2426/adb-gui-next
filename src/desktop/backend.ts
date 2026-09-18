@@ -1,257 +1,196 @@
-import * as core from '@tauri-apps/api/core';
-import { open, save } from '@tauri-apps/plugin-dialog';
-import type { backend } from './models';
+import * as core from "@tauri-apps/api/core";
+import { open, save } from "@tauri-apps/plugin-dialog";
 
-function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
-  return core.invoke<T>(command, args);
-}
+import type { backend } from "./models";
 
-function normalizeSingleSelection(selection: string | null): string {
-  return selection ?? '';
-}
+const call = <T>(command: string, args?: Record<string, unknown>): Promise<T> =>
+  core.invoke<T>(command, args);
 
-function normalizeMultipleSelection(selection: string | string[] | null): string[] {
+const normalizeSingleSelection = (selection: string | null): string => selection ?? "";
+
+const normalizeMultipleSelection = (selection: string | string[] | null): string[] => {
   if (Array.isArray(selection)) {
     return selection;
   }
 
   return selection ? [selection] : [];
-}
+};
 
-async function selectFile(options: Parameters<typeof open>[0]): Promise<string> {
-  return normalizeSingleSelection(await open(options));
-}
+const selectFile = async (options: Parameters<typeof open>[0]): Promise<string> =>
+  normalizeSingleSelection(await open(options));
 
-async function selectFiles(options: Parameters<typeof open>[0]): Promise<string[]> {
-  return normalizeMultipleSelection(await open(options));
-}
+const selectFiles = async (options: Parameters<typeof open>[0]): Promise<string[]> =>
+  normalizeMultipleSelection(await open(options));
 
-async function selectSavePath(options: Parameters<typeof save>[0]): Promise<string> {
-  return normalizeSingleSelection(await save(options));
-}
+const selectSavePath = async (options: Parameters<typeof save>[0]): Promise<string> =>
+  normalizeSingleSelection(await save(options));
 
-const DEFAULT_FILE_ACCESS_MODE: backend.FileAccessMode = 'normal';
+const DEFAULT_FILE_ACCESS_MODE: backend.FileAccessMode = "normal";
 
-export function CleanupPayloadCache(): Promise<void> {
-  return call('cleanup_payload_cache');
-}
+export const CleanupPayloadCache = (): Promise<void> => call("cleanup_payload_cache");
 
-export function CreateCancellationToken(): Promise<string> {
-  return call('create_cancellation_token');
-}
+export const CreateCancellationToken = (): Promise<string> => call("create_cancellation_token");
 
-export function CancelExtraction(tokenId: string): Promise<void> {
-  return call('cancel_extraction', { tokenId });
-}
+export const CancelExtraction = (tokenId: string): Promise<void> =>
+  call("cancel_extraction", { tokenId });
 
-export function FinalizeAvdRoot(
-  request: backend.RootFinalizeRequest,
-): Promise<backend.RootFinalizeResult> {
-  return call('finalize_avd_root', { request });
-}
+export const FinalizeAvdRoot = (
+  request: backend.RootFinalizeRequest
+): Promise<backend.RootFinalizeResult> => call("finalize_avd_root", { request });
 
-export function ConnectWirelessAdb(ip: string, port: string): Promise<string> {
-  return call('connect_wireless_adb', { ip, port });
-}
+export const ConnectWirelessAdb = (ip: string, port: string): Promise<string> =>
+  call("connect_wireless_adb", { ip, port });
 
-export function DisconnectWirelessAdb(ip: string, port: string): Promise<string> {
-  return call('disconnect_wireless_adb', { ip, port });
-}
+export const DisconnectWirelessAdb = (ip: string, port: string): Promise<string> =>
+  call("disconnect_wireless_adb", { ip, port });
 
-export function EnableWirelessAdb(port: string, serial?: string | null): Promise<string> {
-  return call('enable_wireless_adb', { port, serial });
-}
+export const EnableWirelessAdb = (port: string, serial?: string | null): Promise<string> =>
+  call("enable_wireless_adb", { port, serial });
 
-export function ExtractPayload(
+export const ExtractPayload = (
   payloadPath: string,
   outputDir: string,
   selectedPartitions: string[],
   prefetch?: boolean,
-  cancelTokenId?: string,
-): Promise<backend.ExtractPayloadResult> {
-  return call('extract_payload', {
-    payloadPath,
-    outputDir,
-    selectedPartitions,
-    prefetch: prefetch ?? null,
+  cancelTokenId?: string
+): Promise<backend.ExtractPayloadResult> =>
+  call("extract_payload", {
     cancelTokenId: cancelTokenId ?? null,
+    outputDir,
+    payloadPath,
+    prefetch: prefetch ?? null,
+    selectedPartitions,
   });
-}
 
-export function FlashPartition(
+export const FlashPartition = (
   partition: string,
   imagePath: string,
-  serial?: string | null,
-): Promise<void> {
-  return call('flash_partition', { partition, imagePath, serial });
-}
+  serial?: string | null
+): Promise<void> => call("flash_partition", { imagePath, partition, serial });
 
-export function GetAvdRestorePlan(avdName: string): Promise<backend.RestorePlan> {
-  return call('get_avd_restore_plan', { avdName });
-}
+export const GetAvdRestorePlan = (avdName: string): Promise<backend.RestorePlan> =>
+  call("get_avd_restore_plan", { avdName });
 
-export function GetDeviceInfo(serial?: string | null): Promise<backend.DeviceInfo> {
-  return call('get_device_info', { serial });
-}
+export const GetDeviceInfo = (serial?: string | null): Promise<backend.DeviceInfo> =>
+  call("get_device_info", { serial });
 
 /**
  * Structured device telemetry — numbers, not display strings — in one adb round-trip.
  * Prefer this over {@link GetDeviceInfo} for anything charted, compared, or computed.
  */
-export function GetDeviceTelemetry(serial?: string | null): Promise<backend.DeviceTelemetry> {
-  return call('get_device_telemetry', { serial: serial ?? null });
-}
+export const GetDeviceTelemetry = (serial?: string | null): Promise<backend.DeviceTelemetry> =>
+  call("get_device_telemetry", { serial: serial ?? null });
 
-export function GetDevices(): Promise<backend.Device[]> {
-  return call('get_devices');
-}
+export const GetDevices = (): Promise<backend.Device[]> => call("get_devices");
 
-export function GetFastbootDevices(): Promise<backend.Device[]> {
-  return call('get_fastboot_devices');
-}
+export const GetFastbootDevices = (): Promise<backend.Device[]> => call("get_fastboot_devices");
 
-export function GetInstalledPackages(serial?: string | null): Promise<backend.InstalledPackage[]> {
-  return call('get_installed_packages', { serial });
-}
+export const GetInstalledPackages = (serial?: string | null): Promise<backend.InstalledPackage[]> =>
+  call("get_installed_packages", { serial });
 
-export function InstallPackage(
+export const InstallPackage = (
   path: string,
   serial?: string | null,
-  flags?: string[],
-): Promise<string> {
-  return call('install_package', { path, serial, flags });
-}
+  flags?: string[]
+): Promise<string> => call("install_package", { flags, path, serial });
 
-export function InspectPackageFile(path: string): Promise<backend.ApkInspectionResult> {
-  return call('inspect_package_file', { path });
-}
+export const InspectPackageFile = (path: string): Promise<backend.ApkInspectionResult> =>
+  call("inspect_package_file", { path });
 
-export function PackageLifecycleOp(
+export const PackageLifecycleOp = (
   packageName: string,
   op: string,
-  serial?: string | null,
-): Promise<string> {
-  return call('package_lifecycle_op', { packageName, op, serial });
-}
+  serial?: string | null
+): Promise<string> => call("package_lifecycle_op", { op, packageName, serial });
 
-export function PullPackageApk(
+export const PullPackageApk = (
   packageName: string,
   destinationPath: string,
-  serial?: string | null,
-): Promise<string> {
-  return call('pull_package_apk', { packageName, destinationPath, serial });
-}
+  serial?: string | null
+): Promise<string> => call("pull_package_apk", { destinationPath, packageName, serial });
 
-export function GetPackageDetails(
+export const GetPackageDetails = (
   packageName: string,
-  serial?: string | null,
-): Promise<backend.DetailedPackageInfo> {
-  return call('get_package_details', { packageName, serial });
-}
+  serial?: string | null
+): Promise<backend.DetailedPackageInfo> => call("get_package_details", { packageName, serial });
 
-export function LaunchAvd(
+export const LaunchAvd = (
   avdName: string,
-  options: backend.EmulatorLaunchOptions,
-): Promise<string> {
-  return call('launch_avd', { avdName, options });
-}
+  options: backend.EmulatorLaunchOptions
+): Promise<string> => call("launch_avd", { avdName, options });
 
-export function LaunchDeviceManager(): Promise<void> {
-  return call('launch_device_manager');
-}
+export const LaunchDeviceManager = (): Promise<void> => call("launch_device_manager");
 
-export function LaunchTerminal(): Promise<void> {
-  return call('launch_terminal');
-}
+export const LaunchTerminal = (): Promise<void> => call("launch_terminal");
 
-export function ListAvds(): Promise<backend.AvdSummary[]> {
-  return call('list_avds');
-}
+export const ListAvds = (): Promise<backend.AvdSummary[]> => call("list_avds");
 
-export function VerifyFileRootAccess(serial?: string | null): Promise<string> {
-  return call('verify_file_root_access', { serial });
-}
+export const VerifyFileRootAccess = (serial?: string | null): Promise<string> =>
+  call("verify_file_root_access", { serial });
 
-export function ListFiles(
+export const ListFiles = (
   path: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<backend.FileEntry[]> {
-  return call('list_files', { path, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<backend.FileEntry[]> => call("list_files", { accessMode, path, serial });
 
-export function ListPayloadPartitionsWithDetails(
-  payloadPath: string,
-): Promise<backend.PartitionDetail[]> {
-  return call('list_payload_partitions_with_details', { payloadPath });
-}
+export const ListPayloadPartitionsWithDetails = (
+  payloadPath: string
+): Promise<backend.PartitionDetail[]> =>
+  call("list_payload_partitions_with_details", { payloadPath });
 
-export function OpenFolder(folderPath: string): Promise<void> {
-  return call('open_folder', { folderPath });
-}
+export const OpenFolder = (folderPath: string): Promise<void> =>
+  call("open_folder", { folderPath });
 
-export function PullFile(
+export const PullFile = (
   remotePath: string,
   localPath: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('pull_file', { remotePath, localPath, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("pull_file", { accessMode, localPath, remotePath, serial });
 
-export function PrepareAvdRoot(
-  request: backend.RootPreparationRequest,
-): Promise<backend.RootPreparationResult> {
-  return call('prepare_avd_root', { request });
-}
+export const PrepareAvdRoot = (
+  request: backend.RootPreparationRequest
+): Promise<backend.RootPreparationResult> => call("prepare_avd_root", { request });
 
-export function PushFile(
+export const PushFile = (
   localPath: string,
   remotePath: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('push_file', { localPath, remotePath, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("push_file", { accessMode, localPath, remotePath, serial });
 
-export function HostPathKinds(paths: string[]): Promise<backend.HostPathKind[]> {
-  return call('host_path_kinds', { paths });
-}
+export const HostPathKinds = (paths: string[]): Promise<backend.HostPathKind[]> =>
+  call("host_path_kinds", { paths });
 
-export function CreateDirectory(
+export const CreateDirectory = (
   path: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('create_directory', { path, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("create_directory", { accessMode, path, serial });
 
-export function CreateFile(
+export const CreateFile = (
   path: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('create_file', { path, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("create_file", { accessMode, path, serial });
 
-export function DeleteFiles(
+export const DeleteFiles = (
   paths: string[],
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('delete_files', { paths, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("delete_files", { accessMode, paths, serial });
 
-export function TransferDeviceFiles(
+export const TransferDeviceFiles = (
   mode: backend.DeviceTransferMode,
   sources: string[],
   destDir: string,
   overwrite: boolean,
   serial: string | null | undefined,
   clipboardSerial: string,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<backend.DeviceTransferResult> {
-  return call('transfer_device_files', {
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<backend.DeviceTransferResult> =>
+  call("transfer_device_files", {
     accessMode,
     clipboardSerial,
     destDir,
@@ -260,224 +199,180 @@ export function TransferDeviceFiles(
     serial,
     sources,
   });
-}
 
-export function RenameFile(
+export const RenameFile = (
   oldPath: string,
   newPath: string,
   serial?: string | null,
-  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-): Promise<string> {
-  return call('rename_file', { oldPath, newPath, serial, accessMode });
-}
+  accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE
+): Promise<string> => call("rename_file", { accessMode, newPath, oldPath, serial });
 
-export function Reboot(mode: string, serial?: string | null): Promise<void> {
-  return call('reboot', { mode, serial });
-}
+export const Reboot = (mode: string, serial?: string | null): Promise<void> =>
+  call("reboot", { mode, serial });
 
-export function RestartAdbServer(): Promise<string> {
-  return call('restart_adb_server');
-}
+export const RestartAdbServer = (): Promise<string> => call("restart_adb_server");
 
-export function KillAdbServer(): Promise<string> {
-  return call('kill_adb_server');
-}
+export const KillAdbServer = (): Promise<string> => call("kill_adb_server");
 
-export function GetHostToolVersions(): Promise<backend.HostToolVersions> {
-  return call('get_host_tool_versions');
-}
+export const GetHostToolVersions = (): Promise<backend.HostToolVersions> =>
+  call("get_host_tool_versions");
 
-export function HostSetupStatus(): Promise<backend.HostSetupStatus> {
-  return call('host_setup_status');
-}
+export const HostSetupStatus = (): Promise<backend.HostSetupStatus> => call("host_setup_status");
 
-export function HostSetupInstall(): Promise<backend.HostSetupResult> {
-  return call('host_setup_install');
-}
+export const HostSetupInstall = (): Promise<backend.HostSetupResult> => call("host_setup_install");
 
-export function HostSetupInstallDriver(): Promise<backend.HostSetupResult> {
-  return call('host_setup_install_driver');
-}
+export const HostSetupInstallDriver = (): Promise<backend.HostSetupResult> =>
+  call("host_setup_install_driver");
 
-export function LaunchHostSetupTerminal(): Promise<void> {
-  return call('launch_host_setup_terminal');
-}
+export const LaunchHostSetupTerminal = (): Promise<void> => call("launch_host_setup_terminal");
 
-export function HostSetupRepairPath(): Promise<backend.HostSetupResult> {
-  return call('host_setup_repair_path');
-}
+export const HostSetupRepairPath = (): Promise<backend.HostSetupResult> =>
+  call("host_setup_repair_path");
 
-export function RestoreAvdBackups(avdName: string): Promise<string> {
-  return call('restore_avd_backups', { avdName });
-}
+export const RestoreAvdBackups = (avdName: string): Promise<string> =>
+  call("restore_avd_backups", { avdName });
 
-export function RunAdbHostCommand(command: string): Promise<string> {
-  return call('run_adb_host_command', { command });
-}
+export const RunAdbHostCommand = (command: string): Promise<string> =>
+  call("run_adb_host_command", { command });
 
-export function RunFastbootHostCommand(command: string, serial?: string | null): Promise<string> {
-  return call('run_fastboot_host_command', { command, serial });
-}
+export const RunFastbootHostCommand = (command: string, serial?: string | null): Promise<string> =>
+  call("run_fastboot_host_command", { command, serial });
 
-export function RunShellCommand(command: string, serial?: string | null): Promise<string> {
-  return call('run_shell_command', { command, serial });
-}
+export const RunShellCommand = (command: string, serial?: string | null): Promise<string> =>
+  call("run_shell_command", { command, serial });
 
-export function SaveLog(content: string, prefix: string): Promise<string> {
-  return call('save_log', { content, prefix });
-}
+export const SaveLog = (content: string, prefix: string): Promise<string> =>
+  call("save_log", { content, prefix });
 
-export function SaveScreenshot(destPath: string, serial?: string | null): Promise<string> {
-  return call('save_screenshot', { destPath, serial: serial ?? null });
-}
+export const SaveScreenshot = (destPath: string, serial?: string | null): Promise<string> =>
+  call("save_screenshot", { destPath, serial: serial ?? null });
 
-export function SelectDirectoryForPull(): Promise<string> {
-  return selectFile({
+export const SelectDirectoryForPull = (): Promise<string> =>
+  selectFile({
     directory: true,
   });
-}
 
-export function SelectDirectoryToPush(): Promise<string> {
-  return selectFile({
+export const SelectDirectoryToPush = (): Promise<string> =>
+  selectFile({
     directory: true,
   });
-}
 
-export function SelectFileToPush(): Promise<string> {
-  return selectFile({});
-}
+export const SelectFileToPush = (): Promise<string> => selectFile({});
 
-export function SelectImageFile(): Promise<string> {
-  return selectFile({
+export const SelectImageFile = (): Promise<string> =>
+  selectFile({
     filters: [
       {
-        name: 'Image files',
-        extensions: ['img'],
+        extensions: ["img"],
+        name: "Image files",
       },
     ],
   });
-}
 
-export function SelectMultipleApkFiles(): Promise<string[]> {
-  return selectFiles({
+export const SelectMultipleApkFiles = (): Promise<string[]> =>
+  selectFiles({
+    filters: [
+      {
+        extensions: ["apk", "apks", "xapk", "apkm"],
+        name: "Android Package files",
+      },
+    ],
     multiple: true,
-    filters: [
-      {
-        name: 'Android Package files',
-        extensions: ['apk', 'apks', 'xapk', 'apkm'],
-      },
-    ],
   });
-}
 
-export function SelectOutputDirectory(): Promise<string> {
-  return selectFile({
+export const SelectOutputDirectory = (): Promise<string> =>
+  selectFile({
     directory: true,
   });
-}
 
-export function SelectPayloadFile(): Promise<string> {
-  return selectFile({
+export const SelectPayloadFile = (): Promise<string> =>
+  selectFile({
     filters: [
       {
-        name: 'Payload files',
-        extensions: ['bin', 'zip', 'ops', 'ofp'],
+        extensions: ["bin", "zip", "ops", "ofp"],
+        name: "Payload files",
       },
     ],
   });
-}
 
-export function SelectSaveDirectory(defaultPath: string): Promise<string> {
-  return selectSavePath({
+export const SelectSaveDirectory = (defaultPath: string): Promise<string> =>
+  selectSavePath({
     defaultPath,
   });
-}
 
-export function SelectScreenshotPng(): Promise<string> {
-  return selectSavePath({
-    defaultPath: 'screenshot.png',
-    filters: [{ name: 'PNG image', extensions: ['png'] }],
+export const SelectScreenshotPng = (): Promise<string> =>
+  selectSavePath({
+    defaultPath: "screenshot.png",
+    filters: [{ extensions: ["png"], name: "PNG image" }],
   });
-}
 
-export function SelectZipFile(): Promise<string> {
-  return selectFile({
+export const SelectZipFile = (): Promise<string> =>
+  selectFile({
     filters: [
       {
-        name: 'ZIP files',
-        extensions: ['zip'],
+        extensions: ["zip"],
+        name: "ZIP files",
       },
     ],
   });
-}
 
-export function SetActiveSlot(slot: string, serial?: string | null): Promise<void> {
-  return call('set_active_slot', { slot, serial: serial ?? null });
-}
+export const SetActiveSlot = (slot: string, serial?: string | null): Promise<void> =>
+  call("set_active_slot", { serial: serial ?? null, slot });
 
-export function SideloadPackage(path: string, serial?: string | null): Promise<string> {
-  return call('sideload_package', { path, serial });
-}
+export const SideloadPackage = (path: string, serial?: string | null): Promise<string> =>
+  call("sideload_package", { path, serial });
 
-export function SelectRootPackageFile(): Promise<string> {
-  return selectFile({
+export const SelectRootPackageFile = (): Promise<string> =>
+  selectFile({
     filters: [
       {
-        name: 'Root packages',
-        extensions: ['apk', 'zip'],
+        extensions: ["apk", "zip"],
+        name: "Root packages",
       },
     ],
   });
-}
 
-export function SelectPatchedRootImageFile(): Promise<string> {
-  return selectFile({
+export const SelectPatchedRootImageFile = (): Promise<string> =>
+  selectFile({
     filters: [
       {
-        name: 'Patched boot images',
-        extensions: ['img'],
+        extensions: ["img"],
+        name: "Patched boot images",
       },
     ],
   });
-}
 
 /** Fetch the latest official stable Magisk release from the GitHub releases API. */
-export function FetchMagiskStableRelease(): Promise<backend.MagiskStableRelease> {
-  return call('fetch_magisk_stable_release');
-}
+export const FetchMagiskStableRelease = (): Promise<backend.MagiskStableRelease> =>
+  call("fetch_magisk_stable_release");
 
 /** Root an AVD using the automated magiskboot pipeline. Emits root:progress events. */
-export function RootAvd(request: backend.RootAvdRequest): Promise<backend.RootAvdResult> {
-  return call('root_avd', { request });
-}
+export const RootAvd = (request: backend.RootAvdRequest): Promise<backend.RootAvdResult> =>
+  call("root_avd", { request });
 
 /** Run the pre-flight readiness scan for an AVD. Fast (~1-2s). */
-export function ScanAvdRootReadiness(
+export const ScanAvdRootReadiness = (
   avdName: string,
-  serial?: string | null,
-): Promise<backend.RootReadinessScan> {
-  return call('scan_avd_root_readiness', { avdName, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.RootReadinessScan> =>
+  call("scan_avd_root_readiness", { avdName, serial: serial ?? null });
 
 /** Verify that a cold-booted AVD has working Magisk root. */
-export function VerifyAvdRoot(
+export const VerifyAvdRoot = (
   avdName: string,
-  serial: string,
-): Promise<backend.RootVerificationResult> {
-  return call('verify_avd_root', { avdName, serial });
-}
+  serial: string
+): Promise<backend.RootVerificationResult> => call("verify_avd_root", { avdName, serial });
 
-export function UninstallPackage(packageName: string, serial?: string | null): Promise<string> {
-  return call('uninstall_package', { packageName, serial });
-}
+export const UninstallPackage = (packageName: string, serial?: string | null): Promise<string> =>
+  call("uninstall_package", { packageName, serial });
 
-export function StopAvd(serial: string): Promise<string> {
-  return call('stop_avd', { serial });
-}
+export const StopAvd = (serial: string): Promise<string> => call("stop_avd", { serial });
 
-export function WipeData(serial?: string | null, confirm?: string | null): Promise<void> {
-  return call('wipe_data', { serial: serial ?? null, confirm: confirm ?? null });
-}
+export const WipeData = (serial?: string | null, confirm?: string | null): Promise<void> =>
+  call("wipe_data", {
+    confirm: confirm ?? null,
+    serial: serial ?? null,
+  });
 
 // =============================================================================
 // Remote URL Payload Commands
@@ -487,37 +382,33 @@ export function WipeData(serial?: string | null, confirm?: string | null): Promi
  * Check if a remote URL supports HTTP range requests and get file size.
  * Returns error if the server doesn't support range requests.
  */
-export function CheckRemotePayload(url: string): Promise<backend.RemotePayloadInfo> {
-  return call('check_remote_payload', { url });
-}
+export const CheckRemotePayload = (url: string): Promise<backend.RemotePayloadInfo> =>
+  call("check_remote_payload", { url });
 
 /**
  * List partition names and sizes from a remote payload URL.
  * Downloads the payload manifest via HTTP range requests.
  */
-export function ListRemotePayloadPartitions(url: string): Promise<backend.PartitionDetail[]> {
-  return call('list_remote_payload_partitions', { url });
-}
+export const ListRemotePayloadPartitions = (url: string): Promise<backend.PartitionDetail[]> =>
+  call("list_remote_payload_partitions", { url });
 
 /**
  * Get full metadata (HTTP headers + ZIP structure + OTA manifest) for a remote payload.
  * Call after partitions are loaded — re-reads the manifest to extract metadata fields.
  */
-export function GetRemotePayloadMetadata(url: string): Promise<backend.RemotePayloadMetadata> {
-  return call('get_remote_payload_metadata', { url });
-}
+export const GetRemotePayloadMetadata = (url: string): Promise<backend.RemotePayloadMetadata> =>
+  call("get_remote_payload_metadata", { url });
 
 // =============================================================================
 // Marketplace Commands
 // =============================================================================
 
 /** Search apps across all marketplace providers (F-Droid, GitHub, Aptoide). */
-export function MarketplaceSearch(
+export const MarketplaceSearch = (
   query: string,
-  filters?: backend.MarketplaceSearchFilters,
-): Promise<backend.MarketplaceApp[]> {
-  return call('marketplace_search', { query, filters: filters ?? null });
-}
+  filters?: backend.MarketplaceSearchFilters
+): Promise<backend.MarketplaceApp[]> =>
+  call("marketplace_search", { filters: filters ?? null, query });
 
 /**
  * Get detailed info about a single app from a specific provider.
@@ -527,468 +418,415 @@ export function MarketplaceSearch(
  * backend uses them to pin the GitHub lookup instead of guessing from the
  * package ID.
  */
-export function MarketplaceGetAppDetail(
+export const MarketplaceGetAppDetail = (
   packageName: string,
   source: string,
   githubToken?: string | null,
   repoUrl?: string | null,
-  downloadUrl?: string | null,
-): Promise<backend.MarketplaceAppDetail> {
-  return call('marketplace_get_app_detail', {
+  downloadUrl?: string | null
+): Promise<backend.MarketplaceAppDetail> =>
+  call("marketplace_get_app_detail", {
     downloadUrl: downloadUrl ?? null,
     githubToken: githubToken ?? null,
     packageName,
     repoUrl: repoUrl ?? null,
     source,
   });
-}
 
-export function MarketplaceRenderMarkdown(
+export const MarketplaceRenderMarkdown = (
   markdown: string,
   owner?: string,
   repo?: string,
-  defaultBranch?: string,
-): Promise<string> {
-  return call('marketplace_render_markdown', {
+  defaultBranch?: string
+): Promise<string> =>
+  call("marketplace_render_markdown", {
+    defaultBranch: defaultBranch ?? null,
     markdown,
     owner: owner ?? null,
     repo: repo ?? null,
-    defaultBranch: defaultBranch ?? null,
   });
-}
 
 /** Clear backend marketplace caches. */
-export function MarketplaceClearCache(): Promise<string> {
-  return call('marketplace_clear_cache');
-}
+export const MarketplaceClearCache = (): Promise<string> => call("marketplace_clear_cache");
 
 /** Start GitHub device-flow authentication. */
-export function MarketplaceGithubDeviceStart(
+export const MarketplaceGithubDeviceStart = (
   clientId: string,
-  scopes: string[] = [],
-): Promise<backend.GithubDeviceFlowChallenge> {
-  return call('marketplace_github_device_start', {
+  scopes: string[] = []
+): Promise<backend.GithubDeviceFlowChallenge> =>
+  call("marketplace_github_device_start", {
     clientId,
     scopes,
   });
-}
 
 /** Poll GitHub device-flow authentication. */
-export function MarketplaceGithubDevicePoll(
+export const MarketplaceGithubDevicePoll = (
   clientId: string,
-  deviceCode: string,
-): Promise<backend.GithubDeviceFlowPollResult> {
-  return call('marketplace_github_device_poll', {
+  deviceCode: string
+): Promise<backend.GithubDeviceFlowPollResult> =>
+  call("marketplace_github_device_poll", {
     clientId,
     deviceCode,
   });
-}
 
 /** Download an APK from a URL to a temp directory. Returns the local file path. */
-export function MarketplaceDownloadApk(
+export const MarketplaceDownloadApk = (
   url: string,
   packageName?: string,
-  downloadId?: string,
-): Promise<string> {
-  return call('marketplace_download_apk', {
-    url,
-    packageName: packageName ?? null,
+  downloadId?: string
+): Promise<string> =>
+  call("marketplace_download_apk", {
     downloadId: downloadId ?? null,
+    packageName: packageName ?? null,
+    url,
   });
-}
 
 /** Install a downloaded APK via ADB on the selected device when serial is set. */
-export function MarketplaceInstallApk(apkPath: string, serial?: string | null): Promise<string> {
-  return call('marketplace_install_apk', { apkPath, serial });
-}
+export const MarketplaceInstallApk = (apkPath: string, serial?: string | null): Promise<string> =>
+  call("marketplace_install_apk", { apkPath, serial });
 
 // ── Debloater ────────────────────────────────────────────────────────────────
 
 /** Load UAD lists from remote/cache/bundled. Returns status info. */
-export function LoadDebloatLists(): Promise<backend.DebloatListStatus> {
-  return call('load_debloat_lists');
-}
+export const LoadDebloatLists = (): Promise<backend.DebloatListStatus> =>
+  call("load_debloat_lists");
 
 /** Get all system packages merged with UAD metadata. */
-export function GetDebloatPackages(serial?: string | null): Promise<backend.DebloatPackageRow[]> {
-  return call('get_debloat_packages', { serial: serial ?? null });
-}
+export const GetDebloatPackages = (serial?: string | null): Promise<backend.DebloatPackageRow[]> =>
+  call("get_debloat_packages", { serial: serial ?? null });
 
 /** Apply an action to a batch of packages. action: 'uninstall' | 'disable' | 'restore'. */
-export function DebloatPackages(
+export const DebloatPackages = (
   packages: string[],
   action: backend.DebloatAction,
   user = 0,
-  serial?: string | null,
-): Promise<backend.DebloatActionResult[]> {
-  return call('debloat_packages', { packages, action, user, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.DebloatActionResult[]> =>
+  call("debloat_packages", {
+    action,
+    packages,
+    serial: serial ?? null,
+    user,
+  });
 
 /** Create a backup snapshot of current package states. */
-export function CreateDebloatBackup(
+export const CreateDebloatBackup = (
   packages: backend.PackageSnapshot[],
-  serial?: string | null,
-): Promise<backend.BackupSummary> {
-  return call('create_debloat_backup', { packages, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.BackupSummary> =>
+  call("create_debloat_backup", { packages, serial: serial ?? null });
 
 /** List all available backups for the selected device. */
-export function ListDebloatBackups(serial?: string | null): Promise<backend.BackupSummary[]> {
-  return call('list_debloat_backups', { serial: serial ?? null });
-}
+export const ListDebloatBackups = (serial?: string | null): Promise<backend.BackupSummary[]> =>
+  call("list_debloat_backups", { serial: serial ?? null });
 
 /**
  * Restore a previously created backup by file name, reapplying each package's recorded
  * state. `fileName` comes from {@link backend.BackupSummary.fileName}.
  */
-export function RestoreDebloatBackup(
+export const RestoreDebloatBackup = (
   fileName: string,
-  serial?: string | null,
-): Promise<backend.DebloatActionResult[]> {
-  return call('restore_debloat_backup', { fileName, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.DebloatActionResult[]> =>
+  call("restore_debloat_backup", { fileName, serial: serial ?? null });
 
 /** Get per-device settings (expert mode, disable mode, multi-user mode). */
-export function GetDebloatDeviceSettings(
-  serial?: string | null,
-): Promise<backend.PerDeviceSettings> {
-  return call('get_debloat_device_settings', { serial: serial ?? null });
-}
+export const GetDebloatDeviceSettings = (
+  serial?: string | null
+): Promise<backend.PerDeviceSettings> =>
+  call("get_debloat_device_settings", { serial: serial ?? null });
 
 /** Save per-device settings. */
-export function SaveDebloatDeviceSettings(
+export const SaveDebloatDeviceSettings = (
   settings: backend.PerDeviceSettings,
-  serial?: string | null,
-): Promise<void> {
-  return call('save_debloat_device_settings', { settings, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<void> =>
+  call("save_debloat_device_settings", {
+    serial: serial ?? null,
+    settings,
+  });
 
 /** Combined response for all initial debloater data. */
 export type DebloatData = backend.DebloatData;
 
 /** Get all debloater data in one call. Uses in-memory cache when available. */
-export function GetDebloatData(serial?: string | null): Promise<backend.DebloatData> {
-  return call('get_debloat_data', { serial: serial ?? null });
-}
+export const GetDebloatData = (serial?: string | null): Promise<backend.DebloatData> =>
+  call("get_debloat_data", { serial: serial ?? null });
 
 /** Force refresh debloater data for the selected device. */
-export function RefreshDebloatData(serial?: string | null): Promise<backend.DebloatData> {
-  return call('refresh_debloat_data', { serial: serial ?? null });
-}
+export const RefreshDebloatData = (serial?: string | null): Promise<backend.DebloatData> =>
+  call("refresh_debloat_data", { serial: serial ?? null });
 
-export function GetAppIcons(
+export const GetAppIcons = (
   packages: string[],
-  serial?: string | null,
-): Promise<backend.AppIcon[]> {
-  return call('get_app_icons', { packages, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.AppIcon[]> => call("get_app_icons", { packages, serial: serial ?? null });
 
-export function OpenDeviceFileInEditor(
+export const OpenDeviceFileInEditor = (
   remotePath: string,
   serial?: string | null,
   accessMode: backend.FileAccessMode = DEFAULT_FILE_ACCESS_MODE,
-  target: backend.DeviceEditorTarget = 'default',
-): Promise<string> {
-  return call('open_device_file_in_editor', { remotePath, serial, accessMode, target });
-}
+  target: backend.DeviceEditorTarget = "default"
+): Promise<string> =>
+  call("open_device_file_in_editor", {
+    accessMode,
+    remotePath,
+    serial,
+    target,
+  });
 
-export function RevealDevicePathInExplorer(
+export const RevealDevicePathInExplorer = (
   remotePath: string,
-  serial?: string | null,
-): Promise<string> {
-  return call('reveal_device_path_in_explorer', { remotePath, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<string> =>
+  call("reveal_device_path_in_explorer", {
+    remotePath,
+    serial: serial ?? null,
+  });
 
-export function GetLogcatSnapshot(serial?: string | null, lines?: number): Promise<string> {
-  return call('get_logcat_snapshot', { serial: serial ?? null, lines: lines ?? null });
-}
+export const GetLogcatSnapshot = (serial?: string | null, lines?: number): Promise<string> =>
+  call("get_logcat_snapshot", {
+    lines: lines ?? null,
+    serial: serial ?? null,
+  });
 
-export function ScrcpyStatus(): Promise<backend.ScrcpyStatus> {
-  return call('scrcpy_status');
-}
+export const ScrcpyStatus = (): Promise<backend.ScrcpyStatus> => call("scrcpy_status");
 
-export function ScrcpyCheckUpdate(): Promise<backend.ScrcpyStatus> {
-  return call('scrcpy_check_update');
-}
+export const ScrcpyCheckUpdate = (): Promise<backend.ScrcpyStatus> => call("scrcpy_check_update");
 
-export function ScrcpyInstall(): Promise<backend.ScrcpyStatus> {
-  return call('scrcpy_install');
-}
+export const ScrcpyInstall = (): Promise<backend.ScrcpyStatus> => call("scrcpy_install");
 
-export function ScrcpyUninstall(): Promise<backend.ScrcpyStatus> {
-  return call('scrcpy_uninstall');
-}
-export function ScrcpyLaunch(
+export const ScrcpyUninstall = (): Promise<backend.ScrcpyStatus> => call("scrcpy_uninstall");
+
+export const ScrcpyLaunch = (
   options: backend.ScrcpyLaunchOptions,
-  serial?: string | null,
-): Promise<void> {
-  return call('scrcpy_launch', { options, serial: serial ?? null });
-}
-export function ScrcpyStop(serial?: string | null): Promise<void> {
-  return call('scrcpy_stop', { serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<void> => call("scrcpy_launch", { options, serial: serial ?? null });
 
-export function ScrcpyActiveSessions(): Promise<backend.ScrcpyActiveSessions> {
-  return call('scrcpy_active_sessions');
-}
+export const ScrcpyStop = (serial?: string | null): Promise<void> =>
+  call("scrcpy_stop", { serial: serial ?? null });
 
-export function ScrcpyPresets(): Promise<backend.ScrcpyPresetsCatalog> {
-  return call('scrcpy_presets');
-}
+export const ScrcpyActiveSessions = (): Promise<backend.ScrcpyActiveSessions> =>
+  call("scrcpy_active_sessions");
 
-export function ScrcpyOpenToolbar(
+export const ScrcpyPresets = (): Promise<backend.ScrcpyPresetsCatalog> => call("scrcpy_presets");
+
+export const ScrcpyOpenToolbar = (
   serial: string,
   pid?: number | null,
   mode?: backend.ToolbarMode,
-  side?: backend.ToolbarSide,
-): Promise<void> {
-  return call('scrcpy_open_toolbar', {
+  side?: backend.ToolbarSide
+): Promise<void> =>
+  call("scrcpy_open_toolbar", {
     mode: mode ?? null,
     pid: pid ?? null,
     serial,
     side: side ?? null,
   });
-}
 
-export function ScrcpyCloseToolbar(serial: string): Promise<void> {
-  return call('scrcpy_close_toolbar', { serial });
-}
+export const ScrcpyCloseToolbar = (serial: string): Promise<void> =>
+  call("scrcpy_close_toolbar", { serial });
 
-export function ScrcpyGetToolbarState(serial: string): Promise<backend.ToolbarSession | null> {
-  return call('scrcpy_get_toolbar_state', { serial });
-}
+export const ScrcpyGetToolbarState = (serial: string): Promise<backend.ToolbarSession | null> =>
+  call("scrcpy_get_toolbar_state", { serial });
 
-export function ScrcpySetToolbarMode(serial: string, mode: backend.ToolbarMode): Promise<void> {
-  return call('scrcpy_set_toolbar_mode', { mode, serial });
-}
+export const ScrcpySetToolbarMode = (serial: string, mode: backend.ToolbarMode): Promise<void> =>
+  call("scrcpy_set_toolbar_mode", { mode, serial });
 
-export function ScrcpySetToolbarOffset(serial: string, offset: number): Promise<void> {
-  return call('scrcpy_set_toolbar_offset', { offset, serial });
-}
+export const ScrcpySetToolbarOffset = (serial: string, offset: number): Promise<void> =>
+  call("scrcpy_set_toolbar_offset", { offset, serial });
 
-export function ScrcpySetToolbarSide(serial: string, side: backend.ToolbarSide): Promise<void> {
-  return call('scrcpy_set_toolbar_side', { serial, side });
-}
+export const ScrcpySetToolbarSide = (serial: string, side: backend.ToolbarSide): Promise<void> =>
+  call("scrcpy_set_toolbar_side", { serial, side });
 
-export function ScrcpySetToolbarSize(serial: string, width: number, height: number): Promise<void> {
-  return call('scrcpy_set_toolbar_size', { height, serial, width });
-}
-
-export function ScrcpySendKeyevent(serial: string, keycode: number): Promise<void> {
-  return call('scrcpy_send_keyevent', { keycode, serial });
-}
-
-export function ScrcpySendStatusbar(
+export const ScrcpySetToolbarSize = (
   serial: string,
-  action: 'expand-notifications' | 'expand-settings' | 'collapse',
-): Promise<void> {
-  return call('scrcpy_send_statusbar', { action, serial });
-}
+  width: number,
+  height: number
+): Promise<void> => call("scrcpy_set_toolbar_size", { height, serial, width });
 
-export function ScrcpyRotateDevice(
+export const ScrcpySendKeyevent = (serial: string, keycode: number): Promise<void> =>
+  call("scrcpy_send_keyevent", { keycode, serial });
+
+export const ScrcpySendStatusbar = (
   serial: string,
-  direction: 'clockwise' | 'counter-clockwise' | 'natural',
-): Promise<void> {
-  return call('scrcpy_rotate_device', { direction, serial });
-}
+  action: "expand-notifications" | "expand-settings" | "collapse"
+): Promise<void> => call("scrcpy_send_statusbar", { action, serial });
 
-export function ScrcpyTakeScreenshot(serial: string): Promise<string> {
-  return call('scrcpy_take_screenshot', { serial });
-}
+export const ScrcpyRotateDevice = (
+  serial: string,
+  direction: "clockwise" | "counter-clockwise" | "natural"
+): Promise<void> => call("scrcpy_rotate_device", { direction, serial });
+
+export const ScrcpyTakeScreenshot = (serial: string): Promise<string> =>
+  call("scrcpy_take_screenshot", { serial });
 
 // --- App Manager & Debloater Backend APIs ---
-export function GetAppOverviewTelemetry(
-  serial?: string | null,
-): Promise<backend.AppOverviewTelemetry> {
-  return call('get_app_overview_telemetry', { serial: serial ?? null });
-}
+export const GetAppOverviewTelemetry = (
+  serial?: string | null
+): Promise<backend.AppOverviewTelemetry> =>
+  call("get_app_overview_telemetry", { serial: serial ?? null });
 
-export function BatchInspectPackages(paths: string[]): Promise<backend.ApkInspectionResult[]> {
-  return call('batch_inspect_package_files', { paths });
-}
+export const BatchInspectPackages = (paths: string[]): Promise<backend.ApkInspectionResult[]> =>
+  call("batch_inspect_package_files", { paths });
 
-export function BatchInstallPackages(
+export const BatchInstallPackages = (
   paths: string[],
   serial?: string | null,
-  flags?: string[],
-): Promise<backend.BatchInstallResult[]> {
-  return call('batch_install_packages', {
+  flags?: string[]
+): Promise<backend.BatchInstallResult[]> =>
+  call("batch_install_packages", {
+    flags: flags ?? [],
     paths,
     serial: serial ?? null,
-    flags: flags ?? [],
   });
-}
 
 // --- Flasher Backend APIs ---
-export function GetFlasherVitals(serial?: string | null): Promise<backend.FlasherVitalsResult> {
-  return call('get_flasher_vitals', { serial: serial ?? null });
-}
+export const GetFlasherVitals = (serial?: string | null): Promise<backend.FlasherVitalsResult> =>
+  call("get_flasher_vitals", { serial: serial ?? null });
 
-export function InspectPartitionImage(filePath: string): Promise<backend.PartitionTargetInfo> {
-  return call('inspect_partition_image', { filePath });
-}
+export const InspectPartitionImage = (filePath: string): Promise<backend.PartitionTargetInfo> =>
+  call("inspect_partition_image", { filePath });
 
-export function FlashPartitionBatch(
+export const FlashPartitionBatch = (
   items: backend.BatchFlashItem[],
-  serial?: string | null,
-): Promise<void> {
-  return call('flash_partition_batch', { items, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<void> => call("flash_partition_batch", { items, serial: serial ?? null });
 
-export function SideloadPackageStream(zipPath: string, serial?: string | null): Promise<void> {
-  return call('sideload_package_stream', { zipPath, serial: serial ?? null });
-}
+export const SideloadPackageStream = (zipPath: string, serial?: string | null): Promise<void> =>
+  call("sideload_package_stream", { serial: serial ?? null, zipPath });
 
-export function ErasePartition(
+export const ErasePartition = (
   partition: string,
   confirmPhrase: string,
-  serial?: string | null,
-): Promise<void> {
-  return call('erase_partition', { partition, confirmPhrase, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<void> =>
+  call("erase_partition", {
+    confirmPhrase,
+    partition,
+    serial: serial ?? null,
+  });
 
 // --- Scrcpy & Emulator Backend APIs ---
-export function ScrcpyPreviewCommand(
+export const ScrcpyPreviewCommand = (
   options: backend.ScrcpyLaunchOptions,
-  serial?: string | null,
-): Promise<backend.ScrcpyCommandPreview> {
-  return call('scrcpy_preview_command', { options, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.ScrcpyCommandPreview> =>
+  call("scrcpy_preview_command", { options, serial: serial ?? null });
 
-export function ScrcpyProfiles(): Promise<backend.ScrcpyQualityProfile[]> {
-  return call('scrcpy_profiles');
-}
+export const ScrcpyProfiles = (): Promise<backend.ScrcpyQualityProfile[]> =>
+  call("scrcpy_profiles");
 
-export function ScrcpyCalculateBandwidthMetrics(
-  bitrate?: string | null,
-): Promise<backend.BandwidthMetrics> {
-  return call('scrcpy_calculate_bandwidth_metrics', { bitrate: bitrate ?? null });
-}
+export const ScrcpyCalculateBandwidthMetrics = (
+  bitrate?: string | null
+): Promise<backend.BandwidthMetrics> =>
+  call("scrcpy_calculate_bandwidth_metrics", {
+    bitrate: bitrate ?? null,
+  });
 
-export function ScrcpyToolbarAction(serial: string, action: string): Promise<void> {
-  return call('scrcpy_toolbar_action', { serial, action });
-}
+export const ScrcpyToolbarAction = (serial: string, action: string): Promise<void> =>
+  call("scrcpy_toolbar_action", { action, serial });
 
-export function EmulatorGetAvdSpecs(avdName: string): Promise<backend.AvdHardwareDetails> {
-  return call('emulator_get_avd_specs', { avdName });
-}
+export const EmulatorGetAvdSpecs = (avdName: string): Promise<backend.AvdHardwareDetails> =>
+  call("emulator_get_avd_specs", { avdName });
 
-export function EmulatorGetDiskBreakdown(avdName: string): Promise<backend.AvdDiskBreakdown> {
-  return call('emulator_get_disk_breakdown', { avdName });
-}
+export const EmulatorGetDiskBreakdown = (avdName: string): Promise<backend.AvdDiskBreakdown> =>
+  call("emulator_get_disk_breakdown", { avdName });
 
-export function GetHostHardwareCapacity(): Promise<backend.HostHardwareCapacity> {
-  return call('system_host_resources');
-}
+export const GetHostHardwareCapacity = (): Promise<backend.HostHardwareCapacity> =>
+  call("system_host_resources");
 
 // --- Marketplace, Payload, System & Device Backend APIs ---
-export function MarketplaceCheckUpdates(
-  serial?: string | null,
-): Promise<backend.AppUpdateCandidate[]> {
-  return call('marketplace_check_updates', { serial: serial ?? null });
-}
+export const MarketplaceCheckUpdates = (
+  serial?: string | null
+): Promise<backend.AppUpdateCandidate[]> =>
+  call("marketplace_check_updates", { serial: serial ?? null });
 
-export function MarketplaceGetOverviewStats(): Promise<backend.MarketplaceOverviewStats> {
-  return call('marketplace_get_overview_stats');
-}
+export const MarketplaceGetOverviewStats = (): Promise<backend.MarketplaceOverviewStats> =>
+  call("marketplace_get_overview_stats");
 
-export function MarketplaceGetTokenStatus(): Promise<backend.MarketplaceTokenStatus> {
-  return call('marketplace_get_token_status');
-}
+export const MarketplaceGetTokenStatus = (): Promise<backend.MarketplaceTokenStatus> =>
+  call("marketplace_get_token_status");
 
-export function MarketplaceSavePat(token: string): Promise<backend.MarketplaceTokenStatus> {
-  return call('marketplace_save_pat', { token });
-}
+export const MarketplaceSavePat = (token: string): Promise<backend.MarketplaceTokenStatus> =>
+  call("marketplace_save_pat", { token });
 
-export function MarketplaceLogout(): Promise<string> {
-  return call('marketplace_logout');
-}
+export const MarketplaceLogout = (): Promise<string> => call("marketplace_logout");
 
-export function MarketplaceGithubWebAuthFlow(
-  clientId?: string | null,
-): Promise<backend.MarketplaceTokenStatus> {
-  return call('marketplace_github_web_auth_flow', { clientId: clientId ?? null });
-}
+export const MarketplaceGithubWebAuthFlow = (
+  clientId?: string | null
+): Promise<backend.MarketplaceTokenStatus> =>
+  call("marketplace_github_web_auth_flow", {
+    clientId: clientId ?? null,
+  });
 
-export function MarketplaceGetRateLimit(): Promise<backend.MarketplaceRateLimitStatus | null> {
-  return call('marketplace_get_rate_limit');
-}
+export const MarketplaceGetRateLimit = (): Promise<backend.MarketplaceRateLimitStatus | null> =>
+  call("marketplace_get_rate_limit");
 
-export function MarketplaceGetHostTokens(): Promise<backend.MarketplaceHostTokenEntry[]> {
-  return call('marketplace_get_host_tokens');
-}
+export const MarketplaceGetHostTokens = (): Promise<backend.MarketplaceHostTokenEntry[]> =>
+  call("marketplace_get_host_tokens");
 
-export function MarketplaceSaveHostToken(
+export const MarketplaceSaveHostToken = (
   host: string,
   token: string,
-  displayName?: string | null,
-): Promise<backend.MarketplaceHostTokenEntry[]> {
-  return call('marketplace_save_host_token', { host, token, displayName: displayName ?? null });
-}
+  displayName?: string | null
+): Promise<backend.MarketplaceHostTokenEntry[]> =>
+  call("marketplace_save_host_token", {
+    displayName: displayName ?? null,
+    host,
+    token,
+  });
 
-export function MarketplaceRemoveHostToken(
-  host: string,
-): Promise<backend.MarketplaceHostTokenEntry[]> {
-  return call('marketplace_remove_host_token', { host });
-}
+export const MarketplaceRemoveHostToken = (
+  host: string
+): Promise<backend.MarketplaceHostTokenEntry[]> => call("marketplace_remove_host_token", { host });
 
-export function MarketplaceGetCuratedFeed(category: string): Promise<unknown[]> {
-  return call('marketplace_get_curated_feed', { category });
-}
+export const MarketplaceGetCuratedFeed = (category: string): Promise<unknown[]> =>
+  call("marketplace_get_curated_feed", { category });
 
-export function ComputePartitionFileSha256(filePath: string): Promise<string> {
-  return call('compute_partition_file_sha256', { filePath });
-}
+export const ComputePartitionFileSha256 = (filePath: string): Promise<string> =>
+  call("compute_partition_file_sha256", { filePath });
 
-export function GetExtractionPresets(): Promise<backend.PayloadExtractionPreset[]> {
-  return call('get_extraction_presets');
-}
+export const GetExtractionPresets = (): Promise<backend.PayloadExtractionPreset[]> =>
+  call("get_extraction_presets");
 
-export function GetAllDevices(): Promise<backend.DeviceEntry[]> {
-  return call('get_all_devices');
-}
+export const GetAllDevices = (): Promise<backend.DeviceEntry[]> => call("get_all_devices");
 
-export function ExecuteCliCommand(
+export const ExecuteCliCommand = (
   command: string,
-  serial?: string | null,
-): Promise<backend.CliExecutionResult> {
-  return call('execute_cli_command', { command, serial: serial ?? null });
-}
+  serial?: string | null
+): Promise<backend.CliExecutionResult> =>
+  call("execute_cli_command", { command, serial: serial ?? null });
 
-export function GetFirmwareCatalog(
+export const GetFirmwareCatalog = (
   brand?: backend.FirmwareBrand,
-  forceRefresh?: boolean,
-): Promise<backend.FirmwareDeviceModel[]> {
-  return call('get_firmware_catalog', {
+  forceRefresh?: boolean
+): Promise<backend.FirmwareDeviceModel[]> =>
+  call("get_firmware_catalog", {
     brand: brand ?? null,
     forceRefresh: forceRefresh ?? false,
   });
-}
 
-export function RefreshFirmwareCatalog(
-  brand?: backend.FirmwareBrand,
-): Promise<backend.FirmwareDeviceModel[]> {
-  return call('refresh_firmware_catalog', {
+export const RefreshFirmwareCatalog = (
+  brand?: backend.FirmwareBrand
+): Promise<backend.FirmwareDeviceModel[]> =>
+  call("refresh_firmware_catalog", {
     brand: brand ?? null,
   });
-}
 
-export function GetSupportedFirmwareBrands(): Promise<backend.FirmwareBrand[]> {
-  return call('get_supported_firmware_brands');
-}
+export const GetSupportedFirmwareBrands = (): Promise<backend.FirmwareBrand[]> =>
+  call("get_supported_firmware_brands");
 
-export function ClearFirmwareCache(brand?: backend.FirmwareBrand): Promise<void> {
-  return call('clear_firmware_cache', {
+export const ClearFirmwareCache = (brand?: backend.FirmwareBrand): Promise<void> =>
+  call("clear_firmware_cache", {
     brand: brand ?? null,
   });
-}
 
-export function UnpackSuperImage(
+export const UnpackSuperImage = (
   superPath: string,
-  outputDir: string,
-): Promise<[string, number][]> {
-  return call('unpack_super_image', {
-    superPath,
+  outputDir: string
+): Promise<[string, number][]> =>
+  call("unpack_super_image", {
     outputDir,
+    superPath,
   });
-}

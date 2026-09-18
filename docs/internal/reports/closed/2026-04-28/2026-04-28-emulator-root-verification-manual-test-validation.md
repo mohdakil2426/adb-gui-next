@@ -10,11 +10,11 @@ Verify that the Emulator Manager root workflow distinguishes "patch installed" f
 
 ## Test Matrix
 
-| AVD | API | ABI | Image Type | Magisk Version | Expected | Result | Notes |
-|---|---:|---|---|---|---|---|---|
-| Pixel API 29 | 29 | x86/x86_64 | google_apis_playstore | latest stable | Root verified after cold boot | Not run | |
-| Pixel API 30/31 | 30/31 | x86_64 | google_apis_playstore | latest stable | Auto pipeline blocks multi-CPIO or verifies root | Not run | |
-| Pixel API 34+ | 34+ | x86_64 | google_apis_playstore | Magisk 26+ | Patch installed, verify after cold boot | Not run | |
+| AVD             |   API | ABI        | Image Type            | Magisk Version | Expected                                         | Result  | Notes |
+| --------------- | ----: | ---------- | --------------------- | -------------- | ------------------------------------------------ | ------- | ----- |
+| Pixel API 29    |    29 | x86/x86_64 | google_apis_playstore | latest stable  | Root verified after cold boot                    | Not run |       |
+| Pixel API 30/31 | 30/31 | x86_64     | google_apis_playstore | latest stable  | Auto pipeline blocks multi-CPIO or verifies root | Not run |       |
+| Pixel API 34+   |   34+ | x86_64     | google_apis_playstore | Magisk 26+     | Patch installed, verify after cold boot          | Not run |       |
 
 ## Procedure
 

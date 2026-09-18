@@ -9,16 +9,16 @@
 
 ## Executive Summary
 
-| Area | Score | Status |
-|------|-------|--------|
-| Correctness | 8/10 | ✅ Good |
-| Safety & Ownership | 9/10 | ✅ Excellent |
-| Error Handling | 7/10 | ⚠️ Needs Improvement |
-| Performance | 6/10 | ⚠️ Needs Improvement |
-| Modularity | **9/10** | **✅ Excellent (refactored)** |
-| Testing | 7/10 | ✅ Good |
-| Documentation | **8/10** | **✅ Good (refactored)** |
-| **Overall** | **7.7/10** | **Good, clear upgrade paths remain** |
+| Area               | Score      | Status                               |
+| ------------------ | ---------- | ------------------------------------ |
+| Correctness        | 8/10       | ✅ Good                              |
+| Safety & Ownership | 9/10       | ✅ Excellent                         |
+| Error Handling     | 7/10       | ⚠️ Needs Improvement                 |
+| Performance        | 6/10       | ⚠️ Needs Improvement                 |
+| Modularity         | **9/10**   | **✅ Excellent (refactored)**        |
+| Testing            | 7/10       | ✅ Good                              |
+| Documentation      | **8/10**   | **✅ Good (refactored)**             |
+| **Overall**        | **7.7/10** | **Good, clear upgrade paths remain** |
 
 ---
 
@@ -52,11 +52,11 @@ src/
 
 ### Recommendations
 
-| Priority | Recommendation |
-|----------|----------------|
+| Priority | Recommendation                                                                      |
+| -------- | ----------------------------------------------------------------------------------- |
 | **High** | Split `lib.rs` into modules: `commands/`, `device/`, `adb/`, `fastboot/`, `system/` |
-| **High** | Split `payload.rs` into `payload/parser.rs` and `payload/extractor.rs` |
-| Medium | Introduce feature flags to conditionally compile payload extraction |
+| **High** | Split `payload.rs` into `payload/parser.rs` and `payload/extractor.rs`              |
+| Medium   | Introduce feature flags to conditionally compile payload extraction                 |
 
 ---
 
@@ -239,22 +239,22 @@ Err(format!("{binary} command failed (exit code: {})", output.status))
 
 ### Performance Impact Estimates
 
-| Optimization | Estimated Improvement |
-|--------------|----------------------|
-| Streaming vs full-read | 2-5x less memory for large payloads |
-| Parallel extraction | 4-8x faster on multi-core systems |
-| Sparse zero handling | Instant vs minutes for large zero regions |
-| Buffered I/O (256KB) | 20-40% throughput improvement |
+| Optimization           | Estimated Improvement                     |
+| ---------------------- | ----------------------------------------- |
+| Streaming vs full-read | 2-5x less memory for large payloads       |
+| Parallel extraction    | 4-8x faster on multi-core systems         |
+| Sparse zero handling   | Instant vs minutes for large zero regions |
+| Buffered I/O (256KB)   | 20-40% throughput improvement             |
 
 ### Recommendations
 
-| Priority | Recommendation |
-|----------|----------------|
+| Priority | Recommendation                                                                      |
+| -------- | ----------------------------------------------------------------------------------- |
 | **High** | Replace `fs::read` with streaming parser (read header only, then stream operations) |
-| **High** | Use `tokio` async runtime for non-blocking I/O |
-| Medium | Implement parallel partition extraction |
-| Medium | Use sparse file seeks for `Zero` operations |
-| Low | Pre-allocate and reuse copy buffers |
+| **High** | Use `tokio` async runtime for non-blocking I/O                                      |
+| Medium   | Implement parallel partition extraction                                             |
+| Medium   | Use sparse file seeks for `Zero` operations                                         |
+| Low      | Pre-allocate and reuse copy buffers                                                 |
 
 ---
 
@@ -282,14 +282,14 @@ Err(format!("{binary} command failed (exit code: {})", output.status))
 
 ### Gaps
 
-| Gap | Severity |
-|-----|----------|
-| No test for `split_args` with escaped quotes | Low |
-| No test for corrupted CrAU header | Medium |
-| No test for version mismatch | Low |
-| No test for empty payload | Low |
-| No test for concurrent cache access | Medium |
-| No test for `install_apks` | Low |
+| Gap                                          | Severity |
+| -------------------------------------------- | -------- |
+| No test for `split_args` with escaped quotes | Low      |
+| No test for corrupted CrAU header            | Medium   |
+| No test for version mismatch                 | Low      |
+| No test for empty payload                    | Low      |
+| No test for concurrent cache access          | Medium   |
+| No test for `install_apks`                   | Low      |
 
 ---
 
@@ -321,11 +321,11 @@ pub async fn dump_partition<P: AsyncPayloadRead>(...) -> Result<()> { ... }
 
 ### Recommendations
 
-| Priority | Recommendation |
-|----------|----------------|
-| Medium | Add doc comments to all public functions in `payload.rs` |
-| Medium | Add module-level documentation explaining the CrAU format |
-| Low | Add `/// # Examples` doc comments for testable documentation |
+| Priority | Recommendation                                               |
+| -------- | ------------------------------------------------------------ |
+| Medium   | Add doc comments to all public functions in `payload.rs`     |
+| Medium   | Add module-level documentation explaining the CrAU format    |
+| Low      | Add `/// # Examples` doc comments for testable documentation |
 
 ---
 
@@ -333,27 +333,27 @@ pub async fn dump_partition<P: AsyncPayloadRead>(...) -> Result<()> { ... }
 
 ### Current Dependencies
 
-| Crate | Version | Purpose | Status |
-|-------|---------|---------|--------|
-| `anyhow` | 1 | Error handling | ✅ Current |
-| `bzip2` | 0.6 | BZ2 decompression | ✅ Current |
-| `prost` | 0.14 | Protobuf | ✅ Current |
-| `serde` | 1 | Serialization | ✅ Current |
-| `sha2` | 0.10 | SHA-256 | ✅ Current |
-| `tauri` | 2 | Desktop framework | ✅ Current |
-| `tempfile` | 3 | Temp files | ✅ Current |
-| `which` | 8 | Binary lookup | ✅ Current |
-| `xz2` | 0.1 | XZ decompression | ✅ Current |
-| `zstd` | 0.13 | Zstandard decompression | ✅ Current |
-| `zip` | 8.3.1 | ZIP handling | ✅ Current |
+| Crate      | Version | Purpose                 | Status     |
+| ---------- | ------- | ----------------------- | ---------- |
+| `anyhow`   | 1       | Error handling          | ✅ Current |
+| `bzip2`    | 0.6     | BZ2 decompression       | ✅ Current |
+| `prost`    | 0.14    | Protobuf                | ✅ Current |
+| `serde`    | 1       | Serialization           | ✅ Current |
+| `sha2`     | 0.10    | SHA-256                 | ✅ Current |
+| `tauri`    | 2       | Desktop framework       | ✅ Current |
+| `tempfile` | 3       | Temp files              | ✅ Current |
+| `which`    | 8       | Binary lookup           | ✅ Current |
+| `xz2`      | 0.1     | XZ decompression        | ✅ Current |
+| `zstd`     | 0.13    | Zstandard decompression | ✅ Current |
+| `zip`      | 8.3.1   | ZIP handling            | ✅ Current |
 
 ### Missing Dependencies (for performance improvements)
 
-| Crate | Purpose | Benefit |
-|-------|---------|---------|
-| `tokio` | Async runtime | Non-blocking I/O, parallel extraction |
-| `async-compression` | Async decompression | Streaming decompression |
-| `futures` | Async utilities | Parallel task coordination |
+| Crate               | Purpose             | Benefit                               |
+| ------------------- | ------------------- | ------------------------------------- |
+| `tokio`             | Async runtime       | Non-blocking I/O, parallel extraction |
+| `async-compression` | Async decompression | Streaming decompression               |
+| `futures`           | Async utilities     | Parallel task coordination            |
 
 ---
 
@@ -383,27 +383,27 @@ Using `String` as the error type loses structured error information. Consider us
 
 ## 10. Feature Comparison: Our Implementation vs Reference
 
-| Feature | Our Implementation | Reference (payload-dumper-rust) |
-|---------|-------------------|-------------------------------|
-| CrAU parsing | ✅ | ✅ |
-| Protobuf manifest | ✅ | ✅ |
-| SHA-256 verification | ✅ | ✅ |
-| ZIP support | ✅ | ✅ |
-| XZ decompression | ✅ | ✅ |
-| BZ2 decompression | ✅ | ✅ |
-| Zstd decompression | ✅ | ✅ |
-| Zero operations | ✅ (write zeros) | ✅ (sparse file seek) |
-| Multi-extent | ✅ | ✅ |
-| Parallel extraction | ❌ | ✅ |
-| Async I/O | ❌ | ✅ |
-| Streaming | ❌ | ✅ |
-| Remote URL | ❌ | ✅ |
-| Incremental OTA | ❌ | ✅ (experimental) |
-| Metadata export | ❌ | ✅ |
-| Progress reporting | ✅ (Tauri events) | ✅ (trait-based) |
-| Cancellation | ❌ | ✅ |
-| Feature flags | ❌ | ✅ |
-| Caching | ✅ (ZIP payload) | ✅ (prefetch mode) |
+| Feature              | Our Implementation | Reference (payload-dumper-rust) |
+| -------------------- | ------------------ | ------------------------------- |
+| CrAU parsing         | ✅                 | ✅                              |
+| Protobuf manifest    | ✅                 | ✅                              |
+| SHA-256 verification | ✅                 | ✅                              |
+| ZIP support          | ✅                 | ✅                              |
+| XZ decompression     | ✅                 | ✅                              |
+| BZ2 decompression    | ✅                 | ✅                              |
+| Zstd decompression   | ✅                 | ✅                              |
+| Zero operations      | ✅ (write zeros)   | ✅ (sparse file seek)           |
+| Multi-extent         | ✅                 | ✅                              |
+| Parallel extraction  | ❌                 | ✅                              |
+| Async I/O            | ❌                 | ✅                              |
+| Streaming            | ❌                 | ✅                              |
+| Remote URL           | ❌                 | ✅                              |
+| Incremental OTA      | ❌                 | ✅ (experimental)               |
+| Metadata export      | ❌                 | ✅                              |
+| Progress reporting   | ✅ (Tauri events)  | ✅ (trait-based)                |
+| Cancellation         | ❌                 | ✅                              |
+| Feature flags        | ❌                 | ✅                              |
+| Caching              | ✅ (ZIP payload)   | ✅ (prefetch mode)              |
 
 ---
 
@@ -439,6 +439,7 @@ The Rust code in ADB GUI Next is **solid and functional**. It correctly implemen
 The main areas for improvement are **performance** (streaming, async I/O, parallel extraction) and **modularity** (splitting large files into focused modules). The reference project `payload-dumper-rust` demonstrates that these improvements can yield 4-8x extraction speedups and significantly lower memory usage.
 
 For a Tauri desktop app where extractions are user-triggered and the UX already shows progress, the current implementation is acceptable. The performance improvements would be most impactful for:
+
 - Large payloads (3GB+ system images)
 - Multi-partition extractions
 - Users with slower storage

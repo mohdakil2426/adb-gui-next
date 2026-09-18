@@ -9,6 +9,7 @@
 ## Problem Statement
 
 When a user loads partitions from a remote OTA URL, the `FileBanner` shows only:
+
 - A truncated URL
 - Partition count and total size
 - Action buttons (change payload, refresh, output folder)
@@ -31,48 +32,48 @@ The user should be able to **optionally expand** this panel to see all details w
 
 ### Layer 1: HTTP (already available from HEAD request)
 
-| Field | Source | Currently Shown |
-|-------|--------|-----------------|
-| Full URL | Frontend state (`remoteUrl`) | ✅ Truncated in FileBanner |
-| Content-Length | `RemotePayloadInfo.contentLength` | ❌ Only during "Check URL" |
-| Accept-Ranges | `RemotePayloadInfo.supportsRanges` | ❌ Only during "Check URL" |
-| Server | HEAD response header | ❌ Not captured |
-| Content-Type | HEAD response header | ❌ Not captured |
-| Last-Modified | HEAD response header | ❌ Not captured |
-| ETag | HEAD response header | ❌ Not captured |
+| Field          | Source                             | Currently Shown            |
+| -------------- | ---------------------------------- | -------------------------- |
+| Full URL       | Frontend state (`remoteUrl`)       | ✅ Truncated in FileBanner |
+| Content-Length | `RemotePayloadInfo.contentLength`  | ❌ Only during "Check URL" |
+| Accept-Ranges  | `RemotePayloadInfo.supportsRanges` | ❌ Only during "Check URL" |
+| Server         | HEAD response header               | ❌ Not captured            |
+| Content-Type   | HEAD response header               | ❌ Not captured            |
+| Last-Modified  | HEAD response header               | ❌ Not captured            |
+| ETag           | HEAD response header               | ❌ Not captured            |
 
 ### Layer 2: ZIP Structure (available after partition load)
 
-| Field | Source | Currently Shown |
-|-------|--------|-----------------|
-| Is ZIP | `is_zip_url()` | ❌ |
-| payload.bin offset | `ZipPayloadInfo.offset` | ❌ |
-| Compressed size | `ZipPayloadInfo.compressed_size` | ❌ |
-| Uncompressed size | `ZipPayloadInfo.uncompressed_size` | ❌ |
-| Compression method | `ZipPayloadInfo.compression_method` | ❌ |
-| ZIP entries count | EOCD `total_entries` field | ❌ Not captured |
+| Field              | Source                              | Currently Shown |
+| ------------------ | ----------------------------------- | --------------- |
+| Is ZIP             | `is_zip_url()`                      | ❌              |
+| payload.bin offset | `ZipPayloadInfo.offset`             | ❌              |
+| Compressed size    | `ZipPayloadInfo.compressed_size`    | ❌              |
+| Uncompressed size  | `ZipPayloadInfo.uncompressed_size`  | ❌              |
+| Compression method | `ZipPayloadInfo.compression_method` | ❌              |
+| ZIP entries count  | EOCD `total_entries` field          | ❌ Not captured |
 
 ### Layer 3: OTA Manifest (available after partition load)
 
-| Field | Source | Currently Shown |
-|-------|--------|-----------------|
-| Partition count | `manifest.partitions.len()` | ✅ |
-| Total partition size | Computed sum | ✅ |
-| Block size | `manifest.block_size` | ❌ |
-| CrAU payload version | Header byte 4..12 (always 2) | ❌ |
-| Minor (delta) version | `manifest.minor_version` | ❌ |
-| Security patch level | `manifest.security_patch_level` | ❌ |
-| Max timestamp | `manifest.max_timestamp` | ❌ |
-| Partial update | `manifest.partial_update` | ❌ |
-| Dynamic partition groups | `manifest.dynamic_partition_metadata.groups` | ❌ |
-| Per-partition versions | `partition.version` | ❌ |
-| APEX info | `manifest.apex_info` | ❌ |
+| Field                    | Source                                       | Currently Shown |
+| ------------------------ | -------------------------------------------- | --------------- |
+| Partition count          | `manifest.partitions.len()`                  | ✅              |
+| Total partition size     | Computed sum                                 | ✅              |
+| Block size               | `manifest.block_size`                        | ❌              |
+| CrAU payload version     | Header byte 4..12 (always 2)                 | ❌              |
+| Minor (delta) version    | `manifest.minor_version`                     | ❌              |
+| Security patch level     | `manifest.security_patch_level`              | ❌              |
+| Max timestamp            | `manifest.max_timestamp`                     | ❌              |
+| Partial update           | `manifest.partial_update`                    | ❌              |
+| Dynamic partition groups | `manifest.dynamic_partition_metadata.groups` | ❌              |
+| Per-partition versions   | `partition.version`                          | ❌              |
+| APEX info                | `manifest.apex_info`                         | ❌              |
 
 ### Layer 4: User Configuration (already in state)
 
-| Field | Source | Currently Shown |
-|-------|--------|-----------------|
-| Extraction mode | `prefetch` flag | ❌ |
+| Field            | Source                     | Currently Shown        |
+| ---------------- | -------------------------- | ---------------------- |
+| Extraction mode  | `prefetch` flag            | ❌                     |
 | Output directory | `outputPath` / `outputDir` | Partial (tooltip only) |
 
 ---
@@ -188,6 +189,7 @@ key-value grid.
 ```
 
 ### Pros
+
 - **Minimal UI disruption** — default state is visually identical to current `FileBanner`
 - **Progressive disclosure** — users see details only when they want to
 - **Framer Motion `AnimatePresence`** — smooth open/close transition
@@ -195,11 +197,13 @@ key-value grid.
 - **Mobile-friendly** — sections stack vertically, no width concerns
 
 ### Cons
+
 - Panel grows tall when expanded — pushes partition table down
 - Requires backend enrichment to provide the metadata
 - Need to pass down metadata through props chain
 
 ### Component Structure
+
 ```
 FileBanner (existing)
   └── FileBannerDetails (new)     — AnimatePresence toggle
@@ -210,6 +214,7 @@ FileBanner (existing)
 ```
 
 ### Effort: **Medium**
+
 - **Backend:** ~80 lines Rust (new struct + field extraction in partition listing)
 - **Frontend:** ~150 lines (FileBannerDetails component + store field)
 - **Existing code changes:** Minimal — just add a chevron button to FileBanner
@@ -267,12 +272,14 @@ that overlays (doesn't push) the main content.
 ```
 
 ### Pros
+
 - **No layout disruption** — drawer overlays, doesn't push partition table
 - **Can show extensive metadata** without vertical space concerns
 - **Familiar UX** — drawer pattern used by VS Code, Chrome DevTools, etc.
 - **Independent scroll** — metadata scrolls independently from main content
 
 ### Cons
+
 - **Adds a new shadcn Sheet component** — needs `npx shadcn@latest add sheet`
 - **Narrower reading area** on small windows — loses some space
 - **Disconnected feel** — info is spatially separated from the banner it describes
@@ -280,6 +287,7 @@ that overlays (doesn't push) the main content.
 - **May conflict with right-edge sidebar** on some layouts
 
 ### Component Structure
+
 ```
 ViewPayloadDumper
   ├── FileBanner (add ℹ️ button)
@@ -292,6 +300,7 @@ ViewPayloadDumper
 ```
 
 ### Effort: **Medium-High**
+
 - **Backend:** Same ~80 lines Rust
 - **Frontend:** ~200 lines (Sheet wrapper + content + shadcn add)
 - **New dependencies:** `shadcn Sheet` (Radix Dialog under the hood)
@@ -369,12 +378,14 @@ individual categories.
 ```
 
 ### Pros
+
 - **Most granular control** — users open exactly the category they care about
 - **Inline and contextual** — info stays directly in the banner
 - **Uses existing shadcn `Collapsible`** — already available in the project
 - **Accordion-like UX** — familiar pattern for categorized information
 
 ### Cons
+
 - **Horizontal space wasted** — section headers ("▸ HTTP Details") take a full row each
 - **Visual clutter** — 3-4 collapsible triggers visible even when collapsed adds noise
 - **Partial expansion pushes table inconsistently** — each section adds different height
@@ -382,6 +393,7 @@ individual categories.
 - **Doesn't scale well** — if we add more categories later, the row of triggers overflows
 
 ### Component Structure
+
 ```
 FileBanner (modified)
   ├── BannerHeader (URL + buttons — existing)
@@ -394,6 +406,7 @@ FileBanner (modified)
 ```
 
 ### Effort: **Medium**
+
 - **Backend:** Same ~80 lines Rust
 - **Frontend:** ~200 lines (multiple Collapsible wrappers + per-section components)
 - **Existing code changes:** More invasive — FileBanner structure changes significantly
@@ -402,18 +415,18 @@ FileBanner (modified)
 
 ## Comparison Matrix
 
-| Criterion | Approach 1 (Chevron) | Approach 2 (Drawer) | Approach 3 (Inline) |
-|-----------|:-------------------:|:-------------------:|:-------------------:|
-| **UI Disruption** | ✅ Minimal | ✅ None (overlay) | ⚠️ Moderate |
-| **Progressive Disclosure** | ✅ One toggle | ✅ One button | ⚠️ 3-4 toggles |
-| **Visual Clutter (collapsed)** | ✅ Just a ▼ link | ✅ Just an ℹ️ button | ❌ 4 trigger buttons |
-| **Spatial Context** | ✅ Below the banner | ⚠️ Separate drawer | ✅ Inside the banner |
-| **Implementation Effort** | ✅ Low-Medium | ⚠️ Medium-High | ⚠️ Medium |
-| **New Dependencies** | ✅ None | ⚠️ Sheet/Dialog | ✅ Collapsible (exists) |
-| **Responsive Behavior** | ✅ Stacks naturally | ⚠️ Drawer width issues | ⚠️ Stacking + overflow |
-| **Scalability** | ✅ Add sections freely | ✅ Scrollable drawer | ❌ More triggers needed |
-| **Animation** | ✅ Single height animate | ✅ Slide in/out | ⚠️ Per-section animate |
-| **Consistency with project** | ✅ Matches existing patterns | ⚠️ New UI pattern | ⚠️ Overcomplicated |
+| Criterion                      |     Approach 1 (Chevron)     |  Approach 2 (Drawer)   |   Approach 3 (Inline)   |
+| ------------------------------ | :--------------------------: | :--------------------: | :---------------------: |
+| **UI Disruption**              |          ✅ Minimal          |   ✅ None (overlay)    |       ⚠️ Moderate       |
+| **Progressive Disclosure**     |        ✅ One toggle         |     ✅ One button      |     ⚠️ 3-4 toggles      |
+| **Visual Clutter (collapsed)** |       ✅ Just a ▼ link       |  ✅ Just an ℹ️ button  |  ❌ 4 trigger buttons   |
+| **Spatial Context**            |     ✅ Below the banner      |   ⚠️ Separate drawer   |  ✅ Inside the banner   |
+| **Implementation Effort**      |        ✅ Low-Medium         |     ⚠️ Medium-High     |        ⚠️ Medium        |
+| **New Dependencies**           |           ✅ None            |    ⚠️ Sheet/Dialog     | ✅ Collapsible (exists) |
+| **Responsive Behavior**        |     ✅ Stacks naturally      | ⚠️ Drawer width issues | ⚠️ Stacking + overflow  |
+| **Scalability**                |    ✅ Add sections freely    |  ✅ Scrollable drawer  | ❌ More triggers needed |
+| **Animation**                  |   ✅ Single height animate   |    ✅ Slide in/out     | ⚠️ Per-section animate  |
+| **Consistency with project**   | ✅ Matches existing patterns |   ⚠️ New UI pattern    |   ⚠️ Overcomplicated    |
 
 ---
 
@@ -422,6 +435,7 @@ FileBanner (modified)
 > **Approach 1: Collapsible Details Panel** is recommended.
 
 **Rationale:**
+
 1. **Least invasive** — adds ~1 line to `FileBanner` (a chevron toggle), rest is a new sub-component
 2. **Consistent with the app's existing design language** — the app uses flat cards w/ minimal chrome; a simple expand/collapse fits naturally
 3. **No new shadcn dependencies** — uses Framer Motion `AnimatePresence` (already installed)
@@ -431,12 +445,14 @@ FileBanner (modified)
 ### Implementation Sketch (if Approach 1 is chosen)
 
 **Rust (backend):**
+
 1. Add `RemotePayloadMetadata` struct to `commands/payload.rs`
 2. Enrich `check_remote_payload` to return full metadata OR add a new `get_remote_payload_metadata` command that lazily fetches metadata after partitions load
 3. Capture HTTP headers (`content-type`, `last-modified`, `server`, `etag`) from the HEAD response in `HttpPayloadReader`
 4. Extract OTA manifest metadata (`block_size`, `minor_version`, `security_patch_level`, `max_timestamp`, `partial_update`, dynamic groups) during `list_remote_payload_partitions`
 
 **Frontend (React):**
+
 1. Add `remoteMetadata: RemotePayloadMetadata | null` to `payloadDumperStore`
 2. Create `FileBannerDetails.tsx` — receives metadata, renders grouped key-value pairs with `AnimatePresence` for open/close
 3. Add chevron toggle to `FileBanner.tsx` bottom row (only visible when metadata is available and `isRemote === true`)
@@ -444,7 +460,8 @@ FileBanner (modified)
 
 ---
 
-*Report generated from analysis of:*
+_Report generated from analysis of:_
+
 - `src-tauri/src/commands/payload.rs` — Tauri commands
 - `src-tauri/src/payload/http.rs` — HTTP HEAD request + range reader
 - `src-tauri/src/payload/http_zip.rs` — ZIP EOCD/CD parsing + ZipPayloadInfo

@@ -177,41 +177,42 @@ src/
 
 ## Import Migration Map
 
-| Old import prefix | New import prefix |
-|---|---|
-| `@/components/ui/` | `@/shared/ui/` |
-| `@/components/views/ViewFileExplorer` | `@/features/file-explorer/FileExplorerView` |
-| `@/components/views/ViewDashboard` | `@/features/dashboard/DashboardView` |
-| `@/components/views/ViewAppManager` | `@/features/app-manager/AppManagerView` |
-| `@/components/views/ViewFlasher` | `@/features/flasher/FlasherView` |
-| `@/components/views/ViewUtilities` | `@/features/utilities/UtilitiesView` |
-| `@/components/views/ViewPayloadDumper` | `@/features/payload-dumper/PayloadDumperView` |
-| `@/components/views/ViewMarketplace` | `@/features/marketplace/MarketplaceView` |
-| `@/components/views/ViewEmulatorManager` | `@/features/emulator/EmulatorView` |
-| `@/components/marketplace/` | `@/features/marketplace/ui/` |
-| `@/components/payload-dumper/` | `@/features/payload-dumper/ui/` |
-| `@/components/emulator-manager/` | `@/features/emulator/ui/` |
-| `@/components/views/debloater/` | `@/features/app-manager/debloater/ui/` |
-| `@/lib/desktop/` | `@/desktop/` |
-| `@/lib/deviceStore` | `@/shared/stores/deviceStore` |
-| `@/lib/logStore` | `@/shared/stores/logStore` |
-| `@/lib/shellStore` | `@/shared/stores/shellStore` |
-| `@/lib/nicknameStore` | `@/shared/stores/nicknameStore` |
-| `@/lib/marketplaceStore` | `@/features/marketplace/model/marketplaceStore` |
-| `@/lib/payloadDumperStore` | `@/features/payload-dumper/model/payloadDumperStore` |
-| `@/lib/emulatorManagerStore` | `@/features/emulator/model/emulatorManagerStore` |
-| `@/lib/debloatStore` | `@/features/app-manager/debloater/model/debloatStore` |
-| `@/lib/utils` | `@/shared/utils/formatting` for formatters, `@/shared/utils/cn` for `cn` |
-| `@/lib/debug` | `@/shared/utils/debug` |
-| `@/lib/errorHandler` | `@/shared/utils/errorHandler` |
-| `@/lib/deviceStatus` | `@/shared/utils/deviceStatus` |
-| `@/lib/queries` | `@/shared/utils/queries` |
+| Old import prefix                        | New import prefix                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| `@/components/ui/`                       | `@/shared/ui/`                                                           |
+| `@/components/views/ViewFileExplorer`    | `@/features/file-explorer/FileExplorerView`                              |
+| `@/components/views/ViewDashboard`       | `@/features/dashboard/DashboardView`                                     |
+| `@/components/views/ViewAppManager`      | `@/features/app-manager/AppManagerView`                                  |
+| `@/components/views/ViewFlasher`         | `@/features/flasher/FlasherView`                                         |
+| `@/components/views/ViewUtilities`       | `@/features/utilities/UtilitiesView`                                     |
+| `@/components/views/ViewPayloadDumper`   | `@/features/payload-dumper/PayloadDumperView`                            |
+| `@/components/views/ViewMarketplace`     | `@/features/marketplace/MarketplaceView`                                 |
+| `@/components/views/ViewEmulatorManager` | `@/features/emulator/EmulatorView`                                       |
+| `@/components/marketplace/`              | `@/features/marketplace/ui/`                                             |
+| `@/components/payload-dumper/`           | `@/features/payload-dumper/ui/`                                          |
+| `@/components/emulator-manager/`         | `@/features/emulator/ui/`                                                |
+| `@/components/views/debloater/`          | `@/features/app-manager/debloater/ui/`                                   |
+| `@/lib/desktop/`                         | `@/desktop/`                                                             |
+| `@/lib/deviceStore`                      | `@/shared/stores/deviceStore`                                            |
+| `@/lib/logStore`                         | `@/shared/stores/logStore`                                               |
+| `@/lib/shellStore`                       | `@/shared/stores/shellStore`                                             |
+| `@/lib/nicknameStore`                    | `@/shared/stores/nicknameStore`                                          |
+| `@/lib/marketplaceStore`                 | `@/features/marketplace/model/marketplaceStore`                          |
+| `@/lib/payloadDumperStore`               | `@/features/payload-dumper/model/payloadDumperStore`                     |
+| `@/lib/emulatorManagerStore`             | `@/features/emulator/model/emulatorManagerStore`                         |
+| `@/lib/debloatStore`                     | `@/features/app-manager/debloater/model/debloatStore`                    |
+| `@/lib/utils`                            | `@/shared/utils/formatting` for formatters, `@/shared/utils/cn` for `cn` |
+| `@/lib/debug`                            | `@/shared/utils/debug`                                                   |
+| `@/lib/errorHandler`                     | `@/shared/utils/errorHandler`                                            |
+| `@/lib/deviceStatus`                     | `@/shared/utils/deviceStatus`                                            |
+| `@/lib/queries`                          | `@/shared/utils/queries`                                                 |
 
 ---
 
 ## Task 0: Baseline And Clean-Tree Gate
 
 **Files:**
+
 - Read: `git status --short`
 - Read: `package.json`
 - Read: `components.json`
@@ -273,6 +274,7 @@ Expected: no output. If output is not empty, inspect with `git diff` and commit 
 ## Task 1: Add Frontend Architecture Guard Tests
 
 **Files:**
+
 - Create: `src/test/frontendArchitecture.test.ts`
 - Modify: none
 
@@ -281,19 +283,19 @@ Expected: no output. If output is not empty, inspect with `git diff` and commit 
 Create `src/test/frontendArchitecture.test.ts` with this content:
 
 ```ts
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
 
 const repoRoot = process.cwd();
-const srcRoot = path.join(repoRoot, 'src');
+const srcRoot = path.join(repoRoot, "src");
 
-const sourceExtensions = new Set(['.ts', '.tsx']);
-const shadcnPrimitiveDir = path.join(srcRoot, 'shared', 'ui');
+const sourceExtensions = new Set([".ts", ".tsx"]);
+const shadcnPrimitiveDir = path.join(srcRoot, "shared", "ui");
 const allowedLargeFiles = new Set([
-  path.join(srcRoot, 'shared', 'ui', 'sidebar.tsx'),
-  path.join(srcRoot, 'desktop', 'backend.ts'),
-  path.join(srcRoot, 'desktop', 'models.ts'),
+  path.join(srcRoot, "shared", "ui", "sidebar.tsx"),
+  path.join(srcRoot, "desktop", "backend.ts"),
+  path.join(srcRoot, "desktop", "models.ts"),
 ]);
 
 function collectSourceFiles(directory: string): string[] {
@@ -315,60 +317,71 @@ function collectSourceFiles(directory: string): string[] {
 }
 
 function toPosixPath(filePath: string): string {
-  return filePath.split(path.sep).join('/');
+  return filePath.split(path.sep).join("/");
 }
 
-describe('frontend architecture boundaries', () => {
-  it('uses the strict top-level frontend folders', () => {
-    expect(existsSync(path.join(srcRoot, 'app'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'desktop'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'features'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'shared'))).toBe(true);
-    expect(existsSync(path.join(srcRoot, 'components', 'views'))).toBe(false);
-    expect(existsSync(path.join(srcRoot, 'lib'))).toBe(false);
+describe("frontend architecture boundaries", () => {
+  it("uses the strict top-level frontend folders", () => {
+    expect(existsSync(path.join(srcRoot, "app"))).toBe(true);
+    expect(existsSync(path.join(srcRoot, "desktop"))).toBe(true);
+    expect(existsSync(path.join(srcRoot, "features"))).toBe(true);
+    expect(existsSync(path.join(srcRoot, "shared"))).toBe(true);
+    expect(existsSync(path.join(srcRoot, "components", "views"))).toBe(false);
+    expect(existsSync(path.join(srcRoot, "lib"))).toBe(false);
   });
 
-  it('keeps Tauri invoke calls inside the desktop boundary', () => {
+  it("keeps Tauri invoke calls inside the desktop boundary", () => {
     const offenders = collectSourceFiles(srcRoot).filter((filePath) => {
-      const text = readFileSync(filePath, 'utf8');
+      const text = readFileSync(filePath, "utf8");
       return (
         text.includes("@tauri-apps/api/core") &&
-        toPosixPath(filePath) !== toPosixPath(path.join(srcRoot, 'desktop', 'backend.ts'))
+        toPosixPath(filePath) !==
+          toPosixPath(path.join(srcRoot, "desktop", "backend.ts"))
       );
     });
 
-    expect(offenders.map((filePath) => toPosixPath(path.relative(repoRoot, filePath)))).toEqual([]);
+    expect(
+      offenders.map((filePath) =>
+        toPosixPath(path.relative(repoRoot, filePath))
+      )
+    ).toEqual([]);
   });
 
-  it('does not import from legacy frontend folders', () => {
+  it("does not import from legacy frontend folders", () => {
     const legacyPatterns = [
-      '@/components/views',
-      '@/components/marketplace',
-      '@/components/payload-dumper',
-      '@/components/emulator-manager',
-      '@/lib/',
+      "@/components/views",
+      "@/components/marketplace",
+      "@/components/payload-dumper",
+      "@/components/emulator-manager",
+      "@/lib/",
     ];
 
     const offenders = collectSourceFiles(srcRoot).flatMap((filePath) => {
-      const text = readFileSync(filePath, 'utf8');
+      const text = readFileSync(filePath, "utf8");
       return legacyPatterns
         .filter((pattern) => text.includes(pattern))
-        .map((pattern) => `${toPosixPath(path.relative(repoRoot, filePath))}: ${pattern}`);
+        .map(
+          (pattern) =>
+            `${toPosixPath(path.relative(repoRoot, filePath))}: ${pattern}`
+        );
     });
 
     expect(offenders).toEqual([]);
   });
 
-  it('keeps feature implementation files small enough to review', () => {
-    const offenders = collectSourceFiles(path.join(srcRoot, 'features'))
+  it("keeps feature implementation files small enough to review", () => {
+    const offenders = collectSourceFiles(path.join(srcRoot, "features"))
       .filter((filePath) => !filePath.startsWith(shadcnPrimitiveDir))
       .filter((filePath) => !allowedLargeFiles.has(filePath))
       .map((filePath) => {
-        const lines = readFileSync(filePath, 'utf8').split(/\r?\n/).length;
+        const lines = readFileSync(filePath, "utf8").split(/\r?\n/).length;
         return { filePath, lines };
       })
       .filter(({ lines }) => lines > 300)
-      .map(({ filePath, lines }) => `${toPosixPath(path.relative(repoRoot, filePath))}: ${lines}`);
+      .map(
+        ({ filePath, lines }) =>
+          `${toPosixPath(path.relative(repoRoot, filePath))}: ${lines}`
+      );
 
     expect(offenders).toEqual([]);
   });
@@ -401,6 +414,7 @@ Expected: commit succeeds. This commit intentionally contains a failing test tha
 ## Task 2: Move App Shell Into `src/app`
 
 **Files:**
+
 - Move: `src/App.tsx` → `src/app/App.tsx`
 - Move: `src/components/MainLayout.tsx` → `src/app/shell/MainLayout.tsx`
 - Move: `src/components/AppSidebar.tsx` → `src/app/shell/AppSidebar.tsx`
@@ -441,13 +455,13 @@ git mv src\components\ShellPanel.tsx src\app\shell\BottomPanel\ShellPanel.tsx
 Change:
 
 ```ts
-import App from './App';
+import App from "./App";
 ```
 
 To:
 
 ```ts
-import App from '@/app/App';
+import App from "@/app/App";
 ```
 
 - [ ] **Step 4: Update shell-local imports**
@@ -455,21 +469,21 @@ import App from '@/app/App';
 In `src/app/App.tsx`, import `MainLayout` from:
 
 ```ts
-import { MainLayout } from '@/app/shell/MainLayout';
+import { MainLayout } from "@/app/shell/MainLayout";
 ```
 
 In `src/app/shell/MainLayout.tsx`, import shell files from:
 
 ```ts
-import { AppSidebar } from '@/app/shell/AppSidebar';
-import { BottomPanel } from '@/app/shell/BottomPanel/BottomPanel';
+import { AppSidebar } from "@/app/shell/AppSidebar";
+import { BottomPanel } from "@/app/shell/BottomPanel/BottomPanel";
 ```
 
 In `src/app/shell/BottomPanel/BottomPanel.tsx`, import panels from:
 
 ```ts
-import { LogsPanel } from '@/app/shell/BottomPanel/LogsPanel';
-import { ShellPanel } from '@/app/shell/BottomPanel/ShellPanel';
+import { LogsPanel } from "@/app/shell/BottomPanel/LogsPanel";
+import { ShellPanel } from "@/app/shell/BottomPanel/ShellPanel";
 ```
 
 - [ ] **Step 5: Run focused verification**
@@ -497,6 +511,7 @@ git commit -m "refactor: move app shell into app folder"
 ## Task 3: Move Desktop IPC Boundary Into `src/desktop`
 
 **Files:**
+
 - Move: `src/lib/desktop/backend.ts` → `src/desktop/backend.ts`
 - Move: `src/lib/desktop/runtime.ts` → `src/desktop/runtime.ts`
 - Move: `src/lib/desktop/models.ts` → `src/desktop/models.ts`
@@ -576,6 +591,7 @@ git commit -m "refactor: move desktop IPC boundary"
 ## Task 4: Move shadcn Primitives And Shared Utilities
 
 **Files:**
+
 - Move: `src/components/ui/*` → `src/shared/ui/*`
 - Move: `src/lib/utils.ts` → split into `src/shared/utils/cn.ts` and `src/shared/utils/formatting.ts`
 - Modify: `components.json`
@@ -596,8 +612,8 @@ Get-ChildItem src\components\ui -File | ForEach-Object { git mv $_.FullName (Joi
 Create `src/shared/utils/cn.ts`:
 
 ```ts
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -621,42 +637,50 @@ export function formatBytesNum(bytes: number): string {
 
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes == null) {
-    return '—';
+    return "—";
   }
   if (bytes === 0) {
-    return '0 B';
+    return "0 B";
   }
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
-  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const units = ["B", "KB", "MB", "GB", "TB"] as const;
+  const exponent = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
   const value = bytes / 1024 ** exponent;
   return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
 }
 
 export function formatCompactNumber(value: number | null | undefined): string {
   if (value == null) {
-    return '—';
+    return "—";
   }
-  return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(
-    value,
-  );
+  return new Intl.NumberFormat(undefined, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 export function formatRating(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) {
-    return '—';
+    return "—";
   }
   return value.toFixed(1);
 }
 
-export function formatDisplayDate(value: string | number | Date | null | undefined): string {
-  if (value == null || value === '') {
-    return '—';
+export function formatDisplayDate(
+  value: string | number | Date | null | undefined
+): string {
+  if (value == null || value === "") {
+    return "—";
   }
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '—';
+    return "—";
   }
-  return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+    date
+  );
 }
 ```
 
@@ -692,13 +716,19 @@ Apply replacements:
 Then fix every file that imports `cn` from formatting. Those imports must use:
 
 ```ts
-import { cn } from '@/shared/utils/cn';
+import { cn } from "@/shared/utils/cn";
 ```
 
 Formatting imports must use:
 
 ```ts
-import { formatBytes, formatBytesNum, formatDisplayDate, formatFileSize, formatRating } from '@/shared/utils/formatting';
+import {
+  formatBytes,
+  formatBytesNum,
+  formatDisplayDate,
+  formatFileSize,
+  formatRating,
+} from "@/shared/utils/formatting";
 ```
 
 - [ ] **Step 5: Verify no old UI imports remain**
@@ -738,6 +768,7 @@ git commit -m "refactor: move shared ui primitives and utilities"
 ## Task 5: Move Shared Components, Stores, And Utilities
 
 **Files:**
+
 - Move root shared components into `src/shared/components/`
 - Move app-wide stores into `src/shared/stores/`
 - Move common utility files into `src/shared/utils/`
@@ -855,6 +886,7 @@ git commit -m "refactor: move shared frontend modules"
 ## Task 6: Move Existing Modular Features
 
 **Files:**
+
 - Move marketplace UI/hooks/store into `src/features/marketplace/`
 - Move payload dumper UI/hooks/store into `src/features/payload-dumper/`
 - Move emulator UI/store into `src/features/emulator/`
@@ -917,18 +949,18 @@ git mv src\lib\debloatStore.ts src\features\app-manager\debloater\model\debloatS
 Update imports in `src/app/shell/MainLayout.tsx`:
 
 ```ts
-import { AppManagerView } from '@/features/app-manager/AppManagerView';
-import { EmulatorView } from '@/features/emulator/EmulatorView';
-import { MarketplaceView } from '@/features/marketplace/MarketplaceView';
-import { PayloadDumperView } from '@/features/payload-dumper/PayloadDumperView';
+import { AppManagerView } from "@/features/app-manager/AppManagerView";
+import { EmulatorView } from "@/features/emulator/EmulatorView";
+import { MarketplaceView } from "@/features/marketplace/MarketplaceView";
+import { PayloadDumperView } from "@/features/payload-dumper/PayloadDumperView";
 ```
 
 Update internal feature imports to their new concrete paths. Example:
 
 ```ts
-import { AppCard } from '@/features/marketplace/ui/AppCard';
-import { useMarketplaceStore } from '@/features/marketplace/model/marketplaceStore';
-import { useMarketplaceSearch } from '@/features/marketplace/hooks/useMarketplaceSearch';
+import { AppCard } from "@/features/marketplace/ui/AppCard";
+import { useMarketplaceStore } from "@/features/marketplace/model/marketplaceStore";
+import { useMarketplaceSearch } from "@/features/marketplace/hooks/useMarketplaceSearch";
 ```
 
 - [ ] **Step 6: Verify old modular feature imports are gone**
@@ -967,6 +999,7 @@ git commit -m "refactor: move existing features into feature folders"
 ## Task 7: Create File Explorer Model, API, And Pure Utilities
 
 **Files:**
+
 - Create: `src/features/file-explorer/model/fileExplorerTypes.ts`
 - Create: `src/features/file-explorer/model/fileExplorerConstants.ts`
 - Create: `src/features/file-explorer/api/fileExplorerApi.ts`
@@ -991,52 +1024,84 @@ Expected: `ViewFileExplorer` risk LOW because only `MainLayout` calls it. `sortE
 Create `src/test/fileExplorerUtils.test.ts`:
 
 ```ts
-import { describe, expect, it } from 'vitest';
-import { sortFileEntries } from '@/features/file-explorer/utils/fileExplorerSorting';
-import { isValidDevicePath, validateNewEntryName } from '@/features/file-explorer/utils/fileExplorerValidation';
-import type { FileExplorerEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+import { describe, expect, it } from "vitest";
+import { sortFileEntries } from "@/features/file-explorer/utils/fileExplorerSorting";
+import {
+  isValidDevicePath,
+  validateNewEntryName,
+} from "@/features/file-explorer/utils/fileExplorerValidation";
+import type { FileExplorerEntry } from "@/features/file-explorer/model/fileExplorerTypes";
 
-const file = (name: string, size: string, date = '2026-05-10', time = '19:17'): FileExplorerEntry => ({
+const file = (
+  name: string,
+  size: string,
+  date = "2026-05-10",
+  time = "19:17"
+): FileExplorerEntry => ({
   date,
-  linkTarget: '',
+  linkTarget: "",
   name,
-  permissions: '-rw-r--r--',
+  permissions: "-rw-r--r--",
   size,
   time,
-  type: 'File',
+  type: "File",
 });
 
 const dir = (name: string): FileExplorerEntry => ({
-  date: '2026-05-10',
-  linkTarget: '',
+  date: "2026-05-10",
+  linkTarget: "",
   name,
-  permissions: 'drwxr-xr-x',
-  size: '0',
-  time: '19:17',
-  type: 'Directory',
+  permissions: "drwxr-xr-x",
+  size: "0",
+  time: "19:17",
+  type: "Directory",
 });
 
-describe('file explorer utilities', () => {
-  it('keeps directories before files while sorting by name', () => {
-    const result = sortFileEntries([file('z.apk', '100'), dir('Android'), file('a.apk', '50')], 'name', 'asc');
-    expect(result.map((entry) => entry.name)).toEqual(['Android', 'a.apk', 'z.apk']);
+describe("file explorer utilities", () => {
+  it("keeps directories before files while sorting by name", () => {
+    const result = sortFileEntries(
+      [file("z.apk", "100"), dir("Android"), file("a.apk", "50")],
+      "name",
+      "asc"
+    );
+    expect(result.map((entry) => entry.name)).toEqual([
+      "Android",
+      "a.apk",
+      "z.apk",
+    ]);
   });
 
-  it('sorts file sizes numerically', () => {
-    const result = sortFileEntries([file('large.bin', '1000'), file('small.bin', '9')], 'size', 'asc');
-    expect(result.map((entry) => entry.name)).toEqual(['small.bin', 'large.bin']);
+  it("sorts file sizes numerically", () => {
+    const result = sortFileEntries(
+      [file("large.bin", "1000"), file("small.bin", "9")],
+      "size",
+      "asc"
+    );
+    expect(result.map((entry) => entry.name)).toEqual([
+      "small.bin",
+      "large.bin",
+    ]);
   });
 
-  it('rejects unsafe device paths', () => {
-    expect(isValidDevicePath('/sdcard/Download/')).toBe(true);
-    expect(isValidDevicePath('../sdcard')).toBe(false);
-    expect(isValidDevicePath('sdcard')).toBe(false);
+  it("rejects unsafe device paths", () => {
+    expect(isValidDevicePath("/sdcard/Download/")).toBe(true);
+    expect(isValidDevicePath("../sdcard")).toBe(false);
+    expect(isValidDevicePath("sdcard")).toBe(false);
   });
 
-  it('validates new file and folder names', () => {
-    expect(validateNewEntryName('notes.txt')).toEqual({ ok: true, name: 'notes.txt' });
-    expect(validateNewEntryName('..')).toEqual({ ok: false, error: 'Name cannot be . or ..' });
-    expect(validateNewEntryName('bad/name')).toEqual({ ok: false, error: 'Name contains invalid characters' });
+  it("validates new file and folder names", () => {
+    expect(validateNewEntryName("notes.txt")).toEqual({
+      ok: true,
+      name: "notes.txt",
+    });
+    expect(validateNewEntryName("..")).toEqual({
+      ok: false,
+      error: "Name cannot be . or ..",
+    });
+    expect(validateNewEntryName("bad/name")).toEqual({
+      ok: false,
+      error: "Name contains invalid characters",
+    });
   });
 });
 ```
@@ -1056,13 +1121,13 @@ Expected: FAIL with module resolution errors for `@/features/file-explorer/*`.
 Create `src/features/file-explorer/model/fileExplorerTypes.ts`:
 
 ```ts
-import type { backend } from '@/desktop/models';
+import type { backend } from "@/desktop/models";
 
 export type FileExplorerEntry = backend.FileEntry;
-export type LoadError = 'permission_denied' | 'no_device' | 'unknown' | null;
-export type CreatingType = 'file' | 'folder' | null;
-export type SortField = 'name' | 'size' | 'date';
-export type SortDir = 'asc' | 'desc';
+export type LoadError = "permission_denied" | "no_device" | "unknown" | null;
+export type CreatingType = "file" | "folder" | null;
+export type SortField = "name" | "size" | "date";
+export type SortDir = "asc" | "desc";
 
 export interface ValidationResult {
   ok: boolean;
@@ -1080,27 +1145,28 @@ export const DEFAULT_LEFT_WIDTH = 180;
 export const MAX_HISTORY = 50;
 export const RESPONSIVE_COLLAPSE_WIDTH = 1024;
 export const PHANTOM_ROW_HEIGHT = 40;
-export const FILE_TABLE_COLUMNS = '40px minmax(16rem, 1fr) 8rem 8rem 6rem';
-export const FILE_TABLE_COLUMNS_WITH_SELECTION = '40px 40px minmax(16rem, 1fr) 8rem 8rem 6rem';
+export const FILE_TABLE_COLUMNS = "40px minmax(16rem, 1fr) 8rem 8rem 6rem";
+export const FILE_TABLE_COLUMNS_WITH_SELECTION =
+  "40px 40px minmax(16rem, 1fr) 8rem 8rem 6rem";
 ```
 
 Create `src/features/file-explorer/utils/fileExplorerValidation.ts`:
 
 ```ts
-import type { ValidationResult } from '@/features/file-explorer/model/fileExplorerTypes';
+import type { ValidationResult } from "@/features/file-explorer/model/fileExplorerTypes";
 
 const FORBIDDEN_CHARS = /[/\\:*?"<>|]/;
 const RESERVED_NAMES = /^\.{1,2}$/;
 
 export function isValidDevicePath(path: string | null): path is string {
-  if (!path || typeof path !== 'string') {
+  if (!path || typeof path !== "string") {
     return false;
   }
   const trimmed = path.trim();
-  if (!trimmed.startsWith('/')) {
+  if (!trimmed.startsWith("/")) {
     return false;
   }
-  if (trimmed.includes('..')) {
+  if (trimmed.includes("..")) {
     return false;
   }
   return true;
@@ -1109,13 +1175,13 @@ export function isValidDevicePath(path: string | null): path is string {
 export function validateNewEntryName(rawName: string): ValidationResult {
   const name = rawName.trim();
   if (!name) {
-    return { ok: false, error: 'Name is required' };
+    return { ok: false, error: "Name is required" };
   }
   if (RESERVED_NAMES.test(name)) {
-    return { ok: false, error: 'Name cannot be . or ..' };
+    return { ok: false, error: "Name cannot be . or .." };
   }
   if (FORBIDDEN_CHARS.test(name)) {
-    return { ok: false, error: 'Name contains invalid characters' };
+    return { ok: false, error: "Name contains invalid characters" };
   }
   return { ok: true, name };
 }
@@ -1124,16 +1190,20 @@ export function validateNewEntryName(rawName: string): ValidationResult {
 Create `src/features/file-explorer/utils/fileExplorerSorting.ts`:
 
 ```ts
-import type { FileExplorerEntry, SortDir, SortField } from '@/features/file-explorer/model/fileExplorerTypes';
+import type {
+  FileExplorerEntry,
+  SortDir,
+  SortField,
+} from "@/features/file-explorer/model/fileExplorerTypes";
 
 function isDirectoryLike(entry: FileExplorerEntry): boolean {
-  return entry.type === 'Directory' || entry.type === 'Symlink';
+  return entry.type === "Directory" || entry.type === "Symlink";
 }
 
 export function sortFileEntries(
   entries: FileExplorerEntry[],
   field: SortField,
-  dir: SortDir,
+  dir: SortDir
 ): FileExplorerEntry[] {
   return [...entries].sort((a, b) => {
     const aIsDir = isDirectoryLike(a);
@@ -1145,18 +1215,21 @@ export function sortFileEntries(
       return 1;
     }
 
-    if (field === 'name') {
+    if (field === "name") {
       const cmp = a.name.localeCompare(b.name);
-      return dir === 'asc' ? cmp : -cmp;
+      return dir === "asc" ? cmp : -cmp;
     }
-    if (field === 'size') {
+    if (field === "size") {
       const aNum = Number.parseInt(a.size, 10);
       const bNum = Number.parseInt(b.size, 10);
-      const cmp = Number.isNaN(aNum) || Number.isNaN(bNum) ? a.size.localeCompare(b.size) : aNum - bNum;
-      return dir === 'asc' ? cmp : -cmp;
+      const cmp =
+        Number.isNaN(aNum) || Number.isNaN(bNum)
+          ? a.size.localeCompare(b.size)
+          : aNum - bNum;
+      return dir === "asc" ? cmp : -cmp;
     }
     const cmp = `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`);
-    return dir === 'asc' ? cmp : -cmp;
+    return dir === "asc" ? cmp : -cmp;
   });
 }
 ```
@@ -1164,7 +1237,7 @@ export function sortFileEntries(
 Create `src/features/file-explorer/utils/fileExplorerPaths.ts`:
 
 ```ts
-import path from 'path-browserify';
+import path from "path-browserify";
 
 export function joinDevicePath(basePath: string, name: string): string {
   return path.posix.join(basePath, name);
@@ -1175,10 +1248,10 @@ export function joinDeviceDirectory(basePath: string, name: string): string {
 }
 
 export function parentDevicePath(currentPath: string): string {
-  if (currentPath === '/') {
-    return '/';
+  if (currentPath === "/") {
+    return "/";
   }
-  return `${path.posix.join(currentPath, '..')}/`;
+  return `${path.posix.join(currentPath, "..")}/`;
 }
 ```
 
@@ -1197,7 +1270,7 @@ import {
   SelectDirectoryToPush,
   SelectFileToPush,
   SelectSaveDirectory,
-} from '@/desktop/backend';
+} from "@/desktop/backend";
 
 export const fileExplorerApi = {
   createDirectory: CreateDirectory,
@@ -1250,16 +1323,19 @@ import {
   MIN_LEFT_WIDTH,
   PHANTOM_ROW_HEIGHT,
   RESPONSIVE_COLLAPSE_WIDTH,
-} from '@/features/file-explorer/model/fileExplorerConstants';
+} from "@/features/file-explorer/model/fileExplorerConstants";
 import type {
   CreatingType,
   FileExplorerEntry,
   LoadError,
   SortDir,
   SortField,
-} from '@/features/file-explorer/model/fileExplorerTypes';
-import { sortFileEntries } from '@/features/file-explorer/utils/fileExplorerSorting';
-import { isValidDevicePath, validateNewEntryName } from '@/features/file-explorer/utils/fileExplorerValidation';
+} from "@/features/file-explorer/model/fileExplorerTypes";
+import { sortFileEntries } from "@/features/file-explorer/utils/fileExplorerSorting";
+import {
+  isValidDevicePath,
+  validateNewEntryName,
+} from "@/features/file-explorer/utils/fileExplorerValidation";
 ```
 
 Replace `FileEntry` with `FileExplorerEntry`.
@@ -1300,6 +1376,7 @@ git commit -m "refactor: extract file explorer model and utilities"
 ## Task 8: Extract File Explorer Hooks
 
 **Files:**
+
 - Create: `src/features/file-explorer/hooks/useFileExplorerSelection.ts`
 - Create: `src/features/file-explorer/hooks/useFileExplorerHistory.ts`
 - Create: `src/features/file-explorer/hooks/useFileExplorerListing.ts`
@@ -1313,28 +1390,30 @@ git commit -m "refactor: extract file explorer model and utilities"
 Create `src/test/fileExplorerHooks.test.tsx` with focused tests for selection and history:
 
 ```tsx
-import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import { useFileExplorerHistory } from '@/features/file-explorer/hooks/useFileExplorerHistory';
-import { useFileExplorerSelection } from '@/features/file-explorer/hooks/useFileExplorerSelection';
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+import { useFileExplorerHistory } from "@/features/file-explorer/hooks/useFileExplorerHistory";
+import { useFileExplorerSelection } from "@/features/file-explorer/hooks/useFileExplorerSelection";
 
-describe('file explorer hooks', () => {
-  it('enters multi-select mode when selecting a file', () => {
+describe("file explorer hooks", () => {
+  it("enters multi-select mode when selecting a file", () => {
     const { result } = renderHook(() => useFileExplorerSelection());
 
     act(() => {
-      result.current.selectOne('Download/app.apk');
+      result.current.selectOne("Download/app.apk");
     });
 
     expect(result.current.isMultiSelectMode).toBe(true);
-    expect(Array.from(result.current.selectedNames)).toEqual(['Download/app.apk']);
+    expect(Array.from(result.current.selectedNames)).toEqual([
+      "Download/app.apk",
+    ]);
   });
 
-  it('clears selection and exits multi-select mode', () => {
+  it("clears selection and exits multi-select mode", () => {
     const { result } = renderHook(() => useFileExplorerSelection());
 
     act(() => {
-      result.current.selectOne('Download/app.apk');
+      result.current.selectOne("Download/app.apk");
       result.current.clearSelection();
     });
 
@@ -1342,15 +1421,18 @@ describe('file explorer hooks', () => {
     expect(result.current.selectedNames.size).toBe(0);
   });
 
-  it('tracks back and forward history without duplicating refreshes', () => {
-    const { result } = renderHook(() => useFileExplorerHistory('/sdcard/'));
+  it("tracks back and forward history without duplicating refreshes", () => {
+    const { result } = renderHook(() => useFileExplorerHistory("/sdcard/"));
 
     act(() => {
-      result.current.pushPath('/sdcard/Download/');
-      result.current.pushPath('/sdcard/Download/');
+      result.current.pushPath("/sdcard/Download/");
+      result.current.pushPath("/sdcard/Download/");
     });
 
-    expect(result.current.navHistory).toEqual(['/sdcard/', '/sdcard/Download/']);
+    expect(result.current.navHistory).toEqual([
+      "/sdcard/",
+      "/sdcard/Download/",
+    ]);
     expect(result.current.canGoBack).toBe(true);
     expect(result.current.canGoForward).toBe(false);
   });
@@ -1372,7 +1454,7 @@ Expected: FAIL with module resolution errors.
 Create `src/features/file-explorer/hooks/useFileExplorerSelection.ts`:
 
 ```ts
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 
 export function useFileExplorerSelection() {
   const [selectedNames, setSelectedNames] = useState<Set<string>>(new Set());
@@ -1435,7 +1517,7 @@ export function useFileExplorerSelection() {
       selectedNames,
       selectOne,
       toggleName,
-    ],
+    ]
   );
 }
 ```
@@ -1445,8 +1527,8 @@ export function useFileExplorerSelection() {
 Create `src/features/file-explorer/hooks/useFileExplorerHistory.ts`:
 
 ```ts
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { MAX_HISTORY } from '@/features/file-explorer/model/fileExplorerConstants';
+import { useCallback, useMemo, useRef, useState } from "react";
+import { MAX_HISTORY } from "@/features/file-explorer/model/fileExplorerConstants";
 
 export function useFileExplorerHistory(initialPath: string) {
   const [navHistory, setNavHistory] = useState<string[]>([initialPath]);
@@ -1464,7 +1546,9 @@ export function useFileExplorerHistory(initialPath: string) {
         return truncated;
       }
       const next = [...truncated, targetPath];
-      return next.length > MAX_HISTORY ? next.slice(next.length - MAX_HISTORY) : next;
+      return next.length > MAX_HISTORY
+        ? next.slice(next.length - MAX_HISTORY)
+        : next;
     });
     const newIdx = Math.min(currentIdx + 1, MAX_HISTORY - 1);
     historyIndexRef.current = newIdx;
@@ -1505,7 +1589,15 @@ export function useFileExplorerHistory(initialPath: string) {
       navHistory,
       pushPath,
     }),
-    [canGoBack, canGoForward, historyIndex, moveBack, moveForward, navHistory, pushPath],
+    [
+      canGoBack,
+      canGoForward,
+      historyIndex,
+      moveBack,
+      moveForward,
+      navHistory,
+      pushPath,
+    ]
   );
 }
 ```
@@ -1581,6 +1673,7 @@ git commit -m "refactor: extract file explorer hooks"
 ## Task 9: Split File Explorer UI Components
 
 **Files:**
+
 - Create UI files under `src/features/file-explorer/ui/`
 - Move: `src/components/DirectoryTree.tsx` → `src/features/file-explorer/ui/DirectoryTree.tsx`
 - Move/rename: `src/components/views/ViewFileExplorer.tsx` → `src/features/file-explorer/FileExplorerView.tsx`
@@ -1602,7 +1695,7 @@ git mv src\components\DirectoryTree.tsx src\features\file-explorer\ui\DirectoryT
 Create `src/features/file-explorer/ui/DeleteDialog.tsx`:
 
 ```tsx
-import { File, Folder, Link, Loader2, Trash2 } from 'lucide-react';
+import { File, Folder, Link, Loader2, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1612,9 +1705,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/shared/ui/alert-dialog';
-import { buttonVariants } from '@/shared/ui/button-variants';
-import type { FileExplorerEntry } from '@/features/file-explorer/model/fileExplorerTypes';
+} from "@/shared/ui/alert-dialog";
+import { buttonVariants } from "@/shared/ui/button-variants";
+import type { FileExplorerEntry } from "@/features/file-explorer/model/fileExplorerTypes";
 
 interface DeleteDialogProps {
   filesToDelete: string[];
@@ -1646,23 +1739,28 @@ export function DeleteDialog({
             <div>
               <p>
                 {filesToDelete.length === 1
-                  ? 'This item will be permanently deleted from the device. This action cannot be undone.'
-                  : 'These items will be permanently deleted from the device. This action cannot be undone.'}
+                  ? "This item will be permanently deleted from the device. This action cannot be undone."
+                  : "These items will be permanently deleted from the device. This action cannot be undone."}
               </p>
               {filesToDelete.length > 1 && (
                 <ul className="mt-2 flex min-w-0 flex-col gap-0.5 font-mono text-xs">
                   {filesToDelete.slice(0, 5).map((name) => {
                     const file = fileList.find((entry) => entry.name === name);
                     return (
-                      <li className="flex min-w-0 items-start gap-1.5" key={name}>
-                        {file?.type === 'Directory' ? (
+                      <li
+                        className="flex min-w-0 items-start gap-1.5"
+                        key={name}
+                      >
+                        {file?.type === "Directory" ? (
                           <Folder className="h-3 w-3 shrink-0" />
-                        ) : file?.type === 'Symlink' ? (
+                        ) : file?.type === "Symlink" ? (
                           <Link className="h-3 w-3 shrink-0" />
                         ) : (
                           <File className="h-3 w-3 shrink-0" />
                         )}
-                        <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span>
+                        <span className="min-w-0 [overflow-wrap:anywhere]">
+                          {name}
+                        </span>
                       </li>
                     );
                   })}
@@ -1679,7 +1777,7 @@ export function DeleteDialog({
         <AlertDialogFooter className="min-w-0">
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className={buttonVariants({ variant: 'destructive' })}
+            className={buttonVariants({ variant: "destructive" })}
             disabled={isDeleting}
             onClick={onConfirm}
           >
@@ -1768,7 +1866,7 @@ The real returned props may include more fields, but the view must remain a coor
 In `src/app/shell/MainLayout.tsx`, import:
 
 ```ts
-import { FileExplorerView } from '@/features/file-explorer/FileExplorerView';
+import { FileExplorerView } from "@/features/file-explorer/FileExplorerView";
 ```
 
 Update tests:
@@ -1813,6 +1911,7 @@ git commit -m "refactor: split file explorer into feature modules"
 ## Task 10: Move Remaining Views Into Feature Folders
 
 **Files:**
+
 - Move: `ViewDashboard.tsx` → `src/features/dashboard/DashboardView.tsx`
 - Move: `ViewFlasher.tsx` → `src/features/flasher/FlasherView.tsx`
 - Move: `ViewUtilities.tsx` → `src/features/utilities/UtilitiesView.tsx`
@@ -1837,10 +1936,10 @@ if (Test-Path src\components\views\ViewAbout.tsx) { git mv src\components\views\
 Use these imports in `src/app/shell/MainLayout.tsx`:
 
 ```ts
-import { AboutView } from '@/features/about/AboutView';
-import { DashboardView } from '@/features/dashboard/DashboardView';
-import { FlasherView } from '@/features/flasher/FlasherView';
-import { UtilitiesView } from '@/features/utilities/UtilitiesView';
+import { AboutView } from "@/features/about/AboutView";
+import { DashboardView } from "@/features/dashboard/DashboardView";
+import { FlasherView } from "@/features/flasher/FlasherView";
+import { UtilitiesView } from "@/features/utilities/UtilitiesView";
 ```
 
 If `AboutView` does not exist as a separate file, keep the existing about component path and write that exception into the architecture notes.
@@ -1893,6 +1992,7 @@ git commit -m "refactor: move remaining views into features"
 ## Task 11: Split Flasher And Utilities Oversized Views
 
 **Files:**
+
 - Create files under `src/features/flasher/ui/`, `hooks/`, `model/`
 - Create files under `src/features/utilities/ui/`, `hooks/`
 - Modify: `src/features/flasher/FlasherView.tsx`
@@ -1976,6 +2076,7 @@ git commit -m "refactor: split flasher and utilities features"
 ## Task 12: Split Dashboard And App Manager Large Files
 
 **Files:**
+
 - Create files under `src/features/dashboard/ui/`
 - Create files under `src/features/app-manager/installation/hooks/`
 - Modify: `DashboardView.tsx`
@@ -2060,6 +2161,7 @@ git commit -m "refactor: split dashboard and app manager features"
 ## Task 13: Remove Legacy Folders And Make Architecture Test Green
 
 **Files:**
+
 - Delete empty: `src/components/`
 - Delete empty: `src/lib/`
 - Modify: `src/test/frontendArchitecture.test.ts`
@@ -2138,6 +2240,7 @@ git commit -m "refactor: enforce frontend feature architecture"
 ## Task 14: Update Project Documentation And Memory Bank
 
 **Files:**
+
 - Modify: `AGENTS.md`
 - Modify: `memory-bank/systemPatterns.md`
 - Modify: `memory-bank/techContext.md`
@@ -2149,18 +2252,18 @@ git commit -m "refactor: enforce frontend feature architecture"
 Replace the old frontend location table with:
 
 ```markdown
-| Concern | Correct location | Do not do this |
-| --- | --- | --- |
-| App bootstrap | `src/main.tsx`, `src/app/App.tsx` | Put feature logic in bootstrap |
-| App shell and view switching | `src/app/shell/` | Add a router or per-view polling |
-| Tauri IPC wrappers | `src/desktop/` | Scatter raw `invoke()` calls in features |
-| shadcn primitives | `src/shared/ui/` | Hand-roll primitive controls |
-| Cross-feature components | `src/shared/components/` | Put feature-only UI in shared |
-| Cross-feature stores | `src/shared/stores/` | Put feature state in app-wide stores |
-| Feature implementation | `src/features/<feature>/` | Add new code under legacy `components/views` |
-| Feature hooks | `src/features/<feature>/hooks/` | Hide stateful feature logic in view files |
-| Feature utilities | `src/features/<feature>/utils/` | Create generic `utils.ts` dumping grounds |
-| Tests | `src/test/` | Add frontend tests outside `src/test/` |
+| Concern                      | Correct location                  | Do not do this                               |
+| ---------------------------- | --------------------------------- | -------------------------------------------- |
+| App bootstrap                | `src/main.tsx`, `src/app/App.tsx` | Put feature logic in bootstrap               |
+| App shell and view switching | `src/app/shell/`                  | Add a router or per-view polling             |
+| Tauri IPC wrappers           | `src/desktop/`                    | Scatter raw `invoke()` calls in features     |
+| shadcn primitives            | `src/shared/ui/`                  | Hand-roll primitive controls                 |
+| Cross-feature components     | `src/shared/components/`          | Put feature-only UI in shared                |
+| Cross-feature stores         | `src/shared/stores/`              | Put feature state in app-wide stores         |
+| Feature implementation       | `src/features/<feature>/`         | Add new code under legacy `components/views` |
+| Feature hooks                | `src/features/<feature>/hooks/`   | Hide stateful feature logic in view files    |
+| Feature utilities            | `src/features/<feature>/utils/`   | Create generic `utils.ts` dumping grounds    |
+| Tests                        | `src/test/`                       | Add frontend tests outside `src/test/`       |
 ```
 
 - [ ] **Step 2: Update memory bank**
@@ -2209,6 +2312,7 @@ git commit -m "docs: document frontend feature architecture"
 ## Task 15: Final Full Gate And GitNexus Change Detection
 
 **Files:**
+
 - Read: entire worktree
 - Modify: none unless verification finds a bug
 

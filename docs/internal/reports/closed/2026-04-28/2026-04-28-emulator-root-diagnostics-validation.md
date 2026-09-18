@@ -73,4 +73,3 @@ Exit code: `1`
 ```text
 adb.exe: device 'emulator-5554' not found
 ```
-

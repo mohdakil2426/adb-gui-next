@@ -12,13 +12,13 @@
 
 ## File Map
 
-| File | Role | Change |
-|------|------|--------|
-| `src-tauri/src/commands/files.rs` | All file operations (7 commands) | Security hardening, path validation |
-| `src-tauri/src/helpers.rs` | Shared utilities (`sanitize_filename`) | Add `validate_path_traversal()` helper |
-| `src/components/views/ViewFileExplorer.tsx` | 1764-line monolithic component | Virtualization, useMemo, a11y, keyboard |
-| `src/components/DirectoryTree.tsx` | Directory tree sidebar | Tree expand animation |
-| `src/lib/desktop/backend.ts` | Tauri IPC wrappers for files | Progress events for push/pull |
+| File                                        | Role                                   | Change                                  |
+| ------------------------------------------- | -------------------------------------- | --------------------------------------- |
+| `src-tauri/src/commands/files.rs`           | All file operations (7 commands)       | Security hardening, path validation     |
+| `src-tauri/src/helpers.rs`                  | Shared utilities (`sanitize_filename`) | Add `validate_path_traversal()` helper  |
+| `src/components/views/ViewFileExplorer.tsx` | 1764-line monolithic component         | Virtualization, useMemo, a11y, keyboard |
+| `src/components/DirectoryTree.tsx`          | Directory tree sidebar                 | Tree expand animation                   |
+| `src/lib/desktop/backend.ts`                | Tauri IPC wrappers for files           | Progress events for push/pull           |
 
 ---
 
@@ -27,6 +27,7 @@
 ### Task 1: Path Traversal Validation in files.rs
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/files.rs:1-208`
 - Modify: `src-tauri/src/helpers.rs:22-34` (extend `sanitize_filename` or add new helper)
 - Test: `src-tauri/src/helpers.rs` (add tests for new path validation)
@@ -95,26 +96,31 @@ fn validate_path_components_rejects_null_bytes() {
 - [ ] **Step 3: Add `validate_path_components` call to all 7 file commands in `files.rs`**
 
 Add the import at the top of `files.rs`:
+
 ```rust
 use crate::helpers::validate_path_components;
 ```
 
 Add validation at the start of `list_files` body (after trim):
+
 ```rust
 validate_path_components(&path)?;
 ```
 
 Add validation to `pull_file` (after trim):
+
 ```rust
 validate_path_components(&remote)?;
 ```
 
 Add validation to `push_file` (after trim):
+
 ```rust
 validate_path_components(&remote)?;
 ```
 
 Add validation to `delete_files` — validate each path:
+
 ```rust
 for p in &paths {
     validate_path_components(p)?;
@@ -122,17 +128,20 @@ for p in &paths {
 ```
 
 Add validation to `rename_file` (both paths):
+
 ```rust
 validate_path_components(&old)?;
 validate_path_components(&new)?;
 ```
 
 Add validation to `create_file` (after trim):
+
 ```rust
 validate_path_components(&p)?;
 ```
 
 Add validation to `create_directory` (after trim):
+
 ```rust
 validate_path_components(&p)?;
 ```
@@ -165,6 +174,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 2: Path Allowlisting (Restrict to Device Storage)
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/files.rs`
 
 **Context:** The audit recommends restricting file operations to safe directories. For ADB devices, the typical safe paths are `/sdcard/`, `/data/`, and `/mnt/`. We add a `validate_safe_device_path()` function and apply it to write operations (push, create, delete, rename).
@@ -245,11 +255,13 @@ fn validate_safe_device_path_rejects_dev() {
 - [ ] **Step 3: Apply `validate_safe_device_path` to write operations in `files.rs`**
 
 Import the function:
+
 ```rust
 use crate::helpers::{validate_path_components, validate_safe_device_path};
 ```
 
 In `delete_files` — apply to all paths:
+
 ```rust
 tokio::task::spawn_blocking(move || {
     for p in &paths {
@@ -260,6 +272,7 @@ tokio::task::spawn_blocking(move || {
 ```
 
 In `rename_file` — apply to both old and new paths:
+
 ```rust
 validate_path_components(&old)?;
 validate_path_components(&new)?;
@@ -268,18 +281,21 @@ validate_safe_device_path(&new)?;
 ```
 
 In `create_file` — apply to path:
+
 ```rust
 validate_path_components(&p)?;
 validate_safe_device_path(&p)?;
 ```
 
 In `create_directory` — apply to path:
+
 ```rust
 validate_path_components(&p)?;
 validate_safe_device_path(&p)?;
 ```
 
 **Note:** `pull_file` and `push_file` (write side) should also validate:
+
 ```rust
 // push_file: after remote.trim() and validate_path_components
 validate_safe_device_path(&remote)?;
@@ -312,6 +328,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 3: List Virtualization with @tanstack/react-virtual
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:1471-1671` (table body render loop)
 
 **Context:** The audit reports that `visibleList.map((file) => {...})` renders all rows at once. With 1000+ files, this causes severe performance degradation. `@tanstack/react-virtual` v3 is already in `package.json` (`@tanstack/react-virtual@^3.13.23`). The virtualization must be applied only to the `visibleList.map(...)` render loop (lines 1471-1671) inside `<TableBody>`. Do NOT virtualize the phantom creation row or the "no results" row — those are always rendered outside the virtual loop.
@@ -319,13 +336,15 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 - [ ] **Step 1: Add useVirtualizer import to ViewFileExplorer.tsx**
 
 Check existing imports (line 33):
+
 ```ts
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 ```
 
 Add `useVirtualizer` to lucide-react imports or add new import:
+
 ```ts
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from "@tanstack/react-virtual";
 ```
 
 - [ ] **Step 2: Add parent ref for the virtualizer scroll container**
@@ -333,6 +352,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 Find the `<ScrollArea>` wrapping the `<Table>` (around line 1320-1370). The `<ScrollArea>` likely has a `viewport` ref. Check what ref is used for the scroll container. Add a new `useRef` for the virtualizer parent element.
 
 In the refs section (around line 245), add:
+
 ```ts
 const tableContainerRef = useRef<HTMLDivElement>(null);
 ```
@@ -354,55 +374,67 @@ const rowVirtualizer = useVirtualizer({
 Find the render loop starting at `visibleList.map((file) => {` (line 1471). Replace the map with:
 
 ```tsx
-{/* Phantom row (always rendered, not virtualized) */}
-{creatingType !== null && (
-  <TableRow>{/* ... existing phantom row code ... */}</TableRow>
-)}
-
-{/* Search "no results" row (always rendered, not virtualized) */}
-{fileList.length > 0 && visibleList.length === 0 ? (
-  <TableRow>{/* ... existing no-results row ... */}</TableRow>
-) : null}
-
-{/* Virtualized rows */}
-{rowVirtualizer.getVirtualItems().map((virtualRow) => {
-  const file = visibleList[virtualRow.index];
-  const isSelected = selectedNames.has(file.name);
-  const isBeingRenamed = renamingName === file.name;
-  const isNavigable = file.type === 'Directory' || file.type === 'Symlink';
-
-  return (
-    <ContextMenu key={file.name}>
-      <ContextMenuTrigger asChild>
-        <TableRow
-          className="cursor-pointer"
-          data-state={isSelected ? 'selected' : ''}
-          data-index={virtualRow.index}
-          ref={rowVirtualizer.measureElement}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            transform: `translateY(${virtualRow.start}px)`,
-          }}
-          onClick={(e) => {
-            handleRowClick(file, e);
-          }}
-          onDoubleClick={() => {
-            handleRowDoubleClick(file);
-          }}
-        >
-          {/* ... ALL existing TableRow content (checkbox, icon, name, size, date, time) ... */}
-          {/* Keep EVERYTHING inside the existing TableRow — no content changes */}
-        </TableRow>
-      </ContextMenuTrigger>
-
-      {/* ContextMenuContent — keep exactly as is */}
-      {/* ... */}
-    </ContextMenu>
+{
+  /* Phantom row (always rendered, not virtualized) */
+}
+{
+  creatingType !== null && (
+    <TableRow>{/* ... existing phantom row code ... */}</TableRow>
   );
-})}
+}
+
+{
+  /* Search "no results" row (always rendered, not virtualized) */
+}
+{
+  fileList.length > 0 && visibleList.length === 0 ? (
+    <TableRow>{/* ... existing no-results row ... */}</TableRow>
+  ) : null;
+}
+
+{
+  /* Virtualized rows */
+}
+{
+  rowVirtualizer.getVirtualItems().map((virtualRow) => {
+    const file = visibleList[virtualRow.index];
+    const isSelected = selectedNames.has(file.name);
+    const isBeingRenamed = renamingName === file.name;
+    const isNavigable = file.type === "Directory" || file.type === "Symlink";
+
+    return (
+      <ContextMenu key={file.name}>
+        <ContextMenuTrigger asChild>
+          <TableRow
+            className="cursor-pointer"
+            data-state={isSelected ? "selected" : ""}
+            data-index={virtualRow.index}
+            ref={rowVirtualizer.measureElement}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              transform: `translateY(${virtualRow.start}px)`,
+            }}
+            onClick={(e) => {
+              handleRowClick(file, e);
+            }}
+            onDoubleClick={() => {
+              handleRowDoubleClick(file);
+            }}
+          >
+            {/* ... ALL existing TableRow content (checkbox, icon, name, size, date, time) ... */}
+            {/* Keep EVERYTHING inside the existing TableRow — no content changes */}
+          </TableRow>
+        </ContextMenuTrigger>
+
+        {/* ContextMenuContent — keep exactly as is */}
+        {/* ... */}
+      </ContextMenu>
+    );
+  });
+}
 ```
 
 **Important:** Add `ref={rowVirtualizer.measureElement}` to each `<TableRow>` — this tells the virtualizer to measure row heights dynamically. Use `data-index={virtualRow.index}` for stable measurements.
@@ -422,11 +454,13 @@ Find the `<ScrollArea>` that wraps the table. Add `ref={tableContainerRef}` to t
 Set the `<Table>` style to `width: 100%` and ensure `<TableBody>` has `position: relative` with `height: {rowVirtualizer.getTotalSize()}px` for the container height.
 
 Actually, a simpler approach for the table container:
+
 ```tsx
 <div ref={tableContainerRef} className="relative w-full overflow-auto">
 ```
 
 Then set the virtual row's parent container height:
+
 ```tsx
 <TableBody style={{ position: 'relative', height: `${rowVirtualizer.getTotalSize()}px` }}>
 ```
@@ -459,6 +493,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 4: useMemo for Derived State
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:258-273`
 
 **Context:** The audit flags that `sortEntries` and the search filter on lines 267-273 are recomputed on every render. Since these are pure derived computations from `fileList`, `searchQuery`, `sortField`, and `sortDir`, they should be wrapped in `useMemo`.
@@ -466,32 +501,39 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 - [ ] **Step 1: Import useMemo**
 
 Check line 33 — if `useMemo` is not imported, add it:
+
 ```ts
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 ```
 
 - [ ] **Step 2: Wrap `visibleList` computation in useMemo**
 
 Find lines 266-273:
+
 ```ts
 const visibleList = sortEntries(
   searchQuery
-    ? fileList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? fileList.filter((f) =>
+        f.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : fileList,
   sortField,
-  sortDir,
+  sortDir
 );
 ```
 
 Replace with:
+
 ```ts
 const visibleList = useMemo(() => {
   return sortEntries(
     searchQuery
-      ? fileList.filter((f) => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      ? fileList.filter((f) =>
+          f.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       : fileList,
     sortField,
-    sortDir,
+    sortDir
   );
 }, [fileList, searchQuery, sortField, sortDir]);
 ```
@@ -499,30 +541,33 @@ const visibleList = useMemo(() => {
 - [ ] **Step 3: Wrap `selectedList` and `allSelected`/`someSelected` in useMemo**
 
 Find lines 258-262:
+
 ```ts
 const selectedList = fileList.filter((f) => selectedNames.has(f.name));
 const singleSelected = selectedList.length === 1 ? selectedList[0] : null;
-const allSelected = fileList.length > 0 && selectedNames.size === fileList.length;
+const allSelected =
+  fileList.length > 0 && selectedNames.size === fileList.length;
 const someSelected = selectedNames.size > 0 && !allSelected;
 ```
 
 Replace with:
+
 ```ts
 const selectedList = useMemo(
   () => fileList.filter((f) => selectedNames.has(f.name)),
-  [fileList, selectedNames],
+  [fileList, selectedNames]
 );
 const singleSelected = useMemo(
   () => (selectedList.length === 1 ? selectedList[0] : null),
-  [selectedList],
+  [selectedList]
 );
 const allSelected = useMemo(
   () => fileList.length > 0 && selectedNames.size === fileList.length,
-  [fileList, selectedNames],
+  [fileList, selectedNames]
 );
 const someSelected = useMemo(
   () => selectedNames.size > 0 && !allSelected,
-  [selectedNames, allSelected],
+  [selectedNames, allSelected]
 );
 ```
 
@@ -547,14 +592,16 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 5: Fix Keyboard Effect Stale Dependencies
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:966-985`
 
 **Context:** The `useEffect` for keyboard shortcuts at line 970 has `fileList` in its dependency array. Adding `fileList` recreates the effect on every file list change (every navigation), which is wasteful. The keyboard handler doesn't actually need `fileList` — it only needs `selectedNames.size` (which IS in deps) to handle `Ctrl+A`. The fix is to remove `fileList` from the dependency array and use a ref for the count check, OR simply remove `fileList` from deps since the handler only reads `selectedNames.size`, `renamingName`, `creatingType`, `searchQuery`, `activeView`.
 
 Look at the effect carefully — `fileList` is used at line 954 inside the handler:
+
 ```ts
 const name = Array.from(selectedNames)[0];
-const file = fileList.find((f) => f.name === name);  // line 954
+const file = fileList.find((f) => f.name === name); // line 954
 ```
 
 This is the only use of `fileList` in the handler. Since `selectedNames` is in the deps and `fileList` is not, this could cause stale closure issues. However, `selectedNames` is a `Set` that gets updated when the file list changes via navigation, so the `name` will be valid even without `fileList` in deps. But we need the file to call `startRename(file)` — if `file` is undefined, `startRename` would receive `undefined` and crash.
@@ -579,11 +626,12 @@ useEffect(() => {
 - [ ] **Step 2: Update the F2 handler in the keyboard effect to use `fileListRef.current`**
 
 Find the F2 block (lines 951-958):
+
 ```ts
-if (e.key === 'F2' && selectedNames.size === 1) {
+if (e.key === "F2" && selectedNames.size === 1) {
   e.preventDefault();
   const name = Array.from(selectedNames)[0];
-  const file = fileList.find((f) => f.name === name);  // change this
+  const file = fileList.find((f) => f.name === name); // change this
   if (file) {
     startRename(file);
   }
@@ -592,8 +640,9 @@ if (e.key === 'F2' && selectedNames.size === 1) {
 ```
 
 Change to:
+
 ```ts
-if (e.key === 'F2' && selectedNames.size === 1) {
+if (e.key === "F2" && selectedNames.size === 1) {
   e.preventDefault();
   const name = Array.from(selectedNames)[0];
   const file = fileListRef.current.find((f) => f.name === name);
@@ -607,6 +656,7 @@ if (e.key === 'F2' && selectedNames.size === 1) {
 - [ ] **Step 3: Remove `fileList` from the useEffect dependency array**
 
 Find the deps array (lines 970-985):
+
 ```ts
 }, [
   activeView,
@@ -627,6 +677,7 @@ Find the deps array (lines 970-985):
 ```
 
 Remove `fileList`:
+
 ```ts
 }, [
   activeView,
@@ -667,11 +718,13 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 6: Accessibility — ARIA Focus Indicators, Table Headers, Path Button
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:1127, 1360-1398, 1479-1487`
 
 - [ ] **Step 1: Add visible focus indicator to path button (line 1126)**
 
 Find the path button (line 1126-1132):
+
 ```tsx
 <button
   className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -681,6 +734,7 @@ Find the path button (line 1126-1132):
 ```
 
 Add `focus-visible` ring:
+
 ```tsx
 <button
   className="min-w-0 flex-1 cursor-text truncate rounded-sm px-2 py-1 text-left font-mono text-muted-foreground text-xs transition-colors hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -690,6 +744,7 @@ Add `focus-visible` ring:
 ```
 
 Also add keyboard support for Enter/Space on the path button. Since `isEditingPath` is already managed and the path click handler sets `isEditingPath(true)`, add `onKeyDown`:
+
 ```tsx
 onKeyDown={(e) => {
   if (e.key === 'Enter' || e.key === ' ') {
@@ -702,6 +757,7 @@ onKeyDown={(e) => {
 - [ ] **Step 2: Add `role="columnheader"` and sort aria attributes to TableHead elements (lines 1375-1396)**
 
 Find the sort headers loop (lines 1375-1396):
+
 ```tsx
 <TableHead
   className="cursor-pointer select-none capitalize hover:text-foreground"
@@ -713,6 +769,7 @@ Find the sort headers loop (lines 1375-1396):
 ```
 
 Replace with:
+
 ```tsx
 <TableHead
   className="cursor-pointer select-none capitalize hover:text-foreground"
@@ -728,6 +785,7 @@ Replace with:
 - [ ] **Step 3: Add visible focus indicator to TableRow (line 1479)**
 
 Find the `TableRow` (line 1479-1488):
+
 ```tsx
 <TableRow
   className="cursor-pointer"
@@ -742,6 +800,7 @@ Find the `TableRow` (line 1479-1488):
 ```
 
 Add focus-visible ring:
+
 ```tsx
 <TableRow
   className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
@@ -792,6 +851,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 7: ARIA Live Region for Selection Changes
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:1278-1297`
 
 **Context:** Screen readers don't hear selection changes. We need to add a visually hidden `aria-live="polite"` region that announces the selection count when it changes.
@@ -799,6 +859,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 - [ ] **Step 1: Add visually hidden live region above the file table**
 
 Find the SelectionSummaryBar area (lines 1277-1297):
+
 ```tsx
 {/* Selection summary bar — only visible in multi-select mode */}
 {isMultiSelectMode && selectedNames.size > 0 && !renamingName ? (
@@ -807,17 +868,20 @@ Find the SelectionSummaryBar area (lines 1277-1297):
 Add a visually hidden announcement region. The best approach is to add a visually hidden `<div>` with `aria-live="polite"` and `aria-atomic="true"` that updates whenever `selectedNames.size` changes. Add it as a sibling to the toolbar, inside the main pane:
 
 Find the toolbar close tag (around line 1275 `</div>`) and add after:
+
 ```tsx
-{/* Visually hidden live region for screen reader selection announcements */}
+{
+  /* Visually hidden live region for screen reader selection announcements */
+}
 <div
   aria-atomic="true"
   aria-live="polite"
   className="pointer-events-none absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0"
 >
   {selectedNames.size > 0
-    ? `${selectedNames.size} item${selectedNames.size > 1 ? 's' : ''} selected`
+    ? `${selectedNames.size} item${selectedNames.size > 1 ? "s" : ""} selected`
     : null}
-</div>
+</div>;
 ```
 
 Use `position: absolute; -m-px; h-px; w-px` to keep it invisible and not affect layout. The `aria-live="polite"` will announce when the content changes.
@@ -844,6 +908,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 8: Shift+Click Range Selection
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:1471-1487` (row click handler)
 
 **Context:** The audit flags missing Shift+Click range selection. Currently, Ctrl+Click adds to selection and Ctrl+A selects all. We need to add `Shift+Click` to select a range from `lastClickedIndex` to the clicked row's index.
@@ -851,6 +916,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 - [ ] **Step 1: Add `lastClickedIndexRef` to track last clicked row index**
 
 In the refs section (around line 252), add:
+
 ```ts
 const loadRequestIdRef = useRef(0);
 const fileListRef = useRef<FileEntry[]>([]);
@@ -898,6 +964,7 @@ if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
 - [ ] **Step 3: Clear `lastClickedIndexRef` on selection clear**
 
 In the `clearSelection` function, add:
+
 ```ts
 const clearSelection = useCallback(() => {
   setIsMultiSelectMode(false);
@@ -909,6 +976,7 @@ const clearSelection = useCallback(() => {
 - [ ] **Step 4: Also clear `lastClickedIndexRef` on navigation (loadFiles)**
 
 In the `loadFiles` function body, add:
+
 ```ts
 lastClickedIndexRef.current = null;
 ```
@@ -940,6 +1008,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 9: Shell Command Validation in File Operations
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/files.rs`
 
 **Context:** The audit flags that file operations don't use `validate_shell_command`. While we have path traversal validation (Task 1), adding shell command validation provides defense-in-depth. Specifically, `delete_files`, `rename_file`, `create_file`, and `create_directory` all build shell strings that get passed to `adb shell`. If any path component somehow slipped through, the shell metacharacter check would catch it.
@@ -959,6 +1028,7 @@ Add a note that `validate_shell_command` does not exist in the codebase and the 
 ### Task 10: localStorage Validation on Read
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:168-189, 238-240`
 
 **Context:** The audit flags that `localStorage.getItem('fe.currentPath')` returns unvalidated strings. A malicious actor could set `fe.currentPath` to `../../etc/` and trigger the path traversal. Our backend now validates all paths (Tasks 1-2), but we should also validate on read in the frontend for defense-in-depth.
@@ -966,14 +1036,15 @@ Add a note that `validate_shell_command` does not exist in the codebase and the 
 - [ ] **Step 1: Add a path validation helper in ViewFileExplorer.tsx**
 
 Add near the top of the file (around line 100, after constants):
+
 ```ts
 const DEVICE_PATH_PATTERN = /^\/[sdcmt]/;
 
 function isValidDevicePath(path: string | null): path is string {
-  if (!path || typeof path !== 'string') return false;
+  if (!path || typeof path !== "string") return false;
   const trimmed = path.trim();
-  if (!trimmed.startsWith('/')) return false;
-  if (trimmed.includes('..')) return false;
+  if (!trimmed.startsWith("/")) return false;
+  if (trimmed.includes("..")) return false;
   return true;
 }
 ```
@@ -981,17 +1052,19 @@ function isValidDevicePath(path: string | null): path is string {
 - [ ] **Step 2: Apply validation when reading from localStorage**
 
 Find the `currentPath` state initializer (lines 168-170):
+
 ```ts
 const [currentPath, setCurrentPath] = useState(
-  () => localStorage.getItem('fe.currentPath') ?? '/sdcard/',
+  () => localStorage.getItem("fe.currentPath") ?? "/sdcard/"
 );
 ```
 
 Replace with:
+
 ```ts
 const [currentPath, setCurrentPath] = useState(() => {
-  const saved = localStorage.getItem('fe.currentPath');
-  return isValidDevicePath(saved) ? saved : '/sdcard/';
+  const saved = localStorage.getItem("fe.currentPath");
+  return isValidDevicePath(saved) ? saved : "/sdcard/";
 });
 ```
 
@@ -999,17 +1072,18 @@ Similarly for `sortField` (lines 181-184) and `sortDir` (lines 185-188) — thes
 
 ```ts
 const [isTreeCollapsed, setIsTreeCollapsed] = useState(
-  () => localStorage.getItem('fe.treeCollapsed') === 'true',
+  () => localStorage.getItem("fe.treeCollapsed") === "true"
 );
 ```
 
 This is already safe (`=== 'true'` only matches the string, no injection possible).
 
 Also validate the `navHistory` localStorage read:
+
 ```ts
 const [navHistory, setNavHistory] = useState<string[]>(() => {
-  const saved = localStorage.getItem('fe.currentPath');
-  return [isValidDevicePath(saved) ? saved : '/sdcard/'];
+  const saved = localStorage.getItem("fe.currentPath");
+  return [isValidDevicePath(saved) ? saved : "/sdcard/"];
 });
 ```
 
@@ -1035,6 +1109,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 11: F5 Refresh Keyboard Shortcut
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:900-965` (keyboard effect)
 
 **Context:** The toolbar already has a Refresh button with "Refresh (F5)" tooltip (line 1141), but F5 is not wired to the keyboard handler.
@@ -1042,9 +1117,10 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 - [ ] **Step 1: Add F5 handler in the keyboard effect (before the Escape block)**
 
 Find the Escape handler (line 928-940) and add F5 before it:
+
 ```ts
 // Refresh: F5
-if (e.key === 'F5') {
+if (e.key === "F5") {
   e.preventDefault();
   void loadFiles(currentPath, false);
   return;
@@ -1074,6 +1150,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 12: Touch Target Expansion to 44px
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:1040-1274` (toolbar area)
 
 **Context:** The audit reports toolbar touch targets at 28px (WCAG recommends 44px). The main touch targets are the `size-7` buttons (28px). We should increase toolbar button sizes to 44px minimum.
@@ -1083,6 +1160,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 Find all `size-7` buttons in the toolbar area and change to `size-11` (44px):
 
 The buttons affected:
+
 - Back button (line 1063): `className="size-7 shrink-0"` → `className="size-11 shrink-0"`
 - Forward button (line 1076): `className="size-7 shrink-0"` → `className="size-11 shrink-0"`
 - Up button (line 1089): `className="size-7 shrink-0"` → `className="size-11 shrink-0"`
@@ -1093,11 +1171,13 @@ The buttons affected:
 Also the tree buttons (line 1005, 1046): `className="size-6"` → `className="size-11 shrink-0"`
 
 Also update the toolbar height `h-10` (40px) to `h-11` (44px) at line 1040:
+
 ```tsx
 <div className="flex h-11 shrink-0 items-center gap-1 border-border border-b px-2">
 ```
 
 And the tree panel header height (line 1000):
+
 ```tsx
 <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b bg-muted/30 px-3">
 ```
@@ -1105,8 +1185,9 @@ And the tree panel header height (line 1000):
 **Note:** This is a visual change — verify the toolbar doesn't overflow after the size increase. If it does, consider using `h-10` but applying 44px touch targets via padding instead.
 
 If `size-11` causes layout issues, use explicit min-height via Tailwind:
+
 ```tsx
-className="min-h-11 min-w-11"
+className = "min-h-11 min-w-11";
 ```
 
 - [ ] **Step 2: Verify build**
@@ -1134,6 +1215,7 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 13: Tree Expand Animation
 
 **Files:**
+
 - Modify: `src/components/DirectoryTree.tsx`
 
 **Context:** Add smooth expand/collapse animation to the directory tree when folders are opened/closed.
@@ -1143,15 +1225,17 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 Read `src/components/DirectoryTree.tsx` to find the folder open/close logic. Look for where child folders are rendered and add a CSS transition or Framer Motion animation.
 
 **Implementation approach (check first):**
+
 - If the tree uses conditional rendering (`isExpanded ? <children> : null`), wrap the children in a `<motion.div>` with `initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}` using framer-motion.
 - Framer Motion is already in `package.json` (v12.38.0).
 - Check existing animation patterns in `MainLayout.tsx` for how transitions are applied in this app.
 
 **If the tree has no expansion animation**, add a simple CSS transition:
+
 ```tsx
 <div
   className="overflow-hidden transition-all duration-200 ease-in-out"
-  style={{ maxHeight: isExpanded ? '500px' : '0px' }}
+  style={{ maxHeight: isExpanded ? "500px" : "0px" }}
 >
   {children}
 </div>
@@ -1182,16 +1266,19 @@ Refs: FE-EXPLORER-AUDIT-2026-05-12"
 ### Task 14: `import type` Cleanup
 
 **Files:**
+
 - Modify: `src/components/views/ViewFileExplorer.tsx:93-95`
 
 **Context:** Line 95 uses `import type` for `backend.FileEntry` but `backend` is also used as a type-only import. The audit notes line 93 should also use `import type`.
 
 Find line 93:
+
 ```ts
-import type { backend } from '../../lib/desktop/models';
+import type { backend } from "../../lib/desktop/models";
 ```
 
 This is already correct (`import type`). The audit notes line 95 should use `import type`. But line 95 is:
+
 ```ts
 type FileEntry = backend.FileEntry;
 ```
@@ -1221,30 +1308,33 @@ git commit --allow-empty -m "chore: verify import type compliance in ViewFileExp
 
 ## Phase Order Summary
 
-| Phase | Tasks | Focus | Files |
-|-------|-------|-------|-------|
-| 1 | 1-2 | Critical Security | `files.rs`, `helpers.rs` |
-| 2 | 3 | Critical Performance | `ViewFileExplorer.tsx` |
-| 3 | 4-8 | High Priority | `ViewFileExplorer.tsx` |
-| 4 | 9-12 | Medium Priority | `files.rs`, `ViewFileExplorer.tsx`, `backend.ts` |
-| 5 | 13-14 | Minor | `DirectoryTree.tsx`, `ViewFileExplorer.tsx` |
+| Phase | Tasks | Focus                | Files                                            |
+| ----- | ----- | -------------------- | ------------------------------------------------ |
+| 1     | 1-2   | Critical Security    | `files.rs`, `helpers.rs`                         |
+| 2     | 3     | Critical Performance | `ViewFileExplorer.tsx`                           |
+| 3     | 4-8   | High Priority        | `ViewFileExplorer.tsx`                           |
+| 4     | 9-12  | Medium Priority      | `files.rs`, `ViewFileExplorer.tsx`, `backend.ts` |
+| 5     | 13-14 | Minor                | `DirectoryTree.tsx`, `ViewFileExplorer.tsx`      |
 
 ---
 
 ## Verification After Each Phase
 
 After each phase, run:
+
 ```bash
 bun run format:check && bun run lint:web && bun run build
 ```
 
 For Rust changes (Phase 1):
+
 ```bash
 cargo check --manifest-path src-tauri/Cargo.toml
 cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
 After all phases complete:
+
 ```bash
 bun run check
 ```
@@ -1254,6 +1344,7 @@ bun run check
 ## Self-Review Checklist
 
 **Spec coverage:**
+
 - [x] Task 1: Path traversal validation (files.rs) → audit critical #1
 - [x] Task 2: Path allowlisting (files.rs) → audit critical #2
 - [x] Task 3: Virtualization (ViewFileExplorer.tsx) → audit critical #3
@@ -1270,11 +1361,13 @@ bun run check
 - [x] Task 14: import type cleanup → audit minor #17
 
 **Placeholder scan:**
+
 - [x] No "TBD" or "TODO" — all steps have concrete code
 - [x] No "write tests for the above" — test code is always included
 - [x] No "add validation" without showing the exact code
 
 **Type consistency:**
+
 - [x] `FileEntry` type alias used consistently (from `backend.FileEntry`)
 - [x] `visibleList` useMemo wraps the existing `sortEntries` function
 - [x] `fileListRef` pattern matches existing `currentPathRef` pattern

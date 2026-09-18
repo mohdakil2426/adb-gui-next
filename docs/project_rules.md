@@ -12,15 +12,15 @@ Owns **workflow**, report layout, quality gates, and **hard stops**. Module impl
 
 ## Platforms & packaging (product policy)
 
-| User-facing platform | Product status | Notes |
-| --- | --- | --- |
-| **Windows (64-bit)** | First-class | Installer (setup), MSI, portable; Google tools PE **x86** (WOW64 OK) |
-| **Windows (32-bit)** | Shipped (CI) | Installer, MSI, portable; tools PE x86 |
-| **Windows (ARM)** | Shipped (CI, setup) | App ARM64; **bundled tools still PE x86** — needs x86/WOW64 emulation |
-| **Linux (64-bit)** | First-class | deb, rpm, AppImage + bundled ELF 64-bit tools |
-| **Linux (ARM)** | Shipped (CI) | deb/rpm/AppImage; **no bundled platform-tools** — system PATH adb/fastboot |
-| **macOS** | **Code present, builds paused** | See below |
-| Browser / Next.js / Electron | Out of scope | Never reintroduce |
+| User-facing platform         | Product status                  | Notes                                                                      |
+| ---------------------------- | ------------------------------- | -------------------------------------------------------------------------- |
+| **Windows (64-bit)**         | First-class                     | Installer (setup), MSI, portable; Google tools PE **x86** (WOW64 OK)       |
+| **Windows (32-bit)**         | Shipped (CI)                    | Installer, MSI, portable; tools PE x86                                     |
+| **Windows (ARM)**            | Shipped (CI, setup)             | App ARM64; **bundled tools still PE x86** — needs x86/WOW64 emulation      |
+| **Linux (64-bit)**           | First-class                     | deb, rpm, AppImage + bundled ELF 64-bit tools                              |
+| **Linux (ARM)**              | Shipped (CI)                    | deb/rpm/AppImage; **no bundled platform-tools** — system PATH adb/fastboot |
+| **macOS**                    | **Code present, builds paused** | See below                                                                  |
+| Browser / Next.js / Electron | Out of scope                    | Never reintroduce                                                          |
 
 **Win ARM tools strategy:** keep shipping Google’s Windows platform-tools (x86) until an official ARM64 tree is vendored. Document emulation requirement; do not ship mismatched ELF/PE silently.
 
@@ -28,13 +28,13 @@ Full build matrix + portable RCA: `docs/internal/reports/closed/2026-07-18/2026-
 
 ### App naming (canonical)
 
-| Role | Value |
-| --- | --- |
-| Display / product / window / HTML | **ADB GUI Next** |
-| Artifact / download prefix | **`ADB-GUI-Next`** (no spaces) |
-| Cargo / npm / binary stem | **`adb-gui-next`** (no spaces; Linux-safe) |
-| Bundle identifier | **`com.astrixforge.adbguinext`** |
-| Publisher | **Astrixforge** |
+| Role                              | Value                                      |
+| --------------------------------- | ------------------------------------------ |
+| Display / product / window / HTML | **ADB GUI Next**                           |
+| Artifact / download prefix        | **`ADB-GUI-Next`** (no spaces)             |
+| Cargo / npm / binary stem         | **`adb-gui-next`** (no spaces; Linux-safe) |
+| Bundle identifier                 | **`com.astrixforge.adbguinext`**           |
+| Publisher                         | **Astrixforge**                            |
 
 Do not reintroduce mixed styles (`AdbGuiNext` / `Adb Gui Next`) in new user-facing strings or release assets.
 
@@ -42,11 +42,11 @@ Do not reintroduce mixed styles (`AdbGuiNext` / `Adb Gui Next`) in new user-faci
 
 Prefer labels users understand. **Do not** put Rust triple tokens (`x86_64`, `i686`, `aarch64`) in download titles or release asset basenames.
 
-| UX token | Means | Internal Rust arch (CI only) |
-| --- | --- | --- |
-| **`64bit`** | Normal 64-bit PC | `x86_64` |
-| **`32bit`** | Old 32-bit Windows | `i686` |
-| **`arm`** | ARM64 devices / Windows on ARM | `aarch64` |
+| UX token    | Means                          | Internal Rust arch (CI only) |
+| ----------- | ------------------------------ | ---------------------------- |
+| **`64bit`** | Normal 64-bit PC               | `x86_64`                     |
+| **`32bit`** | Old 32-bit Windows             | `i686`                       |
+| **`arm`**   | ARM64 devices / Windows on ARM | `aarch64`                    |
 
 **File pattern:**
 
@@ -56,15 +56,15 @@ ADB-GUI-Next-v{version}-{windows|linux}-{64bit|32bit|arm}[-setup|-portable].{ext
 
 **Examples:**
 
-| User sees | File |
-| --- | --- |
-| Windows (64-bit) Installer | `ADB-GUI-Next-v0.2.5-windows-64bit-setup.exe` |
-| Windows (64-bit) MSI | `ADB-GUI-Next-v0.2.5-windows-64bit.msi` |
-| Windows (64-bit) Portable | `ADB-GUI-Next-v0.2.5-windows-64bit-portable.zip` |
-| Windows (32-bit) Installer | `ADB-GUI-Next-v0.2.5-windows-32bit-setup.exe` |
-| Windows (ARM) Installer | `ADB-GUI-Next-v0.2.5-windows-arm-setup.exe` |
-| Linux (64-bit) AppImage / DEB / RPM | `…-linux-64bit.AppImage` / `.deb` / `.rpm` |
-| Linux (ARM) packages | `…-linux-arm.{AppImage,deb,rpm}` |
+| User sees                           | File                                             |
+| ----------------------------------- | ------------------------------------------------ |
+| Windows (64-bit) Installer          | `ADB-GUI-Next-v0.2.5-windows-64bit-setup.exe`    |
+| Windows (64-bit) MSI                | `ADB-GUI-Next-v0.2.5-windows-64bit.msi`          |
+| Windows (64-bit) Portable           | `ADB-GUI-Next-v0.2.5-windows-64bit-portable.zip` |
+| Windows (32-bit) Installer          | `ADB-GUI-Next-v0.2.5-windows-32bit-setup.exe`    |
+| Windows (ARM) Installer             | `ADB-GUI-Next-v0.2.5-windows-arm-setup.exe`      |
+| Linux (64-bit) AppImage / DEB / RPM | `…-linux-64bit.AppImage` / `.deb` / `.rpm`       |
+| Linux (ARM) packages                | `…-linux-arm.{AppImage,deb,rpm}`                 |
 
 CI matrix keeps `arch` + `rust-target` for the compiler; `cpu` drives the public name (`64bit` / `32bit` / `arm`).
 
@@ -75,21 +75,21 @@ CI matrix keeps `arch` + `rust-target` for the compiler; `cpu` drives the public
 
 ### Packaging / release tooling
 
-| Piece | Role |
-| --- | --- |
-| **`tauri-apps/tauri-action@v1`** | Official build + (on publish) draft release asset upload + per-bundle workflow artifacts |
-| **`scripts/make-windows-portable.ps1`** | Custom only: Windows portable zip (not a Tauri BundleType) |
+| Piece                                   | Role                                                                                     |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **`tauri-apps/tauri-action@v1`**        | Official build + (on publish) draft release asset upload + per-bundle workflow artifacts |
+| **`scripts/make-windows-portable.ps1`** | Custom only: Windows portable zip (not a Tauri BundleType)                               |
 
 Do **not** reintroduce a full `collect-release-assets.ps1` renamer for installers — use tauri-action naming patterns instead.  
 Do **not** reintroduce `verify-release-version.mjs` — version is official Tauri path-to-package.json (see below).
 
 ### App versioning (official Tauri)
 
-| Source | Role |
-| --- | --- |
-| **`package.json` `version`** | **Source of truth** for the app / installers |
+| Source                                    | Role                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| **`package.json` `version`**              | **Source of truth** for the app / installers                            |
 | **`src-tauri/tauri.conf.json` `version`** | Must be **`"../package.json"`** (Tauri reads version from package.json) |
-| **`src-tauri/Cargo.toml` `version`** | Required by Cargo; **keep equal** to `package.json` on every release |
+| **`src-tauri/Cargo.toml` `version`**      | Required by Cargo; **keep equal** to `package.json` on every release    |
 
 Ref: [Tauri config `version`](https://v2.tauri.app/reference/config/#version) — string, path to package.json, or omit (falls back to Cargo.toml).
 
@@ -108,17 +108,17 @@ Ref: [Tauri config `version`](https://v2.tauri.app/reference/config/#version) �
 - **Agents must not:** enable/advertise macOS as supported, unpause CI/publish macOS jobs, claim bundled macOS installers work, or “finish macOS packaging” unless the user **explicitly** asks.
 - **Agents may:** leave existing macOS-related files alone when editing unrelated code; fix compile breakage only if the same change is required for Windows/Linux.
 - When unpaused later (user request only): expect full packaging smoke (signing optional per policy, docs, real device) — do not half-enable.
-- User-facing docs (README platform table, release notes) must not call macOS first-class while builds are paused. Prefer: *code prepared / builds paused*.
+- User-facing docs (README platform table, release notes) must not call macOS first-class while builds are paused. Prefer: _code prepared / builds paused_.
 
 ## Documentation ownership
 
-| Topic | Owner |
-| --- | --- |
-| Architecture / contracts | `docs/architecture.md` |
-| Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
-| Module rules | Closest module `AGENTS.md` |
-| Investigations / audits | `docs/internal/reports/` |
-| FE Ultracite standards | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
+| Topic                                        | Owner                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------------------ |
+| Architecture / contracts                     | `docs/architecture.md`                                                   |
+| Workflow, reports, hard stops, quality gates | `docs/project_rules.md`                                                  |
+| Module rules                                 | Closest module `AGENTS.md`                                               |
+| Investigations / audits                      | `docs/internal/reports/`                                                 |
+| FE Ultracite standards                       | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
 
 One owner per topic; duplicates become pointers.
 
@@ -132,13 +132,13 @@ Living session notes (optional, not architecture): `memory-bank/` — do not dup
 docs/internal/reports/<active|closed>/YYYY-MM-DD/YYYY-MM-DD-short-topic-<category>.md
 ```
 
-| Field | Rule |
-| --- | --- |
-| `active` | Open / still useful |
-| `closed` | Decided, done, or historical |
-| Category | `audit` \| `research` \| `summary` \| `validation` only |
+| Field    | Rule                                                          |
+| -------- | ------------------------------------------------------------- |
+| `active` | Open / still useful                                           |
+| `closed` | Decided, done, or historical                                  |
+| Category | `audit` \| `research` \| `summary` \| `validation` only       |
 | Filename | Lowercase kebab-case; date prefix; category suffix; no spaces |
-| Moves | `active` ↔ `closed` without renaming unless category is wrong |
+| Moves    | `active` ↔ `closed` without renaming unless category is wrong |
 
 Do not put reports in the repo root or ad-hoc folders.
 
@@ -146,10 +146,10 @@ Do not put reports in the repo root or ad-hoc folders.
 
 Follow superpowers conventions (writing-plans / brainstorming):
 
-| Kind | Path pattern |
-| --- | --- |
+| Kind                | Path pattern                                          |
+| ------------------- | ----------------------------------------------------- |
 | Implementation plan | `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md` |
-| Design spec | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` |
+| Design spec         | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` |
 
 Rules: lowercase kebab-case slug; date prefix required; no underscores or SCREAMING names; plans stay under `plans/`, design docs under `specs/`.
 
@@ -157,19 +157,19 @@ Audit/research/validation write-ups go to `docs/internal/reports/` (not superpow
 
 ## Quality commands
 
-| Intent | Command |
-| --- | --- |
-| FE check | `bun run lint:web` (`ultracite check`) |
-| FE fix | `bun run format:web` (`ultracite fix`) |
-| Rust lint | `bun run lint:rust` (clippy `-D warnings`) |
-| Rust format | `bun run format:rust` / `format:rust:check` |
-| Combined lint | `bun run lint` |
-| Combined format | `bun run format` |
-| CI-style format check | `bun run format:check` |
-| FE tests | `bun run test` |
-| Full gate | `bun run check` (format:check → clippy → vitest → cargo test → build) |
-| Dev | `bun run dev` / `bun run tauri dev` |
-| Build | `bun run build` / `bun run tauri build --debug` |
+| Intent                | Command                                                               |
+| --------------------- | --------------------------------------------------------------------- |
+| FE check              | `bun run lint:web` (`ultracite check`)                                |
+| FE fix                | `bun run format:web` (`ultracite fix`)                                |
+| Rust lint             | `bun run lint:rust` (clippy `-D warnings`)                            |
+| Rust format           | `bun run format:rust` / `format:rust:check`                           |
+| Combined lint         | `bun run lint`                                                        |
+| Combined format       | `bun run format`                                                      |
+| CI-style format check | `bun run format:check`                                                |
+| FE tests              | `bun run test`                                                        |
+| Full gate             | `bun run check` (format:check → clippy → vitest → cargo test → build) |
+| Dev                   | `bun run dev` / `bun run tauri dev`                                   |
+| Build                 | `bun run build` / `bun run tauri build --debug`                       |
 
 Do **not** reintroduce alias scripts (`fix`, `lint:fix`, `lint:web:fix`, `format:web:check`, `check:fast`).
 

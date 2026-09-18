@@ -23,6 +23,7 @@ ADB/fastboot are powerful but awkward for repetitive work. This app is a local d
 - Single app instance (second launch focuses existing window)
 - Device screen mirror via **official scrcpy**, launched as its own native process with companion floating pill toolbar
 - Windows host can install official Google platform-tools and the USB driver via native elevation (`pnputil`)
+
 ## Boundaries
 
 **In scope:** local ADB/fastboot, file transfer, packages, wireless ADB, universal payload/OPS/OFP/Samsung/Xiaomi extraction (local + remote HTTP streaming with dynamic CrAU manifest reader), multi-brand OEM Firmware Hub (Google Pixel, Nothing OS & CMF, Xiaomi / Redmi / POCO, OnePlus, and Samsung Galaxy catalogs), marketplace installs, official scrcpy host (download/launch, no fork of scrcpy source), emulator AVD tools, Win/Linux multi-arch packaging (unsigned).

@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, for example 0.2.5 (must match package.json)'
+        description: "Release version, for example 0.2.5 (must match package.json)"
         required: true
-        default: '0.2.5'
+        default: "0.2.5"
 
 permissions:
   contents: read
@@ -69,7 +69,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           shared-key: publish-preflight
           cache-on-failure: true
 
@@ -216,7 +216,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           cache-on-failure: true
 
       - name: Setup Bundled Permissions
@@ -354,7 +354,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
           cache-on-failure: true
 
       - name: Setup Bundled Permissions

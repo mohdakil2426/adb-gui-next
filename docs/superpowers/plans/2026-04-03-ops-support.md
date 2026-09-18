@@ -88,6 +88,7 @@ The decrypted XML has this structure:
 ```
 
 **Key observations:**
+
 - `FileOffsetInSrc` is in **sectors** (multiply by 0x200 = 512 bytes)
 - `SizeInByteInSrc` is the actual file size
 - `SizeInSectorInSrc` is sector-aligned size
@@ -137,6 +138,7 @@ Based on `ofp_qc_decrypt.py`:
 #### XML Manifest
 
 Similar to OPS but uses `<?xml ...>` format with:
+
 - `Sahara`, `Config`, `Provision`, `ChainedTableOfDigests`, `DigestsToSign`, `Firmware`, `Program_N` sections
 - Attributes: `Path`, `filename`, `sha256`, `md5`, `FileOffsetInSrc`, `SizeInByteInSrc`, `SizeInSectorInSrc`
 
@@ -185,6 +187,7 @@ Based on `ofp_mtk_decrypt.py`:
 ### 1.4 ZIP Wrapping
 
 Some OFP files are actually ZIP files (password-protected):
+
 - **Detection:** First 2 bytes = `"PK"` (`0x504B`)
 - **Password:** `flash@realme$50E7F7D847732396F1582CD62DD385ED7ABB0897`
 
@@ -600,9 +603,13 @@ Add a format indicator badge (detected from file extension or backend metadata):
 ```tsx
 // Show format type in the banner
 <Badge variant="outline">
-  {payloadPath.endsWith('.ops') ? 'OnePlus OPS' :
-   payloadPath.endsWith('.ofp') ? 'Oppo OFP' :
-   isRemote ? 'Remote OTA' : 'Android OTA'}
+  {payloadPath.endsWith(".ops")
+    ? "OnePlus OPS"
+    : payloadPath.endsWith(".ofp")
+      ? "Oppo OFP"
+      : isRemote
+        ? "Remote OTA"
+        : "Android OTA"}
 </Badge>
 ```
 
@@ -612,7 +619,8 @@ Add a format indicator badge (detected from file extension or backend metadata):
 // Add format-specific metadata
 interface PayloadDumperState {
   // ... existing ...
-  firmwareFormat: 'payload-bin' | 'ops' | 'ofp-qualcomm' | 'ofp-mediatek' | null;
+  firmwareFormat:
+    "payload-bin" | "ops" | "ofp-qualcomm" | "ofp-mediatek" | null;
   opsMetadata: OpsMetadata | null;
 }
 ```
@@ -643,58 +651,58 @@ If an OPS/OFP file is loaded, show a metadata section (similar to `FileBannerDet
 
 ### 5.1 Encryption Key Detection Failures
 
-| Scenario | Handling |
-|----------|----------|
-| OPS: None of mbox4/5/6 works | Return clear error: "Unsupported OPS encryption key. This firmware may require a newer key variant." |
-| OFP-QC: None of 7 key sets works | Return: "Unsupported OFP encryption. Version not recognized." |
-| OFP-MTK: None of 9 key sets works | Return: "Unknown MTK encryption key." |
-| ZIP-OFP: Password doesn't match | Return: "Protected OFP ZIP -- password not recognized." |
+| Scenario                          | Handling                                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| OPS: None of mbox4/5/6 works      | Return clear error: "Unsupported OPS encryption key. This firmware may require a newer key variant." |
+| OFP-QC: None of 7 key sets works  | Return: "Unsupported OFP encryption. Version not recognized."                                        |
+| OFP-MTK: None of 9 key sets works | Return: "Unknown MTK encryption key."                                                                |
+| ZIP-OFP: Password doesn't match   | Return: "Protected OFP ZIP -- password not recognized."                                              |
 
 ### 5.2 Corrupt or Truncated Files
 
-| Scenario | Handling |
-|----------|----------|
-| Footer magic not 0x7CEF | Bail with "Invalid OPS/OFP file: footer magic not found" |
-| XML decrypted but not valid XML | Bail with "OPS decryption succeeded but manifest is corrupt" |
-| Partition offset exceeds file size | Skip partition, log warning, continue extraction |
+| Scenario                           | Handling                                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| Footer magic not 0x7CEF            | Bail with "Invalid OPS/OFP file: footer magic not found"                     |
+| XML decrypted but not valid XML    | Bail with "OPS decryption succeeded but manifest is corrupt"                 |
+| Partition offset exceeds file size | Skip partition, log warning, continue extraction                             |
 | SHA-256 mismatch on extracted file | Log warning, mark partition as "extracted with hash error" in progress event |
-| Sparse image header invalid | Skip un-sparsing, output raw sparse image with warning |
-| File size < 0x200 (minimum footer) | Bail immediately: "File too small to be OPS/OFP" |
+| Sparse image header invalid        | Skip un-sparsing, output raw sparse image with warning                       |
+| File size < 0x200 (minimum footer) | Bail immediately: "File too small to be OPS/OFP"                             |
 
 ### 5.3 Large File Handling
 
-| Scenario | Handling |
-|----------|----------|
-| 6+ GB OPS files | Use `mmap` -- same as existing payload.bin handling |
-| Many partitions (30+) | Parallel extraction via `std::thread::scope` -- same as existing |
-| Slow disk during sparse un-sparsing | Streaming with 256 KiB buffer -- same pattern as CrAU |
+| Scenario                            | Handling                                                         |
+| ----------------------------------- | ---------------------------------------------------------------- |
+| 6+ GB OPS files                     | Use `mmap` -- same as existing payload.bin handling              |
+| Many partitions (30+)               | Parallel extraction via `std::thread::scope` -- same as existing |
+| Slow disk during sparse un-sparsing | Streaming with 256 KiB buffer -- same pattern as CrAU            |
 
 ### 5.4 Format Ambiguity
 
-| Scenario | Handling |
-|----------|----------|
-| `.bin` file that's actually OPS | Check CrAU magic first; if not CrAU, check 0x7CEF footer |
-| `.zip` file with OFP inside | Check for `"PK"` magic -> try as OTA ZIP first; if no `payload.bin`, try OFP ZIP password |
-| `.ops` extension but actually a ZIP | Check first 2 bytes for `"PK"` -> handle accordingly |
-| Random binary file | Return clear format-not-recognized error |
+| Scenario                            | Handling                                                                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `.bin` file that's actually OPS     | Check CrAU magic first; if not CrAU, check 0x7CEF footer                                  |
+| `.zip` file with OFP inside         | Check for `"PK"` magic -> try as OTA ZIP first; if no `payload.bin`, try OFP ZIP password |
+| `.ops` extension but actually a ZIP | Check first 2 bytes for `"PK"` -> handle accordingly                                      |
+| Random binary file                  | Return clear format-not-recognized error                                                  |
 
 ### 5.5 Security Considerations
 
-| Risk | Mitigation |
-|------|-----------|
-| Path traversal from XML filenames | Sanitize: `Path::file_name()` only, strip `..`, `/`, `\` |
-| XML billion laughs / entity expansion | Use `quick-xml` (SAX-style) or disable DTD processing |
-| Memory exhaustion from large XML | XML is typically < 100 KB; set max length guard (1 MB) |
-| Sparse image with overflow | Validate `total_blks * blk_sz` against available file size |
-| Malicious SHA-256 in XML | SHA-256 is for verification only -- no security impact |
+| Risk                                  | Mitigation                                                 |
+| ------------------------------------- | ---------------------------------------------------------- |
+| Path traversal from XML filenames     | Sanitize: `Path::file_name()` only, strip `..`, `/`, `\`   |
+| XML billion laughs / entity expansion | Use `quick-xml` (SAX-style) or disable DTD processing      |
+| Memory exhaustion from large XML      | XML is typically < 100 KB; set max length guard (1 MB)     |
+| Sparse image with overflow            | Validate `total_blks * blk_sz` against available file size |
+| Malicious SHA-256 in XML              | SHA-256 is for verification only -- no security impact     |
 
 ### 5.6 Concurrent Access
 
-| Scenario | Handling |
-|----------|----------|
-| User resets while extraction running | Existing `cancelLoadingRef` pattern applies |
-| Same file opened twice | `PayloadCache` mutex prevents race conditions |
-| mmap held during extraction | `Arc<Mmap>` shared safely across threads |
+| Scenario                             | Handling                                      |
+| ------------------------------------ | --------------------------------------------- |
+| User resets while extraction running | Existing `cancelLoadingRef` pattern applies   |
+| Same file opened twice               | `PayloadCache` mutex prevents race conditions |
+| mmap held during extraction          | `Arc<Mmap>` shared safely across threads      |
 
 ---
 
@@ -725,6 +733,7 @@ If an OPS/OFP file is loaded, show a metadata section (similar to `FileBannerDet
 ### 6.2 Integration Tests
 
 Require real `.ops`/`.ofp` files:
+
 - List partitions from OPS file
 - Extract single partition
 - Extract all partitions
@@ -736,6 +745,7 @@ Require real `.ops`/`.ofp` files:
 ### 6.3 Frontend Tests
 
 Minimal -- the UI changes are mostly extension additions:
+
 - Verify `.ops`/`.ofp` appears in file picker filter
 - Verify drag-drop accepts `.ops`/`.ofp`
 - Verify format badge renders correctly
@@ -819,28 +829,28 @@ Minimal -- the UI changes are mostly extension additions:
 
 ### High Risk
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Custom OPS cipher bugs | Corrupt extractions | Port directly from Python; test with known test vectors; validate SHA-256 |
-| New mbox variants (post-OP8T) | Can't decrypt newer OPS | Design for extensibility -- mbox array is config, not code. Log clear error. |
-| Large file performance (8+ GB) | Slow extraction | mmap + parallel extraction (proven pattern from CrAU) |
+| Risk                           | Impact                  | Mitigation                                                                   |
+| ------------------------------ | ----------------------- | ---------------------------------------------------------------------------- |
+| Custom OPS cipher bugs         | Corrupt extractions     | Port directly from Python; test with known test vectors; validate SHA-256    |
+| New mbox variants (post-OP8T)  | Can't decrypt newer OPS | Design for extensibility -- mbox array is config, not code. Log clear error. |
+| Large file performance (8+ GB) | Slow extraction         | mmap + parallel extraction (proven pattern from CrAU)                        |
 
 ### Medium Risk
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| `quick-xml` parsing edge cases | Manifest parse failure | Defensive parsing with `?` propagation; log unparseable elements |
-| AES-CFB implementation differences | OFP decryption fails | Use well-tested `aes` + `cfb-mode` crates; validate against Python output |
-| Sparse image format variants | Incomplete unsparse | Fall back to raw sparse image with warning |
-| New OFP key variants | Can't decrypt newer OFP | 7+9 known keys covers most devices; design for extension |
+| Risk                               | Impact                  | Mitigation                                                                |
+| ---------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| `quick-xml` parsing edge cases     | Manifest parse failure  | Defensive parsing with `?` propagation; log unparseable elements          |
+| AES-CFB implementation differences | OFP decryption fails    | Use well-tested `aes` + `cfb-mode` crates; validate against Python output |
+| Sparse image format variants       | Incomplete unsparse     | Fall back to raw sparse image with warning                                |
+| New OFP key variants               | Can't decrypt newer OFP | 7+9 known keys covers most devices; design for extension                  |
 
 ### Low Risk
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| Frontend regressions | UI breakage | Changes are additive (filter extension, badge) -- no layout changes |
-| Cargo dependency conflicts | Build failure | `aes`, `cfb-mode`, `md-5` are from RustCrypto -- well-maintained, compatible |
-| `cargo test` Windows crash | False negatives | Pre-existing issue -- OPS tests will use mocks, not full Tauri runtime |
+| Risk                       | Impact          | Mitigation                                                                   |
+| -------------------------- | --------------- | ---------------------------------------------------------------------------- |
+| Frontend regressions       | UI breakage     | Changes are additive (filter extension, badge) -- no layout changes          |
+| Cargo dependency conflicts | Build failure   | `aes`, `cfb-mode`, `md-5` are from RustCrypto -- well-maintained, compatible |
+| `cargo test` Windows crash | False negatives | Pre-existing issue -- OPS tests will use mocks, not full Tauri runtime       |
 
 ---
 
@@ -858,13 +868,13 @@ Sparse magic: 0xED26FF3A
 
 ## Appendix B: File Extension Decision Matrix
 
-| Extension | Detection | Handler |
-|-----------|-----------|---------|
-| `.bin` | CrAU magic -> payload.bin; 0x7CEF footer -> OPS/OFP | CrAU or OPS |
-| `.zip` | `payload.bin` entry -> OTA ZIP; `PK` + password -> OFP ZIP | Existing or OFP-ZIP |
-| `.ops` | 0x7CEF footer -> OPS; `PK` -> ZIP-wrapped | OPS parser |
-| `.ofp` | 0x7CEF + AES-CFB -> QC; `MMM` -> MTK; `PK` -> ZIP | OFP-QC, OFP-MTK, or ZIP |
+| Extension | Detection                                                  | Handler                 |
+| --------- | ---------------------------------------------------------- | ----------------------- |
+| `.bin`    | CrAU magic -> payload.bin; 0x7CEF footer -> OPS/OFP        | CrAU or OPS             |
+| `.zip`    | `payload.bin` entry -> OTA ZIP; `PK` + password -> OFP ZIP | Existing or OFP-ZIP     |
+| `.ops`    | 0x7CEF footer -> OPS; `PK` -> ZIP-wrapped                  | OPS parser              |
+| `.ofp`    | 0x7CEF + AES-CFB -> QC; `MMM` -> MTK; `PK` -> ZIP          | OFP-QC, OFP-MTK, or ZIP |
 
 ---
 
-*Last Updated: 2026-04-03*
+_Last Updated: 2026-04-03_

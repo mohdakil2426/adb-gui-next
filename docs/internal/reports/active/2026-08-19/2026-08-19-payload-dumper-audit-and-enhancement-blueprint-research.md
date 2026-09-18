@@ -9,6 +9,7 @@
 ---
 
 ## Table of Contents
+
 1. [Executive Summary & Core Objectives](#1-executive-summary--core-objectives)
 2. [End-to-End Payload & Container Extraction Architecture](#2-end-to-end-payload--container-extraction-architecture)
 3. [Deep Comparative Analysis Matrix](#3-deep-comparative-analysis-matrix)
@@ -85,6 +86,7 @@
 ## 1. Executive Summary & Core Objectives
 
 Android firmware updates rely on diverse container architectures across manufacturers:
+
 - **AOSP / Google Pixel / Nothing OS / Modern Xiaomi (HyperOS) / OnePlus (OxygenOS 12+)**: Standard CrAU v2 `payload.bin` inside ZIP archives.
 - **Incremental / Delta OTAs**: Require differential reconstruction against pre-OTA source images using Puffin (`PUFFDIFF`), BSDiff (`SOURCE_BSDIFF`), Brotli BSDiff (`BROTLI_BSDIFF`), and instruction-level disassemblers (`ZUCCHINI`).
 - **Dynamic Partitions (`super.img`)**: Aggregate `system`, `vendor`, `product`, `system_ext`, and `odm` into a single container partitioned via AOSP `liblp` metadata.
@@ -100,7 +102,7 @@ This document presents a comprehensive audit of **`adb-gui-next`**'s Rust core (
 ```mermaid
 graph TD
     A[User Input: File Path or Remote URL] --> B{Container Format Detection}
-    
+
     B -->|CrAU payload.bin / Nothing OS OTA| C[CrAU v1/v2 Header & Protobuf Manifest Parser]
     B -->|Local / Remote .zip / ASUS UL| D[EOCD / ZIP64 In-Place Central Directory Reader]
     B -->|OnePlus .ops| E[OPS S-Box Cipher Decryptor & XML Manifest Parser]
@@ -113,7 +115,7 @@ graph TD
     B -->|MediaTek Scatter| H4[scatter.txt / scatter.xml Table Mapper]
 
     D -->|Zero-Copy STORED Window / Temp Deflate| C
-    
+
     C --> I{Manifest OTA Type}
     I -->|Full OTA: minor_version = 0| J[Direct Stream Decoders: XZ, BZ2, ZSTD, ZERO]
     I -->|Delta OTA: minor_version > 0| K[Delta Reconstruction Pipeline]
@@ -146,32 +148,33 @@ graph TD
 
 ## 3. Deep Comparative Analysis Matrix
 
-| Feature / Metric | `adb-gui-next` (Tauri 2 / Rust) | `ssut/payload-dumper-go` (Go) | `rhythmcache/payload-dumper-rust` (Rust) | `otaripper` (Rust CLI) | `vm03/payload_dumper` (Python 3) | AOSP `update_engine` (C++) |
-|---|---|---|---|---|---|---|
-| **Language & Runtime** | Rust 2024 (Rayon + Tokio) | Go 1.20+ (Goroutines) | Rust (Tokio Tasks + Rayon) | Rust (Rayon + Worker Arena) | Python 3.10+ (CPython) | C++17/C++20 (POSIX) |
-| **Peak Throughput** | **1.8 – 2.4 GB/s** | **0.15 GB/s** (pure) / **1.0 GB/s** (CGO) | **1.2 – 1.6 GB/s** | **2.82 GB/s** (AVX-512) | **0.35 – 0.40 GB/s** | Target I/O Bound |
-| **Memory RSS Footprint** | **~25 MB – 45 MB** | **~150 MB – 400 MB** | **~30 MB – 60 MB** | **~20 MB – 35 MB** | **~500 MB – 2.5 GB** | **< 15 MB** |
-| **CrAU v2 Full OTA** | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Native Reference |
-| **CrAU v1 Legacy OTA** | ❌ Bails (`version != 2`) | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported | ✅ Supported |
-| **Delta / Incremental OTA** | ⚠️ Stubbed / Incomplete | ⚠️ Partial (BSDiff via `-old`) | ✅ Full (`bsdiff`, `puffdiff`, `lz4diff`)| ❌ Not Supported | ⚠️ Partial (via `bsdiff4` pip) | ✅ Full Native Engine |
-| **Zstandard (`ZSTD`)** | ✅ Supported (`zstd` crate) | ❌ Not Supported | ✅ Supported (`async-compression`) | ✅ Supported | ❌ Not Supported | ✅ Native (Android 14+) |
-| **LZMA / XZ (`REPLACE_XZ`)**| ✅ Native C `liblzma` | ⚠️ Slow pure-Go or CGO | ✅ Native `liblzma` / `xz2` | ✅ Native `liblzma` | ⚠️ CPython `lzma` | ✅ Native |
-| **Brotli BSDiff (`BROTLI_BSDIFF`)** | ⚠️ Raw Brotli (Buggy) | ❌ Not Supported | ✅ Supported (`bsdiff-android`) | ❌ Not Supported | ❌ Not Supported | ✅ Native |
-| **Direct ZIP Ingestion** | ✅ Zero-copy STORED mmap | ✅ `archive/zip` ReaderAt | ❌ Extracted to temp directory | ✅ STORED mmap window | ❌ Full unzip required | ❌ Not Supported |
-| **Remote HTTP Range** | ✅ Range + Prefetch Cache | ❌ Local files only | ✅ Range + Prefetch Mode | ❌ Local files only | ❌ Local files only | ✅ Native HTTP Client |
-| **OnePlus `.ops` Decryption**| ✅ S-Box Cipher + XML | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported |
-| **Oppo/Realme `.ofp` Decrypt**| ✅ QC AES-CFB + MTK Shuffle| ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported | ❌ Not Supported |
-| **Streaming Sparse (`0xED26FF3A`)**| ✅ Streaming Unsparse | ❌ Not Supported | ❌ Not Supported | ✅ Inline Unsparse | ❌ Not Supported | ❌ External `simg2img` |
-| **Dynamic Partitions (`super.img`)**| ❌ Manual external tool | ❌ Manual external tool | ❌ Metadata view only | ❌ Manual external tool | ❌ Manual external tool | ✅ Native `liblp` |
-| **Verification Layers** | L1/L2 Header & Extents + L3 Op Blob SHA-256 + L4 File SHA-256 | L1 Header + File SHA | L1 Header + File SHA | L1 Header + L3 Op Blob | L1 Header + File SHA | Full AOSP Crypto Ring |
-| **Transaction / Rollback** | ✅ Atomic `TransactionGuard` | ❌ Leaves partial files | ❌ Leaves partial files | ❌ Leaves partial files | ❌ Leaves partial files | Dual-slot A/B rollback |
-| **UI Integration** | ✅ Native Desktop UI (React 19) | ❌ CLI only | ❌ CLI only | ❌ CLI only | ❌ CLI only | ❌ System Service |
+| Feature / Metric                     | `adb-gui-next` (Tauri 2 / Rust)                               | `ssut/payload-dumper-go` (Go)             | `rhythmcache/payload-dumper-rust` (Rust)  | `otaripper` (Rust CLI)      | `vm03/payload_dumper` (Python 3) | AOSP `update_engine` (C++) |
+| ------------------------------------ | ------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------- | --------------------------- | -------------------------------- | -------------------------- |
+| **Language & Runtime**               | Rust 2024 (Rayon + Tokio)                                     | Go 1.20+ (Goroutines)                     | Rust (Tokio Tasks + Rayon)                | Rust (Rayon + Worker Arena) | Python 3.10+ (CPython)           | C++17/C++20 (POSIX)        |
+| **Peak Throughput**                  | **1.8 – 2.4 GB/s**                                            | **0.15 GB/s** (pure) / **1.0 GB/s** (CGO) | **1.2 – 1.6 GB/s**                        | **2.82 GB/s** (AVX-512)     | **0.35 – 0.40 GB/s**             | Target I/O Bound           |
+| **Memory RSS Footprint**             | **~25 MB – 45 MB**                                            | **~150 MB – 400 MB**                      | **~30 MB – 60 MB**                        | **~20 MB – 35 MB**          | **~500 MB – 2.5 GB**             | **< 15 MB**                |
+| **CrAU v2 Full OTA**                 | ✅ Supported                                                  | ✅ Supported                              | ✅ Supported                              | ✅ Supported                | ✅ Supported                     | ✅ Native Reference        |
+| **CrAU v1 Legacy OTA**               | ❌ Bails (`version != 2`)                                     | ✅ Supported                              | ✅ Supported                              | ✅ Supported                | ✅ Supported                     | ✅ Supported               |
+| **Delta / Incremental OTA**          | ⚠️ Stubbed / Incomplete                                       | ⚠️ Partial (BSDiff via `-old`)            | ✅ Full (`bsdiff`, `puffdiff`, `lz4diff`) | ❌ Not Supported            | ⚠️ Partial (via `bsdiff4` pip)   | ✅ Full Native Engine      |
+| **Zstandard (`ZSTD`)**               | ✅ Supported (`zstd` crate)                                   | ❌ Not Supported                          | ✅ Supported (`async-compression`)        | ✅ Supported                | ❌ Not Supported                 | ✅ Native (Android 14+)    |
+| **LZMA / XZ (`REPLACE_XZ`)**         | ✅ Native C `liblzma`                                         | ⚠️ Slow pure-Go or CGO                    | ✅ Native `liblzma` / `xz2`               | ✅ Native `liblzma`         | ⚠️ CPython `lzma`                | ✅ Native                  |
+| **Brotli BSDiff (`BROTLI_BSDIFF`)**  | ⚠️ Raw Brotli (Buggy)                                         | ❌ Not Supported                          | ✅ Supported (`bsdiff-android`)           | ❌ Not Supported            | ❌ Not Supported                 | ✅ Native                  |
+| **Direct ZIP Ingestion**             | ✅ Zero-copy STORED mmap                                      | ✅ `archive/zip` ReaderAt                 | ❌ Extracted to temp directory            | ✅ STORED mmap window       | ❌ Full unzip required           | ❌ Not Supported           |
+| **Remote HTTP Range**                | ✅ Range + Prefetch Cache                                     | ❌ Local files only                       | ✅ Range + Prefetch Mode                  | ❌ Local files only         | ❌ Local files only              | ✅ Native HTTP Client      |
+| **OnePlus `.ops` Decryption**        | ✅ S-Box Cipher + XML                                         | ❌ Not Supported                          | ❌ Not Supported                          | ❌ Not Supported            | ❌ Not Supported                 | ❌ Not Supported           |
+| **Oppo/Realme `.ofp` Decrypt**       | ✅ QC AES-CFB + MTK Shuffle                                   | ❌ Not Supported                          | ❌ Not Supported                          | ❌ Not Supported            | ❌ Not Supported                 | ❌ Not Supported           |
+| **Streaming Sparse (`0xED26FF3A`)**  | ✅ Streaming Unsparse                                         | ❌ Not Supported                          | ❌ Not Supported                          | ✅ Inline Unsparse          | ❌ Not Supported                 | ❌ External `simg2img`     |
+| **Dynamic Partitions (`super.img`)** | ❌ Manual external tool                                       | ❌ Manual external tool                   | ❌ Metadata view only                     | ❌ Manual external tool     | ❌ Manual external tool          | ✅ Native `liblp`          |
+| **Verification Layers**              | L1/L2 Header & Extents + L3 Op Blob SHA-256 + L4 File SHA-256 | L1 Header + File SHA                      | L1 Header + File SHA                      | L1 Header + L3 Op Blob      | L1 Header + File SHA             | Full AOSP Crypto Ring      |
+| **Transaction / Rollback**           | ✅ Atomic `TransactionGuard`                                  | ❌ Leaves partial files                   | ❌ Leaves partial files                   | ❌ Leaves partial files     | ❌ Leaves partial files          | Dual-slot A/B rollback     |
+| **UI Integration**                   | ✅ Native Desktop UI (React 19)                               | ❌ CLI only                               | ❌ CLI only                               | ❌ CLI only                 | ❌ CLI only                      | ❌ System Service          |
 
 ---
 
 ## 4. Analysis of External Reference Projects
 
 ### 4.1 `ssut/payload-dumper-go`
+
 - **Architecture**: Implemented in Go, utilizing goroutine worker pools. Concurrency is configured via `-c <threads>` (defaults to CPU core count). It accepts local `.zip` archives directly by implementing `io.ReaderAt` on uncompressed `payload.bin` entries.
 - **Decompression Engines**:
   - `REPLACE`: Verbatim byte write at target extent offsets via `WriteAt()`.
@@ -185,6 +188,7 @@ graph TD
   - High heap churn and garbage collection pauses during large chunk allocations.
 
 ### 4.2 `rhythmcache/payload-dumper-rust`
+
 - **Architecture**: Written in asynchronous Rust (crate `payload_dumper`, v0.8.4) on top of Tokio and `async-compression`.
 - **Positional Zero-Copy I/O**:
   - Local ZIPs are parsed without unzipping using platform-specific positional read APIs:
@@ -203,6 +207,7 @@ graph TD
   - Computes `[min_offset, max_offset]` byte bounds for each partition and downloads the entire contiguous range in a single HTTP streaming request, accelerating extraction across high-latency connections by 10x–50x.
 
 ### 4.3 `otaripper`
+
 - **Architecture**: A Rust CLI tool engineered for raw extraction throughput.
 - **Performance Techniques**:
   - Extent coalescing: Combines consecutive contiguous extents into single bulk decompression operations.
@@ -213,10 +218,12 @@ graph TD
   - Focuses solely on CrAU full OTAs. Lacks Delta OTA, HTTP streaming, ZIP parsing, and proprietary vendor format decryption.
 
 ### 4.4 `vm03/payload_dumper` & `cyxx`
+
 - **`vm03/payload_dumper`**: The original Python reference implementation that reverse-engineered the CrAU payload format. Bottlenecked by the Python Global Interpreter Lock (GIL), single-threaded chunk processing, and high memory usage (buffering full decompressed chunks in memory).
 - **`cyxx/extract_android_ota_payload`**: Early high-speed C++ implementation using POSIX memory-mapping (`mmap`). Lacks modern compression algorithms (`ZSTD`, `BROTLI_BSDIFF`), multi-threading across partitions, and ZIP integration.
 
 ### 4.5 AOSP `update_engine`
+
 - **Architecture**: The native Android C++ system daemon executing update installations during runtime or recovery.
 - **Cryptographic Model**: Validates metadata signatures using public keys stored in `/etc/update_engine/update-payload-key.pub.pem` or recovery `/res/keys`.
 - **Differential Patching**: Reference implementation for `PUFFDIFF`, `BROTLI_BSDIFF`, and `ZUCCHINI`. It operates directly on block devices (`/dev/block/by-name/...`) and uses the Linux kernel `BLKDISCARD` ioctl for zero/discard regions.
@@ -354,6 +361,7 @@ message InstallOperation {
 ```
 
 #### Why Delta OTAs Fail on Naive Extractors:
+
 1. **Missing Base Partitions**: In a Full OTA (`minor_version = 0`), every operation is self-contained (`REPLACE`, `REPLACE_XZ`, `ZSTD`, `ZERO`). In an Incremental OTA (`minor_version > 0`), operations contain zero or minimal diff bytes in `payload.bin`. They require reading existing disk blocks from `src_extents` of the pre-OTA base partition (`old_partition_info`).
 2. **Cryptographic State Binding**: `old_partition_info.hash` specifies the exact SHA-256 hash of the base partition. If the source image was modified by even 1 byte (e.g. dm-verity corruption, root/Magisk alterations, remounting read-write), delta reconstruction fails verification.
 3. **Puffin Deflate Shift (`PUFFDIFF`)**: Deflate streams in APKs/JARs use variable-length bit codes. Inserting 1 byte desynchronizes subsequent bit streams across megabytes of data, causing byte diffs to explode in size. Puffin decompresses Deflate Huffman trees into byte-aligned streams ("puffing"), computes BSDiff, and re-compresses ("repuffing") to bit-for-bit identical Deflate output.
@@ -363,27 +371,28 @@ message InstallOperation {
 
 ### 5.4 InstallOperation Taxonomy & Differential Algorithms
 
-| Op Enum | Code | Source Required? | Decompressor / Algorithm | Mathematical Description |
-|---|---|---|---|---|
-| `REPLACE` | `0` | ❌ No | None (Direct) | $\text{dst}[dst\_extents] = \text{payload}[data\_offset \dots data\_offset + data\_len]$ |
-| `REPLACE_BZ` | `1` | ❌ No | Bzip2 | $\text{dst}[dst\_extents] = \text{BzDecompress}(\text{payload}[data\_offset \dots])$ |
-| `REPLACE_XZ` | `8` | ❌ No | LZMA2 (`liblzma`) | $\text{dst}[dst\_extents] = \text{XzDecompress}(\text{payload}[data\_offset \dots])$ |
-| `ZSTD` | `14` | ❌ No | Zstandard | $\text{dst}[dst\_extents] = \text{ZstdDecompress}(\text{payload}[data\_offset \dots])$ |
-| `ZERO` | `6` | ❌ No | Hole Punch / Zero | $\text{dst}[dst\_extents] = 0x00$ (or punched sparse hole) |
-| `DISCARD` | `7` | ❌ No | TRIM / NOP | Ignored / unallocated disk region |
-| `SOURCE_COPY` | `4` | ✅ **Yes** | Block Transfer | $\text{dst}[dst\_extents] = \text{src}[src\_extents]$ |
-| `SOURCE_BSDIFF`| `5` | ✅ **Yes** | BSDiff (`BSDF2`) | $\text{dst}[dst\_extents] = \text{ApplyBsdiff}(\text{src}[src\_extents], \text{payload}[data\_offset \dots])$ |
-| `PUFFDIFF` | `9` | ✅ **Yes** | Puffin (Deflate) | $\text{dst}[dst\_extents] = \text{Repuff}(\text{ApplyBsdiff}(\text{Puff}(\text{src}), \text{patch}))$ |
-| `BROTLI_BSDIFF`| `10` | ✅ **Yes** | BSDiff (Brotli) | $\text{dst}[dst\_extents] = \text{ApplyBsdiff}(\text{src}[src\_extents], \text{BrotliDecompress}(\text{patch}))$ |
-| `ZUCCHINI` | `11` | ✅ **Yes** | Zucchini Engine | $\text{dst}[dst\_extents] = \text{ReconstructDisasm}(\text{src}[src\_extents], \text{patch})$ |
-| `LZ4DIFF_BSDIFF`| `12`| ✅ **Yes** | LZ4 + BSDiff | De-lz4 source $\to$ BSDiff $\to$ Re-lz4 target |
-| `LZ4DIFF_PUFFDIFF`| `13`| ✅ **Yes** | LZ4 + Puffin | De-lz4 source $\to$ Puffin diff $\to$ Re-lz4 target |
+| Op Enum            | Code | Source Required? | Decompressor / Algorithm | Mathematical Description                                                                                         |
+| ------------------ | ---- | ---------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `REPLACE`          | `0`  | ❌ No            | None (Direct)            | $\text{dst}[dst\_extents] = \text{payload}[data\_offset \dots data\_offset + data\_len]$                         |
+| `REPLACE_BZ`       | `1`  | ❌ No            | Bzip2                    | $\text{dst}[dst\_extents] = \text{BzDecompress}(\text{payload}[data\_offset \dots])$                             |
+| `REPLACE_XZ`       | `8`  | ❌ No            | LZMA2 (`liblzma`)        | $\text{dst}[dst\_extents] = \text{XzDecompress}(\text{payload}[data\_offset \dots])$                             |
+| `ZSTD`             | `14` | ❌ No            | Zstandard                | $\text{dst}[dst\_extents] = \text{ZstdDecompress}(\text{payload}[data\_offset \dots])$                           |
+| `ZERO`             | `6`  | ❌ No            | Hole Punch / Zero        | $\text{dst}[dst\_extents] = 0x00$ (or punched sparse hole)                                                       |
+| `DISCARD`          | `7`  | ❌ No            | TRIM / NOP               | Ignored / unallocated disk region                                                                                |
+| `SOURCE_COPY`      | `4`  | ✅ **Yes**       | Block Transfer           | $\text{dst}[dst\_extents] = \text{src}[src\_extents]$                                                            |
+| `SOURCE_BSDIFF`    | `5`  | ✅ **Yes**       | BSDiff (`BSDF2`)         | $\text{dst}[dst\_extents] = \text{ApplyBsdiff}(\text{src}[src\_extents], \text{payload}[data\_offset \dots])$    |
+| `PUFFDIFF`         | `9`  | ✅ **Yes**       | Puffin (Deflate)         | $\text{dst}[dst\_extents] = \text{Repuff}(\text{ApplyBsdiff}(\text{Puff}(\text{src}), \text{patch}))$            |
+| `BROTLI_BSDIFF`    | `10` | ✅ **Yes**       | BSDiff (Brotli)          | $\text{dst}[dst\_extents] = \text{ApplyBsdiff}(\text{src}[src\_extents], \text{BrotliDecompress}(\text{patch}))$ |
+| `ZUCCHINI`         | `11` | ✅ **Yes**       | Zucchini Engine          | $\text{dst}[dst\_extents] = \text{ReconstructDisasm}(\text{src}[src\_extents], \text{patch})$                    |
+| `LZ4DIFF_BSDIFF`   | `12` | ✅ **Yes**       | LZ4 + BSDiff             | De-lz4 source $\to$ BSDiff $\to$ Re-lz4 target                                                                   |
+| `LZ4DIFF_PUFFDIFF` | `13` | ✅ **Yes**       | LZ4 + Puffin             | De-lz4 source $\to$ Puffin diff $\to$ Re-lz4 target                                                              |
 
 ---
 
 ### 5.5 Virtual A/B Compression (V-ABC) & COW v2/v3
 
 Android 11 introduced Virtual A/B with Copy-On-Write (COW) snapshotting, and Android 12–15 added Virtual A/B Compression:
+
 - **`dynamic_partition_metadata`**:
   - `snapshot_enabled`: Indicates snapshot-based delta updates.
   - `vabc_compression_param`: Compression codec utilized for COW storage (`gz`, `lz4`, `zstd`, `none`).
@@ -410,6 +419,7 @@ Android 11 introduced Virtual A/B with Copy-On-Write (COW) snapshotting, and And
 ```
 
 ### 6.1 Dynamic Partitions (`super.img` / `liblp`)
+
 - **Purpose**: Consolidates OS partitions (`system`, `vendor`, `product`, `system_ext`, `odm`) into a single physical partition (`super`).
 - **Binary Header (`liblp`)**:
   - `LP_METADATA_GEOMETRY_MAGIC`: `0x616c4467` (`"gDla"`). Located at offset `0x00` (and backup at `0x1000`).
@@ -421,6 +431,7 @@ Android 11 introduced Virtual A/B with Copy-On-Write (COW) snapshotting, and And
 - **Extraction Requirement**: Extracting `payload.bin` produces a monolithic `super.img`. A native `liblp` unpacker is required to extract individual filesystem `.img` files.
 
 ### 6.2 Android Sparse Image Format (`0xED26FF3A`)
+
 - **Structure**:
   - 28-byte File Header: Magic `0xED26FF3A`, Major/Minor version (`1.0`), Block Size (4096B), Total Blocks, Total Chunks.
   - 12-byte Chunk Headers:
@@ -430,46 +441,56 @@ Android 11 introduced Virtual A/B with Copy-On-Write (COW) snapshotting, and And
     - `0xCAC4` (`CHUNK_TYPE_CRC32`): 4-byte CRC32 checksum.
 
 ### 6.3 OnePlus Qualcomm EDL (`.ops`)
+
 - **Purpose**: Flashing bricked OnePlus devices in Qualcomm Emergency Download (EDL 9008) mode via MSM Download Tool.
 - **Decryption**:
   - SAHARA / Firehose programmer section and partition data are encrypted via a custom byte-substitution S-Box cipher (`sbox.bin` 256-byte substitution matrix).
   - Encrypted XML manifest located at EOF-relative offset detailing partition table offsets, byte lengths, and sparse flags.
 
 ### 6.4 Realme / Oppo (`.ofp` QC & MTK)
+
 - **OFP-Qualcomm**: XML partition manifest encrypted with AES-128-CFB; first 256 KiB (`0x40000` bytes) of critical partitions are AES-128-CFB encrypted, while remaining bytes are plaintext.
 - **OFP-MediaTek**: Trailing binary `MtkHeader` (`0x6C` bytes) at file EOF (`file_size - 0x6C`) and entry table (`file_size - 0x6C - N * 0x60`) obfuscated via `mtk_shuffle` bit-swapping, followed by AES-128-CFB decryption. (Offset `+0x00` contains encrypted partition data whose first 16 bytes validate the cipher key).
 
 ### 6.5 Samsung Odin Firmware (`.tar.md5` with LZ4 Frames)
+
 - **Format**: Standard POSIX `tar` archive with a trailing 16-byte binary or 32-byte ASCII MD5 checksum.
 - **Classification**: AP (Application Processor), BL (Bootloader), CP (Modem), CSC (Consumer Software Customization / PIT repartition table), HOME_CSC (Data-preserving upgrade).
 - **Compression**: Partitions (`boot.img.lz4`, `super.img.lz4`, `recovery.img.lz4`) are compressed inside LZ4 frame format (`0x184D2204` magic).
 
 ### 6.6 Xiaomi Fastboot TGZ & Legacy Recovery (`dat.br`)
+
 - **Fastboot TGZ**: Tarball containing raw partition `.img` files and split sparse super images (`super.img.0`, `super.img.1`, ...).
 - **Recovery ZIP (MIUI Legacy)**: Uses `system.transfer.list` command scripts (`erase`, `new`, `bsdiff`, `stash`) decoding blocks from Brotli-compressed `system.new.dat.br` streams.
 
 ### 6.7 Nothing OS OTA Architecture (Akashic CDN & care_map)
+
 - **Distribution Endpoints**: Delivered via Nothing's **Akashic CDN** (`https://otaupd-fut.nothing.tech/` and `https://akashic-cdn.nothing.tech/`).
 - **Structure**: Uses standard CrAU v2 `payload.bin` accompanied by `care_map.pb` and `payload_properties.txt`.
 - **Devices**: Nothing Phone (1) `Spacewar`, Phone (2) `Pong`, Phone (2a) `Pacman`, CMF Phone 1 `Tetris`.
 
 ### 6.8 Motorola Flashfile XML & Sparse Chunk Assembly
+
 - **Structure**: Fastboot packages contain `flashfile.xml` (or `servicefile.xml` for non-wipe recovery) referencing split sparse chunks (`super.img_sparsechunk.0`, `super.img_sparsechunk.1`, `super.img_sparsechunk.2` ...).
 - **Assembly Algorithm**: Sort chunks numerically, parse independent `0xED26FF3A` chunk headers, and assemble directly into continuous unsparse images.
 
 ### 6.9 Huawei / Honor `UPDATE.APP` Sequential Container
+
 - **Structure**: Sequential stream of binary packets identified by 32-bit synchronization magic `0x55AA5A5A` (`[0x5A, 0x5A, 0xAA, 0x55]`).
 - **Packet Header (98 / 100 Bytes)**: Magic, header size, file type sequence, 64-bit file size (`file_size` + `file_size_hi`), ASCII partition name (e.g. `BOOT`, `SYSTEM`), and header/block CRC-16 checksums.
 
 ### 6.10 Spreadtrum / Unisoc PAC Container (`.pac`)
+
 - **Header**: 2,124-byte `PAC_HEADER` with magic `0xFFFAFFFA`, product version string (`"PAC_BND4"`), and file count $N$.
 - **File Directory**: Array of 2,580-byte `FILE_T` records mapping UTF-16LE partition names (`"boot.img"`, `"system.img"`), byte offsets, and CRC-16 checksums.
 
 ### 6.11 MediaTek Scatter Configurations (Text & XML)
+
 - **Legacy Text Scatter (`MTxxxx_Android_scatter.txt`)**: Key-value block syntax with YAML-like indentation detailing partition indexes, linear start addresses, physical flash addresses, partition sizes, and region identifiers (`EMMC_USER`, `UFS_LU0`).
 - **XML Scatter (`scatter.xml`)**: Modern hierarchical XML schema used by SP Flash Tool v6+ for Dimensity 5G chipsets.
 
 ### 6.12 ASUS Firmware Packages (`UL-*.zip`)
+
 - **Modern ASUS (ROG Phone 3–8, Zenfone 8–11)**: Standard CrAU v2 `payload.bin` inside root of ZIP.
 - **Legacy ASUS (Zenfone 2–6)**: Root of ZIP contains raw `.img` files alongside `system.new.dat` and `system.transfer.list`.
 
@@ -528,24 +549,29 @@ Android 11 introduced Virtual A/B with Copy-On-Write (COW) snapshotting, and And
 ## 8. Performance, Concurrency & I/O Engineering Blueprint
 
 ### 8.1 Memory Model & Zero-Copy Slicing
+
 - `LoadedPayload::mmap` holds an `Arc<ZipPayloadMmap>`. Threads slice sub-slices `&raw_data[..]` directly without heap allocations.
 - For remote streams, allocate thread-local reusable circular buffers (256 KiB L2 cache sweet spot) to eliminate allocator lock contention during multi-threaded decompression loops.
 
 ### 8.2 Memory-Mapped Output & Cache Allocation Model
+
 - `NonTemporalWriter` maps target output files via `memmap2::MmapMut`.
 - Writes execute via optimized compiler-vectorized memory copies into the mapped address space.
 - To prevent kernel dirty-page buildup during multi-gigabyte extractions, periodic `msync(MS_ASYNC)` calls keep dirty page cache overhead tightly bounded.
 
 ### 8.3 SIMD Memory Copy Acceleration & Compiler Vectorization
+
 - Verbatim `REPLACE` and `SOURCE_COPY` operations use `copy_from_slice`, which lowers to the target platform's optimized libc/kernel `memcpy` (AVX2/AVX-512 on x86_64, NEON on aarch64).
 - Relying on compiler-vectorized `memcpy` ensures peak memory bandwidth without runtime instruction fault risks on heterogeneous CPU architectures.
 
 ### 8.4 Platform-Native Sparse File Hole-Punching
+
 - **Windows (NTFS / ReFS)**: `DeviceIoControl` with `FSCTL_SET_SPARSE` and `FSCTL_SET_ZERO_DATA`.
 - **Linux (ext4 / XFS / Btrfs)**: `libc::fallocate` with `FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE`.
 - **macOS (APFS)**: `libc::fcntl` with `F_PUNCHHOLE`.
 
 ### 8.5 High-Latency HTTP Range & Prefetch Optimizations
+
 - Compute partition byte bounds:
   $$\text{Byte Range} = [\min_{op}(\text{data\_offset}), \max_{op}(\text{data\_offset} + \text{data\_len})]$$
 - Stream the entire contiguous block in a single HTTP/2 connection rather than issuing hundreds of discrete range requests, cutting extraction latency by up to 95%.
@@ -578,6 +604,7 @@ graph TD
 ```
 
 ### 9.1 Multi-Stage File Writing Lifecycle
+
 1. **Directory Canonicalization & Path Traversal Guard**:
    - Resolves target directory using `std::fs::canonicalize()` to prevent directory traversal exploits (`../../`).
 2. **Pre-Allocation & Sparse Tagging**:
@@ -590,12 +617,14 @@ graph TD
    - For remote streams or 32-bit systems where virtual address space is constrained, falls back to `BufWriter<File>` with sequential extent seeks.
 
 ### 9.2 Write Buffers & Dirty Page Cache Regulation
+
 - When multi-threaded extractors decompress 15+ GB of partition data simultaneously, the OS kernel dirty-page cache can fill rapidly, causing the kernel writeback thread to block user-space threads.
 - **Regulation Strategy**:
   - Thread-local copy buffers are fixed at **256 KiB** (matching CPU L2/L3 cache line optimization).
   - Every 128 MiB of written data, the extractor issues `mmap.flush_async()` (`msync(MS_ASYNC)`), prompting background kernel flushes without stalling worker threads.
 
 ### 9.3 `TransactionGuard`: Atomic Staging, Commit & Rollback
+
 - Implemented in `src-tauri/src/payload/transaction.rs`.
 - Maintains an atomic manifest of active output files:
   ```rust
@@ -609,6 +638,7 @@ graph TD
 - **Rollback / Drop**: If an error occurs, or the extraction thread panics, or cancellation is signaled, `TransactionGuard::drop()` iterates through `files` and removes every incomplete `.img` file from disk, ensuring zero partial artifacts remain.
 
 ### 9.4 Thread-Safe Cancellation Tokens & Signal Interception
+
 - `CancellationToken` uses `Arc<AtomicBool>` with atomic relaxed checks inserted into inner extent loops (`token.check()?`).
 - Interception latency is **< 5ms**, immediately aborting decompressors and triggering `TransactionGuard` cleanup.
 
@@ -2041,6 +2071,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 ### 13.1 Storage, Filesystem & OS-Level Edge Cases
 
 #### 1. Windows Memory-Mapped File Locking (`ERROR_SHARING_VIOLATION` 0x20)
+
 - **Root Cause**: On Windows NT, memory mapping via `CreateFileMappingW` and `MapViewOfFile` creates a Kernel Section Object (`SECTION`). The NT kernel strictly prohibits deleting or renaming files while open Section handles or virtual address pointers exist. If a worker thread fails and triggers cleanup while another worker still holds an active `MmapMut`, calling `std::fs::remove_file` throws `ERROR_SHARING_VIOLATION` (`0x20` / decimal 32).
 - **Engineering Mitigation**:
   1. Strict RAII drop sequencing in `NonTemporalWriter` (`msync` $\to$ length settlement $\to$ drop `MmapMut` $\to$ close descriptor).
@@ -2049,6 +2080,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
   4. Enable POSIX delete semantics on Windows 10+ (`FILE_DISPOSITION_FLAG_POSIX_SEMANTICS`) via `SetFileInformationByHandle`.
 
 #### 2. NTFS Sparse File Limits & Fragmentation (`ERROR_FILE_SYSTEM_LIMITATION` 0x29C)
+
 - **Root Cause**: NTFS tracks sparse holes via mapping pairs (Runlists) in the Master File Table (MFT). When an extractor punches thousands of small (< 64 KiB) non-allocated holes via `FSCTL_SET_ZERO_DATA`, the runlist overflows the base MFT record (1024 bytes) and exhausts the `$ATTRIBUTE_LIST` attribute, throwing `ERROR_FILE_SYSTEM_LIMITATION` (`0x29C` / decimal 668).
 - **Engineering Mitigation**:
   - **Extent Coalescing**: Consecutive `DONT_CARE` / `ZERO` blocks are merged into continuous runs.
@@ -2057,12 +2089,14 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
     Holes smaller than 64 KiB are zero-filled directly into memory maps without issuing `FSCTL_SET_ZERO_DATA`.
 
 #### 3. FAT32 4 GiB Single-File Limit (`EFBIG` / Win32 `0xDF`)
+
 - **Root Cause**: FAT32 directory entries store file size in a 32-bit unsigned integer ($4\text{ GiB} - 1\text{ B}$ limit), failing on 6–25 GB `super.img` containers. Extracting to FAT32 USB drives triggers `EFBIG` (Errno 27) or `ERROR_DISK_FULL`.
 - **Engineering Mitigation**:
   - Pre-flight filesystem inspection (`GetVolumeInformationW` on Windows, `statfs f_type == 0x4d44` on Linux, `statvfs f_fstypename == "msdos"` on macOS).
   - If target volume is FAT32 and any selected partition $\ge 4\text{ GiB} - 64\text{ KiB}$, immediately halt with an informative UI warning suggesting exFAT/NTFS reformatting.
 
 #### 4. Free Disk Space Pre-Flight Validation (`ENOSPC` Prevention)
+
 - **Root Cause**: Running out of disk space mid-extraction throws `ENOSPC` (Errno 28) / `ERROR_DISK_FULL` (0x70), wasting write cycles and leaving partial files.
 - **Engineering Mitigation**:
   - Query user-quota-aware free space (`GetDiskFreeSpaceExW` / `statvfs.f_bavail`).
@@ -2070,16 +2104,19 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
     $$\text{Required Space} = \left( \sum_{p \in \text{selected}} \text{size}(p) \right) \times 1.05 + 256\text{ MiB}$$
 
 #### 5. Windows `MAX_PATH` (260 Chars) & Verbatim UNC Paths
+
 - **Root Cause**: Win32 path limits (260 characters) fail when nesting deep output paths (e.g. `C:\Users\...\extracted_2026-08-19\system.img`).
 - **Engineering Mitigation**:
   - Normalize long Windows paths by prepending `\\?\` verbatim UNC prefixes via `dunce::canonicalize()` when destination path length $\ge 240$ characters.
 
 #### 6. Case-Insensitive Name Collisions
+
 - **Root Cause**: Linux/Android is case-sensitive (`System` $\ne$ `system`), while Windows NTFS and macOS APFS are case-insensitive by default.
 - **Engineering Mitigation**:
   - Pre-flight collision scan using `UniCase` hash sets. Automatically append disambiguation tags (`_conflict_1.img`) if collisions occur.
 
 #### 7. Modern ARM64 16 KiB Memory Page Alignment
+
 - **Root Cause**: Apple Silicon (M1–M4) and Android 15 ARM64 use **16 KiB memory pages**, whereas x86_64 uses 4 KiB. Individual sub-mappings at 4 KiB boundaries throw `EINVAL` (22).
 - **Engineering Mitigation**:
   - Map the entire payload container once using a single base mapping (`LoadedPayload::mmap`), and slice byte regions via user-space pointer offsets.
@@ -2089,31 +2126,37 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 ### 13.2 Android OTA, dm-verity & Protocol-Level Edge Cases
 
 #### 1. Android 15 16 KiB Filesystem Block Sizes
+
 - **Specification**: In Android 15, `DeltaArchiveManifest.block_size` can be set to `16384` (16 KiB) instead of default `4096`.
 - **Engineering Mitigation**:
   - Dynamically propagate `manifest.block_size.unwrap_or(4096)` into all extent seek offsets and buffer allocations.
 
 #### 2. Forward Error Correction (FEC) & Hash Tree Extents
+
 - **Specification**: Android system partitions append dm-verity hash trees and Reed-Solomon Forward Error Correction (FEC) codes at partition ends (`hash_tree_extent`, `fec_extent`).
 - **Engineering Mitigation**:
   - Output files must be sized to `new_partition_info.size` (which accounts for root filesystem + hash trees + FEC). Extent writers must write trailing verification extents to preserve bit-for-bit dm-verity cryptographic compatibility.
 
 #### 3. Virtual A/B Compression (V-ABC) COW v2 vs COW v3
+
 - **Specification**: Android 14/15 introduced COW v3 supporting batch operations and multi-threaded decompression.
 - **Engineering Mitigation**:
   - Parse `DeltaArchiveManifest.dynamic_partition_metadata` to inspect COW batching, compression parameters (`zstd`, `lz4`, `gz`), and COW version (v2 / v3).
 
 #### 4. Partial OTA Updates
+
 - **Specification**: OEM partial updates only include a subset of partitions (e.g. `boot`, `init_boot`, `vendor_boot`, `dtbo`), omitting `system` and `vendor`.
 - **Engineering Mitigation**:
   - Detect `manifest.partial_update == Some(true)`, rendering a distinct "Partial OTA" badge in the UI.
 
 #### 5. Decompressed APEX Containers (`apex_info`)
+
 - **Specification**: Payloads contain compressed APEX packages (`.capex`). `manifest.apex_info` defines decompressed sizes and package names.
 - **Engineering Mitigation**:
   - Expose APEX package manifests and compression states in metadata inspection dialogs.
 
 #### 6. Malicious & Malformed Payload Defenses
+
 - **Integer Overflow Guards**: All extent calculations use `checked_mul` and `checked_add` to prevent 64-bit integer wrapping in release builds.
 - **Manifest Length Bounds**: Enforce `MAX_MANIFEST_SIZE = 100_000_000` (100 MB).
 - **Path Traversal Sanitization**: Sanitize partition names using `crate::helpers::safe_image_file_name()`, stripping `..`, `/`, `\`, and Windows DOS reserved device names (`CON`, `PRN`, `AUX`, `NUL`, `COM1..9`, `LPT1..9`).
@@ -2123,28 +2166,33 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 ### 13.3 Network, HTTP Range Streaming & CDN Edge Cases
 
 #### 1. HTTP 206 Partial Content vs 200 OK Fallback
+
 - **Root Cause**: Some misconfigured servers ignore `Range: bytes=X-Y` headers and return the full file with HTTP 200 OK.
 - **Engineering Mitigation**:
   - Check `response.status() == StatusCode::PARTIAL_CONTENT`. If server returns 200 OK for a small range probe, immediately abort the stream to prevent buffering gigabytes of unwanted data into memory.
 
 #### 2. Chunk-Encoded Streams (`Transfer-Encoding: chunked`)
+
 - **Root Cause**: Servers streaming dynamic data omit `Content-Length`.
 - **Engineering Mitigation**:
   - Probes `Range: bytes=0-0` to extract total content length from the `Content-Range` denominator.
 
 #### 3. Transient Connection Failures & Byte-Exact Resume
+
 - **Root Cause**: Wi-Fi drops or CDN timeouts interrupt multi-gigabyte remote extractions.
 - **Engineering Mitigation**:
   - Implement exponential backoff with full jitter (3 retries: 500ms, 1500ms, 4000ms).
   - Resume streaming from the exact interrupted byte offset using `Range: bytes={current_pos}-{end}` and validate `If-Match: "{etag}"` to prevent Frankenstein data corruption if the remote file changed.
 
 #### 4. CDN Rate-Limiting & Bot Protection
+
 - **Root Cause**: Cloudflare 429 Too Many Requests, Google Drive download quota limits.
 - **Engineering Mitigation**:
   - Spoof standard desktop browser `User-Agent` headers.
   - Implement token-bucket request throttling and reuse HTTP/2 TCP connections via connection pooling.
 
 #### 5. Server-Side Request Forgery (SSRF) Firewall & DNS Rebinding
+
 - **Root Cause**: Malicious users could input `http://169.254.169.254/` (cloud metadata) or `http://127.0.0.1:8080/`.
 - **Engineering Mitigation**:
   - Strict IP filter checking resolved socket addresses against:
@@ -2159,6 +2207,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 ### 13.4 Concurrency, Threadpool, Memory & Lifecycle Edge Cases
 
 #### 1. Rayon Threadpool Starvation & Core Sizing
+
 - **Root Cause**: Unbounded `par_iter()` across 30+ partitions causes L3 cache thrashing, context-switching overhead, and memory explosion.
 - **Engineering Mitigation**:
   - Dynamically size worker pool:
@@ -2166,23 +2215,27 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
   - Throttle heavy-memory decompressions via `Arc<tokio::sync::Semaphore>` (max 4 concurrent dictionary decompressions) and LPT (Longest Processing Time) partition scheduling.
 
 #### 2. High-Frequency IPC Event Flooding
+
 - **Root Cause**: 100,000+ unthrottled progress events choke the Tauri FFI bridge, starving the webview event loop and freezing the UI.
 - **Engineering Mitigation**:
   - Worker threads update shared lock-free atomic counters (`AtomicU64`).
   - A background Tokio task samples counters and emits consolidated JSON progress events at **100ms intervals (10 Hz)** with EWMA throughput smoothing.
 
 #### 3. Tokio Async Blocking I/O Deadlocks
+
 - **Root Cause**: Executing CPU-bound decompressions inside Tokio worker threads blocks the async scheduler, while calling `block_on` in Rayon causes threadpool inversion deadlocks.
 - **Engineering Mitigation**:
   - Tokio drives asynchronous network downloads and timers; Rayon drives synchronous decompressions; bounded crossbeam channels bridge the runtimes. Rayon worker threads **never** invoke `block_on`.
 
 #### 4. Cross-Device Link Errors (`EXDEV` / Windows Error 17)
+
 - **Root Cause**: `std::fs::rename` across different mount points (`tmpfs` $\to$ `ext4`) or drive letters (`C:` $\to$ `D:`) fails with `EXDEV` (errno 18) or `ERROR_NOT_SAME_DEVICE` (Win32 Error 17).
 - **Engineering Mitigation**:
   - Implement a resilient step-down mover:
     $$\text{Try Atomic Rename} \xrightarrow{\text{on EXDEV}} \text{1 MiB Stream Copy} \to \text{File::sync\_all()} \to \text{Atomic Replace} \to \text{Source Unlink}$$
 
 #### 5. Transaction Rollback Race Conditions
+
 - **Root Cause**: `remove_dir_all` on user folders destroys pre-existing files, while open handles on Windows block unlinking.
 - **Engineering Mitigation**:
   - Extractions are staged into an isolated temporary subfolder (`.tmp_tx_{session_id}`).
@@ -2196,7 +2249,7 @@ pub fn parse_crau_header(payload_bytes: &[u8]) -> Result<ParsedCrauHeader> {
 graph TD
     A[Frontend: PayloadMarketplaceTab] -->|useFirmwareCatalog 'google'| B[Tauri IPC: get_firmware_catalog]
     B --> C{FirmwareHubService Cache Hit?}
-    
+
     C -->|Yes: Memory Cache < 1 hour| D[Return Cached Vec~FirmwareDeviceModel~ < 1ms]
     C -->|Disk Cache Valid < 24h| E[Read JSON File from app_cache_dir/firmware/]
     E --> D
@@ -2219,7 +2272,9 @@ graph TD
 ```
 
 ### 14.1 Architectural Philosophy: Rust Backend Heavy Lifting & Thin Frontend
+
 To ensure enterprise stability, maintainability, and blistering UI responsiveness:
+
 1. **Zero Business Logic in JavaScript/React**: The frontend is strictly a presentational rendering layer (React 19, Tailwind CSS v4, shadcn UI). It contains no hardcoded mock data, no complex scraping logic, and no heavy data transformations.
 2. **Rust Domain Ownership**: The Rust backend (`src-tauri/src/firmware/`) owns all HTTP networking, Cookie header injection, HTML parsing, DOM extraction, device codename mapping, SHA-256 verification, and caching.
 3. **Sub-Millisecond Loading**: The UI queries `get_firmware_catalog` via `@tanstack/react-query`, which returns instantly from Rust's two-tier in-memory and disk cache.
@@ -2229,14 +2284,18 @@ To ensure enterprise stability, maintainability, and blistering UI responsivenes
 ### 14.2 Google Pixel Official Endpoint Scraping & ToS Cookie Bypass
 
 Google publishes official Pixel firmware across two developer portals:
+
 - **Factory Images (Fastboot Flashable)**: `https://developers.google.com/android/images`
 - **Full OTA Images (Recovery / Remote Sideload)**: `https://developers.google.com/android/ota`
 
 #### The Google Terms of Service Cookie Wall:
+
 When scraping without browser cookies, Google returns a Terms of Service acknowledgement wall.
+
 - **Bypass Header**: Setting the cookie `devsite_wall_acks=nexus-image-tos,nexus-ota-tos` instructs Google's DevSite server to bypass the agreement gate and emit the full rendered HTML document containing all device sections and release tables.
 
 #### HTML Structure & DOM Extraction:
+
 ```html
 <h2 id="husky">Pixel 8 Pro ("husky")</h2>
 <table class="responsive">
@@ -2252,7 +2311,12 @@ When scraping without browser cookies, Google returns a Terms of Service acknowl
     <tr>
       <td>14.0.0 (UD1A.230803.041, Oct 2023)</td>
       <td>All carriers</td>
-      <td><a href="https://dl.google.com/dl/android/aosp/husky-ota-ud1a.230803.041-01234567.zip">Link</a></td>
+      <td>
+        <a
+          href="https://dl.google.com/dl/android/aosp/husky-ota-ud1a.230803.041-01234567.zip"
+          >Link</a
+        >
+      </td>
       <td>a1b2c3d4e5f6...64-char-hex...</td>
     </tr>
   </tbody>
@@ -2578,10 +2642,12 @@ pub trait FirmwareProvider: Send + Sync {
 ### 14.6 Universal Frontend Refactoring & 1-Click Remote Extraction Bridge
 
 #### 1. TypeScript Models (`src/features/payload-dumper/ui/marketplace/types.ts`):
+
 ```typescript
-export type FirmwareBrand = 'google' | 'nothing' | 'xiaomi' | 'oneplus' | 'samsung';
-export type BrandFilter = 'all' | FirmwareBrand;
-export type FirmwareImageType = 'factory' | 'ota';
+export type FirmwareBrand =
+  "google" | "nothing" | "xiaomi" | "oneplus" | "samsung";
+export type BrandFilter = "all" | FirmwareBrand;
+export type FirmwareImageType = "factory" | "ota";
 
 export interface FirmwareBuild {
   id: string;
@@ -2611,12 +2677,13 @@ export interface FirmwareDeviceModel {
 ```
 
 #### 2. TanStack React Query Hook (`useFirmwareCatalog.ts`):
+
 ```typescript
-export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all') {
+export function useFirmwareCatalog(selectedBrand: BrandFilter = "all") {
   const queryClient = useQueryClient();
 
   const catalogQuery = useQuery<FirmwareDeviceModel[], Error>({
-    queryKey: ['firmwareCatalog', selectedBrand],
+    queryKey: ["firmwareCatalog", selectedBrand],
     queryFn: () => GetFirmwareCatalog(selectedBrand),
     staleTime: 1000 * 60 * 60, // 1 hour (backed by 24h Rust disk TTL cache)
   });
@@ -2624,8 +2691,10 @@ export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all') {
   const refreshMutation = useMutation({
     mutationFn: () => RefreshFirmwareCatalog(selectedBrand),
     onSuccess: (data) => {
-      queryClient.setQueryData(['firmwareCatalog', selectedBrand], data);
-      toast.success(`Refreshed firmware catalog: ${data.length} device models loaded`);
+      queryClient.setQueryData(["firmwareCatalog", selectedBrand], data);
+      toast.success(
+        `Refreshed firmware catalog: ${data.length} device models loaded`
+      );
     },
   });
 
@@ -2639,10 +2708,13 @@ export function useFirmwareCatalog(selectedBrand: BrandFilter = 'all') {
 ```
 
 #### 3. Seamless 1-Click Remote Extraction Bridge:
+
 In `FirmwareDeviceDetailView.tsx`, clicking the **Remote Stream Extract** button on any OTA build invokes:
+
 ```typescript
 onSelectRemoteUrl(build.downloadUrl);
 ```
+
 This automatically transitions the UI to the **Payload Dumper Extractor** view, triggers Rust's `list_remote_payload_partitions` command over HTTP Range requests, and renders the partition table ready for extraction in **under 2 seconds**.
 
 ---

@@ -51,10 +51,14 @@ This is leftover from a refactor. The `void` statement is a no-op that suppresse
 **File**: [src/components/WelcomeScreen.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/WelcomeScreen.tsx), lines 23–28
 
 ```tsx
-{/* <p className="text-center text-xs text-muted-foreground">
+{
+  /* <p className="text-center text-xs text-muted-foreground">
   Loading app... {Math.round(clampedProgress)}%
-</p> */}
-{/* <Loader2 className="h-6 w-6 animate-spin text-primary" /> */}
+</p> */
+}
+{
+  /* <Loader2 className="h-6 w-6 animate-spin text-primary" /> */
+}
 ```
 
 Two elements are indefinitely commented out. If they're not needed, remove them; if they are, undo the comment. Dead JSX comments are noise.
@@ -70,13 +74,13 @@ Two elements are indefinitely commented out. If they're not needed, remove them;
 **File**: [src/components/ConnectedDevicesCard.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/ConnectedDevicesCard.tsx), lines 63–72
 
 ```tsx
-let statusColor = 'text-yellow-500';
-if (device.status === 'device') {
-  statusColor = 'text-green-500';
-} else if (device.status === 'fastboot') {
-  statusColor = 'text-blue-500';
-} else if (device.status === 'unauthorized') {
-  statusColor = 'text-red-500';
+let statusColor = "text-yellow-500";
+if (device.status === "device") {
+  statusColor = "text-green-500";
+} else if (device.status === "fastboot") {
+  statusColor = "text-blue-500";
+} else if (device.status === "unauthorized") {
+  statusColor = "text-red-500";
 }
 ```
 
@@ -86,6 +90,7 @@ Raw Tailwind color classes (`text-green-500`, `text-blue-500`, `text-red-500`) a
 > Hard-coded Tailwind color classes bypass the theme system. In dark mode, `text-green-500` may have poor contrast.
 
 **Better approach**: Use shadcn `Badge` component with a variant map:
+
 ```tsx
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   device: 'default',
@@ -162,7 +167,7 @@ The `Wipe Data` confirm button applies destructive styling inline, while [ViewAp
 ```tsx
 const handleCopyGetVars = async () => {
   await writeText(getVarContent);
-  toast.success('Copied to clipboard');
+  toast.success("Copied to clipboard");
 };
 ```
 
@@ -187,7 +192,7 @@ This is a fallback for "environments without Tauri clipboard." But this is a Tau
 **File**: [src/components/MainLayout.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/MainLayout.tsx), lines 355, 375
 
 ```tsx
-isLogOpen && useLogStore.getState().activeTab === 'shell'
+isLogOpen && useLogStore.getState().activeTab === "shell";
 ```
 
 `useLogStore.getState()` is called inline inside JSX. This bypasses React's reactivity — the button state won't update when `activeTab` changes unless the component re-renders for another reason. This should use a selector: `const { activeTab } = useLogStore()`.
@@ -246,7 +251,13 @@ interface LoadingButtonProps extends React.ComponentProps<typeof Button> {
   loadingLabel?: string;
 }
 
-export function LoadingButton({ isLoading, icon, loadingLabel, children, ...props }: LoadingButtonProps) {
+export function LoadingButton({
+  isLoading,
+  icon,
+  loadingLabel,
+  children,
+  ...props
+}: LoadingButtonProps) {
   return (
     <Button {...props}>
       {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : icon}
@@ -263,11 +274,13 @@ export function LoadingButton({ isLoading, icon, loadingLabel, children, ...prop
 **Files**: [ViewPayloadDumper.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx), [ViewUtilities.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewUtilities.tsx)
 
 The pattern:
+
 ```tsx
 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
   Section Title
 </h4>
 ```
+
 ...appears **6+ times** across views. Extract to:
 
 ```tsx
@@ -287,13 +300,18 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 **Files**: [ViewFlasher.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewFlasher.tsx), [ViewFileExplorer.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewFileExplorer.tsx), [ViewPayloadDumper.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx)
 
 All three have this pattern:
+
 ```tsx
 <div className="space-y-2">
   <label className="text-sm font-medium">Label</label>
   <div className="flex gap-2">
-    <Button variant="outline" className="flex-1" onClick={handleSelect}>Select File</Button>
+    <Button variant="outline" className="flex-1" onClick={handleSelect}>
+      Select File
+    </Button>
   </div>
-  <p className="text-sm text-muted-foreground truncate">{path || 'No file selected.'}</p>
+  <p className="text-sm text-muted-foreground truncate">
+    {path || "No file selected."}
+  </p>
 </div>
 ```
 
@@ -306,15 +324,24 @@ All three have this pattern:
 **Files**: [ViewAppManager.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx) (appears twice — APK files and packages)
 
 ```tsx
-{selectedPackages.size > 0 && (
-  <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
-    <span>Selected: <span className="font-medium">{selectedPackages.size}</span> package(s)</span>
-    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs hover:text-destructive"
-      onClick={() => setSelectedPackages(new Set())}>
-      Clear Selection
-    </Button>
-  </div>
-)}
+{
+  selectedPackages.size > 0 && (
+    <div className="text-sm text-muted-foreground p-2 bg-muted rounded-md flex justify-between items-center">
+      <span>
+        Selected: <span className="font-medium">{selectedPackages.size}</span>{" "}
+        package(s)
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-2 text-xs hover:text-destructive"
+        onClick={() => setSelectedPackages(new Set())}
+      >
+        Clear Selection
+      </Button>
+    </div>
+  );
+}
 ```
 
 This pattern exists **twice** inside the same component. Extract as `SelectionSummaryBar`.
@@ -342,6 +369,7 @@ The status string → color mapping is an imperative if-else chain. Replace with
 **Files**: [ViewDashboard.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx), [ViewFlasher.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewFlasher.tsx), [ViewUtilities.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewUtilities.tsx)
 
 All three views replicate:
+
 ```tsx
 const [isEditing, setIsEditing] = useState(false);
 // ...
@@ -355,6 +383,7 @@ Consider a `useNicknameEdit()` hook that returns `{ isEditing, openEdit, EditDia
 ### 3.8 File Path → Filename Utility — Multiple Inline Implementations
 
 The `path.split(/[/\\]/).pop()` pattern for extracting filenames appears **5+ times** across views:
+
 - [ViewAppManager.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx) line 133
 - [ViewFlasher.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewFlasher.tsx) lines 81, 96
 - [ViewPayloadDumper.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx) line 409 ([getFileName](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#408-413) function — already extracted!)
@@ -366,6 +395,7 @@ The [getFileName](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gu
 ### 3.9 [ViewAppManager.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx) — Mixed Concerns in 531 Lines
 
 The AppManager view handles **install** and **uninstall** in one 531-line file. Each feature could be its own sub-component:
+
 - `AppInstallCard` — APK selection + installation
 - `AppUninstallCard` — search + virtual list + uninstall action
 
@@ -382,6 +412,7 @@ These are components already available in shadcn/ui (not yet installed or not pr
 **Priority**: 🔴 High
 
 Currently used nowhere. Should be used in:
+
 - **ConnectedDevicesCard**: device status text (replace `text-green-500` strings)
 - **ViewAppManager**: package type labels (replace `bg-blue-500/15 text-blue-600 dark:text-blue-400` inline spans)
 - **ViewPayloadDumper**: partition state indicators
@@ -392,6 +423,7 @@ npx shadcn@latest add badge
 ```
 
 **Usage example** for device status:
+
 ```tsx
 <Badge variant={statusVariant[device.status]}>{statusLabel}</Badge>
 ```
@@ -403,6 +435,7 @@ npx shadcn@latest add badge
 **Priority**: 🔴 High
 
 Three separate custom progress bar implementations exist:
+
 1. **ViewAppManager** — installation progress bar (lines 299–303, manual `div` with `style.width`)
 2. **ViewPayloadDumper** — [ExtractionProgressBar](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#44-84) component (manual `div` with animated width)
 3. **WelcomeScreen** — loading bar (manual `div` with `style.width`)
@@ -446,6 +479,7 @@ npx shadcn@latest add separator
 **Priority**: 🟡 Medium
 
 Currently, most views show either a spinner or empty space while loading. Skeleton loaders would significantly improve perceived performance:
+
 - **ViewDashboard** Device Info section (12 info items)
 - **ViewAppManager** Package list loading state (currently just a spinner in the filter bar)
 - **ViewFileExplorer** File table loading (currently a centered spinner)
@@ -503,6 +537,7 @@ npx shadcn@latest add sheet
 **File**: [BottomPanel.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/BottomPanel.tsx), lines 268–294
 
 The log filter is a manually built dropdown div:
+
 ```tsx
 {isFilterOpen && (
   <div className="absolute right-0 bottom-8 z-50 rounded-md border shadow-lg ...">
@@ -532,7 +567,9 @@ The DTOs use `class` with [createFrom()](file:///c:/Users/akila/OneDrive/Desktop
 ```ts
 // Current pattern (Wails artifact):
 export class Device {
-  constructor(source: any = {}) { this.serial = source['serial']; }
+  constructor(source: any = {}) {
+    this.serial = source["serial"];
+  }
 }
 
 // Preferred (modern Tauri 2):
@@ -546,9 +583,10 @@ export interface Device {
 
 ### 5.2 `activeView` Prop Threading — Mild Coupling
 
-Every view receives `activeView: string` as a prop so it knows whether to trigger its polling or data loading. This is used as: `refetchInterval: activeView === 'dashboard' ? 3000 : false`. 
+Every view receives `activeView: string` as a prop so it knows whether to trigger its polling or data loading. This is used as: `refetchInterval: activeView === 'dashboard' ? 3000 : false`.
 
 While functional, it tightly couples the view to parent navigation state. A cleaner pattern would be:
+
 - Use `enabled: true` always (views are unmounted when not active due to AnimatePresence)
 - Or use an `isActive` boolean prop instead of the string comparison
 
@@ -570,35 +608,35 @@ Check if `EditNicknameDialog` uses the shadcn [Dialog](file:///c:/Users/akila/On
 
 ### 5.4 Keyboard Shortcut Infrastructure — Missing
 
-Currently only `Ctrl+\`` (toggle panel) exists. Many ADB GUI users are power users who would benefit from more keyboard shortcuts. Consider a `useKeyboardShortcuts()` hook registered globally (e.g. `Ctrl+R` = refresh, `Ctrl+K` = shell).
+Currently only `Ctrl+\`` (toggle panel) exists. Many ADB GUI users are power users who would benefit from more keyboard shortcuts. Consider a `useKeyboardShortcuts()`hook registered globally (e.g.`Ctrl+R`= refresh,`Ctrl+K` = shell).
 
 ---
 
 ## 6. Prioritized Action Plan
 
-| Priority | Task | Effort | Impact |
-|----------|------|--------|--------|
-| 🔴 P0 | Fix reactivity bug: `useLogStore.getState()` in JSX → use selector | XS | High |
-| 🔴 P0 | Delete [src/App.css](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/App.css) (dead file) | XS | Low |
-| 🔴 P0 | Remove `refreshTimeout` dead code in [ViewUtilities.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewUtilities.tsx) | XS | Low |
-| 🔴 P1 | Install `Badge` and replace all hard-coded status/type color classes | S | High |
-| 🔴 P1 | Install [Progress](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#44-84) and replace all 3 custom progress bar implementations | S | High |
-| 🔴 P1 | Replace `AlertDialog` with [Dialog](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#165-169) in GetVar All output viewer | S | Medium |
-| 🟡 P2 | Extract `LoadingButton` shared component (20+ usages) | M | High |
-| 🟡 P2 | Extract `SectionHeader` shared component | XS | Medium |
-| 🟡 P2 | Extract [getFileName()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#408-413) to [src/lib/utils.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/utils.ts) | XS | Medium |
-| 🟡 P2 | Replace `<input>` with shadcn `Input` in AppManager search | XS | Medium |
-| 🟡 P2 | Use `buttonVariants({ variant: 'destructive' })` in ViewFlasher wipe button | XS | Low |
-| 🟡 P2 | Install `Separator` and replace manual divider divs | S | Medium |
-| 🟡 P3 | Install `Skeleton` for loading states | M | High (UX) |
-| 🟡 P3 | Extract `FileSelector` shared component | S | Medium |
-| 🟡 P3 | Extract [InfoItem](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#373-401) from ViewDashboard to shared component | XS | Low |
-| 🟡 P3 | Migrate [models.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/models.ts) DTOs from classes to plain interfaces | M | Medium |
-| 🟢 P4 | Install `Popover` for BottomPanel log filter | S | Medium |
-| 🟢 P4 | Split [ViewAppManager](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#42-531) into `AppInstallCard` + `AppUninstallCard` | M | Medium |
-| 🟢 P4 | `useNicknameEdit()` hook to DRY the 3-view nickname pattern | S | Low |
-| 🟢 P4 | Install [Select](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#103-116) for package filter | S | Low |
-| 🟢 P4 | Install `Textarea` for shell input | S | Low |
+| Priority | Task                                                                                                                                                                                                                                                          | Effort | Impact    |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | --------- |
+| 🔴 P0    | Fix reactivity bug: `useLogStore.getState()` in JSX → use selector                                                                                                                                                                                            | XS     | High      |
+| 🔴 P0    | Delete [src/App.css](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/App.css) (dead file)                                                                                                                                            | XS     | Low       |
+| 🔴 P0    | Remove `refreshTimeout` dead code in [ViewUtilities.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewUtilities.tsx)                                                                                         | XS     | Low       |
+| 🔴 P1    | Install `Badge` and replace all hard-coded status/type color classes                                                                                                                                                                                          | S      | High      |
+| 🔴 P1    | Install [Progress](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#44-84) and replace all 3 custom progress bar implementations                                                               | S      | High      |
+| 🔴 P1    | Replace `AlertDialog` with [Dialog](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#165-169) in GetVar All output viewer                                                                          | S      | Medium    |
+| 🟡 P2    | Extract `LoadingButton` shared component (20+ usages)                                                                                                                                                                                                         | M      | High      |
+| 🟡 P2    | Extract `SectionHeader` shared component                                                                                                                                                                                                                      | XS     | Medium    |
+| 🟡 P2    | Extract [getFileName()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#408-413) to [src/lib/utils.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/utils.ts) | XS     | Medium    |
+| 🟡 P2    | Replace `<input>` with shadcn `Input` in AppManager search                                                                                                                                                                                                    | XS     | Medium    |
+| 🟡 P2    | Use `buttonVariants({ variant: 'destructive' })` in ViewFlasher wipe button                                                                                                                                                                                   | XS     | Low       |
+| 🟡 P2    | Install `Separator` and replace manual divider divs                                                                                                                                                                                                           | S      | Medium    |
+| 🟡 P3    | Install `Skeleton` for loading states                                                                                                                                                                                                                         | M      | High (UX) |
+| 🟡 P3    | Extract `FileSelector` shared component                                                                                                                                                                                                                       | S      | Medium    |
+| 🟡 P3    | Extract [InfoItem](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#373-401) from ViewDashboard to shared component                                                                                | XS     | Low       |
+| 🟡 P3    | Migrate [models.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/models.ts) DTOs from classes to plain interfaces                                                                                                     | M      | Medium    |
+| 🟢 P4    | Install `Popover` for BottomPanel log filter                                                                                                                                                                                                                  | S      | Medium    |
+| 🟢 P4    | Split [ViewAppManager](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#42-531) into `AppInstallCard` + `AppUninstallCard`                                                                        | M      | Medium    |
+| 🟢 P4    | `useNicknameEdit()` hook to DRY the 3-view nickname pattern                                                                                                                                                                                                   | S      | Low       |
+| 🟢 P4    | Install [Select](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#103-116) for package filter                                                                                                     | S      | Low       |
+| 🟢 P4    | Install `Textarea` for shell input                                                                                                                                                                                                                            | S      | Low       |
 
 ---
 
@@ -635,29 +673,29 @@ Then fix the **P0 reactivity bug** in [MainLayout.tsx](file:///c:/Users/akila/On
 
 ## 8. shadcn Components Inventory
 
-| Component | Installed | Should Install |
-|-----------|-----------|---------------|
-| alert-dialog | ✅ | — |
-| button | ✅ | — |
-| card | ✅ | — |
-| command | ✅ (unused?) | — |
-| dropdown-menu | ✅ | — |
-| input | ✅ | — |
-| label | ✅ | — |
-| scroll-area | ✅ | — |
-| sonner | ✅ | — |
-| table | ✅ | — |
-| tabs | ✅ | — |
-| tooltip | ✅ | — |
-| **badge** | ❌ | ✅ P1 |
-| **progress** | ❌ | ✅ P1 |
-| **dialog** | ❌ | ✅ P1 |
-| **separator** | ❌ | ✅ P2 |
-| **skeleton** | ❌ | ✅ P3 |
-| **select** | ❌ | ✅ P3 |
-| **popover** | ❌ | ✅ P4 |
-| **textarea** | ❌ | ✅ P4 |
-| **sheet** | ❌ | ✅ P4 |
+| Component     | Installed    | Should Install |
+| ------------- | ------------ | -------------- |
+| alert-dialog  | ✅           | —              |
+| button        | ✅           | —              |
+| card          | ✅           | —              |
+| command       | ✅ (unused?) | —              |
+| dropdown-menu | ✅           | —              |
+| input         | ✅           | —              |
+| label         | ✅           | —              |
+| scroll-area   | ✅           | —              |
+| sonner        | ✅           | —              |
+| table         | ✅           | —              |
+| tabs          | ✅           | —              |
+| tooltip       | ✅           | —              |
+| **badge**     | ❌           | ✅ P1          |
+| **progress**  | ❌           | ✅ P1          |
+| **dialog**    | ❌           | ✅ P1          |
+| **separator** | ❌           | ✅ P2          |
+| **skeleton**  | ❌           | ✅ P3          |
+| **select**    | ❌           | ✅ P3          |
+| **popover**   | ❌           | ✅ P4          |
+| **textarea**  | ❌           | ✅ P4          |
+| **sheet**     | ❌           | ✅ P4          |
 
 > [!NOTE]
 > The `command` component is installed but appears unused in the current codebase. It may have been installed speculatively. Verify whether it is needed — if not, it's dead weight.
@@ -666,16 +704,16 @@ Then fix the **P0 reactivity bug** in [MainLayout.tsx](file:///c:/Users/akila/On
 
 ## 9. Code Quality Summary
 
-| Category | Score | Notes |
-|----------|-------|-------|
-| Architecture | 8/10 | Clean Tauri abstraction, proper stores, TanStack Query |
-| DRY | 5/10 | Many duplicated patterns (spinner, file selector, section header) |
-| shadcn Utilization | 5/10 | Core components used, but Badge/Progress/Dialog/Skeleton missing |
-| Hard-Coded Values | 6/10 | Several raw color classes bypass theme system |
-| Component Size | 6/10 | [ViewPayloadDumper](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#85-819) (819 lines) and [ViewAppManager](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#42-531) (531 lines) are too large |
-| Type Safety | 7/10 | [models.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/models.ts) uses `source: any` — should migrate to plain interfaces |
-| Reactivity | 8/10 | One P0 bug: `getState()` in render |
-| Accessibility | 6/10 | Custom inputs, manual dropdowns missing ARIA roles |
-| Performance | 9/10 | Virtual list, TanStack Query, AnimatePresence all correct |
+| Category           | Score | Notes                                                                                                                                                                                                                                                                                                                       |
+| ------------------ | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Architecture       | 8/10  | Clean Tauri abstraction, proper stores, TanStack Query                                                                                                                                                                                                                                                                      |
+| DRY                | 5/10  | Many duplicated patterns (spinner, file selector, section header)                                                                                                                                                                                                                                                           |
+| shadcn Utilization | 5/10  | Core components used, but Badge/Progress/Dialog/Skeleton missing                                                                                                                                                                                                                                                            |
+| Hard-Coded Values  | 6/10  | Several raw color classes bypass theme system                                                                                                                                                                                                                                                                               |
+| Component Size     | 6/10  | [ViewPayloadDumper](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewPayloadDumper.tsx#85-819) (819 lines) and [ViewAppManager](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewAppManager.tsx#42-531) (531 lines) are too large |
+| Type Safety        | 7/10  | [models.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/models.ts) uses `source: any` — should migrate to plain interfaces                                                                                                                                                         |
+| Reactivity         | 8/10  | One P0 bug: `getState()` in render                                                                                                                                                                                                                                                                                          |
+| Accessibility      | 6/10  | Custom inputs, manual dropdowns missing ARIA roles                                                                                                                                                                                                                                                                          |
+| Performance        | 9/10  | Virtual list, TanStack Query, AnimatePresence all correct                                                                                                                                                                                                                                                                   |
 
 **Overall: 7/10** — A well-built app with clear, actionable improvements available.

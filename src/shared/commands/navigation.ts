@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
 import {
   Bot,
   Box,
@@ -10,8 +10,10 @@ import {
   Smartphone,
   Store,
   Zap,
-} from 'lucide-react';
-import { VIEWS, type ViewType } from '@/app/shell/viewConfig';
+} from "lucide-react";
+
+import { VIEWS } from "@/app/shell/view-config";
+import type { ViewType } from "@/app/shell/view-config";
 
 export interface ViewMeta {
   /** One-line explanation — palette subtitle and collapsed-sidebar tooltip. */
@@ -28,64 +30,64 @@ export interface ViewMeta {
  */
 export const VIEW_META: Record<ViewType, ViewMeta> = {
   [VIEWS.DASHBOARD]: {
-    description: 'Device identity, battery, storage and security at a glance',
+    description: "Device identity, battery, storage and security at a glance",
     icon: LayoutDashboard,
-    keywords: ['home', 'overview', 'telemetry', 'battery', 'storage'],
-    title: 'Dashboard',
+    keywords: ["home", "overview", "telemetry", "battery", "storage"],
+    title: "Dashboard",
   },
   [VIEWS.APPS]: {
-    description: 'Installed packages, APK installs and debloat',
+    description: "Installed packages, APK installs and debloat",
     icon: Box,
-    keywords: ['apps', 'packages', 'apk', 'install', 'uninstall', 'debloat'],
-    title: 'Applications',
+    keywords: ["apps", "packages", "apk", "install", "uninstall", "debloat"],
+    title: "Applications",
   },
   [VIEWS.FILES]: {
-    description: 'Browse, push and pull device storage',
+    description: "Browse, push and pull device storage",
     icon: FolderOpen,
-    keywords: ['files', 'storage', 'push', 'pull', 'sdcard', 'browse'],
-    title: 'File Explorer',
+    keywords: ["files", "storage", "push", "pull", "sdcard", "browse"],
+    title: "File Explorer",
   },
   [VIEWS.MARKETPLACE]: {
-    description: 'Discover and install open-source Android apps',
+    description: "Discover and install open-source Android apps",
     icon: Store,
-    keywords: ['store', 'fdroid', 'github', 'download', 'apps'],
-    title: 'Marketplace',
+    keywords: ["store", "fdroid", "github", "download", "apps"],
+    title: "Marketplace",
   },
   [VIEWS.FLASHER]: {
-    description: 'Write partition images over fastboot',
+    description: "Write partition images over fastboot",
     icon: Zap,
-    keywords: ['flash', 'fastboot', 'partition', 'boot', 'sideload', 'slot'],
-    title: 'Flasher',
+    keywords: ["flash", "fastboot", "partition", "boot", "sideload", "slot"],
+    title: "Flasher",
   },
   [VIEWS.PAYLOAD]: {
-    description: 'Extract partitions from payload.bin and OTA archives',
+    description: "Extract partitions from payload.bin and OTA archives",
     icon: Package,
-    keywords: ['payload', 'dumper', 'ota', 'extract', 'unpack', 'image'],
-    title: 'Payload Dumper',
+    keywords: ["payload", "dumper", "ota", "extract", "unpack", "image"],
+    title: "Payload Dumper",
   },
   [VIEWS.UTILS]: {
-    description: 'ADB and fastboot host commands',
+    description: "ADB and fastboot host commands",
     icon: Settings,
-    keywords: ['utilities', 'tools', 'adb', 'fastboot', 'wireless', 'screenshot'],
-    title: 'Utilities',
+    keywords: ["utilities", "tools", "adb", "fastboot", "wireless", "screenshot"],
+    title: "Utilities",
   },
   [VIEWS.SCRCPY]: {
-    description: 'Mirror and control the selected device in a native scrcpy window',
+    description: "Mirror and control the selected device in a native scrcpy window",
     icon: Smartphone,
-    keywords: ['scrcpy', 'mirror', 'screen', 'cast', 'control', 'record'],
-    title: 'Scrcpy',
+    keywords: ["scrcpy", "mirror", "screen", "cast", "control", "record"],
+    title: "Scrcpy",
   },
   [VIEWS.EMULATOR]: {
-    description: 'Manage, launch and root Android virtual devices',
+    description: "Manage, launch and root Android virtual devices",
     icon: Bot,
-    keywords: ['emulator', 'avd', 'virtual', 'magisk', 'root'],
-    title: 'Emulator',
+    keywords: ["emulator", "avd", "virtual", "magisk", "root"],
+    title: "Emulator",
   },
   [VIEWS.ABOUT]: {
-    description: 'Version, licences and project links',
+    description: "Version, licences and project links",
     icon: Info,
-    keywords: ['about', 'version', 'licence', 'license', 'credits'],
-    title: 'About',
+    keywords: ["about", "version", "licence", "license", "credits"],
+    title: "About",
   },
 };
 
@@ -104,17 +106,17 @@ export interface NavSection {
 export const NAV_SECTIONS: NavSection[] = [
   {
     items: [VIEWS.DASHBOARD, VIEWS.APPS, VIEWS.FILES, VIEWS.MARKETPLACE],
-    label: 'Device',
+    label: "Device",
     risk: false,
   },
   {
     items: [VIEWS.FLASHER, VIEWS.PAYLOAD],
-    label: 'Firmware',
+    label: "Firmware",
     risk: true,
   },
   {
     items: [VIEWS.UTILS, VIEWS.SCRCPY, VIEWS.EMULATOR],
-    label: 'Tools',
+    label: "Tools",
     risk: false,
   },
 ];
@@ -126,6 +128,5 @@ export const NAV_VIEW_ORDER: ViewType[] = [
 ];
 
 /** Section a view belongs to — drives the header breadcrumb. `about` has none. */
-export function sectionForView(view: ViewType): NavSection | null {
-  return NAV_SECTIONS.find((section) => section.items.includes(view)) ?? null;
-}
+export const sectionForView = (view: ViewType): NavSection | null =>
+  NAV_SECTIONS.find((section) => section.items.includes(view)) ?? null;

@@ -1,11 +1,11 @@
-import { shellCommands, viewCommands } from '@/shared/commands/appCommands';
-import { deviceActionCommands, deviceSelectionCommands } from '@/shared/commands/deviceCommands';
-import type { CommandAction, CommandContext, CommandGroupId } from '@/shared/commands/types';
+import { shellCommands, viewCommands } from "@/shared/commands/app-commands";
+import { deviceActionCommands, deviceSelectionCommands } from "@/shared/commands/device-commands";
+import type { CommandAction, CommandContext, CommandGroupId } from "@/shared/commands/types";
 
 export const COMMAND_GROUPS: { id: CommandGroupId; label: string }[] = [
-  { id: 'actions', label: 'Actions' },
-  { id: 'navigate', label: 'Navigate' },
-  { id: 'devices', label: 'Devices' },
+  { id: "actions", label: "Actions" },
+  { id: "navigate", label: "Navigate" },
+  { id: "devices", label: "Devices" },
 ];
 
 /**
@@ -14,11 +14,9 @@ export const COMMAND_GROUPS: { id: CommandGroupId; label: string }[] = [
  * Order inside a group is authoring order — cmdk re-ranks on search but keeps it
  * for the empty query, so the most-reached-for actions come first.
  */
-export function buildCommands(ctx: CommandContext): CommandAction[] {
-  return [
-    ...deviceActionCommands(),
-    ...shellCommands(ctx),
-    ...viewCommands(ctx),
-    ...deviceSelectionCommands(ctx),
-  ];
-}
+export const buildCommands = (ctx: CommandContext): CommandAction[] => [
+  ...deviceActionCommands(),
+  ...shellCommands(ctx),
+  ...viewCommands(ctx),
+  ...deviceSelectionCommands(ctx),
+];

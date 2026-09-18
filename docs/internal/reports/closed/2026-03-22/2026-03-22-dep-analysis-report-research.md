@@ -8,18 +8,18 @@
 
 ## Codebase Snapshot (Verified)
 
-| Area | Current State |
-|------|--------------|
-| Frontend | React 19.2 + TypeScript 5.9 + Vite 8 + Tailwind v4 + Zustand 5 |
-| UI Primitives | shadcn/ui (new-york), Radix UI, lucide-react |
-| State | Zustand (device, log, payloadDumper) + localStorage (nicknames only) |
-| Backend | Rust 2024 edition, Tauri 2, 26 commands, 4-module payload parser |
-| Logging | `tauri-plugin-log` + [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) crate (info/debug/warn/error macros) |
-| Forms | Plain `useState` per field — **no form library** |
-| Validation | None — raw checks in Rust commands (`.trim()`, `.is_empty()`) |
-| Testing (FE) | **None** — zero JS/TS test framework |
-| Testing (Rust) | 8 unit tests passing |
-| Known Issues | 589 KB JS chunk, device polling duplicated across 3 views |
+| Area           | Current State                                                                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend       | React 19.2 + TypeScript 5.9 + Vite 8 + Tailwind v4 + Zustand 5                                                                                                                       |
+| UI Primitives  | shadcn/ui (new-york), Radix UI, lucide-react                                                                                                                                         |
+| State          | Zustand (device, log, payloadDumper) + localStorage (nicknames only)                                                                                                                 |
+| Backend        | Rust 2024 edition, Tauri 2, 26 commands, 4-module payload parser                                                                                                                     |
+| Logging        | `tauri-plugin-log` + [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) crate (info/debug/warn/error macros) |
+| Forms          | Plain `useState` per field — **no form library**                                                                                                                                     |
+| Validation     | None — raw checks in Rust commands (`.trim()`, `.is_empty()`)                                                                                                                        |
+| Testing (FE)   | **None** — zero JS/TS test framework                                                                                                                                                 |
+| Testing (Rust) | 8 unit tests passing                                                                                                                                                                 |
+| Known Issues   | 589 KB JS chunk, device polling duplicated across 3 views                                                                                                                            |
 
 ---
 
@@ -32,12 +32,14 @@
 **Verdict: ✅ CONFIRMED — but evaluate fit carefully before adding.**
 
 **Research findings (2025-2026):**
+
 - TanStack Query v5 (currently `5.94.5`) requires React ≥ 18. Fully compatible with React 19 via `useSyncExternalStore`. Actively maintained by the Tanstack org, 2M+ weekly downloads.
 - The promise-based nature of `core.invoke()` is a perfect match — `useQuery(() => GetDevices())` replaces the `setInterval` + `useState` pattern used in all 3 polling views.
 - A Jan 2025 article demonstrates React Query + Tauri 2 + SQLite integration as a reference pattern.
 - **Codebase gap**: All 8 views use either raw `useState` + `useEffect` + `setInterval` or inline async handlers. [GetDevices()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/backend.ts#79-82) is called every 3 seconds in Dashboard, Flasher, and Utilities via manual polling loops.
 
 **Real benefit if added:**
+
 - `useQuery` with `refetchInterval: 3000` replaces 3 duplicated polling `useEffect` blocks → **directly fixes the "device polling duplicated" known issue**.
 - `useMutation` replaces every `try/catch` wrapper around [install_package](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/commands/apps.rs#31-45), `flash_partition`, etc. — automatic `isPending`, `isError`, `data` states.
 - **No cache concerns**: All Tauri backend calls are local/device-specific with no HTTP caching semantics — use `staleTime: 0` for polling queries.
@@ -53,6 +55,7 @@
 **Verdict: ✅ CONFIRMED — but note: Zod v4 released May 2025.**
 
 **Research findings (2025-2026):**
+
 - **Zod v4** (released May 2025, stable Aug 2025) is a major improvement: 14× faster string parsing, 2.3× smaller bundle, type-safe metadata system, built-in JSON Schema output. Breaking changes from v3 are minimal for basic usage.
 - [dep.md](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/docs/dependencies/dep.md) wrote this for v3 (`^3.x`). You should install **v4** directly if adding today.
 - React 19 + Zod pairing is the 2025 gold standard for TypeScript-first validation.
@@ -60,12 +63,14 @@
 **Codebase gap:** The wireless ADB form in [ViewDashboard.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx) uses raw string state for IP + port with zero validation before calling [ConnectWirelessAdb()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/backend.ts#39-42). [ViewFlasher.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewFlasher.tsx) similarly calls [FlashPartition()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/backend.ts#63-66) without validating the partition name. [ViewShell.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewShell.tsx) sends raw command strings to [RunShellCommand()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/desktop/backend.ts#145-148).
 
 **Real benefit if added:**
+
 ```ts
 const wirelessSchema = z.object({
-  ip: z.string().ip({ version: 'v4', message: 'Invalid IPv4 address' }),
-  port: z.string().regex(/^\d{4,5}$/, 'Port must be 4-5 digits'),
+  ip: z.string().ip({ version: "v4", message: "Invalid IPv4 address" }),
+  port: z.string().regex(/^\d{4,5}$/, "Port must be 4-5 digits"),
 });
 ```
+
 Prevents bad data from ever reaching the Rust backend. Avoids defensive `.trim()` / `.is_empty()` checks scattered across Rust commands.
 
 **Action: HIGH priority. Small dep, massive input safety improvement.**
@@ -79,6 +84,7 @@ Prevents bad data from ever reaching the Rust backend. Avoids defensive `.trim()
 **Verdict: ✅ CONFIRMED — with one React 19 caveat.**
 
 **Research findings (2025-2026):**
+
 - RHF 7.x is fully compatible with React 19. Minor caveat: `watch()` may not reliably trigger re-renders in React 19 due to more aggressive batching — use `useWatch()` instead for reactive field observing.
 - `@hookform/resolvers/zod` bridges Zod v4 and RHF seamlessly.
 - RHF fills the gap React 19's native form APIs leave (no built-in complex validation).
@@ -86,12 +92,14 @@ Prevents bad data from ever reaching the Rust backend. Avoids defensive `.trim()
 **Codebase assessment:** Wireless ADB form (2 inputs, 3 buttons) and Shell command input are the primary candidates. The wireless form in [ViewDashboard.tsx](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx) has 50+ lines of `useState` + handler boilerplate that compresses to ~15 lines with RHF + Zod.
 
 **Real benefit if added (paired with zod):**
+
 ```tsx
 const form = useForm<z.infer<typeof wirelessSchema>>({
   resolver: zodResolver(wirelessSchema),
-  defaultValues: { ip: '', port: '5555' }
+  defaultValues: { ip: "", port: "5555" },
 });
 ```
+
 Eliminates `wirelessIp`, `wirelessPort`, `setWirelessIp`, `setWirelessPort` state + manual empty checks.
 
 **Action: MEDIUM priority. Add together with zod as a package.**
@@ -105,6 +113,7 @@ Eliminates `wirelessIp`, `wirelessPort`, `setWirelessIp`, `setWirelessPort` stat
 **Verdict: ⚠️ PARTIALLY INCORRECT FOR THIS PROJECT — ADB is already done in Rust.**
 
 **Research findings (2025-2026):**
+
 - Plugin-shell v2 is stable and actively maintained. CVE-2025-31477 (open endpoint scope leak) was patched in `2.2.1`. Keep updated.
 - **Key issue found**: The plugin's `spawn()` has a documented intermittent hang on Windows (v2.0.2). Path resolution for Android SDK tools (including calling bundled executables) has reported "no such file or directory" errors on some systems.
 - Subprocess security requires explicit allowlisting in `tauri.conf.json` — each command + argument must be scoped.
@@ -124,6 +133,7 @@ Adding `plugin-shell` would introduce a parallel, less controlled path for binar
 **Verdict: ✅ CONFIRMED — Latest is v2.3.3 (early 2026).**
 
 **Research findings (2025-2026):**
+
 - `tauri-plugin-notification` is actively maintained by the Tauri team, latest `2.3.3`.
 - Uses the OS notification system (Windows Action Center, Linux libnotify). Works headlessly when the Tauri window is hidden or minimized.
 - Requires `notification:default` capability grant.
@@ -143,6 +153,7 @@ Adding `plugin-shell` would introduce a parallel, less controlled path for binar
 **Verdict: ✅ CONFIRMED — Latest confirmed at v2.3.2.**
 
 **Research findings (2025-2026):**
+
 - Plugin is actively maintained by Tauri team, stable.
 - Requires `clipboard-manager:allow-write-text` capability.
 - `writeText(text)` is the primary API — simple Promise-based call.
@@ -162,6 +173,7 @@ Adding `plugin-shell` would introduce a parallel, less controlled path for binar
 **Verdict: ✅ CONFIRMED — Latest is v2.2.2+.**
 
 **Research findings (2025-2026):**
+
 - `tauri-plugin-process` provides `exit()` and `relaunch()` via `process:allow-exit` and `process:allow-relaunch` capabilities.
 - The plugin is coordinated with Tauri releases (all plugins bumped to v2.2.0 together).
 
@@ -178,6 +190,7 @@ Adding `plugin-shell` would introduce a parallel, less controlled path for binar
 **Verdict: ✅ TECHNICALLY CORRECT — but has a significant Tauri-specific complication.**
 
 **Research findings (2025-2026):**
+
 - `tracing` is the async-native Tokio-team standard. Provides spans, structured fields, and async context propagation that the [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) crate fundamentally cannot offer.
 - **However**: `tauri-plugin-log` is built on the [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) facade — it accepts `log::info!()` → routes to stdout/file/webview. Adding `tracing` alongside it requires `tracing-log` as a compatibility shim to forward tracing events to the log facade.
 - `tauri-plugin-tracing` exists separately and enables advanced Tauri + tracing integration with span visualization, but is separate from `tauri-plugin-log`.
@@ -198,6 +211,7 @@ This is a meaningful refactor for a tangential benefit at current scale. The ben
 **Verdict: ✅ CONFIRMED — and there's a specific, valid reason to add it.**
 
 **Research findings (2025-2026):**
+
 - Tauri 2 bundles and initializes a Tokio runtime. `tauri::async_runtime::spawn()` re-exports key Tokio functions. For most use cases, the re-export is sufficient.
 - Best practice: Add `tokio` as an explicit [Cargo.toml](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Cargo.toml) dependency **only when you need features not re-exported by `tauri::async_runtime`** — e.g., `tokio::sync::mpsc`, `tokio::time::timeout`, `tokio::sync::RwLock`.
 - The payload extractor already uses `tauri::async_runtime::spawn_blocking()` for the parallel extraction thread scope. This works today without explicit `tokio` in [Cargo.toml](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Cargo.toml).
@@ -205,6 +219,7 @@ This is a meaningful refactor for a tangential benefit at current scale. The ben
 **Codebase assessment:** `payload/extractor.rs` uses `std::thread::scope` for parallel partition extraction — a sync thread model, not async. [commands/payload.rs](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/commands/payload.rs) uses `tauri::async_runtime::spawn_blocking`. No direct `tokio::` usage exists. The current approach is correct per Tauri docs.
 
 **When you'd actually need explicit tokio:**
+
 - Streaming extraction progress updates via `tokio::sync::mpsc` channels (vs polling).
 - `tokio::time::timeout` for commands that might hang (ADB can deadlock on disconnected devices).
 - `tokio::sync::RwLock` for shared mutable state across async tasks.
@@ -220,11 +235,13 @@ This is a meaningful refactor for a tangential benefit at current scale. The ben
 **Verdict: ✅ CONFIRMED — but the codebase doesn't actually use regex yet, and may not need it.**
 
 **Research findings (2025-2026):**
+
 - `regex` crate is stable, performant, and battle-tested. For ADB outputs (device list, package list, `getprop`), it's the pragmatic choice.
 - **Alternative**: For production-grade parsing of complex or evolving ADB output, `nom` (parser combinators) offers better structured output + error reporting.
 - **The YAGNI angle**: Current parsing in [helpers.rs](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/helpers.rs) uses `.split_whitespace()`, `.lines()`, `.strip_prefix()`, `.split(':')`, `.split('/')` — all stdlib string operations. No regex is needed for current parsing tasks.
 
 **Codebase evidence:**
+
 ```rust
 // helpers.rs - get_ip_address: pure stdlib parsing
 .split_whitespace().collect::<Vec<_>>().windows(2)
@@ -249,16 +266,19 @@ All current parsing is simple and handled cleanly without regex. Adding `regex` 
 **Verdict: ✅ CONFIRMED — and this is a MUST-DO gap in the project.**
 
 **Research findings (2025-2026):**
+
 - Vitest 3.x is fully compatible with Vite 8 and React 19. Configuration is minimal (`vitest.config.ts` with `jsdom` environment, `@testing-library/react` + `@testing-library/user-event`).
 - This is the undisputed 2025 standard for Vite-based React testing.
 - The `pnpm check` pipeline currently has 8 Rust tests but **zero JS/TS tests** — a hard gap listed in the memory bank as [activeContext.md](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/memory-bank/activeContext.md) and [progress.md](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/memory-bank/progress.md).
 
 **Setup packages needed:**
+
 ```
 vitest @testing-library/react @testing-library/user-event jsdom @vitest/coverage-v8
 ```
 
 **Immediate candidate tests:**
+
 - `ConnectedDevicesCard` — renders device list, handles empty state
 - `TerminalLogPanel` — renders log entries, filters by level
 - [errorHandler.ts](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/errorHandler.ts) — [handleError()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/errorHandler.ts#4-13), [handleSuccess()](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/lib/errorHandler.ts#14-18) unit tests (pure functions, easy to isolate)
@@ -275,6 +295,7 @@ vitest @testing-library/react @testing-library/user-event jsdom @vitest/coverage
 **Verdict: ⚠️ DEP.MD WAS OUTDATED — Biome 2.0 (March 2025) now HAS the rule.**
 
 **Research findings (2025-2026):**
+
 - **Biome 2.0 (released March 2025)** added `lint/correctness/useExhaustiveDependencies` — a direct equivalent to `eslint-plugin-react-hooks/exhaustive-deps`. This is available since Biome 1.0 but matured in 2.0.
 - Biome 2.0 also added: plugin system, type-aware linting, multi-file analysis.
 - **Remaining practical consideration**: Biome's `useExhaustiveDependencies` still has behavioral differences from ESLint's version (e.g., previously it flagged `useState` setters as unnecessary deps, which ESLint does not — being addressed).
@@ -288,20 +309,20 @@ vitest @testing-library/react @testing-library/user-event jsdom @vitest/coverage
 
 ## Actionable Recommendations (Priority-Ordered)
 
-| Priority | Action | Rationale |
-|----------|--------|-----------|
-| 🔴 **HIGH** | Add `vitest` + `@testing-library/react` | Zero FE test coverage is the biggest quality gap. Easy to add, immediate value. |
-| 🔴 **HIGH** | Add `zod` (v4) | Input safety for IP/port/command fields with minimal bundle impact. YAGNI satisfied — these forms exist now. |
-| 🟡 **MEDIUM** | Add `@tanstack/react-query` v5 | Eliminates duplicated device polling across 3 views. Replaces 150+ lines of boilerplate. |
-| 🟡 **MEDIUM** | Add `react-hook-form` + `@hookform/resolvers` | Pair with zod for the wireless ADB form and shell command form. |
-| 🟡 **MEDIUM** | Add `@tauri-apps/plugin-clipboard-manager` | One-click copy for device info. Minimal integration effort, high UX payoff. |
-| 🟢 **LOW** | Add `@tauri-apps/plugin-notification` | OS notifications for payload extraction completion. Deferred until polling is refactored. |
-| ⏸️ **DEFER** | Add `@tauri-apps/plugin-process` | No settings page exists yet. YAGNI applies. |
-| ⏸️ **DEFER** | Add `tracing` + `tracing-subscriber` | Current [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) + `tauri-plugin-log` is working. Worth revisiting when async complexity grows. |
-| ⏸️ **DEFER** | Add `tokio` explicitly | Tauri's re-export is sufficient today. Add only when a specific tokio primitive is needed. |
-| ❌ **DO NOT ADD** | `@tauri-apps/plugin-shell` | ADB is already spawned in Rust via [helpers.rs](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/helpers.rs). Adding shell plugin duplicates logic and widens attack surface. |
-| ❌ **DO NOT ADD (yet)** | `regex` | All current ADB output parsing uses stdlib string ops. Add only when a specific complex parsing need arises. |
-| 📝 **UPDATE** | dep.md Biome entry | Biome 2.0 (March 2025) now has `useExhaustiveDependencies`. Update caveat but keep recommendation to not migrate. |
+| Priority                | Action                                        | Rationale                                                                                                                                                                                                         |
+| ----------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔴 **HIGH**             | Add `vitest` + `@testing-library/react`       | Zero FE test coverage is the biggest quality gap. Easy to add, immediate value.                                                                                                                                   |
+| 🔴 **HIGH**             | Add `zod` (v4)                                | Input safety for IP/port/command fields with minimal bundle impact. YAGNI satisfied — these forms exist now.                                                                                                      |
+| 🟡 **MEDIUM**           | Add `@tanstack/react-query` v5                | Eliminates duplicated device polling across 3 views. Replaces 150+ lines of boilerplate.                                                                                                                          |
+| 🟡 **MEDIUM**           | Add `react-hook-form` + `@hookform/resolvers` | Pair with zod for the wireless ADB form and shell command form.                                                                                                                                                   |
+| 🟡 **MEDIUM**           | Add `@tauri-apps/plugin-clipboard-manager`    | One-click copy for device info. Minimal integration effort, high UX payoff.                                                                                                                                       |
+| 🟢 **LOW**              | Add `@tauri-apps/plugin-notification`         | OS notifications for payload extraction completion. Deferred until polling is refactored.                                                                                                                         |
+| ⏸️ **DEFER**            | Add `@tauri-apps/plugin-process`              | No settings page exists yet. YAGNI applies.                                                                                                                                                                       |
+| ⏸️ **DEFER**            | Add `tracing` + `tracing-subscriber`          | Current [log](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src/components/views/ViewDashboard.tsx#171-175) + `tauri-plugin-log` is working. Worth revisiting when async complexity grows. |
+| ⏸️ **DEFER**            | Add `tokio` explicitly                        | Tauri's re-export is sufficient today. Add only when a specific tokio primitive is needed.                                                                                                                        |
+| ❌ **DO NOT ADD**       | `@tauri-apps/plugin-shell`                    | ADB is already spawned in Rust via [helpers.rs](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/helpers.rs). Adding shell plugin duplicates logic and widens attack surface.   |
+| ❌ **DO NOT ADD (yet)** | `regex`                                       | All current ADB output parsing uses stdlib string ops. Add only when a specific complex parsing need arises.                                                                                                      |
+| 📝 **UPDATE**           | dep.md Biome entry                            | Biome 2.0 (March 2025) now has `useExhaustiveDependencies`. Update caveat but keep recommendation to not migrate.                                                                                                 |
 
 ---
 
@@ -333,17 +354,17 @@ pnpm add @tauri-apps/plugin-notification
 
 ## dep.md Accuracy Assessment
 
-| Entry | dep.md Status | Actual Status (2026-03-22) |
-|-------|--------------|---------------------------|
-| TanStack Query v5 | ✅ Correct | ✅ Confirmed + verified |
-| zod | ✅ Correct (v3) | ✅ Upgrade to v4 |
-| react-hook-form | ✅ Correct | ✅ + note useWatch caveat |
-| plugin-shell | ✅ "Required" | ❌ NOT needed — architecture mismatch |
-| plugin-notification | ✅ Correct | ✅ v2.3.3 (updated from 2.2.2) |
-| plugin-clipboard-manager | ✅ Correct | ✅ v2.3.2 confirmed |
-| plugin-process | ✅ Correct | ⏸️ Defer — no use case exists yet |
-| tracing + tracing-subscriber | ✅ Correct | ⚠️ Works but complicates tauri-plugin-log |
-| tokio | ✅ Correct | ⏸️ Defer — tauri re-export is sufficient |
-| regex | ✅ Correct | ❌ Not needed — stdlib ops sufficient |
-| vitest + @testing-library | ✅ Correct | ✅ HIGH PRIORITY — add now |
-| Biome | ⚠️ Outdated caveat | ⚠️ Rule exists in Biome 2.0 but migration risk still real |
+| Entry                        | dep.md Status      | Actual Status (2026-03-22)                                |
+| ---------------------------- | ------------------ | --------------------------------------------------------- |
+| TanStack Query v5            | ✅ Correct         | ✅ Confirmed + verified                                   |
+| zod                          | ✅ Correct (v3)    | ✅ Upgrade to v4                                          |
+| react-hook-form              | ✅ Correct         | ✅ + note useWatch caveat                                 |
+| plugin-shell                 | ✅ "Required"      | ❌ NOT needed — architecture mismatch                     |
+| plugin-notification          | ✅ Correct         | ✅ v2.3.3 (updated from 2.2.2)                            |
+| plugin-clipboard-manager     | ✅ Correct         | ✅ v2.3.2 confirmed                                       |
+| plugin-process               | ✅ Correct         | ⏸️ Defer — no use case exists yet                         |
+| tracing + tracing-subscriber | ✅ Correct         | ⚠️ Works but complicates tauri-plugin-log                 |
+| tokio                        | ✅ Correct         | ⏸️ Defer — tauri re-export is sufficient                  |
+| regex                        | ✅ Correct         | ❌ Not needed — stdlib ops sufficient                     |
+| vitest + @testing-library    | ✅ Correct         | ✅ HIGH PRIORITY — add now                                |
+| Biome                        | ⚠️ Outdated caveat | ⚠️ Rule exists in Biome 2.0 but migration risk still real |

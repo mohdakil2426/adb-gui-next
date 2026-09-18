@@ -1,15 +1,16 @@
-import type { ReactNode } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
-import { cn } from '@/shared/utils/cn';
+import type { ReactNode } from "react";
 
-export type TabsWithIconItem = {
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { cn } from "@/shared/utils/cn";
+
+export interface TabsWithIconItem {
   content: ReactNode;
   icon: ReactNode;
   name: string;
   value: string;
-};
+}
 
-export function TabsWithIcon({
+export const TabsWithIcon = ({
   className,
   defaultValue,
   onValueChange,
@@ -21,28 +22,26 @@ export function TabsWithIcon({
   onValueChange?: (value: string) => void;
   tabs: TabsWithIconItem[];
   value?: string;
-}) {
-  return (
-    <Tabs
-      className={cn('gap-4', className)}
-      {...(defaultValue === undefined ? {} : { defaultValue })}
-      {...(onValueChange === undefined ? {} : { onValueChange })}
-      {...(value === undefined ? {} : { value })}
-    >
-      <TabsList>
-        {tabs.map(({ icon, name, value: tabValue }) => (
-          <TabsTrigger key={tabValue} value={tabValue}>
-            {icon}
-            {name}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-
-      {tabs.map((tab) => (
-        <TabsContent key={tab.value} value={tab.value}>
-          {tab.content}
-        </TabsContent>
+}) => (
+  <Tabs
+    className={cn("gap-4", className)}
+    {...(defaultValue === undefined ? {} : { defaultValue })}
+    {...(onValueChange === undefined ? {} : { onValueChange })}
+    {...(value === undefined ? {} : { value })}
+  >
+    <TabsList>
+      {tabs.map(({ icon, name, value: tabValue }) => (
+        <TabsTrigger key={tabValue} value={tabValue}>
+          {icon}
+          {name}
+        </TabsTrigger>
       ))}
-    </Tabs>
-  );
-}
+    </TabsList>
+
+    {tabs.map((tab) => (
+      <TabsContent key={tab.value} value={tab.value}>
+        {tab.content}
+      </TabsContent>
+    ))}
+  </Tabs>
+);

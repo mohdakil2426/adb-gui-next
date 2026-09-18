@@ -79,4 +79,3 @@ Exit code: `0`
 ```text
 <empty>
 ```
-

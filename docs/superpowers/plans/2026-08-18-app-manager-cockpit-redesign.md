@@ -4,7 +4,8 @@
 
 **Goal:** Transform the Applications view (`/applications` / App Manager) into a high-density Precision Hardware Cockpit featuring an Overview/Analytics tab with hand-rolled SVG charts, a high-density virtualized Installed Packages grid with inline actions and a floating batch bar, an extended Sideload Studio, and a slide-out Deep Package Inspector drawer with direct ADB lifecycle and APK pull controls.
 
-**Architecture:** 
+**Architecture:**
+
 - Frontend state orchestrated through modular Zustand stores (`useAppManagerStore`, `useInstallationStore`, `useDebloatStore`).
 - Data visualization built entirely via hand-crafted, zero-dependency inline SVGs conforming to `DESIGN.md` Hardware Cockpit standards (`freezePrototype: true` invariant compliant).
 - Backend Rust commands in `src-tauri/src/commands/apps.rs` leveraging `pm`, `am`, `monkey`, and `dumpsys package` for lifecycle, storage, and APK extraction.
@@ -14,6 +15,7 @@
 ---
 
 ## Global Constraints
+
 - **Desktop-only Tauri 2**: No Next.js, no react-router, no Electron.
 - **Zero Charting Libraries**: Recharts / Chart.js prohibited due to `freezePrototype: true` webview crash. All charts must be pure inline SVG or CSS grid meters.
 - **Container queries (`@lg:`, `@md:`)**: Window `minWidth` is 1024px, so container queries must be used instead of viewport breakpoints.
@@ -25,11 +27,13 @@
 ### Task 1: Package Statistics Engine & Metric Types
 
 **Files:**
+
 - Create: `src/features/app-manager/model/packageStats.ts`
 - Create: `src/features/app-manager/model/packageTypes.ts`
 - Test: `src/test/unit/packageStats.test.ts`
 
 **Interfaces:**
+
 - Produces: `computePackageOverviewStats(installedPackages, debloatPackages, storageData)` returning:
   - `totalCount`, `userCount`, `systemCount`, `disabledCount`
   - `targetSdkBuckets`: `{ modern: number, standard: number, legacy: number }`
@@ -40,14 +44,14 @@
 
 ```typescript
 // src/test/unit/packageStats.test.ts
-import { describe, expect, it } from 'vitest';
-import { computePackageOverviewStats } from '@/features/app-manager/model/packageStats';
+import { describe, expect, it } from "vitest";
+import { computePackageOverviewStats } from "@/features/app-manager/model/packageStats";
 
-describe('computePackageOverviewStats', () => {
-  it('computes composition and SDK distribution correctly', () => {
+describe("computePackageOverviewStats", () => {
+  it("computes composition and SDK distribution correctly", () => {
     const packages = [
-      { name: 'com.app.one', packageType: 'user', label: 'App One' },
-      { name: 'com.app.two', packageType: 'system', label: 'App Two' },
+      { name: "com.app.one", packageType: "user", label: "App One" },
+      { name: "com.app.two", packageType: "system", label: "App Two" },
     ];
     const stats = computePackageOverviewStats(packages, []);
     expect(stats.totalCount).toBe(2);
@@ -85,7 +89,7 @@ export interface DetailedPackageInfo {
 }
 
 // src/features/app-manager/model/packageStats.ts
-import type { InstalledPackage } from '@/desktop/models';
+import type { InstalledPackage } from "@/desktop/models";
 
 export interface PackageOverviewStats {
   totalCount: number;
@@ -107,21 +111,23 @@ export interface PackageOverviewStats {
 
 export function computePackageOverviewStats(
   installed: InstalledPackage[],
-  debloatList: Array<{ packageName: string; removal: string }>,
+  debloatList: Array<{ packageName: string; removal: string }>
 ): PackageOverviewStats {
   let userCount = 0;
   let systemCount = 0;
   let disabledCount = 0;
 
   for (const pkg of installed) {
-    if (pkg.packageType === 'user') {
+    if (pkg.packageType === "user") {
       userCount++;
     } else {
       systemCount++;
     }
   }
 
-  const debloatMap = new Map(debloatList.map((d) => [d.packageName, d.removal.toLowerCase()]));
+  const debloatMap = new Map(
+    debloatList.map((d) => [d.packageName, d.removal.toLowerCase()])
+  );
   let recommended = 0;
   let advanced = 0;
   let expert = 0;
@@ -129,10 +135,10 @@ export function computePackageOverviewStats(
 
   for (const pkg of installed) {
     const tier = debloatMap.get(pkg.name);
-    if (tier === 'recommended') recommended++;
-    else if (tier === 'advanced') advanced++;
-    else if (tier === 'expert') expert++;
-    else if (tier === 'unsafe') unsafe++;
+    if (tier === "recommended") recommended++;
+    else if (tier === "advanced") advanced++;
+    else if (tier === "expert") expert++;
+    else if (tier === "unsafe") unsafe++;
   }
 
   return {
@@ -143,7 +149,12 @@ export function computePackageOverviewStats(
     targetSdkBuckets: {
       modern: Math.round(installed.length * 0.65),
       standard: Math.round(installed.length * 0.28),
-      legacy: Math.max(0, installed.length - Math.round(installed.length * 0.65) - Math.round(installed.length * 0.28)),
+      legacy: Math.max(
+        0,
+        installed.length -
+          Math.round(installed.length * 0.65) -
+          Math.round(installed.length * 0.28)
+      ),
     },
     safetyTiers: { recommended, advanced, expert, unsafe },
   };
@@ -160,6 +171,7 @@ Expected: PASS
 ### Task 2: Hand-Rolled SVG Telemetry Charts & Visual Gauges
 
 **Files:**
+
 - Create: `src/features/app-manager/overview/charts/PackageCompositionDonut.tsx`
 - Create: `src/features/app-manager/overview/charts/TargetSdkDistributionMeter.tsx`
 - Create: `src/features/app-manager/overview/charts/TopStorageConsumersChart.tsx`
@@ -167,6 +179,7 @@ Expected: PASS
 - Create: `src/features/app-manager/overview/charts/PermissionDensityMatrix.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `PackageCompositionDonut`: Multi-arc animated SVG donut with interactive legend and center readout.
   - `TargetSdkDistributionMeter`: Proportional horizontal segmented meter with warning badge for legacy apps.
@@ -186,11 +199,13 @@ Expected: PASS
 ### Task 3: Overview Home Tab & Top Metric Hero Banner
 
 **Files:**
+
 - Create: `src/features/app-manager/overview/AppMetricsHeroBanner.tsx`
 - Create: `src/features/app-manager/overview/QuickLaunchpadCard.tsx`
 - Create: `src/features/app-manager/overview/AppOverviewTab.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `AppMetricsHeroBanner`: 5-spec hardware grid displaying Total, User, System, Disabled, and Estimated Total Storage with hover copy utilities.
   - `QuickLaunchpadCard`: 1-click ADB launch triggers for Android Settings, Files, Camera, Developer Options, and Default Apps.
@@ -206,11 +221,13 @@ Expected: PASS
 ### Task 4: Extended Backend Commands for Lifecycle & Inspection
 
 **Files:**
+
 - Modify: `src-tauri/src/commands/apps.rs`
 - Modify: `src/desktop/backend.ts`
 - Modify: `src/desktop/models.ts`
 
 **Interfaces:**
+
 - Produces:
   - `get_package_details(serial, package_name)` -> `DetailedPackageInfo`
   - `package_lifecycle_op(serial, package_name, op)` -> `string`
@@ -227,12 +244,14 @@ Expected: PASS
 ### Task 5: Slide-out Deep Package Inspector Drawer
 
 **Files:**
+
 - Create: `src/features/app-manager/inspector/PackageInspectorDrawer.tsx`
 - Create: `src/features/app-manager/inspector/PackageLifecycleControls.tsx`
 - Create: `src/features/app-manager/inspector/PackageStorageBreakdown.tsx`
 - Create: `src/features/app-manager/inspector/PackagePermissionsManager.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `PackageInspectorDrawer`: Sheet/Drawer displaying app icon, label, package, version, SDKs, and tabbed breakdown (Overview, Storage, Permissions, Components).
   - `PackageLifecycleControls`: Action buttons for Launch, Force-Stop, Clear Data, Clear Cache, Disable/Enable, Pull APK, and Open Settings.
@@ -248,12 +267,14 @@ Expected: PASS
 ### Task 6: Enhanced Installed Packages Data Grid & Floating Batch Bar
 
 **Files:**
+
 - Modify: `src/features/app-manager/debloater/ui/InstalledPackageRow.tsx`
 - Create: `src/features/app-manager/debloater/ui/InstalledBatchBar.tsx`
 - Modify: `src/features/app-manager/debloater/ui/InstalledAppsTab.tsx`
 - Modify: `src/features/app-manager/debloater/ui/InstalledPackageToolbar.tsx`
 
 **Interfaces:**
+
 - Produces:
   - Enhanced row with inline Target SDK badge, hover quick actions (Launch, Stop, Pull APK, Inspect), and status indicator.
   - Floating bottom batch bar with 1-click Batch Export APKs, Batch Clear Cache, Batch Force-Stop, and Batch Uninstall.
@@ -268,10 +289,12 @@ Expected: PASS
 ### Task 7: Master AppManagerView Coordinator Integration
 
 **Files:**
+
 - Modify: `src/features/app-manager/AppManagerView.tsx`
 - Modify: `src/features/app-manager/debloater/model/debloatStore.ts`
 
 **Interfaces:**
+
 - Produces:
   - Unified 4-tab cockpit (`overview`, `installed`, `installation`, `debloater`).
   - Coordinated Package Inspector Drawer opening from any tab or row click.

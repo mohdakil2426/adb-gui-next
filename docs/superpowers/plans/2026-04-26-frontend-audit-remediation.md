@@ -63,6 +63,7 @@
 ### Task 1: Lock The Audit Baseline In Tests
 
 **Files:**
+
 - Create: `src/test/deviceStatus.test.ts`
 - Create: `src/test/FileSelector.test.tsx`
 - Modify: `src/test/ConnectedDevicesCard.test.tsx`
@@ -70,20 +71,22 @@
 - [ ] **Step 1: Write the failing device-status test**
 
 ```ts
-import { describe, expect, it } from 'vitest';
-import { getStatusConfig } from '@/lib/deviceStatus';
+import { describe, expect, it } from "vitest";
+import { getStatusConfig } from "@/lib/deviceStatus";
 
-describe('deviceStatus', () => {
-  it('returns semantic token classes for known device states', () => {
-    expect(getStatusConfig('device')).toMatchObject({
-      label: 'adb',
-      variant: 'default',
-      badgeClass: expect.stringContaining('bg-[var(--device-status-adb-bg)]'),
+describe("deviceStatus", () => {
+  it("returns semantic token classes for known device states", () => {
+    expect(getStatusConfig("device")).toMatchObject({
+      label: "adb",
+      variant: "default",
+      badgeClass: expect.stringContaining("bg-[var(--device-status-adb-bg)]"),
     });
-    expect(getStatusConfig('unauthorized')).toMatchObject({
-      label: 'unauthorized',
-      variant: 'destructive',
-      badgeClass: expect.stringContaining('text-[var(--device-status-unauthorized-fg)]'),
+    expect(getStatusConfig("unauthorized")).toMatchObject({
+      label: "unauthorized",
+      variant: "destructive",
+      badgeClass: expect.stringContaining(
+        "text-[var(--device-status-unauthorized-fg)]"
+      ),
     });
   });
 });
@@ -92,15 +95,25 @@ describe('deviceStatus', () => {
 - [ ] **Step 2: Write the failing FileSelector test**
 
 ```tsx
-import { render, screen } from '@testing-library/react';
-import { FileSelector } from '@/components/FileSelector';
+import { render, screen } from "@testing-library/react";
+import { FileSelector } from "@/components/FileSelector";
 
-describe('FileSelector', () => {
-  it('shows the full selected path in visible assistive text instead of native title', () => {
-    render(<FileSelector label="Payload File" path="/sdcard/Download/payload.bin" onSelect={() => {}} />);
+describe("FileSelector", () => {
+  it("shows the full selected path in visible assistive text instead of native title", () => {
+    render(
+      <FileSelector
+        label="Payload File"
+        path="/sdcard/Download/payload.bin"
+        onSelect={() => {}}
+      />
+    );
 
-    expect(screen.getByText('/sdcard/Download/payload.bin')).toBeInTheDocument();
-    expect(screen.getByText('/sdcard/Download/payload.bin')).not.toHaveAttribute('title');
+    expect(
+      screen.getByText("/sdcard/Download/payload.bin")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("/sdcard/Download/payload.bin")
+    ).not.toHaveAttribute("title");
   });
 });
 ```
@@ -119,20 +132,22 @@ Expected: FAIL because `deviceStatus.test.ts` does not exist yet and `FileSelect
 
 ```ts
 // src/test/deviceStatus.test.ts
-import { describe, expect, it } from 'vitest';
-import { getStatusConfig } from '@/lib/deviceStatus';
+import { describe, expect, it } from "vitest";
+import { getStatusConfig } from "@/lib/deviceStatus";
 
-describe('deviceStatus', () => {
-  it('returns semantic token classes for known device states', () => {
-    expect(getStatusConfig('device')).toMatchObject({
-      label: 'adb',
-      variant: 'default',
-      badgeClass: expect.stringContaining('bg-[var(--device-status-adb-bg)]'),
+describe("deviceStatus", () => {
+  it("returns semantic token classes for known device states", () => {
+    expect(getStatusConfig("device")).toMatchObject({
+      label: "adb",
+      variant: "default",
+      badgeClass: expect.stringContaining("bg-[var(--device-status-adb-bg)]"),
     });
-    expect(getStatusConfig('unauthorized')).toMatchObject({
-      label: 'unauthorized',
-      variant: 'destructive',
-      badgeClass: expect.stringContaining('text-[var(--device-status-unauthorized-fg)]'),
+    expect(getStatusConfig("unauthorized")).toMatchObject({
+      label: "unauthorized",
+      variant: "destructive",
+      badgeClass: expect.stringContaining(
+        "text-[var(--device-status-unauthorized-fg)]"
+      ),
     });
   });
 });
@@ -140,17 +155,23 @@ describe('deviceStatus', () => {
 
 ```tsx
 // src/test/FileSelector.test.tsx
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { FileSelector } from '@/components/FileSelector';
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { FileSelector } from "@/components/FileSelector";
 
-describe('FileSelector', () => {
-  it('shows the full selected path in visible assistive text instead of native title', () => {
-    render(<FileSelector label="Payload File" path="/sdcard/Download/payload.bin" onSelect={() => {}} />);
+describe("FileSelector", () => {
+  it("shows the full selected path in visible assistive text instead of native title", () => {
+    render(
+      <FileSelector
+        label="Payload File"
+        path="/sdcard/Download/payload.bin"
+        onSelect={() => {}}
+      />
+    );
 
-    const fullPath = screen.getByText('/sdcard/Download/payload.bin');
+    const fullPath = screen.getByText("/sdcard/Download/payload.bin");
     expect(fullPath).toBeInTheDocument();
-    expect(fullPath).not.toHaveAttribute('title');
+    expect(fullPath).not.toHaveAttribute("title");
   });
 });
 ```
@@ -175,6 +196,7 @@ git commit -m "test: lock frontend audit regressions"
 ### Task 2: Replace Raw Device Badge Palette Classes With Semantic Tokens
 
 **Files:**
+
 - Modify: `src/styles/global.css`
 - Modify: `src/lib/deviceStatus.ts`
 - Test: `src/test/deviceStatus.test.ts`
@@ -186,19 +208,55 @@ git commit -m "test: lock frontend audit regressions"
 :root {
   --device-status-adb-bg: color-mix(in oklch, var(--success) 18%, transparent);
   --device-status-adb-fg: var(--success);
-  --device-status-adb-border: color-mix(in oklch, var(--success) 35%, transparent);
-  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 18%, transparent);
+  --device-status-adb-border: color-mix(
+    in oklch,
+    var(--success) 35%,
+    transparent
+  );
+  --device-status-fastboot-bg: color-mix(
+    in oklch,
+    var(--warning) 18%,
+    transparent
+  );
   --device-status-fastboot-fg: var(--warning-foreground);
-  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 38%, transparent);
-  --device-status-recovery-bg: color-mix(in oklch, var(--chart-2) 18%, transparent);
+  --device-status-fastboot-border: color-mix(
+    in oklch,
+    var(--warning) 38%,
+    transparent
+  );
+  --device-status-recovery-bg: color-mix(
+    in oklch,
+    var(--chart-2) 18%,
+    transparent
+  );
   --device-status-recovery-fg: var(--chart-2);
-  --device-status-recovery-border: color-mix(in oklch, var(--chart-2) 35%, transparent);
-  --device-status-neutral-bg: color-mix(in oklch, var(--muted-foreground) 16%, transparent);
+  --device-status-recovery-border: color-mix(
+    in oklch,
+    var(--chart-2) 35%,
+    transparent
+  );
+  --device-status-neutral-bg: color-mix(
+    in oklch,
+    var(--muted-foreground) 16%,
+    transparent
+  );
   --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(in oklch, var(--muted-foreground) 28%, transparent);
-  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-neutral-border: color-mix(
+    in oklch,
+    var(--muted-foreground) 28%,
+    transparent
+  );
+  --device-status-unauthorized-bg: color-mix(
+    in oklch,
+    var(--destructive) 16%,
+    transparent
+  );
   --device-status-unauthorized-fg: var(--destructive);
-  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 32%, transparent);
+  --device-status-unauthorized-border: color-mix(
+    in oklch,
+    var(--destructive) 32%,
+    transparent
+  );
 }
 ```
 
@@ -208,22 +266,22 @@ git commit -m "test: lock frontend audit regressions"
 // src/lib/deviceStatus.ts
 const STATUS_CONFIG: Record<string, StatusConfig> = {
   device: {
-    label: 'adb',
-    variant: 'default',
+    label: "adb",
+    variant: "default",
     badgeClass:
-      'bg-[var(--device-status-adb-bg)] text-[var(--device-status-adb-fg)] border-[var(--device-status-adb-border)]',
+      "bg-[var(--device-status-adb-bg)] text-[var(--device-status-adb-fg)] border-[var(--device-status-adb-border)]",
   },
   fastboot: {
-    label: 'fastboot',
-    variant: 'outline',
+    label: "fastboot",
+    variant: "outline",
     badgeClass:
-      'bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]',
+      "bg-[var(--device-status-fastboot-bg)] text-[var(--device-status-fastboot-fg)] border-[var(--device-status-fastboot-border)]",
   },
   unauthorized: {
-    label: 'unauthorized',
-    variant: 'destructive',
+    label: "unauthorized",
+    variant: "destructive",
     badgeClass:
-      'bg-[var(--device-status-unauthorized-bg)] text-[var(--device-status-unauthorized-fg)] border-[var(--device-status-unauthorized-border)]',
+      "bg-[var(--device-status-unauthorized-bg)] text-[var(--device-status-unauthorized-fg)] border-[var(--device-status-unauthorized-border)]",
   },
 };
 ```
@@ -258,6 +316,7 @@ git commit -m "refactor: replace raw device badge colors with semantic tokens"
 ### Task 3: Remove Native Title Tooltips And Normalize Full-Path Disclosure
 
 **Files:**
+
 - Modify: `src/components/FileSelector.tsx`
 - Modify: `src/components/views/ViewDashboard.tsx`
 - Test: `src/test/FileSelector.test.tsx`
@@ -266,11 +325,11 @@ git commit -m "refactor: replace raw device badge colors with semantic tokens"
 
 ```tsx
 // src/components/FileSelector.tsx
-{path && (
-  <FieldDescription className="break-all text-xs">
-    {path}
-  </FieldDescription>
-)}
+{
+  path && (
+    <FieldDescription className="break-all text-xs">{path}</FieldDescription>
+  );
+}
 ```
 
 - [ ] **Step 2: Remove dashboard info-cell native titles and rely on truncation + copy controls**
@@ -315,17 +374,18 @@ git commit -m "fix: remove remaining native title tooltips"
 ### Task 4: Normalize The Dashboard Wireless ADB Form To Current shadcn Form Patterns
 
 **Files:**
+
 - Modify: `src/components/views/ViewDashboard.tsx`
 - Add or modify: `src/test/ViewDashboard.test.tsx`
 
 - [ ] **Step 1: Write the failing dashboard form test**
 
 ```tsx
-it('renders the wireless adb inputs with explicit field labels and validation text', async () => {
+it("renders the wireless adb inputs with explicit field labels and validation text", async () => {
   render(<ViewDashboard activeView="dashboard" />);
 
-  expect(screen.getByLabelText('Device IP Address')).toBeInTheDocument();
-  expect(screen.getByLabelText('Wireless ADB Port')).toBeInTheDocument();
+  expect(screen.getByLabelText("Device IP Address")).toBeInTheDocument();
+  expect(screen.getByLabelText("Wireless ADB Port")).toBeInTheDocument();
 });
 ```
 
@@ -350,21 +410,27 @@ Expected: FAIL if the test file does not exist yet or if current assertions do n
       <Input
         id="dashboard-wireless-ip"
         aria-invalid={Boolean(wirelessForm.formState.errors.ip)}
-        {...wirelessForm.register('ip')}
+        {...wirelessForm.register("ip")}
       />
       {wirelessForm.formState.errors.ip && (
-        <FieldDescription>{wirelessForm.formState.errors.ip.message}</FieldDescription>
+        <FieldDescription>
+          {wirelessForm.formState.errors.ip.message}
+        </FieldDescription>
       )}
     </Field>
     <Field data-invalid={Boolean(wirelessForm.formState.errors.port)}>
-      <FieldLabel htmlFor="dashboard-wireless-port">Wireless ADB Port</FieldLabel>
+      <FieldLabel htmlFor="dashboard-wireless-port">
+        Wireless ADB Port
+      </FieldLabel>
       <Input
         id="dashboard-wireless-port"
         aria-invalid={Boolean(wirelessForm.formState.errors.port)}
-        {...wirelessForm.register('port')}
+        {...wirelessForm.register("port")}
       />
       {wirelessForm.formState.errors.port && (
-        <FieldDescription>{wirelessForm.formState.errors.port.message}</FieldDescription>
+        <FieldDescription>
+          {wirelessForm.formState.errors.port.message}
+        </FieldDescription>
       )}
     </Field>
   </div>
@@ -391,15 +457,16 @@ git commit -m "refactor: normalize dashboard wireless adb form"
 ### Task 5: Normalize The Flasher Form To Shared Field Patterns
 
 **Files:**
+
 - Modify: `src/components/views/ViewFlasher.tsx`
 - Add or modify: `src/test/ViewFlasher.test.tsx`
 
 - [ ] **Step 1: Write the failing flasher form test**
 
 ```tsx
-it('renders the flash partition input with an explicit field label', () => {
+it("renders the flash partition input with an explicit field label", () => {
   render(<ViewFlasher />);
-  expect(screen.getByLabelText('Partition Name')).toBeInTheDocument();
+  expect(screen.getByLabelText("Partition Name")).toBeInTheDocument();
 });
 ```
 
@@ -427,7 +494,9 @@ Expected: FAIL if the test file is missing or if assertions need wiring.
     onChange={(e) => setPartition(e.target.value)}
     disabled={isGlobalLoading}
   />
-  <FieldDescription>Choose a fastboot partition name or type a custom one.</FieldDescription>
+  <FieldDescription>
+    Choose a fastboot partition name or type a custom one.
+  </FieldDescription>
 </Field>
 ```
 
@@ -451,6 +520,7 @@ git commit -m "refactor: align flasher form with shared field components"
 ### Task 6: Replace The Bottom Panel’s Custom Filter Popup With shadcn Menu Primitives
 
 **Files:**
+
 - Modify: `src/components/BottomPanel.tsx`
 - Modify: `src/components/LogsPanel.tsx`
 - Add or modify: `src/test/BottomPanel.test.tsx`
@@ -458,13 +528,13 @@ git commit -m "refactor: align flasher form with shared field components"
 - [ ] **Step 1: Write the failing bottom-panel filter interaction test**
 
 ```tsx
-it('opens the log filter menu and applies a level option', async () => {
+it("opens the log filter menu and applies a level option", async () => {
   render(<BottomPanel viewportHeight={900} />);
 
-  await user.click(screen.getByLabelText('Filter Logs'));
-  await user.click(screen.getByRole('menuitemradio', { name: 'Error' }));
+  await user.click(screen.getByLabelText("Filter Logs"));
+  await user.click(screen.getByRole("menuitemradio", { name: "Error" }));
 
-  expect(useLogStore.getState().filter).toBe('error');
+  expect(useLogStore.getState().filter).toBe("error");
 });
 ```
 
@@ -484,14 +554,22 @@ Expected: FAIL because the current filter popup is not a shadcn menu.
 // src/components/BottomPanel.tsx
 <DropdownMenu>
   <DropdownMenuTrigger asChild>
-    <Button variant="ghost" size="icon" aria-label="Filter Logs" className="size-6">
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="Filter Logs"
+      className="size-6"
+    >
       <Filter className="size-3.5" aria-hidden="true" />
     </Button>
   </DropdownMenuTrigger>
   <DropdownMenuContent align="end" className="w-40">
     <DropdownMenuLabel>Filter logs</DropdownMenuLabel>
     <DropdownMenuSeparator />
-    <DropdownMenuRadioGroup value={filter} onValueChange={(value) => setFilter(value as LogLevel | 'all')}>
+    <DropdownMenuRadioGroup
+      value={filter}
+      onValueChange={(value) => setFilter(value as LogLevel | "all")}
+    >
       {FILTER_OPTIONS.map((option) => (
         <DropdownMenuRadioItem key={option.value} value={option.value}>
           {option.label}
@@ -529,6 +607,7 @@ git commit -m "refactor: replace custom log filter popup with shadcn menu"
 ### Task 7: Tighten Device Surface Empty States And Row Composition
 
 **Files:**
+
 - Modify: `src/components/ConnectedDevicesCard.tsx`
 - Modify: `src/components/DeviceSwitcher.tsx`
 - Modify: `src/test/ConnectedDevicesCard.test.tsx`
@@ -536,12 +615,19 @@ git commit -m "refactor: replace custom log filter popup with shadcn menu"
 - [ ] **Step 1: Write the failing empty-state expectation**
 
 ```tsx
-it('renders a shared empty-state presentation when no devices are present', () => {
+it("renders a shared empty-state presentation when no devices are present", () => {
   render(
-    <ConnectedDevicesCard devices={[]} isLoading={false} onRefresh={() => {}} onEdit={() => {}} />,
+    <ConnectedDevicesCard
+      devices={[]}
+      isLoading={false}
+      onRefresh={() => {}}
+      onEdit={() => {}}
+    />
   );
 
-  expect(screen.getByText('No device detected. Ensure USB Debugging is enabled.')).toBeInTheDocument();
+  expect(
+    screen.getByText("No device detected. Ensure USB Debugging is enabled.")
+  ).toBeInTheDocument();
 });
 ```
 
@@ -565,7 +651,7 @@ it('renders a shared empty-state presentation when no devices are present', () =
 // src/components/DeviceSwitcher.tsx
 <Badge
   variant={config.variant}
-  className={cn('shrink-0 px-1.5 py-0 text-[10px]', config.badgeClass)}
+  className={cn("shrink-0 px-1.5 py-0 text-[10px]", config.badgeClass)}
 >
   {config.label}
 </Badge>
@@ -591,6 +677,7 @@ git commit -m "refactor: normalize device surface empty states"
 ### Task 8: Tighten Marketplace Interaction Semantics Without Changing Behavior
 
 **Files:**
+
 - Modify: `src/components/marketplace/AppCard.tsx`
 - Modify: `src/components/marketplace/AppListItem.tsx`
 - Modify: `src/components/views/ViewMarketplace.tsx`
@@ -599,10 +686,13 @@ git commit -m "refactor: normalize device surface empty states"
 - [ ] **Step 1: Write the failing marketplace interaction test**
 
 ```tsx
-it('keeps install actions separate from detail navigation', async () => {
+it("keeps install actions separate from detail navigation", async () => {
   render(<ViewMarketplace />);
 
-  expect(screen.getAllByRole('button', { name: /install|view details|details/i }).length).toBeGreaterThan(0);
+  expect(
+    screen.getAllByRole("button", { name: /install|view details|details/i })
+      .length
+  ).toBeGreaterThan(0);
 });
 ```
 
@@ -627,7 +717,11 @@ it('keeps install actions separate from detail navigation', async () => {
 ```tsx
 // src/components/marketplace/AppListItem.tsx
 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-3 transition-colors hover:bg-accent/50">
-  <button type="button" className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left" onClick={onSelect}>
+  <button
+    type="button"
+    className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"
+    onClick={onSelect}
+  >
     {/* existing summary content */}
   </button>
   <Button onClick={handleInstall} />
@@ -654,6 +748,7 @@ git commit -m "refactor: tighten marketplace interaction semantics"
 ### Task 9: Final Verification, Audit Notes, And Memory Bank Update
 
 **Files:**
+
 - Modify: `memory-bank/activeContext.md`
 - Modify: `memory-bank/progress.md`
 

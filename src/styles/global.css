@@ -22,9 +22,8 @@
   font-display: swap;
   src: url("/fonts/inter-latin-wght-normal.woff2") format("woff2");
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -34,9 +33,9 @@
   font-display: swap;
   src: url("/fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
   unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 @font-face {
@@ -46,9 +45,8 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
   unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 @font-face {
@@ -58,9 +56,9 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-latin-ext-wght-normal.woff2") format("woff2");
   unicode-range:
-    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
 }
 
 @theme inline {
@@ -233,11 +231,11 @@
   --motion-slow: 320ms;
 
   --font-sans:
-    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, sans-serif;
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   --font-mono:
-    "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", "Segoe UI Mono",
-    "Roboto Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono",
+    "SFMono-Regular", Menlo, Consolas, monospace;
 
   /* Official Neutral — light */
   --background: oklch(1 0 0);
@@ -284,16 +282,8 @@
   --primary-active: color-mix(in oklch, var(--primary) 76%, var(--foreground));
   --accent-active: color-mix(in oklch, var(--accent) 82%, var(--foreground));
   --destructive-foreground: oklch(0.985 0 0);
-  --destructive-hover: color-mix(
-    in oklch,
-    var(--destructive) 88%,
-    var(--foreground)
-  );
-  --destructive-active: color-mix(
-    in oklch,
-    var(--destructive) 76%,
-    var(--foreground)
-  );
+  --destructive-hover: color-mix(in oklch, var(--destructive) 88%, var(--foreground));
+  --destructive-active: color-mix(in oklch, var(--destructive) 76%, var(--foreground));
 
   /* Device-state accents (not part of the Neutral scaffold) */
   --success: oklch(0.52 0.155 155);
@@ -320,72 +310,20 @@
      `recovery` is info, not success — it must never look like a healthy
      `adb` connection. ---- */
   --device-status-adb-bg: color-mix(in oklch, var(--success) 16%, transparent);
-  --device-status-adb-fg: color-mix(
-    in oklab,
-    var(--success) 78%,
-    var(--foreground)
-  );
-  --device-status-adb-border: color-mix(
-    in oklch,
-    var(--success) 34%,
-    transparent
-  );
-  --device-status-recovery-bg: color-mix(
-    in oklch,
-    var(--info) 16%,
-    transparent
-  );
-  --device-status-recovery-fg: color-mix(
-    in oklab,
-    var(--info) 78%,
-    var(--foreground)
-  );
-  --device-status-recovery-border: color-mix(
-    in oklch,
-    var(--info) 34%,
-    transparent
-  );
-  --device-status-fastboot-bg: color-mix(
-    in oklch,
-    var(--warning) 16%,
-    transparent
-  );
-  --device-status-fastboot-fg: color-mix(
-    in oklab,
-    var(--warning) 78%,
-    var(--foreground)
-  );
-  --device-status-fastboot-border: color-mix(
-    in oklch,
-    var(--warning) 34%,
-    transparent
-  );
-  --device-status-unauthorized-bg: color-mix(
-    in oklch,
-    var(--destructive) 16%,
-    transparent
-  );
-  --device-status-unauthorized-fg: color-mix(
-    in oklab,
-    var(--destructive) 78%,
-    var(--foreground)
-  );
-  --device-status-unauthorized-border: color-mix(
-    in oklch,
-    var(--destructive) 34%,
-    transparent
-  );
-  --device-status-neutral-bg: color-mix(
-    in oklch,
-    var(--foreground-subtle) 14%,
-    transparent
-  );
+  --device-status-adb-fg: color-mix(in oklab, var(--success) 78%, var(--foreground));
+  --device-status-adb-border: color-mix(in oklch, var(--success) 34%, transparent);
+  --device-status-recovery-bg: color-mix(in oklch, var(--info) 16%, transparent);
+  --device-status-recovery-fg: color-mix(in oklab, var(--info) 78%, var(--foreground));
+  --device-status-recovery-border: color-mix(in oklch, var(--info) 34%, transparent);
+  --device-status-fastboot-bg: color-mix(in oklch, var(--warning) 16%, transparent);
+  --device-status-fastboot-fg: color-mix(in oklab, var(--warning) 78%, var(--foreground));
+  --device-status-fastboot-border: color-mix(in oklch, var(--warning) 34%, transparent);
+  --device-status-unauthorized-bg: color-mix(in oklch, var(--destructive) 16%, transparent);
+  --device-status-unauthorized-fg: color-mix(in oklab, var(--destructive) 78%, var(--foreground));
+  --device-status-unauthorized-border: color-mix(in oklch, var(--destructive) 34%, transparent);
+  --device-status-neutral-bg: color-mix(in oklch, var(--foreground-subtle) 14%, transparent);
   --device-status-neutral-fg: var(--muted-foreground);
-  --device-status-neutral-border: color-mix(
-    in oklch,
-    var(--foreground-subtle) 28%,
-    transparent
-  );
+  --device-status-neutral-border: color-mix(in oklch, var(--foreground-subtle) 28%, transparent);
 
   --terminal-border: var(--border);
   --terminal-tab-active: var(--foreground);
@@ -434,16 +372,8 @@
   --primary-active: color-mix(in oklch, var(--primary) 82%, var(--background));
   --accent-active: color-mix(in oklch, var(--accent) 88%, oklch(1 0 0));
   --destructive-foreground: oklch(0.985 0 0);
-  --destructive-hover: color-mix(
-    in oklch,
-    var(--destructive) 88%,
-    var(--background)
-  );
-  --destructive-active: color-mix(
-    in oklch,
-    var(--destructive) 76%,
-    var(--background)
-  );
+  --destructive-hover: color-mix(in oklch, var(--destructive) 88%, var(--background));
+  --destructive-active: color-mix(in oklch, var(--destructive) 76%, var(--background));
 
   --success: oklch(0.72 0.17 155);
   --success-foreground: oklch(0.16 0.03 155);
@@ -505,8 +435,7 @@
 
 html,
 body {
-  scrollbar-color: color-mix(in oklch, var(--foreground) 22%, transparent)
-    transparent;
+  scrollbar-color: color-mix(in oklch, var(--foreground) 22%, transparent) transparent;
   scrollbar-width: thin;
 }
 

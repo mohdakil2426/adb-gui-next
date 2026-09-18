@@ -16,9 +16,9 @@
 
 Upcoming work is large:
 
-| Source | Themes |
-|--------|--------|
-| Remote matrix | Load-partitions staged UX, no-range fallback, hard cancel, span prefetch, download_size |
+| Source               | Themes                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| Remote matrix        | Load-partitions staged UX, no-range fallback, hard cancel, span prefetch, download_size         |
 | Reference comparison | Unified verify (L2+L4), single CrAU engine, ReadAt sources, ZIP mmap, buffer pools, delta later |
 
 Current `payload/` is a **flat root** with dual engines (`extractor.rs` + `remote.rs`), orphan `zip_mmap.rs`, dead L4 helpers, and one monolithic `tests.rs`. Applying both reports on that layout will re-introduce divergent hash paths and unreviewable diffs.
@@ -29,12 +29,12 @@ Current `payload/` is a **flat root** with dual engines (`extractor.rs` + `remot
 
 ## 2. Hard boundaries (project law)
 
-| Layer | Path | May contain | Must not contain |
-|-------|------|-------------|------------------|
-| Tauri commands | `src-tauri/src/commands/payload.rs` | `invoke` adapters, token registry, error string map | Crypto, EOCD, decompress loops |
-| Domain | `src-tauri/src/payload/**` | All extract/list/verify/remote/ops logic | React, Zustand, raw `invoke` |
-| Desktop IPC | `src/desktop/backend.ts`, `models.ts` | Typed wrappers + DTOs | Business rules |
-| Feature UI | `src/features/payload-dumper/**` | Views, hooks, store, progress cards | Format parsers |
+| Layer          | Path                                  | May contain                                         | Must not contain               |
+| -------------- | ------------------------------------- | --------------------------------------------------- | ------------------------------ |
+| Tauri commands | `src-tauri/src/commands/payload.rs`   | `invoke` adapters, token registry, error string map | Crypto, EOCD, decompress loops |
+| Domain         | `src-tauri/src/payload/**`            | All extract/list/verify/remote/ops logic            | React, Zustand, raw `invoke`   |
+| Desktop IPC    | `src/desktop/backend.ts`, `models.ts` | Typed wrappers + DTOs                               | Business rules                 |
+| Feature UI     | `src/features/payload-dumper/**`      | Views, hooks, store, progress cards                 | Format parsers                 |
 
 Matches `AGENTS.md`: thin commands, domain modules own complexity.
 
@@ -53,12 +53,12 @@ payload/
   verify.rs / delta.rs  # stubs / dead helpers
 ```
 
-| Issue | Risk when scaling |
-|-------|-------------------|
+| Issue              | Risk when scaling                         |
+| ------------------ | ----------------------------------------- |
 | Dual extract paths | Local vs remote hash/op semantics diverge |
-| Flat root | Every feature = new root file |
-| Orphan modules | Dead code erodes trust |
-| Monolithic tests | Parallel agents collide; weak ownership |
+| Flat root          | Every feature = new root file             |
+| Orphan modules     | Dead code erodes trust                    |
+| Monolithic tests   | Parallel agents collide; weak ownership   |
 
 ---
 
@@ -166,12 +166,12 @@ commands/payload.rs
 
 **Frozen decisions**
 
-| Decision | Choice |
-|----------|--------|
+| Decision            | Choice                                                         |
+| ------------------- | -------------------------------------------------------------- |
 | CrAU local + remote | **One** `crau/extract`; remote only supplies `ReadAt` / ranges |
-| Factory images | Separate path under `remote/factory` (not fake CrAU) |
-| OPS/OFP | Stay under `ops/`; local-first |
-| Cargo features | Keep `remote_zip`; add `diff_ota` only when real |
+| Factory images      | Separate path under `remote/factory` (not fake CrAU)           |
+| OPS/OFP             | Stay under `ops/`; local-first                                 |
+| Cargo features      | Keep `remote_zip`; add `diff_ota` only when real               |
 
 ---
 
@@ -179,25 +179,25 @@ commands/payload.rs
 
 ### From remote matrix
 
-| Feature | Home |
-|---------|------|
+| Feature                          | Home                                                     |
+| -------------------------------- | -------------------------------------------------------- |
 | Load-partitions stages + FE card | `remote/load_progress.rs` + `RemoteLoadProgressCard.tsx` |
-| Span prefetch | `remote/prefetch.rs` |
-| No-range fallback | `remote/http.rs` + command/UX confirm |
-| Hard cancel mid-request | `cancel` + `remote/http.rs` |
-| `download_size` | list DTO in `types.rs` + remote list |
+| Span prefetch                    | `remote/prefetch.rs`                                     |
+| No-range fallback                | `remote/http.rs` + command/UX confirm                    |
+| Hard cancel mid-request          | `cancel` + `remote/http.rs`                              |
+| `download_size`                  | list DTO in `types.rs` + remote list                     |
 
 ### From reference comparison
 
-| Feature | Home |
-|---------|------|
-| L2+L4 verify wired | `verify/` |
+| Feature                     | Home                                                              |
+| --------------------------- | ----------------------------------------------------------------- |
+| L2+L4 verify wired          | `verify/`                                                         |
 | ZIP mmap / zero-copy STORED | `zip/stored_window.rs` + `PayloadCache::open_payload` ✅ Task 3.3 |
-| Buffer pools | `io/buffers.rs` |
-| Reader trait | `source/` |
-| Multi-extent REPLACE* | `crau/ops.rs` |
-| Fail-hard decompress | `crau/ops.rs` |
-| Delta (later) | `delta/` + `crau/ops.rs` |
+| Buffer pools                | `io/buffers.rs`                                                   |
+| Reader trait                | `source/`                                                         |
+| Multi-extent REPLACE*       | `crau/ops.rs`                                                     |
+| Fail-hard decompress        | `crau/ops.rs`                                                     |
+| Delta (later)               | `delta/` + `crau/ops.rs`                                          |
 
 ---
 
@@ -213,13 +213,13 @@ commands/payload.rs
 
 ### Scale upgrades
 
-| Do | Don’t |
-|----|--------|
+| Do                                                         | Don’t                          |
+| ---------------------------------------------------------- | ------------------------------ |
 | Colocate pure unit tests (`#[cfg(test)]` in `zip/eocd.rs`) | One 2k-line `tests.rs` forever |
-| Split E2E under `payload/tests/` | Commit multi-GB OTAs |
-| Mock HTTP / offline remote tests | Default suite requires network |
-| Assert bytes + hashes | Only `Ok(())` |
-| Feature-gate remote tests | Flaky sleep-based cancel tests |
+| Split E2E under `payload/tests/`                           | Commit multi-GB OTAs           |
+| Mock HTTP / offline remote tests                           | Default suite requires network |
+| Assert bytes + hashes                                      | Only `Ok(())`                  |
+| Feature-gate remote tests                                  | Flaky sleep-based cancel tests |
 
 ```text
         ╱  manual e2e GUI     ╲
@@ -234,35 +234,35 @@ Windows: known Tauri-linked loader issue on `cargo test` run — compile with `-
 
 ## 8. Maintainability rules
 
-1. No new root-level file under `payload/` without a subfolder home.  
-2. One CrAU extract brain — no third remote copy of op loop.  
-3. Public surface only via `mod.rs` re-exports.  
-4. Wire or delete dead code (`zip_mmap`, unused L4).  
-5. Soft size: split before ~600 LOC review-hostile files.  
-6. Typed domain errors → command `String`.  
-7. Progress emit helpers centralized (`crau/progress`, `remote/load_progress`).  
-8. Apply order: **structure → correctness → remote UX → perf → delta**.  
-9. Docs update **in the same change** as code (memory-bank + active reports status).  
+1. No new root-level file under `payload/` without a subfolder home.
+2. One CrAU extract brain — no third remote copy of op loop.
+3. Public surface only via `mod.rs` re-exports.
+4. Wire or delete dead code (`zip_mmap`, unused L4).
+5. Soft size: split before ~600 LOC review-hostile files.
+6. Typed domain errors → command `String`.
+7. Progress emit helpers centralized (`crau/progress`, `remote/load_progress`).
+8. Apply order: **structure → correctness → remote UX → perf → delta**.
+9. Docs update **in the same change** as code (memory-bank + active reports status).
 10. **No git commits** unless a human explicitly requests them later.
 
 ---
 
 ## 9. Phase 0 move map (behavior-preserving)
 
-| From (today) | To (target) |
-|--------------|-------------|
-| `parser.rs` (header/list) | `crau/header.rs`, `crau/manifest.rs` |
-| `extractor.rs` | `crau/extract.rs`, `crau/ops.rs`, `crau/diagnose.rs`, `types.rs` |
-| `copy.rs`, `write.rs` | `io/copy.rs`, `io/write.rs` |
-| `verify.rs` | `verify/*` |
-| `zip.rs` | `zip/extract_entry.rs` (+ shared eocd) |
-| `zip_mmap.rs` | `zip/stored_window.rs` + **register in mod** |
-| `http.rs`, `http_zip.rs` | `remote/http.rs`, `remote/http_zip.rs` |
-| `factory_image.rs` | `remote/factory.rs` |
-| `remote.rs` | `remote/{list,metadata,prefetch,direct}.rs` |
-| `delta.rs` | `delta/source_copy.rs` |
-| `tests.rs` | `tests/*` split |
-| `ops/*` | mostly stay |
+| From (today)              | To (target)                                                      |
+| ------------------------- | ---------------------------------------------------------------- |
+| `parser.rs` (header/list) | `crau/header.rs`, `crau/manifest.rs`                             |
+| `extractor.rs`            | `crau/extract.rs`, `crau/ops.rs`, `crau/diagnose.rs`, `types.rs` |
+| `copy.rs`, `write.rs`     | `io/copy.rs`, `io/write.rs`                                      |
+| `verify.rs`               | `verify/*`                                                       |
+| `zip.rs`                  | `zip/extract_entry.rs` (+ shared eocd)                           |
+| `zip_mmap.rs`             | `zip/stored_window.rs` + **register in mod**                     |
+| `http.rs`, `http_zip.rs`  | `remote/http.rs`, `remote/http_zip.rs`                           |
+| `factory_image.rs`        | `remote/factory.rs`                                              |
+| `remote.rs`               | `remote/{list,metadata,prefetch,direct}.rs`                      |
+| `delta.rs`                | `delta/source_copy.rs`                                           |
+| `tests.rs`                | `tests/*` split                                                  |
+| `ops/*`                   | mostly stay                                                      |
 
 Each move PR/wave: **compile + existing tests green, no feature work**.
 
@@ -270,14 +270,14 @@ Each move PR/wave: **compile + existing tests green, no feature work**.
 
 ## 10. Parallelism for agents
 
-| Wave | Parallelizable units | Must serialize after |
-|------|----------------------|----------------------|
-| 0a | Create empty subdirs + `mod.rs` skeletons | — |
-| 0b | Move `io/` + `verify/` (low coupling) | 0a |
-| 0c | Move `zip/` + `source/` | 0a |
-| 0d | Move `crau/` from parser/extractor | 0b, 0c if types move |
-| 0e | Move `remote/*` | 0c (zip eocd shared) |
-| 0f | Split tests | after 0d–0e compile |
+| Wave | Parallelizable units                      | Must serialize after |
+| ---- | ----------------------------------------- | -------------------- |
+| 0a   | Create empty subdirs + `mod.rs` skeletons | —                    |
+| 0b   | Move `io/` + `verify/` (low coupling)     | 0a                   |
+| 0c   | Move `zip/` + `source/`                   | 0a                   |
+| 0d   | Move `crau/` from parser/extractor        | 0b, 0c if types move |
+| 0e   | Move `remote/*`                           | 0c (zip eocd shared) |
+| 0f   | Split tests                               | after 0d–0e compile  |
 
 Feature waves similarly: verify C1–C5 before remote load UX depends on events; FE optimistic stages can parallel with Rust phases.
 

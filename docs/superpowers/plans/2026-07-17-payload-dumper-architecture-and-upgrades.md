@@ -15,35 +15,35 @@
 
 ## Global agent rules (non-negotiable)
 
-| Rule | Detail |
-|------|--------|
-| **Commits** | Plan execution was no-commit until human request. **Human requested multi-commit land (2026-07-17)** after Waves 0–4 implementation complete. |
-| **Docs in realtime** | Every completed task that changes behavior or layout **must** update the relevant doc in the same work unit (see Doc sync checklist). |
-| **Surgical** | No drive-by refactors outside the task file list. |
-| **Verify** | Run the task’s verify commands; report outcomes to orchestrator. |
-| **Windows cargo test** | Prefer `cargo test --manifest-path src-tauri/Cargo.toml --no-run` after Rust changes; full run may hit known `STATUS_ENTRYPOINT_NOT_FOUND`. Use isolated `CARGO_TARGET_DIR` if DLL locks. |
-| **TDD where stated** | Write/adjust tests before or with behavior; never delete coverage without replacement. |
-| **Parallel safety** | Do not edit the same path as another running parallel agent. Prefer exclusive file ownership per group. |
-| **Subagent-driven-dev override** | Ignore any template step that says “Commit”. Self-review + leave working tree dirty. |
+| Rule                             | Detail                                                                                                                                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Commits**                      | Plan execution was no-commit until human request. **Human requested multi-commit land (2026-07-17)** after Waves 0–4 implementation complete.                                             |
+| **Docs in realtime**             | Every completed task that changes behavior or layout **must** update the relevant doc in the same work unit (see Doc sync checklist).                                                     |
+| **Surgical**                     | No drive-by refactors outside the task file list.                                                                                                                                         |
+| **Verify**                       | Run the task’s verify commands; report outcomes to orchestrator.                                                                                                                          |
+| **Windows cargo test**           | Prefer `cargo test --manifest-path src-tauri/Cargo.toml --no-run` after Rust changes; full run may hit known `STATUS_ENTRYPOINT_NOT_FOUND`. Use isolated `CARGO_TARGET_DIR` if DLL locks. |
+| **TDD where stated**             | Write/adjust tests before or with behavior; never delete coverage without replacement.                                                                                                    |
+| **Parallel safety**              | Do not edit the same path as another running parallel agent. Prefer exclusive file ownership per group.                                                                                   |
+| **Subagent-driven-dev override** | Ignore any template step that says “Commit”. Self-review + leave working tree dirty.                                                                                                      |
 
 ### Doc sync checklist (realtime)
 
-| When you change… | Update… |
-|------------------|---------|
-| `payload/` module tree | `docs/reports/active/PAYLOAD-DUMPER-FOLDER-ARCHITECTURE-2026-07-17.md` status notes; `memory-bank/systemPatterns.md` payload section if present |
-| Remote list/extract/UX | `docs/reports/active/PAYLOAD-DUMPER-REMOTE-URL-SUPPORT-MATRIX-2026-07-17.md` (mark implemented items) |
-| Verify/perf/readers | `docs/reports/active/PAYLOAD-DUMPER-REFERENCE-COMPARISON-2026-07-17.md` (check off proposals landed) |
-| Perf/libs decisions | `docs/reports/active/PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md` |
-| User-visible feature done | `memory-bank/activeContext.md` + `memory-bank/progress.md` short bullet |
-| This plan progress | Check boxes `- [x]` in **this file** |
+| When you change…          | Update…                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payload/` module tree    | `docs/reports/active/PAYLOAD-DUMPER-FOLDER-ARCHITECTURE-2026-07-17.md` status notes; `memory-bank/systemPatterns.md` payload section if present |
+| Remote list/extract/UX    | `docs/reports/active/PAYLOAD-DUMPER-REMOTE-URL-SUPPORT-MATRIX-2026-07-17.md` (mark implemented items)                                           |
+| Verify/perf/readers       | `docs/reports/active/PAYLOAD-DUMPER-REFERENCE-COMPARISON-2026-07-17.md` (check off proposals landed)                                            |
+| Perf/libs decisions       | `docs/reports/active/PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md`                                                                       |
+| User-visible feature done | `memory-bank/activeContext.md` + `memory-bank/progress.md` short bullet                                                                         |
+| This plan progress        | Check boxes `- [x]` in **this file**                                                                                                            |
 
 ### Spec sources (read before coding)
 
-1. `docs/reports/active/PAYLOAD-DUMPER-FOLDER-ARCHITECTURE-2026-07-17.md`  
-2. `docs/reports/active/PAYLOAD-DUMPER-REMOTE-URL-SUPPORT-MATRIX-2026-07-17.md`  
-3. `docs/reports/active/PAYLOAD-DUMPER-REFERENCE-COMPARISON-2026-07-17.md`  
-4. `docs/reports/active/PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md`  
-5. `AGENTS.md` (commands thin, domain in `payload/`)  
+1. `docs/reports/active/PAYLOAD-DUMPER-FOLDER-ARCHITECTURE-2026-07-17.md`
+2. `docs/reports/active/PAYLOAD-DUMPER-REMOTE-URL-SUPPORT-MATRIX-2026-07-17.md`
+3. `docs/reports/active/PAYLOAD-DUMPER-REFERENCE-COMPARISON-2026-07-17.md`
+4. `docs/reports/active/PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md`
+5. `AGENTS.md` (commands thin, domain in `payload/`)
 6. Current code under `src-tauri/src/payload/`, `commands/payload.rs`, `src/features/payload-dumper/`
 
 ---
@@ -123,12 +123,13 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G1  
 **Depends-on:** none  
 **Files:**
+
 - Create: `src-tauri/src/payload/{source,zip,crau,io,verify,remote,delta,tests}/mod.rs` (empty `// scaffold` modules as needed)
 - Modify: `src-tauri/src/payload/mod.rs` (wire modules gradually; keep old paths exporting until moves complete)
 
-- [x] **Step 1:** Create subdirectories listed in target map with `mod.rs` files that compile (`pub mod x;` stubs OK).  
-- [x] **Step 2:** Ensure `cargo check --manifest-path src-tauri/Cargo.toml` succeeds (isolated `CARGO_TARGET_DIR` if needed).  
-- [x] **Step 3:** Doc: note “Wave 0 started” in architecture report § status if present, or add a one-line “Implementation status: Wave 0 in progress” at top of architecture report.  
+- [x] **Step 1:** Create subdirectories listed in target map with `mod.rs` files that compile (`pub mod x;` stubs OK).
+- [x] **Step 2:** Ensure `cargo check --manifest-path src-tauri/Cargo.toml` succeeds (isolated `CARGO_TARGET_DIR` if needed).
+- [x] **Step 3:** Doc: note “Wave 0 started” in architecture report § status if present, or add a one-line “Implementation status: Wave 0 in progress” at top of architecture report.
 - [x] **Step 4:** **NO COMMIT.**
 
 **Verify:** `cargo check --manifest-path src-tauri/Cargo.toml`  
@@ -141,13 +142,14 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G1  
 **Depends-on:** Task 0.1  
 **Files:**
+
 - Create: `src-tauri/src/payload/types.rs`
 - Modify: `src-tauri/src/payload/extractor.rs` (move `PartitionDetail`, `ExtractPayloadResult`, `RemotePayloadMetadata`, `DynamicGroupInfo`, `PayloadDiagnostics` if defined there)
 - Modify: `src-tauri/src/payload/mod.rs` re-exports
 
-- [x] **Step 1:** Move public DTO structs with identical serde attributes (`rename_all = "camelCase"`) into `types.rs`.  
-- [x] **Step 2:** Re-export from `mod.rs` so `commands/payload.rs` and FE contracts need **zero** path changes if possible (`pub use types::…`).  
-- [x] **Step 3:** `cargo check` + existing payload unit tests compile.  
+- [x] **Step 1:** Move public DTO structs with identical serde attributes (`rename_all = "camelCase"`) into `types.rs`.
+- [x] **Step 2:** Re-export from `mod.rs` so `commands/payload.rs` and FE contracts need **zero** path changes if possible (`pub use types::…`).
+- [x] **Step 3:** `cargo check` + existing payload unit tests compile.
 - [x] **Step 4:** **NO COMMIT.**
 
 **Verify:** TypeScript still builds if IPC shapes unchanged: `bun run build` only if serde field names changed (should not).
@@ -159,13 +161,14 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G2  
 **Depends-on:** Task 0.1  
 **Files:**
+
 - Move: `copy.rs` → `io/copy.rs`, `write.rs` → `io/write.rs`
 - Create: `io/mod.rs`, stub `io/buffers.rs` (empty re-export or `// later Wave 3`)
 - Modify: all `use super::copy` / `write` paths
 
-- [x] **Step 1:** `git mv` or move files; fix module paths.  
-- [x] **Step 2:** Keep public API: `pub use io::{…}` from root if previously public.  
-- [x] **Step 3:** `cargo check` + `cargo test --manifest-path src-tauri/Cargo.toml --lib --no-run`.  
+- [x] **Step 1:** `git mv` or move files; fix module paths.
+- [x] **Step 2:** Keep public API: `pub use io::{…}` from root if previously public.
+- [x] **Step 3:** `cargo check` + `cargo test --manifest-path src-tauri/Cargo.toml --lib --no-run`.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -175,12 +178,13 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G3  
 **Depends-on:** Task 0.1  
 **Files:**
+
 - Move: `verify.rs` → `verify/mode.rs` + `verify/op_blob.rs` + `verify/output_file.rs` (split by function; behavior unchanged; dead code may stay dead until Wave 1)
 - Create: `verify/mod.rs`
 
-- [x] **Step 1:** Split without wiring L4 yet.  
-- [x] **Step 2:** Re-export `VerifyMode`, `VerificationResult`.  
-- [x] **Step 3:** compile.  
+- [x] **Step 1:** Split without wiring L4 yet.
+- [x] **Step 2:** Re-export `VerifyMode`, `VerificationResult`.
+- [x] **Step 3:** compile.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -190,13 +194,14 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G4  
 **Depends-on:** Task 0.1  
 **Files:**
+
 - Move: `zip.rs` → `zip/extract_entry.rs`
 - Move: `zip_mmap.rs` → `zip/stored_window.rs` and **register** it in `zip/mod.rs` (even if only used by tests initially)
 - Extract shared EOCD helpers from `http_zip.rs` / `factory_image.rs` into `zip/eocd.rs` **only if** identical code can move without behavior change; otherwise leave duplication for Wave 3 and document TODO in `zip/mod.rs`
 - Create: `source/mod.rs`, `source/local_mmap.rs` (wrap `open_mmap` from parser)
 
-- [x] **Step 1:** Moves + compile.  
-- [x] **Step 2:** Document any remaining EOCD duplication in architecture report.  
+- [x] **Step 1:** Moves + compile.
+- [x] **Step 2:** Document any remaining EOCD duplication in architecture report.
 - [x] **Step 3:** **NO COMMIT.**
 
 ---
@@ -206,15 +211,16 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G5  
 **Depends-on:** Task 0.2, 0.3, 0.5  
 **Files:**
+
 - Split: `parser.rs` → `crau/header.rs`, `crau/manifest.rs`
 - Split: `extractor.rs` → `crau/extract.rs`, `crau/ops.rs`, `crau/progress.rs`, `crau/diagnose.rs`
 - Create: `crau/mod.rs`
 - Modify: root `mod.rs` re-exports so commands still work
 
-- [x] **Step 1:** Behavior-preserving move; **do not** change op semantics.  
-- [x] **Step 2:** Ensure `extract_payload`, list, diagnose symbols re-exported.  
-- [x] **Step 3:** Run payload-related unit tests (`--no-run` then run if possible).  
-- [x] **Step 4:** Update architecture report move map checkmarks.  
+- [x] **Step 1:** Behavior-preserving move; **do not** change op semantics.
+- [x] **Step 2:** Ensure `extract_payload`, list, diagnose symbols re-exported.
+- [x] **Step 3:** Run payload-related unit tests (`--no-run` then run if possible).
+- [x] **Step 4:** Update architecture report move map checkmarks.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -224,6 +230,7 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G6  
 **Depends-on:** Task 0.5  
 **Files:**
+
 - Move: `http.rs` → `remote/http.rs`
 - Move: `http_zip.rs` → `remote/http_zip.rs`
 - Move: `factory_image.rs` → `remote/factory.rs`
@@ -231,10 +238,10 @@ Wave 4 — Polish / optional
 - Create: `remote/mod.rs` with feature cfg
 - Stub: `remote/load_progress.rs` (`// Wave 2`)
 
-- [x] **Step 1:** Preserve public functions: `extract_remote_*`, `list_remote_*`, `get_remote_payload_metadata`, `HttpPayloadReader`, factory APIs.  
-- [x] **Step 2:** Feature `remote_zip` still gates module.  
-- [x] **Step 3:** `cargo check` with default features.  
-- [x] **Step 4:** Doc: remote matrix “module path updated”.  
+- [x] **Step 1:** Preserve public functions: `extract_remote_*`, `list_remote_*`, `get_remote_payload_metadata`, `HttpPayloadReader`, factory APIs.
+- [x] **Step 2:** Feature `remote_zip` still gates module.
+- [x] **Step 3:** `cargo check` with default features.
+- [x] **Step 4:** Doc: remote matrix “module path updated”.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -244,14 +251,15 @@ Wave 4 — Polish / optional
 **parallel-group:** W0G7  
 **Depends-on:** Task 0.6, 0.7  
 **Files:**
+
 - Move: `tests.rs` → `tests/mod.rs` + split modules (`crau_extract.rs`, `zip`/`factory` tests)
 - Move: `delta.rs` → `delta/source_copy.rs`
 - Remove empty old root files
 - Fix: `ops/test_ops_decrypt.rs` → prefer `#[cfg(test)]` module or keep but document
 
-- [x] **Step 1:** All former tests still registered under `#[cfg(test)] mod tests`.  
-- [x] **Step 2:** Compile tests.  
-- [x] **Step 3:** Architecture report: Wave 0 complete.  
+- [x] **Step 1:** All former tests still registered under `#[cfg(test)] mod tests`.
+- [x] **Step 2:** Compile tests.
+- [x] **Step 3:** Architecture report: Wave 0 complete.
 - [x] **Step 4:** **NO COMMIT.**
 
 **Wave 0 exit criteria:** Default `cargo check` green; FE `bun run build` if only re-exports; no intentional behavior change.
@@ -271,6 +279,7 @@ Wave 4 — Polish / optional
 **parallel-group:** W1G1  
 **Depends-on:** Wave 0 complete  
 **Files:**
+
 - Modify: `verify/op_blob.rs`, `verify/output_file.rs`, `verify/mode.rs`
 - Modify: `crau/ops.rs` / `crau/extract.rs` (call sites)
 - Test: `payload/tests/` or colocated verify tests
@@ -278,10 +287,10 @@ Wave 4 — Polish / optional
 - [x] **Step 1:** Write failing tests:
   - Compressed blob hash mismatch fails extract.
   - When `new_partition_info.hash` present and `layer4_enabled`, wrong output file fails after write.
-- [x] **Step 2:** Implement: hash **raw op bytes** before decompress (AOSP / existing local fix).  
-- [x] **Step 3:** After successful partition write, optional parallel file SHA-256 vs manifest hash.  
-- [x] **Step 4:** Remove `#[allow(dead_code)]` from wired helpers.  
-- [x] **Step 5:** Doc: check off C1/C2 in reference comparison report.  
+- [x] **Step 2:** Implement: hash **raw op bytes** before decompress (AOSP / existing local fix).
+- [x] **Step 3:** After successful partition write, optional parallel file SHA-256 vs manifest hash.
+- [x] **Step 4:** Remove `#[allow(dead_code)]` from wired helpers.
+- [x] **Step 5:** Doc: check off C1/C2 in reference comparison report.
 - [x] **Step 6:** **NO COMMIT.**
 
 **Verify:** unit tests pass (or `--no-run` + Linux CI note).
@@ -293,13 +302,14 @@ Wave 4 — Polish / optional
 **parallel-group:** W1G2  
 **Depends-on:** Task 1.1 preferred  
 **Files:**
+
 - Modify: `crau/ops.rs`
 - Test: synthetic multi-extent payload if feasible; else unit test extent loop with mock writer
 
-- [x] **Step 1:** Ensure all `dst_extents` written at correct `start_block * block_size` (not only `[0]`).  
-- [x] **Step 2:** Decompress/decode errors return `Err` (no soft Ok after warn).  
-- [x] **Step 3:** Transaction/delete partial `.img` on failure (use existing `transaction`).  
-- [x] **Step 4:** Doc: C4/C5 checkoff.  
+- [x] **Step 1:** Ensure all `dst_extents` written at correct `start_block * block_size` (not only `[0]`).
+- [x] **Step 2:** Decompress/decode errors return `Err` (no soft Ok after warn).
+- [x] **Step 3:** Transaction/delete partial `.img` on failure (use existing `transaction`).
+- [x] **Step 4:** Doc: C4/C5 checkoff.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -309,11 +319,12 @@ Wave 4 — Polish / optional
 **parallel-group:** W1G3  
 **Depends-on:** Task 1.1  
 **Files:**
+
 - Modify: `remote/direct.rs`, `remote/prefetch.rs` (and any stream_copy hash usage)
 
-- [x] **Step 1:** Grep remote path for `Sha256` / hasher-in-stream_copy; fix to compressed-blob semantics.  
-- [x] **Step 2:** Add regression unit test if remote logic can be exercised offline with fixed bytes.  
-- [x] **Step 3:** Doc: C3 checkoff.  
+- [x] **Step 1:** Grep remote path for `Sha256` / hasher-in-stream_copy; fix to compressed-blob semantics.
+- [x] **Step 2:** Add regression unit test if remote logic can be exercised offline with fixed bytes.
+- [x] **Step 3:** Doc: C3 checkoff.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -324,9 +335,9 @@ Wave 4 — Polish / optional
 **Depends-on:** Task 1.1–1.3  
 **Files:** tests only + this plan checkboxes
 
-- [x] **Step 1:** Run `bun run lint:web` only if FE untouched; else skip.  
-- [x] **Step 2:** `cargo check` + payload tests.  
-- [x] **Step 3:** Update `memory-bank/progress.md` with Wave 1 correctness bullets.  
+- [x] **Step 1:** Run `bun run lint:web` only if FE untouched; else skip.
+- [x] **Step 2:** `cargo check` + payload tests.
+- [x] **Step 3:** Update `memory-bank/progress.md` with Wave 1 correctness bullets.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -335,7 +346,7 @@ Wave 4 — Polish / optional
 
 ### Contract (freeze before parallel FE/Rust)
 
-Event name: `payload:load-progress`  
+Event name: `payload:load-progress`
 
 ```json
 {
@@ -356,13 +367,14 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **parallel-group:** W2G1  
 **Depends-on:** Wave 1 recommended; Wave 0 required  
 **Files:**
+
 - Modify: `remote/list.rs`, `remote/load_progress.rs`, `remote/factory.rs`, `remote/http_zip.rs` (emit at phase boundaries)
 - Modify: `commands/payload.rs` if AppHandle needed for list command
 
-- [x] **Step 1:** Implement `emit_load_progress(app, phase, …)` helper.  
-- [x] **Step 2:** Call at: start (verifyConnection), after EOCD/CD, after format detect (payload vs factory), before return partitions, on error.  
-- [x] **Step 3:** List command remains returning `Vec<PartitionDetail>`.  
-- [x] **Step 4:** Doc: remote matrix §9.9 Phase 3 marked in progress/done.  
+- [x] **Step 1:** Implement `emit_load_progress(app, phase, …)` helper.
+- [x] **Step 2:** Call at: start (verifyConnection), after EOCD/CD, after format detect (payload vs factory), before return partitions, on error.
+- [x] **Step 3:** List command remains returning `Vec<PartitionDetail>`.
+- [x] **Step 4:** Doc: remote matrix §9.9 Phase 3 marked in progress/done.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -372,14 +384,15 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **parallel-group:** W2G2  
 **Depends-on:** Contract above (can start without Rust if using optimistic stages)  
 **Files:**
+
 - Create: `src/features/payload-dumper/ui/RemoteLoadProgressCard.tsx`
 - Modify: `PayloadSourceTabs.tsx` or `PayloadDumperView.tsx` — replace Cancel-only bar during `loading-partitions` when remote
 - Modify: store/hooks for `loadPhase` optional state
 
-- [x] **Step 1:** Implement in-panel card per architecture/remote matrix ASCII (steps 1–4, indeterminate bar, elapsed timer, “not full {size}” copy, Cancel).  
-- [x] **Step 2:** Show while `status === 'loading-partitions'` and remote mode **even if `payloadPath` empty** (fix branch bug).  
-- [x] **Step 3:** Unit/smoke: store/status if existing tests; otherwise component renders with props.  
-- [x] **Step 4:** `bun run lint:web` / format.  
+- [x] **Step 1:** Implement in-panel card per architecture/remote matrix ASCII (steps 1–4, indeterminate bar, elapsed timer, “not full {size}” copy, Cancel).
+- [x] **Step 2:** Show while `status === 'loading-partitions'` and remote mode **even if `payloadPath` empty** (fix branch bug).
+- [x] **Step 3:** Unit/smoke: store/status if existing tests; otherwise component renders with props.
+- [x] **Step 4:** `bun run lint:web` / format.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -389,14 +402,15 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **parallel-group:** W2G3  
 **Depends-on:** Wave 0 types  
 **Files:**
+
 - Modify: `types.rs` / `PartitionDetail`
 - Modify: remote list mapping
 - Modify: `src/desktop/models.ts`
 - Optional: partition table column or tooltip later (minimal: field available)
 
-- [x] **Step 1:** For CrAU remote, sum op `data_length` per partition when building details (or approximate).  
-- [x] **Step 2:** Factory: use compressed or uncompressed size already known.  
-- [x] **Step 3:** Keep `size` as image size; `downloadSize` network estimate.  
+- [x] **Step 1:** For CrAU remote, sum op `data_length` per partition when building details (or approximate).
+- [x] **Step 2:** Factory: use compressed or uncompressed size already known.
+- [x] **Step 3:** Keep `size` as image size; `downloadSize` network estimate.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -406,15 +420,16 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **parallel-group:** W2G4  
 **Depends-on:** Task 2.1, 2.2  
 **Files:**
+
 - Modify: `usePayloadEvents.ts` or new `usePayloadLoadEvents.ts`
 - Modify: `runtime.ts` only if needed for event name typing
 - Modify: load card to prefer real phases over optimistic timer
 
-- [x] **Step 1:** Subscribe to `payload:load-progress`.  
-- [x] **Step 2:** Fallback optimistic stages if no events for 500ms (slow IPC).  
-- [x] **Step 3:** `bun run test` focused + `bun run build`.  
-- [x] **Step 4:** Doc: remote matrix §9 implemented flags.  
-- [x] **Step 5:** memory-bank activeContext bullet.  
+- [x] **Step 1:** Subscribe to `payload:load-progress`.
+- [x] **Step 2:** Fallback optimistic stages if no events for 500ms (slow IPC).
+- [x] **Step 3:** `bun run test` focused + `bun run build`.
+- [x] **Step 4:** Doc: remote matrix §9 implemented flags.
+- [x] **Step 5:** memory-bank activeContext bullet.
 - [x] **Step 6:** **NO COMMIT.**
 
 ---
@@ -427,10 +442,10 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 0  
 **Files:** `src-tauri/Cargo.toml`, optional note in `AGENTS.md` / perf report
 
-- [x] **Step 1:** Keep existing `[profile.release]` with `opt-level = "s"` for size builds if desired.  
-- [x] **Step 2:** Add `[profile.release-fast]` with `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, `strip = true` (or package-level override for extract-critical crates).  
-- [x] **Step 3:** Document how to build: `cargo build --profile release-fast --manifest-path src-tauri/Cargo.toml` (inherits release LTO/CGU/strip; do not combine with `--release`).  
-- [x] **Step 4:** Update BEFORE-AFTER perf report “implemented” note.  
+- [x] **Step 1:** Keep existing `[profile.release]` with `opt-level = "s"` for size builds if desired.
+- [x] **Step 2:** Add `[profile.release-fast]` with `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, `strip = true` (or package-level override for extract-critical crates).
+- [x] **Step 3:** Document how to build: `cargo build --profile release-fast --manifest-path src-tauri/Cargo.toml` (inherits release LTO/CGU/strip; do not combine with `--release`).
+- [x] **Step 4:** Update BEFORE-AFTER perf report “implemented” note.
 - [x] **Step 5:** **NO COMMIT.**
 
 **Why first in Wave 3:** `opt-level = "s"` is a known silent killer for `sha2` soft paths and decomp loops; often larger win than new crates.
@@ -443,9 +458,9 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 0 remote split  
 **Files:** `remote/http.rs`, `remote/list.rs`, `remote/metadata.rs`, extract entrypoints
 
-- [x] **Step 1:** Avoid triple HEAD + ZIP CD parse on list→meta→extract when URL unchanged (session struct or cache with content-length/etag key).  
-- [x] **Step 2:** Tests for cache hit logic with mock if possible.  
-- [x] **Step 3:** Doc R1 checkoff.  
+- [x] **Step 1:** Avoid triple HEAD + ZIP CD parse on list→meta→extract when URL unchanged (session struct or cache with content-length/etag key).
+- [x] **Step 2:** Tests for cache hit logic with mock if possible.
+- [x] **Step 3:** Doc R1 checkoff.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -456,9 +471,9 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Task 3.1 helpful  
 **Files:** `remote/prefetch.rs`
 
-- [x] **Step 1:** For OTA remote, download min–max byte span covering selected partitions’ ops, not always full `Content-Length` when ZIP is huge.  
-- [x] **Step 2:** Keep factory path selective (already); ensure prefetch doesn’t re-download whole factory ZIP.  
-- [x] **Step 3:** Doc S2 checkoff.  
+- [x] **Step 1:** For OTA remote, download min–max byte span covering selected partitions’ ops, not always full `Content-Length` when ZIP is huge.
+- [x] **Step 2:** Keep factory path selective (already); ensure prefetch doesn’t re-download whole factory ZIP.
+- [x] **Step 3:** Doc S2 checkoff.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -469,10 +484,10 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 0 zip  
 **Files:** `zip/stored_window.rs`, `zip/extract_entry.rs`, `crau/extract` load path
 
-- [x] **Step 1:** When local ZIP entry is STORED, map window instead of always temp extract.  
-- [x] **Step 2:** Deflate-compressed payload.bin keeps temp path.  
-- [x] **Step 3:** Tests: STORED zip synthetic.  
-- [x] **Step 4:** Doc S1 checkoff.  
+- [x] **Step 1:** When local ZIP entry is STORED, map window instead of always temp extract.
+- [x] **Step 2:** Deflate-compressed payload.bin keeps temp path.
+- [x] **Step 3:** Tests: STORED zip synthetic.
+- [x] **Step 4:** Doc S1 checkoff.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -483,10 +498,10 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 0 io  
 **Files:** `io/buffers.rs`, `crau/ops.rs`, `src-tauri/Cargo.toml`, `remote/http.rs`
 
-- [x] **Step 1:** Reuse 256–512 KiB buffers per worker thread (`io/buffers.rs`).  
-- [x] **Step 2:** Enable **flate2 `zlib-rs`** (and zip deflate path if feature-gated) for faster factory/ZIP inflate.  
-- [x] **Step 3:** Use **`bytes`** (`Bytes`/`BytesMut`) for HTTP range bodies to cut realloc churn.  
-- [x] **Step 4:** Doc S3 + perf report libs section checkoff.  
+- [x] **Step 1:** Reuse 256–512 KiB buffers per worker thread (`io/buffers.rs`).
+- [x] **Step 2:** Enable **flate2 `zlib-rs`** (and zip deflate path if feature-gated) for faster factory/ZIP inflate.
+- [x] **Step 3:** Use **`bytes`** (`Bytes`/`BytesMut`) for HTTP range bodies to cut realloc churn.
+- [x] **Step 4:** Doc S3 + perf report libs section checkoff.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -497,9 +512,9 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 0  
 **Files:** `ops/extractor.rs` (or `ops/extract.rs`), cancel plumbing from commands
 
-- [x] **Step 1:** Pass `CancellationToken` into OPS extract; check between partitions/files.  
-- [x] **Step 2:** Prefer `io::NonTemporalWriter` for large images when size known.  
-- [x] **Step 3:** Doc S6.  
+- [x] **Step 1:** Pass `CancellationToken` into OPS extract; check between partitions/files.
+- [x] **Step 2:** Prefer `io::NonTemporalWriter` for large images when size known.
+- [x] **Step 3:** Doc S6.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -510,9 +525,9 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Task 3.1  
 **Files:** `remote/http.rs`, commands, FE confirm dialog optional
 
-- [x] **Step 1:** If HEAD lacks Accept-Ranges, return structured error code; optional full GET to temp then local extract behind explicit flag/UX confirm.  
-- [x] **Step 2:** On cancel, drop/abort in-flight request where reqwest allows; shorten wait.  
-- [x] **Step 3:** Doc R3/R4.  
+- [x] **Step 1:** If HEAD lacks Accept-Ranges, return structured error code; optional full GET to temp then local extract behind explicit flag/UX confirm.
+- [x] **Step 2:** On cancel, drop/abort in-flight request where reqwest allows; shorten wait.
+- [x] **Step 3:** Doc R3/R4.
 - [x] **Step 4:** **NO COMMIT.**
 
 ---
@@ -523,10 +538,10 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Task 3.0 helpful  
 **Files:** `src-tauri/Cargo.toml`, `crau/ops.rs` and any `xz2::` imports
 
-- [x] **Step 1:** Replace `xz2` with `liblzma` per crates.io migration notes (compatible API).  
-- [x] **Step 2:** Ensure single native lzma link (no dual xz2+liblzma).  
-- [x] **Step 3:** `cargo check` + payload extract smoke if possible.  
-- [x] **Step 4:** Doc perf report.  
+- [x] **Step 1:** Replace `xz2` with `liblzma` per crates.io migration notes (compatible API).
+- [x] **Step 2:** Ensure single native lzma link (no dual xz2+liblzma).
+- [x] **Step 3:** `cargo check` + payload extract smoke if possible.
+- [x] **Step 4:** Doc perf report.
 - [x] **Step 5:** **NO COMMIT.**
 
 ---
@@ -537,10 +552,10 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Task 3.0  
 **Files:** `src-tauri/src/main.rs` or `lib.rs`, `Cargo.toml`
 
-- [x] **Step 1:** Add feature-gated `mimalloc` global allocator **only if** quick bench vs default shows win on Win+Lin.  
-- [x] **Step 2:** If no clear win on Windows, document skip in perf report — do not force.  
+- [x] **Step 1:** Add feature-gated `mimalloc` global allocator **only if** quick bench vs default shows win on Win+Lin.
+- [x] **Step 2:** If no clear win on Windows, document skip in perf report — do not force.
 - [x] **Step 3:** **NO COMMIT.**  
-  **Outcome:** **SKIP** — no Win/Lin bench in this unit; documented in `PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md`. Do not force mimalloc.
+      **Outcome:** **SKIP** — no Win/Lin bench in this unit; documented in `PAYLOAD-DUMPER-BEFORE-AFTER-PERF-LIBS-2026-07-17.md`. Do not force mimalloc.
 
 ---
 
@@ -550,28 +565,31 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 
 **parallel-group:** W4G1  
 **Depends-on:** Wave 2+  
-**Files:** store + `PartitionRow`  
-- [x] Map pending/running/completed/failed/verifying from events.  
+**Files:** store + `PartitionRow`
+
+- [x] Map pending/running/completed/failed/verifying from events.
 - [x] **NO COMMIT.**
 
 ### Task 4.2: Extraction stats event
 
 **parallel-group:** W4G2  
 **Depends-on:** Wave 1  
-**Files:** `crau/extract.rs`, models, status card  
-- [x] FE: show existing `ExtractionStats` + live progress throughput; fallback aggregate when `result.stats` missing. (Rust emit still optional / not done here.)  
-- [x] Emit durationMs, totalBytes, throughputMbps on success (fill `ExtractPayloadResult.stats` if missing in Rust).  
-  - Rust: `types::ExtractionStats` + optional `ExtractPayloadResult.stats` (camelCase).  
-  - Filled on success: local CrAU (`crau/extract.rs`), remote prefetch/direct, factory images, OPS/OFP.  
-  - FE already consumes `result.stats` in `payloadExtractionActions.ts`; field names match `models.ts`.  
+**Files:** `crau/extract.rs`, models, status card
+
+- [x] FE: show existing `ExtractionStats` + live progress throughput; fallback aggregate when `result.stats` missing. (Rust emit still optional / not done here.)
+- [x] Emit durationMs, totalBytes, throughputMbps on success (fill `ExtractPayloadResult.stats` if missing in Rust).
+  - Rust: `types::ExtractionStats` + optional `ExtractPayloadResult.stats` (camelCase).
+  - Filled on success: local CrAU (`crau/extract.rs`), remote prefetch/direct, factory images, OPS/OFP.
+  - FE already consumes `result.stats` in `payloadExtractionActions.ts`; field names match `models.ts`.
 - [x] **NO COMMIT.**
 
 ### Task 4.3: Delta OTA (OPTIONAL — default SKIP)
 
 **parallel-group:** W4G3  
 **Depends-on:** product approval  
-**Files:** `delta/*`, `crau/ops.rs`  
-- [x] **SKIPPED** — no product green-light. Delta folder remains structural only; do not wire real SOURCE_COPY/bsdiff work.  
+**Files:** `delta/*`, `crau/ops.rs`
+
+- [x] **SKIPPED** — no product green-light. Delta folder remains structural only; do not wire real SOURCE_COPY/bsdiff work.
 - [x] **NO COMMIT.**
 
 ### Task 4.4: Tauri notification + single-instance
@@ -580,20 +598,20 @@ DTO optional: `PartitionDetail` gains `downloadSize?: number` (camelCase serde).
 **Depends-on:** Wave 2+ for extract complete signals  
 **Files:** `src-tauri/Cargo.toml`, `lib.rs`, capabilities, FE toast/OS notify hook
 
-- [x] **DEFERRED** — plugins are UX/reliability only (not GB/s). Not adding `tauri-plugin-notification` / `tauri-plugin-single-instance` in this plan wave. Existing Sonner toasts cover extract complete/fail in-app.  
+- [x] **DEFERRED** — plugins are UX/reliability only (not GB/s). Not adding `tauri-plugin-notification` / `tauri-plugin-single-instance` in this plan wave. Existing Sonner toasts cover extract complete/fail in-app.
 - [x] **NO COMMIT.**
 
 ### Task 4.5: Final documentation pass
 
 **parallel-group:** W4G5  
 **Depends-on:** all completed waves  
-**Files:** memory-bank/*, active reports, this plan checkboxes  
+**Files:** memory-bank/*, active reports, this plan checkboxes
 
-- [x] Mark implemented vs deferred in product reports + BEFORE-AFTER perf report.  
-- [x] `activeContext.md` summary of architecture + upgrades.  
-- [x] `progress.md` version note.  
-- [x] Confirm **no plan-execution commits** made by agents.  
-- [x] Verify (this wave): isolated `cargo check` ✅ · `cargo test --lib --no-run` (see session notes). Full FE gate not re-run (FE models already had `stats?`; Rust-only IPC fill).  
+- [x] Mark implemented vs deferred in product reports + BEFORE-AFTER perf report.
+- [x] `activeContext.md` summary of architecture + upgrades.
+- [x] `progress.md` version note.
+- [x] Confirm **no plan-execution commits** made by agents.
+- [x] Verify (this wave): isolated `cargo check` ✅ · `cargo test --lib --no-run` (see session notes). Full FE gate not re-run (FE models already had `stats?`; Rust-only IPC fill).
 
 **Wave 4 close-out (2026-07-17):** 4.1 FE partition status ✅ · 4.2 Rust `ExtractPayloadResult.stats` ✅ · 4.3 SKIP · 4.4 deferred · 4.5 docs ✅. Agent build dirs use `CARGO_TARGET_DIR=target/agent-*` (covered by root `target/` / `target-*/` gitignore). Landed as multi-commit series on `main`.
 
@@ -621,55 +639,55 @@ parallel-group: <do not edit files owned by other concurrent groups>
 
 ### Suggested parallel batches
 
-| Batch | Tasks | Notes |
-|-------|-------|-------|
-| B0a | 0.1 → 0.2 | serial |
-| B0b | 0.3, 0.4, 0.5 | parallel |
-| B0c | 0.6 | after B0b |
-| B0d | 0.7 | after 0.5 |
-| B0e | 0.8 | after 0.6+0.7 |
-| B1 | 1.1 then 1.2∥1.3 then 1.4 | |
-| B2 | 2.1∥2.2∥2.3 then 2.4 | agree event contract first |
-| B3a | 3.0 first | opt-level profile |
-| B3b | 3.1 then 3.2∥3.3∥3.4∥3.5; 3.6 after 3.1; 3.7; 3.8 optional | |
-| B4 | 4.1∥4.2; 4.3 skip; 4.4 plugins; 4.5 docs last | |
+| Batch | Tasks                                                      | Notes                      |
+| ----- | ---------------------------------------------------------- | -------------------------- |
+| B0a   | 0.1 → 0.2                                                  | serial                     |
+| B0b   | 0.3, 0.4, 0.5                                              | parallel                   |
+| B0c   | 0.6                                                        | after B0b                  |
+| B0d   | 0.7                                                        | after 0.5                  |
+| B0e   | 0.8                                                        | after 0.6+0.7              |
+| B1    | 1.1 then 1.2∥1.3 then 1.4                                  |                            |
+| B2    | 2.1∥2.2∥2.3 then 2.4                                       | agree event contract first |
+| B3a   | 3.0 first                                                  | opt-level profile          |
+| B3b   | 3.1 then 3.2∥3.3∥3.4∥3.5; 3.6 after 3.1; 3.7; 3.8 optional |                            |
+| B4    | 4.1∥4.2; 4.3 skip; 4.4 plugins; 4.5 docs last              |                            |
 
 ---
 
 ## Verification matrix (definition of done)
 
-| Wave | Rust | FE | Docs |
-|------|------|----|------|
-| 0 | `cargo check` green; tests compile | build if IPC stable | architecture report updated |
-| 1 | verify + extent tests | — | comparison C1–C5 |
-| 2 | load-progress emits | card + no stuck Cancel-only | remote matrix §9 |
-| 3 | check + targeted tests | optional | S/R proposals |
-| 4 | full lint/check subset | `bun run test` + build | memory-bank + all reports |
+| Wave | Rust                               | FE                          | Docs                        |
+| ---- | ---------------------------------- | --------------------------- | --------------------------- |
+| 0    | `cargo check` green; tests compile | build if IPC stable         | architecture report updated |
+| 1    | verify + extent tests              | —                           | comparison C1–C5            |
+| 2    | load-progress emits                | card + no stuck Cancel-only | remote matrix §9            |
+| 3    | check + targeted tests             | optional                    | S/R proposals               |
+| 4    | full lint/check subset             | `bun run test` + build      | memory-bank + all reports   |
 
 ---
 
 ## Out of scope (YAGNI this plan)
 
-- Samsung/Xiaomi OEM formats  
-- Porting Kotlin UI  
-- Torrents / magnet  
-- Committing to git  
-- macOS-only work  
-- Replacing Tauri with CLI  
+- Samsung/Xiaomi OEM formats
+- Porting Kotlin UI
+- Torrents / magnet
+- Committing to git
+- macOS-only work
+- Replacing Tauri with CLI
 
 ---
 
 ## Self-review (writing-plans checklist)
 
-| Check | Result |
-|-------|--------|
-| Spec coverage: architecture report | Wave 0 + target tree |
-| Spec coverage: remote matrix | Wave 2 + 3.6 + download_size |
-| Spec coverage: reference comparison P0–P2 | Wave 1 + 3 |
-| Placeholders | Avoided TBD; optional delta explicit SKIP |
-| No-commit rule | Global + every task |
-| Docs realtime | Global checklist + per-task steps |
-| Parallel subagents | DAG + parallel-groups + file ownership |
+| Check                                     | Result                                    |
+| ----------------------------------------- | ----------------------------------------- |
+| Spec coverage: architecture report        | Wave 0 + target tree                      |
+| Spec coverage: remote matrix              | Wave 2 + 3.6 + download_size              |
+| Spec coverage: reference comparison P0–P2 | Wave 1 + 3                                |
+| Placeholders                              | Avoided TBD; optional delta explicit SKIP |
+| No-commit rule                            | Global + every task                       |
+| Docs realtime                             | Global checklist + per-task steps         |
+| Parallel subagents                        | DAG + parallel-groups + file ownership    |
 
 ---
 
@@ -681,7 +699,7 @@ parallel-group: <do not edit files owned by other concurrent groups>
 
 **Execution options when you want implementation:**
 
-1. **Subagent-Driven (recommended)** — orchestrator runs batches B0a→B4; one agent per task; no commits; docs updated each task.  
+1. **Subagent-Driven (recommended)** — orchestrator runs batches B0a→B4; one agent per task; no commits; docs updated each task.
 2. **Inline Execution** — same plan, single session waves.
 
 **Do not start Wave 1 until Wave 0 exit criteria pass.**

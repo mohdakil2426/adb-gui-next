@@ -71,9 +71,9 @@ offline       subtle   · seen but not reachable
 
 **Self-hosted.** Google Fonts is removed entirely — `index.html:10-15` plus the `font-src`/`style-src` CSP allowances. A desktop tool that flashes phones cannot depend on a network round-trip to render text, and it should not phone home to Google on every launch.
 
-| Role | Face | Why |
-| --- | --- | --- |
-| UI | **Inter Variable** | Designed for UI at small sizes; excellent `tabular-nums`; variable = one file, all weights |
+| Role           | Face                        | Why                                                                                                                              |
+| -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| UI             | **Inter Variable**          | Designed for UI at small sizes; excellent `tabular-nums`; variable = one file, all weights                                       |
 | Numeric / code | **JetBrains Mono Variable** | Serials, paths, package names, hashes, logs, shell. Distinct `0/O` and `1/l/I` — this matters when reading a device serial aloud |
 
 Both ship as `woff2` in `public/fonts/`, declared with `font-display: swap` and `<link rel="preload">`. Onest is dropped.
@@ -183,17 +183,17 @@ The current shell has **no visible page title anywhere in the application** — 
 
 ### 2.2 What changes and why
 
-| Change | Reason |
-| --- | --- |
-| **Visible page title** in the header | The app currently has zero wayfinding beyond a sidebar highlight |
-| **Device card in the sidebar** (name, status dot, Android/API) | Device identity is the app's most important global state; a 120px-truncated pill in the header under-serves it |
-| **⌘K command palette** | 60+ actions across 9 views with no global search. `cmdk` was previously removed as dead code — it returns with a real call site |
-| **Status bar** (26px) | Long operations currently live in transient toasts that vanish. Flash, push/pull, extract, debloat need a persistent, cancellable home |
-| **Sidebar groups → Device / Firmware / Tools** | Current "Main / Advanced" puts the device-bricking Flasher in the same bucket as the Emulator. Grouping now reflects risk and intent |
-| **Risk marker on Firmware group** | Destructive sections should look destructive before you click |
-| **Nav badges** | The sidebar currently never communicates that anything is happening |
-| **Bottom panel joins the flex column** | Removes the `paddingBottom` overlay hack; views get honest height |
-| **Drop `max-w-1280px`** | It's a desktop app; users run it maximised on 27" displays |
+| Change                                                         | Reason                                                                                                                                 |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Visible page title** in the header                           | The app currently has zero wayfinding beyond a sidebar highlight                                                                       |
+| **Device card in the sidebar** (name, status dot, Android/API) | Device identity is the app's most important global state; a 120px-truncated pill in the header under-serves it                         |
+| **⌘K command palette**                                         | 60+ actions across 9 views with no global search. `cmdk` was previously removed as dead code — it returns with a real call site        |
+| **Status bar** (26px)                                          | Long operations currently live in transient toasts that vanish. Flash, push/pull, extract, debloat need a persistent, cancellable home |
+| **Sidebar groups → Device / Firmware / Tools**                 | Current "Main / Advanced" puts the device-bricking Flasher in the same bucket as the Emulator. Grouping now reflects risk and intent   |
+| **Risk marker on Firmware group**                              | Destructive sections should look destructive before you click                                                                          |
+| **Nav badges**                                                 | The sidebar currently never communicates that anything is happening                                                                    |
+| **Bottom panel joins the flex column**                         | Removes the `paddingBottom` overlay hack; views get honest height                                                                      |
+| **Drop `max-w-1280px`**                                        | It's a desktop app; users run it maximised on 27" displays                                                                             |
 
 ### 2.3 Command palette (⌘K / Ctrl+K)
 
@@ -225,7 +225,7 @@ Registry-driven: each action declares `id`, `label`, `group`, `icon`, `keywords`
 
 `GetDeviceInfo` returns `batteryLevel: "87%"`, `storageInfo: "12G used of 64G"`, `ramTotal: "5.6 GB"` — pre-formatted strings. **The frontend cannot chart them without parsing display text.** This is why the `--chart-1..5` tokens have sat unused since they were defined.
 
-So the dashboard redesign *requires* a backend contract change, and that change also fixes the 12-spawn latency problem. One change, two wins.
+So the dashboard redesign _requires_ a backend contract change, and that change also fixes the 12-spawn latency problem. One change, two wins.
 
 ```rust
 // NEW — structured, chartable, one shell round-trip
@@ -308,13 +308,13 @@ This is the app's true first-run screen and it currently does not exist. Zero on
 
 shadcn `Chart` (wraps Recharts) — the project-endorsed path per `.agents/skills/frontend/shadcn/SKILL.md`, themed by the `--chart-*` CSS variables that already exist. Used only where a chart genuinely beats a number:
 
-| Visual | Data | Why not just text |
-| --- | --- | --- |
-| Radial gauge | Battery % | Instantly readable at a glance; colour-codes low battery |
-| Stacked bar | Storage per volume | Shows used/free proportion, which "12G used of 64G" does not |
-| Sparkline | RAM over session | Reveals trend and pressure; a single number cannot |
-| Donut | Package composition (system/user/disabled) | App Manager — makes debloat progress legible |
-| Horizontal bars | Partition sizes | Payload Dumper — shows what dominates an extraction |
+| Visual          | Data                                       | Why not just text                                            |
+| --------------- | ------------------------------------------ | ------------------------------------------------------------ |
+| Radial gauge    | Battery %                                  | Instantly readable at a glance; colour-codes low battery     |
+| Stacked bar     | Storage per volume                         | Shows used/free proportion, which "12G used of 64G" does not |
+| Sparkline       | RAM over session                           | Reveals trend and pressure; a single number cannot           |
+| Donut           | Package composition (system/user/disabled) | App Manager — makes debloat progress legible                 |
+| Horizontal bars | Partition sizes                            | Payload Dumper — shows what dominates an extraction          |
 
 Charts are lazy-loaded so Recharts never enters the initial bundle.
 
@@ -324,30 +324,30 @@ Charts are lazy-loaded so Recharts never enters the initial bundle.
 
 ### 4.1 Correctness & safety (must land)
 
-| ID | Change | File |
-| --- | --- | --- |
-| C1/C2 | `checked_add` + `mmap.get(start..end)` on all untrusted manifest offsets | `remote/mod.rs:951-957`, `crau/extract.rs:265-271` |
-| M14 | Error instead of silently truncating short REPLACE data | `remote/mod.rs:1015`, `crau/extract.rs:397` |
-| C5 | `NonTemporalWriter` fallback for `size == 0` and 32-bit targets | `io/write.rs:40-66` |
-| M1 | `impl Drop for PayloadCache` + use managed state in `extract_delta_payload` | `commands/payload.rs:408` |
-| M2 | `TransactionGuard` on both remote extract paths | `remote/mod.rs:704,870` |
-| M8 | Refuse to cache under `"unknown"` device id | `debloat/sync.rs:41-45` |
-| H11 | `error_for_status()` + preserve the cache/bundled fallback chain; call `load_uad_lists` once | `debloat/lists.rs:65-84`, `commands/debloat.rs:95,106` |
-| H12 | Verify the Magisk `sha256`; validate redirects | `magisk_download.rs:131,202-227` |
-| — | Validate package names `^[A-Za-z0-9._]+$` before `adb shell pm` | `debloat/actions.rs:150` |
+| ID    | Change                                                                                       | File                                                   |
+| ----- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| C1/C2 | `checked_add` + `mmap.get(start..end)` on all untrusted manifest offsets                     | `remote/mod.rs:951-957`, `crau/extract.rs:265-271`     |
+| M14   | Error instead of silently truncating short REPLACE data                                      | `remote/mod.rs:1015`, `crau/extract.rs:397`            |
+| C5    | `NonTemporalWriter` fallback for `size == 0` and 32-bit targets                              | `io/write.rs:40-66`                                    |
+| M1    | `impl Drop for PayloadCache` + use managed state in `extract_delta_payload`                  | `commands/payload.rs:408`                              |
+| M2    | `TransactionGuard` on both remote extract paths                                              | `remote/mod.rs:704,870`                                |
+| M8    | Refuse to cache under `"unknown"` device id                                                  | `debloat/sync.rs:41-45`                                |
+| H11   | `error_for_status()` + preserve the cache/bundled fallback chain; call `load_uad_lists` once | `debloat/lists.rs:65-84`, `commands/debloat.rs:95,106` |
+| H12   | Verify the Magisk `sha256`; validate redirects                                               | `magisk_download.rs:131,202-227`                       |
+| —     | Validate package names `^[A-Za-z0-9._]+$` before `adb shell pm`                              | `debloat/actions.rs:150`                               |
 
 ### 4.2 Performance
 
-| ID | Change | Expected |
-| --- | --- | --- |
-| H7 | `[profile.release] opt-level = 3`; adopt in CI; delete `release-fast` | 20–40% on extraction |
-| H2 | Delete the SIMD copy module → `copy_from_slice` | 10–30× on ARM; −90 lines `unsafe` |
-| H1 | Remove `payload.manifest.clone()` from the rayon loop | −0.2–2 GB alloc per extraction |
-| H3 | Throttle progress emission to ~4/s via a shared `AtomicU64` | 2,000–16,000 events → ~40 |
-| H6 | Hash the writer's own mmap instead of a second read pass | −8 GiB reads per extraction |
-| H8 | `get_device_info` → one batched shell call | 12 spawns → 1–2 |
-| M5 | `OnceLock` binary path resolution | −4–8 syscalls × 112 sites |
-| H4 | `spawn_blocking` the remote extract paths | frees a pinned Tokio worker |
+| ID  | Change                                                                | Expected                          |
+| --- | --------------------------------------------------------------------- | --------------------------------- |
+| H7  | `[profile.release] opt-level = 3`; adopt in CI; delete `release-fast` | 20–40% on extraction              |
+| H2  | Delete the SIMD copy module → `copy_from_slice`                       | 10–30× on ARM; −90 lines `unsafe` |
+| H1  | Remove `payload.manifest.clone()` from the rayon loop                 | −0.2–2 GB alloc per extraction    |
+| H3  | Throttle progress emission to ~4/s via a shared `AtomicU64`           | 2,000–16,000 events → ~40         |
+| H6  | Hash the writer's own mmap instead of a second read pass              | −8 GiB reads per extraction       |
+| H8  | `get_device_info` → one batched shell call                            | 12 spawns → 1–2                   |
+| M5  | `OnceLock` binary path resolution                                     | −4–8 syscalls × 112 sites         |
+| H4  | `spawn_blocking` the remote extract paths                             | frees a pinned Tokio worker       |
 
 ### 4.3 New: `AdbClient`
 
@@ -369,18 +369,18 @@ First three consumers: `get_device_info` (12→1), debloat restore (400+→4), `
 
 ## 5. Frontend architecture
 
-| # | Change | Effect |
-| --- | --- | --- |
-| 1 | `React.lazy` all 9 views + `Suspense` | 566 kB → ~150–250 kB initial |
-| 2 | Un-subscribe `MainLayout` from `unreadCount`; extract `<UnreadBadge/>`; hoist `renderContent`; memo `ViewContent` | Kills a full-app re-render per log line |
-| 3 | Global query defaults `staleTime: 30s`, `refetchOnWindowFocus: false`; AVD `staleTime` | Stops subprocess spawns on alt-tab |
-| 4 | Split payload progress into a **non-persisted** store + rAF throttle | Removes a blocking `localStorage` write per progress event |
-| 5 | Virtualise `LogsPanel`; memo `LogRow`; hoist the regex; pass `logCount` not `logs` | 1,000 rows → ~30 |
-| 6 | `nicknameStore` → real in-memory Zustand | Removes sync `localStorage`+`JSON.parse` from render |
-| 7 | Delete the 750 ms artificial splash; gate on real readiness | −750 ms cold start |
-| 8 | Self-host fonts; tighten CSP | Removes a network round-trip before first paint |
-| 9 | Stabilise selection callbacks → memo `FileExplorerRow`; pass `isSelected` not the `Set` | Search typing: ~30 row re-renders → ~1 |
-| 10 | Fix defeated memos (marketplace closures, `DropZone` deps) | Makes existing `memo`s work |
+| #   | Change                                                                                                            | Effect                                                     |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 1   | `React.lazy` all 9 views + `Suspense`                                                                             | 566 kB → ~150–250 kB initial                               |
+| 2   | Un-subscribe `MainLayout` from `unreadCount`; extract `<UnreadBadge/>`; hoist `renderContent`; memo `ViewContent` | Kills a full-app re-render per log line                    |
+| 3   | Global query defaults `staleTime: 30s`, `refetchOnWindowFocus: false`; AVD `staleTime`                            | Stops subprocess spawns on alt-tab                         |
+| 4   | Split payload progress into a **non-persisted** store + rAF throttle                                              | Removes a blocking `localStorage` write per progress event |
+| 5   | Virtualise `LogsPanel`; memo `LogRow`; hoist the regex; pass `logCount` not `logs`                                | 1,000 rows → ~30                                           |
+| 6   | `nicknameStore` → real in-memory Zustand                                                                          | Removes sync `localStorage`+`JSON.parse` from render       |
+| 7   | Delete the 750 ms artificial splash; gate on real readiness                                                       | −750 ms cold start                                         |
+| 8   | Self-host fonts; tighten CSP                                                                                      | Removes a network round-trip before first paint            |
+| 9   | Stabilise selection callbacks → memo `FileExplorerRow`; pass `isSelected` not the `Set`                           | Search typing: ~30 row re-renders → ~1                     |
+| 10  | Fix defeated memos (marketplace closures, `DropZone` deps)                                                        | Makes existing `memo`s work                                |
 
 ---
 
@@ -414,17 +414,17 @@ First three consumers: `get_device_info` (12→1), debloat restore (400+→4), `
 
 Each phase is independently verifiable. Verification: `bun run lint:web`, `bun run test`, `bun run build`; Rust `cargo fmt --check`, `cargo clippy -- -D warnings`, `cargo test --no-run` (Windows loader caveat per project rules).
 
-| Phase | Work | Verify |
-| --- | --- | --- |
-| **0** | Zero-risk perf: `opt-level`, SIMD deletion, `manifest.clone()`, query defaults, `chunkSizeWarningLimit` | clippy + build |
-| **1** | Design system: tokens, self-hosted fonts, type scale, CSS reset, primitive restyle | build + visual |
-| **2** | Rust: `AdbClient`, `DeviceTelemetry`, IPC + models + permissions | clippy + FE types |
-| **3** | Shell: sidebar, header, status bar, ⌘K palette, layout flex fix | lint + test + build |
-| **4** | Dashboard: telemetry cards, charts, no-device onboarding | build |
-| **5** | Safety: flash/slot/reboot confirmations, debloat restore, drop queued-flash | test |
-| **6** | FE perf: lazy views, log re-render, non-persisted progress, virtualised logs | build + test |
-| **7** | Rust correctness: overflow guards, transaction guards, cache/digest fixes | clippy + test |
-| **8** | Remaining views migrated to the new system, as depth allows | full gate |
+| Phase | Work                                                                                                    | Verify              |
+| ----- | ------------------------------------------------------------------------------------------------------- | ------------------- |
+| **0** | Zero-risk perf: `opt-level`, SIMD deletion, `manifest.clone()`, query defaults, `chunkSizeWarningLimit` | clippy + build      |
+| **1** | Design system: tokens, self-hosted fonts, type scale, CSS reset, primitive restyle                      | build + visual      |
+| **2** | Rust: `AdbClient`, `DeviceTelemetry`, IPC + models + permissions                                        | clippy + FE types   |
+| **3** | Shell: sidebar, header, status bar, ⌘K palette, layout flex fix                                         | lint + test + build |
+| **4** | Dashboard: telemetry cards, charts, no-device onboarding                                                | build               |
+| **5** | Safety: flash/slot/reboot confirmations, debloat restore, drop queued-flash                             | test                |
+| **6** | FE perf: lazy views, log re-render, non-persisted progress, virtualised logs                            | build + test        |
+| **7** | Rust correctness: overflow guards, transaction guards, cache/digest fixes                               | clippy + test       |
+| **8** | Remaining views migrated to the new system, as depth allows                                             | full gate           |
 
 **Final gate:** `bun run check` once, after every phase completes — per `docs/project_rules.md`, never mid-implementation.
 
@@ -440,4 +440,4 @@ Each phase is independently verifiable. Verification: `bun run lint:web`, `bun r
 
 ---
 
-*Success is measured, not asserted: initial bundle size, cold-start time, `get_device_info` spawn count, and progress-event count are all recorded before and after.*
+_Success is measured, not asserted: initial bundle size, cold-start time, `get_device_info` spawn count, and progress-event count are all recorded before and after._

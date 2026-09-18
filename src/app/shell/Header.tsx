@@ -1,21 +1,22 @@
-import { ChevronRight, Cpu, Logs, Search, SquareTerminal, Terminal } from 'lucide-react';
-import type { ViewType } from '@/app/shell/viewConfig';
-import { sectionForView, VIEW_META } from '@/shared/commands/navigation';
-import { MOD_KEY } from '@/shared/commands/shortcuts';
-import { DeviceSwitcher } from '@/shared/components/DeviceSwitcher';
-import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
-import { ThemeToggle } from '@/shared/components/ThemeToggle';
-import { UnreadLogBadge } from '@/shared/components/UnreadLogBadge';
-import { Button } from '@/shared/ui/button';
-import { Kbd, KbdGroup } from '@/shared/ui/kbd';
-import { Separator } from '@/shared/ui/separator';
-import { SidebarTrigger } from '@/shared/ui/sidebar';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/ui/tooltip';
-import { cn } from '@/shared/utils/cn';
-import { isLinux, isMac } from '@/shared/utils/platform';
+import { ChevronRight, Cpu, Logs, Search, SquareTerminal, Terminal } from "lucide-react";
+
+import type { ViewType } from "@/app/shell/view-config";
+import { sectionForView, VIEW_META } from "@/shared/commands/navigation";
+import { MOD_KEY } from "@/shared/commands/shortcuts";
+import { DeviceSwitcher } from "@/shared/components/device-switcher";
+import { ErrorBoundary } from "@/shared/components/error-boundary";
+import { ThemeToggle } from "@/shared/components/theme-toggle";
+import { UnreadLogBadge } from "@/shared/components/unread-log-badge";
+import { Button } from "@/shared/ui/button";
+import { Kbd, KbdGroup } from "@/shared/ui/kbd";
+import { Separator } from "@/shared/ui/separator";
+import { SidebarTrigger } from "@/shared/ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
+import { cn } from "@/shared/utils/cn";
+import { isLinux, isMac } from "@/shared/utils/platform";
 
 interface HeaderProps {
-  activeTab: 'logs' | 'shell';
+  activeTab: "logs" | "shell";
   activeView: ViewType;
   isDeviceRefreshing: boolean;
   isLogOpen: boolean;
@@ -35,7 +36,7 @@ interface HeaderProps {
  * each view still owns its own (screen-reader) heading, so promoting this would
  * give every page two.
  */
-export function Header({
+export const Header = ({
   activeTab,
   activeView,
   isDeviceRefreshing,
@@ -46,10 +47,10 @@ export function Header({
   onOpenLogsPanel,
   onOpenShellPanel,
   onRefreshDevices,
-}: HeaderProps) {
+}: HeaderProps) => {
   const meta = VIEW_META[activeView];
   const section = sectionForView(activeView);
-  const deviceManagerLabel = isMac ? 'System Information' : 'Device Manager';
+  const deviceManagerLabel = isMac ? "System Information" : "Device Manager";
 
   return (
     <header className="z-(--z-sticky) flex h-11 shrink-0 items-center gap-2 border-border border-b bg-surface px-3">
@@ -133,13 +134,13 @@ export function Header({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              aria-label={isLogOpen && activeTab === 'shell' ? 'Close Shell' : 'Open Shell'}
+              aria-label={isLogOpen && activeTab === "shell" ? "Close Shell" : "Open Shell"}
               className={cn(
-                'size-8',
+                "size-8",
                 // `bg-accent` alone is 1.17:1 against the surface — invisible as a
                 // state indicator (SC 1.4.11 wants 3:1). The primary-tinted glyph
                 // carries the state; the tint is only reinforcement.
-                isLogOpen && activeTab === 'shell' && 'bg-accent-active text-primary',
+                isLogOpen && activeTab === "shell" && "bg-accent-active text-primary"
               )}
               onClick={onOpenShellPanel}
               size="icon"
@@ -149,17 +150,17 @@ export function Header({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {isLogOpen && activeTab === 'shell' ? 'Close Shell' : 'Shell (Ctrl+`)'}
+            {isLogOpen && activeTab === "shell" ? "Close Shell" : "Shell (Ctrl+`)"}
           </TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              aria-label={isLogOpen && activeTab === 'logs' ? 'Close Logs' : 'Open Logs'}
+              aria-label={isLogOpen && activeTab === "logs" ? "Close Logs" : "Open Logs"}
               className={cn(
-                'relative size-8',
-                isLogOpen && activeTab === 'logs' && 'bg-accent-active text-primary',
+                "relative size-8",
+                isLogOpen && activeTab === "logs" && "bg-accent-active text-primary"
               )}
               onClick={onOpenLogsPanel}
               size="icon"
@@ -170,10 +171,10 @@ export function Header({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">
-            {isLogOpen && activeTab === 'logs' ? 'Close Logs' : 'Logs (Ctrl+`)'}
+            {isLogOpen && activeTab === "logs" ? "Close Logs" : "Logs (Ctrl+`)"}
           </TooltipContent>
         </Tooltip>
       </div>
     </header>
   );
-}
+};

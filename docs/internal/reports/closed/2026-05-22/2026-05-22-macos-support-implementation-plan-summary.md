@@ -64,6 +64,7 @@ The architectural integration involves five layers, which are visualised below:
 ### 3.1 Dependencies & Bootstrapping
 
 #### `src-tauri/Cargo.toml`
+
 To resolve the environment path inheritance issue common in macOS GUI apps, we add `fix-path-env-rs` to our crate dependencies:
 
 ```toml
@@ -73,6 +74,7 @@ fix-path-env-rs = "0.2"
 ```
 
 #### `src-tauri/src/lib.rs`
+
 The library entry point must execute this environment patch before Tauri initializes the webview engine:
 
 ```rust
@@ -97,13 +99,14 @@ pub fn run() {
 ### 3.2 Platform-Specific Helper Updates
 
 #### `src-tauri/src/helpers.rs`
+
 We must instruct our binary path resolvers to search in `resources/darwin/` when compiled for macOS:
 
 ```rust
 pub fn resolve_binary_path(app: &AppHandle, name: &str) -> CmdResult<PathBuf> {
     debug!("Resolving binary path for: {}", name);
     let file_name = binary_name(name);
-    
+
     // Map non-Windows Unix targets specifically to "darwin" if macos, otherwise "linux"
     let os_dir = if cfg!(target_os = "windows") {
         "windows"
@@ -155,6 +158,7 @@ pub fn binary_working_directory(app: Option<&AppHandle>) -> Option<PathBuf> {
 ### 3.3 System Commands Realignment
 
 #### `src-tauri/src/commands/system.rs`
+
 System launchers are OS-dependent. Device Manager and native interactive terminal wrappers must be created for macOS target configurations:
 
 ```rust
@@ -226,6 +230,7 @@ pub fn launch_terminal() -> CmdResult<()> {
 ### 3.4 Tauri Configuration and Plist Entitlements
 
 #### `src-tauri/Entitlements.plist`
+
 To enable standard WebKit JIT compiler functionality and allow execution of unsigned executable memory (critical for compiled code integrity and child processes after codesigning), a new `Entitlements.plist` file must be created inside `src-tauri/`:
 
 ```xml
@@ -238,7 +243,7 @@ To enable standard WebKit JIT compiler functionality and allow execution of unsi
     <true/>
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
     <true/>
-    
+
     <!-- Child execution environments -->
     <key>com.apple.security.cs.allow-dyld-environment-variables</key>
     <true/>
@@ -249,6 +254,7 @@ To enable standard WebKit JIT compiler functionality and allow execution of unsi
 ```
 
 #### `src-tauri/tauri.conf.json`
+
 We modify the `"bundle"` field to define minimum target versions, reference the newly created JIT entitlements file, establish ad-hoc signing identities (`"-"` is standard for development/unsigned CI, replaced via environment variables dynamically in the build step), and set custom installer properties:
 
 ```json
@@ -285,6 +291,7 @@ We modify the `"bundle"` field to define minimum target versions, reference the 
 Google distributes platform-tools for macOS containing universal binaries compiled natively with fat header formats (fat slices for both Intel `x86_64` and Silicon `arm64`).
 
 ### 4.1 Folder Layout
+
 Create a dedicated `darwin` resources directory:
 
 ```text
@@ -303,6 +310,7 @@ src-tauri/resources/darwin/
 ```
 
 ### 4.2 Local Download & Verification Steps (Simulated on Windows Host)
+
 To prepare these resources inside the repository on Windows before committing:
 
 1. **Download source**: Use the official URL:
@@ -311,12 +319,13 @@ To prepare these resources inside the repository on Windows before committing:
 3. **Permissions flag preservation**: Since the files are committed from a Windows filesystem (which does not represent standard Unix execute bits `chmod +x` natively), the release pipeline runner will enforce correct file permissions automatically inside the GitHub workflow.
 
 ### 4.3 Universal Slice Verification
+
 Once running on the macOS runner, we verify the binary headers explicitly to confirm native multi-architecture support:
 
 ```bash
 # Executing this on the runner checks that the compiled binary has both slices
 lipo -info src-tauri/resources/darwin/adb
-# Output MUST state: 
+# Output MUST state:
 # Architectures in the fat file: adb are: x86_64 arm64
 ```
 
@@ -331,7 +340,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -357,7 +366,7 @@ jobs:
       - name: Configure Rust Cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: './src-tauri -> target'
+          workspaces: "./src-tauri -> target"
 
       - name: Restore Web Dependencies
         run: bun install
@@ -379,7 +388,7 @@ jobs:
           security set-keychain-settings -t 3600 -u build.keychain
           security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-          
+
           # Extract and export identity dynamically to Github Env
           CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Apple Development" | head -n 1)
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
@@ -406,12 +415,12 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY || '-' }}
         with:
           tagName: v__VERSION__
-          releaseName: 'AdbGuiNext v__VERSION__'
-          releaseBody: 'Official release build featuring comprehensive platform support.'
+          releaseName: "AdbGuiNext v__VERSION__"
+          releaseBody: "Official release build featuring comprehensive platform support."
           releaseDraft: true
           prerelease: false
           # Directs Tauri to build fat slices for both architectures and assemble DMG
-          args: '--target universal-apple-darwin --bundles dmg'
+          args: "--target universal-apple-darwin --bundles dmg"
 ```
 
 ---
@@ -419,6 +428,7 @@ jobs:
 ## 6. Verification & Quality Assurance Plan
 
 ### 6.1 Automated Verification (GitHub Actions Run)
+
 To verify correct target architecture structures on the compiler container before completing the release artifacts:
 
 ```bash
@@ -431,49 +441,54 @@ codesign -dv --verbose=4 target/universal-apple-darwin/release/bundle/macos/AdbG
 ```
 
 ### 6.2 Manual Verification (On physical macOS Client)
+
 For verifying application behaviors on a local test Mac:
 
-| Target Case | Step Description | Expected Pass Result |
-|---|---|---|
-| **App Startup** | Double-click the compiled `.app` inside the mounted `.dmg`. | The application opens, the frontend renders fully, and no WebKit thread crashes occur (proves JIT plist config is valid). |
-| **Path Fix** | Launch from Applications folder directly (GUI mode). | Environment variables are successfully read; internal utilities locate `adb` and `fastboot` successfully. |
-| **USB Link** | Connect an Android target device via USB and unlock it. | ADB discovers the node, serial number mounts, and active status updates in the dashboard. |
-| **Terminal Launch** | Click the "Open Terminal" button. | macOS Terminal launches with active directory focused inside `resources/darwin/`. |
-| **System Profile** | Click the "Device Manager" option. | The native System Information profile application opens. |
-| **Payload Extraction**| Run payload dumper on a standard firmware zip. | The streaming extraction works, using macOS native unix disk buffers without memory leaks. |
-| **Rosetta Fallback** | Execute the app enforcing Intel emulation: `arch -x86_64 open AdbGuiNext.app`. | Emulation runs flawlessly under Rosetta 2 (proves x86_64 slice compliance). |
+| Target Case            | Step Description                                                               | Expected Pass Result                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| **App Startup**        | Double-click the compiled `.app` inside the mounted `.dmg`.                    | The application opens, the frontend renders fully, and no WebKit thread crashes occur (proves JIT plist config is valid). |
+| **Path Fix**           | Launch from Applications folder directly (GUI mode).                           | Environment variables are successfully read; internal utilities locate `adb` and `fastboot` successfully.                 |
+| **USB Link**           | Connect an Android target device via USB and unlock it.                        | ADB discovers the node, serial number mounts, and active status updates in the dashboard.                                 |
+| **Terminal Launch**    | Click the "Open Terminal" button.                                              | macOS Terminal launches with active directory focused inside `resources/darwin/`.                                         |
+| **System Profile**     | Click the "Device Manager" option.                                             | The native System Information profile application opens.                                                                  |
+| **Payload Extraction** | Run payload dumper on a standard firmware zip.                                 | The streaming extraction works, using macOS native unix disk buffers without memory leaks.                                |
+| **Rosetta Fallback**   | Execute the app enforcing Intel emulation: `arch -x86_64 open AdbGuiNext.app`. | Emulation runs flawlessly under Rosetta 2 (proves x86_64 slice compliance).                                               |
 
 ---
 
 ## 7. Strategic Risks & Mitigations
 
 ### 7.1 Gatekeeper Restrictions
-* **Risk**: Unnotarized builds will be blocked by default with the "app is damaged and cannot be opened" or "unidentified developer" prompt.
-* **Mitigation**: Standardize distribution as a `.dmg`. For ad-hoc unsigned distributions, provide simple installation documentation detailing `Right-Click -> Open` or `xattr -cr /Applications/AdbGuiNext.app` terminal command bypasses.
+
+- **Risk**: Unnotarized builds will be blocked by default with the "app is damaged and cannot be opened" or "unidentified developer" prompt.
+- **Mitigation**: Standardize distribution as a `.dmg`. For ad-hoc unsigned distributions, provide simple installation documentation detailing `Right-Click -> Open` or `xattr -cr /Applications/AdbGuiNext.app` terminal command bypasses.
 
 ### 7.2 WebKit JIT Crash Patterns
-* **Risk**: High-security OS profiles (macOS Sonoma and Sequoia) enforce absolute sandbox safety. If entitlements are missing or corrupted, the WebView engine terminates the executable instantly with code signature errors.
-* **Mitigation**: The `Entitlements.plist` explicitly requests `allow-jit` and `allow-unsigned-executable-memory`. Additionally, dynamic library validation is bypassed using `disable-library-validation` so that child executables (like ADB) do not require identical code-signing certificate footprints.
+
+- **Risk**: High-security OS profiles (macOS Sonoma and Sequoia) enforce absolute sandbox safety. If entitlements are missing or corrupted, the WebView engine terminates the executable instantly with code signature errors.
+- **Mitigation**: The `Entitlements.plist` explicitly requests `allow-jit` and `allow-unsigned-executable-memory`. Additionally, dynamic library validation is bypassed using `disable-library-validation` so that child executables (like ADB) do not require identical code-signing certificate footprints.
 
 ### 7.3 Binary Execution Permission Resets
-* **Risk**: Committing binaries from Windows ignores the POSIX executable file modes, causing ADB commands to crash with "permission denied" on run.
-* **Mitigation**: The GitHub Actions runner includes automated shell command scripts (`chmod +x`) directly inside the packaging step, guaranteeing that the target `.dmg` has correct Unix permissions.
+
+- **Risk**: Committing binaries from Windows ignores the POSIX executable file modes, causing ADB commands to crash with "permission denied" on run.
+- **Mitigation**: The GitHub Actions runner includes automated shell command scripts (`chmod +x`) directly inside the packaging step, guaranteeing that the target `.dmg` has correct Unix permissions.
 
 ---
 
 ## 8. Summary of File Modification Surface
 
-| Target File | Scope of Change | Role in macOS Integration |
-|---|---|---|
-| [`src-tauri/Cargo.toml`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Cargo.toml) | Added dependency | Imports `fix-path-env-rs` for environment variable loading. |
-| [`src-tauri/src/lib.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/lib.rs) | Injected initialization call | Triggers environmental path patch on app startup. |
-| [`src-tauri/src/helpers.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/helpers.rs) | Added OS directory branches | Directs resolvers to look in the `"darwin"` resources directory. |
-| [`src-tauri/src/commands/system.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/commands/system.rs) | Added cfg targets | Implements macOS native terminal and device profiling launchers. |
-| [`src-tauri/tauri.conf.json`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/tauri.conf.json) | Appended macOS schema object | Integrates minimum versions, bundle properties, and Plist references. |
-| [`src-tauri/Entitlements.plist`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Entitlements.plist) | **NEW FILE** | Defines code signing sandbox & WebKit JIT entitlements. |
-| [`.github/workflows/release.yml`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/.github/workflows/release.yml) | **NEW FILE** | Release pipeline building universal `.dmg` binaries. |
+| Target File                                                                                                                                 | Scope of Change              | Role in macOS Integration                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------- |
+| [`src-tauri/Cargo.toml`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Cargo.toml)                         | Added dependency             | Imports `fix-path-env-rs` for environment variable loading.           |
+| [`src-tauri/src/lib.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/lib.rs)                         | Injected initialization call | Triggers environmental path patch on app startup.                     |
+| [`src-tauri/src/helpers.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/helpers.rs)                 | Added OS directory branches  | Directs resolvers to look in the `"darwin"` resources directory.      |
+| [`src-tauri/src/commands/system.rs`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/src/commands/system.rs) | Added cfg targets            | Implements macOS native terminal and device profiling launchers.      |
+| [`src-tauri/tauri.conf.json`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/tauri.conf.json)               | Appended macOS schema object | Integrates minimum versions, bundle properties, and Plist references. |
+| [`src-tauri/Entitlements.plist`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/src-tauri/Entitlements.plist)         | **NEW FILE**                 | Defines code signing sandbox & WebKit JIT entitlements.               |
+| [`.github/workflows/release.yml`](file:///c:/Users/akila/OneDrive/Desktop/OSS/WindowsApps/adb-gui-next/.github/workflows/release.yml)       | **NEW FILE**                 | Release pipeline building universal `.dmg` binaries.                  |
 
 ---
 
 ### Conclusion
+
 This plan provides a fully engineered, robust, and low-friction path to achieve production-grade macOS support for **ADB GUI Next** entirely from a Windows development machine. The changes are surgical, preserve all existing Windows/Linux workflows, and implement the highest standard of macOS application delivery guidelines.

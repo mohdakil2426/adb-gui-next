@@ -1,7 +1,7 @@
-import type { backend } from '@/desktop/models';
+import type { backend } from "@/desktop/models";
 
 export type FirmwareBrand = backend.FirmwareBrand;
-export type BrandFilter = 'all' | FirmwareBrand;
+export type BrandFilter = "all" | FirmwareBrand;
 export type FirmwareImageType = backend.FirmwareImageType;
 export type FirmwareBuild = backend.FirmwareBuild;
 export type FirmwareDeviceModel = backend.FirmwareDeviceModel;
@@ -18,46 +18,46 @@ export interface BrandMetadata {
 
 export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
   google: {
-    id: 'google',
-    displayName: 'Google Pixel',
-    shortLabel: 'Pixel',
-    description: 'Official Google Pixel firmware builds with verified OTA payloads.',
-    portalUrl: 'https://developers.google.com/android/ota',
-    portalName: 'Google Pixel OTA Portal',
+    description: "Official Google Pixel firmware builds with verified OTA payloads.",
+    displayName: "Google Pixel",
+    id: "google",
+    portalName: "Google Pixel OTA Portal",
+    portalUrl: "https://developers.google.com/android/ota",
+    shortLabel: "Pixel",
   },
   nothing: {
-    id: 'nothing',
-    displayName: 'Nothing',
-    shortLabel: 'Nothing',
     description:
-      'Nothing OS & CMF by Nothing official firmware builds, OTA updates, and image packages.',
-    portalUrl: 'https://nothingarchive.tech/docs/firmware',
-    portalName: 'Nothing OS Firmware Archive',
-  },
-  xiaomi: {
-    id: 'xiaomi',
-    displayName: 'Xiaomi',
-    shortLabel: 'Xiaomi',
-    description:
-      'Xiaomi, Redmi, and POCO official HyperOS & MIUI recovery ROMs and fastboot image archives.',
-    portalUrl: 'https://xmfirmwareupdater.com',
-    portalName: 'XM Firmware Updater Portal',
+      "Nothing OS & CMF by Nothing official firmware builds, OTA updates, and image packages.",
+    displayName: "Nothing",
+    id: "nothing",
+    portalName: "Nothing OS Firmware Archive",
+    portalUrl: "https://nothingarchive.tech/docs/firmware",
+    shortLabel: "Nothing",
   },
   oneplus: {
-    id: 'oneplus',
-    displayName: 'OnePlus',
-    shortLabel: 'OnePlus',
-    description: 'OxygenOS & ColorOS full firmware payloads and OTA updates.',
-    portalUrl: 'https://service.oneplus.com',
-    portalName: 'OnePlus Software Portal',
+    description: "OxygenOS & ColorOS full firmware payloads and OTA updates.",
+    displayName: "OnePlus",
+    id: "oneplus",
+    portalName: "OnePlus Software Portal",
+    portalUrl: "https://service.oneplus.com",
+    shortLabel: "OnePlus",
   },
   samsung: {
-    id: 'samsung',
-    displayName: 'Samsung',
-    shortLabel: 'Samsung',
-    description: 'Samsung Galaxy official multi-file (AP/BL/CP/CSC) firmware packages.',
-    portalUrl: 'https://samfw.com',
-    portalName: 'Samsung Firmware Portal',
+    description: "Samsung Galaxy official multi-file (AP/BL/CP/CSC) firmware packages.",
+    displayName: "Samsung",
+    id: "samsung",
+    portalName: "Samsung Firmware Portal",
+    portalUrl: "https://samfw.com",
+    shortLabel: "Samsung",
+  },
+  xiaomi: {
+    description:
+      "Xiaomi, Redmi, and POCO official HyperOS & MIUI recovery ROMs and fastboot image archives.",
+    displayName: "Xiaomi",
+    id: "xiaomi",
+    portalName: "XM Firmware Updater Portal",
+    portalUrl: "https://xmfirmwareupdater.com",
+    shortLabel: "Xiaomi",
   },
 };
 
@@ -65,12 +65,12 @@ export const BRAND_DISPLAY_INFO: Record<FirmwareBrand, BrandMetadata> = {
 export type PixelFirmwareBuild = FirmwareBuild;
 export type PixelDeviceModel = FirmwareDeviceModel;
 
-export function formatCleanDeviceName(name: string): string {
+export const formatCleanDeviceName = (name: string): string => {
   let cleaned = name.trim();
-  const forIdx = cleaned.indexOf(' for ');
+  const forIdx = cleaned.indexOf(" for ");
   if (forIdx !== -1) {
     cleaned = cleaned.slice(forIdx + 5).trim();
   }
-  cleaned = cleaned.replace(/["'“”‘’]/g, '').trim();
+  cleaned = cleaned.replaceAll(/["'“”‘’]/gu, "").trim();
   return cleaned || name;
-}
+};

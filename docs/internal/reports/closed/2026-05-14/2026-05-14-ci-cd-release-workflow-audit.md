@@ -68,16 +68,16 @@ Adb Gui Next
 
 ## Current Files Changed
 
-| File | Purpose |
-| --- | --- |
-| `.github/workflows/ci.yml` | CI on every branch push and PR to main, plus temporary x64 artifacts |
-| `.github/workflows/publish.yml` | Manual-only release from main, draft release, checksums |
-| `.github/release-notes/v0.2.0.md` | Release notes used by `gh release create` |
+| File                                 | Purpose                                                                     |
+| ------------------------------------ | --------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`           | CI on every branch push and PR to main, plus temporary x64 artifacts        |
+| `.github/workflows/publish.yml`      | Manual-only release from main, draft release, checksums                     |
+| `.github/release-notes/v0.2.0.md`    | Release notes used by `gh release create`                                   |
 | `scripts/verify-release-version.mjs` | Verifies `package.json`, `Cargo.toml`, and `tauri.conf.json` versions match |
-| `scripts/collect-release-assets.ps1` | Normalizes Tauri output names and creates the Windows portable zip |
-| `package.json` | Adds `release:verify` script |
-| `src-tauri/tauri.conf.json` | Sets version `0.2.0` and product/window title `Adb Gui Next` |
-| `README.md` | Updates install naming, release asset names, and current project structure |
+| `scripts/collect-release-assets.ps1` | Normalizes Tauri output names and creates the Windows portable zip          |
+| `package.json`                       | Adds `release:verify` script                                                |
+| `src-tauri/tauri.conf.json`          | Sets version `0.2.0` and product/window title `Adb Gui Next`                |
+| `README.md`                          | Updates install naming, release asset names, and current project structure  |
 
 ## CI Workflow Review
 
@@ -89,7 +89,7 @@ Current CI trigger:
 on:
   push:
     branches:
-      - '**'
+      - "**"
   pull_request:
     branches: [main]
 ```
@@ -135,7 +135,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        default: '0.2.0'
+        default: "0.2.0"
 ```
 
 No tag push and no branch push can publish a release. This matches the requested manual-only release policy.
@@ -247,13 +247,13 @@ Reasoning:
 
 ## Risk Register
 
-| Risk | Status | Recommendation |
-| --- | --- | --- |
-| Unsigned Windows installer | Accepted for v0.2.0 draft | Add signing later through a dedicated release-hardening pass |
-| No artifact attestations | Accepted for v0.2.0 draft | Add after the draft release flow is proven |
-| No updater metadata | Accepted | Do not add updater until signing and updater keys are planned |
-| Linux build not locally verified on Windows | Expected | GitHub Linux matrix will verify `.deb` and `.rpm` packaging |
-| Windows `cargo test` can fail in some local environments | Known | Keep CI strict unless GitHub runners prove the loader issue reproduces there |
+| Risk                                                     | Status                    | Recommendation                                                               |
+| -------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| Unsigned Windows installer                               | Accepted for v0.2.0 draft | Add signing later through a dedicated release-hardening pass                 |
+| No artifact attestations                                 | Accepted for v0.2.0 draft | Add after the draft release flow is proven                                   |
+| No updater metadata                                      | Accepted                  | Do not add updater until signing and updater keys are planned                |
+| Linux build not locally verified on Windows              | Expected                  | GitHub Linux matrix will verify `.deb` and `.rpm` packaging                  |
+| Windows `cargo test` can fail in some local environments | Known                     | Keep CI strict unless GitHub runners prove the loader issue reproduces there |
 
 ## Best-Practice References Used
 
