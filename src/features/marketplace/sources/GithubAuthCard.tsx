@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   User,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { BrowserOpenURL } from '@/desktop/runtime';
 import { useMarketplaceAuth } from '@/features/marketplace/hooks/useMarketplaceAuth';
@@ -35,6 +35,11 @@ export function GithubAuthCard() {
   const githubOauthClientId = useMarketplaceStore((state) => state.githubOauthClientId);
   const setGithubOauthClientId = useMarketplaceStore((state) => state.setGithubOauthClientId);
   const { tokenStatus, rateLimit: authRateLimit } = useMarketplaceAuthStore();
+  const refreshAuth = useMarketplaceAuthStore((state) => state.refresh);
+
+  useEffect(() => {
+    void refreshAuth();
+  }, [refreshAuth]);
   const {
     githubDeviceChallenge,
     isGithubAuthenticating,
@@ -60,7 +65,7 @@ export function GithubAuthCard() {
   const login = tokenStatus?.login ?? githubSession.user?.login ?? null;
   const rateLimit = authRateLimit ?? githubSession.rateLimit;
   const effectiveToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
-
+  const isAuthenticated = isSignedIn || Boolean(effectiveToken);
   return (
     <Card className="rounded-xl border-border bg-surface shadow-none">
       <CardHeader className="pb-3">
@@ -69,10 +74,11 @@ export function GithubAuthCard() {
             <GitBranch className="size-5 text-muted-foreground" />
             GitHub API Rate Limit & Authentication
           </CardTitle>
-          {effectiveToken ? (
+          {isAuthenticated ? (
             <Badge className="gap-1 text-[10px]" variant="success">
               <ShieldCheck className="size-3" />
-              Authenticated (5,000 req/hr)
+              Authenticated (
+              {rateLimit?.limit ? `${rateLimit.limit.toLocaleString()} req/hr` : '5,000 req/hr'})
             </Badge>
           ) : (
             <Badge className="gap-1 text-[10px]" variant="outline">

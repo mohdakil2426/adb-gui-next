@@ -1,7 +1,9 @@
 import { ArrowUpCircle, Database, Search, Sparkles } from 'lucide-react';
+import { useEffect } from 'react';
 import { MarketplaceBrowseTab } from '@/features/marketplace/browse/MarketplaceBrowseTab';
 import { useInstallTarget } from '@/features/marketplace/hooks/useInstallTarget';
 import { useMarketplaceSearch } from '@/features/marketplace/hooks/useMarketplaceSearch';
+import { useMarketplaceAuthStore } from '@/features/marketplace/model/authStore';
 import {
   type MarketplaceTab,
   useMarketplaceStore,
@@ -35,6 +37,11 @@ export function ViewMarketplace({ initialTab }: { initialTab?: MarketplaceTab } 
   const target = useInstallTarget();
   const currentTab: MarketplaceTab =
     initialTab ?? (activeTab || (hasQuery ? 'browse' : 'overview'));
+
+  useEffect(() => {
+    void useMarketplaceAuthStore.getState().refresh();
+  }, []);
+
   return (
     <div className="@container relative flex min-h-0 w-full flex-1 flex-col gap-4">
       <h1 className="sr-only">Open-Source App Marketplace</h1>
