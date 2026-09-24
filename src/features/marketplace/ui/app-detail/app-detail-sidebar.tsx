@@ -11,8 +11,8 @@ const MetadataItem = ({ label, value }: { label: string; value: string | null | 
   }
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-caption text-muted-foreground uppercase tracking-wide">{label}</span>
-      <span className="truncate font-medium text-body text-foreground">{value}</span>
+      <span className="text-caption text-muted-foreground tracking-wide uppercase">{label}</span>
+      <span className="text-body text-foreground truncate font-medium">{value}</span>
     </div>
   );
 };
@@ -37,7 +37,7 @@ export const AppDetailSidebar = ({
   version,
 }: AppDetailSidebarProps) => (
   <section className="flex flex-col gap-3">
-    <h2 className="text-caption text-muted-foreground uppercase tracking-wide">App information</h2>
+    <h2 className="text-caption text-muted-foreground tracking-wide uppercase">App information</h2>
     <div className="grid grid-cols-2 gap-x-4 gap-y-3">
       <MetadataItem label="Version" value={version} />
       <MetadataItem label="Updated" value={updatedAt ? formatDisplayDate(updatedAt) : null} />

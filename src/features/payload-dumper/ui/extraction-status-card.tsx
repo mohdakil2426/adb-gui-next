@@ -80,26 +80,26 @@ const renderStatusHeadingIcon = (isSuccess: boolean, wroteNothing: boolean) => {
 };
 
 const ExtractionStatsSummary = ({ stats }: { stats: backend.ExtractionStats }) => (
-  <div className="numeric flex min-w-0 items-center gap-2 text-caption text-muted-foreground">
+  <div className="numeric text-caption text-muted-foreground flex min-w-0 items-center gap-2">
     <HardDrive aria-hidden="true" className="size-3.5 shrink-0" />
     <span className="truncate">
       {stats.partitionsExtracted} partitions
       {stats.totalBytes > 0 ? (
         <>
-          <span className="mx-1 text-foreground-subtle">·</span>
+          <span className="text-foreground-subtle mx-1">·</span>
           {formatBytes(stats.totalBytes)}
         </>
       ) : null}
       {stats.durationMs > 0 ? (
         <>
-          <span className="mx-1 text-foreground-subtle">·</span>
+          <span className="text-foreground-subtle mx-1">·</span>
           <Clock aria-hidden="true" className="inline size-3 align-text-bottom" />{" "}
           {formatDuration(stats.durationMs / MS_PER_SECOND)}
         </>
       ) : null}
       {stats.throughputMbps > 0 ? (
         <>
-          <span className="mx-1 text-foreground-subtle">·</span>
+          <span className="text-foreground-subtle mx-1">·</span>
           {stats.throughputMbps.toFixed(1)} MB/s
         </>
       ) : null}
@@ -127,7 +127,7 @@ export const ExtractionStatusCard = ({
       className={cn("flex min-w-0 flex-col gap-3 rounded-lg border p-4", TONE_SURFACE[tone])}
     >
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-        <h2 className={cn("flex shrink-0 items-center gap-1.5 text-title", TONE_TEXT[tone])}>
+        <h2 className={cn("text-title flex shrink-0 items-center gap-1.5", TONE_TEXT[tone])}>
           {renderStatusHeadingIcon(isSuccess, wroteNothing)}
           {title}
         </h2>
@@ -141,7 +141,7 @@ export const ExtractionStatusCard = ({
       {isSuccess ? null : (
         <div aria-live="assertive" className="flex flex-col gap-2" role="alert">
           {errorMessage ? (
-            <p className="min-w-0 break-words font-mono text-destructive text-mono">
+            <p className="text-destructive text-mono min-w-0 font-mono break-words">
               {errorMessage}
             </p>
           ) : null}
@@ -175,9 +175,9 @@ export const ExtractionStatusCard = ({
       {/* Output path */}
       {isSuccess && !wroteNothing && outputDir ? (
         <div className="flex min-w-0 items-center gap-2">
-          <FolderOpen aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+          <FolderOpen aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
           <code
-            className="min-w-0 flex-1 select-all truncate font-mono text-mono text-muted-foreground"
+            className="text-mono text-muted-foreground min-w-0 flex-1 truncate font-mono select-all"
             title={outputDir}
           >
             {outputDir}
@@ -199,11 +199,11 @@ export const ExtractionStatusCard = ({
         <ul className="flex flex-wrap gap-x-3 gap-y-1">
           {extractedFiles.map((file) => (
             <li
-              className="inline-flex min-w-0 items-center gap-1 font-mono text-mono text-muted-foreground"
+              className="text-mono text-muted-foreground inline-flex min-w-0 items-center gap-1 font-mono"
               key={file}
               title={file}
             >
-              <FileDown aria-hidden="true" className="size-3 shrink-0 text-success" />
+              <FileDown aria-hidden="true" className="text-success size-3 shrink-0" />
               <span className="max-w-48 truncate">{file}</span>
             </li>
           ))}

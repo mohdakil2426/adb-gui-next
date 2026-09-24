@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import type { QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 

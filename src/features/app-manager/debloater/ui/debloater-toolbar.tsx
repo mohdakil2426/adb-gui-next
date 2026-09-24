@@ -94,11 +94,11 @@ export const DebloaterToolbar = ({
         <div className="relative min-w-48 flex-1">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
           />
           <Input
             aria-label="Search system package list"
-            className="h-9 pr-8 pl-8 text-body"
+            className="text-body h-9 pr-8 pl-8"
             disabled={!selectedSerial}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder="Search packages by name or description…"
@@ -107,7 +107,7 @@ export const DebloaterToolbar = ({
           {searchQuery ? (
             <button
               aria-label="Clear search"
-              className="absolute top-1/2 right-2 -translate-y-1/2 rounded-xs p-1 text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded-xs p-1 transition-colors"
               onClick={() => onSearchQueryChange("")}
               type="button"
             >
@@ -127,7 +127,7 @@ export const DebloaterToolbar = ({
             >
               <Building2
                 aria-hidden="true"
-                className="size-3.5 text-muted-foreground"
+                className="text-muted-foreground size-3.5"
                 data-icon="inline-start"
               />
               <span className="truncate">{listLabel}</span>
@@ -154,7 +154,7 @@ export const DebloaterToolbar = ({
             <Button className="h-9 gap-1.5" disabled={!selectedSerial} size="sm" type="button">
               <Layers
                 aria-hidden="true"
-                className="size-3.5 text-muted-foreground"
+                className="text-muted-foreground size-3.5"
                 data-icon="inline-start"
               />
               <span className="truncate">{stateLabel}</span>
@@ -197,7 +197,7 @@ export const DebloaterToolbar = ({
       />
 
       {/* ── Telemetry & Mode Toggles Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-border/40 border-t pt-2">
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-t pt-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="numeric text-caption text-muted-foreground">
             {isLoadingPackages
@@ -205,7 +205,7 @@ export const DebloaterToolbar = ({
               : `${filteredCount} of ${packagesCount} system packages`}
           </span>
           {selectedCount > 0 ? (
-            <Badge className="font-mono text-caption" variant="default">
+            <Badge className="text-caption font-mono" variant="default">
               {selectedCount} selected
             </Badge>
           ) : null}
@@ -225,7 +225,7 @@ export const DebloaterToolbar = ({
               onCheckedChange={onDisableModeChange}
             />
             <FieldContent className="gap-0">
-              <FieldLabel className="cursor-pointer text-label" htmlFor="debloat-disable-mode">
+              <FieldLabel className="text-label cursor-pointer" htmlFor="debloat-disable-mode">
                 Disable mode
               </FieldLabel>
               <FieldDescription className="sr-only">
@@ -244,15 +244,15 @@ export const DebloaterToolbar = ({
             <FieldContent className="gap-0">
               <FieldLabel
                 className={cn(
-                  "flex cursor-pointer items-center gap-1.5 text-label",
-                  expertMode && "font-semibold text-warning"
+                  "text-label flex cursor-pointer items-center gap-1.5",
+                  expertMode && "text-warning font-semibold"
                 )}
                 htmlFor="debloat-expert-mode"
               >
                 {expertMode ? (
-                  <ShieldAlert aria-hidden="true" className="size-3.5 text-warning" />
+                  <ShieldAlert aria-hidden="true" className="text-warning size-3.5" />
                 ) : (
-                  <Shield aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                  <Shield aria-hidden="true" className="text-muted-foreground size-3.5" />
                 )}
                 Expert mode
               </FieldLabel>

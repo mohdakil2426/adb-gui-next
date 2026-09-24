@@ -129,7 +129,7 @@ describe("frontend architecture boundaries", () => {
       /from\s+['"]@\/lib\b/u,
       /from\s+['"]@\/stores\b/u,
       /from\s+['"]@\/types\b/u,
-      /from\s+['"]\.\.?\/.*(components|hooks|lib|stores|types)\b/u,
+      /from\s+['"]\.\.?\/.*(?:components|hooks|lib|stores|types)\b/u,
     ];
 
     const offenders = collectFrontendImplementationFiles()

@@ -90,17 +90,17 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
 
   const { partitions, totalGb } = buildPartitions(breakdown, avd);
   return (
-    <Card className="@container flex h-full flex-col justify-between rounded-xl border-border bg-surface py-4 shadow-none">
+    <Card className="border-border bg-surface @container flex h-full flex-col justify-between rounded-xl py-4 shadow-none">
       <CardHeader className="gap-0 px-4.5 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle
             as="h2"
-            className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+            className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
           >
-            <HardDrive aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <HardDrive aria-hidden="true" className="text-muted-foreground size-3.5" />
             Virtual Disk Partition Allocation
           </CardTitle>
-          <span className="font-medium font-mono text-caption text-foreground">
+          <span className="text-caption text-foreground font-mono font-medium">
             {totalGb.toFixed(1)} GB Total
           </span>
         </div>
@@ -108,10 +108,10 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
 
       <CardContent className="flex flex-1 flex-col justify-between gap-4 px-4.5 pt-1">
         {/* Hand-rolled Pure SVG Horizontal Segmented Bar */}
-        <div className="flex flex-col gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-4">
-          <div className="flex items-center justify-between text-caption text-muted-foreground">
+        <div className="border-border/60 bg-surface-raised/40 flex flex-col gap-2 rounded-lg border p-4">
+          <div className="text-caption text-muted-foreground flex items-center justify-between">
             <span>Storage Composition</span>
-            <span className="font-medium text-foreground">
+            <span className="text-foreground font-medium">
               {hoveredId
                 ? `${partitions.find((p) => p.id === hoveredId)?.label}: ${partitions.find((p) => p.id === hoveredId)?.sizeGb.toFixed(1)} GB (${partitions.find((p) => p.id === hoveredId)?.percentage.toFixed(1)}%)`
                 : "Hover segments for partition details"}
@@ -156,7 +156,7 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
             return (
               <div
                 className={cn(
-                  "flex flex-col gap-0.5 rounded-lg border border-border/40 bg-surface-raised/30 p-2.5 transition-colors",
+                  "border-border/40 bg-surface-raised/30 flex flex-col gap-0.5 rounded-lg border p-2.5 transition-colors",
                   isHovered && "border-border bg-surface-raised/80"
                 )}
                 key={part.id}
@@ -173,15 +173,15 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
                       className="size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: part.color }}
                     />
-                    <span className="truncate font-medium text-caption text-foreground">
+                    <span className="text-caption text-foreground truncate font-medium">
                       {part.label}
                     </span>
                   </div>
-                  <span className="font-medium font-mono text-caption text-foreground text-mono-sm">
+                  <span className="text-caption text-foreground text-mono-sm font-mono font-medium">
                     {part.sizeGb.toFixed(1)} GB
                   </span>
                 </div>
-                <span className="truncate text-[10px] text-muted-foreground">
+                <span className="text-muted-foreground truncate text-[10px]">
                   {part.percentage.toFixed(1)}% · {part.description}
                 </span>
               </div>

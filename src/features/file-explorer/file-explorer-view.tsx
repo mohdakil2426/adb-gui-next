@@ -8,10 +8,16 @@ import { FileExplorerTreeSection } from "@/features/file-explorer/ui/file-explor
 export const ViewFileExplorer = ({ activeView }: { activeView: string }) => {
   const vm = useFileExplorerViewModel(activeView);
   const { containerRef } = vm;
-
+  const handleCreateFile = vm.actions.startCreateFile;
+  const handleCreateFolder = vm.actions.startCreateFolder;
+  const handleNavigate = vm.actions.loadFiles;
+  const handlePathEditingChange = vm.actions.setEditPathValue;
+  const handlePathEditingStop = vm.actions.stopPathEditing;
+  const handleRename = vm.actions.startRename;
+  const handleSearchQueryChange = vm.actions.setSearchQuery;
   return (
     <div
-      className="@container flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-surface"
+      className="border-border bg-surface @container flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border"
       ref={containerRef}
     >
       <h1 className="sr-only">File Explorer</h1>
@@ -29,8 +35,8 @@ export const ViewFileExplorer = ({ activeView }: { activeView: string }) => {
         onBack={vm.actions.handleGoBack}
         onClearSearch={vm.actions.handleClearSearch}
         onCollapseTree={vm.actions.handleCollapseTree}
-        onCreateFile={vm.actions.startCreateFile}
-        onCreateFolder={vm.actions.startCreateFolder}
+        onCreateFile={handleCreateFile}
+        onCreateFolder={handleCreateFolder}
         onDeleteSelection={vm.actions.handleDeleteFromSelection}
         onExpandTree={vm.actions.handleExpandTree}
         onExport={vm.actions.handlePull}
@@ -39,15 +45,15 @@ export const ViewFileExplorer = ({ activeView }: { activeView: string }) => {
         onImportFile={vm.actions.handlePushFile}
         onImportFolder={vm.actions.handlePushFolder}
         onMoveToFolder={vm.actions.handleMoveToFolder}
-        onNavigate={vm.actions.loadFiles}
+        onNavigate={handleNavigate}
         onPathClick={vm.actions.handlePathClick}
-        onPathEditingChange={vm.actions.setEditPathValue}
+        onPathEditingChange={handlePathEditingChange}
         onPathEditingCommit={vm.actions.handlePathEditCommit}
-        onPathEditingStop={vm.actions.stopPathEditing}
+        onPathEditingStop={handlePathEditingStop}
         onRefresh={vm.actions.handleRefreshClick}
-        onRename={vm.actions.startRename}
+        onRename={handleRename}
         onRootAccessToggle={vm.actions.handleRootAccessToggle}
-        onSearchQueryChange={vm.actions.setSearchQuery}
+        onSearchQueryChange={handleSearchQueryChange}
         rootAccessGranted={vm.rootAccessGranted}
         searchQuery={vm.listing.searchQuery}
         selectedCount={vm.selection.selectedNames.size}

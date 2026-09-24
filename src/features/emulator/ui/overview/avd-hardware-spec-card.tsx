@@ -24,17 +24,17 @@ const SpecRow = ({
   secondary?: string;
   value: string;
 }) => (
-  <div className="flex items-center justify-between gap-3 rounded-lg border border-border/40 bg-surface-raised/30 px-3.5 py-2.5">
+  <div className="border-border/40 bg-surface-raised/30 flex items-center justify-between gap-3 rounded-lg border px-3.5 py-2.5">
     <div className="flex min-w-0 items-center gap-2.5">
-      <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+      <Icon aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
       <div className="flex min-w-0 flex-col">
-        <span className="font-medium text-caption text-muted-foreground">{label}</span>
+        <span className="text-caption text-muted-foreground font-medium">{label}</span>
         {secondary ? (
-          <span className="truncate text-[11px] text-muted-foreground">{secondary}</span>
+          <span className="text-muted-foreground truncate text-[11px]">{secondary}</span>
         ) : null}
       </div>
     </div>
-    <span className="truncate font-medium text-body text-foreground">{value}</span>
+    <span className="text-body text-foreground truncate font-medium">{value}</span>
   </div>
 );
 
@@ -51,13 +51,13 @@ export const AvdHardwareSpecCard = ({ avd }: AvdHardwareSpecCardProps) => {
   const specs = realSpecs ?? fallback;
 
   return (
-    <Card className="@container flex h-full flex-col justify-between rounded-xl border-border bg-surface py-4 shadow-none">
+    <Card className="border-border bg-surface @container flex h-full flex-col justify-between rounded-xl py-4 shadow-none">
       <CardHeader className="gap-0 px-4.5 pb-2">
         <CardTitle
           as="h2"
-          className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+          className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
         >
-          <Cpu aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <Cpu aria-hidden="true" className="text-muted-foreground size-3.5" />
           Emulated Hardware & Host Interface
         </CardTitle>
       </CardHeader>

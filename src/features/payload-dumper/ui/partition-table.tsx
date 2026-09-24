@@ -124,15 +124,15 @@ export const PartitionTable = ({
       </div>
 
       {/* Table container */}
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="relative flex items-center border-border border-b px-3 py-2">
+      <div className="border-border bg-surface overflow-hidden rounded-lg border">
+        <div className="border-border relative flex items-center border-b px-3 py-2">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute left-5 size-3.5 text-muted-foreground"
+            className="text-muted-foreground pointer-events-none absolute left-5 size-3.5"
           />
           <Input
             aria-label="Search partitions"
-            className="h-8 w-full pl-7 text-body"
+            className="text-body h-8 w-full pl-7"
             onChange={(event) => {
               setSearchQuery(event.target.value);
             }}
@@ -143,7 +143,7 @@ export const PartitionTable = ({
 
         {/* Header — the grid never changes, so rows never reflow mid-extraction */}
         <div
-          className="grid gap-2 border-border border-b bg-surface-raised px-3 py-2 text-caption text-muted-foreground uppercase tracking-wide"
+          className="border-border bg-surface-raised text-caption text-muted-foreground grid gap-2 border-b px-3 py-2 tracking-wide uppercase"
           style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
         >
           <span />
@@ -159,9 +159,9 @@ export const PartitionTable = ({
             on a tall/4K window well past the point of being useful. The rem
             ceiling caps that growth; `min-h-[120px]` keeps it from collapsing at
             the 720px window-height floor. */}
-        <div className="max-h-[min(40vh,28rem)] min-h-[120px] divide-y divide-border/60 overflow-y-auto overflow-x-hidden">
+        <div className="divide-border/60 max-h-[min(40vh,28rem)] min-h-[120px] divide-y overflow-x-hidden overflow-y-auto">
           {filteredPartitions.length === 0 ? (
-            <p className="px-3 py-6 text-center text-body text-muted-foreground">
+            <p className="text-body text-muted-foreground px-3 py-6 text-center">
               {`No partition matches “${searchQuery}” — clear the search to see all ${partitions.length}.`}
             </p>
           ) : null}

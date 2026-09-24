@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Loader2, PackageOpen } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -90,15 +91,15 @@ export const PayloadOverviewTab = ({ onNavigateTab }: PayloadOverviewTabProps) =
     <div className="@container flex flex-col gap-5">
       {/* Dynamic Partition Unpack Banner (Appears when super.img detected) */}
       {hasSuper ? (
-        <Card className="rounded-xl border-primary/30 bg-primary/5 p-4 shadow-none">
-          <CardContent className="flex @sm:flex-row flex-col @sm:items-center @sm:justify-between gap-3 p-0">
+        <Card className="border-primary/30 bg-primary/5 rounded-xl p-4 shadow-none">
+          <CardContent className="flex flex-col gap-3 p-0 @sm:flex-row @sm:items-center @sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/40 bg-primary/10 text-primary">
+              <div className="border-primary/40 bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg border">
                 <PackageOpen className="size-4.5" />
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-body text-foreground">
+                  <h3 className="text-body text-foreground font-semibold">
                     Dynamic Partition Container (super.img) Detected
                   </h3>
                   <Badge className="border-primary/30 bg-primary/10 text-primary" variant="outline">

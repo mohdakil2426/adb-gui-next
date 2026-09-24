@@ -43,7 +43,7 @@ export const DeleteDialog = ({
   <AlertDialog onOpenChange={onOpenChange} open={open}>
     <AlertDialogContent className="min-w-0 overflow-hidden">
       <AlertDialogHeader className="min-w-0">
-        <AlertDialogTitle className="min-w-0 max-w-full whitespace-normal [overflow-wrap:anywhere]">
+        <AlertDialogTitle className="max-w-full min-w-0 [overflow-wrap:anywhere] whitespace-normal">
           {filesToDelete.length === 1
             ? `Delete "${filesToDelete[0]}"?`
             : `Delete ${filesToDelete.length} items?`}
@@ -56,7 +56,7 @@ export const DeleteDialog = ({
                 : "These items will be permanently deleted from the device. This action cannot be undone."}
             </p>
             {filesToDelete.length > 1 && (
-              <ul className="mt-2 flex min-w-0 flex-col gap-0.5 font-mono text-mono">
+              <ul className="text-mono mt-2 flex min-w-0 flex-col gap-0.5 font-mono">
                 {filesToDelete.slice(0, 5).map((name) => {
                   const file = fileList.find((entry) => entry.name === name);
                   return (

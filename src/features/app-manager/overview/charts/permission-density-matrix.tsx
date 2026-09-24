@@ -10,6 +10,7 @@ interface PermissionDensityMatrixProps {
 }
 
 const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
+const DEFAULT_ITEMS: backend.PermissionDensityItem[] = [];
 
 const getPermissionIcon = (permission?: string | null, label?: string | null) => {
   const text = `${permission ?? ""} ${label ?? ""}`.toLowerCase();
@@ -71,18 +72,18 @@ const getRiskLabel = (risk?: string | null) => {
 };
 
 export const PermissionDensityMatrix = ({
-  items = [],
+  items = DEFAULT_ITEMS,
   userAppCount,
 }: PermissionDensityMatrixProps) => {
   const shouldReduceMotion = useReducedMotion();
   const maxCount = Math.max(...items.map((item) => item.count), 1);
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Eye aria-hidden="true" className="size-4 text-primary" />
-          <h3 className="font-medium text-foreground text-label">Permission & Privacy Footprint</h3>
+          <Eye aria-hidden="true" className="text-primary size-4" />
+          <h3 className="text-foreground text-label font-medium">Permission & Privacy Footprint</h3>
         </div>
         <span className="numeric text-caption text-muted-foreground">
           {userAppCount ? `across ${userAppCount} user apps` : "User App Exposure"}
@@ -90,7 +91,7 @@ export const PermissionDensityMatrix = ({
       </div>
 
       {items.length === 0 ? (
-        <div className="flex h-28 items-center justify-center rounded-md border border-border border-dashed text-caption text-muted-foreground">
+        <div className="border-border text-caption text-muted-foreground flex h-28 items-center justify-center rounded-md border border-dashed">
           No permission telemetry available
         </div>
       ) : (
@@ -101,7 +102,7 @@ export const PermissionDensityMatrix = ({
             return (
               <m.div
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col gap-1.5 rounded-md border border-border bg-surface-raised p-2 transition-colors hover:bg-surface-raised/80"
+                className="border-border bg-surface-raised hover:bg-surface-raised/80 flex flex-col gap-1.5 rounded-md border p-2 transition-colors"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
                 key={item.permission || item.label}
                 transition={
@@ -116,9 +117,9 @@ export const PermissionDensityMatrix = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <Icon aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+                    <Icon aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
                     <div className="flex min-w-0 flex-col">
-                      <span className="truncate font-medium text-body text-foreground">
+                      <span className="text-body text-foreground truncate font-medium">
                         {item.label || item.permission}
                       </span>
                       <span className={cn("text-caption", riskInfo.toneClass)}>
@@ -126,14 +127,14 @@ export const PermissionDensityMatrix = ({
                       </span>
                     </div>
                   </div>
-                  <span className="numeric shrink-0 font-semibold text-body text-foreground">
+                  <span className="numeric text-body text-foreground shrink-0 font-semibold">
                     {item.count}
                   </span>
                 </div>
                 {/* Density meter relative to the largest category */}
                 <div
                   aria-hidden="true"
-                  className="h-1 w-full overflow-hidden rounded-full bg-secondary"
+                  className="bg-secondary h-1 w-full overflow-hidden rounded-full"
                 >
                   <m.div
                     animate={{ scaleX: item.count / maxCount }}

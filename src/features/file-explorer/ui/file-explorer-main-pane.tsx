@@ -19,7 +19,7 @@ interface Props {
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
 }
 
-export const FileExplorerMainPane = memo(function FileExplorerMainPane({
+const FileExplorerMainPaneImpl = ({
   actions,
   editing,
   listing,
@@ -27,7 +27,7 @@ export const FileExplorerMainPane = memo(function FileExplorerMainPane({
   selection,
   status,
   tableScrollRef,
-}: Props) {
+}: Props) => {
   const selectedCount = selection.selectedNames.size;
 
   return (
@@ -35,7 +35,7 @@ export const FileExplorerMainPane = memo(function FileExplorerMainPane({
       <div
         aria-atomic="true"
         aria-live="polite"
-        className="pointer-events-none absolute -m-px h-px w-px overflow-hidden whitespace-nowrap border-0 p-0"
+        className="pointer-events-none absolute -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap"
       >
         {selectedCount > 0 ? `${selectedCount} item${selectedCount > 1 ? "s" : ""} selected` : null}
       </div>
@@ -50,4 +50,6 @@ export const FileExplorerMainPane = memo(function FileExplorerMainPane({
       />
     </div>
   );
-});
+};
+
+export const FileExplorerMainPane = memo(FileExplorerMainPaneImpl);

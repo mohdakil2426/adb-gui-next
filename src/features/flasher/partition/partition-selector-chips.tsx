@@ -22,13 +22,13 @@ export const PartitionSelectorChips = ({
   return (
     <div className="flex flex-col gap-2.5">
       {/* Group Switcher Tabs */}
-      <div className="flex flex-wrap items-center gap-1 border-border/70 border-b pb-2">
+      <div className="border-border/70 flex flex-wrap items-center gap-1 border-b pb-2">
         {PARTITION_PRESET_GROUPS.map((group) => (
           <button
             className={cn(
-              "rounded-md px-2.5 py-1 font-medium text-caption transition-colors",
+              "text-caption rounded-md px-2.5 py-1 font-medium transition-colors",
               activeGroup === group.id
-                ? "bg-surface-raised font-semibold text-foreground shadow-xs"
+                ? "bg-surface-raised text-foreground font-semibold shadow-xs"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
             disabled={disabled}
@@ -50,7 +50,7 @@ export const PartitionSelectorChips = ({
               className={cn(
                 "flex items-center gap-1 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-[border-color,background-color,color,box-shadow] duration-150",
                 isSelected
-                  ? "border-primary bg-primary/10 font-bold text-primary shadow-xs"
+                  ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
                   : "border-border bg-surface text-muted-foreground hover:border-foreground/30 hover:bg-surface-raised hover:text-foreground",
                 disabled && "pointer-events-none opacity-50"
               )}

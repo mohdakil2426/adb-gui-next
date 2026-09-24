@@ -57,9 +57,9 @@ export const FilterBar = ({ resultCount }: { resultCount: number }) => {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex @xl:flex-row flex-col @xl:items-center @xl:justify-between gap-3">
+      <div className="flex flex-col gap-3 @xl:flex-row @xl:items-center @xl:justify-between">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <p className="text-caption text-muted-foreground uppercase tracking-wide">Sources</p>
+          <p className="text-caption text-muted-foreground tracking-wide uppercase">Sources</p>
           <ToggleGroup
             className="flex flex-wrap justify-start"
             onValueChange={(values) => {
@@ -88,7 +88,7 @@ export const FilterBar = ({ resultCount }: { resultCount: number }) => {
 
         <div className="flex flex-wrap items-center gap-2">
           <label
-            className="flex items-center gap-2 text-caption text-muted-foreground"
+            className="text-caption text-muted-foreground flex items-center gap-2"
             htmlFor="marketplace-installable-only"
           >
             <Switch
@@ -100,7 +100,7 @@ export const FilterBar = ({ resultCount }: { resultCount: number }) => {
           </label>
 
           <label
-            className="flex items-center gap-2 text-caption text-muted-foreground"
+            className="text-caption text-muted-foreground flex items-center gap-2"
             htmlFor="marketplace-github-apk-only"
             title={
               isGithubActive

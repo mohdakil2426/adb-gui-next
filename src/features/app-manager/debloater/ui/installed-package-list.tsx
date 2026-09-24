@@ -311,21 +311,21 @@ export const InstalledPackageList = ({
 
       {/* Virtualized Package Listbox */}
       {/* Virtualized Package Listbox Container with Table Header */}
-      <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
+      <div className="border-border bg-surface flex flex-col overflow-hidden rounded-lg border">
         {/* Table Column Header Band */}
-        <div className="flex select-none items-center gap-3 border-border/80 border-b bg-surface-raised/60 px-3.5 py-2 font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+        <div className="border-border/80 bg-surface-raised/60 text-muted-foreground flex items-center gap-3 border-b px-3.5 py-2 text-[11px] font-medium tracking-wider uppercase select-none">
           <div className="size-4 shrink-0" />
           <div className="size-7 shrink-0" />
           <div className="flex-1">Application & Package Name</div>
-          <div className="@md:block hidden w-20 shrink-0 text-center">Target SDK</div>
-          <div className="@sm:block hidden w-24 shrink-0 text-right">Storage Size</div>
+          <div className="hidden w-20 shrink-0 text-center @md:block">Target SDK</div>
+          <div className="hidden w-24 shrink-0 text-right @sm:block">Storage Size</div>
           <div className="w-20 shrink-0 text-center">Type</div>
           <div className="w-24 shrink-0 pr-2 text-right">Actions</div>
         </div>
 
         <div
           aria-label="Installed packages"
-          className={cn(PACKAGE_LIST_VIEWPORT, "overflow-y-auto overflow-x-hidden")}
+          className={cn(PACKAGE_LIST_VIEWPORT, "overflow-x-hidden overflow-y-auto")}
           ref={listRef}
         >
           {listState ?? (
@@ -365,14 +365,14 @@ export const InstalledPackageList = ({
         </div>
       </div>
       {/* Footer Info Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-caption text-muted-foreground">
+      <div className="text-caption text-muted-foreground flex flex-wrap items-center justify-between gap-2 px-1">
         <span className="numeric font-mono">
           {isLoadingPackages
             ? "Loading packages…"
             : `${filteredPackages.length} of ${packages.length} packages displayed`}
         </span>
         {selectedPackages.size > 0 ? (
-          <span className="numeric font-medium text-foreground">
+          <span className="numeric text-foreground font-medium">
             {selectedPackages.size} selected
           </span>
         ) : null}

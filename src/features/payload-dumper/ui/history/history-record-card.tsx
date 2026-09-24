@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import {
   CheckCircle2,
   Clock,
@@ -104,7 +105,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+    <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
       <CardContent className="flex flex-col gap-3.5 p-0">
         {/* Header Row: Session Date, Status Badge & Quick Folder Opener */}
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -120,13 +121,13 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
 
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-body text-foreground">{formattedDate}</span>
+                <span className="text-body text-foreground font-semibold">{formattedDate}</span>
                 <Badge variant={STATUS_BADGE_VARIANTS[record.status] ?? "destructive"}>
                   {STATUS_LABEL[record.status] ?? "Failed"}
                 </Badge>
               </div>
               <span
-                className="max-w-md truncate font-mono text-caption text-muted-foreground"
+                className="text-caption text-muted-foreground max-w-md truncate font-mono"
                 title={record.payloadPath}
               >
                 {record.payloadPath || "Standard Payload Stream"}
@@ -136,7 +137,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
 
           <div className="flex items-center gap-2">
             <Button
-              className="h-7 gap-1 text-caption"
+              className="text-caption h-7 gap-1"
               onClick={handleOpenFolder}
               size="sm"
               type="button"
@@ -148,35 +149,35 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
         </div>
 
         {/* Extraction Specs Bar */}
-        <div className="grid @sm:grid-cols-3 grid-cols-1 gap-2 rounded-lg border border-border/60 bg-surface-raised/40 p-2 text-caption">
+        <div className="border-border/60 bg-surface-raised/40 text-caption grid grid-cols-1 gap-2 rounded-lg border p-2 @sm:grid-cols-3">
           <div className="flex items-center gap-2">
-            <Layers className="size-3.5 text-muted-foreground" />
+            <Layers className="text-muted-foreground size-3.5" />
             <span className="text-muted-foreground">Partitions Extracted:</span>
-            <span className="font-medium font-mono text-foreground">
+            <span className="text-foreground font-mono font-medium">
               {record.partitions.length}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Zap className="size-3.5 text-muted-foreground" />
+            <Zap className="text-muted-foreground size-3.5" />
             <span className="text-muted-foreground">Total Extracted Size:</span>
-            <span className="font-medium font-mono text-foreground tabular-nums">
+            <span className="text-foreground font-mono font-medium tabular-nums">
               {formatBytes(record.totalBytes)}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <Clock className="size-3.5 text-muted-foreground" />
+            <Clock className="text-muted-foreground size-3.5" />
             <span className="text-muted-foreground">Duration:</span>
-            <span className="font-medium font-mono text-foreground">
+            <span className="text-foreground font-mono font-medium">
               {record.duration > 0 ? formatDuration(record.duration) : "< 1s"}
             </span>
           </div>
         </div>
 
         {/* Output Directory Path */}
-        <div className="flex items-center justify-between gap-2 rounded-md border border-border/40 bg-surface-raised/20 px-2.5 py-1.5 font-mono text-[11px]">
-          <span className="truncate text-muted-foreground" title={record.outputDir}>
+        <div className="border-border/40 bg-surface-raised/20 flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 font-mono text-[11px]">
+          <span className="text-muted-foreground truncate" title={record.outputDir}>
             {record.outputDir}
           </span>
           <CopyButton className="size-4" label="Output Directory" value={record.outputDir} />
@@ -184,23 +185,23 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
 
         {/* Extracted Partitions Grid */}
         <div className="flex flex-col gap-1.5">
-          <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
             Extracted Partitions ({record.partitions.length})
           </span>
-          <div className="grid @lg:grid-cols-3 @sm:grid-cols-2 grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-2 @sm:grid-cols-2 @lg:grid-cols-3">
             {record.partitions.map((part) => {
               const hash = checksums[part];
               const isComputing = computingHash === part;
 
               return (
                 <div
-                  className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface-raised/30 p-2 transition-colors hover:bg-surface-raised/60"
+                  className="border-border/60 bg-surface-raised/30 hover:bg-surface-raised/60 flex flex-col gap-1.5 rounded-lg border p-2 transition-colors"
                   key={part}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <FileCode className="size-3.5 text-primary" />
-                      <span className="font-mono font-semibold text-foreground text-mono-sm">
+                      <FileCode className="text-primary size-3.5" />
+                      <span className="text-foreground text-mono-sm font-mono font-semibold">
                         {part}.img
                       </span>
                     </div>
@@ -213,15 +214,15 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
                         type="button"
                         variant="ghost"
                       >
-                        <Zap className="mr-1 size-3 text-warning" data-icon="inline-start" /> Flash
+                        <Zap className="text-warning mr-1 size-3" data-icon="inline-start" /> Flash
                       </Button>
                     </div>
                   </div>
 
                   {/* Hash calculation / display */}
-                  <div className="flex items-center justify-between border-border/30 border-t pt-1 text-[10px]">
+                  <div className="border-border/30 flex items-center justify-between border-t pt-1 text-[10px]">
                     {hash ? (
-                      <div className="flex w-full items-center justify-between font-mono text-muted-foreground">
+                      <div className="text-muted-foreground flex w-full items-center justify-between font-mono">
                         <span className="max-w-[140px] truncate" title={hash}>
                           SHA: {hash.slice(0, 12)}…
                         </span>
@@ -229,7 +230,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
                       </div>
                     ) : (
                       <Button
-                        className="h-5 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground h-5 px-1 text-[10px]"
                         disabled={isComputing}
                         onClick={() => handleComputeChecksum(part)}
                         size="sm"

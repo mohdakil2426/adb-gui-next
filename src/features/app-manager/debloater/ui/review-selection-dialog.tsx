@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { AlertTriangle, HardDrive, Loader2, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -118,7 +119,7 @@ export const ReviewSelectionDialog = ({
                     <TableCell>
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium text-caption",
+                          "text-caption inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium",
                           classes.badge
                         )}
                       >
@@ -128,7 +129,7 @@ export const ReviewSelectionDialog = ({
                         />
                         {REMOVAL_TIER_LABELS[tier]}
                       </span>
-                      <span className="mt-1 block text-caption text-muted-foreground">
+                      <span className="text-caption text-muted-foreground mt-1 block">
                         {REMOVAL_TIER_MEANINGS[tier]}
                       </span>
                     </TableCell>
@@ -141,31 +142,31 @@ export const ReviewSelectionDialog = ({
         </div>
 
         {/* Package list */}
-        <div className="custom-scroll max-h-40 overflow-y-auto rounded-lg border border-border p-1">
+        <div className="custom-scroll border-border max-h-40 overflow-y-auto rounded-lg border p-1">
           {selectedRows.map((pkg) => {
             const classes = REMOVAL_TIER_CLASSES[pkg.removal];
             return (
               <div
-                className="flex h-7 items-center gap-2 rounded-md px-2 hover:bg-accent"
+                className="hover:bg-accent flex h-7 items-center gap-2 rounded-md px-2"
                 key={pkg.name}
               >
                 <span
                   className={cn(
-                    "shrink-0 rounded-full px-1.5 py-0.5 font-medium text-caption",
+                    "text-caption shrink-0 rounded-full px-1.5 py-0.5 font-medium",
                     classes.badge
                   )}
                 >
                   {pkg.removal}
                 </span>
-                <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-caption text-muted-foreground">
+                <span className="border-border bg-muted text-caption text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 font-medium">
                   {pkg.list}
                 </span>
-                <span className="min-w-0 flex-1 truncate font-mono text-foreground text-mono">
+                <span className="text-foreground text-mono min-w-0 flex-1 truncate font-mono">
                   {pkg.name}
                 </span>
                 <span
                   className={cn(
-                    "shrink-0 font-medium text-caption",
+                    "text-caption shrink-0 font-medium",
                     disableMode ? "text-warning" : "text-destructive"
                   )}
                 >
@@ -177,9 +178,9 @@ export const ReviewSelectionDialog = ({
         </div>
 
         {/* Backup prompt */}
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-raised px-3 py-2.5">
-          <HardDrive aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-          <div className="flex-1 text-body text-muted-foreground">
+        <div className="border-border bg-surface-raised flex items-center gap-3 rounded-lg border px-3 py-2.5">
+          <HardDrive aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
+          <div className="text-body text-muted-foreground flex-1">
             {backupCreated
               ? "Backup created — restore it any time from Backups, below the package list."
               : "Create a device backup before applying so this is reversible."}

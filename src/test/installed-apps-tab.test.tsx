@@ -205,6 +205,7 @@ describe(InstalledAppsTab, () => {
       "device-test-1"
     );
   });
+
   it("displays floating batch bar when packages are selected", async () => {
     const user = userEvent.setup();
 

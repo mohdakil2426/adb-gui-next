@@ -13,4 +13,5 @@ export default defineConfig({
     "**/memory-bank/**",
     "**/src-tauri/**",
   ],
+  jsPlugins: ["@shadcn/lint"],
 });

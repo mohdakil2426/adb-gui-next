@@ -49,7 +49,7 @@ const NEXT_STEPS: { content: ReactNode; id: string }[] = [
     content: (
       <>
         Verify root from a shell:{" "}
-        <code className="rounded-sm bg-muted px-1 font-mono text-mono">su</code> should return a
+        <code className="bg-muted text-mono rounded-sm px-1 font-mono">su</code> should return a
         root prompt.
       </>
     ),
@@ -85,26 +85,26 @@ export const RootResultStep = ({
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
-          <CircleCheck aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-success" />
+          <CircleCheck aria-hidden="true" className="text-success mt-0.5 size-6 shrink-0" />
           <div className="min-w-0">
             {verified ? (
               <>
                 <h3 className="text-title">Root Verified</h3>
-                <p className="mt-0.5 text-body text-muted-foreground">
-                  <span className="font-medium text-foreground">{avdName}</span> has working Magisk
+                <p className="text-body text-muted-foreground mt-0.5">
+                  <span className="text-foreground font-medium">{avdName}</span> has working Magisk
                   root —{" "}
-                  <code className="rounded-sm bg-muted px-1 font-mono text-mono">su -c id -u</code>{" "}
-                  returned <code className="rounded-sm bg-muted px-1 font-mono text-mono">0</code>.
+                  <code className="bg-muted text-mono rounded-sm px-1 font-mono">su -c id -u</code>{" "}
+                  returned <code className="bg-muted text-mono rounded-sm px-1 font-mono">0</code>.
                 </p>
               </>
             ) : (
               <>
                 <h3 className="text-title">Patch Installed</h3>
-                <p className="mt-0.5 text-body text-muted-foreground">
-                  <span className="font-medium text-foreground">{avdName}</span> has a patched
+                <p className="text-body text-muted-foreground mt-0.5">
+                  <span className="text-foreground font-medium">{avdName}</span> has a patched
                   ramdisk. Cold boot it, then verify root before using root-only tools.
                   {result.managerInstalled ? null : (
-                    <span className="ml-1 text-warning">
+                    <span className="text-warning ml-1">
                       Magisk Manager did not install — install it manually from your package file.
                     </span>
                   )}
@@ -115,18 +115,18 @@ export const RootResultStep = ({
         </div>
 
         {verification && !verified ? (
-          <div className="rounded-md border border-warning/30 bg-warning-muted p-3">
+          <div className="border-warning/30 bg-warning-muted rounded-md border p-3">
             <p className="text-body text-foreground">Verification result</p>
-            <p className="mt-0.5 text-caption text-muted-foreground">{verification.message}</p>
+            <p className="text-caption text-muted-foreground mt-0.5">{verification.message}</p>
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-2 rounded-md border border-border bg-surface-raised p-3">
+        <div className="border-border bg-surface-raised flex flex-col gap-2 rounded-md border p-3">
           <SectionHeader>Next steps</SectionHeader>
-          <ol className="flex flex-col gap-1.5 text-body text-foreground">
+          <ol className="text-body text-foreground flex flex-col gap-1.5">
             {NEXT_STEPS.map((step, index) => (
               <li className="flex items-start gap-2" key={step.id}>
-                <span className="numeric mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-primary text-caption text-primary-foreground">
+                <span className="numeric bg-primary text-caption text-primary-foreground mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full">
                   {index + 1}
                 </span>
                 <span className="min-w-0">{step.content}</span>
@@ -135,7 +135,7 @@ export const RootResultStep = ({
           </ol>
         </div>
 
-        <p className="flex items-start gap-2 rounded-md bg-warning-muted px-3 py-2 text-caption text-warning">
+        <p className="bg-warning-muted text-caption text-warning flex items-start gap-2 rounded-md px-3 py-2">
           <TriangleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
           <span>
             Always cold boot after rooting. A normal boot can load a snapshot taken before the patch
@@ -184,7 +184,7 @@ export const RootResultStep = ({
             Restore stock (undo)
           </Button>
           <Button
-            className="w-full text-muted-foreground"
+            className="text-muted-foreground w-full"
             id="root-result-done"
             onClick={onReset}
             size="sm"
@@ -201,10 +201,10 @@ export const RootResultStep = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3">
-        <TriangleAlert aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-destructive" />
+        <TriangleAlert aria-hidden="true" className="text-destructive mt-0.5 size-6 shrink-0" />
         <div className="min-w-0">
           <h3 className="text-title">Root failed</h3>
-          <p className="mt-0.5 text-body text-muted-foreground">
+          <p className="text-body text-muted-foreground mt-0.5">
             The automated pipeline stopped before the patch was installed. Nothing was written to
             the AVD.
           </p>
@@ -212,9 +212,9 @@ export const RootResultStep = ({
       </div>
 
       {error ? (
-        <div className="rounded-md border border-destructive/30 bg-destructive-muted p-3">
+        <div className="border-destructive/30 bg-destructive-muted rounded-md border p-3">
           <p className="text-body text-destructive">Error details</p>
-          <p className="mt-0.5 break-words font-mono text-mono-sm text-muted-foreground">{error}</p>
+          <p className="text-mono-sm text-muted-foreground mt-0.5 font-mono break-words">{error}</p>
         </div>
       ) : null}
 

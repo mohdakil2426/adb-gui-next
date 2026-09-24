@@ -114,20 +114,20 @@ export const RemoteUrlPanel = ({
         <Field>
           <div className="flex items-center justify-between gap-2 pb-1">
             <FieldLabel
-              className="flex items-center gap-1.5 font-medium text-body"
+              className="text-body flex items-center gap-1.5 font-medium"
               htmlFor="remote-url"
             >
-              <Globe aria-hidden="true" className="size-4 text-primary" />
+              <Globe aria-hidden="true" className="text-primary size-4" />
               Payload or Firmware Archive URL
             </FieldLabel>
             <span className="text-caption text-muted-foreground">Direct HTTP/HTTPS stream</span>
           </div>
 
-          <div className="flex @sm:flex-row flex-col @sm:items-center items-stretch gap-2">
+          <div className="flex flex-col items-stretch gap-2 @sm:flex-row @sm:items-center">
             <InputGroup className="min-w-0 flex-1">
               <InputGroupInput
                 autoComplete="off"
-                className="min-w-0 flex-1 text-body"
+                className="text-body min-w-0 flex-1"
                 disabled={disabled}
                 id="remote-url"
                 inputMode="url"
@@ -204,9 +204,9 @@ export const RemoteUrlPanel = ({
 
       {/* Recent URLs History Strip */}
       {recentUrls.length > 0 && !disabled ? (
-        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-border/40 bg-surface px-2.5 py-1.5 text-[11px]">
-          <span className="flex shrink-0 items-center gap-1 font-medium text-muted-foreground">
-            <History className="size-3 text-primary" />
+        <div className="border-border/40 bg-surface flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px]">
+          <span className="text-muted-foreground flex shrink-0 items-center gap-1 font-medium">
+            <History className="text-primary size-3" />
             Recent Links:
           </span>
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
@@ -217,8 +217,8 @@ export const RemoteUrlPanel = ({
                 <button
                   className={`inline-flex max-w-[220px] items-center truncate rounded px-2 py-0.5 font-mono text-[10px] transition-colors ${
                     isCurrent
-                      ? "border border-primary/30 bg-primary/15 font-medium text-primary"
-                      : "border border-border/60 bg-surface-raised/80 text-muted-foreground hover:bg-surface-raised hover:text-foreground"
+                      ? "border-primary/30 bg-primary/15 text-primary border font-medium"
+                      : "border-border/60 bg-surface-raised/80 text-muted-foreground hover:bg-surface-raised hover:text-foreground border"
                   }`}
                   key={recent}
                   onClick={() => handleSelectRecent(recent)}
@@ -231,7 +231,7 @@ export const RemoteUrlPanel = ({
             })}
           </div>
           <button
-            className="flex shrink-0 items-center gap-0.5 px-1 py-0.5 text-[10px] text-muted-foreground/80 transition-colors hover:text-destructive"
+            className="text-muted-foreground/80 hover:text-destructive flex shrink-0 items-center gap-0.5 px-1 py-0.5 text-[10px] transition-colors"
             onClick={clearRecentUrls}
             title="Clear recent links"
             type="button"
@@ -243,7 +243,7 @@ export const RemoteUrlPanel = ({
       ) : null}
 
       {/* Options & Connection Status Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2">
+      <div className="border-border/60 bg-surface-raised/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2">
         <Field className="m-0 gap-2.5" data-disabled={disabled} orientation="horizontal">
           <Switch
             checked={prefetch}
@@ -252,7 +252,7 @@ export const RemoteUrlPanel = ({
             onCheckedChange={onPrefetchChange}
           />
           <FieldContent>
-            <FieldLabel className="cursor-pointer font-medium text-caption" htmlFor="prefetch">
+            <FieldLabel className="text-caption cursor-pointer font-medium" htmlFor="prefetch">
               Prefetch mode
             </FieldLabel>
             <FieldDescription className="text-[11px]">
@@ -266,7 +266,7 @@ export const RemoteUrlPanel = ({
           {(() => {
             if (isChecking) {
               return (
-                <div className="flex items-center gap-1.5 text-caption text-primary">
+                <div className="text-caption text-primary flex items-center gap-1.5">
                   <Loader2 className="size-3.5 animate-spin" />
                   <span>Checking HTTP range requests…</span>
                 </div>
@@ -274,14 +274,14 @@ export const RemoteUrlPanel = ({
             }
             if (isReady) {
               return (
-                <div className="flex items-center gap-1.5 rounded-md border border-success/30 bg-success/10 px-2.5 py-1 font-medium text-caption text-success">
+                <div className="border-success/30 bg-success/10 text-caption text-success flex items-center gap-1.5 rounded-md border px-2.5 py-1 font-medium">
                   <CheckCircle2 className="size-3.5" />
                   <span>Range Requests Verified</span>
                   {estimatedSize ? (
                     <>
                       <span className="text-success/60">·</span>
                       <Badge
-                        className="border-success/30 font-mono text-[10px] text-success"
+                        className="border-success/30 text-success font-mono text-[10px]"
                         variant="outline"
                       >
                         {estimatedSize}
@@ -293,14 +293,14 @@ export const RemoteUrlPanel = ({
             }
             if (isError) {
               return (
-                <div className="flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-caption text-destructive">
+                <div className="border-destructive/30 bg-destructive/10 text-caption text-destructive flex items-center gap-1.5 rounded-md border px-2.5 py-1">
                   <AlertCircle className="size-3.5 shrink-0" />
                   <span>Range check failed — enable Prefetch or check URL</span>
                 </div>
               );
             }
             return (
-              <div className="flex items-center gap-1 text-caption text-muted-foreground">
+              <div className="text-caption text-muted-foreground flex items-center gap-1">
                 <Zap className="size-3 text-amber-400" />
                 <span>Zero-download selective partition extraction</span>
               </div>

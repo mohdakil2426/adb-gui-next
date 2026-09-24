@@ -45,7 +45,7 @@ export const PostureSpectrum = ({ items }: PostureSpectrumProps) => {
           />
         ))}
       </div>
-      <p className="flex items-center justify-between pt-1.5 text-caption text-muted-foreground">
+      <p className="text-caption text-muted-foreground flex items-center justify-between pt-1.5">
         <span>Posture</span>
         <span className="numeric">
           {nominal} of {items.length} nominal

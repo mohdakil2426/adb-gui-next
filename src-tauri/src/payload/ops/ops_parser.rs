@@ -120,11 +120,12 @@ fn parse_manifest_xml(xml: &str) -> Result<Vec<OpsPartitionEntry>> {
     loop {
         match reader.read_event() {
             Ok(Event::Start(e) | Event::Empty(e)) => {
-                let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                let qname = e.name();
+                let tag = qname.as_ref();
 
                 // Track section context (SAHARA, UFS_PROVISION, Program0, etc.)
                 if matches!(
-                    tag.as_str(),
+                    tag,
                     "SAHARA"
                         | "UFS_PROVISION"
                         | "Config"
@@ -134,17 +135,16 @@ fn parse_manifest_xml(xml: &str) -> Result<Vec<OpsPartitionEntry>> {
                         | "Firmware"
                 ) || tag.starts_with("Program")
                 {
-                    current_section = tag.clone();
+                    current_section = tag.to_string();
                 }
 
                 // Track <program label="..."> for naming partitions
                 if tag == "program" {
                     current_program_label = String::new();
                     for attr in e.attributes().filter_map(|a| a.ok()) {
-                        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
+                        let key = attr.key.as_ref();
                         if key == "label" {
-                            current_program_label =
-                                String::from_utf8_lossy(&attr.value).to_string();
+                            current_program_label = attr.value.to_string();
                         }
                     }
                 }
@@ -165,7 +165,8 @@ fn parse_manifest_xml(xml: &str) -> Result<Vec<OpsPartitionEntry>> {
                 }
             }
             Ok(Event::End(e)) => {
-                let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                let qname = e.name();
+                let tag = qname.as_ref();
                 if tag == "program" {
                     current_program_label.clear();
                 }
@@ -194,15 +195,15 @@ fn parse_file_element(
     let mut sparse = false;
 
     for attr in e.attributes().filter_map(|a| a.ok()) {
-        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-        let val = String::from_utf8_lossy(&attr.value).to_string();
+        let key = attr.key.as_ref();
+        let val = attr.value.as_ref();
 
-        match key.as_str() {
-            "Path" | "filename" => name = sanitize_filename(&val),
+        match key {
+            "Path" | "filename" => name = sanitize_filename(val),
             "FileOffsetInSrc" => offset = val.parse().unwrap_or(0),
             "SizeInByteInSrc" => size = val.parse().unwrap_or(0),
             "SizeInSectorInSrc" => sector_size = val.parse().unwrap_or(0),
-            "Sha256" | "sha256" => sha256 = val,
+            "Sha256" | "sha256" => sha256 = val.to_string(),
             "sparse" => sparse = val.eq_ignore_ascii_case("true"),
             _ => {}
         }
@@ -244,16 +245,16 @@ fn parse_image_element(
     let mut sparse = false;
 
     for attr in e.attributes().filter_map(|a| a.ok()) {
-        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-        let val = String::from_utf8_lossy(&attr.value).to_string();
+        let key = attr.key.as_ref();
+        let val = attr.value.as_ref();
 
-        match key.as_str() {
-            "filename" => name = sanitize_filename(&val),
+        match key {
+            "filename" => name = sanitize_filename(val),
             "FileOffsetInSrc" => offset = val.parse().unwrap_or(0),
             "SizeInByteInSrc" => size = val.parse().unwrap_or(0),
             "SizeInSectorInSrc" => sector_size = val.parse().unwrap_or(0),
             // Skip placeholder "0" hash
-            "Sha256" | "sha256" if val != "0" => sha256 = val,
+            "Sha256" | "sha256" if val != "0" => sha256 = val.to_string(),
             "sparse" => sparse = val.eq_ignore_ascii_case("true"),
             _ => {}
         }

@@ -20,6 +20,7 @@ import {
 } from "@/shared/ui/dropdown-menu";
 import { Input } from "@/shared/ui/input";
 import { cn } from "@/shared/utils/cn";
+
 export type { InstalledPackageFilter as PackageFilter } from "@/features/app-manager/debloater/model/installation-store";
 
 interface InstalledPackageToolbarProps {
@@ -134,11 +135,11 @@ export const InstalledPackageToolbar = ({
         <div className="relative min-w-56 flex-1">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+            className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
           />
           <Input
             aria-label="Search installed packages"
-            className="h-9 pr-8 pl-8 text-body"
+            className="text-body h-9 pr-8 pl-8"
             disabled={!selectedSerial}
             onChange={(e) => onSearchQueryChange(e.target.value)}
             placeholder="Search apps by name or package ID…"
@@ -147,7 +148,7 @@ export const InstalledPackageToolbar = ({
           {searchQuery ? (
             <Button
               aria-label="Clear search"
-              className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 p-0 text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 size-6 -translate-y-1/2 p-0"
               onClick={() => onSearchQueryChange("")}
               size="icon"
               type="button"
@@ -159,15 +160,15 @@ export const InstalledPackageToolbar = ({
         </div>
 
         {/* Quick Filter Pills */}
-        <div className="flex items-center gap-1 rounded-md border border-border/70 bg-surface-raised/40 p-0.5">
+        <div className="border-border/70 bg-surface-raised/40 flex items-center gap-1 rounded-md border p-0.5">
           {filterPills.map((pill) => {
             const isActive = packageFilter === pill.id;
             return (
               <Button
                 className={cn(
-                  "h-7 gap-1.5 rounded-sm px-2.5 font-medium text-caption transition-colors",
+                  "text-caption h-7 gap-1.5 rounded-sm px-2.5 font-medium transition-colors",
                   isActive
-                    ? "bg-surface font-semibold text-foreground shadow-xs"
+                    ? "bg-surface text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:bg-surface/50 hover:text-foreground"
                 )}
                 key={pill.id}
@@ -181,8 +182,8 @@ export const InstalledPackageToolbar = ({
                   className={cn(
                     "numeric px-1 py-0 font-mono text-[10px]",
                     isActive
-                      ? "border-transparent bg-primary text-primary-foreground"
-                      : "border-transparent bg-muted text-muted-foreground"
+                      ? "bg-primary text-primary-foreground border-transparent"
+                      : "bg-muted text-muted-foreground border-transparent"
                   )}
                   variant="secondary"
                 >
@@ -197,18 +198,18 @@ export const InstalledPackageToolbar = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className="h-9 gap-1.5 font-normal text-body"
+              className="text-body h-9 gap-1.5 font-normal"
               disabled={!selectedSerial}
               size="sm"
               type="button"
             >
               <ArrowUpDown
                 aria-hidden="true"
-                className="size-3.5 text-muted-foreground"
+                className="text-muted-foreground size-3.5"
                 data-icon="inline-start"
               />
-              <span className="@md:inline-block hidden">Sort:</span>
-              <span className="font-medium text-foreground">{currentSortOption.label}</span>
+              <span className="hidden @md:inline-block">Sort:</span>
+              <span className="text-foreground font-medium">{currentSortOption.label}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -235,7 +236,7 @@ export const InstalledPackageToolbar = ({
         {/* Select All Filtered Toggle */}
         {onToggleSelectAllFiltered ? (
           <Button
-            className="h-9 gap-1.5 font-medium text-caption"
+            className="text-caption h-9 gap-1.5 font-medium"
             disabled={!selectedSerial || packages.length === 0}
             onClick={onToggleSelectAllFiltered}
             size="sm"
@@ -245,13 +246,13 @@ export const InstalledPackageToolbar = ({
             {isAllFilteredSelected ? (
               <Square
                 aria-hidden="true"
-                className="size-3.5 text-primary"
+                className="text-primary size-3.5"
                 data-icon="inline-start"
               />
             ) : (
               <CheckSquare
                 aria-hidden="true"
-                className="size-3.5 text-muted-foreground"
+                className="text-muted-foreground size-3.5"
                 data-icon="inline-start"
               />
             )}

@@ -55,7 +55,7 @@ export const EditNicknameDialog = ({
           <DialogDescription>
             A nickname replaces the serial wherever this device is shown. It is stored on this
             computer only.
-            <span className="mt-2 block font-mono text-foreground text-mono">{serial}</span>
+            <span className="text-foreground text-mono mt-2 block font-mono">{serial}</span>
           </DialogDescription>
         </DialogHeader>
 

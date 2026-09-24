@@ -20,14 +20,13 @@ export interface FileExplorerTreeConfig {
 
 /** Memoized: the directory tree must not re-render for file-list or
  *  selection state, only for its own slice. */
-export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
-  tree,
-}: {
-  tree: FileExplorerTreeConfig;
-}) {
+const FileExplorerTreeSectionImpl = ({ tree }: { tree: FileExplorerTreeConfig }) => {
   if (tree.isTreeCollapsed) {
     return null;
   }
+
+  const handleMoveToFolder = tree.onMoveToFolder;
+  const handlePointerDown = tree.startResizing;
 
   return (
     <>
@@ -36,7 +35,7 @@ export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
         getFileAccessMode={tree.getFileAccessMode}
         leftWidth={tree.leftWidth}
         loadFiles={tree.loadFiles}
-        onMoveToFolder={tree.onMoveToFolder}
+        onMoveToFolder={handleMoveToFolder}
         selectedSerial={tree.selectedSerial}
         treeRefreshKey={tree.treeRefreshKey}
       />
@@ -44,8 +43,10 @@ export const FileExplorerTreeSection = memo(function FileExplorerTreeSection({
         isResizing={tree.isResizing}
         leftWidth={tree.leftWidth}
         onKeyDown={tree.handleResizeKeyDown}
-        onPointerDown={tree.startResizing}
+        onPointerDown={handlePointerDown}
       />
     </>
   );
-});
+};
+
+export const FileExplorerTreeSection = memo(FileExplorerTreeSectionImpl);

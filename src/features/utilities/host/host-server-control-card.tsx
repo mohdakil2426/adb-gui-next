@@ -26,11 +26,11 @@ export const HostServerControlCard = ({
   const [pendingRestart, setPendingRestart] = useState(false);
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Server className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Server className="text-primary size-4.5" />
             Host ADB Server Controls
           </CardTitle>
           <Badge className="font-mono text-[10px]" variant="success">
@@ -45,28 +45,28 @@ export const HostServerControlCard = ({
 
       <CardContent className="flex flex-col gap-4 pt-1">
         {/* Version info readouts */}
-        <div className="grid @lg:grid-cols-2 @xs:grid-cols-1 gap-3">
-          <div className="flex flex-col gap-1 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+        <div className="grid gap-3 @xs:grid-cols-1 @lg:grid-cols-2">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
+            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
               ADB Server Binary
             </span>
-            <span className="truncate font-medium font-mono text-body text-foreground">
+            <span className="text-body text-foreground truncate font-mono font-medium">
               {versions?.adb || "Android Debug Bridge (Bundled)"}
             </span>
           </div>
 
-          <div className="flex flex-col gap-1 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
+            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
               Fastboot Tool Binary
             </span>
-            <span className="truncate font-medium font-mono text-body text-foreground">
+            <span className="text-body text-foreground truncate font-mono font-medium">
               {versions?.fastboot || "Fastboot Tool (Bundled)"}
             </span>
           </div>
         </div>
 
         {/* Server Actions */}
-        <div className="grid @lg:grid-cols-2 @xs:grid-cols-1 gap-3 border-border/50 border-t pt-3">
+        <div className="border-border/50 grid gap-3 border-t pt-3 @xs:grid-cols-1 @lg:grid-cols-2">
           <Button
             className="h-12 justify-start gap-3 p-3 text-left"
             disabled={Boolean(loadingAction)}
@@ -79,7 +79,7 @@ export const HostServerControlCard = ({
               data-icon="inline-start"
             />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Restart ADB Server</span>
+              <span className="text-body text-foreground font-semibold">Restart ADB Server</span>
               <span className="text-caption text-muted-foreground">
                 Kill and respawn host daemon
               </span>
@@ -93,9 +93,9 @@ export const HostServerControlCard = ({
             type="button"
             variant="outline"
           >
-            <Power className="size-4.5 text-destructive" data-icon="inline-start" />
+            <Power className="text-destructive size-4.5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Kill ADB Server</span>
+              <span className="text-body text-foreground font-semibold">Kill ADB Server</span>
               <span className="text-caption text-muted-foreground">
                 Terminate background adb.exe
               </span>

@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { CircleCheck, FileCheck2, FolderOpen, Loader2, ShieldCheck, Star } from "lucide-react";
 import { useCallback } from "react";
 import { toast } from "sonner";
@@ -135,11 +136,11 @@ export const RootManualStep = ({ avdName, serial }: RootManualStepProps) => {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-title">Manual FAKEBOOTIMG Mode</h3>
-          <p className="mt-0.5 flex items-center gap-1.5 text-caption text-success">
+          <p className="text-caption text-success mt-0.5 flex items-center gap-1.5">
             <Star aria-hidden="true" className="size-3.5" />
             Recommended for modern Magisk (v26 and above)
           </p>
-          <p className="mt-1 text-body text-muted-foreground">
+          <p className="text-body text-muted-foreground mt-1">
             Create a temporary fake boot image, patch it inside the Magisk app on the emulator, then
             install the patched output back into the AVD ramdisk.
           </p>
@@ -180,14 +181,14 @@ export const RootManualStep = ({ avdName, serial }: RootManualStepProps) => {
         >
           <FolderOpen
             aria-hidden="true"
-            className="size-5 shrink-0 text-muted-foreground"
+            className="text-muted-foreground size-5 shrink-0"
             data-icon="inline-start"
           />
           <span className="min-w-0 flex-1">
-            <span className="block font-medium text-body">
+            <span className="text-body block font-medium">
               {packageName ?? "Choose Magisk Package"}
             </span>
-            <span className="block truncate font-mono text-mono-sm text-muted-foreground">
+            <span className="text-mono-sm text-muted-foreground block truncate font-mono">
               {state.packagePath ?? "Supports .apk and .zip packages"}
             </span>
           </span>
@@ -213,21 +214,21 @@ export const RootManualStep = ({ avdName, serial }: RootManualStepProps) => {
       </div>
 
       {state.prepareResult ? (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-raised p-3">
+        <div className="border-border bg-surface-raised flex flex-col gap-3 rounded-md border p-3">
           <div className="flex items-start gap-3">
-            <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />
+            <CircleCheck aria-hidden="true" className="text-success mt-0.5 size-4 shrink-0" />
             <div className="min-w-0">
               <p className="text-body text-foreground">fakeboot.img is ready</p>
-              <p className="mt-0.5 break-all font-mono text-mono text-muted-foreground">
+              <p className="text-mono text-muted-foreground mt-0.5 font-mono break-all">
                 {state.prepareResult.fakeBootRemotePath}
               </p>
             </div>
           </div>
 
-          <ol className="grid gap-1.5 text-body text-muted-foreground">
+          <ol className="text-body text-muted-foreground grid gap-1.5">
             {state.prepareResult.instructions.map((instruction) => (
               <li
-                className="rounded-md border border-border bg-surface px-3 py-2"
+                className="border-border bg-surface rounded-md border px-3 py-2"
                 key={instruction}
               >
                 {instruction}

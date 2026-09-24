@@ -195,12 +195,12 @@ export const MainLayout = () => {
         </AnimatePresence>
         <div
           className={cn(
-            "h-svh overflow-hidden bg-background text-foreground",
+            "bg-background text-foreground h-svh overflow-hidden",
             isReady ? "opacity-100 transition-opacity duration-300 ease-out" : "opacity-0"
           )}
         >
           <a
-            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:font-medium focus:text-foreground focus:text-sm focus:ring-2 focus:ring-ring"
+            className="focus:bg-background focus:text-foreground focus:ring-ring sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[var(--z-toast)] focus:rounded-md focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:ring-2"
             href="#main-content"
           >
             Skip to main content

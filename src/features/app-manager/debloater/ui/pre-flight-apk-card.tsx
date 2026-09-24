@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import {
   AlertCircle,
   Archive,
@@ -65,13 +66,13 @@ const PreFlightCardIcon = ({
     if (isBundle) {
       return <Layers aria-hidden="true" className="size-5 text-sky-500" />;
     }
-    return <Package aria-hidden="true" className="size-5 text-muted-foreground" />;
+    return <Package aria-hidden="true" className="text-muted-foreground size-5" />;
   };
 
   return (
-    <div className="relative flex size-8.5 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-raised">
+    <div className="border-border bg-surface-raised relative flex size-8.5 shrink-0 items-center justify-center overflow-hidden rounded-md border">
       {renderIcon()}
-      <span className="absolute right-0.5 bottom-0.5 rounded bg-background/90 px-1 font-bold font-mono text-caption text-foreground uppercase">
+      <span className="bg-background/90 text-caption text-foreground absolute right-0.5 bottom-0.5 rounded px-1 font-mono font-bold uppercase">
         {inspection?.format ?? filePath.split(".").pop() ?? "apk"}
       </span>
     </div>
@@ -97,7 +98,7 @@ const PreFlightCardStatus = ({
 }) => {
   if (status === "installing") {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-medium text-caption text-primary">
+      <div className="border-primary/30 bg-primary/10 text-caption text-primary flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium">
         <Loader2 aria-hidden="true" className="size-3 animate-spin" />
         <span>Installing…</span>
       </div>
@@ -106,7 +107,7 @@ const PreFlightCardStatus = ({
 
   if (status === "completed") {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-medium text-caption text-emerald-500">
+      <div className="text-caption flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-500">
         <CheckCircle2 aria-hidden="true" className="size-3" />
         <span>
           {installStatus?.durationMs
@@ -119,7 +120,7 @@ const PreFlightCardStatus = ({
 
   if (status === "failed") {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-1 font-medium text-caption text-destructive">
+      <div className="border-destructive/30 bg-destructive/10 text-caption text-destructive flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium">
         <AlertCircle aria-hidden="true" className="size-3" />
         <span>Failed</span>
       </div>
@@ -129,7 +130,7 @@ const PreFlightCardStatus = ({
   return (
     <Button
       aria-label={`Remove ${fileName} from install queue`}
-      className="size-7 text-muted-foreground opacity-60 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+      className="text-muted-foreground hover:text-destructive size-7 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
       disabled={disabled || isInstalling}
       onClick={() => onRemove(filePath)}
       size="icon-sm"
@@ -160,7 +161,7 @@ const PreFlightCardSpecGrid = ({
       return (
         <>
           API {inspection.targetSdk}{" "}
-          <span className="font-normal text-muted-foreground">
+          <span className="text-muted-foreground font-normal">
             ({getSdkName(inspection.targetSdk)})
           </span>
         </>
@@ -180,46 +181,46 @@ const PreFlightCardSpecGrid = ({
   }
 
   return (
-    <div className="grid @lg:grid-cols-4 grid-cols-2 gap-1.5 pt-0.5">
+    <div className="grid grid-cols-2 gap-1.5 pt-0.5 @lg:grid-cols-4">
       {/* Version Name & Code */}
-      <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
-        <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           Version
         </span>
-        <span className="truncate font-mono font-semibold text-foreground text-mono-sm">
+        <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
           {versionText}
         </span>
       </div>
 
       {/* Target SDK */}
-      <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
-        <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           Target SDK
         </span>
-        <span className="truncate font-mono font-semibold text-foreground text-mono-sm">
+        <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
           {renderTargetSdk()}
         </span>
       </div>
 
       {/* Native ABIs */}
-      <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
-        <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           Architecture / ABI
         </span>
         <div className="flex items-center gap-1 overflow-hidden">
-          <Cpu aria-hidden="true" className="size-3 shrink-0 text-muted-foreground" />
-          <span className="truncate font-mono font-semibold text-foreground text-mono-sm">
+          <Cpu aria-hidden="true" className="text-muted-foreground size-3 shrink-0" />
+          <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
             {abiText}
           </span>
         </div>
       </div>
 
       {/* File Size & Bundle info */}
-      <div className="flex flex-col rounded-md border border-border/60 bg-surface-raised/40 px-2 py-1">
-        <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           File Size
         </span>
-        <span className="truncate font-mono font-semibold text-foreground text-mono-sm">
+        <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
           {inspection?.fileSize ? formatBytes(inspection.fileSize) : "—"}
         </span>
       </div>
@@ -237,7 +238,7 @@ const PreFlightCardHeader = ({
 }) => (
   <div className="flex min-w-0 flex-1 flex-col">
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="truncate font-semibold text-body text-foreground">
+      <span className="text-body text-foreground truncate font-semibold">
         {inspection?.label || fileName}
       </span>
 
@@ -255,7 +256,7 @@ const PreFlightCardHeader = ({
       ) : null}
     </div>
 
-    <span className="truncate font-mono text-mono-sm text-muted-foreground">
+    <span className="text-mono-sm text-muted-foreground truncate font-mono">
       {inspection?.packageName || fileName}
     </span>
   </div>
@@ -274,7 +275,7 @@ const PreFlightCardNotices = ({
 }) => (
   <>
     {inspection?.splitNames && inspection.splitNames.length > 0 ? (
-      <div className="flex items-center gap-1.5 rounded-md border border-info/20 bg-info-muted px-2.5 py-1 text-caption text-info">
+      <div className="border-info/20 bg-info-muted text-caption text-info flex items-center gap-1.5 rounded-md border px-2.5 py-1">
         <Archive aria-hidden="true" className="size-3.5 shrink-0" />
         <span>
           Split App Bundle: Includes{" "}
@@ -287,11 +288,11 @@ const PreFlightCardNotices = ({
     ) : null}
 
     {inspection?.targetSdk && inspection.targetSdk < 23 ? (
-      <div className="flex items-center gap-1.5 rounded-md border border-warning/25 bg-warning-muted px-2.5 py-1 text-caption text-warning">
+      <div className="border-warning/25 bg-warning-muted text-caption text-warning flex items-center gap-1.5 rounded-md border px-2.5 py-1">
         <ShieldAlert aria-hidden="true" className="size-3.5 shrink-0" />
         <span>
           Legacy Target SDK {inspection.targetSdk}: Android 14+ requires{" "}
-          <code className="font-bold font-mono">--bypass-low-target-sdk-block</code> flag enabled.
+          <code className="font-mono font-bold">--bypass-low-target-sdk-block</code> flag enabled.
         </span>
       </div>
     ) : null}
@@ -303,16 +304,16 @@ const PreFlightCardNotices = ({
       >
         <AlertCircle aria-hidden="true" className="size-3.5" />
         <AlertTitle className="text-caption">Installation failed</AlertTitle>
-        <AlertDescription className="break-all font-mono text-mono-sm">
+        <AlertDescription className="text-mono-sm font-mono break-all">
           {installStatus.error}
         </AlertDescription>
       </Alert>
     ) : null}
 
     {inspectionError ? (
-      <div className="flex items-start gap-1.5 rounded-md border border-warning/30 bg-warning-muted px-2.5 py-1.5 text-caption text-warning">
+      <div className="border-warning/30 bg-warning-muted text-caption text-warning flex items-start gap-1.5 rounded-md border px-2.5 py-1.5">
         <AlertCircle aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
-        <span className="min-w-0 break-all font-mono text-mono-sm leading-tight">
+        <span className="text-mono-sm min-w-0 font-mono leading-tight break-all">
           Manifest inspection notice: {inspectionError}
         </span>
       </div>
@@ -374,7 +375,7 @@ export const PreFlightApkCard = ({
     <div
       className={cn(
         "group relative flex flex-col gap-2 rounded-lg border p-2.5 transition-colors duration-200",
-        status === "installing" && "border-primary/50 bg-primary/5 ring-1 ring-primary/30",
+        status === "installing" && "border-primary/50 bg-primary/5 ring-primary/30 ring-1",
         status === "completed" && "border-success/30 bg-success-muted",
         status === "failed" && "border-destructive/40 bg-destructive-muted",
         status === "queued" &&

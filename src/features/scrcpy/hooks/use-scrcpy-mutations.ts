@@ -13,6 +13,7 @@ import type { backend } from "@/desktop/models";
 import { useNicknameStore } from "@/shared/stores/nickname-store";
 import { handleError } from "@/shared/utils/error-handler";
 import { queryKeys } from "@/shared/utils/queries";
+
 export const openInstalledFolder = async (binaryPath?: string | null) => {
   if (!binaryPath) {
     return;

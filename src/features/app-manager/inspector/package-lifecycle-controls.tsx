@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Download, Play, RotateCcw, Settings, Square, Trash2, Zap, ZapOff } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -83,15 +84,15 @@ export const PackageLifecycleControls = ({
   };
 
   return (
-    <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-3">
+    <div className="border-border bg-surface flex flex-col gap-2.5 rounded-lg border p-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-medium text-foreground text-label">Lifecycle Operations</h4>
+        <h4 className="text-foreground text-label font-medium">Lifecycle Operations</h4>
         <span className="text-caption text-muted-foreground">Direct ADB dispatch</span>
       </div>
 
-      <div className="grid @lg:grid-cols-4 grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={() => runOp("launch", "Launch App")}
           size="sm"
@@ -103,7 +104,7 @@ export const PackageLifecycleControls = ({
         </Button>
 
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={() => setIsConfirmForceStopOpen(true)}
           size="sm"
@@ -114,7 +115,7 @@ export const PackageLifecycleControls = ({
           <span>Force Stop</span>
         </Button>
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={() => runOp("clear_cache", "Clear Cache")}
           size="sm"
@@ -130,7 +131,7 @@ export const PackageLifecycleControls = ({
         </Button>
 
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={() => setIsConfirmClearDataOpen(true)}
           size="sm"
@@ -141,19 +142,19 @@ export const PackageLifecycleControls = ({
           <span>Clear Data</span>
         </Button>
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={handlePullApk}
           size="sm"
           type="button"
           variant="outline"
         >
-          <Download aria-hidden="true" className="size-3.5 text-primary" data-icon="inline-start" />
+          <Download aria-hidden="true" className="text-primary size-3.5" data-icon="inline-start" />
           <span>Export APK</span>
         </Button>
 
         <Button
-          className="h-8 justify-start gap-1.5 text-caption"
+          className="text-caption h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={() => {
             if (info.isEnabled) {
@@ -187,7 +188,7 @@ export const PackageLifecycleControls = ({
           )}
         </Button>
         <Button
-          className="col-span-2 h-8 justify-start gap-1.5 text-caption"
+          className="text-caption col-span-2 h-8 justify-start gap-1.5"
           disabled={isActing}
           onClick={handleOpenSettings}
           size="sm"
@@ -196,7 +197,7 @@ export const PackageLifecycleControls = ({
         >
           <Settings
             aria-hidden="true"
-            className="size-3.5 text-muted-foreground"
+            className="text-muted-foreground size-3.5"
             data-icon="inline-start"
           />
           <span>Open App Settings on Device</span>

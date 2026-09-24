@@ -85,7 +85,7 @@ export const FileSelector = ({
         {trailingAction}
       </div>
       {path ? (
-        <FieldDescription className="break-all font-mono text-mono-sm">{path}</FieldDescription>
+        <FieldDescription className="text-mono-sm font-mono break-all">{path}</FieldDescription>
       ) : null}
     </Field>
   );

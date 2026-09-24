@@ -48,11 +48,11 @@ export const PartitionToolbar = ({
   <div className="flex flex-col gap-3.5">
     {/* Top Bar: Search Input & Category Filters */}
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="relative min-w-[200px] max-w-sm flex-1">
-        <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative max-w-sm min-w-[200px] flex-1">
+        <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
         <Input
           aria-label="Search partitions"
-          className="h-8 pl-8 text-body"
+          className="text-body h-8 pl-8"
           disabled={isBusy}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search partition name (e.g. boot, system)…"
@@ -68,9 +68,9 @@ export const PartitionToolbar = ({
     </div>
 
     {/* Sub-bar: Selection Counters & Bulk Selection Actions */}
-    <div className="flex flex-wrap items-center justify-between gap-2 border-border/50 border-t pt-2.5 text-caption">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <span className="font-medium text-foreground">
+    <div className="border-border/50 text-caption flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
+      <div className="text-muted-foreground flex items-center gap-2">
+        <span className="text-foreground font-medium">
           {filteredCount} of {totalCount} partitions shown
         </span>
         <span>·</span>
@@ -80,14 +80,14 @@ export const PartitionToolbar = ({
         {completedCount > 0 ? (
           <>
             <span>·</span>
-            <span className="font-medium text-success">{completedCount} extracted</span>
+            <span className="text-success font-medium">{completedCount} extracted</span>
           </>
         ) : null}
       </div>
 
       <div className="flex items-center gap-1">
         <Button
-          className="h-7 px-2 text-caption"
+          className="text-caption h-7 px-2"
           disabled={isBusy}
           onClick={onToggleAll}
           size="sm"
@@ -105,7 +105,7 @@ export const PartitionToolbar = ({
           )}
         </Button>
         <Button
-          className="h-7 px-2 text-caption"
+          className="text-caption h-7 px-2"
           disabled={isBusy}
           onClick={onInvertFiltered}
           size="sm"

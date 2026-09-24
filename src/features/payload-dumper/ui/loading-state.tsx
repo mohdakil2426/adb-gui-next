@@ -31,10 +31,10 @@ export const LoadingState = ({ mode, remoteUrl, payloadPath }: LoadingStateProps
   return (
     <output aria-busy="true" className="flex w-full flex-col gap-3">
       <div className="flex min-w-0 items-center gap-2">
-        <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin text-primary" />
-        <span className="font-medium text-body">{message}</span>
+        <Loader2 aria-hidden="true" className="text-primary size-4 shrink-0 animate-spin" />
+        <span className="text-body font-medium">{message}</span>
       </div>
-      <p className="min-w-0 truncate font-mono text-mono text-muted-foreground" title={subtitle}>
+      <p className="text-mono text-muted-foreground min-w-0 truncate font-mono" title={subtitle}>
         {subtitle}
       </p>
       <Skeleton className="h-8 w-full" />

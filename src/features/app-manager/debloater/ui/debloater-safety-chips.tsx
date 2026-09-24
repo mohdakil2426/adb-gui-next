@@ -18,7 +18,7 @@ export const DebloaterSafetyChips = ({
   tierCounts,
 }: DebloaterSafetyChipsProps) => (
   <div className="flex flex-wrap items-center gap-1.5">
-    <span className="mr-1 text-caption text-muted-foreground">Safety:</span>
+    <span className="text-caption text-muted-foreground mr-1">Safety:</span>
     {SAFETY_CHIP_DEFS.map((chip) => {
       const isActive = removalFilter === chip.tier;
       const count = chip.tier === "All" ? packagesCount : (tierCounts[chip.tier] ?? 0);
@@ -26,7 +26,7 @@ export const DebloaterSafetyChips = ({
       return (
         <button
           className={cn(
-            "inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-caption transition-colors duration-90 ease-standard",
+            "text-caption ease-standard inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-0.5 transition-colors duration-90",
             isActive
               ? chip.active
               : "border-border/80 bg-surface-raised/40 text-muted-foreground hover:border-border hover:bg-accent hover:text-foreground",

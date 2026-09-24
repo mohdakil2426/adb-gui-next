@@ -88,12 +88,12 @@ export const FlashConfirmDialog = ({
         <div className="flex flex-col gap-1">
           <p>
             Flashing the wrong image can leave the device unable to boot. Make sure{" "}
-            <span className="font-mono text-mono">{imageName}</span> was built for{" "}
-            <span className="font-mono text-mono">{deviceLabel}</span>.
+            <span className="text-mono font-mono">{imageName}</span> was built for{" "}
+            <span className="text-mono font-mono">{deviceLabel}</span>.
           </p>
           {highRisk ? (
             <p>
-              <span className="font-mono text-mono">{partition}</span> is a high-risk partition — a
+              <span className="text-mono font-mono">{partition}</span> is a high-risk partition — a
               bad write here is not recoverable from fastboot.
             </p>
           ) : null}

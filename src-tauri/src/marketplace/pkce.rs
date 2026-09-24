@@ -1,5 +1,4 @@
 use base64::Engine;
-use rand::RngCore;
 use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone)]
@@ -15,7 +14,7 @@ fn base64url_encode(input: &[u8]) -> String {
 
 fn random_url_safe_string(byte_len: usize) -> String {
     let mut bytes = vec![0u8; byte_len];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::fill(&mut bytes[..]);
     base64url_encode(&bytes)
 }
 

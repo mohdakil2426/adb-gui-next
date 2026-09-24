@@ -57,8 +57,8 @@ export const GetVarDialog = ({
           </div>
         </div>
       </DialogHeader>
-      <div className="max-h-[60vh] w-full overflow-y-auto rounded-md border bg-muted/50 p-4">
-        <pre className="whitespace-pre-wrap font-mono text-mono-sm text-muted-foreground">
+      <div className="bg-muted/50 max-h-[60vh] w-full overflow-y-auto rounded-md border p-4">
+        <pre className="text-mono-sm text-muted-foreground font-mono whitespace-pre-wrap">
           {getVarContent || "No output received."}
         </pre>
       </div>

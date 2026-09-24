@@ -29,7 +29,7 @@ const VolumeRow = ({ index, volume }: { index: number; volume: backend.StorageVo
     : volume.rawMount || volume.mount;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface-raised/40 p-2 transition-colors hover:bg-surface-raised/80">
+    <div className="border-border/60 bg-surface-raised/40 hover:bg-surface-raised/80 flex flex-col gap-1.5 rounded-lg border p-2 transition-colors">
       <div className="flex items-baseline justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-1.5 truncate">
           {/* Matches this volume's segment in the capacity map above. */}
@@ -38,24 +38,24 @@ const VolumeRow = ({ index, volume }: { index: number; volume: backend.StorageVo
             className="size-1.5 shrink-0 translate-y-[-1px] rounded-full"
             style={{ backgroundColor: storageSegmentColor(index) }}
           />
-          <span className="font-medium text-body text-foreground">{label}</span>
+          <span className="text-body text-foreground font-medium">{label}</span>
           <span
-            className="truncate font-mono text-caption text-muted-foreground"
+            className="text-caption text-muted-foreground truncate font-mono"
             title={mountTitle}
           >
             {volume.mount}
           </span>
         </div>
-        <span className={cn("numeric shrink-0 font-semibold text-label", TONE_TEXT[tone])}>
+        <span className={cn("numeric text-label shrink-0 font-semibold", TONE_TEXT[tone])}>
           {formatPercent(ratio)}
         </span>
       </div>
       <UsageBar label={`${label} used`} ratio={ratio} tone={tone} />
-      <div className="numeric flex items-baseline justify-between gap-3 text-caption text-muted-foreground">
+      <div className="numeric text-caption text-muted-foreground flex items-baseline justify-between gap-3">
         <span>
           {formatBytes(volume.usedBytes)} of {formatBytes(volume.totalBytes)}
         </span>
-        <span className="font-medium text-foreground">{formatBytes(volume.freeBytes)} free</span>
+        <span className="text-foreground font-medium">{formatBytes(volume.freeBytes)} free</span>
       </div>
     </div>
   );
@@ -103,21 +103,21 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
       ) : (
         <div className="flex w-full flex-1 flex-col justify-between gap-3">
           {/* Capacity map: every volume's share of the summed capacity */}
-          <div className="flex flex-col gap-2 border-border/50 pb-0.5">
-            <div className="flex items-center justify-between font-medium text-caption text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/50 flex flex-col gap-2 pb-0.5">
+            <div className="text-caption text-muted-foreground flex items-center justify-between font-medium tracking-wider uppercase">
               <span>Capacity map</span>
               <MapIcon aria-hidden="true" className="size-3.5" />
             </div>
             <StorageAllocationBar volumes={volumes} />
           </div>
 
-          <div className="flex flex-col gap-2 border-border/50 border-t pt-2">
+          <div className="border-border/50 flex flex-col gap-2 border-t pt-2">
             {volumes.map((volume, index) => (
               <VolumeRow index={index} key={volume.mount} volume={volume} />
             ))}
           </div>
 
-          <div className="grid w-full grid-cols-2 gap-2 border-border/50 border-t pt-2">
+          <div className="border-border/50 grid w-full grid-cols-2 gap-2 border-t pt-2">
             <SpecChip icon={HardDrive} label="Capacity" value={formatBytes(totalCapacity)} />
             <SpecChip icon={CheckCircle2} label="Used" value={formatBytes(totalUsed)} />
             <SpecChip icon={Layers} label="Free" value={formatBytes(totalFree)} />

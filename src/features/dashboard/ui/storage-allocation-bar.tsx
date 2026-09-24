@@ -33,7 +33,7 @@ export const StorageAllocationBar = ({ volumes }: StorageAllocationBarProps) => 
   return (
     <figure
       aria-label={`Storage allocation across ${volumes.length} ${volumes.length === 1 ? "volume" : "volumes"}, ${Math.round(100 - freeWidth)}% used`}
-      className="flex h-3 w-full gap-px overflow-hidden rounded-full bg-secondary"
+      className="bg-secondary flex h-3 w-full gap-px overflow-hidden rounded-full"
     >
       {segments.map((segment, index) => (
         <m.div
@@ -57,7 +57,7 @@ export const StorageAllocationBar = ({ volumes }: StorageAllocationBarProps) => 
       <m.div
         animate={{ opacity: 1 }}
         aria-hidden="true"
-        className="h-full bg-secondary"
+        className="bg-secondary h-full"
         initial={shouldReduceMotion ? false : { opacity: 0 }}
         style={{ width: `${freeWidth}%` }}
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.5 }}

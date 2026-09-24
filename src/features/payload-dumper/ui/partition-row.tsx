@@ -62,18 +62,18 @@ const PartitionStatusIcon = ({
   selected: boolean;
 }) => {
   if (extractStatus === "running") {
-    return <Loader2 aria-hidden="true" className="size-3.5 shrink-0 animate-spin text-primary" />;
+    return <Loader2 aria-hidden="true" className="text-primary size-3.5 shrink-0 animate-spin" />;
   }
   if (extractStatus === "verifying") {
     return (
-      <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0 animate-pulse text-primary" />
+      <ShieldCheck aria-hidden="true" className="text-primary size-3.5 shrink-0 animate-pulse" />
     );
   }
   if (extractStatus === "pending") {
-    return <Clock aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />;
+    return <Clock aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />;
   }
   if (extractStatus === "failed") {
-    return <XCircle aria-hidden="true" className="size-3.5 shrink-0 text-destructive" />;
+    return <XCircle aria-hidden="true" className="text-destructive size-3.5 shrink-0" />;
   }
   return (
     <HardDrive
@@ -90,10 +90,10 @@ const renderCheckboxColumn = (
   disabled?: boolean
 ) => {
   if (isCompleted) {
-    return <CheckCircle2 aria-label="Completed" className="size-4 text-success" />;
+    return <CheckCircle2 aria-label="Completed" className="text-success size-4" />;
   }
   if (isFailed) {
-    return <XCircle aria-label="Failed" className="size-4 text-destructive" />;
+    return <XCircle aria-label="Failed" className="text-destructive size-4" />;
   }
   return <CheckboxItem checked={selected} {...(disabled === undefined ? {} : { disabled })} />;
 };
@@ -125,106 +125,106 @@ const getPartitionSizeColor = (isCompleted: boolean, isFailed: boolean): string 
   return "text-muted-foreground";
 };
 
-export const PartitionRow = React.memo(
-  ({
-    partition,
-    index,
-    extractStatus,
-    progressPercent,
-    throughputMbps,
-    showProgress,
-    onToggle,
-    disabled,
-  }: PartitionRowProps) => {
-    const isCompleted = extractStatus === "completed";
-    const isFailed = extractStatus === "failed";
-    const isPending = extractStatus === "pending";
-    const isRunning = extractStatus === "running";
-    const isVerifying = extractStatus === "verifying";
-    const isActive = isPending || isRunning || isVerifying;
-    const rowDisabled = disabled || isCompleted || isFailed;
+const PartitionRowImpl = ({
+  partition,
+  index,
+  extractStatus,
+  progressPercent,
+  throughputMbps,
+  showProgress,
+  onToggle,
+  disabled,
+}: PartitionRowProps) => {
+  const isCompleted = extractStatus === "completed";
+  const isFailed = extractStatus === "failed";
+  const isPending = extractStatus === "pending";
+  const isRunning = extractStatus === "running";
+  const isVerifying = extractStatus === "verifying";
+  const isActive = isPending || isRunning || isVerifying;
+  const rowDisabled = disabled || isCompleted || isFailed;
 
-    return (
-      <button
-        className={cn(
-          "grid w-full items-center gap-2 px-3 py-2 text-left text-body transition-colors duration-90 ease-standard",
-          !rowDisabled && "cursor-pointer hover:bg-accent",
-          partition.selected && !isCompleted && !isFailed && "bg-primary-muted",
-          isCompleted && "bg-success-muted",
-          isFailed && "bg-destructive-muted"
-        )}
-        disabled={rowDisabled}
-        onClick={() => {
-          if (!rowDisabled) {
-            onToggle(index);
-          }
-        }}
-        style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
-        type="button"
-      >
-        {/* Checkbox / terminal status icon */}
-        {renderCheckboxColumn(isCompleted, isFailed, partition.selected, disabled)}
+  return (
+    <button
+      className={cn(
+        "text-body ease-standard grid w-full items-center gap-2 px-3 py-2 text-left transition-colors duration-90",
+        !rowDisabled && "hover:bg-accent cursor-pointer",
+        partition.selected && !isCompleted && !isFailed && "bg-primary-muted",
+        isCompleted && "bg-success-muted",
+        isFailed && "bg-destructive-muted"
+      )}
+      disabled={rowDisabled}
+      onClick={() => {
+        if (!rowDisabled) {
+          onToggle(index);
+        }
+      }}
+      style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
+      type="button"
+    >
+      {/* Checkbox / terminal status icon */}
+      {renderCheckboxColumn(isCompleted, isFailed, partition.selected, disabled)}
 
-        {/* Name + status indicator */}
-        <div className="flex min-w-0 items-center gap-2">
-          <PartitionStatusIcon
-            extractStatus={extractStatus}
-            isCompleted={isCompleted}
-            selected={partition.selected}
-          />
-          <span
-            className={cn(
-              "min-w-0 truncate font-mono text-mono",
-              getPartitionNameColor(isCompleted, isFailed, partition.selected)
-            )}
-            title={`${partition.name}.img`}
-          >
-            {partition.name}.img
-          </span>
-          {extractStatus && showProgress ? (
-            <span
-              className={cn(
-                "shrink-0 rounded-sm px-1.5 py-0.5 text-caption uppercase",
-                statusBadgeClass(extractStatus)
-              )}
-            >
-              {extractStatus}
-            </span>
-          ) : null}
-        </div>
-
-        {/* Progress — the column is always reserved, so the row never reflows */}
-        <div className="flex min-w-0 flex-col items-stretch justify-center gap-0.5">
-          {showProgress ? (
-            <>
-              <ExtractionProgressBar
-                isCompleted={isCompleted}
-                isExtracting={isActive}
-                isFailed={isFailed}
-                realProgress={progressPercent}
-              />
-              {isRunning &&
-              throughputMbps !== null &&
-              throughputMbps !== undefined &&
-              throughputMbps > 0 ? (
-                <span className="numeric text-center text-caption text-muted-foreground">
-                  {throughputMbps.toFixed(1)} MB/s
-                </span>
-              ) : null}
-            </>
-          ) : null}
-        </div>
-
-        {/* Size */}
+      {/* Name + status indicator */}
+      <div className="flex min-w-0 items-center gap-2">
+        <PartitionStatusIcon
+          extractStatus={extractStatus}
+          isCompleted={isCompleted}
+          selected={partition.selected}
+        />
         <span
           className={cn(
-            "numeric text-right text-caption",
-            getPartitionSizeColor(isCompleted, isFailed)
+            "text-mono min-w-0 truncate font-mono",
+            getPartitionNameColor(isCompleted, isFailed, partition.selected)
           )}
+          title={`${partition.name}.img`}
         >
-          {formatBytes(partition.size)}
+          {partition.name}.img
         </span>
-      </button>
-    );
-  }
-);
+        {extractStatus && showProgress ? (
+          <span
+            className={cn(
+              "text-caption shrink-0 rounded-sm px-1.5 py-0.5 uppercase",
+              statusBadgeClass(extractStatus)
+            )}
+          >
+            {extractStatus}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Progress — the column is always reserved, so the row never reflows */}
+      <div className="flex min-w-0 flex-col items-stretch justify-center gap-0.5">
+        {showProgress ? (
+          <>
+            <ExtractionProgressBar
+              isCompleted={isCompleted}
+              isExtracting={isActive}
+              isFailed={isFailed}
+              realProgress={progressPercent}
+            />
+            {isRunning &&
+            throughputMbps !== null &&
+            throughputMbps !== undefined &&
+            throughputMbps > 0 ? (
+              <span className="numeric text-caption text-muted-foreground text-center">
+                {throughputMbps.toFixed(1)} MB/s
+              </span>
+            ) : null}
+          </>
+        ) : null}
+      </div>
+
+      {/* Size */}
+      <span
+        className={cn(
+          "numeric text-caption text-right",
+          getPartitionSizeColor(isCompleted, isFailed)
+        )}
+      >
+        {formatBytes(partition.size)}
+      </span>
+    </button>
+  );
+};
+
+export const PartitionRow = React.memo(PartitionRowImpl);

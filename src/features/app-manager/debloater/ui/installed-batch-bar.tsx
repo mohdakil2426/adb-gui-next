@@ -32,18 +32,18 @@ export const InstalledBatchBar = ({
   }
 
   return (
-    <div className="fade-in slide-in-from-bottom-2 sticky bottom-0 z-30 flex animate-in flex-wrap items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/95 px-4 py-2.5 shadow-2xl backdrop-blur-md transition-colors transition-opacity transition-transform duration-150">
+    <div className="fade-in slide-in-from-bottom-2 animate-in border-border/80 bg-surface-raised/95 sticky bottom-0 z-30 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-2.5 shadow-2xl backdrop-blur-md transition-colors transition-opacity transition-transform duration-150">
       {/* Selected Items Counter */}
       <div className="flex items-center gap-2.5">
-        <Badge className="numeric px-2 py-0.5 font-mono text-caption" variant="default">
+        <Badge className="numeric text-caption px-2 py-0.5 font-mono" variant="default">
           {selectedCount}
         </Badge>
-        <span className="font-medium text-body text-foreground">
+        <span className="text-body text-foreground font-medium">
           {selectedCount === 1 ? "1 package selected" : `${selectedCount} packages selected`}
         </span>
         <Button
           aria-label="Clear selection"
-          className="size-6 p-0 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground size-6 p-0"
           onClick={onClearSelection}
           size="icon"
           type="button"
@@ -57,7 +57,7 @@ export const InstalledBatchBar = ({
       <div className="flex flex-wrap items-center gap-2">
         {onBatchEnable ? (
           <Button
-            className="h-8 gap-1.5 border-border/80 font-medium text-caption text-emerald-600 hover:bg-accent dark:text-emerald-400"
+            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-emerald-600 dark:text-emerald-400"
             disabled={isUninstalling}
             onClick={onBatchEnable}
             size="sm"
@@ -71,7 +71,7 @@ export const InstalledBatchBar = ({
 
         {onBatchDisable ? (
           <Button
-            className="h-8 gap-1.5 border-border/80 font-medium text-amber-600 text-caption hover:bg-accent dark:text-amber-400"
+            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-amber-600 dark:text-amber-400"
             disabled={isUninstalling}
             onClick={onBatchDisable}
             size="sm"
@@ -84,7 +84,7 @@ export const InstalledBatchBar = ({
 
         {onBatchExportApk ? (
           <Button
-            className="h-8 gap-1.5 border-border/80 font-medium text-caption hover:bg-accent"
+            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium"
             disabled={isUninstalling}
             onClick={onBatchExportApk}
             size="sm"
@@ -93,7 +93,7 @@ export const InstalledBatchBar = ({
           >
             <Download
               aria-hidden="true"
-              className="size-3.5 text-primary"
+              className="text-primary size-3.5"
               data-icon="inline-start"
             />
             <span>Export APKs</span>
@@ -102,7 +102,7 @@ export const InstalledBatchBar = ({
 
         {onBatchClearCache ? (
           <Button
-            className="h-8 gap-1.5 border-border/80 font-medium text-caption text-sky-600 hover:bg-accent dark:text-sky-400"
+            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-sky-600 dark:text-sky-400"
             disabled={isUninstalling}
             onClick={onBatchClearCache}
             size="sm"
@@ -116,7 +116,7 @@ export const InstalledBatchBar = ({
 
         {onBatchForceStop ? (
           <Button
-            className="h-8 gap-1.5 border-border/80 font-medium text-amber-600 text-caption hover:bg-accent dark:text-amber-400"
+            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-amber-600 dark:text-amber-400"
             disabled={isUninstalling}
             onClick={onBatchForceStop}
             size="sm"
@@ -131,7 +131,7 @@ export const InstalledBatchBar = ({
         <Button
           aria-haspopup="dialog"
           aria-label={`Uninstall ${selectedCount} selected package${selectedCount === 1 ? "" : "s"}`}
-          className="h-8 gap-1.5 font-medium text-caption shadow-xs"
+          className="text-caption h-8 gap-1.5 font-medium shadow-xs"
           disabled={isUninstalling}
           onClick={onBatchUninstall}
           size="sm"

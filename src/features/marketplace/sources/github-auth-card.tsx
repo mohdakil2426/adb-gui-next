@@ -42,10 +42,10 @@ interface GithubDeviceChallengeViewProps {
 }
 
 const GithubDeviceChallengeView = ({ challenge, onCancel }: GithubDeviceChallengeViewProps) => (
-  <div className="mt-3 rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
-    <p className="font-medium text-foreground">Enter this code at github.com/login/device</p>
+  <div className="bg-background/80 text-caption text-muted-foreground mt-3 rounded-lg border p-3">
+    <p className="text-foreground font-medium">Enter this code at github.com/login/device</p>
     <div className="mt-1 flex items-center gap-2">
-      <span className="select-all font-mono text-foreground text-title tracking-[0.2em]">
+      <span className="text-foreground text-title font-mono tracking-[0.2em] select-all">
         {challenge.challenge.userCode}
       </span>
       <CopyButton
@@ -55,7 +55,7 @@ const GithubDeviceChallengeView = ({ challenge, onCancel }: GithubDeviceChalleng
         value={challenge.challenge.userCode}
       />
     </div>
-    <p className="mt-1 text-caption">
+    <p className="text-caption mt-1">
       Code expires in {Math.ceil(challenge.challenge.expiresIn / 60)} min — approve in browser to
       finish.
     </p>
@@ -89,22 +89,22 @@ const GithubPatSection = ({
   const [localPat, setLocalPat] = useState(githubPat);
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+    <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-2 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <label
-          className="flex items-center gap-1.5 font-medium text-body text-foreground"
+          className="text-body text-foreground flex items-center gap-1.5 font-medium"
           htmlFor="github-pat-input"
         >
-          <Key className="size-4 text-muted-foreground" />
+          <Key className="text-muted-foreground size-4" />
           Session Personal Access Token (PAT)
         </label>
-        <span className="text-[10px] text-muted-foreground">In-memory only</span>
+        <span className="text-muted-foreground text-[10px]">In-memory only</span>
       </div>
 
       <div className="flex gap-2">
         <Input
           autoComplete="current-password"
-          className="font-mono text-mono-sm"
+          className="text-mono-sm font-mono"
           id="github-pat-input"
           onChange={(e) => setLocalPat(e.target.value)}
           placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
@@ -170,28 +170,28 @@ const GithubKeychainSection = ({
   signOutGithub,
   tokenStatus,
 }: GithubKeychainSectionProps) => (
-  <div className="rounded-lg border bg-muted/20 p-4">
-    <p className="font-medium text-body">
+  <div className="bg-muted/20 rounded-lg border p-4">
+    <p className="text-body font-medium">
       {isSignedIn
         ? `Signed in as ${login ?? "github-user"}`
         : "Not signed in — one-click sign-in ready"}
     </p>
-    <p className="mt-1 text-caption text-muted-foreground">
+    <p className="text-caption text-muted-foreground mt-1">
       {isSignedIn
         ? `Keychain: ${tokenStatus?.source ?? "keyring"} • Token is AES-256-GCM encrypted via OS keychain, never in localStorage.`
         : "Sign in once to get 5,000 GitHub API requests/hour (vs 60 anonymous). No setup needed — uses built-in OAuth app."}
     </p>
     {isSignedIn && authRateLimit ? (
-      <p className="mt-2 text-caption">
+      <p className="text-caption mt-2">
         Rate limit: {authRateLimit.remaining}/{authRateLimit.limit} (reset in{" "}
         {Math.ceil(authRateLimit.secondsUntilReset / 60)} min)
       </p>
     ) : null}
 
     {isSignedIn ? (
-      <div className="mt-3 rounded-lg border bg-background/80 p-3 text-caption text-muted-foreground">
-        <div className="flex items-center gap-2 text-foreground">
-          <CheckCircle2 className="size-4 text-success" />
+      <div className="bg-background/80 text-caption text-muted-foreground mt-3 rounded-lg border p-3">
+        <div className="text-foreground flex items-center gap-2">
+          <CheckCircle2 className="text-success size-4" />
           <span className="font-medium">{login ?? "Signed in"}</span>
           {tokenStatus?.source ? (
             <span className="text-caption text-muted-foreground">via {tokenStatus.source}</span>
@@ -200,7 +200,7 @@ const GithubKeychainSection = ({
         {authRateLimit ? (
           <p className="mt-2">
             Remaining API requests:{" "}
-            <span className="font-medium text-foreground">{authRateLimit.remaining}</span> /{" "}
+            <span className="text-foreground font-medium">{authRateLimit.remaining}</span> /{" "}
             {authRateLimit.limit}
           </p>
         ) : null}
@@ -247,7 +247,7 @@ const GithubKeychainSection = ({
       </FieldLabel>
       <Input
         autoComplete="off"
-        className="font-mono text-mono"
+        className="text-mono font-mono"
         id="github-oauth-client-id"
         name="github-oauth-client-id"
         onBlur={() => onSaveClientId(localClientId.trim())}
@@ -302,11 +302,11 @@ export const GithubAuthCard = () => {
   const effectiveToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
   const isAuthenticated = isSignedIn || Boolean(effectiveToken);
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <GitBranch className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <GitBranch className="text-muted-foreground size-5" />
             GitHub API Rate Limit & Authentication
           </CardTitle>
           {isAuthenticated ? (
@@ -317,7 +317,7 @@ export const GithubAuthCard = () => {
             </Badge>
           ) : (
             <Badge className="gap-1 text-[10px]" variant="outline">
-              <ShieldAlert className="size-3 text-warning" />
+              <ShieldAlert className="text-warning size-3" />
               Anonymous (60 req/hr)
             </Badge>
           )}
@@ -348,23 +348,23 @@ export const GithubAuthCard = () => {
 
         {/* Active Session Info if signed in — legacy PAT session */}
         {githubSession.user ? (
-          <div className="flex items-center justify-between rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between rounded-lg border p-3.5">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-full border border-border bg-surface-raised">
-                <User className="size-4.5 text-foreground" />
+              <div className="border-border bg-surface-raised flex size-9 items-center justify-center rounded-full border">
+                <User className="text-foreground size-4.5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-body text-foreground">
+                <span className="text-body text-foreground font-semibold">
                   @{githubSession.user.login}
                 </span>
-                <span className="font-mono text-[11px] text-muted-foreground">
+                <span className="text-muted-foreground font-mono text-[11px]">
                   GitHub Account Active
                 </span>
               </div>
             </div>
 
             <Button
-              className="h-8 gap-1.5 text-caption"
+              className="text-caption h-8 gap-1.5"
               onClick={signOutGithub}
               size="sm"
               type="button"
@@ -379,7 +379,7 @@ export const GithubAuthCard = () => {
         <GithubPatSection githubPat={githubPat} onSavePat={handleSavePat} />
         {/* Rate Limit Readout */}
         {rateLimit ? (
-          <div className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-raised/20 px-3.5 py-2 text-caption text-muted-foreground">
+          <div className="border-border/60 bg-surface-raised/20 text-caption text-muted-foreground flex items-center justify-between rounded-lg border px-3.5 py-2">
             <span>
               Remaining quota: <strong className="text-foreground">{rateLimit.remaining}</strong> of{" "}
               {rateLimit.limit}

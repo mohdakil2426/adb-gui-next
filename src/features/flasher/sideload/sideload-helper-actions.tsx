@@ -21,11 +21,11 @@ export const SideloadHelperActions = ({
   onCheckState,
   disabled = false,
 }: SideloadHelperActionsProps) => (
-  <Card className="flex flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+  <Card className="border-border bg-surface flex flex-col justify-between rounded-xl shadow-none">
     <CardHeader className="pb-3">
       <div className="flex items-center justify-between">
-        <CardTitle className="flex items-center gap-2 text-foreground text-title">
-          <Zap className="size-5 text-muted-foreground" />
+        <CardTitle className="text-foreground text-title flex items-center gap-2">
+          <Zap className="text-muted-foreground size-5" />
           Sideload Helper Utilities
         </CardTitle>
         <Badge variant={isSideloadActive ? "success" : "outline"}>
@@ -48,11 +48,11 @@ export const SideloadHelperActions = ({
           type="button"
           variant="outline"
         >
-          <div className="flex items-center gap-1.5 font-semibold text-body text-foreground">
+          <div className="text-body text-foreground flex items-center gap-1.5 font-semibold">
             <RotateCcw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             Reboot to Recovery
           </div>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-muted-foreground text-[11px]">
             Prepares device for &quot;Apply update from ADB&quot;
           </span>
         </Button>
@@ -66,11 +66,11 @@ export const SideloadHelperActions = ({
           type="button"
           variant="outline"
         >
-          <div className="flex items-center gap-1.5 font-semibold text-body text-foreground">
+          <div className="text-body text-foreground flex items-center gap-1.5 font-semibold">
             <RefreshCw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             Check Sideload State
           </div>
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-muted-foreground text-[11px]">
             Scans for active ADB sideload handshake
           </span>
         </Button>
@@ -78,7 +78,7 @@ export const SideloadHelperActions = ({
 
       {/* Action 3: Reboot System */}
       <Button
-        className="w-full justify-center gap-1.5 text-caption"
+        className="text-caption w-full justify-center gap-1.5"
         disabled={disabled || !serial}
         onClick={onRebootSystem}
         size="sm"
@@ -89,8 +89,8 @@ export const SideloadHelperActions = ({
         Reboot to System OS (Finish Sideload)
       </Button>
 
-      <div className="rounded-lg border border-border/70 bg-background/50 p-2.5 text-[11px] text-muted-foreground">
-        <p className="font-semibold text-foreground">💡 How to initiate Sideload on device:</p>
+      <div className="border-border/70 bg-background/50 text-muted-foreground rounded-lg border p-2.5 text-[11px]">
+        <p className="text-foreground font-semibold">💡 How to initiate Sideload on device:</p>
         <ol className="mt-1 list-inside list-decimal space-y-0.5">
           <li>Reboot device into Recovery mode.</li>
           <li>Use volume keys to navigate to &quot;Apply update&quot;.</li>

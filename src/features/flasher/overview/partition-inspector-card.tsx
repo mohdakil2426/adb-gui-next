@@ -40,8 +40,8 @@ export const PartitionInspectorCard = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-border/50 border-b pb-2">
+    <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-3 rounded-lg border p-3.5">
+      <div className="border-border/50 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <Badge className="font-mono text-[11px]" variant="secondary">
             {meta.name}.img
@@ -73,10 +73,10 @@ export const PartitionInspectorCard = ({
       </div>
 
       <div className="flex items-start gap-2.5">
-        <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        <Info className="text-muted-foreground mt-0.5 size-4 shrink-0" />
         <div className="flex flex-col gap-1">
           <p className="text-body text-foreground">{meta.description}</p>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-muted-foreground">
+          <div className="text-caption text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1">
             <span>
               Category: <strong className="text-foreground capitalize">{meta.category}</strong>
             </span>

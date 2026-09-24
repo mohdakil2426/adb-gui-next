@@ -10,37 +10,37 @@ const ESTIMATED_ROW_HEIGHT = 20;
 const WELCOME_TEXT =
   "Welcome. Type your command below.\nExamples:\n  adb devices\n  adb shell ls /sdcard/\n  fastboot devices";
 
-const TranscriptRow = memo(function TranscriptRow({ entry }: { entry: HistoryEntry }) {
-  return (
-    <div className="flex gap-2 px-3">
-      <span
-        className={cn(
-          "shrink-0 select-none font-mono text-[12px] leading-5",
-          entry.type === "command" ? "font-semibold" : "opacity-60"
-        )}
-        style={{
-          color: entry.type === "command" ? "var(--terminal-log-info)" : "var(--terminal-fg)",
-        }}
-      >
-        {entry.type === "command" ? "$" : ">"}
-      </span>
-      <span
-        className="min-w-0 whitespace-pre-wrap break-words font-mono text-[12px] leading-5"
-        style={{
-          color: entry.type === "error" ? "var(--terminal-log-error)" : "var(--terminal-fg)",
-        }}
-      >
-        {entry.text}
-      </span>
-    </div>
-  );
-});
+const TranscriptRowImpl = ({ entry }: { entry: HistoryEntry }) => (
+  <div className="flex gap-2 px-3">
+    <span
+      className={cn(
+        "shrink-0 font-mono text-[12px] leading-5 select-none",
+        entry.type === "command" ? "font-semibold" : "opacity-60"
+      )}
+      style={{
+        color: entry.type === "command" ? "var(--terminal-log-info)" : "var(--terminal-fg)",
+      }}
+    >
+      {entry.type === "command" ? "$" : ">"}
+    </span>
+    <span
+      className="min-w-0 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap"
+      style={{
+        color: entry.type === "error" ? "var(--terminal-log-error)" : "var(--terminal-fg)",
+      }}
+    >
+      {entry.text}
+    </span>
+  </div>
+);
+
+const TranscriptRow = memo(TranscriptRowImpl);
 
 /**
  * Owns the only subscription to `history`. The command input lives in a sibling
  * so typing never re-renders the transcript.
  */
-export const ShellTranscript = memo(function ShellTranscript() {
+const ShellTranscriptImpl = () => {
   const history = useShellStore((state) => state.history);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,13 +63,13 @@ export const ShellTranscript = memo(function ShellTranscript() {
 
   return (
     <div
-      className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden py-3"
+      className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto py-3"
       ref={scrollRef}
       role="log"
     >
       {history.length === 0 ? (
         <pre
-          className="whitespace-pre-wrap break-words px-3 font-mono text-[12px] italic leading-5 opacity-40"
+          className="px-3 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap italic opacity-40"
           style={{ color: "var(--terminal-fg)" }}
         >
           {WELCOME_TEXT}
@@ -109,4 +109,6 @@ export const ShellTranscript = memo(function ShellTranscript() {
       )}
     </div>
   );
-});
+};
+
+export const ShellTranscript = memo(ShellTranscriptImpl);

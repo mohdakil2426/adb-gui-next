@@ -8,13 +8,13 @@ App versioning uses official Tauri: `src-tauri/tauri.conf.json` → `"version": 
 
 ## Inventory
 
-| Script                                                             | Purpose                                                           | When                                                               |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`make-windows-portable.ps1`](./make-windows-portable.ps1)         | Build Windows **portable zip** after a Tauri release build        | CI/publish (Windows jobs) or local after `tauri build`             |
-| [`sync-cargo-version.mjs`](./sync-cargo-version.mjs)               | Set `Cargo.toml` version from `package.json` (app SoT)            | Before release: `bun run version:sync`                             |
-| [`download-darwin-tools.ps1`](./download-darwin-tools.ps1)         | Download Google platform-tools into `src-tauri/resources/darwin/` | macOS tools refresh (macOS product builds remain paused by policy) |
-| [`emulator-root-diagnostics.ps1`](./emulator-root-diagnostics.ps1) | Collect emulator root status into a markdown report               | Manual debug when Emulator Root misbehaves                         |
-| [`emulator-root-e2e.ps1`](./emulator-root-e2e.ps1)                 | End-to-end AVD root test via upstream rootAVD                     | Manual QA of root pipeline on a real AVD                           |
+| Script | Purpose | When |
+| --- | --- | --- |
+| [`make-windows-portable.ps1`](./make-windows-portable.ps1) | Build Windows **portable zip** after a Tauri release build | CI/publish (Windows jobs) or local after `tauri build` |
+| [`sync-cargo-version.mjs`](./sync-cargo-version.mjs) | Set `Cargo.toml` version from `package.json` (app SoT) | Before release: `bun run version:sync` |
+| [`download-darwin-tools.ps1`](./download-darwin-tools.ps1) | Download Google platform-tools into `src-tauri/resources/darwin/` | macOS tools refresh (macOS product builds remain paused by policy) |
+| [`emulator-root-diagnostics.ps1`](./emulator-root-diagnostics.ps1) | Collect emulator root status into a markdown report | Manual debug when Emulator Root misbehaves |
+| [`emulator-root-e2e.ps1`](./emulator-root-e2e.ps1) | End-to-end AVD root test via upstream rootAVD | Manual QA of root pipeline on a real AVD |
 
 ---
 

@@ -11,7 +11,7 @@ const Breadcrumb = ({ ...props }: React.ComponentProps<"nav">) => (
 const BreadcrumbList = ({ className, ...props }: React.ComponentProps<"ol">) => (
   <ol
     className={cn(
-      "flex items-center gap-1 break-words text-label text-muted-foreground",
+      "text-label text-muted-foreground flex items-center gap-1 break-words",
       className
     )}
     data-slot="breadcrumb-list"
@@ -37,7 +37,7 @@ const BreadcrumbLink = ({
   return (
     <Comp
       className={cn(
-        "rounded-sm transition-colors duration-90 ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "ease-standard hover:text-foreground focus-visible:ring-ring rounded-sm transition-colors duration-90 focus-visible:ring-2 focus-visible:outline-none",
         className
       )}
       data-slot="breadcrumb-link"
@@ -50,7 +50,7 @@ const BreadcrumbPage = ({ className, ...props }: React.ComponentProps<"span">) =
   <span
     aria-current="page"
     aria-disabled="true"
-    className={cn("font-medium text-foreground", className)}
+    className={cn("text-foreground font-medium", className)}
     data-slot="breadcrumb-page"
     {...props}
   />

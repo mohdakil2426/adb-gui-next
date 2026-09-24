@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useEffect } from "react";
 
 import { GetInstalledPackages } from "@/desktop/backend";

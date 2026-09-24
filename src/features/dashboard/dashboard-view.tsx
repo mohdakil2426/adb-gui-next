@@ -180,6 +180,10 @@ export const ViewDashboard = ({ activeView }: { activeView: string }) => {
     );
   }
 
+  const handleRebootRequest = reboot.request;
+  const handleRebootDismiss = reboot.dismiss;
+  const handleRebootConfirm = reboot.confirm;
+
   const deviceLabel = `${selectedDevice.serial} · ${selectedDevice.status}`;
 
   return (
@@ -228,7 +232,7 @@ export const ViewDashboard = ({ activeView }: { activeView: string }) => {
           isDisabled={mode === "unavailable"}
           mode={mode}
           onOpenShell={openShell}
-          onReboot={reboot.request}
+          onReboot={handleRebootRequest}
           runningTarget={reboot.runningTarget}
           serial={selectedDevice.serial}
         />
@@ -247,8 +251,8 @@ export const ViewDashboard = ({ activeView }: { activeView: string }) => {
 
       <RebootConfirmDialog
         deviceLabel={deviceLabel}
-        onCancel={reboot.dismiss}
-        onConfirm={reboot.confirm}
+        onCancel={handleRebootDismiss}
+        onConfirm={handleRebootConfirm}
         target={reboot.pendingConfirmation}
       />
 

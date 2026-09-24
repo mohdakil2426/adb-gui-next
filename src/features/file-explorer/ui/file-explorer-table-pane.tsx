@@ -117,7 +117,8 @@ export const FileExplorerTablePane = ({
   const paneState = resolvePaneState(listing, editing, status);
   const { fileTableColumns, resizeColumn } = useFileExplorerColumnWidths();
   const showSelectAll = selection.isMultiSelectMode;
-
+  const handleCreateFile = actions.startCreateFile;
+  const handleCreateFolder = actions.startCreateFolder;
   useEffect(() => {
     const el = tableScrollRef.current;
     if (!el) {
@@ -148,7 +149,7 @@ export const FileExplorerTablePane = ({
         <section
           aria-label="Files table"
           className={cn(
-            "min-h-0 flex-1 overflow-auto overscroll-contain focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "focus-visible:ring-ring min-h-0 flex-1 overflow-auto overscroll-contain focus-visible:ring-1 focus-visible:outline-none",
             FE_DROP_OVER_CLASS
           )}
           data-fe-drop-pane={listing.currentPath}
@@ -179,14 +180,14 @@ export const FileExplorerTablePane = ({
           {paneState === "empty" ? (
             <EmptyDirectoryState
               disabled={status.isBusy}
-              onCreateFile={actions.startCreateFile}
-              onCreateFolder={actions.startCreateFolder}
+              onCreateFile={handleCreateFile}
+              onCreateFolder={handleCreateFolder}
             />
           ) : null}
           {paneState === "listing" ? (
             <div className="relative min-h-full w-full">
               <Table className="min-w-0">
-                <TableHeader className="sticky top-0 z-10 block border-border border-b bg-surface">
+                <TableHeader className="border-border bg-surface sticky top-0 z-10 block border-b">
                   <TableRow
                     className="group/header grid hover:bg-transparent"
                     style={{ gridTemplateColumns: fileTableColumns }}
@@ -194,7 +195,7 @@ export const FileExplorerTablePane = ({
                     {SORTABLE_COLUMNS.map(({ field, label }) => (
                       <TableHead
                         aria-sort={getAriaSort(field, listing.sortField, listing.sortDir)}
-                        className="relative h-9 min-w-0 px-3 text-label text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        className="text-label text-muted-foreground hover:bg-muted/50 hover:text-foreground relative h-9 min-w-0 px-3"
                         key={field}
                       >
                         <div className="flex h-full min-w-0 items-center gap-1 pr-2">
@@ -282,8 +283,8 @@ export const FileExplorerTablePane = ({
         />
         <FileExplorerCreateMenuItems
           disabled={status.isBusy}
-          onCreateFile={actions.startCreateFile}
-          onCreateFolder={actions.startCreateFolder}
+          onCreateFile={handleCreateFile}
+          onCreateFolder={handleCreateFolder}
         />
       </ContextMenuContent>
     </ContextMenu>

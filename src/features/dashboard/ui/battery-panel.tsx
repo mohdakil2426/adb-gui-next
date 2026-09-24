@@ -39,7 +39,7 @@ const BatterySkeleton = () => (
 );
 
 const BatteryChips = ({ health, status }: { health: string; status: string }) => (
-  <div className="grid w-full grid-cols-2 gap-2 border-border/50 border-t pt-2">
+  <div className="border-border/50 grid w-full grid-cols-2 gap-2 border-t pt-2">
     <SpecChip icon={Zap} label="Status" value={status} />
     <SpecChip icon={HeartHandshake} label="Health" value={health} />
   </div>
@@ -56,7 +56,7 @@ const BatteryScales = ({
   voltage: number | null;
   voltageDisplay: string;
 }) => (
-  <div className="flex flex-col gap-2.5 border-border/50 border-t pt-2.5">
+  <div className="border-border/50 flex flex-col gap-2.5 border-t pt-2.5">
     <MicroScale
       ariaLabel="Battery temperature"
       display={tempDisplay}

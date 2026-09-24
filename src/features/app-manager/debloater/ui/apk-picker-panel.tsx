@@ -121,14 +121,14 @@ export const ApkPickerPanel = ({
       ) : (
         /* State 2: Active Queue with Pre-Flight Inspection & Controls */
         <div className="flex flex-col gap-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-lg border border-border bg-surface px-3.5 py-2.5 shadow-none">
+          <div className="border-border bg-surface flex flex-wrap items-center justify-between gap-2.5 rounded-lg border px-3.5 py-2.5 shadow-none">
             <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground">
-                <Package aria-hidden="true" className="size-4.5 text-primary" />
+              <div className="border-border bg-surface-raised text-foreground flex size-9 items-center justify-center rounded-lg border">
+                <Package aria-hidden="true" className="text-primary size-4.5" />
               </div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-body text-foreground">
+                  <span className="text-body text-foreground font-semibold">
                     Installation Queue
                   </span>
                   <Badge className="h-5 px-2 font-mono text-[11px]" variant="secondary">
@@ -148,7 +148,7 @@ export const ApkPickerPanel = ({
 
             <div className="flex items-center gap-2">
               <Button
-                className="h-8 gap-1.5 px-3 font-medium text-caption"
+                className="text-caption h-8 gap-1.5 px-3 font-medium"
                 disabled={isInstalling}
                 onClick={onAddMore}
                 size="sm"
@@ -159,7 +159,7 @@ export const ApkPickerPanel = ({
                 Add More Files
               </Button>
               <Button
-                className="h-8 gap-1.5 px-2.5 text-caption text-muted-foreground hover:text-destructive"
+                className="text-caption text-muted-foreground hover:text-destructive h-8 gap-1.5 px-2.5"
                 disabled={isInstalling}
                 onClick={onClearAll}
                 size="sm"
@@ -192,7 +192,7 @@ export const ApkPickerPanel = ({
           {/* Pre-Flight APK Cards List (Scrollable, Fixed Max-Height) */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between px-1">
-              <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
+              <span className="text-caption text-muted-foreground font-medium tracking-wider uppercase">
                 Pre-Flight Binary Inspection ({apkPaths.length})
               </span>
               <span className="text-caption text-muted-foreground">
@@ -217,7 +217,7 @@ export const ApkPickerPanel = ({
           {/* Primary Installation Action Trigger */}
           <div className="flex flex-col gap-1.5 pt-0.5">
             <Button
-              className="h-10 w-full gap-2 font-semibold text-body shadow-xs"
+              className="text-body h-10 w-full gap-2 font-semibold shadow-xs"
               disabled={isInstalling || !selectedSerial}
               onClick={onInstall}
               size="lg"
@@ -247,7 +247,7 @@ export const ApkPickerPanel = ({
             </Button>
 
             {selectedSerial ? null : (
-              <span className="text-center text-caption text-muted-foreground">
+              <span className="text-caption text-muted-foreground text-center">
                 Connect and pick a target device in the sidebar to begin installation.
               </span>
             )}

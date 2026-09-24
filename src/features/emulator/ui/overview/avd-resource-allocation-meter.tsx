@@ -71,17 +71,17 @@ const RadialMeter = ({
 
         {/* Center Percentage Display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-semibold text-foreground text-title tracking-tight">
+          <span className="text-foreground text-title font-semibold tracking-tight">
             {Math.round(clamped)}%
           </span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
             {sublabel}
           </span>
         </div>
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <span className="font-medium text-body text-foreground">{valueLabel}</span>
+        <span className="text-body text-foreground font-medium">{valueLabel}</span>
         <span className="text-caption text-muted-foreground">of {maxLabel}</span>
       </div>
     </div>
@@ -118,20 +118,20 @@ export const AvdResourceAllocationMeter = ({ avd }: AvdResourceAllocationMeterPr
     hostCapacity?.logicalCores && hostCapacity.logicalCores > 0 ? hostCapacity.logicalCores : 8;
   const cpuPercentage = (vCpus / hostCores) * 100;
   return (
-    <Card className="@container flex h-full flex-col justify-between rounded-xl border-border bg-surface py-4 shadow-none">
+    <Card className="border-border bg-surface @container flex h-full flex-col justify-between rounded-xl py-4 shadow-none">
       <CardHeader className="gap-0 px-4.5 pb-2">
         <CardTitle
           as="h2"
-          className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+          className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
         >
-          <Server aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <Server aria-hidden="true" className="text-muted-foreground size-3.5" />
           Virtual Hardware & Allocation Telemetry
         </CardTitle>
       </CardHeader>
 
       <CardContent className="flex flex-1 flex-col justify-between gap-4 px-4.5 pt-1">
         {/* Dual Radial Gauge Telemetry */}
-        <div className="grid grid-cols-2 gap-4 rounded-lg border border-border/60 bg-surface-raised/40 p-4">
+        <div className="border-border/60 bg-surface-raised/40 grid grid-cols-2 gap-4 rounded-lg border p-4">
           <RadialMeter
             color="var(--chart-1)"
             label="RAM"
@@ -153,32 +153,32 @@ export const AvdResourceAllocationMeter = ({ avd }: AvdResourceAllocationMeterPr
 
         {/* Hypervisor Allocation Breakdown Rows */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between rounded-md border border-border/40 bg-surface-raised/30 px-3 py-2 text-caption">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MemoryStick aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <div className="border-border/40 bg-surface-raised/30 text-caption flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="text-muted-foreground flex items-center gap-2">
+              <MemoryStick aria-hidden="true" className="text-muted-foreground size-3.5" />
               <span>Dalvik VM Heap Size</span>
             </div>
-            <span className="font-medium font-mono text-foreground text-mono-sm">
+            <span className="text-foreground text-mono-sm font-mono font-medium">
               512 MB (Large Heap)
             </span>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-border/40 bg-surface-raised/30 px-3 py-2 text-caption">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Layers aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <div className="border-border/40 bg-surface-raised/30 text-caption flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="text-muted-foreground flex items-center gap-2">
+              <Layers aria-hidden="true" className="text-muted-foreground size-3.5" />
               <span>GPU VRAM Texture Budget</span>
             </div>
-            <span className="font-medium font-mono text-foreground text-mono-sm">
+            <span className="text-foreground text-mono-sm font-mono font-medium">
               1024 MB (Host Unified)
             </span>
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-border/40 bg-surface-raised/30 px-3 py-2 text-caption">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Cpu aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <div className="border-border/40 bg-surface-raised/30 text-caption flex items-center justify-between rounded-md border px-3 py-2">
+            <div className="text-muted-foreground flex items-center gap-2">
+              <Cpu aria-hidden="true" className="text-muted-foreground size-3.5" />
               <span>SMP Multithreading</span>
             </div>
-            <span className="font-medium font-mono text-foreground text-mono-sm">
+            <span className="text-foreground text-mono-sm font-mono font-medium">
               Enabled · 4 Threads
             </span>
           </div>

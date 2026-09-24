@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/sha
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
 export const FlasherKnowledgeBase = () => (
-  <Card className="flex h-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+  <Card className="border-border bg-surface flex h-full flex-col justify-between rounded-xl shadow-none">
     <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-foreground text-title">
-        <BookOpen className="size-5 text-muted-foreground" />
+      <CardTitle className="text-foreground text-title flex items-center gap-2">
+        <BookOpen className="text-muted-foreground size-5" />
         Flasher Knowledge Base: Modes & Protocols
       </CardTitle>
       <CardDescription className="text-caption">
@@ -19,26 +19,26 @@ export const FlasherKnowledgeBase = () => (
 
     <CardContent className="flex flex-1 flex-col">
       <Tabs className="flex flex-1 flex-col gap-3" defaultValue="fastboot">
-        <TabsList className="w-full bg-surface-raised">
-          <TabsTrigger className="flex-1 gap-1.5 text-caption" value="fastboot">
+        <TabsList className="bg-surface-raised w-full">
+          <TabsTrigger className="text-caption flex-1 gap-1.5" value="fastboot">
             <HardDrive className="size-3.5" />
             Fastboot Mode
           </TabsTrigger>
-          <TabsTrigger className="flex-1 gap-1.5 text-caption" value="fastbootd">
-            <Zap className="size-3.5 text-warning" />
+          <TabsTrigger className="text-caption flex-1 gap-1.5" value="fastbootd">
+            <Zap className="text-warning size-3.5" />
             FastbootD Mode
           </TabsTrigger>
-          <TabsTrigger className="flex-1 gap-1.5 text-caption" value="sideload">
-            <Package className="size-3.5 text-info" />
+          <TabsTrigger className="text-caption flex-1 gap-1.5" value="sideload">
+            <Package className="text-info size-3.5" />
             ADB Sideload
           </TabsTrigger>
         </TabsList>
 
         {/* Fastboot Mode */}
         <TabsContent className="m-0 flex flex-1 flex-col gap-3" value="fastboot">
-          <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-2 rounded-lg border p-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Bootloader Raw Partition Flasher
               </span>
               <Badge variant="outline">Low-Level Hardware</Badge>
@@ -49,38 +49,38 @@ export const FlasherKnowledgeBase = () => (
             </p>
           </div>
 
-          <div className="grid @xs:grid-cols-2 gap-2 text-caption">
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">✅ Ideal For</span>
-              <ul className="flex flex-col gap-1 text-muted-foreground">
+          <div className="text-caption grid gap-2 @xs:grid-cols-2">
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">✅ Ideal For</span>
+              <ul className="text-muted-foreground flex flex-col gap-1">
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>
                     Flashing Custom Kernels (<code>boot.img</code>)
                   </span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>
                     Ramdisk Rooting (<code>init_boot.img</code>)
                   </span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>
                     AVB Key Disabling (<code>vbmeta.img</code>)
                   </span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>A/B Active Slot switching</span>
                 </li>
               </ul>
             </div>
 
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">⚠️ Limitations</span>
-              <ul className="flex flex-col gap-1 text-muted-foreground">
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">⚠️ Limitations</span>
+              <ul className="text-muted-foreground flex flex-col gap-1">
                 <li>
                   • Cannot resize dynamic partitions inside <code>super</code>
                 </li>
@@ -93,9 +93,9 @@ export const FlasherKnowledgeBase = () => (
 
         {/* FastbootD Mode */}
         <TabsContent className="m-0 flex flex-1 flex-col gap-3" value="fastbootd">
-          <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-2 rounded-lg border p-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Userspace Fastboot (Android 10+ Dynamic Partitions)
               </span>
               <Badge variant="warning">Recovery Userspace</Badge>
@@ -107,31 +107,31 @@ export const FlasherKnowledgeBase = () => (
             </p>
           </div>
 
-          <div className="grid @xs:grid-cols-2 gap-2 text-caption">
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">✅ Ideal For</span>
-              <ul className="flex flex-col gap-1 text-muted-foreground">
+          <div className="text-caption grid gap-2 @xs:grid-cols-2">
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">✅ Ideal For</span>
+              <ul className="text-muted-foreground flex flex-col gap-1">
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>
                     Generic System Images (<code>system.img</code> GSI)
                   </span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>
                     Vendor & Product Overlays (<code>vendor.img</code>)
                   </span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>Dynamic Partition Resizing & Erasing</span>
                 </li>
               </ul>
             </div>
 
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">💡 How to Access</span>
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">💡 How to Access</span>
               <p className="text-muted-foreground">
                 Run <code>fastboot reboot fastboot</code> while in bootloader, or choose &quot;Enter
                 Fastboot&quot; from Recovery menu.
@@ -142,9 +142,9 @@ export const FlasherKnowledgeBase = () => (
 
         {/* ADB Sideload Mode */}
         <TabsContent className="m-0 flex flex-1 flex-col gap-3" value="sideload">
-          <div className="flex flex-col gap-2 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-2 rounded-lg border p-3.5">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Recovery OTA & ROM Installer Engine
               </span>
               <Badge variant="info">Encrypted OTA Pipeline</Badge>
@@ -156,27 +156,27 @@ export const FlasherKnowledgeBase = () => (
             </p>
           </div>
 
-          <div className="grid @xs:grid-cols-2 gap-2 text-caption">
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">✅ Ideal For</span>
-              <ul className="flex flex-col gap-1 text-muted-foreground">
+          <div className="text-caption grid gap-2 @xs:grid-cols-2">
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">✅ Ideal For</span>
+              <ul className="text-muted-foreground flex flex-col gap-1">
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>Full Custom ROMs (LineageOS, PixelOS)</span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>Official Manufacturer OTA Update ZIPs</span>
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <Check className="size-3 shrink-0 text-success" />
+                  <Check className="text-success size-3 shrink-0" />
                   <span>Magisk / KernelSU recovery install packages</span>
                 </li>
               </ul>
             </div>
 
-            <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-background/50 p-2.5">
-              <span className="font-medium text-foreground">💡 How to Access</span>
+            <div className="border-border/60 bg-background/50 flex flex-col gap-1.5 rounded-md border p-2.5">
+              <span className="text-foreground font-medium">💡 How to Access</span>
               <p className="text-muted-foreground">
                 Boot to recovery, tap &quot;Apply update&quot; → &quot;Apply from ADB&quot;, then
                 send the ZIP package.

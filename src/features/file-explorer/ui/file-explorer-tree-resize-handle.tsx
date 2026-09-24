@@ -50,9 +50,9 @@ export const FileExplorerTreeResizeHandle = ({
       aria-valuenow={leftWidth}
       className={cn(
         "group relative z-10 m-0 flex h-full w-3 shrink-0 cursor-col-resize justify-center border-0 bg-transparent p-0 outline-none",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
-        "before:h-full before:w-px before:bg-border before:transition-colors before:duration-90 before:ease-standard group-hover:before:bg-primary/60 group-active:before:bg-primary",
-        isResizing && "select-none before:bg-primary"
+        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0",
+        "before:bg-border before:ease-standard group-hover:before:bg-primary/60 group-active:before:bg-primary before:h-full before:w-px before:transition-colors before:duration-90",
+        isResizing && "before:bg-primary select-none"
       )}
       ref={hrRef}
     />

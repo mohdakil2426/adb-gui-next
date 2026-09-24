@@ -56,6 +56,9 @@ export const FileExplorerVirtualBody = ({
   // this list only, instead of the whole File Explorer tree from the top.
   const rowVirtualizer = useFileExplorerRowVirtualizer(listing.visibleList, tableScrollRef);
   const [menuFile, setMenuFile] = useState<FileEntry | null>(null);
+  const handleCancelCreate = actions.cancelCreate;
+  const handleCreateFile = actions.startCreateFile;
+  const handleCreateFolder = actions.startCreateFolder;
 
   return (
     <ContextMenu>
@@ -103,9 +106,9 @@ export const FileExplorerVirtualBody = ({
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="size-4 shrink-0" />
                   {editing.creatingType === "folder" ? (
-                    <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                    <Folder aria-hidden="true" className="text-primary size-4 shrink-0" />
                   ) : (
-                    <File aria-hidden="true" className="size-4 shrink-0 text-foreground-subtle" />
+                    <File aria-hidden="true" className="text-foreground-subtle size-4 shrink-0" />
                   )}
                   <Input
                     aria-label={
@@ -113,11 +116,11 @@ export const FileExplorerVirtualBody = ({
                     }
                     autoFocus
                     className={cn(
-                      "h-7 max-w-xs px-1.5 py-0 font-mono text-mono",
+                      "text-mono h-7 max-w-xs px-1.5 py-0 font-mono",
                       editing.createError && "border-destructive focus-visible:ring-destructive"
                     )}
                     disabled={status.isCreating}
-                    onBlur={actions.cancelCreate}
+                    onBlur={handleCancelCreate}
                     onChange={(e) => actions.handleCreateChange(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
@@ -136,14 +139,14 @@ export const FileExplorerVirtualBody = ({
                     value={editing.createName}
                   />
                   {editing.createError ? (
-                    <span className="shrink-0 text-caption text-destructive">
+                    <span className="text-caption text-destructive shrink-0">
                       {editing.createError}
                     </span>
                   ) : null}
                   {status.isCreating ? (
                     <Loader2
                       aria-hidden="true"
-                      className="size-3.5 shrink-0 animate-spin text-muted-foreground"
+                      className="text-muted-foreground size-3.5 shrink-0 animate-spin"
                     />
                   ) : null}
                 </div>
@@ -166,7 +169,7 @@ export const FileExplorerVirtualBody = ({
               }}
             >
               <TableCell
-                className="col-span-full h-32 text-center text-body text-muted-foreground"
+                className="text-body text-muted-foreground col-span-full h-32 text-center"
                 colSpan={FILE_TABLE_CELL_COUNT}
               >
                 No files match &ldquo;{listing.searchQuery}&rdquo; — clear the filter to see all{" "}
@@ -241,8 +244,8 @@ export const FileExplorerVirtualBody = ({
             />
             <FileExplorerCreateMenuItems
               disabled={status.isBusy}
-              onCreateFile={actions.startCreateFile}
-              onCreateFolder={actions.startCreateFolder}
+              onCreateFile={handleCreateFile}
+              onCreateFolder={handleCreateFolder}
             />
           </>
         )}

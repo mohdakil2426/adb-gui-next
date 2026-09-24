@@ -26,10 +26,10 @@ export const PartitionInspectionBadge = ({
   disabled,
   onAddToQueue,
 }: PartitionInspectionBadgeProps) => (
-  <div className="flex flex-col gap-1.5 rounded-md border border-border/60 bg-surface-raised/40 p-2.5 text-caption">
+  <div className="border-border/60 bg-surface-raised/40 text-caption flex flex-col gap-1.5 rounded-md border p-2.5">
     <div className="flex items-center justify-between">
       <span className="text-muted-foreground">
-        Target file: <span className="font-mono text-foreground">{fileName}</span>
+        Target file: <span className="text-foreground font-mono">{fileName}</span>
       </span>
       <Button
         className="h-6 gap-1 px-2 text-[11px]"
@@ -44,13 +44,13 @@ export const PartitionInspectionBadge = ({
       </Button>
     </div>
     {isInspecting && (
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+      <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
         <Loader2 className="size-3 animate-spin" />
         <span>Inspecting image headers...</span>
       </div>
     )}
     {!isInspecting && inspectInfo && (
-      <div className="flex flex-wrap items-center gap-2 border-border/40 border-t pt-1 text-[11px]">
+      <div className="border-border/40 flex flex-wrap items-center gap-2 border-t pt-1 text-[11px]">
         <Badge className="font-mono text-[10px]" variant="secondary">
           {inspectInfo.detectedPartition || partition}
         </Badge>

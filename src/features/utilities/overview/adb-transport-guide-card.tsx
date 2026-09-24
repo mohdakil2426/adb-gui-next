@@ -55,11 +55,11 @@ export const AdbTransportGuideCard = () => {
     };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex flex-col gap-1">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Layers className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Layers className="text-primary size-4.5" />
             ADB Transport & Socket Architecture Guide
           </CardTitle>
           <CardDescription className="text-body text-muted-foreground">
@@ -70,7 +70,7 @@ export const AdbTransportGuideCard = () => {
 
         <div className="flex items-center gap-1.5">
           <Button
-            className={cn("h-7 px-2.5 text-caption", viewMode === "visual" && "bg-surface-raised")}
+            className={cn("text-caption h-7 px-2.5", viewMode === "visual" && "bg-surface-raised")}
             onClick={() => setViewMode("visual")}
             size="sm"
             type="button"
@@ -80,7 +80,7 @@ export const AdbTransportGuideCard = () => {
             Guide
           </Button>
           <Button
-            className={cn("h-7 px-2.5 text-caption", viewMode === "ascii" && "bg-surface-raised")}
+            className={cn("text-caption h-7 px-2.5", viewMode === "ascii" && "bg-surface-raised")}
             onClick={() => setViewMode("ascii")}
             size="sm"
             type="button"
@@ -94,17 +94,17 @@ export const AdbTransportGuideCard = () => {
 
       <CardContent className="pt-1">
         {viewMode === "ascii" ? (
-          <div className="overflow-x-auto rounded-lg border border-border/80 bg-background/80 p-3.5">
-            <pre className="font-mono text-[11px] text-muted-foreground leading-relaxed">
+          <div className="border-border/80 bg-background/80 overflow-x-auto rounded-lg border p-3.5">
+            <pre className="text-muted-foreground font-mono text-[11px] leading-relaxed">
               {ASCII_TRANSPORT_DIAGRAM}
             </pre>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-1.5 border-border/50 border-b pb-2.5">
+            <div className="border-border/50 flex flex-wrap items-center gap-1.5 border-b pb-2.5">
               {GUIDES.map((g) => (
                 <Button
-                  className="h-7 text-caption"
+                  className="text-caption h-7"
                   key={g.id}
                   onClick={() => setActiveGuide(g.id)}
                   size="sm"
@@ -116,8 +116,8 @@ export const AdbTransportGuideCard = () => {
               ))}
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
-              <HelpCircle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+            <div className="border-border/80 bg-surface-raised/40 flex items-start gap-2.5 rounded-lg border p-3.5">
+              <HelpCircle className="text-muted-foreground mt-0.5 size-4 shrink-0" />
               <p className="text-body text-foreground">{selectedGuide.description}</p>
             </div>
           </div>

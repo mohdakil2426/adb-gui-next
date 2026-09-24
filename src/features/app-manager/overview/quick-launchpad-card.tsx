@@ -58,11 +58,11 @@ export const QuickLaunchpadCard = ({ selectedSerial }: QuickLaunchpadCardProps) 
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Play className="size-4 text-primary" />
-          <h3 className="font-medium text-foreground text-label">Device App Launchpad</h3>
+          <Play className="text-primary size-4" />
+          <h3 className="text-foreground text-label font-medium">Device App Launchpad</h3>
         </div>
         <span className="text-caption text-muted-foreground">Direct ADB Intents</span>
       </div>
@@ -86,13 +86,13 @@ export const QuickLaunchpadCard = ({ selectedSerial }: QuickLaunchpadCardProps) 
               }
             >
               <Button
-                className="h-8 w-full justify-start gap-2 border-border/80 bg-surface-raised/60 px-2.5 text-body text-foreground hover:bg-surface-raised"
+                className="border-border/80 bg-surface-raised/60 text-body text-foreground hover:bg-surface-raised h-8 w-full justify-start gap-2 px-2.5"
                 onClick={() => launchIntent(act.label, act.cmd)}
                 size="sm"
                 type="button"
                 variant="outline"
               >
-                <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+                <Icon aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
                 <span className="truncate">{act.label}</span>
               </Button>
             </m.div>

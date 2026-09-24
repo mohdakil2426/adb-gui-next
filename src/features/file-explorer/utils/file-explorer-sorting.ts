@@ -22,8 +22,8 @@ export const sortEntries = (entries: FileEntry[], field: SortField, dir: SortDir
       return dir === "asc" ? cmp : -cmp;
     }
     if (field === "size") {
-      const aNum = Number.parseInt(a.size, 10);
-      const bNum = Number.parseInt(b.size, 10);
+      const aNum = Math.trunc(Number(a.size));
+      const bNum = Math.trunc(Number(b.size));
       const cmp =
         Number.isNaN(aNum) || Number.isNaN(bNum) ? a.size.localeCompare(b.size) : aNum - bNum;
       return dir === "asc" ? cmp : -cmp;

@@ -69,13 +69,13 @@ export const DebloatSafetySpectrum = ({
   let offset = 0;
 
   return (
-    <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex h-full flex-col justify-between gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldCheck aria-hidden="true" className="size-4 text-success" />
-          <h3 className="font-medium text-foreground text-label">Debloat Health & Safety</h3>
+          <ShieldCheck aria-hidden="true" className="text-success size-4" />
+          <h3 className="text-foreground text-label font-medium">Debloat Health & Safety</h3>
         </div>
-        <span className="numeric font-medium text-caption text-success">
+        <span className="numeric text-caption text-success font-medium">
           {debloatableTotal} debloatable
         </span>
       </div>
@@ -120,7 +120,7 @@ export const DebloatSafetySpectrum = ({
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="numeric font-semibold text-foreground text-headline">
+            <span className="numeric text-foreground text-headline font-semibold">
               {debloatableTotal}
             </span>
             <span className="text-caption text-muted-foreground">debloat</span>
@@ -132,7 +132,7 @@ export const DebloatSafetySpectrum = ({
           {slices.map((slice, index) => (
             <m.div
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center justify-between text-body"
+              className="text-body flex items-center justify-between"
               initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
               key={slice.key}
               transition={
@@ -150,11 +150,11 @@ export const DebloatSafetySpectrum = ({
                   aria-hidden="true"
                   className={`size-2 shrink-0 rounded-full ${slice.dotClass}`}
                 />
-                <span className="truncate text-muted-foreground">{slice.label}</span>
+                <span className="text-muted-foreground truncate">{slice.label}</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="numeric font-medium text-foreground">{slice.count}</span>
-                <span className="numeric w-9 text-right text-caption text-muted-foreground">
+                <span className="numeric text-foreground font-medium">{slice.count}</span>
+                <span className="numeric text-caption text-muted-foreground w-9 text-right">
                   {formatPercent(usageRatio(slice.count, total))}
                 </span>
               </div>
@@ -164,13 +164,13 @@ export const DebloatSafetySpectrum = ({
       </div>
 
       {/* Bottom action strip */}
-      <div className="flex items-center justify-between border-border/50 border-t pt-2">
-        <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-success" />
+      <div className="border-border/50 flex items-center justify-between border-t pt-2">
+        <div className="text-caption text-muted-foreground flex items-center gap-1.5">
+          <span aria-hidden="true" className="bg-success size-1.5 rounded-full" />
           <span>UAD community rules</span>
         </div>
         <Button
-          className="h-7 gap-1 px-2.5 text-caption"
+          className="text-caption h-7 gap-1 px-2.5"
           onClick={onOpenDebloat}
           size="sm"
           type="button"

@@ -15,12 +15,12 @@ const DISPLAY_REMOVAL_TIERS = ALL_REMOVAL_TIERS.filter((t) => t !== "Unlisted");
 export const SafetyTierLegend = ({ expertMode }: { expertMode: boolean }) => (
   <section
     aria-label="Safety tier reference"
-    className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-3 shadow-none"
+    className="border-border bg-surface flex flex-col gap-2.5 rounded-lg border p-3 shadow-none"
   >
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-1.5">
-        <ShieldCheck aria-hidden="true" className="size-3.5 text-muted-foreground" />
-        <h3 className="font-semibold text-caption text-muted-foreground uppercase tracking-wider">
+        <ShieldCheck aria-hidden="true" className="text-muted-foreground size-3.5" />
+        <h3 className="text-caption text-muted-foreground font-semibold tracking-wider uppercase">
           Universal Android Debloater (UAD) Safety Classification
         </h3>
       </div>
@@ -31,16 +31,16 @@ export const SafetyTierLegend = ({ expertMode }: { expertMode: boolean }) => (
     </div>
 
     {/* 4-Column responsive risk level grid */}
-    <div className="grid @3xl:grid-cols-4 @md:grid-cols-2 grid-cols-1 gap-2">
+    <div className="grid grid-cols-1 gap-2 @md:grid-cols-2 @3xl:grid-cols-4">
       {DISPLAY_REMOVAL_TIERS.map((tier) => (
         <div
-          className="flex flex-col gap-1 rounded-md border border-border/50 bg-surface-raised/40 p-2"
+          className="border-border/50 bg-surface-raised/40 flex flex-col gap-1 rounded-md border p-2"
           key={tier}
         >
           <div className="flex items-center justify-between">
             <span
               className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2 py-0.2 font-medium text-[10px]",
+                "py-0.2 inline-flex items-center gap-1 rounded-full px-2 text-[10px] font-medium",
                 REMOVAL_TIER_CLASSES[tier].badge
               )}
             >
@@ -59,7 +59,7 @@ export const SafetyTierLegend = ({ expertMode }: { expertMode: boolean }) => (
     </div>
 
     {expertMode ? (
-      <div className="flex items-center gap-2 rounded-md border border-warning/40 bg-warning-muted/40 px-2.5 py-1.5 text-caption text-warning">
+      <div className="border-warning/40 bg-warning-muted/40 text-caption text-warning flex items-center gap-2 rounded-md border px-2.5 py-1.5">
         <ShieldAlert aria-hidden="true" className="size-3.5 shrink-0" />
         <span className="font-medium">
           Expert Mode is active — Unsafe packages can now be selected. Ensure you create a state

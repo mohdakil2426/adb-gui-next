@@ -47,13 +47,13 @@ export const DownloadProgressStrip = ({ className, packageName }: DownloadProgre
       >
         {Math.round(pct)}%
       </progress>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="bg-secondary h-1 w-full overflow-hidden rounded-full">
         <div
-          className="h-full rounded-full bg-primary transition-[width] duration-150 ease-linear"
+          className="bg-primary h-full rounded-full transition-[width] duration-150 ease-linear"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <div className="numeric flex items-center justify-between gap-2 text-caption text-muted-foreground">
+      <div className="numeric text-caption text-muted-foreground flex items-center justify-between gap-2">
         <span>{Math.round(pct)}%</span>
         {transferred ? <span className="truncate">{transferred}</span> : null}
         <span className="shrink-0">{eta ?? ""}</span>

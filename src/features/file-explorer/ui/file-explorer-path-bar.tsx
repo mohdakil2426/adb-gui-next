@@ -102,14 +102,7 @@ const PathCrumb = ({ isLast, isRoot, onMoveToFolder, onNavigate, segment }: Path
   );
   if (isLast) {
     return (
-      <BreadcrumbPage
-        className={className}
-        data-fe-drop-dir={destDir}
-        onDragEnter={dropProps.onDragEnter}
-        onDragLeave={dropProps.onDragLeave}
-        onDragOver={dropProps.onDragOver}
-        onDrop={dropProps.onDrop}
-      >
+      <BreadcrumbPage className={className} data-fe-drop-dir={destDir} {...dropProps}>
         <CrumbLabel isRoot={isRoot} segment={segment} />
       </BreadcrumbPage>
     );
@@ -120,10 +113,7 @@ const PathCrumb = ({ isLast, isRoot, onMoveToFolder, onNavigate, segment }: Path
         className={className}
         data-fe-drop-dir={destDir}
         onClick={() => onNavigate(segment.path)}
-        onDragEnter={dropProps.onDragEnter}
-        onDragLeave={dropProps.onDragLeave}
-        onDragOver={dropProps.onDragOver}
-        onDrop={dropProps.onDrop}
+        {...dropProps}
         title={segment.path}
         type="button"
       >
@@ -142,7 +132,7 @@ const PathCrumb = ({ isLast, isRoot, onMoveToFolder, onNavigate, segment }: Path
  * arrow. Every ancestor is now one click, the middle collapses into a menu on
  * deep paths, and free-text entry is an explicit, labelled control.
  */
-export const FileExplorerPathBar = memo((props: Props) => {
+const FileExplorerPathBarImpl = (props: Props) => {
   const {
     currentPath,
     editPathValue,
@@ -158,15 +148,15 @@ export const FileExplorerPathBar = memo((props: Props) => {
 
   if (isEditingPath) {
     return (
-      <div className="relative flex h-8 min-w-0 flex-1 items-center rounded-md border border-border-control bg-background dark:bg-input/30">
+      <div className="border-border-control bg-background dark:bg-input/30 relative flex h-8 min-w-0 flex-1 items-center rounded-md border">
         <HardDrive
           aria-hidden="true"
-          className="pointer-events-none absolute left-2 size-3.5 shrink-0 text-muted-foreground"
+          className="text-muted-foreground pointer-events-none absolute left-2 size-3.5 shrink-0"
         />
         <Input
           aria-label="Device path"
           autoFocus
-          className="h-8 min-w-0 flex-1 border-0 bg-transparent pr-2 pl-7 font-mono text-mono shadow-none focus-visible:ring-0 dark:bg-transparent"
+          className="text-mono h-8 min-w-0 flex-1 border-0 bg-transparent pr-2 pl-7 font-mono shadow-none focus-visible:ring-0 dark:bg-transparent"
           id="fe-path-input"
           onBlur={onPathEditingStop}
           onChange={(event) => onPathEditingChange(event.target.value)}
@@ -187,7 +177,7 @@ export const FileExplorerPathBar = memo((props: Props) => {
 
   const lastIndex = visible.length - 1;
   return (
-    <div className="flex h-8 min-w-0 flex-1 items-center gap-1 rounded-md border border-border-control bg-background px-1 dark:bg-input/30">
+    <div className="border-border-control bg-background dark:bg-input/30 flex h-8 min-w-0 flex-1 items-center gap-1 rounded-md border px-1">
       <button
         aria-label="Edit path location"
         className="sr-only focus:not-sr-only"
@@ -197,7 +187,7 @@ export const FileExplorerPathBar = memo((props: Props) => {
         Edit path
       </button>
       <Breadcrumb className="min-w-0 flex-1 overflow-hidden">
-        <BreadcrumbList className="flex-nowrap font-mono text-mono">
+        <BreadcrumbList className="text-mono flex-nowrap font-mono">
           {visible.map((segment, index) => {
             const isRoot = index === 0 && segment.path === "/";
             const isLast = index === lastIndex;
@@ -219,7 +209,7 @@ export const FileExplorerPathBar = memo((props: Props) => {
                       <DropdownMenu>
                         <DropdownMenuTrigger
                           aria-label={`Show ${hidden.length} hidden path segments`}
-                          className="flex items-center rounded-sm px-0.5 text-muted-foreground transition-colors duration-90 ease-standard hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="text-muted-foreground ease-standard hover:text-foreground focus-visible:ring-ring flex items-center rounded-sm px-0.5 transition-colors duration-90 focus-visible:ring-2 focus-visible:outline-none"
                         >
                           <BreadcrumbEllipsis />
                         </DropdownMenuTrigger>
@@ -230,7 +220,7 @@ export const FileExplorerPathBar = memo((props: Props) => {
                                 key={hiddenSeg.path}
                                 onClick={() => onNavigate(hiddenSeg.path)}
                               >
-                                <span className="font-mono text-mono">{hiddenSeg.label}</span>
+                                <span className="text-mono font-mono">{hiddenSeg.label}</span>
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuGroup>
@@ -248,7 +238,7 @@ export const FileExplorerPathBar = memo((props: Props) => {
       <ToolbarTooltip label="Edit path — type a location">
         <Button
           aria-label="Edit path"
-          className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground size-8 shrink-0"
           onClick={onPathClick}
           size="icon-sm"
           variant="ghost"
@@ -258,4 +248,6 @@ export const FileExplorerPathBar = memo((props: Props) => {
       </ToolbarTooltip>
     </div>
   );
-});
+};
+
+export const FileExplorerPathBar = memo(FileExplorerPathBarImpl);

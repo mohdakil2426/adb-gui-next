@@ -45,7 +45,7 @@ describe(MemorySparkline, () => {
     const { getByText } = render(<MemorySparkline samples={[sample(0, 2), sample(15_000, 6)]} />);
 
     expect(getByText(/6\.0 GB/u)).toBeInTheDocument();
-    expect(getByText(/75(\.0)?%/u)).toBeInTheDocument();
+    expect(getByText(/75(?:\.0)?%/u)).toBeInTheDocument();
   });
 
   it("renders nothing without samples", () => {

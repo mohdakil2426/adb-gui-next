@@ -26,13 +26,13 @@ interface ScrcpyDisplayTabProps {
 export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabProps) => (
   <div className="flex flex-col gap-4">
     {/* Top Grid: Video Resolution & Bitrate Tuning */}
-    <div className="grid @2xl:grid-cols-3 grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 gap-4 @2xl:grid-cols-3">
       {/* Left 2 Cols: Video Stream Parameters */}
-      <Card className="@2xl:col-span-2 border-border bg-surface shadow-none">
+      <Card className="border-border bg-surface shadow-none @2xl:col-span-2">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Sliders aria-hidden="true" className="size-4 text-foreground" />
-            <CardTitle className="font-semibold text-body text-foreground">
+            <Sliders aria-hidden="true" className="text-foreground size-4" />
+            <CardTitle className="text-body text-foreground font-semibold">
               Video Stream Tuning
             </CardTitle>
           </div>
@@ -42,7 +42,7 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
-          <div className="grid @lg:grid-cols-2 grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
             <ScrcpyPresetField
               id="scrcpy-max-size"
               isNumeric
@@ -80,9 +80,9 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
               {["2M", "4M", "8M", "12M", "16M", "24M", "32M", "64M"].map((br) => (
                 <Button
                   className={cn(
-                    "h-6 px-2 font-mono text-caption",
+                    "text-caption h-6 px-2 font-mono",
                     options.videoBitRate === br
-                      ? "border-border bg-surface-raised font-bold text-foreground"
+                      ? "border-border bg-surface-raised text-foreground font-bold"
                       : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
                   )}
                   key={br}
@@ -122,11 +122,11 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
       </Card>
 
       {/* Right 1 Col: Bandwidth Gauge Card */}
-      <Card className="flex flex-col justify-between border-border bg-surface shadow-none">
+      <Card className="border-border bg-surface flex flex-col justify-between shadow-none">
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
-            <Gauge aria-hidden="true" className="size-4 text-foreground" />
-            <CardTitle className="font-semibold text-body text-foreground">
+            <Gauge aria-hidden="true" className="text-foreground size-4" />
+            <CardTitle className="text-body text-foreground font-semibold">
               Bandwidth Telemetry
             </CardTitle>
           </div>
@@ -145,8 +145,8 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
     <Card className="border-border bg-surface shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Tv aria-hidden="true" className="size-4 text-foreground" />
-          <CardTitle className="font-semibold text-body text-foreground">
+          <Tv aria-hidden="true" className="text-foreground size-4" />
+          <CardTitle className="text-body text-foreground font-semibold">
             Window & Display Automation Flags
           </CardTitle>
         </div>
@@ -156,11 +156,11 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
       </CardHeader>
 
       <CardContent>
-        <div className="grid @2xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2 @2xl:grid-cols-3">
           {/* Flag: Fullscreen */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-fullscreen">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-fullscreen">
                 Fullscreen
               </Label>
               <p className="text-caption text-muted-foreground">Start mirror in fullscreen mode</p>
@@ -173,9 +173,9 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
           </div>
 
           {/* Flag: Always On Top */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-always-on-top">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-always-on-top">
                 Always on Top
               </Label>
               <p className="text-caption text-muted-foreground">Keep window above all apps</p>
@@ -188,9 +188,9 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
           </div>
 
           {/* Flag: Borderless */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-borderless">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-borderless">
                 Borderless Window
               </Label>
               <p className="text-caption text-muted-foreground">Disable OS window frame</p>
@@ -203,9 +203,9 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
           </div>
 
           {/* Flag: Stay Awake */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-stay-awake">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-stay-awake">
                 Stay Awake
               </Label>
               <p className="text-caption text-muted-foreground">Prevent device from sleeping</p>
@@ -218,10 +218,10 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
           </div>
 
           {/* Flag: Turn Screen Off */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
               <Label
-                className="font-medium text-body text-foreground"
+                className="text-body text-foreground font-medium"
                 htmlFor="flag-turn-screen-off"
               >
                 Turn Screen Off
@@ -236,9 +236,9 @@ export const ScrcpyDisplayTab = ({ onOptionsChange, options }: ScrcpyDisplayTabP
           </div>
 
           {/* Flag: Show Touches */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-show-touches">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-show-touches">
                 Show Touch Circles
               </Label>
               <p className="text-caption text-muted-foreground">Display visual touch points</p>

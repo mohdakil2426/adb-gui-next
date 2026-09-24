@@ -42,12 +42,12 @@ const MarketplaceResults = ({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-caption text-muted-foreground uppercase tracking-wide">Results</h2>
+        <h2 className="text-caption text-muted-foreground tracking-wide uppercase">Results</h2>
         <span className="numeric text-caption text-muted-foreground">{getStatusText()}</span>
       </div>
 
       {viewMode === "grid" ? (
-        <div className="grid @4xl:grid-cols-3 @7xl:grid-cols-4 @lg:grid-cols-2 gap-3">
+        <div className="grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4">
           {safeResults.map((app) => (
             <AppCard
               app={app}

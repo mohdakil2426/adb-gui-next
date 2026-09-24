@@ -169,18 +169,18 @@ export const SecurityPanel = ({ isLoading, security }: SecurityPanelProps) => {
       <div className="flex flex-1 flex-col justify-between gap-2">
         <PostureSpectrum items={rows.map((row) => ({ id: row.label, tone: row.tone }))} />
 
-        <div className="flex flex-col gap-1.5 border-border/50 border-t pt-2">
+        <div className="border-border/50 flex flex-col gap-1.5 border-t pt-2">
           {rows.map((row) => {
             const Icon = TONE_ICON[row.tone];
             return (
               <div
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
+                className="border-border/60 bg-surface-raised/40 hover:bg-surface-raised/80 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors"
                 key={row.label}
               >
-                <span className="truncate font-medium text-foreground text-label">{row.label}</span>
+                <span className="text-foreground text-label truncate font-medium">{row.label}</span>
                 <div className="flex shrink-0 items-center gap-1.5">
                   {row.hint ? (
-                    <span className="numeric @2xl:inline hidden text-caption text-muted-foreground">
+                    <span className="numeric text-caption text-muted-foreground hidden @2xl:inline">
                       {row.hint}
                     </span>
                   ) : null}
@@ -188,7 +188,7 @@ export const SecurityPanel = ({ isLoading, security }: SecurityPanelProps) => {
                     aria-hidden="true"
                     className={cn("size-3.5 shrink-0", TONE_TEXT[row.tone])}
                   />
-                  <span className={cn("numeric font-medium text-label", TONE_TEXT[row.tone])}>
+                  <span className={cn("numeric text-label font-medium", TONE_TEXT[row.tone])}>
                     {row.value}
                   </span>
                 </div>

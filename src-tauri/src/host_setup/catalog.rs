@@ -94,24 +94,24 @@ pub fn parse_sdk_packages(xml: &str) -> CmdResult<Vec<SdkPackage>> {
     reader.config_mut().trim_text(true);
 
     let mut packages = Vec::new();
-    let mut stack: Vec<Vec<u8>> = Vec::new();
+    let mut stack: Vec<String> = Vec::new();
     let mut draft: Option<PackageDraft> = None;
     let mut buf = Vec::new();
 
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(e)) => {
-                let name = e.local_name().as_ref().to_vec();
-                if name.as_slice() == b"remotePackage" {
+                let name = e.local_name().as_ref().to_string();
+                if name == "remotePackage" {
                     draft = Some(PackageDraft {
                         archives: Vec::new(),
                         current: ArchiveDraft::default(),
-                        kind: package_kind_from_path(attr_value(&e, b"path").as_deref()),
+                        kind: package_kind_from_path(attr_value(&e, "path").as_deref()),
                         revision: Revision::default(),
                     });
-                } else if name.as_slice() == b"checksum"
+                } else if name == "checksum"
                     && let Some(current) = draft.as_mut()
-                    && let Some(kind) = attr_value(&e, b"type")
+                    && let Some(kind) = attr_value(&e, "type")
                 {
                     current.current.checksum_type = kind;
                 }
@@ -121,32 +121,29 @@ pub fn parse_sdk_packages(xml: &str) -> CmdResult<Vec<SdkPackage>> {
                 let Some(draft) = draft.as_mut() else {
                     continue;
                 };
-                let Ok(decoded) = reader.decoder().decode(t.as_ref()) else {
-                    continue;
-                };
-                let text = decoded.trim();
+                let text = t.as_ref().trim();
                 if text.is_empty() {
                     continue;
                 }
-                match stack.last().map(Vec::as_slice) {
-                    Some(b"major") => draft.revision.major = text.parse().unwrap_or(0),
-                    Some(b"minor") => draft.revision.minor = text.parse().unwrap_or(0),
-                    Some(b"micro") => draft.revision.micro = text.parse().unwrap_or(0),
-                    Some(b"host-os") => draft.current.host_os = text.to_ascii_lowercase(),
-                    Some(b"url") => draft.current.url = text.to_string(),
-                    Some(b"checksum") => draft.current.checksum = text.to_ascii_lowercase(),
+                match stack.last().map(String::as_str) {
+                    Some("major") => draft.revision.major = text.parse().unwrap_or(0),
+                    Some("minor") => draft.revision.minor = text.parse().unwrap_or(0),
+                    Some("micro") => draft.revision.micro = text.parse().unwrap_or(0),
+                    Some("host-os") => draft.current.host_os = text.to_ascii_lowercase(),
+                    Some("url") => draft.current.url = text.to_string(),
+                    Some("checksum") => draft.current.checksum = text.to_ascii_lowercase(),
                     _ => {}
                 }
             }
             Ok(Event::End(e)) => {
                 match e.local_name().as_ref() {
-                    b"archive" => {
+                    "archive" => {
                         if let Some(draft) = draft.as_mut() {
                             let finished = std::mem::take(&mut draft.current);
                             draft.archives.push(finished);
                         }
                     }
-                    b"remotePackage" => {
+                    "remotePackage" => {
                         if let Some(finished) = draft.take() {
                             packages.extend(windows_packages_from_draft(finished)?);
                         }
@@ -165,14 +162,10 @@ pub fn parse_sdk_packages(xml: &str) -> CmdResult<Vec<SdkPackage>> {
     Ok(packages)
 }
 
-fn attr_value(tag: &quick_xml::events::BytesStart<'_>, key: &[u8]) -> Option<String> {
+fn attr_value(tag: &quick_xml::events::BytesStart<'_>, key: &str) -> Option<String> {
     tag.attributes().with_checks(false).find_map(|attr| {
         let attr = attr.ok()?;
-        if attr.key.local_name().as_ref() == key {
-            String::from_utf8(attr.value.into_owned()).ok()
-        } else {
-            None
-        }
+        if attr.key.local_name().as_ref() == key { Some(attr.value.to_string()) } else { None }
     })
 }
 

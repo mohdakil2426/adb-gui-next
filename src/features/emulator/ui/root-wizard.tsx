@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -240,7 +241,7 @@ export const RootWizard = ({ avd }: RootWizardProps) => {
               Manual FAKEBOOTIMG (Magisk v26+)
             </TabsTrigger>
           </TabsList>
-          <div className="mt-3 rounded-md border border-border bg-surface-raised p-4">
+          <div className="border-border bg-surface-raised mt-3 rounded-md border p-4">
             <TabsContent value="autopilot">
               <RootSourceStep
                 onContinue={handleContinue}

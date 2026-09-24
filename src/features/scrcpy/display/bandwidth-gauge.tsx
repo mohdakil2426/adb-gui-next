@@ -64,7 +64,7 @@ export const BandwidthGauge = ({ bitrateStr }: BandwidthGaugeProps) => {
       : Math.round(metrics.mbPerMin).toString();
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+    <div className="border-border/80 bg-surface-raised/40 flex flex-col items-center justify-center rounded-lg border p-3">
       <div className="relative flex size-36 items-center justify-center">
         <svg aria-hidden="true" className="size-full overflow-visible" viewBox="0 0 160 140">
           {/* Background Track Arc */}
@@ -88,17 +88,17 @@ export const BandwidthGauge = ({ bitrateStr }: BandwidthGaugeProps) => {
 
         {/* Center Readout */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-          <span className="font-bold font-mono text-foreground text-xl tracking-tight">
+          <span className="text-foreground font-mono text-xl font-bold tracking-tight">
             {bitrateMbps}{" "}
-            <span className="font-normal text-caption text-muted-foreground">Mbps</span>
+            <span className="text-caption text-muted-foreground font-normal">Mbps</span>
           </span>
-          <span className={cn("font-medium text-[11px]", ratingColor)}>{rating}</span>
+          <span className={cn("text-[11px] font-medium", ratingColor)}>{rating}</span>
         </div>
       </div>
 
-      <div className="flex w-full items-center justify-between gap-3 border-border/40 border-t px-2 pt-1 text-caption text-muted-foreground">
+      <div className="border-border/40 text-caption text-muted-foreground flex w-full items-center justify-between gap-3 border-t px-2 pt-1">
         <span>Estimated Data:</span>
-        <span className="font-medium font-mono text-foreground text-mono-sm">
+        <span className="text-foreground text-mono-sm font-mono font-medium">
           ~{mbPerMin} MB / min
         </span>
       </div>

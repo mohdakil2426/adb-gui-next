@@ -83,8 +83,12 @@ describe(formatBytes, () => {
   it("absorbs an unparseable size string from `ls` (File Explorer)", () => {
     // FileExplorerRow parses `FileEntry.size` before formatting; a non-numeric
     // column must read as the empty marker, not leak raw text into the table.
+    // Number.parseInt("", 10) produces NaN, whereas Number("") produces 0.
+    // eslint-disable-next-line unicorn/prefer-number-coercion
     expect(formatBytes(Number.parseInt("", 10), { locale })).toBe(EMPTY_VALUE);
+    // eslint-disable-next-line unicorn/prefer-number-coercion
     expect(formatBytes(Number.parseInt("not-a-size", 10), { locale })).toBe(EMPTY_VALUE);
+    // eslint-disable-next-line unicorn/prefer-number-coercion
     expect(formatBytes(Number.parseInt("1536", 10), { locale })).toBe("1.5 KB");
   });
 });

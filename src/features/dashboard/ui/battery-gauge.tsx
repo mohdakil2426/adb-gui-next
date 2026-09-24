@@ -160,10 +160,10 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
         ) : null}
       </svg>
 
-      <div aria-hidden="true" className="absolute flex select-none flex-col items-center gap-0.5">
+      <div aria-hidden="true" className="absolute flex flex-col items-center gap-0.5 select-none">
         <m.span
           animate={{ opacity: 1, y: 0 }}
-          className={cn("numeric font-semibold text-display tracking-tight", TONE_TEXT[tone])}
+          className={cn("numeric text-display font-semibold tracking-tight", TONE_TEXT[tone])}
           initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
           key={levelPct ?? "empty"}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.2, ease: EASE_STANDARD }}
@@ -173,7 +173,7 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
         {isCharging ? (
           <m.span
             animate={shouldReduceMotion ? { opacity: 1 } : { opacity: [1, 0.6, 1] }}
-            className={cn("flex items-center gap-1 font-medium text-caption", TONE_TEXT[tone])}
+            className={cn("text-caption flex items-center gap-1 font-medium", TONE_TEXT[tone])}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }

@@ -179,87 +179,95 @@ interface TreeRowProps {
   onToggle: (id: string, path: string) => void;
 }
 
-const TreeRow = memo(
-  ({ depth, isActive, isAncestor, node, onMoveToFolder, onSelect, onToggle }: TreeRowProps) => {
-    const dropProps = onMoveToFolder ? folderInternalDropProps(node.path, onMoveToFolder) : null;
-    return (
-      <div
-        aria-expanded={node.isExpanded}
-        aria-level={depth + 1}
-        aria-selected={isActive}
-        className={cn(
-          "mx-1 flex min-w-0 cursor-pointer select-none items-center gap-2 rounded-md py-1.5 text-body transition-colors",
-          "hover:bg-accent hover:text-accent-foreground",
-          FE_DROP_OVER_CLASS,
-          isActive && "bg-accent font-medium text-accent-foreground",
-          isAncestor && "text-foreground",
-          !(isActive || isAncestor) && "text-muted-foreground"
-        )}
-        data-fe-drop-dir={node.path}
-        onDragLeave={dropProps?.onDragLeave}
-        onDragOver={dropProps?.onDragOver}
-        onDrop={dropProps?.onDrop}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelect(node.path);
-          }
-          if (e.key === "ArrowRight") {
-            e.preventDefault();
-            onToggle(node.id, node.path);
-          }
-          if (e.key === "ArrowLeft" && node.isExpanded) {
-            e.preventDefault();
-            onToggle(node.id, node.path);
-          }
-        }}
-        onPointerDown={() => {
+const TreeRowImpl = ({
+  depth,
+  isActive,
+  isAncestor,
+  node,
+  onMoveToFolder,
+  onSelect,
+  onToggle,
+}: TreeRowProps) => {
+  const dropProps = onMoveToFolder ? folderInternalDropProps(node.path, onMoveToFolder) : null;
+  return (
+    <div
+      aria-expanded={node.isExpanded}
+      aria-level={depth + 1}
+      aria-selected={isActive}
+      className={cn(
+        "text-body mx-1 flex min-w-0 cursor-pointer items-center gap-2 rounded-md py-1.5 transition-colors select-none",
+        "hover:bg-accent hover:text-accent-foreground",
+        FE_DROP_OVER_CLASS,
+        isActive && "bg-accent text-accent-foreground font-medium",
+        isAncestor && "text-foreground",
+        !(isActive || isAncestor) && "text-muted-foreground"
+      )}
+      data-fe-drop-dir={node.path}
+      onDragLeave={dropProps?.onDragLeave}
+      onDragOver={dropProps?.onDragOver}
+      onDrop={dropProps?.onDrop}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
           onSelect(node.path);
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          onToggle(node.id, node.path);
+        }
+        if (e.key === "ArrowLeft" && node.isExpanded) {
+          e.preventDefault();
+          onToggle(node.id, node.path);
+        }
+      }}
+      onPointerDown={() => {
+        onSelect(node.path);
+      }}
+      role="treeitem"
+      style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: "8px" }}
+      tabIndex={0}
+    >
+      <button
+        aria-label={node.isExpanded ? "Collapse" : "Expand"}
+        className="flex size-4 shrink-0 items-center justify-center"
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation();
+          onToggle(node.id, node.path);
         }}
-        role="treeitem"
-        style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: "8px" }}
-        tabIndex={0}
+        tabIndex={-1}
+        type="button"
       >
-        <button
-          aria-label={node.isExpanded ? "Collapse" : "Expand"}
-          className="flex size-4 shrink-0 items-center justify-center"
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            onToggle(node.id, node.path);
-          }}
-          tabIndex={-1}
-          type="button"
-        >
-          {(() => {
-            if (node.isLoading) {
-              return (
-                <output className="contents">
-                  <Loader2 aria-label="Loading directory…" className="size-3.5 animate-spin" />
-                </output>
-              );
-            }
-            if (node.isExpanded) {
-              return <ChevronDown className="size-4" />;
-            }
-            return <ChevronRight className="size-4 opacity-50" />;
-          })()}
-        </button>
-        {node.isExpanded ? (
-          <FolderOpen className="size-4 shrink-0 text-primary" />
-        ) : (
-          <Folder
-            className={cn(
-              "size-4 shrink-0",
-              isActive || isAncestor ? "text-primary" : "text-muted-foreground"
-            )}
-          />
-        )}
+        {(() => {
+          if (node.isLoading) {
+            return (
+              <output className="contents">
+                <Loader2 aria-label="Loading directory…" className="size-3.5 animate-spin" />
+              </output>
+            );
+          }
+          if (node.isExpanded) {
+            return <ChevronDown className="size-4" />;
+          }
+          return <ChevronRight className="size-4 opacity-50" />;
+        })()}
+      </button>
+      {node.isExpanded ? (
+        <FolderOpen className="text-primary size-4 shrink-0" />
+      ) : (
+        <Folder
+          className={cn(
+            "size-4 shrink-0",
+            isActive || isAncestor ? "text-primary" : "text-muted-foreground"
+          )}
+        />
+      )}
 
-        <span className="min-w-0 truncate">{node.name}</span>
-      </div>
-    );
-  }
-);
+      <span className="min-w-0 truncate">{node.name}</span>
+    </div>
+  );
+};
+
+const TreeRow = memo(TreeRowImpl);
 
 export interface DirectoryTreeProps {
   currentPath: string;
@@ -280,11 +288,11 @@ export const DirectoryTree = ({
   refreshTrigger,
   serial,
 }: DirectoryTreeProps) => {
-  const [nodes, setNodesRaw] = useState<TreeNode[]>(() => INITIAL_NODES);
+  const [nodes, setNodes] = useState<TreeNode[]>(() => INITIAL_NODES);
   const [prevSerial, setPrevSerial] = useState(serial);
   if (serial !== prevSerial) {
     setPrevSerial(serial);
-    setNodesRaw(INITIAL_NODES);
+    setNodes(INITIAL_NODES);
   }
 
   // Sync ref — always holds latest nodes for use in async callbacks
@@ -294,7 +302,7 @@ export const DirectoryTree = ({
   }, [nodes]);
 
   const updateNodes = useCallback((updater: (prev: TreeNode[]) => TreeNode[]) => {
-    setNodesRaw(updater);
+    setNodes(updater);
   }, []);
 
   const getFileAccessModeRef = useRef(getFileAccessMode);
@@ -412,7 +420,7 @@ export const DirectoryTree = ({
         {rows.map((row) =>
           row.kind === "empty" ? (
             <div
-              className="py-1.5 text-caption text-muted-foreground italic"
+              className="text-caption text-muted-foreground py-1.5 italic"
               key={row.key}
               style={{ paddingLeft: `${row.depth * 16 + 32}px` }}
             >

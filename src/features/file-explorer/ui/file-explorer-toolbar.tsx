@@ -119,7 +119,7 @@ export const FileExplorerToolbar = (props: FileExplorerToolbarProps) => {
   } = props;
 
   return (
-    <div className="flex shrink-0 flex-col border-border border-b">
+    <div className="border-border flex shrink-0 flex-col border-b">
       <div className="flex h-10 items-center gap-1.5 px-2">
         <div className="flex shrink-0 items-center gap-2">
           <ToolbarTooltip label="Back (Alt+Left)">
@@ -179,7 +179,7 @@ export const FileExplorerToolbar = (props: FileExplorerToolbarProps) => {
           onPathEditingStop={onPathEditingStop}
         />
 
-        <InputGroup className="h-8 @2xl:w-52 w-40 shrink-0">
+        <InputGroup className="h-8 w-40 shrink-0 @2xl:w-52">
           <InputGroupAddon>
             <Search aria-hidden="true" />
           </InputGroupAddon>
@@ -209,7 +209,7 @@ export const FileExplorerToolbar = (props: FileExplorerToolbarProps) => {
         <ToolbarTooltip label={isTreeCollapsed ? "Show tree panel" : "Collapse tree panel"}>
           <Button
             aria-label={isTreeCollapsed ? "Show tree panel" : "Collapse tree panel"}
-            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground size-8 shrink-0"
             onClick={isTreeCollapsed ? onExpandTree : onCollapseTree}
             size="icon-sm"
             type="button"

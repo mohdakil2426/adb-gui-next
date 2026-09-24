@@ -39,11 +39,11 @@ export const MultiPartitionQueue = ({
   serial,
   disabled = false,
 }: MultiPartitionQueueProps) => (
-  <Card className="flex flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+  <Card className="border-border bg-surface flex flex-col justify-between rounded-xl shadow-none">
     <CardHeader className="flex flex-row items-start justify-between pb-3">
       <div>
-        <CardTitle className="flex items-center gap-2 text-foreground text-title">
-          <ListOrdered className="size-5 text-muted-foreground" />
+        <CardTitle className="text-foreground text-title flex items-center gap-2">
+          <ListOrdered className="text-muted-foreground size-5" />
           Deterministic Multi-Partition Queue
         </CardTitle>
         <CardDescription className="text-caption">
@@ -64,7 +64,7 @@ export const MultiPartitionQueue = ({
         >
           <Trash2
             aria-hidden="true"
-            className="size-3.5 text-muted-foreground"
+            className="text-muted-foreground size-3.5"
             data-icon="inline-start"
           />
         </Button>
@@ -73,9 +73,9 @@ export const MultiPartitionQueue = ({
 
     <CardContent className="flex flex-col gap-3">
       {queue.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-1.5 rounded-lg border border-border/80 border-dashed p-6 text-center">
-          <HardDrive className="size-6 text-muted-foreground/40" />
-          <p className="font-medium text-body text-muted-foreground">Queue is empty</p>
+        <div className="border-border/80 flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed p-6 text-center">
+          <HardDrive className="text-muted-foreground/40 size-6" />
+          <p className="text-body text-muted-foreground font-medium">Queue is empty</p>
           <p className="text-caption text-muted-foreground/70">
             Select partition images in the flasher panel to queue batch operations.
           </p>
@@ -92,21 +92,21 @@ export const MultiPartitionQueue = ({
                 key={item.id}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="font-mono font-semibold text-[11px] text-muted-foreground">
+                  <span className="text-muted-foreground font-mono text-[11px] font-semibold">
                     #{idx + 1}
                   </span>
 
                   <div className="flex min-w-0 flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold font-mono text-body text-foreground">
+                      <span className="text-body text-foreground font-mono font-bold">
                         {item.partition}
                       </span>
-                      <span className="truncate font-mono text-caption text-muted-foreground">
+                      <span className="text-caption text-muted-foreground truncate font-mono">
                         ← {item.fileName}
                       </span>
                     </div>
                     {item.error ? (
-                      <span className="truncate text-[10px] text-destructive">{item.error}</span>
+                      <span className="text-destructive truncate text-[10px]">{item.error}</span>
                     ) : null}
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export const MultiPartitionQueue = ({
                     type="button"
                     variant="ghost"
                   >
-                    <X className="size-3 text-muted-foreground" data-icon="inline-start" />
+                    <X className="text-muted-foreground size-3" data-icon="inline-start" />
                   </Button>
                 </div>
               </div>

@@ -96,11 +96,11 @@ export const ConfirmDialog = ({
         </AlertDialogHeader>
 
         {details && details.length > 0 ? (
-          <dl className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-md border bg-muted/40 px-3 py-2.5 text-body">
+          <dl className="bg-muted/40 text-body grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] gap-x-4 gap-y-2 rounded-md border px-3 py-2.5">
             {details.map((detail) => (
               <Fragment key={detail.label}>
-                <dt className="truncate text-label text-muted-foreground">{detail.label}</dt>
-                <dd className={cn("min-w-0 break-words", detail.mono && "font-mono text-mono")}>
+                <dt className="text-label text-muted-foreground truncate">{detail.label}</dt>
+                <dd className={cn("min-w-0 break-words", detail.mono && "text-mono font-mono")}>
                   {detail.value}
                 </dd>
               </Fragment>
@@ -111,7 +111,7 @@ export const ConfirmDialog = ({
         {consequence ? (
           <div
             className={cn(
-              "flex gap-2 rounded-md border px-3 py-2.5 text-body",
+              "text-body flex gap-2 rounded-md border px-3 py-2.5",
               destructive
                 ? "border-destructive/30 bg-destructive-muted"
                 : "border-warning/30 bg-warning-muted"
@@ -133,7 +133,7 @@ export const ConfirmDialog = ({
             <Label htmlFor={inputId}>
               {confirmPhraseHint ?? (
                 <span>
-                  Type <span className="font-mono text-mono">{confirmPhrase}</span> to confirm
+                  Type <span className="text-mono font-mono">{confirmPhrase}</span> to confirm
                 </span>
               )}
             </Label>

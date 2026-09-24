@@ -23,7 +23,7 @@ const readStoredActiveView = (): ViewType => {
 
 /** Persist shell view id across reloads (no React Router). */
 export const usePersistedActiveView = () => {
-  const [activeView, setActiveViewState] = useState<ViewType>(readStoredActiveView);
+  const [activeViewState, setActiveViewState] = useState<ViewType>(readStoredActiveView);
 
   const setActiveView = useCallback((view: ViewType) => {
     setActiveViewState(view);
@@ -34,5 +34,5 @@ export const usePersistedActiveView = () => {
     }
   }, []);
 
-  return { activeView, setActiveView };
+  return { activeView: activeViewState, setActiveView };
 };

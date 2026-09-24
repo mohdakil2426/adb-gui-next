@@ -26,7 +26,7 @@ export const WirelessAdbPanel = ({
   return (
     <PanelCard
       action={
-        <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
+        <span className="text-caption text-muted-foreground flex items-center gap-1.5">
           <span
             aria-hidden="true"
             className={cn(
@@ -48,7 +48,7 @@ export const WirelessAdbPanel = ({
         })}
       >
         <FieldGroup>
-          <div className="grid @sm:grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+          <div className="grid gap-2 @sm:grid-cols-[minmax(0,1fr)_6.5rem]">
             <Field data-invalid={Boolean(errors.ip)}>
               <FieldLabel htmlFor="dashboard-wireless-ip">Device IP address</FieldLabel>
               <Input
@@ -121,7 +121,7 @@ export const WirelessAdbPanel = ({
       </form>
 
       {showEnableStep ? (
-        <div className="mt-3 flex flex-col gap-2 border-border border-t pt-3">
+        <div className="border-border mt-3 flex flex-col gap-2 border-t pt-3">
           <p className="text-caption text-muted-foreground">
             First time on this network? Enable TCP/IP mode while the device is on USB.
           </p>

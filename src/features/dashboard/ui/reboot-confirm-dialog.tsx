@@ -48,11 +48,11 @@ export const RebootConfirmDialog = ({
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle className="flex items-center gap-2">
-          <TriangleAlert aria-hidden="true" className="size-4 text-warning" />
+          <TriangleAlert aria-hidden="true" className="text-warning size-4" />
           Reboot to {target ? REBOOT_LABEL[target] : ""}?
         </AlertDialogTitle>
         <AlertDialogDescription>
-          <span className="block font-mono text-foreground text-mono">{deviceLabel}</span>
+          <span className="text-foreground text-mono block font-mono">{deviceLabel}</span>
           <span className="mt-2 block">{target ? CONSEQUENCE[target] : ""}</span>
         </AlertDialogDescription>
       </AlertDialogHeader>

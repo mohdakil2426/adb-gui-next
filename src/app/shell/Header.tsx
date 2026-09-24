@@ -53,27 +53,27 @@ export const Header = ({
   const deviceManagerLabel = isMac ? "System Information" : "Device Manager";
 
   return (
-    <header className="z-(--z-sticky) flex h-11 shrink-0 items-center gap-2 border-border border-b bg-surface px-3">
+    <header className="border-border bg-surface z-(--z-sticky) flex h-11 shrink-0 items-center gap-2 border-b px-3">
       <SidebarTrigger aria-label="Toggle Sidebar" className="-ml-1 size-8" />
       <Separator className="data-[orientation=vertical]:h-4" orientation="vertical" />
 
       <div className="flex min-w-0 items-center gap-1.5">
         {section ? (
           <>
-            <span className="shrink-0 text-caption text-muted-foreground uppercase">
+            <span className="text-caption text-muted-foreground shrink-0 uppercase">
               {section.label}
             </span>
-            <ChevronRight aria-hidden="true" className="size-3 shrink-0 text-foreground-subtle" />
+            <ChevronRight aria-hidden="true" className="text-foreground-subtle size-3 shrink-0" />
           </>
         ) : null}
-        <span className="truncate text-title" title={meta.description}>
+        <span className="text-title truncate" title={meta.description}>
           {meta.title}
         </span>
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
         <Button
-          className="h-8 gap-2 px-2 text-muted-foreground"
+          className="text-muted-foreground h-8 gap-2 px-2"
           onClick={onOpenCommandPalette}
           size="sm"
           variant="outline"

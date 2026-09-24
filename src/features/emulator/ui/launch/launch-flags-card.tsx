@@ -27,10 +27,10 @@ export const LaunchFlagsCard = ({
   const unacknowledged = unacknowledgedLaunchOptions(launchOptions, launchAcknowledgements);
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-foreground text-title">
-          <Settings2 className="size-5 text-muted-foreground" />
+        <CardTitle className="text-foreground text-title flex items-center gap-2">
+          <Settings2 className="text-muted-foreground size-5" />
           Hardware & Virtualization Launch Flags
         </CardTitle>
         <CardDescription className="text-caption">
@@ -39,20 +39,20 @@ export const LaunchFlagsCard = ({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        <div className="grid @lg:grid-cols-2 gap-3.5">
+        <div className="grid gap-3.5 @lg:grid-cols-2">
           {LAUNCH_OPTIONS.map((opt) => {
             const isChecked = Boolean(launchOptions[opt.key]);
             const isHazard = opt.destructive;
 
             return (
               <div
-                className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5"
+                className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5"
                 key={opt.key}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-body text-foreground">{opt.label}</span>
+                      <span className="text-body text-foreground font-semibold">{opt.label}</span>
                       {isHazard ? (
                         <Badge className="text-[10px]" variant="destructive">
                           Safety Interlock
@@ -70,7 +70,7 @@ export const LaunchFlagsCard = ({
                 </div>
 
                 {isHazard && isChecked ? (
-                  <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-2 text-caption text-destructive">
+                  <div className="border-destructive/30 bg-destructive/5 text-caption text-destructive flex items-center gap-2 rounded-md border p-2">
                     <AlertTriangle className="size-4 shrink-0" />
                     <Checkbox
                       checked={Boolean(launchAcknowledgements[opt.key])}
@@ -88,7 +88,7 @@ export const LaunchFlagsCard = ({
         </div>
 
         {unacknowledged.length > 0 ? (
-          <div className="flex items-center gap-2.5 rounded-lg border border-warning/40 bg-warning/5 p-3 text-caption text-warning">
+          <div className="border-warning/40 bg-warning/5 text-caption text-warning flex items-center gap-2.5 rounded-lg border p-3">
             <AlertTriangle className="size-4 shrink-0" />
             <span>
               Please acknowledge {unacknowledged.map((o) => o.label).join(", ")} above to enable

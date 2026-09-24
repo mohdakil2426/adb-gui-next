@@ -54,7 +54,7 @@ const DebloaterRowAction = ({
       return (
         <Button
           aria-busy={isPending}
-          className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-warning/50 hover:bg-warning-muted hover:text-warning"
+          className="border-border/80 text-caption hover:border-warning/50 hover:bg-warning-muted hover:text-warning h-7 gap-1 px-2.5"
           disabled={isUnsafeBlocked || isPending || !selectedSerial}
           onClick={() => onSingleAction?.(pkg, "disable")}
           size="sm"
@@ -86,7 +86,7 @@ const DebloaterRowAction = ({
     return (
       <Button
         aria-busy={isPending}
-        className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-destructive/50 hover:bg-destructive-muted hover:text-destructive"
+        className="border-border/80 text-caption hover:border-destructive/50 hover:bg-destructive-muted hover:text-destructive h-7 gap-1 px-2.5"
         disabled={isUnsafeBlocked || isPending || !selectedSerial}
         onClick={() => onSingleAction?.(pkg, "uninstall")}
         size="sm"
@@ -115,7 +115,7 @@ const DebloaterRowAction = ({
     return (
       <Button
         aria-busy={isPending}
-        className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success"
+        className="border-border/80 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success h-7 gap-1 px-2.5"
         disabled={isPending || !selectedSerial}
         onClick={() => onSingleAction?.(pkg, "restore")}
         size="sm"
@@ -139,7 +139,7 @@ const DebloaterRowAction = ({
   return (
     <Button
       aria-busy={isPending}
-      className="h-7 gap-1 border-border/80 px-2.5 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success"
+      className="border-border/80 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success h-7 gap-1 px-2.5"
       disabled={isPending || !selectedSerial}
       onClick={() => onSingleAction?.(pkg, "restore")}
       size="sm"
@@ -181,9 +181,9 @@ export const DebloaterPackageRow = ({
     <div
       aria-selected={isSelected}
       className={cn(
-        "group absolute left-0 flex w-full cursor-pointer items-center justify-between gap-3 border-border/30 border-b px-3 py-1.5 outline-none transition-colors duration-90 ease-standard hover:bg-accent/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
+        "group border-border/30 ease-standard hover:bg-accent/60 focus-visible:ring-ring absolute left-0 flex w-full cursor-pointer items-center justify-between gap-3 border-b px-3 py-1.5 transition-colors duration-90 outline-none focus-visible:ring-1 focus-visible:ring-inset",
         isSelected && "bg-primary-muted/40 hover:bg-primary-muted/60",
-        isCurrent && !isSelected && "bg-accent/80 ring-1 ring-border/80 ring-inset",
+        isCurrent && !isSelected && "bg-accent/80 ring-border/80 ring-1 ring-inset",
         isUnsafeBlocked && "cursor-not-allowed opacity-65"
       )}
       onClick={() => {
@@ -209,7 +209,7 @@ export const DebloaterPackageRow = ({
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <button
           aria-label={isSelected ? `Deselect ${pkg.name}` : `Select ${pkg.name}`}
-          className="shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed"
+          className="focus-visible:ring-ring shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0 outline-none focus-visible:ring-1 disabled:cursor-not-allowed"
           disabled={isUnsafeBlocked}
           onClick={(e) => {
             e.stopPropagation();
@@ -237,7 +237,7 @@ export const DebloaterPackageRow = ({
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
           {/* Top Line: Package Name + Vendor Badge + Safety Tier */}
           <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate font-medium font-mono text-foreground text-mono">
+            <span className="text-foreground text-mono truncate font-mono font-medium">
               {pkg.name}
             </span>
 
@@ -247,7 +247,7 @@ export const DebloaterPackageRow = ({
 
             <span
               className={cn(
-                "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.2 font-medium text-[10px]",
+                "py-0.2 inline-flex shrink-0 items-center gap-1 rounded-full px-2 text-[10px] font-medium",
                 REMOVAL_TIER_CLASSES[pkg.removal].badge
               )}
             >
@@ -260,13 +260,13 @@ export const DebloaterPackageRow = ({
           </div>
 
           {/* Bottom Line: Description snippet + dependencies */}
-          <div className="flex min-w-0 items-center gap-2 text-caption text-muted-foreground">
+          <div className="text-caption text-muted-foreground flex min-w-0 items-center gap-2">
             <span className="truncate">
               {pkg.description || "No description available in UAD database"}
             </span>
 
             {pkg.neededBy.length > 0 ? (
-              <span className="shrink-0 font-medium text-[10px] text-warning">
+              <span className="text-warning shrink-0 text-[10px] font-medium">
                 Needed by {pkg.neededBy.length}
               </span>
             ) : null}
@@ -287,7 +287,7 @@ export const DebloaterPackageRow = ({
         {/* Inspect Details trigger */}
         <Button
           aria-label={`Inspect ${pkg.name}`}
-          className="size-7 p-0 text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground size-7 p-0"
           onClick={() => onCurrentPackageNameChange(pkg.name)}
           size="icon"
           title="Inspect package telemetry"

@@ -1,12 +1,12 @@
 /// <reference types="node" />
 
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-const rootPipelineFile = join(process.cwd(), "src-tauri", "src", "emulator", "root.rs");
-const magiskDownloadFile = join(
+const rootPipelineFile = path.join(process.cwd(), "src-tauri", "src", "emulator", "root.rs");
+const magiskDownloadFile = path.join(
   process.cwd(),
   "src-tauri",
   "src",

@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { FolderLock, HardDrive, Loader2, ShieldAlert, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -56,7 +57,7 @@ export const FlasherWipeTab = ({
   const isLocked = !isGateUnlocked || disabled || !serial || isLoading || isActionLoading;
 
   return (
-    <div className="grid @3xl:grid-cols-2 grid-cols-1 items-start gap-5">
+    <div className="grid grid-cols-1 items-start gap-5 @3xl:grid-cols-2">
       {/* ── Left Column: Safety Gate Interlock ───────────────────────── */}
       <div className="flex flex-col gap-4">
         <WipeSafetyGate
@@ -75,10 +76,10 @@ export const FlasherWipeTab = ({
       {/* ── Right Column: Formatted Partition Erase Tools ────────────── */}
       <div className="flex flex-col gap-4">
         {/* Tool 1: Factory Reset / Wipe Data */}
-        <Card className="rounded-xl border-border bg-surface shadow-none">
+        <Card className="border-border bg-surface rounded-xl shadow-none">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-destructive text-title">
+              <CardTitle className="text-destructive text-title flex items-center gap-2">
                 <Trash2 className="size-5" />
                 Wipe Userdata (Factory Reset)
               </CardTitle>
@@ -108,11 +109,11 @@ export const FlasherWipeTab = ({
         </Card>
 
         {/* Tool 2: Erase Cache Partition */}
-        <Card className="rounded-xl border-border bg-surface shadow-none">
+        <Card className="border-border bg-surface rounded-xl shadow-none">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-foreground text-title">
-                <HardDrive className="size-5 text-muted-foreground" />
+              <CardTitle className="text-foreground text-title flex items-center gap-2">
+                <HardDrive className="text-muted-foreground size-5" />
                 Erase Cache Partition
               </CardTitle>
               <Badge variant="outline">Maintenance</Badge>
@@ -140,11 +141,11 @@ export const FlasherWipeTab = ({
         </Card>
 
         {/* Tool 3: Erase Metadata Partition */}
-        <Card className="rounded-xl border-border bg-surface shadow-none">
+        <Card className="border-border bg-surface rounded-xl shadow-none">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-foreground text-title">
-                <FolderLock className="size-5 text-muted-foreground" />
+              <CardTitle className="text-foreground text-title flex items-center gap-2">
+                <FolderLock className="text-muted-foreground size-5" />
                 Erase Metadata Partition
               </CardTitle>
               <Badge variant="outline">Encryption Reset</Badge>
@@ -173,10 +174,10 @@ export const FlasherWipeTab = ({
         </Card>
 
         {/* Tool 4: Erase System Partition */}
-        <Card className="rounded-xl border-border bg-surface shadow-none">
+        <Card className="border-border bg-surface rounded-xl shadow-none">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-destructive text-title">
+              <CardTitle className="text-destructive text-title flex items-center gap-2">
                 <ShieldAlert className="size-5" />
                 Erase System Partition
               </CardTitle>

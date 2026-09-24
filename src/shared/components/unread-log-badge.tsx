@@ -22,7 +22,7 @@ export const UnreadLogBadge = () => {
   return (
     <span
       aria-hidden="true"
-      className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 font-semibold text-caption text-destructive-foreground tabular-nums leading-none"
+      className="bg-destructive text-caption text-destructive-foreground absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 leading-none font-semibold tabular-nums"
     >
       {unreadCount > MAX_DISPLAYED ? `${MAX_DISPLAYED}+` : unreadCount}
     </span>

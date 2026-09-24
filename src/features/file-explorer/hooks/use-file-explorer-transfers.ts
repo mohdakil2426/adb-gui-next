@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import path from "path-browserify";
 import { useCallback } from "react";
 import { toast } from "sonner";

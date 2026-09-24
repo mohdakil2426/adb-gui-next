@@ -57,6 +57,7 @@ export const PayloadSourceTabs = ({
   loadPhase,
   loadStartedAt,
 }: PayloadSourceTabsProps) => {
+  // eslint-disable-next-line react/hook-use-state -- mount timestamp without setter
   const [fallbackStartedAt] = useState(() => Date.now());
   const showLoadCard = isLoadingPartitions && mode === "remote";
 

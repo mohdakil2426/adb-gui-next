@@ -119,9 +119,9 @@ export const InstallDropZone = ({
     return (
       <div
         className={cn(
-          "group relative flex select-none items-center justify-between gap-3 rounded-lg border-2 border-dashed px-4 py-2.5 transition-[color,background-color,border-color,box-shadow] duration-200",
+          "group relative flex items-center justify-between gap-3 rounded-lg border-2 border-dashed px-4 py-2.5 transition-[color,background-color,border-color,box-shadow] duration-200 select-none",
           isDragOver
-            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+            ? "border-primary bg-primary/10 ring-primary/20 ring-2"
             : "border-border/80 bg-surface/60 hover:border-border-control hover:bg-surface-raised/40",
           disabled && "pointer-events-none opacity-60",
           className
@@ -143,7 +143,7 @@ export const InstallDropZone = ({
             <FileUp className="size-4" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate font-medium text-body text-foreground">
+            <span className="text-body text-foreground truncate font-medium">
               {isDragOver
                 ? "Drop files to add to queue"
                 : "Drag & drop more .apk, .apks, .xapk, or .apkm files here"}
@@ -155,7 +155,7 @@ export const InstallDropZone = ({
         </div>
 
         <Button
-          className="h-7 shrink-0 gap-1.5 px-2.5 font-medium text-caption"
+          className="text-caption h-7 shrink-0 gap-1.5 px-2.5 font-medium"
           disabled={disabled}
           onClick={onBrowse}
           size="sm"
@@ -172,9 +172,9 @@ export const InstallDropZone = ({
   return (
     <div
       className={cn(
-        "group relative flex select-none flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center transition-[border-color,background-color,box-shadow] duration-200",
+        "group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center transition-[border-color,background-color,box-shadow] duration-200 select-none",
         isDragOver
-          ? "border-primary bg-primary/5 ring-4 ring-primary/10"
+          ? "border-primary bg-primary/5 ring-primary/10 ring-4"
           : "border-border/80 bg-surface/70 hover:border-border-control hover:bg-surface-raised/40",
         disabled && "pointer-events-none opacity-60",
         className
@@ -189,8 +189,8 @@ export const InstallDropZone = ({
         className={cn(
           "flex size-14 items-center justify-center rounded-2xl border transition-[color,background-color,border-color,box-shadow,transform] duration-300",
           isDragOver
-            ? "scale-110 border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-            : "border-border bg-surface-raised text-muted-foreground group-hover:scale-105 group-hover:border-border-control group-hover:text-foreground"
+            ? "border-primary bg-primary text-primary-foreground shadow-primary/20 scale-110 shadow-lg"
+            : "border-border bg-surface-raised text-muted-foreground group-hover:border-border-control group-hover:text-foreground group-hover:scale-105"
         )}
       >
         {isDragOver ? (
@@ -202,10 +202,10 @@ export const InstallDropZone = ({
 
       {/* Main Callout text */}
       <div className="flex flex-col items-center gap-1">
-        <h3 className="font-semibold text-foreground text-title tracking-tight">
+        <h3 className="text-foreground text-title font-semibold tracking-tight">
           {isDragOver ? "Release to queue packages for install" : "Drag & Drop Android Packages"}
         </h3>
-        <p className="max-w-md text-body text-muted-foreground leading-relaxed">
+        <p className="text-body text-muted-foreground max-w-md leading-relaxed">
           Drop application binaries or bundles directly into this cockpit, or browse files on your
           computer.
         </p>
@@ -227,34 +227,34 @@ export const InstallDropZone = ({
 
       {/* Supported Package Container Formats Pill Band */}
       <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
-        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
-          <PackageCheck aria-hidden="true" className="size-3.5 text-success" />
-          <span className="font-bold font-mono">.APK</span>
+        <Badge className="text-caption gap-1 px-2 py-1" variant="secondary">
+          <PackageCheck aria-hidden="true" className="text-success size-3.5" />
+          <span className="font-mono font-bold">.APK</span>
           <span className="text-muted-foreground">Standalone</span>
         </Badge>
 
-        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
-          <Layers aria-hidden="true" className="size-3.5 text-info" />
-          <span className="font-bold font-mono">.APKS</span>
+        <Badge className="text-caption gap-1 px-2 py-1" variant="secondary">
+          <Layers aria-hidden="true" className="text-info size-3.5" />
+          <span className="font-mono font-bold">.APKS</span>
           <span className="text-muted-foreground">Split Bundle</span>
         </Badge>
 
-        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
-          <Archive aria-hidden="true" className="size-3.5 text-warning" />
-          <span className="font-bold font-mono">.XAPK</span>
+        <Badge className="text-caption gap-1 px-2 py-1" variant="secondary">
+          <Archive aria-hidden="true" className="text-warning size-3.5" />
+          <span className="font-mono font-bold">.XAPK</span>
           <span className="text-muted-foreground">OBB Archive</span>
         </Badge>
 
-        <Badge className="gap-1 px-2 py-1 text-caption" variant="secondary">
-          <FileCode aria-hidden="true" className="size-3.5 text-info" />
-          <span className="font-bold font-mono">.APKM</span>
+        <Badge className="text-caption gap-1 px-2 py-1" variant="secondary">
+          <FileCode aria-hidden="true" className="text-info size-3.5" />
+          <span className="font-mono font-bold">.APKM</span>
           <span className="text-muted-foreground">APKMirror</span>
         </Badge>
       </div>
 
       {/* Device advisory footer note */}
       {selectedSerial ? null : (
-        <Alert className="mt-1 border-warning/30 bg-warning-muted text-warning" variant="default">
+        <Alert className="border-warning/30 bg-warning-muted text-warning mt-1" variant="default">
           <Smartphone aria-hidden="true" className="size-3.5" />
           <AlertTitle className="text-caption">No device selected</AlertTitle>
           <AlertDescription className="text-caption">

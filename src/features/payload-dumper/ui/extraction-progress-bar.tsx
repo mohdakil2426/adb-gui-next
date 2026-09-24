@@ -46,7 +46,7 @@ export const ExtractionProgressBar = ({
       />
       <span
         className={cn(
-          "numeric w-9 shrink-0 text-right text-caption",
+          "numeric text-caption w-9 shrink-0 text-right",
           getProgressTextColor(isCompleted, isFailed)
         )}
       >

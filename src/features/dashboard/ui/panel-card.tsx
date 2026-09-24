@@ -45,14 +45,14 @@ export const PanelCard = ({
     >
       <Card
         className={cn(
-          "@container flex h-full flex-1 flex-col justify-between gap-3 rounded-xl border-border bg-surface py-4 shadow-none transition-colors duration-150",
+          "border-border bg-surface @container flex h-full flex-1 flex-col justify-between gap-3 rounded-xl py-4 shadow-none transition-colors duration-150",
           className
         )}
       >
         <CardHeader className="gap-0 px-4.5 pb-0.5">
           <CardTitle
             as="h2"
-            className="flex items-center gap-1.5 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+            className="text-caption text-muted-foreground flex items-center gap-1.5 font-medium tracking-wider uppercase"
           >
             <Icon aria-hidden="true" className="size-3.5" />
             {title}

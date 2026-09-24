@@ -45,7 +45,7 @@ export const AppOverviewTab = ({
       <AppMetricsHeroBanner stats={stats} />
 
       {/* Row 1: Package Composition & Target SDK Distribution */}
-      <div className="grid @lg:grid-cols-2 grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
         <PackageCompositionDonut
           disabledCount={stats.disabledCount}
           systemCount={stats.systemCount}
@@ -59,7 +59,7 @@ export const AppOverviewTab = ({
       </div>
 
       {/* Row 2: Top Storage Consumers & Debloat Health Spectrum */}
-      <div className="grid @lg:grid-cols-2 grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
         <TopStorageConsumersChart consumers={stats.storageBreakdown} onSelectApp={onSelectApp} />
         <DebloatSafetySpectrum
           onOpenDebloat={onOpenDebloat}
@@ -69,7 +69,7 @@ export const AppOverviewTab = ({
       </div>
 
       {/* Row 3: Permission Matrix & Quick App Launchpad */}
-      <div className="grid @lg:grid-cols-2 grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
         <PermissionDensityMatrix items={stats.permissionDensity} userAppCount={stats.userCount} />
         <QuickLaunchpadCard selectedSerial={selectedSerial} />
       </div>

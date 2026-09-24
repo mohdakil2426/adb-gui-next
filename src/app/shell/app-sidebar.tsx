@@ -72,24 +72,24 @@ const SidebarDeviceCard = ({ onOpenDevicePicker }: SidebarDeviceCardProps) => {
       <SidebarMenuItem>
         <SidebarMenuButton
           aria-label={`Current device: ${primary}. Click to select device or view actions.`}
-          className="h-auto gap-2.5 border border-sidebar-border bg-sidebar-accent/50 py-1.5"
+          className="border-sidebar-border bg-sidebar-accent/50 h-auto gap-2.5 border py-1.5"
           onClick={onOpenDevicePicker}
           size="lg"
           tooltip={`${primary} — ${secondary}`}
         >
-          <span className="relative flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-raised">
+          <span className="bg-surface-raised relative flex size-7 shrink-0 items-center justify-center rounded-md">
             <Smartphone aria-hidden="true" className="size-3.5" />
             <span
               aria-hidden="true"
               className={cn(
-                "absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-sidebar",
+                "border-sidebar absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2",
                 (status && STATUS_DOT[status.toLowerCase()]) ?? "bg-foreground-subtle"
               )}
             />
           </span>
           <span className="grid min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
-            <span className="truncate font-medium text-body">{primary}</span>
-            <span className="truncate text-caption text-muted-foreground">{secondary}</span>
+            <span className="text-body truncate font-medium">{primary}</span>
+            <span className="text-caption text-muted-foreground truncate">{secondary}</span>
           </span>
           <ChevronsUpDown
             aria-hidden="true"
@@ -114,7 +114,7 @@ const NavActivityBadge = ({ view }: { view: ViewType }) => {
       {count > 1 ? (
         <span className="numeric">{count}</span>
       ) : (
-        <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-primary" />
+        <span aria-hidden="true" className="bg-primary size-1.5 animate-pulse rounded-full" />
       )}
       <span className="sr-only">{`${count} running operation${count === 1 ? "" : "s"}`}</span>
     </SidebarMenuBadge>
@@ -180,8 +180,8 @@ export const AppSidebar = ({
             width={24}
           />
           <span className="grid min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-            <span className="truncate font-semibold text-body">ADB GUI Next</span>
-            <span className="truncate text-caption text-muted-foreground">Desktop toolkit</span>
+            <span className="text-body truncate font-semibold">ADB GUI Next</span>
+            <span className="text-caption text-muted-foreground truncate">Desktop toolkit</span>
           </span>
         </div>
         <SidebarTrigger aria-label="Toggle mobile navigation" className="md:hidden" />

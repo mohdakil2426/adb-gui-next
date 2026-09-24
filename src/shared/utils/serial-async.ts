@@ -9,6 +9,7 @@ export const runSerial = async <T, R>(
 ): Promise<R[]> => {
   const results: R[] = [];
   for (const [i, item] of items.entries()) {
+    // eslint-disable-next-line no-await-in-loop
     results.push(await worker(item, i));
   }
   return results;

@@ -59,9 +59,9 @@ export const MarketplaceBrowseTab = ({
     if (searchError) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-          <CircleAlert className="size-8 text-destructive" />
-          <p className="font-semibold text-body text-foreground">Search failed</p>
-          <p className="max-w-md text-caption text-muted-foreground">{searchError}</p>
+          <CircleAlert className="text-destructive size-8" />
+          <p className="text-body text-foreground font-semibold">Search failed</p>
+          <p className="text-caption text-muted-foreground max-w-md">{searchError}</p>
           <Button onClick={handleRetry} size="sm" type="button" variant="outline">
             Try again
           </Button>

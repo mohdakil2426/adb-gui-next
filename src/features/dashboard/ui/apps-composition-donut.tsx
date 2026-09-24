@@ -107,12 +107,12 @@ export const AppsCompositionDonut = ({ slices }: AppsCompositionDonutProps) => {
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute flex select-none flex-col items-center"
+        className="pointer-events-none absolute flex flex-col items-center select-none"
       >
         {active ? (
           <m.span
             animate={{ opacity: 1, y: 0 }}
-            className="numeric font-semibold text-display text-foreground"
+            className="numeric text-display text-foreground font-semibold"
             initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
             key={active.key}
             transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15 }}
@@ -121,7 +121,7 @@ export const AppsCompositionDonut = ({ slices }: AppsCompositionDonutProps) => {
           </m.span>
         ) : (
           <>
-            <span className="numeric font-semibold text-display text-foreground">{total}</span>
+            <span className="numeric text-display text-foreground font-semibold">{total}</span>
             <span className="text-caption text-muted-foreground lowercase">apps</span>
           </>
         )}

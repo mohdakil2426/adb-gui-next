@@ -51,7 +51,7 @@ const DescriptionActionButton = ({
     if (disableMode) {
       return (
         <Button
-          className="h-8 gap-1.5 border-border px-3 text-caption hover:border-warning/50 hover:bg-warning-muted hover:text-warning"
+          className="border-border text-caption hover:border-warning/50 hover:bg-warning-muted hover:text-warning h-8 gap-1.5 px-3"
           disabled={isUnsafeBlocked || isPending || !selectedSerial}
           onClick={() => onSingleAction?.(pkg, "disable")}
           size="sm"
@@ -74,7 +74,7 @@ const DescriptionActionButton = ({
 
     return (
       <Button
-        className="h-8 gap-1.5 border-border px-3 text-caption hover:border-destructive/50 hover:bg-destructive-muted hover:text-destructive"
+        className="border-border text-caption hover:border-destructive/50 hover:bg-destructive-muted hover:text-destructive h-8 gap-1.5 px-3"
         disabled={isUnsafeBlocked || isPending || !selectedSerial}
         onClick={() => onSingleAction?.(pkg, "uninstall")}
         size="sm"
@@ -93,7 +93,7 @@ const DescriptionActionButton = ({
 
   return (
     <Button
-      className="h-8 gap-1.5 border-border px-3 text-caption hover:border-success/50 hover:bg-success-muted hover:text-success"
+      className="border-border text-caption hover:border-success/50 hover:bg-success-muted hover:text-success h-8 gap-1.5 px-3"
       disabled={isPending || !selectedSerial}
       onClick={() => onSingleAction?.(pkg, "restore")}
       size="sm"
@@ -122,14 +122,14 @@ export const DescriptionPanel = ({
   <section
     aria-label={`Package telemetry: ${pkg.name}`}
     aria-live="polite"
-    className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4"
+    className="border-border bg-surface flex flex-col gap-4 rounded-xl border p-4"
   >
     {/* ── Top Header Row ── */}
-    <div className="flex flex-wrap items-center justify-between gap-2 border-border/40 border-b pb-2.5">
+    <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-b pb-2.5">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5">
-          <Package aria-hidden="true" className="size-4 text-muted-foreground" />
-          <span className="font-bold font-mono text-foreground text-title">{pkg.name}</span>
+          <Package aria-hidden="true" className="text-muted-foreground size-4" />
+          <span className="text-foreground text-title font-mono font-bold">{pkg.name}</span>
         </div>
 
         <CopyButton aria-label="Copy package name" value={pkg.name} />
@@ -149,7 +149,7 @@ export const DescriptionPanel = ({
         {/* Safety Tier Badge */}
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-caption",
+            "text-caption inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
             REMOVAL_TIER_CLASSES[pkg.removal].badge
           )}
         >
@@ -161,7 +161,7 @@ export const DescriptionPanel = ({
         </span>
 
         {/* List/Vendor Badge */}
-        <Badge className="font-mono text-caption" variant="neutral">
+        <Badge className="text-caption font-mono" variant="neutral">
           {pkg.list}
         </Badge>
       </div>
@@ -180,7 +180,7 @@ export const DescriptionPanel = ({
         {onClose ? (
           <Button
             aria-label="Close details"
-            className="size-8 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground size-8"
             onClick={onClose}
             size="icon"
             type="button"
@@ -195,7 +195,7 @@ export const DescriptionPanel = ({
     {/* ── Safety Risk Guidance Callout ── */}
     <div
       className={cn(
-        "flex items-start gap-2 rounded-md border px-3 py-2 text-caption",
+        "text-caption flex items-start gap-2 rounded-md border px-3 py-2",
         pkg.removal === "Recommended" && "border-success/30 bg-success-muted/50 text-success",
         pkg.removal === "Advanced" && "border-info/30 bg-info-muted/50 text-info",
         pkg.removal === "Expert" && "border-warning/30 bg-warning-muted/50 text-warning",
@@ -216,8 +216,8 @@ export const DescriptionPanel = ({
     </div>
 
     {/* ── Community Description ── */}
-    <div className="flex flex-col gap-1 rounded-md border border-border/50 bg-surface-raised/40 p-2.5">
-      <span className="font-semibold text-caption text-muted-foreground uppercase tracking-wider">
+    <div className="border-border/50 bg-surface-raised/40 flex flex-col gap-1 rounded-md border p-2.5">
+      <span className="text-caption text-muted-foreground font-semibold tracking-wider uppercase">
         Package Description (UAD Database)
       </span>
       <p className="text-body text-foreground/90 leading-relaxed">
@@ -227,9 +227,9 @@ export const DescriptionPanel = ({
     </div>
 
     {/* ── Dependencies & Dependents Grid ── */}
-    <div className="grid @lg:grid-cols-2 grid-cols-1 gap-2.5">
-      <div className="flex flex-col gap-1.5 rounded-md border border-border/50 bg-surface-raised/30 p-2.5">
-        <span className="font-medium text-caption text-muted-foreground">
+    <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2">
+      <div className="border-border/50 bg-surface-raised/30 flex flex-col gap-1.5 rounded-md border p-2.5">
+        <span className="text-caption text-muted-foreground font-medium">
           Depends on ({pkg.dependencies.length})
         </span>
         {pkg.dependencies.length > 0 ? (
@@ -247,15 +247,15 @@ export const DescriptionPanel = ({
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5 rounded-md border border-border/50 bg-surface-raised/30 p-2.5">
-        <span className="font-medium text-caption text-muted-foreground">
+      <div className="border-border/50 bg-surface-raised/30 flex flex-col gap-1.5 rounded-md border p-2.5">
+        <span className="text-caption text-muted-foreground font-medium">
           Needed by ({pkg.neededBy.length})
         </span>
         {pkg.neededBy.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {pkg.neededBy.map((dep) => (
               <Badge
-                className="border-warning/30 bg-warning-muted/40 font-mono text-[10px] text-warning"
+                className="border-warning/30 bg-warning-muted/40 text-warning font-mono text-[10px]"
                 key={dep}
                 variant="outline"
               >

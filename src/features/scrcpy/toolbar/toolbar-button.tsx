@@ -155,7 +155,7 @@ export const ToolbarButton = ({
       <TooltipTrigger asChild>
         <button
           aria-label={label}
-          className={`group flex size-10 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 ease-standard active:scale-92 ${
+          className={`group ease-standard flex size-10 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 active:scale-92 ${
             isActive
               ? "bg-accent text-accent-foreground shadow-xs"
               : "text-muted-foreground hover:bg-muted/80 hover:text-foreground"
@@ -169,20 +169,20 @@ export const ToolbarButton = ({
         </button>
       </TooltipTrigger>
       <TooltipContent
-        className="flex flex-col gap-0.5 rounded-md border border-border/80 bg-surface-raised/95 px-2.5 py-1.5 shadow-md backdrop-blur-md"
+        className="border-border/80 bg-surface-raised/95 flex flex-col gap-0.5 rounded-md border px-2.5 py-1.5 shadow-md backdrop-blur-md"
         side="left"
         sideOffset={8}
       >
-        <div className="flex items-center gap-2 font-medium text-foreground text-xs">
+        <div className="text-foreground flex items-center gap-2 text-xs font-medium">
           <span>{label}</span>
           {shortcut ? (
-            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <kbd className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
               {shortcut}
             </kbd>
           ) : null}
         </div>
         {description ? (
-          <span className="text-[11px] text-muted-foreground">{description}</span>
+          <span className="text-muted-foreground text-[11px]">{description}</span>
         ) : null}
       </TooltipContent>
     </Tooltip>

@@ -104,7 +104,7 @@ export const ViewPayloadDumper = () => {
   const isTerminal = status === "success" || status === "error";
   const effectiveOutputPath = outputDir || outputPath;
   const outputIsAuto = Boolean(outputDir);
-
+  const handleLoadRemotePartitions = actions.loadRemotePartitions;
   return (
     <div className="flex w-full min-w-0 flex-col gap-4">
       <output aria-live="polite" className="sr-only">
@@ -131,7 +131,7 @@ export const ViewPayloadDumper = () => {
       />
 
       {/* 4-Tab Precision Hardware Cockpit */}
-      <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+      <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
         <CardContent className="flex flex-col gap-4 p-0">
           <Tabs
             className="w-full gap-4"
@@ -148,7 +148,7 @@ export const ViewPayloadDumper = () => {
                 <Layers aria-hidden="true" className="mr-2 size-4" />
                 Extractor & Partitions
                 {partitions.length > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-primary/10 px-1.5 py-0.2 font-mono text-[10px] text-primary">
+                  <span className="bg-primary/10 py-0.2 text-primary ml-1.5 rounded-full px-1.5 font-mono text-[10px]">
                     {partitions.length}
                   </span>
                 ) : null}
@@ -162,7 +162,7 @@ export const ViewPayloadDumper = () => {
                 <History aria-hidden="true" className="mr-2 size-4" />
                 Extracted Outputs & History
                 {history.length > 0 || extractedFiles.length > 0 ? (
-                  <span className="ml-1.5 rounded-full bg-surface-raised px-1.5 py-0.2 font-mono text-[10px] text-muted-foreground">
+                  <span className="bg-surface-raised py-0.2 text-muted-foreground ml-1.5 rounded-full px-1.5 font-mono text-[10px]">
                     {history.length || extractedFiles.length}
                   </span>
                 ) : null}
@@ -194,7 +194,7 @@ export const ViewPayloadDumper = () => {
                 onCancelLoadPartitions={actions.handleCancelLoadPartitions}
                 onCheckUrl={actions.handleCheckUrl}
                 onExtract={actions.handleExtract}
-                onLoadRemotePartitions={actions.loadRemotePartitions}
+                onLoadRemotePartitions={handleLoadRemotePartitions}
                 onModeChange={setActiveMode}
                 onOpenOutputFolder={actions.handleOpenOutputFolder}
                 onPayloadDrop={actions.handlePayloadDrop}

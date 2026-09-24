@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { PackageCheck, RefreshCw, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -147,7 +148,7 @@ export const MarketplaceUpdatesTab = ({ target }: { target: InstallTarget }) => 
 
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             aria-label="Search installed open-source apps"
             className="pl-9"
@@ -158,7 +159,7 @@ export const MarketplaceUpdatesTab = ({ target }: { target: InstallTarget }) => 
         </div>
 
         <Button
-          className="h-9 gap-1.5 px-3 text-caption"
+          className="text-caption h-9 gap-1.5 px-3"
           disabled={isLoading}
           onClick={() => {
             void fetchUpdates();
@@ -189,9 +190,9 @@ export const MarketplaceUpdatesTab = ({ target }: { target: InstallTarget }) => 
         ))}
 
         {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-border border-dashed py-12 text-center">
-            <PackageCheck className="mb-2 size-8 text-muted-foreground" />
-            <p className="font-medium text-body text-foreground">No updates found</p>
+          <div className="border-border flex flex-col items-center justify-center rounded-xl border border-dashed py-12 text-center">
+            <PackageCheck className="text-muted-foreground mb-2 size-8" />
+            <p className="text-body text-foreground font-medium">No updates found</p>
             <p className="text-caption text-muted-foreground">
               All installed open-source apps match current release versions.
             </p>

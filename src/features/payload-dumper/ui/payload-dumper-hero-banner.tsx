@@ -96,7 +96,7 @@ const PayloadDumperSpecGrid = ({
   selectedCount: number;
   totalPayloadSize: number;
 }) => (
-  <div className="grid @3xl:grid-cols-6 @lg:grid-cols-3 @xs:grid-cols-2 gap-2.5 border-border/50 border-t pt-3">
+  <div className="border-border/50 grid gap-2.5 border-t pt-3 @xs:grid-cols-2 @lg:grid-cols-3 @3xl:grid-cols-6">
     <PayloadDumperSpecBadge
       copyValue={fileName}
       icon={FileArchive}
@@ -142,155 +142,152 @@ const PayloadDumperSpecGrid = ({
   </div>
 );
 
-export const PayloadDumperHeroBanner = memo(
-  ({
-    activeMode,
-    completedCount = 0,
-    isExtractionActive = false,
-    onOpenOutputFolder,
-    onRefreshPartitions,
-    onSelectPayload,
-    outputDir,
-    outputPath,
-    partitionCount,
-    payloadPath,
-    remoteMetadata: _remoteMetadata,
-    remoteUrl,
-    selectedCount = 0,
-    status,
-    totalPayloadSize,
-  }: PayloadDumperHeroBannerProps) => {
-    const isLoaded = partitionCount > 0;
-    const fileName = resolveHeroFileName(activeMode, payloadPath, remoteUrl);
+const PayloadDumperHeroBannerImpl = ({
+  activeMode,
+  completedCount = 0,
+  isExtractionActive = false,
+  onOpenOutputFolder,
+  onRefreshPartitions,
+  onSelectPayload,
+  outputDir,
+  outputPath,
+  partitionCount,
+  payloadPath,
+  remoteMetadata: _remoteMetadata,
+  remoteUrl,
+  selectedCount = 0,
+  status,
+  totalPayloadSize,
+}: PayloadDumperHeroBannerProps) => {
+  const isLoaded = partitionCount > 0;
+  const fileName = resolveHeroFileName(activeMode, payloadPath, remoteUrl);
 
-    const targetPathOrUrl = activeMode === "local" ? payloadPath : remoteUrl;
-    const isZipFile = targetPathOrUrl.toLowerCase().endsWith(".zip");
-    const formatInfo = detectPayloadFormat(targetPathOrUrl, isZipFile, activeMode === "remote");
-    const effectiveOutputDir = outputDir || outputPath || "Default (~/Downloads/extracted)";
+  const targetPathOrUrl = activeMode === "local" ? payloadPath : remoteUrl;
+  const isZipFile = targetPathOrUrl.toLowerCase().endsWith(".zip");
+  const formatInfo = detectPayloadFormat(targetPathOrUrl, isZipFile, activeMode === "remote");
+  const effectiveOutputDir = outputDir || outputPath || "Default (~/Downloads/extracted)";
 
-    return (
-      <Card className="@container rounded-xl border-border bg-surface p-4.5 shadow-none">
-        <CardContent className="flex flex-col gap-4 p-0">
-          {/* Top Header Row: Branding Avatar, Target Name, Badges & Actions */}
-          <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3.5">
-              <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface-raised p-2 text-foreground shadow-xs">
-                {activeMode === "remote" ? (
-                  <Globe aria-hidden="true" className="size-6 text-foreground" />
-                ) : (
-                  <Package aria-hidden="true" className="size-6 text-foreground" />
-                )}
+  return (
+    <Card className="border-border bg-surface @container rounded-xl p-4.5 shadow-none">
+      <CardContent className="flex flex-col gap-4 p-0">
+        {/* Top Header Row: Branding Avatar, Target Name, Badges & Actions */}
+        <div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="border-border/80 bg-surface-raised text-foreground relative flex size-12 shrink-0 items-center justify-center rounded-2xl border p-2 shadow-xs">
+              {activeMode === "remote" ? (
+                <Globe aria-hidden="true" className="text-foreground size-6" />
+              ) : (
+                <Package aria-hidden="true" className="text-foreground size-6" />
+              )}
 
-                {/* Status Pulse Indicator */}
-                <span className="absolute -top-0.5 -right-0.5 flex size-3">
-                  <span
-                    className={cn(
-                      "absolute inline-flex size-full animate-ping rounded-full opacity-60",
-                      getStatusPulseColor(isExtractionActive, isLoaded)
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "relative inline-flex size-3 rounded-full border-2 border-surface",
-                      getStatusPulseColor(isExtractionActive, isLoaded)
-                    )}
-                  />
-                </span>
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate font-semibold text-foreground text-title">
-                    {isLoaded ? fileName : "No Payload Source Loaded"}
-                  </h2>
-
-                  {/* Status Badges */}
-                  <Badge
-                    className="font-mono text-[10px]"
-                    variant={isLoaded ? "success" : "outline"}
-                  >
-                    {getExtractionBadgeLabel(isExtractionActive, isLoaded, partitionCount)}
-                  </Badge>
-
-                  <Badge className="font-mono text-[10px]" variant="secondary">
-                    {activeMode === "local" ? "Local Storage" : "Remote HTTP Stream"}
-                  </Badge>
-
-                  {isLoaded ? (
-                    <Badge className="font-mono text-[10px]" variant="outline">
-                      {formatInfo.label}
-                    </Badge>
-                  ) : null}
-                </div>
-
-                <p className="truncate text-caption text-muted-foreground">
-                  {isLoaded
-                    ? `Source: ${activeMode === "local" ? payloadPath : remoteUrl}`
-                    : "Load an Android OTA payload.bin, factory archive, or stream URL to inspect partitions."}
-                </p>
-              </div>
+              {/* Status Pulse Indicator */}
+              <span className="absolute -top-0.5 -right-0.5 flex size-3">
+                <span
+                  className={cn(
+                    "absolute inline-flex size-full animate-ping rounded-full opacity-60",
+                    getStatusPulseColor(isExtractionActive, isLoaded)
+                  )}
+                />
+                <span
+                  className={cn(
+                    "border-surface relative inline-flex size-3 rounded-full border-2",
+                    getStatusPulseColor(isExtractionActive, isLoaded)
+                  )}
+                />
+              </span>
             </div>
 
-            {/* Top-Right Action Controls */}
-            <div className="flex flex-wrap items-center gap-2 @lg:self-auto self-start">
-              <Button
-                className="h-8 gap-1.5 px-3 text-caption"
-                disabled={isExtractionActive}
-                onClick={onSelectPayload}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <FileArchive className="size-3.5 text-muted-foreground" data-icon="inline-start" />
-                {isLoaded ? "Change Source" : "Open Payload File"}
-              </Button>
+            <div className="flex min-w-0 flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-foreground text-title truncate font-semibold">
+                  {isLoaded ? fileName : "No Payload Source Loaded"}
+                </h2>
 
-              <Button
-                className="h-8 gap-1.5 px-3 text-caption"
-                onClick={onOpenOutputFolder}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <FolderOpen className="size-3.5 text-muted-foreground" data-icon="inline-start" />
-                Output Folder
-              </Button>
+                {/* Status Badges */}
+                <Badge className="font-mono text-[10px]" variant={isLoaded ? "success" : "outline"}>
+                  {getExtractionBadgeLabel(isExtractionActive, isLoaded, partitionCount)}
+                </Badge>
 
-              {isLoaded ? (
-                <Button
-                  aria-label="Refresh partition list"
-                  className="size-8 rounded-lg p-0"
-                  disabled={isExtractionActive}
-                  onClick={onRefreshPartitions}
-                  size="sm"
-                  title="Re-read Partition Table"
-                  type="button"
-                  variant="outline"
-                >
-                  <RefreshCw
-                    className={cn(
-                      "size-3.5 text-muted-foreground",
-                      status === "loading-partitions" && "animate-spin text-foreground"
-                    )}
-                    data-icon="inline-start"
-                  />
-                </Button>
-              ) : null}
+                <Badge className="font-mono text-[10px]" variant="secondary">
+                  {activeMode === "local" ? "Local Storage" : "Remote HTTP Stream"}
+                </Badge>
+
+                {isLoaded ? (
+                  <Badge className="font-mono text-[10px]" variant="outline">
+                    {formatInfo.label}
+                  </Badge>
+                ) : null}
+              </div>
+
+              <p className="text-caption text-muted-foreground truncate">
+                {isLoaded
+                  ? `Source: ${activeMode === "local" ? payloadPath : remoteUrl}`
+                  : "Load an Android OTA payload.bin, factory archive, or stream URL to inspect partitions."}
+              </p>
             </div>
           </div>
 
-          <PayloadDumperSpecGrid
-            completedCount={completedCount}
-            effectiveOutputDir={effectiveOutputDir}
-            fileName={fileName}
-            formatLabel={formatInfo.label}
-            isLoaded={isLoaded}
-            partitionCount={partitionCount}
-            selectedCount={selectedCount}
-            totalPayloadSize={totalPayloadSize}
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-);
+          {/* Top-Right Action Controls */}
+          <div className="flex flex-wrap items-center gap-2 self-start @lg:self-auto">
+            <Button
+              className="text-caption h-8 gap-1.5 px-3"
+              disabled={isExtractionActive}
+              onClick={onSelectPayload}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <FileArchive className="text-muted-foreground size-3.5" data-icon="inline-start" />
+              {isLoaded ? "Change Source" : "Open Payload File"}
+            </Button>
+
+            <Button
+              className="text-caption h-8 gap-1.5 px-3"
+              onClick={onOpenOutputFolder}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <FolderOpen className="text-muted-foreground size-3.5" data-icon="inline-start" />
+              Output Folder
+            </Button>
+
+            {isLoaded ? (
+              <Button
+                aria-label="Refresh partition list"
+                className="size-8 rounded-lg p-0"
+                disabled={isExtractionActive}
+                onClick={onRefreshPartitions}
+                size="sm"
+                title="Re-read Partition Table"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw
+                  className={cn(
+                    "text-muted-foreground size-3.5",
+                    status === "loading-partitions" && "text-foreground animate-spin"
+                  )}
+                  data-icon="inline-start"
+                />
+              </Button>
+            ) : null}
+          </div>
+        </div>
+
+        <PayloadDumperSpecGrid
+          completedCount={completedCount}
+          effectiveOutputDir={effectiveOutputDir}
+          fileName={fileName}
+          formatLabel={formatInfo.label}
+          isLoaded={isLoaded}
+          partitionCount={partitionCount}
+          selectedCount={selectedCount}
+          totalPayloadSize={totalPayloadSize}
+        />
+      </CardContent>
+    </Card>
+  );
+};
+
+export const PayloadDumperHeroBanner = memo(PayloadDumperHeroBannerImpl);

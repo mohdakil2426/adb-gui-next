@@ -96,7 +96,7 @@ interface LaunchPresetsGridProps {
 }
 
 export const LaunchPresetsGrid = ({ currentOptions, onApplyPreset }: LaunchPresetsGridProps) => (
-  <div className="grid @3xl:grid-cols-3 @lg:grid-cols-2 gap-3">
+  <div className="grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3">
     {LAUNCH_PRESETS.map((preset) => {
       const Icon = preset.icon;
       const isMatched =
@@ -109,16 +109,16 @@ export const LaunchPresetsGrid = ({ currentOptions, onApplyPreset }: LaunchPrese
       return (
         <Card
           className={cn(
-            "cursor-pointer rounded-xl border-border bg-surface shadow-none transition-colors hover:border-foreground/40 hover:bg-surface-raised/40",
-            isMatched && "border-primary bg-surface-raised/60 ring-1 ring-primary/20"
+            "border-border bg-surface hover:border-foreground/40 hover:bg-surface-raised/40 cursor-pointer rounded-xl shadow-none transition-colors",
+            isMatched && "border-primary bg-surface-raised/60 ring-primary/20 ring-1"
           )}
           key={preset.id}
           onClick={() => onApplyPreset(preset.options)}
         >
           <CardContent className="flex flex-col gap-2.5 p-4">
             <div className="flex items-center justify-between">
-              <div className="flex size-8 items-center justify-center rounded-lg border border-border bg-surface-raised">
-                <Icon className="size-4 text-foreground" />
+              <div className="border-border bg-surface-raised flex size-8 items-center justify-center rounded-lg border">
+                <Icon className="text-foreground size-4" />
               </div>
               <Badge
                 className="text-[10px]"
@@ -129,13 +129,13 @@ export const LaunchPresetsGrid = ({ currentOptions, onApplyPreset }: LaunchPrese
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-body text-foreground">{preset.title}</span>
-              <p className="line-clamp-2 text-caption text-muted-foreground">
+              <span className="text-body text-foreground font-semibold">{preset.title}</span>
+              <p className="text-caption text-muted-foreground line-clamp-2">
                 {preset.description}
               </p>
             </div>
 
-            <span className="font-mono text-[10px] text-muted-foreground">{preset.flags}</span>
+            <span className="text-muted-foreground font-mono text-[10px]">{preset.flags}</span>
           </CardContent>
         </Card>
       );

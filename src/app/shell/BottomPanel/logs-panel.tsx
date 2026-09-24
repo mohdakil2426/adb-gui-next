@@ -12,7 +12,7 @@ const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/gu;
 
 const escapeRegExp = (value: string): string => value.replace(REGEX_ESCAPE, "\\$&");
 
-export const LogsPanel = memo(function LogsPanel() {
+const LogsPanelImpl = () => {
   const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore(
     useShallow((state) => ({
       filter: state.filter,
@@ -106,13 +106,13 @@ export const LogsPanel = memo(function LogsPanel() {
       <div
         aria-live="polite"
         aria-relevant="additions"
-        className="min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden py-1"
+        className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto py-1"
         ref={scrollRef}
         role="log"
       >
         {filteredLogs.length === 0 ? (
           <div
-            className="select-none py-8 text-center text-sm italic opacity-40"
+            className="py-8 text-center text-sm italic opacity-40 select-none"
             style={{ color: "var(--terminal-fg)" }}
           >
             {logs.length === 0
@@ -155,4 +155,6 @@ export const LogsPanel = memo(function LogsPanel() {
       </div>
     </div>
   );
-});
+};
+
+export const LogsPanel = memo(LogsPanelImpl);

@@ -28,16 +28,16 @@ interface RootPreflightStepProps {
 const StatusIcon = ({ status }: { status: backend.CheckStatus }) => {
   switch (status) {
     case "pass": {
-      return <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-success" />;
+      return <CircleCheck aria-hidden="true" className="text-success mt-0.5 size-4 shrink-0" />;
     }
     case "warn": {
-      return <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />;
+      return <TriangleAlert aria-hidden="true" className="text-warning mt-0.5 size-4 shrink-0" />;
     }
     case "fail": {
-      return <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-destructive" />;
+      return <CircleAlert aria-hidden="true" className="text-destructive mt-0.5 size-4 shrink-0" />;
     }
     case "info": {
-      return <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />;
+      return <Info aria-hidden="true" className="text-muted-foreground mt-0.5 size-4 shrink-0" />;
     }
     default: {
       return null;
@@ -48,7 +48,7 @@ const StatusIcon = ({ status }: { status: backend.CheckStatus }) => {
 const CheckRow = ({ check }: { check: backend.ReadinessCheck }) => (
   <li
     className={cn(
-      "flex items-start gap-3 rounded-md px-3 py-2 text-body",
+      "text-body flex items-start gap-3 rounded-md px-3 py-2",
       check.status === "fail" && "bg-destructive-muted",
       check.status === "warn" && "bg-warning-muted"
     )}
@@ -71,7 +71,7 @@ const CheckRow = ({ check }: { check: backend.ReadinessCheck }) => (
         <span className="text-caption text-muted-foreground">{check.message}</span>
       </div>
       {check.detail ? (
-        <p className="mt-0.5 text-caption text-muted-foreground">{check.detail}</p>
+        <p className="text-caption text-muted-foreground mt-0.5">{check.detail}</p>
       ) : null}
     </div>
   </li>
@@ -88,7 +88,7 @@ const RecommendedAction = ({
   onLaunch: () => void;
   onRestoreStock: () => void;
 }) => (
-  <div className="flex flex-col gap-2 rounded-md border border-border bg-surface-raised p-3">
+  <div className="border-border bg-surface-raised flex flex-col gap-2 rounded-md border p-3">
     <SectionHeader>Recommended action</SectionHeader>
     {action.type === "launchEmulator" && (
       <>
@@ -171,7 +171,7 @@ const getScanSummaryMessage = (canProceed: boolean, hasWarnings: boolean) => {
 const renderScanContent = (isScanning: boolean, scan: backend.RootReadinessScan | null) => {
   if (isScanning) {
     return (
-      <div className="flex items-center gap-3 rounded-md border border-border bg-surface-raised px-4 py-5 text-body text-muted-foreground">
+      <div className="border-border bg-surface-raised text-body text-muted-foreground flex items-center gap-3 rounded-md border px-4 py-5">
         <Loader2 aria-hidden="true" className="size-4 shrink-0 animate-spin" />
         Scanning emulator state…
       </div>
@@ -179,7 +179,7 @@ const renderScanContent = (isScanning: boolean, scan: backend.RootReadinessScan 
   }
   if (scan) {
     return (
-      <ul className="flex flex-col gap-1 rounded-md border border-border bg-surface-raised py-2">
+      <ul className="border-border bg-surface-raised flex flex-col gap-1 rounded-md border py-2">
         {scan.checks.map((check) => (
           <CheckRow check={check} key={check.id} />
         ))}
@@ -187,7 +187,7 @@ const renderScanContent = (isScanning: boolean, scan: backend.RootReadinessScan 
     );
   }
   return (
-    <div className="flex items-center gap-3 rounded-md border border-border border-dashed bg-surface-raised px-4 py-5 text-body text-muted-foreground">
+    <div className="border-border bg-surface-raised text-body text-muted-foreground flex items-center gap-3 rounded-md border border-dashed px-4 py-5">
       <ScanSearch aria-hidden="true" className="size-4 shrink-0" />
       Run the preflight scan to check this emulator&rsquo;s readiness.
     </div>
@@ -211,9 +211,9 @@ export const RootPreflightStep = ({
     <div className="flex flex-col gap-4">
       <div>
         <h3 className="text-title">Root readiness check</h3>
-        <p className="mt-0.5 text-body text-muted-foreground">
+        <p className="text-body text-muted-foreground mt-0.5">
           These checks confirm rooting will succeed on{" "}
-          <span className="font-mono text-foreground text-mono">{avdName}</span> before anything is
+          <span className="text-foreground text-mono font-mono">{avdName}</span> before anything is
           written.
         </p>
       </div>
@@ -232,7 +232,7 @@ export const RootPreflightStep = ({
       {!isScanning && scan ? (
         <p
           className={cn(
-            "rounded-md px-3 py-2 text-caption",
+            "text-caption rounded-md px-3 py-2",
             canProceed && !scan.hasWarnings && "bg-success-muted text-success",
             canProceed && scan.hasWarnings && "bg-warning-muted text-warning",
             !canProceed && "bg-destructive-muted text-destructive"
@@ -277,7 +277,7 @@ export const RootPreflightStep = ({
         )}
       </div>
 
-      <p className="flex items-start gap-2 text-caption text-muted-foreground">
+      <p className="text-caption text-muted-foreground flex items-start gap-2">
         <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
         <span>
           Cold boot starts the emulator without loading a saved state, so root changes persist. A

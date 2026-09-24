@@ -47,7 +47,7 @@ const SdkDistributionMeter = ({ buckets, total }: { buckets: SdkBuckets; total: 
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between font-medium text-caption text-muted-foreground uppercase tracking-wider">
+      <div className="text-caption text-muted-foreground flex items-center justify-between font-medium tracking-wider uppercase">
         <span>Target SDK health</span>
         <span className="numeric lowercase">
           {buckets.maxApi ? `max API ${buckets.maxApi}` : ""}
@@ -55,7 +55,7 @@ const SdkDistributionMeter = ({ buckets, total }: { buckets: SdkBuckets; total: 
       </div>
       <figure
         aria-label="Target SDK distribution"
-        className="flex h-2 w-full gap-px overflow-hidden rounded-full bg-secondary"
+        className="bg-secondary flex h-2 w-full gap-px overflow-hidden rounded-full"
       >
         {SDK_SEGMENTS.map((segment, index) => {
           const count = buckets[segment.bucketKey];
@@ -85,7 +85,7 @@ const SdkDistributionMeter = ({ buckets, total }: { buckets: SdkBuckets; total: 
           const count = buckets[segment.bucketKey];
           return (
             <div className="flex flex-col" key={segment.bucketKey}>
-              <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
+              <span className="text-caption text-muted-foreground flex items-center gap-1.5">
                 <span
                   aria-hidden="true"
                   className={cn("size-1.5 shrink-0 rounded-full", segment.colorClass)}
@@ -93,7 +93,7 @@ const SdkDistributionMeter = ({ buckets, total }: { buckets: SdkBuckets; total: 
                 <span className="truncate">{segment.label}</span>
               </span>
               <span className="numeric flex items-baseline gap-1">
-                <span className="font-semibold text-body text-foreground">{count}</span>
+                <span className="text-body text-foreground font-semibold">{count}</span>
                 <span className="text-caption text-muted-foreground">
                   {formatPercent(usageRatio(count, denominator))}
                 </span>
@@ -118,8 +118,8 @@ const AppsLoadingSkeleton = () => (
 
 const AppsErrorView = ({ error, onRetry }: { error: Error; onRetry: () => void }) => (
   <div className="flex flex-col items-start gap-3">
-    <p className="flex items-center gap-2 text-body text-muted-foreground">
-      <CircleAlert aria-hidden="true" className="size-4 shrink-0 text-warning" />
+    <p className="text-body text-muted-foreground flex items-center gap-2">
+      <CircleAlert aria-hidden="true" className="text-warning size-4 shrink-0" />
       Application inventory could not be read: {error.message}
     </p>
     <Button onClick={onRetry} size="sm" type="button" variant="outline">
@@ -162,14 +162,14 @@ export const AppsPanel = ({ isEnabled, serial }: AppsPanelProps) => {
     }
     if (hasData && telemetry) {
       return (
-        <div className="flex @2xl:flex-row flex-col @2xl:items-center @2xl:gap-6 gap-4">
+        <div className="flex flex-col gap-4 @2xl:flex-row @2xl:items-center @2xl:gap-6">
           {/* Composition donut + legend */}
           <div className="flex items-center gap-4">
             <AppsCompositionDonut slices={slices} />
             <div className="flex flex-col gap-2">
               {slices.map((slice) => (
                 <div className="flex flex-col" key={slice.key}>
-                  <span className="flex items-center gap-1.5 text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground flex items-center gap-1.5">
                     <span
                       aria-hidden="true"
                       className="size-1.5 shrink-0 rounded-full"
@@ -178,7 +178,7 @@ export const AppsPanel = ({ isEnabled, serial }: AppsPanelProps) => {
                     {slice.label}
                   </span>
                   <span className="numeric flex items-baseline gap-1">
-                    <span className="font-semibold text-body text-foreground">{slice.count}</span>
+                    <span className="text-body text-foreground font-semibold">{slice.count}</span>
                     <span className="text-caption text-muted-foreground">
                       {formatPercent(usageRatio(slice.count, totalApps))}
                     </span>
@@ -189,7 +189,7 @@ export const AppsPanel = ({ isEnabled, serial }: AppsPanelProps) => {
           </div>
 
           {/* Right column: SDK health + footprint chips */}
-          <div className="flex flex-1 flex-col justify-between gap-3 border-border/50 border-t @2xl:border-t-0 @2xl:border-l @2xl:pt-0 pt-3 @2xl:pl-6">
+          <div className="border-border/50 flex flex-1 flex-col justify-between gap-3 border-t pt-3 @2xl:border-t-0 @2xl:border-l @2xl:pt-0 @2xl:pl-6">
             <SdkDistributionMeter buckets={telemetry.targetSdkDistribution} total={totalApps} />
             <div className="grid grid-cols-2 gap-2">
               <SpecChip icon={LayoutGrid} label="Installed" value={`${totalApps}`} />

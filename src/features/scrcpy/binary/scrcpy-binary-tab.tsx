@@ -73,7 +73,7 @@ const BinaryTabActions = ({
 }) => (
   <div className="flex flex-wrap items-center gap-2">
     <Button
-      className="h-8 gap-1.5 px-3 font-medium text-caption"
+      className="text-caption h-8 gap-1.5 px-3 font-medium"
       disabled={isCheckingUpdate || isInstalling}
       onClick={onCheckUpdate}
       size="sm"
@@ -89,7 +89,7 @@ const BinaryTabActions = ({
     </Button>
 
     <Button
-      className="h-8 gap-1.5 px-3 font-medium text-caption"
+      className="text-caption h-8 gap-1.5 px-3 font-medium"
       disabled={isInstalling}
       onClick={onInstall}
       size="sm"
@@ -108,7 +108,7 @@ const BinaryTabActions = ({
 
     {status?.source === "managed" && installed && onOpenFolder ? (
       <Button
-        className="h-8 gap-1.5 px-3 text-caption"
+        className="text-caption h-8 gap-1.5 px-3"
         onClick={onOpenFolder}
         size="sm"
         type="button"
@@ -121,7 +121,7 @@ const BinaryTabActions = ({
 
     {status?.source === "managed" && installed && onOpenUninstall ? (
       <Button
-        className="h-8 gap-1.5 px-3 text-caption text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        className="text-caption text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 px-3"
         disabled={isInstalling || isUninstalling}
         onClick={onOpenUninstall}
         size="sm"
@@ -152,7 +152,7 @@ const BinaryTabDetails = ({
   <CardContent className="flex flex-col gap-4">
     {isInstalling ? (
       <div className="flex flex-col gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 p-3.5">
-        <div className="flex items-center justify-between gap-2 font-medium text-caption text-sky-400">
+        <div className="text-caption flex items-center justify-between gap-2 font-medium text-sky-400">
           <span>{progress?.stage ?? "Downloading official Scrcpy release archive..."}</span>
           <span>{percent === null ? "In-flight" : `${percent}%`}</span>
         </div>
@@ -161,50 +161,50 @@ const BinaryTabDetails = ({
     ) : null}
 
     {isError ? (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-caption text-destructive">
+      <div className="border-destructive/30 bg-destructive/10 text-caption text-destructive rounded-lg border p-3">
         Could not read local scrcpy installation state. Try checking for updates or reinstalling.
       </div>
     ) : null}
 
-    <div className="grid @lg:grid-cols-3 grid-cols-1 gap-3">
-      <div className="flex flex-col gap-1 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-        <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+    <div className="grid grid-cols-1 gap-3 @lg:grid-cols-3">
+      <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
+        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Installed Version
         </span>
-        <span className="font-medium font-mono text-foreground text-mono">
+        <span className="text-foreground text-mono font-mono font-medium">
           {status?.installedVersion ?? (installed ? "Detected" : "Not installed")}
         </span>
       </div>
 
-      <div className="flex flex-col gap-1 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-        <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
+        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Latest Upstream
         </span>
-        <span className="font-medium font-mono text-foreground text-mono">
+        <span className="text-foreground text-mono font-mono font-medium">
           {status?.latestVersion ?? "—"}
         </span>
       </div>
 
-      <div className="flex flex-col gap-1 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-        <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
+        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Binary Source
         </span>
-        <span className="font-medium text-body text-foreground capitalize">
+        <span className="text-body text-foreground font-medium capitalize">
           {status?.source ?? "—"}
         </span>
       </div>
     </div>
 
     {status?.binaryPath ? (
-      <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-surface-raised/30 p-2.5">
-        <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+      <div className="border-border/60 bg-surface-raised/30 flex flex-col gap-1 rounded-lg border p-2.5">
+        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
           Executable Location
         </span>
-        <span className="truncate font-mono text-foreground text-mono-sm">{status.binaryPath}</span>
+        <span className="text-foreground text-mono-sm truncate font-mono">{status.binaryPath}</span>
       </div>
     ) : null}
 
-    <div className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-surface-raised/30 p-3 text-caption text-muted-foreground">
+    <div className="border-border/60 bg-surface-raised/30 text-caption text-muted-foreground flex items-start gap-2.5 rounded-lg border p-3">
       <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-emerald-400" />
       <span>
         Official Genymobile release archives are cryptographically verified using SHA-256 checksums
@@ -248,11 +248,11 @@ export const ScrcpyBinaryTab = ({
       {/* Binary Status & Management Card */}
       <Card className="border-border bg-surface shadow-none">
         <CardHeader className="pb-3">
-          <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-3">
+          <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center @lg:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <Package aria-hidden="true" className="size-4 text-foreground" />
-                <CardTitle className="font-semibold text-body text-foreground">
+                <Package aria-hidden="true" className="text-foreground size-4" />
+                <CardTitle className="text-body text-foreground font-semibold">
                   Official Genymobile Scrcpy Engine Manager
                 </CardTitle>
               </div>

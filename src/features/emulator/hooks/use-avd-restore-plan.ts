@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useEffect, useState } from "react";
 
 import { GetAvdRestorePlan } from "@/desktop/backend";

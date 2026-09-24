@@ -27,7 +27,7 @@ export const FileExplorerPlaces = ({
 
   return (
     <div className="flex flex-col gap-0.5 px-1.5 pt-1.5">
-      <p className="px-2 py-1 text-caption text-muted-foreground">Places</p>
+      <p className="text-caption text-muted-foreground px-2 py-1">Places</p>
       {FILE_EXPLORER_PLACES.map((place) => {
         const isActive = place.id === activeId;
         const dropProps = folderInternalDropProps(place.path, (destDir, names) => {
@@ -37,10 +37,10 @@ export const FileExplorerPlaces = ({
           <button
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-body transition-colors duration-90 ease-standard",
+              "text-body ease-standard flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors duration-90",
               "hover:bg-accent hover:text-accent-foreground",
               FE_DROP_OVER_CLASS,
-              isActive ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground"
+              isActive ? "bg-accent text-accent-foreground font-medium" : "text-muted-foreground"
             )}
             data-fe-drop-dir={place.path}
             disabled={disabled}
@@ -48,13 +48,10 @@ export const FileExplorerPlaces = ({
             onClick={() => {
               onNavigate(place.path);
             }}
-            onDragEnter={dropProps.onDragEnter}
-            onDragLeave={dropProps.onDragLeave}
-            onDragOver={dropProps.onDragOver}
-            onDrop={dropProps.onDrop}
+            {...dropProps}
             type="button"
           >
-            <Folder aria-hidden="true" className="size-4 shrink-0 text-primary" />
+            <Folder aria-hidden="true" className="text-primary size-4 shrink-0" />
             <span className="min-w-0 truncate">{place.label}</span>
           </button>
         );

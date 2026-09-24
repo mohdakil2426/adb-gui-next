@@ -34,17 +34,17 @@ export const TargetSdkDistributionMeter = ({
   const total = totalCount || 1;
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-foreground text-label">Target SDK Distribution</h3>
+          <h3 className="text-foreground text-label font-medium">Target SDK Distribution</h3>
           {buckets.legacy > 0 ? (
-            <span className="flex items-center gap-1 rounded bg-warning-muted px-1.5 py-0.5 font-medium text-caption text-warning">
+            <span className="bg-warning-muted text-caption text-warning flex items-center gap-1 rounded px-1.5 py-0.5 font-medium">
               <AlertTriangle aria-hidden="true" className="size-3" />
               {buckets.legacy} Legacy
             </span>
           ) : (
-            <span className="flex items-center gap-1 rounded bg-success-muted px-1.5 py-0.5 font-medium text-caption text-success">
+            <span className="bg-success-muted text-caption text-success flex items-center gap-1 rounded px-1.5 py-0.5 font-medium">
               <ShieldCheck aria-hidden="true" className="size-3" />
               Modern
             </span>
@@ -56,7 +56,7 @@ export const TargetSdkDistributionMeter = ({
       {/* Proportional segmented bar — scaleX fills, never width */}
       <div
         aria-label={`Target SDK distribution: ${buckets.modern} modern, ${buckets.standard} standard, ${buckets.legacy} legacy`}
-        className="flex h-3 w-full gap-px overflow-hidden rounded-full bg-surface-raised"
+        className="bg-surface-raised flex h-3 w-full gap-px overflow-hidden rounded-full"
       >
         {SEGMENTS.map((segment, index) => (
           <m.div
@@ -104,10 +104,10 @@ export const TargetSdkDistributionMeter = ({
                   aria-hidden="true"
                   className={cn("size-2 shrink-0 rounded-full", segment.colorClass)}
                 />
-                <span className="truncate text-caption text-muted-foreground">{segment.label}</span>
+                <span className="text-caption text-muted-foreground truncate">{segment.label}</span>
               </div>
               <div className="flex items-baseline gap-1 pt-0.5">
-                <span className="numeric font-semibold text-body text-foreground">{count}</span>
+                <span className="numeric text-body text-foreground font-semibold">{count}</span>
                 <span className="numeric text-caption text-muted-foreground">
                   ({formatPercent(usageRatio(count, total))})
                 </span>

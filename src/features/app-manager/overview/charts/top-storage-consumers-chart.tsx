@@ -22,23 +22,23 @@ export const TopStorageConsumersChart = ({
   const maxBytes = Math.max(...displayConsumers.map((c) => c.totalSize), 1);
 
   return (
-    <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex h-full flex-col justify-between gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <HardDrive aria-hidden="true" className="size-4 text-primary" />
-          <h3 className="font-medium text-foreground text-label">Top Space Consumers</h3>
+          <HardDrive aria-hidden="true" className="text-primary size-4" />
+          <h3 className="text-foreground text-label font-medium">Top Space Consumers</h3>
         </div>
-        <div className="flex items-center gap-3 text-caption text-muted-foreground">
+        <div className="text-caption text-muted-foreground flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary" />
+            <span aria-hidden="true" className="bg-primary size-1.5 rounded-full" />
             <span>App</span>
           </div>
           <div className="flex items-center gap-1">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary/60" />
+            <span aria-hidden="true" className="bg-primary/60 size-1.5 rounded-full" />
             <span>Data</span>
           </div>
           <div className="flex items-center gap-1">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-primary/30" />
+            <span aria-hidden="true" className="bg-primary/30 size-1.5 rounded-full" />
             <span>Cache</span>
           </div>
         </div>
@@ -46,7 +46,7 @@ export const TopStorageConsumersChart = ({
 
       <div className="flex flex-col gap-2.5">
         {displayConsumers.length === 0 ? (
-          <div className="flex h-32 items-center justify-center rounded-md border border-border border-dashed text-caption text-muted-foreground">
+          <div className="border-border text-caption text-muted-foreground flex h-32 items-center justify-center rounded-md border border-dashed">
             No storage telemetry available
           </div>
         ) : (
@@ -70,7 +70,7 @@ export const TopStorageConsumersChart = ({
             return (
               <m.button
                 animate={{ opacity: 1, x: 0 }}
-                className="group flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors hover:bg-surface-raised"
+                className="group hover:bg-surface-raised flex flex-col gap-1 rounded-md p-1.5 text-left transition-colors"
                 initial={shouldReduceMotion ? false : { opacity: 0, x: -8 }}
                 key={pkgName || index}
                 onClick={() => onSelectApp?.(pkgName)}
@@ -85,22 +85,22 @@ export const TopStorageConsumersChart = ({
                 }
                 type="button"
               >
-                <div className="flex items-center justify-between text-body">
+                <div className="text-body flex items-center justify-between">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="numeric font-semibold text-caption text-muted-foreground">
+                    <span className="numeric text-caption text-muted-foreground font-semibold">
                       #{index + 1}
                     </span>
-                    <span className="truncate font-medium text-foreground group-hover:text-primary">
+                    <span className="text-foreground group-hover:text-primary truncate font-medium">
                       {label}
                     </span>
                   </div>
-                  <span className="numeric font-semibold text-caption text-foreground">
+                  <span className="numeric text-caption text-foreground font-semibold">
                     {formatBytes(app.totalSize)}
                   </span>
                 </div>
 
                 {/* Segmented multi-tone bar; the track width is static, only the segments draw in */}
-                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+                <div className="bg-surface-raised h-2 w-full overflow-hidden rounded-full">
                   <m.div
                     animate={{ opacity: 1 }}
                     className="flex h-full overflow-hidden rounded-full"
@@ -113,17 +113,17 @@ export const TopStorageConsumersChart = ({
                     }
                   >
                     <div
-                      className="h-full bg-primary transition-colors group-hover:bg-primary/90"
+                      className="bg-primary group-hover:bg-primary/90 h-full transition-colors"
                       style={{ width: `${appPct}%` }}
                       title={`App: ${formatBytes(app.appSize)}`}
                     />
                     <div
-                      className="h-full bg-primary/60 transition-colors group-hover:bg-primary/70"
+                      className="bg-primary/60 group-hover:bg-primary/70 h-full transition-colors"
                       style={{ width: `${dataPct}%` }}
                       title={`Data: ${formatBytes(app.dataSize)}`}
                     />
                     <div
-                      className="h-full bg-primary/30 transition-colors group-hover:bg-primary/40"
+                      className="bg-primary/30 group-hover:bg-primary/40 h-full transition-colors"
                       style={{ width: `${cachePct}%` }}
                       title={`Cache: ${formatBytes(app.cacheSize)}`}
                     />

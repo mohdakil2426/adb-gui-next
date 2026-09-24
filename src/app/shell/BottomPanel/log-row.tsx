@@ -22,9 +22,15 @@ const LOG_LEVEL_CONFIG: Record<LogLevel, { colorVar: string; icon: string; label
  * `String.prototype.matchAll` clones the regex internally, so a global regex is
  * safe to reuse across rows without `lastIndex` bleed.
  */
-const HighlightedText = ({ searchRegex, text }: { searchRegex: RegExp | null; text: string }) => {
+const HighlightedText = ({
+  searchRegex,
+  text,
+}: {
+  searchRegex: RegExp | null;
+  text: string;
+}): React.ReactNode => {
   if (!searchRegex) {
-    return <>{text}</>;
+    return text;
   }
 
   const nodes: React.ReactNode[] = [];
@@ -41,7 +47,7 @@ const HighlightedText = ({ searchRegex, text }: { searchRegex: RegExp | null; te
     }
 
     nodes.push(
-      <mark className="rounded-sm bg-warning/30 px-0.5 text-inherit" key={`m-${start}`}>
+      <mark className="bg-warning/30 rounded-sm px-0.5 text-inherit" key={`m-${start}`}>
         {matched}
       </mark>
     );
@@ -52,38 +58,34 @@ const HighlightedText = ({ searchRegex, text }: { searchRegex: RegExp | null; te
     nodes.push(<React.Fragment key={`t-${lastIndex}`}>{text.slice(lastIndex)}</React.Fragment>);
   }
 
-  return <>{nodes}</>;
+  return nodes;
 };
 
-export const LogRow = memo(function LogRow({
-  log,
-  searchRegex,
-}: {
-  log: LogEntry;
-  searchRegex: RegExp | null;
-}) {
+const LogRowImpl = ({ log, searchRegex }: { log: LogEntry; searchRegex: RegExp | null }) => {
   const config = LOG_LEVEL_CONFIG[log.type];
 
   return (
-    <div className="flex gap-2 px-3 py-0.5 transition-colors hover:bg-accent/20">
+    <div className="hover:bg-accent/20 flex gap-2 px-3 py-0.5 transition-colors">
       <span
-        className="shrink-0 select-none font-mono text-[11px] leading-5 opacity-50"
+        className="shrink-0 font-mono text-[11px] leading-5 opacity-50 select-none"
         style={{ color: "var(--terminal-fg)" }}
       >
         {log.timestamp}
       </span>
       <span
-        className="w-16 shrink-0 select-none font-mono font-semibold text-[11px] leading-5"
+        className="w-16 shrink-0 font-mono text-[11px] leading-5 font-semibold select-none"
         style={{ color: config.colorVar }}
       >
         {config.icon} {config.label}
       </span>
       <span
-        className="min-w-0 break-all font-mono text-[12px] leading-5"
+        className="min-w-0 font-mono text-[12px] leading-5 break-all"
         style={{ color: "var(--terminal-fg)" }}
       >
         <HighlightedText searchRegex={searchRegex} text={log.message} />
       </span>
     </div>
   );
-});
+};
+
+export const LogRow = memo(LogRowImpl);

@@ -17,13 +17,13 @@ export const AttributionFooter = () => {
   const active = activeProviders.filter((p) => p in PROVIDER_LINKS);
 
   return (
-    <div className="pt-2 text-center text-caption text-muted-foreground">
+    <div className="text-caption text-muted-foreground pt-2 text-center">
       Powered by{" "}
       {active.map((p, i) => (
         <span key={p}>
           {i > 0 && (i === active.length - 1 ? " & " : ", ")}
           <button
-            className="cursor-pointer border-none bg-transparent p-0 underline-offset-2 transition-colors duration-90 ease-standard hover:text-foreground hover:underline"
+            className="ease-standard hover:text-foreground cursor-pointer border-none bg-transparent p-0 underline-offset-2 transition-colors duration-90 hover:underline"
             onClick={() => {
               const link = PROVIDER_LINKS[p as keyof typeof PROVIDER_LINKS];
               if (link) {

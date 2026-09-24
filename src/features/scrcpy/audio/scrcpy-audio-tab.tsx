@@ -42,8 +42,8 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Volume2 aria-hidden="true" className="size-4 text-foreground" />
-              <CardTitle className="font-semibold text-body text-foreground">
+              <Volume2 aria-hidden="true" className="text-foreground size-4" />
+              <CardTitle className="text-body text-foreground font-semibold">
                 Audio Forwarding Engine
               </CardTitle>
             </div>
@@ -66,12 +66,12 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
-          <div className="grid @lg:grid-cols-2 grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
             {/* Audio Enable / Disable Toggle Row */}
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+            <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
               <div className="min-w-0">
                 <Label
-                  className="font-medium text-body text-foreground"
+                  className="text-body text-foreground font-medium"
                   htmlFor="audio-forward-toggle"
                 >
                   Forward Device Audio
@@ -88,7 +88,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
             </div>
 
             {/* Audio Capture Source */}
-            <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+            <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3">
               <Label htmlFor="scrcpy-audio-source">Audio Capture Source</Label>
               <Select
                 disabled={options.noAudio}
@@ -115,8 +115,8 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
             </div>
           </div>
 
-          <div className="flex items-start gap-2.5 rounded-lg border border-border/60 bg-surface-raised/30 p-3 text-caption text-muted-foreground">
-            <HelpCircle aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+          <div className="border-border/60 bg-surface-raised/30 text-caption text-muted-foreground flex items-start gap-2.5 rounded-lg border p-3">
+            <HelpCircle aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
             <span>
               Audio forwarding uses the official Scrcpy audio server subsystem. Audio is forwarded
               using high-quality OPUS codec on Android 11+. For Android 10 or earlier, audio is
@@ -131,14 +131,14 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <FileVideo aria-hidden="true" className="size-4 text-foreground" />
-              <CardTitle className="font-semibold text-body text-foreground">
+              <FileVideo aria-hidden="true" className="text-foreground size-4" />
+              <CardTitle className="text-body text-foreground font-semibold">
                 Mirror Recording Studio
               </CardTitle>
             </div>
             {isRecording ? (
               <Badge
-                className="gap-1 border-rose-500/30 bg-rose-500/10 text-caption text-rose-400"
+                className="text-caption gap-1 border-rose-500/30 bg-rose-500/10 text-rose-400"
                 variant="outline"
               >
                 <span className="size-1.5 animate-pulse rounded-full bg-rose-500" />
@@ -160,9 +160,9 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="record-auto-toggle">
+              <Label className="text-body text-foreground font-medium" htmlFor="record-auto-toggle">
                 Auto-Record on Mirror Start
               </Label>
               <p className="text-caption text-muted-foreground">
@@ -183,8 +183,8 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
           </div>
 
           {isRecording ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-border/80 bg-surface-raised/30 p-3.5">
-              <div className="grid @lg:grid-cols-2 grid-cols-1 gap-3">
+            <div className="border-border/80 bg-surface-raised/30 flex flex-col gap-3 rounded-lg border p-3.5">
+              <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
                 {/* Format Selector */}
                 <div className="flex flex-col gap-1.5">
                   <Label htmlFor="scrcpy-record-format">Container Format</Label>
@@ -216,7 +216,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
                   <Label>Output File Destination</Label>
                   <div className="flex items-center gap-2">
                     <Button
-                      className="h-9 gap-1.5 font-medium text-caption"
+                      className="text-caption h-9 gap-1.5 font-medium"
                       onClick={() => {
                         void handlePickRecordPath();
                       }}
@@ -232,7 +232,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
                       <span>Browse File</span>
                     </Button>
                     <Button
-                      className="h-9 px-2 text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground h-9 px-2"
                       onClick={() => onOptionsChange({ recordPath: null })}
                       size="sm"
                       type="button"
@@ -247,11 +247,11 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
 
               {/* Active Path Box */}
               {options.recordPath ? (
-                <div className="flex flex-col gap-1 rounded border border-border/60 bg-surface p-2.5">
-                  <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+                <div className="border-border/60 bg-surface flex flex-col gap-1 rounded border p-2.5">
+                  <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
                     Target Output File
                   </span>
-                  <span className="truncate font-mono text-foreground text-mono-sm">
+                  <span className="text-foreground text-mono-sm truncate font-mono">
                     {options.recordPath}
                   </span>
                 </div>
@@ -260,7 +260,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
               <p className="text-caption text-muted-foreground">
                 Tip: If multiple devices are selected simultaneously, scrcpy will automatically
                 append the device serial (e.g.{" "}
-                <code className="rounded bg-surface px-1 py-0.5 font-mono text-mono-sm">
+                <code className="bg-surface text-mono-sm rounded px-1 py-0.5 font-mono">
                   scrcpy-recording-SERIAL.mp4
                 </code>
                 ) to avoid file collisions.

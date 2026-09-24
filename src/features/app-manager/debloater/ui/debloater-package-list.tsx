@@ -137,7 +137,7 @@ export const DebloaterPackageList = ({
         aria-label="System packages"
         className={cn(
           PACKAGE_LIST_VIEWPORT,
-          "select-none overflow-y-auto overflow-x-hidden rounded-lg border border-border bg-surface"
+          "border-border bg-surface overflow-x-hidden overflow-y-auto rounded-lg border select-none"
         )}
         ref={listRef}
       >
@@ -202,7 +202,7 @@ export const DebloaterPackageList = ({
 
           {onSelectAllRecommended ? (
             <Button
-              className="gap-1.5 border-success/30 text-caption text-success hover:bg-success-muted hover:text-success"
+              className="border-success/30 text-caption text-success hover:bg-success-muted hover:text-success gap-1.5"
               disabled={filteredPackages.length === 0}
               onClick={onSelectAllRecommended}
               size="sm"

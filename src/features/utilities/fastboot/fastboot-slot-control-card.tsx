@@ -47,10 +47,10 @@ export const FastbootSlotControlCard = ({
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 font-semibold text-title">
-          <Zap className="size-4.5 text-primary" />
+        <CardTitle className="text-title flex items-center gap-2 font-semibold">
+          <Zap className="text-primary size-4.5" />
           Bootloader Slot Controls & Fastboot Power
         </CardTitle>
         <CardDescription className="text-body text-muted-foreground">
@@ -61,7 +61,7 @@ export const FastbootSlotControlCard = ({
 
       <CardContent className="flex flex-col gap-4 pt-1">
         {/* Row 1: Slot Switchers */}
-        <div className="grid @lg:grid-cols-2 @xs:grid-cols-1 gap-3">
+        <div className="grid gap-3 @xs:grid-cols-1 @lg:grid-cols-2">
           <Button
             className="h-14 justify-start gap-3 p-3 text-left"
             disabled={!isFastboot || isGlobalLoading}
@@ -69,9 +69,9 @@ export const FastbootSlotControlCard = ({
             type="button"
             variant="outline"
           >
-            <Layers className="size-5 text-muted-foreground" data-icon="inline-start" />
+            <Layers className="text-muted-foreground size-5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Set Active Slot _A</span>
+              <span className="text-body text-foreground font-semibold">Set Active Slot _A</span>
               <span className="text-caption text-muted-foreground">fastboot --set-active=a</span>
             </div>
           </Button>
@@ -83,16 +83,16 @@ export const FastbootSlotControlCard = ({
             type="button"
             variant="outline"
           >
-            <Layers className="size-5 text-muted-foreground" data-icon="inline-start" />
+            <Layers className="text-muted-foreground size-5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Set Active Slot _B</span>
+              <span className="text-body text-foreground font-semibold">Set Active Slot _B</span>
               <span className="text-caption text-muted-foreground">fastboot --set-active=b</span>
             </div>
           </Button>
         </div>
 
         {/* Row 2: Fastboot Reboots */}
-        <div className="grid @lg:grid-cols-3 @xs:grid-cols-2 gap-3 border-border/50 border-t pt-3">
+        <div className="border-border/50 grid gap-3 border-t pt-3 @xs:grid-cols-2 @lg:grid-cols-3">
           <Button
             className="h-12 justify-start gap-3 p-3 text-left"
             disabled={!isFastboot || isGlobalLoading}
@@ -100,9 +100,9 @@ export const FastbootSlotControlCard = ({
             type="button"
             variant="outline"
           >
-            <RotateCw className="size-4.5 text-muted-foreground" data-icon="inline-start" />
+            <RotateCw className="text-muted-foreground size-4.5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Reboot System</span>
+              <span className="text-body text-foreground font-semibold">Reboot System</span>
               <span className="text-caption text-muted-foreground">Normal boot</span>
             </div>
           </Button>
@@ -114,9 +114,9 @@ export const FastbootSlotControlCard = ({
             type="button"
             variant="outline"
           >
-            <Zap className="size-4.5 text-muted-foreground" data-icon="inline-start" />
+            <Zap className="text-muted-foreground size-4.5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Reboot Bootloader</span>
+              <span className="text-body text-foreground font-semibold">Reboot Bootloader</span>
               <span className="text-caption text-muted-foreground">Restart fastboot</span>
             </div>
           </Button>
@@ -128,9 +128,9 @@ export const FastbootSlotControlCard = ({
             type="button"
             variant="outline"
           >
-            <Zap className="size-4.5 text-warning" data-icon="inline-start" />
+            <Zap className="text-warning size-4.5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Reboot FastbootD</span>
+              <span className="text-body text-foreground font-semibold">Reboot FastbootD</span>
               <span className="text-caption text-muted-foreground">Userspace flasher</span>
             </div>
           </Button>

@@ -14,6 +14,7 @@ import { Badge } from "@/shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
+
 interface EmulatorRestoreStudioTabProps {
   avd: backend.AvdSummary | null;
   isLoadingPlan: boolean;
@@ -57,18 +58,18 @@ const RestorePlanContent = ({
 
           return (
             <div
-              className="flex @sm:flex-row flex-col @sm:items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-raised/40 p-3.5"
+              className="border-border/60 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5 @sm:flex-row @sm:items-center"
               key={entry.originalPath}
             >
               <div className="flex min-w-0 items-center gap-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-surface text-muted-foreground">
+                <div className="border-border/60 bg-surface text-muted-foreground flex size-8 shrink-0 items-center justify-center rounded-lg border">
                   <FileCode aria-hidden="true" className="size-4" />
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <span className="font-medium font-mono text-body text-foreground">
+                  <span className="text-body text-foreground font-mono font-medium">
                     {fileName}
                   </span>
-                  <span className="truncate font-mono text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground truncate font-mono">
                     {entry.originalPath}
                   </span>
                 </div>
@@ -83,7 +84,7 @@ const RestorePlanContent = ({
     );
   }
   return (
-    <div className="rounded-lg border border-border/60 bg-surface-raised/40 p-4 text-center">
+    <div className="border-border/60 bg-surface-raised/40 rounded-lg border p-4 text-center">
       <p className="text-body text-muted-foreground">
         No stock backup archives found for this AVD.
       </p>
@@ -100,7 +101,7 @@ export const EmulatorRestoreStudioTab = ({
 }: EmulatorRestoreStudioTabProps) => {
   if (!avd) {
     return (
-      <div className="rounded-lg border border-border bg-surface-raised/40 p-8 text-center">
+      <div className="border-border bg-surface-raised/40 rounded-lg border p-8 text-center">
         <p className="text-body text-muted-foreground">
           Select an AVD to inspect restore candidates and backup state.
         </p>
@@ -114,14 +115,14 @@ export const EmulatorRestoreStudioTab = ({
   return (
     <div className="flex flex-col gap-5">
       {/* 1. Backup & Pristine Integrity Status Banner */}
-      <Card className="@container rounded-xl border-border bg-surface py-4 shadow-none">
+      <Card className="border-border bg-surface @container rounded-xl py-4 shadow-none">
         <CardHeader className="gap-0 px-4.5 pb-3">
           <div className="flex items-center justify-between">
             <CardTitle
               as="h2"
-              className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+              className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
             >
-              <History aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <History aria-hidden="true" className="text-muted-foreground size-3.5" />
               Backup & Snapshot State Integrity
             </CardTitle>
 
@@ -146,12 +147,12 @@ export const EmulatorRestoreStudioTab = ({
             )}
           >
             {avd.hasBackups ? (
-              <CircleCheck aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-success" />
+              <CircleCheck aria-hidden="true" className="text-success mt-0.5 size-5 shrink-0" />
             ) : (
-              <Info aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+              <Info aria-hidden="true" className="text-muted-foreground mt-0.5 size-5 shrink-0" />
             )}
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="font-semibold text-body text-foreground">
+              <p className="text-body text-foreground font-semibold">
                 {avd.hasBackups
                   ? "Stock Snapshot & Ramdisk Backups Verified"
                   : "No Stock Backup Created Yet"}
@@ -164,9 +165,9 @@ export const EmulatorRestoreStudioTab = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-border/40 border-t pt-3">
+          <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-t pt-3">
             <div className="flex min-w-0 flex-col">
-              <span className="font-medium text-body text-foreground">
+              <span className="text-body text-foreground font-medium">
                 {getPlanSourceLabel(isLoadingPlan, hasEntries, restorePlan?.source)}
               </span>
               <span className="text-caption text-muted-foreground">
@@ -191,13 +192,13 @@ export const EmulatorRestoreStudioTab = ({
       </Card>
 
       {/* 2. System Files Modified & Rollback Plan Table */}
-      <Card className="@container rounded-xl border-border bg-surface py-4 shadow-none">
+      <Card className="border-border bg-surface @container rounded-xl py-4 shadow-none">
         <CardHeader className="gap-0 px-4.5 pb-3">
           <CardTitle
             as="h2"
-            className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+            className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
           >
-            <HardDrive aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <HardDrive aria-hidden="true" className="text-muted-foreground size-3.5" />
             Archived Stock System Files
           </CardTitle>
         </CardHeader>

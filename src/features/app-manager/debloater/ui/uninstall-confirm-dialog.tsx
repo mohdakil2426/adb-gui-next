@@ -87,27 +87,27 @@ export const UninstallConfirmDialog = ({
             <div className="flex flex-col gap-3">
               <p className="text-body">
                 These packages are removed from{" "}
-                <span className="font-mono text-foreground text-mono">
+                <span className="text-foreground text-mono font-mono">
                   {selectedSerial ?? "the selected device"}
                 </span>
                 . Reinstall them from the Install tab or the Marketplace if you need them back.
               </p>
-              <div className="max-h-40 overflow-y-auto rounded-md border border-border bg-muted p-2">
+              <div className="border-border bg-muted max-h-40 overflow-y-auto rounded-md border p-2">
                 {[...selectedPackages].map((name) => {
                   const pkg = packages.find((entry) => entry.name === name);
                   return (
                     <div className="flex min-w-0 items-baseline gap-2" key={name}>
-                      <span className="min-w-0 flex-1 truncate text-body text-foreground">
+                      <span className="text-body text-foreground min-w-0 flex-1 truncate">
                         {pkg?.label || name}
                       </span>
-                      <span className="min-w-0 flex-1 truncate font-mono text-mono-sm text-muted-foreground">
+                      <span className="text-mono-sm text-muted-foreground min-w-0 flex-1 truncate font-mono">
                         {name}
                       </span>
                     </div>
                   );
                 })}
               </div>
-              <p className="rounded-md border border-warning/30 bg-warning-muted px-3 py-2 text-caption text-foreground">
+              <p className="border-warning/30 bg-warning-muted text-caption text-foreground rounded-md border px-3 py-2">
                 <span className="font-semibold">Disclaimer:</span> ADB GUI Next is not responsible
                 for system instability, bootloops or data loss caused by uninstalling packages.
               </p>

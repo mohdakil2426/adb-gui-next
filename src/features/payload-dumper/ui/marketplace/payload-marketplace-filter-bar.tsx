@@ -57,7 +57,7 @@ export const PayloadMarketplaceFilterBar = ({
         return (
           <Button
             className={cn(
-              "h-8 rounded-full px-3.5 font-medium text-caption transition-colors",
+              "text-caption h-8 rounded-full px-3.5 font-medium transition-colors",
               isSelected
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "bg-surface-raised/60 text-muted-foreground hover:bg-surface-raised hover:text-foreground"
@@ -71,7 +71,7 @@ export const PayloadMarketplaceFilterBar = ({
             <span>{chip.label}</span>
             <span
               className={cn(
-                "ml-1.5 rounded-full px-1.5 py-0.2 font-mono text-[10px]",
+                "py-0.2 ml-1.5 rounded-full px-1.5 font-mono text-[10px]",
                 isSelected
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-muted text-muted-foreground"
@@ -87,11 +87,11 @@ export const PayloadMarketplaceFilterBar = ({
     {/* Search & Dropdown Filters Bar */}
     <div className="flex flex-wrap items-center justify-between gap-3">
       {/* Left: Search Bar */}
-      <div className="relative min-w-[260px] max-w-sm flex-1 sm:flex-initial">
-        <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <div className="relative max-w-sm min-w-[260px] flex-1 sm:flex-initial">
+        <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
         <Input
           aria-label="Search device model, codename, or SoC"
-          className="h-8.5 pr-8 pl-8 text-body"
+          className="text-body h-8.5 pr-8 pl-8"
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search device model, codename (e.g. husky), SoC…"
           value={searchQuery}
@@ -99,7 +99,7 @@ export const PayloadMarketplaceFilterBar = ({
         {searchQuery ? (
           <Button
             aria-label="Clear search"
-            className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 size-6 -translate-y-1/2 rounded-full p-1"
             onClick={() => onSearchChange("")}
             size="icon"
             type="button"
@@ -117,14 +117,14 @@ export const PayloadMarketplaceFilterBar = ({
             <Button
               aria-expanded={isModelOpen}
               aria-haspopup="listbox"
-              className="h-8.5 min-w-[200px] max-w-[280px] justify-between gap-2 border-border-control bg-surface-raised/40 px-3 font-normal text-body hover:bg-surface-raised"
+              className="border-border-control bg-surface-raised/40 text-body hover:bg-surface-raised h-8.5 max-w-[280px] min-w-[200px] justify-between gap-2 px-3 font-normal"
               size="sm"
               type="button"
               variant="outline"
             >
               <div className="flex min-w-0 items-center gap-2 truncate">
                 <Smartphone
-                  className="size-3.5 shrink-0 text-muted-foreground"
+                  className="text-muted-foreground size-3.5 shrink-0"
                   data-icon="inline-start"
                 />
                 <span className="truncate">
@@ -141,7 +141,7 @@ export const PayloadMarketplaceFilterBar = ({
                 <CommandEmpty>No device models found.</CommandEmpty>
                 <CommandGroup heading="Device Models">
                   <CommandItem
-                    className="flex items-center justify-between text-body"
+                    className="text-body flex items-center justify-between"
                     key="all-models"
                     onSelect={() => {
                       onSelectModelId("all");
@@ -152,20 +152,20 @@ export const PayloadMarketplaceFilterBar = ({
                     <div className="flex min-w-0 items-center gap-2 truncate">
                       <Check
                         className={cn(
-                          "size-3.5 shrink-0 text-primary",
+                          "text-primary size-3.5 shrink-0",
                           selectedModelId === "all" ? "opacity-100" : "opacity-0"
                         )}
                       />
                       <span
                         className={cn(
                           "truncate",
-                          selectedModelId === "all" && "font-medium text-foreground"
+                          selectedModelId === "all" && "text-foreground font-medium"
                         )}
                       >
                         All Models
                       </span>
                     </div>
-                    <span className="ml-2 shrink-0 font-mono text-[10px] text-muted-foreground">
+                    <span className="text-muted-foreground ml-2 shrink-0 font-mono text-[10px]">
                       {devices.length}
                     </span>
                   </CommandItem>
@@ -174,7 +174,7 @@ export const PayloadMarketplaceFilterBar = ({
                     const isSelected = selectedModelId === device.id;
                     return (
                       <CommandItem
-                        className="flex items-center justify-between text-body"
+                        className="text-body flex items-center justify-between"
                         key={device.id}
                         onSelect={() => {
                           onSelectModelId(device.id);
@@ -185,7 +185,7 @@ export const PayloadMarketplaceFilterBar = ({
                         <div className="flex min-w-0 items-center gap-2 truncate">
                           <Check
                             className={cn(
-                              "size-3.5 shrink-0 text-primary",
+                              "text-primary size-3.5 shrink-0",
                               isSelected ? "opacity-100" : "opacity-0"
                             )}
                           />
@@ -193,13 +193,13 @@ export const PayloadMarketplaceFilterBar = ({
                             <span className={cn("truncate", isSelected && "font-medium")}>
                               {device.name}
                             </span>
-                            <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+                            <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
                               ({device.codename})
                             </span>
                           </div>
                         </div>
                         {device.releaseYear ? (
-                          <span className="ml-2 shrink-0 font-mono text-[10px] text-muted-foreground">
+                          <span className="text-muted-foreground ml-2 shrink-0 font-mono text-[10px]">
                             {device.releaseYear}
                           </span>
                         ) : null}
@@ -214,7 +214,7 @@ export const PayloadMarketplaceFilterBar = ({
 
         {selectedModelId === "all" ? null : (
           <Button
-            className="h-8.5 px-2.5 text-caption text-muted-foreground hover:text-foreground"
+            className="text-caption text-muted-foreground hover:text-foreground h-8.5 px-2.5"
             onClick={() => onSelectModelId("all")}
             size="sm"
             type="button"

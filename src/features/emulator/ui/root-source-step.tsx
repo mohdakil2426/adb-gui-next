@@ -42,6 +42,9 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
 
   useEffect(() => {
     let cancelled = false;
+    if (reloadToken < 0) {
+      return;
+    }
     const loadRelease = async () => {
       try {
         const release = await FetchMagiskStableRelease();
@@ -93,13 +96,13 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
     <div className="flex flex-col gap-4">
       <div>
         <h3 className="text-title">Select Magisk source (Autopilot)</h3>
-        <p className="mt-0.5 text-body text-muted-foreground">
+        <p className="text-body text-muted-foreground mt-0.5">
           Magisk is what gives the emulator root access. Autopilot patches the boot image for you.
         </p>
       </div>
 
       <Alert className="border-warning/30 bg-warning-muted">
-        <TriangleAlert aria-hidden="true" className="size-4 text-warning" />
+        <TriangleAlert aria-hidden="true" className="text-warning size-4" />
         <AlertTitle>Autopilot needs Magisk v25.2 or older</AlertTitle>
         <AlertDescription>
           Newer Magisk releases (v26 and above) changed their internal layout and cannot be patched
@@ -125,8 +128,8 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
         >
           <Download aria-hidden="true" />
           <span className="min-w-0">
-            <span className="block font-medium text-body">Download</span>
-            <span className="block text-caption text-muted-foreground">
+            <span className="text-body block font-medium">Download</span>
+            <span className="text-caption text-muted-foreground block">
               Official stable from GitHub
             </span>
           </span>
@@ -139,8 +142,8 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
         >
           <FolderOpen aria-hidden="true" />
           <span className="min-w-0">
-            <span className="block font-medium text-body">Local file</span>
-            <span className="block text-caption text-muted-foreground">Pick an .apk or .zip</span>
+            <span className="text-body block font-medium">Local file</span>
+            <span className="text-caption text-muted-foreground block">Pick an .apk or .zip</span>
           </span>
         </ToggleGroupItem>
       </ToggleGroup>
@@ -148,7 +151,7 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
       {mode === "download" && (
         <div className="flex flex-col gap-3">
           {fetchState.status === "loading" && (
-            <output className="flex items-center gap-2 text-body text-muted-foreground">
+            <output className="text-body text-muted-foreground flex items-center gap-2">
               <Loader2 aria-hidden="true" className="size-4 animate-spin" />
               Fetching the latest stable release…
             </output>
@@ -183,7 +186,7 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
             <>
               <button
                 className={cn(
-                  "flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2.5 text-left transition-colors duration-90 ease-standard",
+                  "ease-standard flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2.5 text-left transition-colors duration-90",
                   source?.type === "stable"
                     ? "border-primary bg-primary-muted"
                     : "border-border bg-surface-raised hover:border-border-strong"
@@ -196,24 +199,24 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="flex items-center gap-2">
-                    <span className="font-medium text-body text-foreground">
+                    <span className="text-body text-foreground font-medium">
                       Magisk {fetchState.release.tag}
                     </span>
                     <Badge variant="info">Automated</Badge>
                   </span>
-                  <span className="numeric truncate text-caption text-muted-foreground">
+                  <span className="numeric text-caption text-muted-foreground truncate">
                     {fetchState.release.assetName} · {formatBytes(fetchState.release.size)} ·{" "}
                     {formatDisplayDate(fetchState.release.publishedAt)}
                   </span>
                   {fetchState.release.sha256 ? (
-                    <span className="truncate font-mono text-mono-sm text-muted-foreground">
+                    <span className="text-mono-sm text-muted-foreground truncate font-mono">
                       sha256 {fetchState.release.sha256.slice(0, 16)}…
                     </span>
                   ) : null}
                 </span>
 
                 {source?.type === "stable" ? (
-                  <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                  <CircleCheck aria-hidden="true" className="text-primary size-4 shrink-0" />
                 ) : null}
               </button>
               <p className="text-caption text-muted-foreground">
@@ -243,19 +246,19 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
             <span className="min-w-0 text-left">
               {source?.type === "local" ? (
                 <>
-                  <span className="block font-medium text-body text-foreground">
+                  <span className="text-body text-foreground block font-medium">
                     {source.path.split(/[/\\]/u).pop()}
                   </span>
-                  <span className="block truncate font-mono text-mono-sm text-muted-foreground">
+                  <span className="text-mono-sm text-muted-foreground block truncate font-mono">
                     {source.path}
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="block font-medium text-body text-foreground">
+                  <span className="text-body text-foreground block font-medium">
                     Click to select a file
                   </span>
-                  <span className="block text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground block">
                     Supports .apk and .zip packages
                   </span>
                 </>

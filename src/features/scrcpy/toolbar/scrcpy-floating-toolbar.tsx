@@ -1,7 +1,7 @@
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { Maximize2, Minus, Pin, PinOff, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -32,7 +32,7 @@ const getInitialParams = () => {
 };
 
 export const ScrcpyFloatingToolbar = () => {
-  const [initialParams] = useState(getInitialParams);
+  const initialParams = useMemo(() => getInitialParams(), []);
   const serialRef = useRef<string>(initialParams.serial);
   const [mode, setMode] = useState<backend.ToolbarMode>(initialParams.mode);
   const [side, setSide] = useState<backend.ToolbarSide>("left");
@@ -171,11 +171,11 @@ export const ScrcpyFloatingToolbar = () => {
   if (isMinimized) {
     return (
       <div
-        className="flex size-10 cursor-move items-center justify-center rounded-xl border border-border/80 bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-colors hover:bg-surface-raised dark:bg-[#1e1f22]/95"
+        className="border-border/80 hover:bg-surface-raised flex size-10 cursor-move items-center justify-center rounded-xl border bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-colors dark:bg-[#1e1f22]/95"
         data-tauri-drag-region
       >
         <button
-          className="flex size-7 items-center justify-center rounded text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground flex size-7 items-center justify-center rounded"
           onClick={() => handleToggleMinimize(false)}
           title="Expand Toolbar"
           type="button"
@@ -187,16 +187,16 @@ export const ScrcpyFloatingToolbar = () => {
   }
 
   return (
-    <div className="relative flex select-none items-start gap-2 bg-transparent p-0">
+    <div className="relative flex items-start gap-2 bg-transparent p-0 select-none">
       {/* Main Action Strip */}
-      <div className="flex w-[52px] flex-col items-center gap-1 rounded-xl border border-border/80 bg-[#f3f4f6]/95 p-1.5 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
+      <div className="border-border/80 flex w-[52px] flex-col items-center gap-1 rounded-xl border bg-[#f3f4f6]/95 p-1.5 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
         {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
         <div
-          className="flex w-full cursor-move items-center justify-between border-border/40 border-b px-1 pb-1.5 text-muted-foreground"
+          className="border-border/40 text-muted-foreground flex w-full cursor-move items-center justify-between border-b px-1 pb-1.5"
           data-tauri-drag-region
         >
           <button
-            className="flex size-5 items-center justify-center rounded hover:bg-muted hover:text-foreground"
+            className="hover:bg-muted hover:text-foreground flex size-5 items-center justify-center rounded"
             onClick={() => handleToggleMinimize(true)}
             title="Minimize"
             type="button"
@@ -226,7 +226,7 @@ export const ScrcpyFloatingToolbar = () => {
           </button>
 
           <button
-            className="flex size-5 items-center justify-center rounded hover:bg-destructive/20 hover:text-destructive"
+            className="hover:bg-destructive/20 hover:text-destructive flex size-5 items-center justify-center rounded"
             onClick={handleClose}
             title="Close Toolbar"
             type="button"

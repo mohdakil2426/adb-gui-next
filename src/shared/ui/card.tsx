@@ -5,7 +5,7 @@ import { cn } from "@/shared/utils/cn";
 const Card = ({ className, ...props }: React.ComponentProps<"div">) => (
   <div
     className={cn(
-      "flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground shadow-sm",
+      "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
       className
     )}
     data-slot="card"
@@ -39,7 +39,7 @@ const CardTitle = <T extends CardTitleElement = "h2">({
 
   return (
     <Comp
-      className={cn("font-semibold leading-none", className)}
+      className={cn("leading-none font-semibold", className)}
       data-slot="card-title"
       {...props}
     />

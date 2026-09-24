@@ -85,19 +85,19 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
   const total = categories.reduce((sum, c) => sum + c.count, 0) || 1;
 
   return (
-    <div className="@container flex flex-col justify-between rounded-lg border border-border bg-surface p-4">
+    <div className="border-border bg-surface @container flex flex-col justify-between rounded-lg border p-4">
       <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <FileCode2 className="size-4 text-muted-foreground" />
-          <h3 className="font-semibold text-body text-foreground">Category Spectrum</h3>
+          <FileCode2 className="text-muted-foreground size-4" />
+          <h3 className="text-body text-foreground font-semibold">Category Spectrum</h3>
         </div>
-        <span className="numeric font-mono text-caption text-muted-foreground">
+        <span className="numeric text-caption text-muted-foreground font-mono">
           {total.toLocaleString()} categorized
         </span>
       </div>
 
       {/* Proportional Segmented Bar */}
-      <div className="my-3 flex h-3.5 w-full overflow-hidden rounded-full border border-border/50 bg-surface-raised">
+      <div className="border-border/50 bg-surface-raised my-3 flex h-3.5 w-full overflow-hidden rounded-full border">
         {categories.map((cat) => {
           const pct = (cat.count / total) * 100;
           return (
@@ -115,27 +115,27 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
       </div>
 
       {/* Segment Legend Grid */}
-      <div className="grid @sm:grid-cols-3 grid-cols-2 gap-2 pt-1">
+      <div className="grid grid-cols-2 gap-2 pt-1 @sm:grid-cols-3">
         {categories.map((cat) => {
           const Icon = cat.icon;
           const ratio = usageRatio(cat.count, total);
           const pct = formatPercent(ratio);
           return (
             <div
-              className="flex flex-col justify-between rounded-md border border-border/40 bg-surface-raised/40 p-2"
+              className="border-border/40 bg-surface-raised/40 flex flex-col justify-between rounded-md border p-2"
               key={cat.key}
             >
               <div className="flex min-w-0 items-center gap-1.5">
-                <Icon className="size-3 shrink-0 text-muted-foreground" />
-                <span className="truncate font-medium text-caption text-foreground">
+                <Icon className="text-muted-foreground size-3 shrink-0" />
+                <span className="text-caption text-foreground truncate font-medium">
                   {cat.label}
                 </span>
               </div>
               <div className="flex items-baseline justify-between pt-1">
-                <span className="numeric font-mono text-caption text-muted-foreground">
+                <span className="numeric text-caption text-muted-foreground font-mono">
                   {cat.count.toLocaleString()}
                 </span>
-                <span className="numeric font-bold font-mono text-caption text-foreground">
+                <span className="numeric text-caption text-foreground font-mono font-bold">
                   {pct}
                 </span>
               </div>

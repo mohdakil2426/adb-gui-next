@@ -50,26 +50,26 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
     typeof build.fileSize === "number" && build.fileSize > 0 ? formatBytes(build.fileSize) : "—";
 
   return (
-    <Card className="rounded-xl border-border bg-surface p-4 shadow-none transition-colors duration-150 hover:border-border-strong">
+    <Card className="border-border bg-surface hover:border-border-strong rounded-xl p-4 shadow-none transition-colors duration-150">
       <CardContent className="flex flex-col gap-3 p-0">
         {/* Build Header Row */}
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-2">
+        <div className="flex flex-col gap-2 @lg:flex-row @lg:items-center @lg:justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-body text-foreground">{build.version}</h3>
+            <h3 className="text-body text-foreground font-semibold">{build.version}</h3>
             {build.isLatest ? (
               <Badge className="border-primary/20 bg-primary/10 text-primary">Latest</Badge>
             ) : null}
             {build.androidVersion ? <Badge variant="outline">{build.androidVersion}</Badge> : null}
             {build.securityPatch ? (
               <Badge variant="secondary">
-                <ShieldCheck className="mr-1 size-3 text-success" />
+                <ShieldCheck className="text-success mr-1 size-3" />
                 Patch: {build.securityPatch}
               </Badge>
             ) : null}
             {build.carrier ? <Badge variant="outline">{build.carrier}</Badge> : null}
           </div>
 
-          <span className="font-mono text-caption text-muted-foreground">
+          <span className="text-caption text-muted-foreground font-mono">
             Build: <strong className="text-foreground">{build.buildId}</strong>
             {sizeLabel === "—" ? null : (
               <>
@@ -82,10 +82,10 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
 
         {/* SHA-256 Row */}
         {build.sha256 ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 text-caption">
+          <div className="border-border/60 bg-surface-raised/40 text-caption flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 font-medium text-muted-foreground">SHA-256:</span>
-              <span className="truncate font-mono text-[11px] text-foreground/80">
+              <span className="text-muted-foreground shrink-0 font-medium">SHA-256:</span>
+              <span className="text-foreground/80 truncate font-mono text-[11px]">
                 {build.sha256}
               </span>
             </div>
@@ -97,7 +97,7 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
               variant="ghost"
             >
               {copiedSha ? (
-                <Check className="mr-1 size-3 text-success" data-icon="inline-start" />
+                <Check className="text-success mr-1 size-3" data-icon="inline-start" />
               ) : (
                 <Copy className="mr-1 size-3" data-icon="inline-start" />
               )}
@@ -107,7 +107,7 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
         ) : null}
 
         {/* Action Buttons Row */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-border/40 border-t pt-2.5">
+        <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
           <div className="flex items-center gap-2">
             {build.imageType === "ota" ? (
               <Button onClick={handleRemoteExtract} size="sm" type="button" variant="default">
@@ -139,7 +139,7 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
 
           <Button onClick={handleCopyUrl} size="sm" type="button" variant="ghost">
             {copiedUrl ? (
-              <Check className="mr-1 size-3 text-success" data-icon="inline-start" />
+              <Check className="text-success mr-1 size-3" data-icon="inline-start" />
             ) : (
               <Copy className="mr-1 size-3" data-icon="inline-start" />
             )}

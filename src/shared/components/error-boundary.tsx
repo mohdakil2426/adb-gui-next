@@ -40,10 +40,13 @@ export class ErrorBoundary extends Component<Props, State> {
     );
   }
 
-  resetErrorBoundary = (): void => {
+  handleReset = (): void => {
     this.props.onReset?.();
+    // eslint-disable-next-line react/no-set-state -- ErrorBoundary class component state recovery
     this.setState({ error: null, hasError: false });
   };
+
+  resetErrorBoundary = this.handleReset;
 
   override render(): ReactNode {
     if (this.state.hasError) {
@@ -54,8 +57,8 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           {/* Depth from a surface step and a hairline border — the previous
               blurred halo was invisible on the dark canvas and a smudge on light. */}
-          <div className="flex size-10 items-center justify-center rounded-lg border border-destructive/30 bg-destructive-muted">
-            <AlertTriangle aria-hidden="true" className="size-5 text-destructive" />
+          <div className="border-destructive/30 bg-destructive-muted flex size-10 items-center justify-center rounded-lg border">
+            <AlertTriangle aria-hidden="true" className="text-destructive size-5" />
           </div>
           <div className="flex max-w-md flex-col gap-1">
             <p className="text-title">
@@ -73,7 +76,7 @@ export class ErrorBoundary extends Component<Props, State> {
             aria-label={
               this.props.viewName ? `Retry loading ${this.props.viewName}` : "Retry loading view"
             }
-            onClick={this.resetErrorBoundary}
+            onClick={this.handleReset}
             size="sm"
             type="button"
             variant="outline"

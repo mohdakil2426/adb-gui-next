@@ -27,21 +27,21 @@ export const AppDetailVersions = ({
   versions,
 }: AppDetailVersionsProps) => (
   <section className="flex flex-col gap-2">
-    <h2 className="text-caption text-muted-foreground uppercase tracking-wide">All APK releases</h2>
+    <h2 className="text-caption text-muted-foreground tracking-wide uppercase">All APK releases</h2>
     <div className="flex max-h-80 min-h-0 flex-col gap-1.5 overflow-y-auto">
       {versions.map((version) => {
         const isInstallingVersion = activeVersionName === version.versionName;
         return (
           <div
-            className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-raised p-2.5"
+            className="border-border bg-surface-raised flex flex-col gap-1.5 rounded-lg border p-2.5"
             key={version.downloadUrl ?? version.versionName}
           >
             <div className="flex items-baseline justify-between gap-2">
-              <span className="min-w-0 truncate font-medium text-body text-foreground">
+              <span className="text-body text-foreground min-w-0 truncate font-medium">
                 {version.versionName}
               </span>
               {version.publishedAt ? (
-                <span className="numeric shrink-0 text-caption text-muted-foreground">
+                <span className="numeric text-caption text-muted-foreground shrink-0">
                   {formatDisplayDate(version.publishedAt)}
                 </span>
               ) : null}

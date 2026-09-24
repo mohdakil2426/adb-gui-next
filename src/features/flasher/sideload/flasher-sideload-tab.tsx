@@ -46,15 +46,15 @@ export const FlasherSideloadTab = ({
   const isSideloading = loadingAction === "sideload";
 
   return (
-    <div className="grid @3xl:grid-cols-2 grid-cols-1 items-start gap-5">
+    <div className="grid grid-cols-1 items-start gap-5 @3xl:grid-cols-2">
       {/* ── Left Column: Primary Sideload Package Card ───────────────── */}
       <div className="flex" ref={sideloadSectionRef}>
-        <Card className="flex h-full w-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+        <Card className="border-border bg-surface flex h-full w-full flex-col justify-between rounded-xl shadow-none">
           <div className="flex flex-1 flex-col">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-foreground text-title">
-                  <Package className="size-5 text-muted-foreground" />
+                <CardTitle className="text-foreground text-title flex items-center gap-2">
+                  <Package className="text-muted-foreground size-5" />
                   Recovery Sideload Studio
                 </CardTitle>
                 {selectedSideloadSerial ? (
@@ -102,9 +102,9 @@ export const FlasherSideloadTab = ({
                     }
                   />
 
-                  <div className="flex items-center justify-between rounded-md border border-border/60 bg-surface-raised/40 px-3 py-1.5 text-caption">
+                  <div className="border-border/60 bg-surface-raised/40 text-caption flex items-center justify-between rounded-md border px-3 py-1.5">
                     <span className="text-muted-foreground">
-                      Package: <span className="font-mono text-foreground">{fileName}</span>
+                      Package: <span className="text-foreground font-mono">{fileName}</span>
                     </span>
                     <Badge variant="outline">ZIP Format</Badge>
                   </div>
@@ -121,8 +121,8 @@ export const FlasherSideloadTab = ({
                 />
               )}
 
-              <div className="rounded-lg border border-border/70 bg-background/50 p-3 text-caption text-muted-foreground">
-                <p className="font-semibold text-foreground">Sideload Process Overview:</p>
+              <div className="border-border/70 bg-background/50 text-caption text-muted-foreground rounded-lg border p-3">
+                <p className="text-foreground font-semibold">Sideload Process Overview:</p>
                 <p className="mt-1">
                   Ensure the device screen shows &quot;Sideload&quot; or &quot;ADB Sideload&quot;
                   before pressing Sideload Package. The recovery updater binary will verify

@@ -44,11 +44,11 @@ export const FlashAuditLogCard = () => {
   );
 
   return (
-    <Card className="flex h-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface flex h-full flex-col justify-between rounded-xl shadow-none">
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div>
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <Clock className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <Clock className="text-muted-foreground size-5" />
             Recent Flash History & Audit Log
           </CardTitle>
           <CardDescription className="text-caption">
@@ -69,7 +69,7 @@ export const FlashAuditLogCard = () => {
           >
             <Trash2
               aria-hidden="true"
-              className="size-3.5 text-muted-foreground"
+              className="text-muted-foreground size-3.5"
               data-icon="inline-start"
             />
           </Button>
@@ -78,9 +78,9 @@ export const FlashAuditLogCard = () => {
 
       <CardContent className="flex flex-1 flex-col">
         {flasherLogs.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-border/80 border-dashed p-8 text-center">
-            <FileText className="size-8 text-muted-foreground/40" />
-            <p className="font-medium text-body text-muted-foreground">
+          <div className="border-border/80 flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center">
+            <FileText className="text-muted-foreground/40 size-8" />
+            <p className="text-body text-muted-foreground font-medium">
               No flash operations this session
             </p>
             <p className="text-caption text-muted-foreground/70">
@@ -92,7 +92,7 @@ export const FlashAuditLogCard = () => {
           <div className="flex max-h-[280px] flex-1 flex-col gap-2 overflow-y-auto pr-1">
             {flasherLogs.map((entry) => (
               <div
-                className="flex items-start justify-between gap-3 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5 transition-colors hover:bg-surface-raised"
+                className="border-border/70 bg-surface-raised/40 hover:bg-surface-raised flex items-start justify-between gap-3 rounded-lg border p-2.5 transition-colors"
                 key={entry.id}
               >
                 <div className="flex min-w-0 items-start gap-2.5">
@@ -113,8 +113,8 @@ export const FlashAuditLogCard = () => {
                   </div>
 
                   <div className="flex min-w-0 flex-col gap-0.5">
-                    <p className="truncate font-mono text-body text-foreground">{entry.message}</p>
-                    <span className="font-mono text-[10px] text-caption text-muted-foreground">
+                    <p className="text-body text-foreground truncate font-mono">{entry.message}</p>
+                    <span className="text-caption text-muted-foreground font-mono text-[10px]">
                       {entry.timestamp}
                     </span>
                   </div>

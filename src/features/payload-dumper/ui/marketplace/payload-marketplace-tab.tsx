@@ -101,19 +101,19 @@ export const PayloadMarketplaceTab = ({ onSelectRemoteUrl }: PayloadMarketplaceT
   return (
     <div className="@container flex flex-col gap-5">
       {/* Top Banner */}
-      <Card className="rounded-xl border-border bg-surface p-4.5 shadow-none">
-        <CardContent className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4 p-0">
+      <Card className="border-border bg-surface rounded-xl p-4.5 shadow-none">
+        <CardContent className="flex flex-col gap-4 p-0 @lg:flex-row @lg:items-center @lg:justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-primary">
+            <div className="border-border bg-surface-raised text-primary flex size-11 shrink-0 items-center justify-center rounded-xl border">
               <Store className="size-5.5" />
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-foreground text-title">
+                <h2 className="text-foreground text-title font-semibold">
                   Firmware Hub & Device Marketplace
                 </h2>
                 <Badge variant="outline">
-                  <Sparkles className="mr-1 size-3 text-primary" />
+                  <Sparkles className="text-primary mr-1 size-3" />
                   Universal OTA Hub
                 </Badge>
               </div>

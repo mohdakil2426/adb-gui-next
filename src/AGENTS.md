@@ -23,18 +23,18 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 
 ## Ownership map
 
-| Area             | Path                                                                                                               |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Bootstrap        | `src/main.tsx` → `src/app/App.tsx` (`QueryClientProvider`)                                                         |
-| Shell            | `src/app/shell/` — MainLayout, viewConfig, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
-| Command registry | `src/shared/commands/` — palette actions, `VIEW_META`, `NAV_SECTIONS`, shortcut reference                          |
-| Desktop IPC only | `src/desktop/backend.ts`, `runtime.ts`, `models.ts`                                                                |
-| Features         | `src/features/<feature>/` — `*View.tsx`, optional `hooks/`, `model/`, `ui/`, `utils/`                              |
-| Shared           | `src/shared/{ui,components,stores,hooks,utils}/`                                                                   |
-| Design tokens    | `src/styles/global.css`                                                                                            |
-| Fonts            | `public/fonts/` — self-hosted Inter + JetBrains Mono woff2 (+ OFL texts), preloaded in `index.html`                |
-| Tests            | `src/test/` only                                                                                                   |
-| Alias            | `@/` → `src/` (`vite.config.ts`)                                                                                   |
+| Area | Path |
+| --- | --- |
+| Bootstrap | `src/main.tsx` → `src/app/App.tsx` (`QueryClientProvider`) |
+| Shell | `src/app/shell/` — MainLayout, viewConfig, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
+| Command registry | `src/shared/commands/` — palette actions, `VIEW_META`, `NAV_SECTIONS`, shortcut reference |
+| Desktop IPC only | `src/desktop/backend.ts`, `runtime.ts`, `models.ts` |
+| Features | `src/features/<feature>/` — `*View.tsx`, optional `hooks/`, `model/`, `ui/`, `utils/` |
+| Shared | `src/shared/{ui,components,stores,hooks,utils}/` |
+| Design tokens | `src/styles/global.css` |
+| Fonts | `public/fonts/` — self-hosted Inter + JetBrains Mono woff2 (+ OFL texts), preloaded in `index.html` |
+| Tests | `src/test/` only |
+| Alias | `@/` → `src/` (`vite.config.ts`) |
 
 ### Views (no React Router, code-split)
 
@@ -60,13 +60,13 @@ Defined in `src/app/shell/viewConfig.tsx`. Every view is a `React.lazy` dynamic 
 
 ### Command palette + navigation metadata (`src/shared/commands/`)
 
-| File                                   | Owns                                                                                          |
-| -------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `navigation.ts`                        | `VIEW_META` (title / icon / description / palette keywords), `NAV_SECTIONS`, `sectionForView` |
-| `registry.ts`                          | `buildCommands(ctx)`, `COMMAND_GROUPS` (`actions` · `navigate` · `devices`)                   |
-| `appCommands.ts` / `deviceCommands.ts` | Action definitions composed by the registry                                                   |
-| `shortcuts.ts`                         | `MOD_KEY`, `SHORTCUT_HELP` — the app's whole keyboard surface, rendered by the palette        |
-| `types.ts`                             | `CommandAction`, `CommandContext`, `CommandGroupId`                                           |
+| File | Owns |
+| --- | --- |
+| `navigation.ts` | `VIEW_META` (title / icon / description / palette keywords), `NAV_SECTIONS`, `sectionForView` |
+| `registry.ts` | `buildCommands(ctx)`, `COMMAND_GROUPS` (`actions` · `navigate` · `devices`) |
+| `appCommands.ts` / `deviceCommands.ts` | Action definitions composed by the registry |
+| `shortcuts.ts` | `MOD_KEY`, `SHORTCUT_HELP` — the app's whole keyboard surface, rendered by the palette |
+| `types.ts` | `CommandAction`, `CommandContext`, `CommandGroupId` |
 
 A view is named **once**, in `VIEW_META`. Sidebar label, header title/breadcrumb and the palette's Navigate group all read from it — do not hard-code a view title anywhere else.
 
@@ -82,15 +82,15 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 
 ### Known events (FE subscribers)
 
-| Event                           | Used by                                                                                                                                 |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `payload:progress`              | `features/payload-dumper/hooks/usePayloadEvents.ts`                                                                                     |
-| `payload:load-progress`         | `features/payload-dumper/hooks/usePayloadLoadEvents.ts`                                                                                 |
-| `root:progress`                 | `features/emulator/ui/RootWizard.tsx`                                                                                                   |
-| `scrcpy:download-progress`      | `features/scrcpy/hooks/useScrcpyProgress.ts`                                                                                            |
-| `host-setup:progress`           | `features/utilities/hooks/useHostSetupProgress.ts`                                                                                      |
+| Event | Used by |
+| --- | --- |
+| `payload:progress` | `features/payload-dumper/hooks/usePayloadEvents.ts` |
+| `payload:load-progress` | `features/payload-dumper/hooks/usePayloadLoadEvents.ts` |
+| `root:progress` | `features/emulator/ui/RootWizard.tsx` |
+| `scrcpy:download-progress` | `features/scrcpy/hooks/useScrcpyProgress.ts` |
+| `host-setup:progress` | `features/utilities/hooks/useHostSetupProgress.ts` |
 | `marketplace:download-progress` | `features/marketplace/model/downloadStore.ts` + `AppInstallButton`/`AppDetailHero` (8 Hz throttled `{bytes, total, %, speed_bps, eta}`) |
-| `files:edit-pushed`             | `features/file-explorer/hooks/useFileExplorerClipboard.ts`                                                                              |
+| `files:edit-pushed` | `features/file-explorer/hooks/useFileExplorerClipboard.ts` |
 
 ### File drop
 
@@ -100,14 +100,14 @@ Shortcut ownership is split on purpose: `useGlobalShortcuts` binds **only** ⌘/
 
 ### App-wide stores (`src/shared/stores/`)
 
-| Store / helper        | File                  | Role                                                              |
-| --------------------- | --------------------- | ----------------------------------------------------------------- |
-| `useDeviceStore`      | `deviceStore.ts`      | devices, selectedSerial, deviceInfo                               |
-| `useLogStore`         | `logStore.ts`         | logs + bottom-panel chrome                                        |
-| `useShellStore`       | `shellStore.ts`       | shell history                                                     |
-| `useWirelessAdbStore` | `wirelessAdbStore.ts` | wireless ADB form persistence                                     |
-| `useOperationStore`   | `operationStore.ts`   | long-running operations shown in the status bar (never persisted) |
-| nickname helpers      | `nicknameStore.ts`    | localStorage helpers (not Zustand `create`)                       |
+| Store / helper | File | Role |
+| --- | --- | --- |
+| `useDeviceStore` | `deviceStore.ts` | devices, selectedSerial, deviceInfo |
+| `useLogStore` | `logStore.ts` | logs + bottom-panel chrome |
+| `useShellStore` | `shellStore.ts` | shell history |
+| `useWirelessAdbStore` | `wirelessAdbStore.ts` | wireless ADB form persistence |
+| `useOperationStore` | `operationStore.ts` | long-running operations shown in the status bar (never persisted) |
+| nickname helpers | `nicknameStore.ts` | localStorage helpers (not Zustand `create`) |
 
 `logStore.unreadCount` is **high-churn** (every log line, ~100 call sites). Read it only from `UnreadLogBadge` / `UnreadLogAnnouncer`. Subscribing from `MainLayout` re-renders header, sidebar, panel and the whole active view once per log line.
 
@@ -154,13 +154,13 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 
 This is a resizable desktop window, not a web page. `src-tauri/tauri.conf.json` pins it to **`minWidth: 1024, minHeight: 720`**.
 
-| Rule                                                          | Why                                                                                                                                                                                                                     |
-| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Never use `sm:` (640px) or `md:` (768px).**                 | They can never evaluate false above a 1024px floor — permanently-on conditionals that mislead the next reader.                                                                                                          |
+| Rule | Why |
+| --- | --- |
+| **Never use `sm:` (640px) or `md:` (768px).** | They can never evaluate false above a 1024px floor — permanently-on conditionals that mislead the next reader. |
 | **Use `@container` + `@xs`/`@sm`/`@lg`/`@xl`/`@2xl`/`@4xl`.** | The content width tracks the **sidebar** (`16rem` expanded ↔ `3rem` icon-only), not the window. At a 1280px window the content box is ~974px or ~1182px depending only on `Ctrl+B`. Viewport queries are blind to that. |
-| Viewport queries only for genuine window-size concerns        | e.g. bottom-panel max height. Pick a threshold meaningfully above 1024px.                                                                                                                                               |
-| **No fixed `vh` list heights** (`h-[40vh]`, `max-h-[38vh]`).  | At the 720px minimum height with header (44px), status bar (26px) and an open bottom panel, they overflow or waste space. Use `min-h-0` + `flex-1` so lists fill what is actually available.                            |
-| No horizontal page scroll at any size                         | Wide content scrolls inside its own container.                                                                                                                                                                          |
+| Viewport queries only for genuine window-size concerns | e.g. bottom-panel max height. Pick a threshold meaningfully above 1024px. |
+| **No fixed `vh` list heights** (`h-[40vh]`, `max-h-[38vh]`). | At the 720px minimum height with header (44px), status bar (26px) and an open bottom panel, they overflow or waste space. Use `min-h-0` + `flex-1` so lists fill what is actually available. |
+| No horizontal page scroll at any size | Wide content scrolls inside its own container. |
 
 Container scale (Tailwind 4.3.3 defaults): `@xs` 20rem · `@sm` 24rem · `@lg` 32rem · `@xl` 36rem · `@2xl` 42rem · `@4xl` 56rem.
 
@@ -203,29 +203,29 @@ Check any layout change at: 1024×720 sidebar-expanded **with the bottom panel o
 
 Baseline after 2026-07-18 pass: **100/100** (`npx react-doctor@latest .`). Do **not** reintroduce:
 
-| Avoid                                                                        | Correct                                                              |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Side effects inside `setState(prev => …)` (other setters, ref writes, flags) | Pure updater; effects in handler / `useEffect`                       |
-| Timers without cleanup                                                       | `return () => clearTimeout/clearInterval`                            |
-| Animate CSS `height`                                                         | transform / opacity / `grid-rows-[0fr]`↔`[1fr]`                      |
-| Full `import { motion }` under shell                                         | `LazyMotion` once in `MainLayout`; leaves use `m`                    |
-| Index keys on dynamic lists                                                  | Stable ids (shell history: `id` when pushing)                        |
-| Dead unused `shared/ui/*` / unused exports                                   | Delete or wire a real call site — never eslint-disable / fake import |
-| Parallel multi-APK on one serial                                             | Serial only (`InstallationTab` mapSerial pattern)                    |
-| `useEffect(() => setMounted(true), [])` for theme/UI flash                   | `useSyncExternalStore` or lazy `useState` init                       |
-| Subscribing the shell root to a high-churn counter (`logStore.unreadCount`)  | Isolated leaf subscriber (`UnreadLogBadge` / `UnreadLogAnnouncer`)   |
-| High-frequency writes into a `zustand/persist` store                         | Sibling non-persisted store (`payloadProgressStore`)                 |
-| Static **value** import from a lazy view module into shell/shared            | `import type`, or move the value into `shared/`                      |
+| Avoid | Correct |
+| --- | --- |
+| Side effects inside `setState(prev => …)` (other setters, ref writes, flags) | Pure updater; effects in handler / `useEffect` |
+| Timers without cleanup | `return () => clearTimeout/clearInterval` |
+| Animate CSS `height` | transform / opacity / `grid-rows-[0fr]`↔`[1fr]` |
+| Full `import { motion }` under shell | `LazyMotion` once in `MainLayout`; leaves use `m` |
+| Index keys on dynamic lists | Stable ids (shell history: `id` when pushing) |
+| Dead unused `shared/ui/*` / unused exports | Delete or wire a real call site — never eslint-disable / fake import |
+| Parallel multi-APK on one serial | Serial only (`InstallationTab` mapSerial pattern) |
+| `useEffect(() => setMounted(true), [])` for theme/UI flash | `useSyncExternalStore` or lazy `useState` init |
+| Subscribing the shell root to a high-churn counter (`logStore.unreadCount`) | Isolated leaf subscriber (`UnreadLogBadge` / `UnreadLogAnnouncer`) |
+| High-frequency writes into a `zustand/persist` store | Sibling non-persisted store (`payloadProgressStore`) |
+| Static **value** import from a lazy view module into shell/shared | `import type`, or move the value into `shared/` |
 
 Dead kit removed (do not re-add without product need): `avatar`, `radio-group`, `slider`, `toggle`, `collapsible` (keep `toggle-group` + `toggle-variants`).
 
 Re-added **with real call sites** — each stays only while its call site exists:
 
-| Primitive            | Call site                                                                          |
-| -------------------- | ---------------------------------------------------------------------------------- |
+| Primitive | Call site |
+| --- | --- |
 | `command` (+ `cmdk`) | global ⌘K palette — `app/shell/CommandPalette.tsx`, registry in `shared/commands/` |
-| `kbd`                | shortcut chips in `Header` and the palette footer / shortcut reference             |
-| `breadcrumb`         | `Header` view breadcrumb from `VIEW_META` / `sectionForView`                       |
+| `kbd` | shortcut chips in `Header` and the palette footer / shortcut reference |
+| `breadcrumb` | `Header` view breadcrumb from `VIEW_META` / `sectionForView` |
 
 ### Charts — do not add a charting library
 
@@ -233,19 +233,19 @@ Re-added **with real call sites** — each stays only while its call site exists
 
 ## Feature invariants (verified)
 
-| Feature          | Must keep                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Device targeting | Pass `selectedSerial` into device-scoped desktop APIs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Dashboard        | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers; `AppsPanel` shares the `appOverviewTelemetry` query key (30 s stale) with App Manager overview so the adb round-trip runs once per device                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| File Explorer    | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor (VS Code / Notepad). **Show in Explorer** opens the same path in Windows Explorer over MTP (File transfer) — not the editor temp folder. Copy/cut/paste and overwrite live in `transfer_device_files`; editor saves emit `files:edit-pushed`. Host files/folders drop into the open pane (or a folder / Place / tree / crumb) via `OnFileDrop` + `host_path_kinds` then serial `push_file`. In-app row/tree/Places/crumb drops move with `application/x-adb-gui-files`.                  |
-| Debloat          | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Marketplace      | 4-tab Hardware Cockpit (Overview & Curated, Browse & Search, Installed & Updates, Sources & Repos); `MarketplaceHeroBanner` with live repo sync pulse & device ABI/SDK compatibility indicator; install with selected serial; session-only PAT/OAuth; provider orchestration stays on Rust side; FE caches last search results; `marketplace:download-progress` via `downloadStore` drives live % + speed in `AppInstallButton`/`AppDetailHero`; `MarketplaceDownloadApk(url, packageName?, downloadId?)` streaming; `AppDetailView`_retry + `ReadmeMarkdown` GFM (tables with centered/right alignment, `> [!NOTE]` alerts, images, `kbd`/`sup`/`sub`, task lists, copyable code blocks) backed by Rust `assets` ABI-ranking + `resolver` dynamic + `markdown` dual-path README |
-| Flasher          | 4-tab Hardware Cockpit (Overview & Diagnostics, Partition Flasher, Recovery Sideload, Partitions & Wipe); `FlasherCockpitHero` with connection mode & lock state badges; interactive pure SVG & ASCII `PartitionHierarchyDiagram` and 6-row pre-flight hardware matrix; auto-detecting DropArea and deterministic `MultiPartitionQueue`                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Payload Dumper   | 5-tab Precision Hardware Cockpit (Overview, Source & Remote Loader, Firmware Hub, Extractor & Partitions, Extracted Outputs & History); `PayloadDumperHeroBanner` with format detection & uncompressed footprint; `PayloadMarketplaceTab` multi-brand live OEM Firmware Hub with Google Pixel scraper, ToS cookie authentication, and 1-click Remote Stream Extraction bridge; dynamic partition sub-unpacking controls (`unpack_super_image`)                                                                                                                                                                                                                                                                                                                                   |
-| Utilities        | 5-tab Hardware Cockpit (Overview & Quick Actions, Power & Tweaks, Diagnostics, Fastboot, Host Setup); `UtilitiesCockpitHero` with live ADB daemon status; `InstantActionsCard` symmetrical 3x2 grid; `AdbTransportGuideCard` socket architecture guide; deep `getvar all` variable inspector; official Google platform-tools & USB driver installer for Windows                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Scrcpy           | 5-tab Hardware Cockpit (Overview & Quick Mirror, Display & Video Engine, Audio & Recording Studio, Input & Keymaps, Binary Management); `ScrcpyCockpitHero` with session count & transport badges; 4 tailored 1-click quality presets (Gaming, Productivity, Battery Saver, Creator); Genymobile binary lifecycle manager and live CLI command preview                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Emulator         | 4-tab Hardware Cockpit (Overview & Telemetry, AVD Launch Studio, Root Engine, Snapshots & Restore); `EmulatorCockpitHero` with 8-spec hardware grid; pure SVG `AvdResourceAllocationMeter` and `DiskUsageBreakdownChart`; 5 startup presets in `LaunchPresetsGrid`; multi-step Magisk/KernelSU root wizard                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster; `TopStorageConsumersChart` caps to 5, strips quoted `packageName`/`label`, `computePackageOverviewStats` filters `storageBreakdown` to user packages only (system excluded, quoted CSV trimmed in `apps/telemetry.rs`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Feature | Must keep |
+| --- | --- |
+| Device targeting | Pass `selectedSerial` into device-scoped desktop APIs |
+| Dashboard | Telemetry auto-loads on device selection (no "click refresh to load" dead end); formatting stays in the frontend (`shared/utils/format.ts`) — the backend returns numbers; `AppsPanel` shares the `appOverviewTelemetry` query key (30 s stale) with App Manager overview so the adb round-trip runs once per device |
+| File Explorer | Stable `loadFiles` (refs, not historyIndex in deps); mutations re-list with `loadFiles(path, false)`; empty state `fileList.length === 0 && creatingType === null`; snapshot serial before host dialogs; clear root grant on serial change; text files open via Rust pull + host editor (VS Code / Notepad). **Show in Explorer** opens the same path in Windows Explorer over MTP (File transfer) — not the editor temp folder. Copy/cut/paste and overwrite live in `transfer_device_files`; editor saves emit `files:edit-pushed`. Host files/folders drop into the open pane (or a folder / Place / tree / crumb) via `OnFileDrop` + `host_path_kinds` then serial `push_file`. In-app row/tree/Places/crumb drops move with `application/x-adb-gui-files`. |
+| Debloat | Reload when `selectedSerial` changes; SDK-aware actions; DTO field `listStatus` (camelCase) |
+| Marketplace | 4-tab Hardware Cockpit (Overview & Curated, Browse & Search, Installed & Updates, Sources & Repos); `MarketplaceHeroBanner` with live repo sync pulse & device ABI/SDK compatibility indicator; install with selected serial; session-only PAT/OAuth; provider orchestration stays on Rust side; FE caches last search results; `marketplace:download-progress` via `downloadStore` drives live % + speed in `AppInstallButton`/`AppDetailHero`; `MarketplaceDownloadApk(url, packageName?, downloadId?)` streaming; `AppDetailView`_retry + `ReadmeMarkdown` GFM (tables with centered/right alignment, `> [!NOTE]` alerts, images, `kbd`/`sup`/`sub`, task lists, copyable code blocks) backed by Rust `assets` ABI-ranking + `resolver` dynamic + `markdown` dual-path README |
+| Flasher | 4-tab Hardware Cockpit (Overview & Diagnostics, Partition Flasher, Recovery Sideload, Partitions & Wipe); `FlasherCockpitHero` with connection mode & lock state badges; interactive pure SVG & ASCII `PartitionHierarchyDiagram` and 6-row pre-flight hardware matrix; auto-detecting DropArea and deterministic `MultiPartitionQueue` |
+| Payload Dumper | 5-tab Precision Hardware Cockpit (Overview, Source & Remote Loader, Firmware Hub, Extractor & Partitions, Extracted Outputs & History); `PayloadDumperHeroBanner` with format detection & uncompressed footprint; `PayloadMarketplaceTab` multi-brand live OEM Firmware Hub with Google Pixel scraper, ToS cookie authentication, and 1-click Remote Stream Extraction bridge; dynamic partition sub-unpacking controls (`unpack_super_image`) |
+| Utilities | 5-tab Hardware Cockpit (Overview & Quick Actions, Power & Tweaks, Diagnostics, Fastboot, Host Setup); `UtilitiesCockpitHero` with live ADB daemon status; `InstantActionsCard` symmetrical 3x2 grid; `AdbTransportGuideCard` socket architecture guide; deep `getvar all` variable inspector; official Google platform-tools & USB driver installer for Windows |
+| Scrcpy | 5-tab Hardware Cockpit (Overview & Quick Mirror, Display & Video Engine, Audio & Recording Studio, Input & Keymaps, Binary Management); `ScrcpyCockpitHero` with session count & transport badges; 4 tailored 1-click quality presets (Gaming, Productivity, Battery Saver, Creator); Genymobile binary lifecycle manager and live CLI command preview |
+| Emulator | 4-tab Hardware Cockpit (Overview & Telemetry, AVD Launch Studio, Root Engine, Snapshots & Restore); `EmulatorCockpitHero` with 8-spec hardware grid; pure SVG `AvdResourceAllocationMeter` and `DiskUsageBreakdownChart`; 5 startup presets in `LaunchPresetsGrid`; multi-step Magisk/KernelSU root wizard |
+| App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster; `TopStorageConsumersChart` caps to 5, strips quoted `packageName`/`label`, `computePackageOverviewStats` filters `storageBreakdown` to user packages only (system excluded, quoted CSV trimmed in `apps/telemetry.rs`) |
 
 ## Tests
 
@@ -255,11 +255,13 @@ Re-added **with real call sites** — each stays only while its call site exists
 
 ## Validation
 
-| Change type                   | Minimum gate                                                                        |
-| ----------------------------- | ----------------------------------------------------------------------------------- |
-| Docs only under `src/`        | `git diff --check`                                                                  |
-| Frontend code                 | `bun run lint:web`, `bun run test`, `bun run build`                                 |
+| Change type | Minimum gate |
+| --- | --- |
+| Docs only under `src/` | `git diff --check` |
+| Frontend code | `bun run lint:web`, `bun run test`, `bun run build` |
 | FE quality / doctor-sensitive | Also `npx react-doctor@latest .` when touching state/effects/motion/lists/unused ui |
-| IPC contract                  | Also update `src-tauri` handler + permissions + desktop models                      |
+| IPC contract | Also update `src-tauri` handler + permissions + desktop models |
+
+- **Frontend linting (`bun run lint:web`):** Ultracite/Oxlint registers `@shadcn/lint` through `jsPlugins` in `oxlint.config.ts`. No shadcn lint rules are enabled yet; rule selection remains user-configured and belongs in `oxlint.config.ts`.
 
 Full gate (`bun run check`) only after **all** tasks for the request finish — see `docs/project_rules.md`.

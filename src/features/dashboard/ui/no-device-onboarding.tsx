@@ -51,7 +51,7 @@ export const NoDeviceOnboarding = ({
   wireless,
 }: NoDeviceOnboardingProps) => (
   <div className="@container flex flex-col gap-4">
-    <Empty className="rounded-lg border border-border border-dashed bg-surface">
+    <Empty className="border-border bg-surface rounded-lg border border-dashed">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <Smartphone aria-hidden="true" className="animate-pulse" />
@@ -66,16 +66,16 @@ export const NoDeviceOnboarding = ({
         {/* Container query, not `sm:` — the window is never below 1024px, so a
               viewport breakpoint here could never evaluate false. What actually
               varies is this card's own width as the sidebar collapses. */}
-        <ol className="grid w-full @xl:grid-cols-3 grid-cols-1 gap-3 text-left">
+        <ol className="grid w-full grid-cols-1 gap-3 text-left @xl:grid-cols-3">
           {STEPS.map((step, index) => (
             <li
-              className="flex flex-col gap-1.5 rounded-lg border border-border bg-surface-raised p-3"
+              className="border-border bg-surface-raised flex flex-col gap-1.5 rounded-lg border p-3"
               key={step.title}
             >
-              <span className="numeric flex size-5 items-center justify-center rounded-full bg-primary-muted text-caption text-primary">
+              <span className="numeric bg-primary-muted text-caption text-primary flex size-5 items-center justify-center rounded-full">
                 {index + 1}
               </span>
-              <span className="font-medium text-body text-foreground">{step.title}</span>
+              <span className="text-body text-foreground font-medium">{step.title}</span>
               <span className="text-caption text-muted-foreground">{step.body}</span>
             </li>
           ))}
@@ -115,9 +115,9 @@ export const NoDeviceOnboarding = ({
 
         <output
           aria-live="polite"
-          className="flex items-center gap-2 text-caption text-muted-foreground"
+          className="text-caption text-muted-foreground flex items-center gap-2"
         >
-          <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-primary" />
+          <span aria-hidden="true" className="bg-primary size-1.5 animate-pulse rounded-full" />
           {isScanning ? "Scanning for devices…" : "Watching for devices…"}
         </output>
       </EmptyContent>

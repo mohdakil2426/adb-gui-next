@@ -25,7 +25,7 @@ export const UsageBar = ({ label, ratio, tone }: UsageBarProps) => {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+    <div className="bg-secondary relative h-1.5 w-full overflow-hidden rounded-full">
       <progress
         aria-label={label}
         className="sr-only"

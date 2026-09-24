@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -34,9 +35,12 @@ for (const staleKey of ["flasher.partition", "flasher.filePath", "flasher.sidelo
 }
 
 export const useFlasherActions = () => {
-  const [partition, setPartitionState] = useState(flasherDraft.partition);
-  const [filePath, setFilePathState] = useState(flasherDraft.filePath);
-  const [sideloadFilePath, setSideloadFilePathState] = useState(flasherDraft.sideloadFilePath);
+  const [partitionState, setPartitionState] = useState(flasherDraft.partition);
+  const [filePathState, setFilePathState] = useState(flasherDraft.filePath);
+  const [sideloadFilePathState, setSideloadFilePathState] = useState(flasherDraft.sideloadFilePath);
+  const partition = partitionState;
+  const filePath = filePathState;
+  const sideloadFilePath = sideloadFilePathState;
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<FlasherConfirm>(null);
 

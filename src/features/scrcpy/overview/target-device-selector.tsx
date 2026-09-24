@@ -36,7 +36,7 @@ const DeviceTileBottomRow = ({
   nickname: string | undefined;
   serial: string;
 }) => (
-  <div className="flex flex-wrap items-center justify-between gap-2 border-border/40 border-t pt-1 text-caption text-muted-foreground">
+  <div className="border-border/40 text-caption text-muted-foreground flex flex-wrap items-center justify-between gap-2 border-t pt-1">
     <div className="flex items-center gap-3">
       <span className="inline-flex items-center gap-1">
         {isWireless ? (
@@ -46,25 +46,25 @@ const DeviceTileBottomRow = ({
           </>
         ) : (
           <>
-            <Usb aria-hidden="true" className="size-3 text-muted-foreground" />
+            <Usb aria-hidden="true" className="text-muted-foreground size-3" />
             <span>USB Cable</span>
           </>
         )}
       </span>
 
       {batteryPercent !== undefined && batteryPercent !== null ? (
-        <span className="inline-flex items-center gap-1 font-mono text-mono-sm">
+        <span className="text-mono-sm inline-flex items-center gap-1 font-mono">
           {isCharging ? (
             <BatteryCharging aria-hidden="true" className="size-3 text-emerald-400" />
           ) : (
-            <Battery aria-hidden="true" className="size-3 text-muted-foreground" />
+            <Battery aria-hidden="true" className="text-muted-foreground size-3" />
           )}
           <span>{batteryPercent}%</span>
         </span>
       ) : null}
     </div>
 
-    <span className="font-mono text-mono-sm text-muted-foreground/80">
+    <span className="text-mono-sm text-muted-foreground/80 font-mono">
       {nickname ? "Ready" : serial}
     </span>
   </div>
@@ -107,9 +107,9 @@ const DeviceTile = ({
     <button
       aria-label={`Select device ${displayName}`}
       className={cn(
-        "group relative flex w-full cursor-pointer select-none flex-col justify-between gap-3 rounded-lg border p-3.5 text-left transition-colors duration-100 ease-standard",
+        "group ease-standard relative flex w-full cursor-pointer flex-col justify-between gap-3 rounded-lg border p-3.5 text-left transition-colors duration-100 select-none",
         isSelected
-          ? "border-foreground/30 bg-surface-raised ring-1 ring-foreground/20"
+          ? "border-foreground/30 bg-surface-raised ring-foreground/20 ring-1"
           : "border-border/80 bg-surface-raised/40 hover:border-border hover:bg-surface-raised",
         disabled && "pointer-events-none opacity-50"
       )}
@@ -130,15 +130,15 @@ const DeviceTile = ({
           </div>
           <div className="flex min-w-0 flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="truncate font-medium text-body text-foreground">{displayName}</span>
+              <span className="text-body text-foreground truncate font-medium">{displayName}</span>
               {nickname ? (
-                <span className="truncate font-mono text-caption text-muted-foreground">
+                <span className="text-caption text-muted-foreground truncate font-mono">
                   ({device.serial})
                 </span>
               ) : null}
             </div>
             {deviceModel ? (
-              <span className="truncate text-caption text-muted-foreground">{deviceModel}</span>
+              <span className="text-caption text-muted-foreground truncate">{deviceModel}</span>
             ) : null}
           </div>
         </div>
@@ -147,7 +147,7 @@ const DeviceTile = ({
         <div className="flex shrink-0 items-center gap-1.5">
           {isMirroring ? (
             <Badge
-              className="gap-1 border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-caption text-emerald-400"
+              className="text-caption gap-1 border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-400"
               variant="outline"
             >
               <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
@@ -158,7 +158,7 @@ const DeviceTile = ({
           {isMirroring && onStopDevice ? (
             <Button
               aria-label={`Stop mirror for ${displayName}`}
-              className="size-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive size-6"
               onClick={(e) => {
                 e.stopPropagation();
                 onStopDevice(device.serial);
@@ -203,7 +203,7 @@ export const TargetDeviceSelector = ({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Label className="font-semibold text-body text-foreground">Target Android Devices</Label>
+          <Label className="text-body text-foreground font-semibold">Target Android Devices</Label>
           {adbDevices.length > 0 ? (
             <span className="text-caption text-muted-foreground">
               ({selectedSerials.size} of {adbDevices.length} selected)
@@ -214,7 +214,7 @@ export const TargetDeviceSelector = ({
         {adbDevices.length > 1 ? (
           <div className="flex items-center gap-2">
             <Button
-              className="h-6 px-2 text-caption"
+              className="text-caption h-6 px-2"
               disabled={disabled}
               onClick={allSelected ? onClearAll : onSelectAll}
               size="sm"
@@ -228,15 +228,15 @@ export const TargetDeviceSelector = ({
       </div>
 
       {adbDevices.length === 0 ? (
-        <div className="flex items-center gap-2.5 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5 text-caption text-muted-foreground">
-          <Info aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+        <div className="border-border/80 bg-surface-raised/40 text-caption text-muted-foreground flex items-center gap-2.5 rounded-lg border p-3.5">
+          <Info aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
           <span>
             No active ADB devices detected. Plug in a device with USB Debugging enabled or connect
             via Wireless ADB.
           </span>
         </div>
       ) : (
-        <div className="grid @lg:grid-cols-2 grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2">
           {adbDevices.map((device) => (
             <DeviceTile
               activeSerials={activeSerials}

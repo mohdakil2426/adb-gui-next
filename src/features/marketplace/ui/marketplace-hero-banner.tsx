@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import {
   CheckCircle2,
   Database,
@@ -33,19 +34,19 @@ const CompatibilityStrip = ({
   canInstall: boolean;
   compatibilityString: string;
 }) => (
-  <div className="flex items-center justify-between rounded-md border border-border/70 bg-surface-raised/40 px-3 py-2 text-caption">
+  <div className="border-border/70 bg-surface-raised/40 text-caption flex items-center justify-between rounded-md border px-3 py-2">
     <div className="flex min-w-0 items-center gap-2">
       <Smartphone
         className={cn("size-3.5 shrink-0", canInstall ? "text-success" : "text-muted-foreground")}
       />
-      <span className="font-medium text-foreground">Target Architecture:</span>
-      <span className="truncate font-mono text-mono-sm text-muted-foreground">
+      <span className="text-foreground font-medium">Target Architecture:</span>
+      <span className="text-mono-sm text-muted-foreground truncate font-mono">
         {compatibilityString}
       </span>
     </div>
     {canInstall && (
       <Badge
-        className="@md:inline-flex hidden gap-1 border-success/30 bg-success/10 font-mono text-caption text-success"
+        className="border-success/30 bg-success/10 text-caption text-success hidden gap-1 font-mono @md:inline-flex"
         variant="outline"
       >
         <CheckCircle2 className="size-3" />
@@ -104,21 +105,21 @@ const MarketplaceHeroSpecsGrid = ({
   ];
 
   return (
-    <div className="grid @lg:grid-cols-5 @xs:grid-cols-2 grid-cols-1 gap-2.5">
+    <div className="grid grid-cols-1 gap-2.5 @xs:grid-cols-2 @lg:grid-cols-5">
       {specs.map((spec) => {
         const Icon = spec.icon;
         return (
           <div
-            className="flex flex-col justify-between rounded-md border border-border/60 bg-surface-raised/60 p-2.5 transition-colors hover:border-border"
+            className="border-border/60 bg-surface-raised/60 hover:border-border flex flex-col justify-between rounded-md border p-2.5 transition-colors"
             key={spec.label}
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-caption text-muted-foreground">{spec.label}</span>
-              <Icon className="size-3.5 text-muted-foreground" />
+              <span className="text-caption text-muted-foreground font-medium">{spec.label}</span>
+              <Icon className="text-muted-foreground size-3.5" />
             </div>
             <div className="flex flex-col pt-1.5">
-              <span className="numeric font-bold text-body text-foreground">{spec.value}</span>
-              <span className="truncate text-caption text-muted-foreground">{spec.subtext}</span>
+              <span className="numeric text-body text-foreground font-bold">{spec.value}</span>
+              <span className="text-caption text-muted-foreground truncate">{spec.subtext}</span>
             </div>
           </div>
         );
@@ -181,22 +182,22 @@ export const MarketplaceHeroBanner = ({
   const syncing = isSyncing || localSyncing;
 
   return (
-    <Card className="@container gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
-      <CardContent className="@sm:p-5 p-4">
+    <Card className="border-border bg-surface @container gap-0 rounded-lg py-0 shadow-none">
+      <CardContent className="p-4 @sm:p-5">
         <div className="flex flex-col gap-4">
           {/* Top Title & Status Row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/80 bg-surface-raised shadow-xs">
-                <Sparkles aria-hidden="true" className="size-5 text-foreground" />
+              <div className="border-border/80 bg-surface-raised flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-xs">
+                <Sparkles aria-hidden="true" className="text-foreground size-5" />
               </div>
               <div className="flex flex-col">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold text-foreground text-title">
+                  <h2 className="text-foreground text-title font-semibold">
                     Open-Source App Marketplace
                   </h2>
                   <Badge className="gap-1.5 font-medium" variant="outline">
-                    <span className="size-2 animate-pulse rounded-full bg-success" />
+                    <span className="bg-success size-2 animate-pulse rounded-full" />
                     INDEX SYNCED
                   </Badge>
                 </div>
@@ -209,13 +210,13 @@ export const MarketplaceHeroBanner = ({
 
             {/* Quick Actions & Source Badges */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="mr-1 @xl:flex hidden items-center gap-1.5">
+              <div className="mr-1 hidden items-center gap-1.5 @xl:flex">
                 {MARKETPLACE_PROVIDERS.map((provider) => {
                   const isActive = activeProviders.includes(provider.id);
                   return (
                     <Badge
                       className={cn(
-                        "px-2 py-0.5 font-mono text-caption",
+                        "text-caption px-2 py-0.5 font-mono",
                         !isActive && "line-through opacity-50"
                       )}
                       key={provider.id}

@@ -18,16 +18,16 @@ export const PayloadDumperSpecBadge = ({
   value,
 }: PayloadDumperSpecBadgeProps) => (
   <div
-    className="group relative flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:bg-surface-raised/80"
+    className="group border-border/60 bg-surface-raised/40 hover:bg-surface-raised/80 relative flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors"
     title={tooltip || value}
   >
     <div className="flex min-w-0 items-center gap-2.5">
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+      <Icon className="text-muted-foreground size-3.5 shrink-0" />
       <div className="flex min-w-0 flex-col">
-        <span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
           {label}
         </span>
-        <span className="truncate font-medium text-[12px] text-body text-foreground">{value}</span>
+        <span className="text-body text-foreground truncate text-[12px] font-medium">{value}</span>
       </div>
     </div>
     {copyValue ? (

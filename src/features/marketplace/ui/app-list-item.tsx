@@ -23,11 +23,11 @@ interface AppListItemProps {
   target: InstallTarget;
 }
 
-export const AppListItem = memo(function AppListItem({ app, onSelect, target }: AppListItemProps) {
+const AppListItemBase = ({ app, onSelect, target }: AppListItemProps) => {
   const downloadsLabel = formatDownloadCount(app.downloadsCount);
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-90 ease-standard hover:bg-accent">
+    <div className="ease-standard hover:bg-accent grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-90">
       <button
         aria-label={`View details for ${app.name}`}
         className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 text-left"
@@ -40,13 +40,13 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
 
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className="min-w-0 truncate font-medium text-body text-foreground">
+            <span className="text-body text-foreground min-w-0 truncate font-medium">
               {app.name}
             </span>
             <ProviderBadge source={app.source} />
             {app.downloadUrl && (
               <Badge
-                className="gap-0.5 border-success/30 bg-success/5 px-1 py-0 font-mono text-[10px] text-success"
+                className="border-success/30 bg-success/5 text-success gap-0.5 px-1 py-0 font-mono text-[10px]"
                 variant="outline"
               >
                 <CheckCircle2 className="size-2.5" />
@@ -54,10 +54,10 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
               </Badge>
             )}
           </div>
-          <p className="truncate text-body text-muted-foreground">
+          <p className="text-body text-muted-foreground truncate">
             {app.summary || "No description available yet."}
           </p>
-          <div className="numeric flex flex-wrap items-center gap-x-3 text-caption text-muted-foreground">
+          <div className="numeric text-caption text-muted-foreground flex flex-wrap items-center gap-x-3">
             <span className="truncate font-mono">{app.packageName}</span>
             <span>{app.version || "Version unknown"}</span>
             {app.size ? <span>{formatBytes(app.size)}</span> : null}
@@ -84,4 +84,7 @@ export const AppListItem = memo(function AppListItem({ app, onSelect, target }: 
       </div>
     </div>
   );
-});
+};
+
+export const AppListItem = memo(AppListItemBase);
+AppListItem.displayName = "AppListItem";

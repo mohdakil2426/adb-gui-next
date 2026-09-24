@@ -87,8 +87,8 @@ export const AvdSwitcher = ({
       <PopoverContent align="start" className="w-72 p-0">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-1.5">
-            <MonitorSmartphone aria-hidden="true" className="size-3.5 text-muted-foreground" />
-            <span className="text-caption text-muted-foreground uppercase tracking-wide">
+            <MonitorSmartphone aria-hidden="true" className="text-muted-foreground size-3.5" />
+            <span className="text-caption text-muted-foreground tracking-wide uppercase">
               Emulators
             </span>
             {avds.length > 0 ? (
@@ -110,12 +110,12 @@ export const AvdSwitcher = ({
             <div className="px-3 py-6 text-center">
               <MonitorSmartphone
                 aria-hidden="true"
-                className="mx-auto size-8 text-foreground-subtle"
+                className="text-foreground-subtle mx-auto size-8"
               />
-              <p className="mt-2 text-body text-muted-foreground">
+              <p className="text-body text-muted-foreground mt-2">
                 {isRefreshing ? "Scanning for AVDs…" : "No AVDs found"}
               </p>
-              <p className="mt-1 text-caption text-foreground-subtle">
+              <p className="text-caption text-foreground-subtle mt-1">
                 Create one in Android Studio → Device Manager, then refresh.
               </p>
             </div>
@@ -131,8 +131,8 @@ export const AvdSwitcher = ({
                   <button
                     aria-current={isSelected}
                     className={cn(
-                      "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-body",
-                      "transition-colors duration-90 ease-standard hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                      "text-body flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left",
+                      "ease-standard hover:bg-accent focus-visible:ring-ring transition-colors duration-90 focus-visible:ring-1 focus-visible:outline-none",
                       isSelected && "bg-accent"
                     )}
                     key={avd.name}
@@ -151,7 +151,7 @@ export const AvdSwitcher = ({
 
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">{avd.name}</span>
-                      <span className="numeric block truncate text-caption text-muted-foreground">
+                      <span className="numeric text-caption text-muted-foreground block truncate">
                         API {avd.apiLevel ?? "—"}
                         {avd.abi ? ` · ${avd.abi}` : ""}
                         {avd.rootState === "stock" ? "" : ` · ${rootStateLabel(avd.rootState)}`}

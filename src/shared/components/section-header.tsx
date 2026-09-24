@@ -15,7 +15,7 @@ interface SectionHeaderProps {
  * must stay quieter than the values underneath it.
  */
 export const SectionHeader = ({ children, className }: SectionHeaderProps) => (
-  <h4 className={cn("text-caption text-muted-foreground uppercase tracking-wide", className)}>
+  <h4 className={cn("text-caption text-muted-foreground tracking-wide uppercase", className)}>
     {children}
   </h4>
 );

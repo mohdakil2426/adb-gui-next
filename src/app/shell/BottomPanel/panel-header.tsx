@@ -54,7 +54,7 @@ export const PanelHeader = ({
             aria-controls="bottom-panel-logs"
             aria-selected={activeTab === "logs"}
             className={cn(
-              "flex items-center gap-1.5 rounded-t-md px-3 py-1 font-medium text-xs transition-colors",
+              "flex items-center gap-1.5 rounded-t-md px-3 py-1 text-xs font-medium transition-colors",
               activeTab === "logs" ? "opacity-100" : "opacity-60 hover:opacity-80"
             )}
             id="bottom-panel-logs-tab"
@@ -77,14 +77,14 @@ export const PanelHeader = ({
             <Logs aria-hidden="true" className="size-3.5" />
             Logs
             {logCount > 0 && (
-              <span className="ml-1 text-caption tabular-nums opacity-60">({logCount})</span>
+              <span className="text-caption ml-1 tabular-nums opacity-60">({logCount})</span>
             )}
           </button>
           <button
             aria-controls="bottom-panel-shell"
             aria-selected={activeTab === "shell"}
             className={cn(
-              "flex items-center gap-1.5 rounded-t-md px-3 py-1 font-medium text-xs transition-colors",
+              "flex items-center gap-1.5 rounded-t-md px-3 py-1 text-xs font-medium transition-colors",
               activeTab === "shell" ? "opacity-100" : "opacity-60 hover:opacity-80"
             )}
             id="bottom-panel-shell-tab"

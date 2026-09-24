@@ -165,7 +165,7 @@ export const BottomPanel = ({ viewportHeight }: BottomPanelProps) => {
           aria-valuemax={Math.round(viewportHeight * MAX_HEIGHT_RATIO)}
           aria-valuemin={120}
           aria-valuenow={Math.round(computedHeight)}
-          className="group flex h-6 w-full shrink-0 cursor-ns-resize items-start border-0 bg-transparent p-0 transition-colors hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary active:bg-primary/15"
+          className="group hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:ring-primary active:bg-primary/15 flex h-6 w-full shrink-0 cursor-ns-resize items-start border-0 bg-transparent p-0 transition-colors focus-visible:ring-1 focus-visible:outline-none"
           onKeyDown={handleResizeKeyDown}
           onMouseDown={startResizing}
           role="scrollbar"

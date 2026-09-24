@@ -27,8 +27,8 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Keyboard aria-hidden="true" className="size-4 text-foreground" />
-            <CardTitle className="font-semibold text-body text-foreground">
+            <Keyboard aria-hidden="true" className="text-foreground size-4" />
+            <CardTitle className="text-body text-foreground font-semibold">
               Input & Hardware Forwarding Engine
             </CardTitle>
           </div>
@@ -51,9 +51,9 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        <div className="grid @lg:grid-cols-2 grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2">
           {/* Keyboard Mode Selector */}
-          <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3">
             <Label htmlFor="scrcpy-keyboard-mode">Physical Keyboard Mode</Label>
             <Select
               disabled={options.noControl}
@@ -72,15 +72,15 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <p className="pt-1 text-caption text-muted-foreground">
+            <p className="text-caption text-muted-foreground pt-1">
               UHID simulates physical USB keyboard scancodes for low-latency shortcuts and games.
             </p>
           </div>
 
           {/* Read-Only / View-Only Mode Toggle */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="flag-no-control">
+              <Label className="text-body text-foreground font-medium" htmlFor="flag-no-control">
                 View-Only Mode
               </Label>
               <p className="text-caption text-muted-foreground">
@@ -95,23 +95,23 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
         </div>
 
-        <div className="grid @lg:grid-cols-3 grid-cols-1 gap-2.5">
-          <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-surface-raised/30 p-2.5">
-            <span className="font-semibold text-caption text-foreground">UHID Mode</span>
+        <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-3">
+          <div className="border-border/60 bg-surface-raised/30 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-caption text-foreground font-semibold">UHID Mode</span>
             <span className="text-caption text-muted-foreground">
               Simulates real USB HID keyboard at OS driver level. Supports gaming WASD, Ctrl, Alt,
               and special keys.
             </span>
           </div>
-          <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-surface-raised/30 p-2.5">
-            <span className="font-semibold text-caption text-foreground">SDK Mode</span>
+          <div className="border-border/60 bg-surface-raised/30 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-caption text-foreground font-semibold">SDK Mode</span>
             <span className="text-caption text-muted-foreground">
               Injects software key events through Android framework. Best compatibility on
               older/custom ROMs.
             </span>
           </div>
-          <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-surface-raised/30 p-2.5">
-            <span className="font-semibold text-caption text-foreground">AOA Mode</span>
+          <div className="border-border/60 bg-surface-raised/30 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-caption text-foreground font-semibold">AOA Mode</span>
             <span className="text-caption text-muted-foreground">
               Uses USB Accessory protocol for direct hardware HID. Works over USB connections.
             </span>
@@ -124,8 +124,8 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
     <Card className="border-border bg-surface shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Sliders aria-hidden="true" className="size-4 text-foreground" />
-          <CardTitle className="font-semibold text-body text-foreground">
+          <Sliders aria-hidden="true" className="text-foreground size-4" />
+          <CardTitle className="text-body text-foreground font-semibold">
             Automation & Device Lifecycle Behavior
           </CardTitle>
         </div>
@@ -135,11 +135,11 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
       </CardHeader>
 
       <CardContent>
-        <div className="grid @2xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2 @2xl:grid-cols-3">
           {/* Stay Awake */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="input-stay-awake">
+              <Label className="text-body text-foreground font-medium" htmlFor="input-stay-awake">
                 Stay Awake
               </Label>
               <p className="text-caption text-muted-foreground">
@@ -154,10 +154,10 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
 
           {/* Turn Screen Off */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
               <Label
-                className="font-medium text-body text-foreground"
+                className="text-body text-foreground font-medium"
                 htmlFor="input-turn-screen-off"
               >
                 Turn Screen Off on Start
@@ -174,9 +174,9 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
 
           {/* Show Touches */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="input-show-touches">
+              <Label className="text-body text-foreground font-medium" htmlFor="input-show-touches">
                 Show Touch Dots
               </Label>
               <p className="text-caption text-muted-foreground">
@@ -191,9 +191,9 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
 
           {/* Fullscreen */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="input-fullscreen">
+              <Label className="text-body text-foreground font-medium" htmlFor="input-fullscreen">
                 Start Fullscreen
               </Label>
               <p className="text-caption text-muted-foreground">
@@ -208,10 +208,10 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
 
           {/* Always on Top */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
               <Label
-                className="font-medium text-body text-foreground"
+                className="text-body text-foreground font-medium"
                 htmlFor="input-always-on-top"
               >
                 Always on Top
@@ -228,9 +228,9 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
           </div>
 
           {/* Borderless */}
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
+          <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
-              <Label className="font-medium text-body text-foreground" htmlFor="input-borderless">
+              <Label className="text-body text-foreground font-medium" htmlFor="input-borderless">
                 Borderless Window
               </Label>
               <p className="text-caption text-muted-foreground">

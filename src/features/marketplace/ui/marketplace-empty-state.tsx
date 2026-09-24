@@ -67,7 +67,7 @@ const ChipRow = ({
 );
 
 const SectionHeading = ({ children }: { children: string }) => (
-  <h3 className="text-caption text-muted-foreground uppercase tracking-wide">{children}</h3>
+  <h3 className="text-caption text-muted-foreground tracking-wide uppercase">{children}</h3>
 );
 
 export const MarketplaceEmptyState = ({
@@ -87,7 +87,7 @@ export const MarketplaceEmptyState = ({
 
   if (hasQuery) {
     return (
-      <Empty className="border border-border border-dashed bg-surface">
+      <Empty className="border-border bg-surface border border-dashed">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <SearchX aria-hidden="true" />
@@ -96,7 +96,7 @@ export const MarketplaceEmptyState = ({
           <EmptyDescription>
             Try a shorter term, enable more sources in Sources &amp; Repos, or search by exact
             package name (for example{" "}
-            <span className="font-mono text-mono">org.mozilla.firefox</span>).
+            <span className="text-mono font-mono">org.mozilla.firefox</span>).
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -111,7 +111,7 @@ export const MarketplaceEmptyState = ({
 
   return (
     <div className="flex flex-col gap-5">
-      <Empty className="border border-border border-dashed bg-surface py-10">
+      <Empty className="border-border bg-surface border border-dashed py-10">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Compass aria-hidden="true" />
@@ -160,7 +160,7 @@ export const MarketplaceEmptyState = ({
       {(recentlyViewedApps ?? []).length > 0 ? (
         <section className="flex flex-col gap-2">
           <SectionHeading>Recently viewed</SectionHeading>
-          <div className="grid @4xl:grid-cols-3 @lg:grid-cols-2 gap-3">
+          <div className="grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-3">
             {(recentlyViewedApps ?? []).slice(0, RECENT_APP_LIMIT).map((app) => (
               <AppCard
                 app={app}
@@ -173,13 +173,13 @@ export const MarketplaceEmptyState = ({
         </section>
       ) : null}
 
-      <p className="flex items-center gap-1.5 text-caption text-muted-foreground">
+      <p className="text-caption text-muted-foreground flex items-center gap-1.5">
         <Clock3 aria-hidden="true" className="size-3.5 shrink-0" />
         {githubSession.user
           ? `Signed in to GitHub as ${githubSession.user.login}.`
           : "Anonymous browsing is the default."}{" "}
         <button
-          className="cursor-pointer text-primary underline underline-offset-2"
+          className="text-primary cursor-pointer underline underline-offset-2"
           onClick={openSourcesTab}
           type="button"
         >

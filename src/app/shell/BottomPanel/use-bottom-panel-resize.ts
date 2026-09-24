@@ -41,6 +41,7 @@ export const useBottomPanelResize = ({ viewportHeight, setPanelHeight }: ResizeO
     // Commit the final height to the store — single re-render after drag ends
     if (panelRef.current) {
       Object.assign(panelRef.current.style, { userSelect: "", willChange: "" });
+      // eslint-disable-next-line unicorn/prefer-number-coercion -- style.height includes 'px' suffix; Number() returns NaN
       const finalHeight = Number.parseFloat(panelRef.current.style.height);
       if (!Number.isNaN(finalHeight)) {
         setPanelHeight(finalHeight);
@@ -84,7 +85,8 @@ export const useBottomPanelResize = ({ viewportHeight, setPanelHeight }: ResizeO
       const current =
         panelRef.current === null
           ? MIN_HEIGHT
-          : Number.parseFloat(panelRef.current.style.height) ||
+          : // eslint-disable-next-line unicorn/prefer-number-coercion -- style.height includes 'px' suffix; Number() returns NaN
+            Number.parseFloat(panelRef.current.style.height) ||
             panelRef.current.getBoundingClientRect().height;
       const next = Math.max(MIN_HEIGHT, Math.min(maxHeight, current + deltaPx));
       if (panelRef.current) {

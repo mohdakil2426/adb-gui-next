@@ -89,8 +89,8 @@ const EmulatorHeroHeader = ({
   return (
     <div className="flex min-w-0 items-center gap-3.5">
       {/* OS Avatar Box with Live Connection / Boot State Pulse Dot */}
-      <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface-raised p-2 text-foreground shadow-xs">
-        <Bot aria-hidden="true" className="size-6 text-foreground" />
+      <div className="border-border/80 bg-surface-raised text-foreground relative flex size-12 shrink-0 items-center justify-center rounded-2xl border p-2 shadow-xs">
+        <Bot aria-hidden="true" className="text-foreground size-6" />
         <span className="absolute -top-0.5 -right-0.5 flex size-3">
           <span
             className={cn(
@@ -100,7 +100,7 @@ const EmulatorHeroHeader = ({
           />
           <span
             className={cn(
-              "relative inline-flex size-3 rounded-full border-2 border-surface",
+              "border-surface relative inline-flex size-3 rounded-full border-2",
               pulseColor
             )}
           />
@@ -109,7 +109,7 @@ const EmulatorHeroHeader = ({
 
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="truncate font-semibold text-foreground text-title">
+          <h2 className="text-foreground text-title truncate font-semibold">
             {selectedAvd ? selectedAvd.name : "No Virtual Device Selected"}
           </h2>
 
@@ -142,7 +142,7 @@ const EmulatorHeroHeader = ({
           ) : null}
         </div>
 
-        <p className="truncate text-caption text-muted-foreground">
+        <p className="text-caption text-muted-foreground truncate">
           {selectedAvd
             ? `Virtual Device Path: ${selectedAvd.avdPath}`
             : "Select an Android Virtual Device from the catalog to launch, configure, or root."}
@@ -182,7 +182,7 @@ const EmulatorHeroControls = ({
   const isLaunchDisabled = !selectedAvd || isBusy || Boolean(launchBlockedReason);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 @lg:self-auto self-start">
+    <div className="flex flex-wrap items-center gap-2 self-start @lg:self-auto">
       <AvdSwitcher
         avds={avds}
         isRefreshing={isRefreshing}
@@ -192,7 +192,7 @@ const EmulatorHeroControls = ({
       />
 
       <Button
-        className="h-8 gap-1.5 px-3 text-caption"
+        className="text-caption h-8 gap-1.5 px-3"
         disabled={!selectedAvd || isBusy}
         onClick={onOpenFolder}
         size="sm"
@@ -201,7 +201,7 @@ const EmulatorHeroControls = ({
       >
         <FolderOpen
           aria-hidden="true"
-          className="size-3.5 text-muted-foreground"
+          className="text-muted-foreground size-3.5"
           data-icon="inline-start"
         />
         Open Folder
@@ -215,7 +215,7 @@ const EmulatorHeroControls = ({
       />
       {isRunning ? (
         <Button
-          className="h-8 gap-1.5 px-3.5 text-caption"
+          className="text-caption h-8 gap-1.5 px-3.5"
           disabled={isBusy}
           onClick={onStop}
           size="sm"
@@ -227,7 +227,7 @@ const EmulatorHeroControls = ({
         </Button>
       ) : (
         <Button
-          className="h-8 gap-1.5 px-3.5 text-caption"
+          className="text-caption h-8 gap-1.5 px-3.5"
           disabled={isLaunchDisabled}
           onClick={onLaunch}
           size="sm"
@@ -251,7 +251,7 @@ const EmulatorHardwareSpecsGrid = ({ selectedAvd, specs }: EmulatorHardwareSpecs
   const rootBadge = getRootStatusBadge(selectedAvd?.rootState);
 
   return (
-    <div className="grid @3xl:grid-cols-8 @lg:grid-cols-4 @xs:grid-cols-2 gap-2.5 border-border/50 border-t pt-3">
+    <div className="border-border/50 grid gap-2.5 border-t pt-3 @xs:grid-cols-2 @lg:grid-cols-4 @3xl:grid-cols-8">
       <EmulatorSpecBadge
         copyValue={selectedAvd?.name}
         icon={Bot}
@@ -341,9 +341,9 @@ export const EmulatorCockpitHero = ({
   const isColdBootRequired = selectedAvd?.rootState === "modified" && !isRunning;
 
   return (
-    <Card className="@container rounded-xl border-border bg-surface p-4.5 shadow-none">
+    <Card className="border-border bg-surface @container rounded-xl p-4.5 shadow-none">
       <CardContent className="flex flex-col gap-4 p-0">
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4">
+        <div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
           <EmulatorHeroHeader
             isColdBootRequired={isColdBootRequired}
             isRunning={isRunning}

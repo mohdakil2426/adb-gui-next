@@ -42,10 +42,10 @@ export const PartitionSizeChart = ({ data }: { data: PartitionSizeDatum[] }) => 
             key={row.name}
             title={`${row.name}: ${formatBytes(row.size)}${row.extracted ? " (extracted)" : ""}`}
           >
-            <span className="truncate text-caption text-muted-foreground">{row.name}</span>
-            <span className="h-3 w-full overflow-hidden rounded-xs bg-surface-raised">
+            <span className="text-caption text-muted-foreground truncate">{row.name}</span>
+            <span className="bg-surface-raised h-3 w-full overflow-hidden rounded-xs">
               <span
-                className="block h-full rounded-xs transition-[width] duration-base ease-standard"
+                className="duration-base ease-standard block h-full rounded-xs transition-[width]"
                 style={{
                   backgroundColor: row.extracted ? "var(--chart-2)" : "var(--chart-1)",
                   width: `${percent}%`,

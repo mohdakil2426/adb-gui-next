@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 

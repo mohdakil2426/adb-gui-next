@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -225,7 +226,6 @@ export const useMarketplaceAuth = () => {
   }, [
     clearPendingPoll,
     githubDeviceChallenge,
-    githubOauthClientId,
     isGithubAuthenticating,
     refreshSecureAuth,
     setGithubDeviceChallenge,

@@ -23,7 +23,7 @@ export const FlasherOverviewTab = ({
 }: FlasherOverviewTabProps) => (
   <div className="flex flex-col gap-5">
     {/* Row 1: Hardware Partition Hierarchy Diagram & Diagnostic Matrix */}
-    <div className="grid @3xl:grid-cols-2 grid-cols-1 items-stretch gap-5">
+    <div className="grid grid-cols-1 items-stretch gap-5 @3xl:grid-cols-2">
       <div className="flex">
         <PartitionHierarchyDiagram activeSlot={vitals.activeSlot} />
       </div>
@@ -40,7 +40,7 @@ export const FlasherOverviewTab = ({
     </div>
 
     {/* Row 2: Flasher Knowledge Base & Flash Audit Log */}
-    <div className="grid @3xl:grid-cols-2 grid-cols-1 items-stretch gap-5">
+    <div className="grid grid-cols-1 items-stretch gap-5 @3xl:grid-cols-2">
       <div className="flex">
         <FlasherKnowledgeBase />
       </div>

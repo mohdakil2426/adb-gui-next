@@ -66,14 +66,14 @@ export const AppDetailHero = ({
   };
 
   return (
-    <div className="flex @md:flex-row flex-col @md:items-start @md:justify-between gap-4">
+    <div className="flex flex-col gap-4 @md:flex-row @md:items-start @md:justify-between">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <MarketplaceAppIcon alt={displayName} iconUrl={iconUrl} size="lg" />
 
         <div className="flex min-w-0 flex-col gap-1">
-          <h2 className="truncate font-semibold text-display text-foreground">{displayName}</h2>
-          <p className="truncate font-mono text-mono text-muted-foreground">{packageName}</p>
-          <div className="numeric flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+          <h2 className="text-display text-foreground truncate font-semibold">{displayName}</h2>
+          <p className="text-mono text-muted-foreground truncate font-mono">{packageName}</p>
+          <div className="numeric text-caption text-muted-foreground flex flex-wrap items-center gap-2">
             <ProviderBadge source={source} />
             {repoStars ? (
               <span className="inline-flex items-center gap-1">
@@ -86,9 +86,9 @@ export const AppDetailHero = ({
         </div>
       </div>
 
-      <div className="flex @md:max-w-72 shrink-0 flex-col @md:items-end items-stretch gap-1.5">
+      <div className="flex shrink-0 flex-col items-stretch gap-1.5 @md:max-w-72 @md:items-end">
         <Button
-          className="@md:w-auto w-full"
+          className="w-full @md:w-auto"
           disabled={!canInstall || installState === "running"}
           onClick={onInstall}
           type="button"
@@ -98,7 +98,7 @@ export const AppDetailHero = ({
         </Button>
         <DownloadProgressStrip packageName={packageName} />
         {canInstall || !blockedReason ? null : (
-          <p className="@md:text-right text-caption text-muted-foreground">{blockedReason}</p>
+          <p className="text-caption text-muted-foreground @md:text-right">{blockedReason}</p>
         )}
       </div>
     </div>

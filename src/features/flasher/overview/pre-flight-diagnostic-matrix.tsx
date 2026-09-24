@@ -205,57 +205,60 @@ const DIAG_BADGE_VARIANT: Record<string, "success" | "warning" | "destructive" |
   warn: "warning",
 };
 
-const DiagnosticRow = ({ diag }: { diag: DiagnosticItem }) => (
-  <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-2.5 rounded-lg border border-border/70 bg-surface-raised/40 p-3 transition-colors hover:border-border hover:bg-surface-raised/70">
-    <div className="flex min-w-0 items-center gap-3">
-      <div
-        className={cn(
-          "flex size-8 shrink-0 items-center justify-center rounded-lg border",
-          diag.status === "pass" && "border-success/30 bg-success/10 text-success",
-          diag.status === "warn" && "border-warning/30 bg-warning/10 text-warning",
-          diag.status === "fail" && "border-destructive/30 bg-destructive/10 text-destructive",
-          diag.status === "checking" && "border-info/30 bg-info/10 text-info",
-          diag.status === "idle" && "border-border bg-surface text-muted-foreground"
-        )}
-      >
-        {renderDiagStatusIcon(diag.status)}
-      </div>
-
-      <div className="flex min-w-0 flex-col">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-body text-foreground">{diag.label}</span>
-          {diag.value ? (
-            <Badge className="font-mono text-[10px]" variant="outline">
-              {diag.value}
-            </Badge>
-          ) : null}
-        </div>
-        <span className="text-caption text-muted-foreground">{diag.tip ?? diag.description}</span>
-      </div>
-    </div>
-
-    <div className="flex items-center gap-2 @lg:self-auto self-end">
-      {diag.fixLabel && diag.fixAction ? (
-        <Button
-          className="h-7 text-caption"
-          onClick={diag.fixAction}
-          size="sm"
-          type="button"
-          variant="outline"
+const DiagnosticRow = ({ diag }: { diag: DiagnosticItem }) => {
+  const handleClick = diag.fixAction;
+  return (
+    <div className="border-border/70 bg-surface-raised/40 hover:border-border hover:bg-surface-raised/70 flex flex-col gap-2.5 rounded-lg border p-3 transition-colors @lg:flex-row @lg:items-center @lg:justify-between">
+      <div className="flex min-w-0 items-center gap-3">
+        <div
+          className={cn(
+            "flex size-8 shrink-0 items-center justify-center rounded-lg border",
+            diag.status === "pass" && "border-success/30 bg-success/10 text-success",
+            diag.status === "warn" && "border-warning/30 bg-warning/10 text-warning",
+            diag.status === "fail" && "border-destructive/30 bg-destructive/10 text-destructive",
+            diag.status === "checking" && "border-info/30 bg-info/10 text-info",
+            diag.status === "idle" && "border-border bg-surface text-muted-foreground"
+          )}
         >
-          {diag.fixLabel}
-        </Button>
-      ) : null}
+          {renderDiagStatusIcon(diag.status)}
+        </div>
 
-      <Badge
-        className="font-mono text-[10px] uppercase"
-        variant={DIAG_BADGE_VARIANT[diag.status] ?? "secondary"}
-      >
-        {diag.status}
-      </Badge>
+        <div className="flex min-w-0 flex-col">
+          <div className="flex items-center gap-2">
+            <span className="text-body text-foreground font-semibold">{diag.label}</span>
+            {diag.value ? (
+              <Badge className="font-mono text-[10px]" variant="outline">
+                {diag.value}
+              </Badge>
+            ) : null}
+          </div>
+          <span className="text-caption text-muted-foreground">{diag.tip ?? diag.description}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 self-end @lg:self-auto">
+        {diag.fixLabel && diag.fixAction ? (
+          <Button
+            className="text-caption h-7"
+            onClick={handleClick}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {diag.fixLabel}
+          </Button>
+        ) : null}
+
+        <Badge
+          className="font-mono text-[10px] uppercase"
+          variant={DIAG_BADGE_VARIANT[diag.status] ?? "secondary"}
+        >
+          {diag.status}
+        </Badge>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const PreFlightDiagnosticMatrix = ({
   vitals,
@@ -279,11 +282,11 @@ export const PreFlightDiagnosticMatrix = ({
         }))
       : buildDefaultDiagnostics(vitals, isFastbootMode, hasDevice, isUnlocked, onRebootBootloader);
   return (
-    <Card className="flex h-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface flex h-full flex-col justify-between rounded-xl shadow-none">
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div>
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <ShieldCheck className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <ShieldCheck className="text-muted-foreground size-5" />
             Pre-Flight Diagnostic Matrix
           </CardTitle>
           <CardDescription className="text-caption">
@@ -293,7 +296,7 @@ export const PreFlightDiagnosticMatrix = ({
 
         <Button
           aria-label="Re-run diagnostics"
-          className="h-8 gap-1.5 px-3 text-caption"
+          className="text-caption h-8 gap-1.5 px-3"
           disabled={isProbing || !hasDevice}
           onClick={onRefresh}
           size="sm"

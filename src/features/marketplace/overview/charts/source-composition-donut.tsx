@@ -75,13 +75,13 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
   let offset = 0;
 
   return (
-    <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-4">
+    <div className="border-border bg-surface flex flex-col justify-between rounded-lg border p-4">
       <div className="flex items-center justify-between pb-2">
         <div className="flex items-center gap-2">
-          <Layers className="size-4 text-muted-foreground" />
-          <h3 className="font-semibold text-body text-foreground">Source Composition</h3>
+          <Layers className="text-muted-foreground size-4" />
+          <h3 className="text-body text-foreground font-semibold">Source Composition</h3>
         </div>
-        <span className="numeric font-mono text-caption text-muted-foreground">
+        <span className="numeric text-caption text-muted-foreground font-mono">
           {total.toLocaleString()} total apps
         </span>
       </div>
@@ -129,10 +129,10 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
             })}
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="numeric font-bold text-foreground text-title leading-tight">
+            <span className="numeric text-foreground text-title leading-tight font-bold">
               {slices.length}
             </span>
-            <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+            <span className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
               Sources
             </span>
           </div>
@@ -145,20 +145,20 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
             const pct = formatPercent(usageRatio(slice.count, total));
             return (
               <div
-                className="flex items-center justify-between rounded-md border border-border/40 bg-surface-raised/40 px-2.5 py-1.5"
+                className="border-border/40 bg-surface-raised/40 flex items-center justify-between rounded-md border px-2.5 py-1.5"
                 key={slice.key}
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span className="truncate font-medium text-caption text-foreground">
+                  <Icon className="text-muted-foreground size-3.5 shrink-0" />
+                  <span className="text-caption text-foreground truncate font-medium">
                     {slice.label}
                   </span>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="numeric font-mono text-caption text-muted-foreground">
+                  <span className="numeric text-caption text-muted-foreground font-mono">
                     {slice.count.toLocaleString()}
                   </span>
-                  <span className="numeric font-medium font-mono text-caption text-foreground">
+                  <span className="numeric text-caption text-foreground font-mono font-medium">
                     {pct}
                   </span>
                 </div>

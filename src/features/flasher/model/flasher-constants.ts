@@ -104,7 +104,7 @@ export const detectPartitionFromFilename = (fileName: string): string | null => 
   }
 
   // Fallback: strip extension and check if base matches any common partition
-  const base = normalized.replace(/\.(img|bin)$/iu, "").replace(/_[ab]$/iu, "");
+  const base = normalized.replace(/\.(?:img|bin)$/iu, "").replace(/_[ab]$/iu, "");
   if ((COMMON_PARTITIONS as readonly string[]).includes(base)) {
     return base;
   }

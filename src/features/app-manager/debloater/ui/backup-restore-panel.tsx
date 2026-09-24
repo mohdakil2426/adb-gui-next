@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import {
   Archive,
   Camera,
@@ -28,7 +29,7 @@ const backupTimestampFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 const formatBackupTimestamp = (createdAt: string): string => {
-  const s = Number.parseInt(createdAt, 10);
+  const s = Math.trunc(Number(createdAt));
   return Number.isFinite(s) && s > 0
     ? backupTimestampFormatter.format(new Date(s * 1000))
     : "Unknown date";
@@ -127,23 +128,23 @@ export const BackupRestorePanel = () => {
   return (
     <section
       aria-label="Device state snapshots and backups"
-      className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5 shadow-none"
+      className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5 shadow-none"
     >
       {/* ── Panel Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-border/40 border-b pb-2.5">
+      <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-b pb-2.5">
         <div className="flex items-center gap-2">
-          <Archive aria-hidden="true" className="size-4 text-muted-foreground" />
-          <h3 className="font-semibold text-foreground text-label">
+          <Archive aria-hidden="true" className="text-muted-foreground size-4" />
+          <h3 className="text-foreground text-label font-semibold">
             Device State Snapshots & Backups
           </h3>
-          <Badge className="font-mono text-caption" variant="neutral">
+          <Badge className="text-caption font-mono" variant="neutral">
             {backups.length}
           </Badge>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
-            className="h-8 cursor-pointer gap-1.5 px-3 text-caption"
+            className="text-caption h-8 cursor-pointer gap-1.5 px-3"
             disabled={isCreatingBackup || packages.length === 0 || !selectedSerial}
             onClick={() => {
               void handleCreateBackup();
@@ -166,7 +167,7 @@ export const BackupRestorePanel = () => {
 
           <Button
             aria-label="Refresh backup list"
-            className="size-8 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground size-8"
             disabled={isRefreshing || !selectedSerial}
             onClick={() => {
               void refreshBackups();
@@ -186,10 +187,10 @@ export const BackupRestorePanel = () => {
 
       {/* ── Snapshot List / Empty State ── */}
       {backups.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2.5 rounded-md border border-border/60 border-dashed bg-surface-raised/30 p-6 text-center">
-          <ShieldCheck aria-hidden="true" className="size-8 text-muted-foreground/60" />
+        <div className="border-border/60 bg-surface-raised/30 flex flex-col items-center justify-center gap-2.5 rounded-md border border-dashed p-6 text-center">
+          <ShieldCheck aria-hidden="true" className="text-muted-foreground/60 size-8" />
           <div className="flex max-w-md flex-col gap-1">
-            <span className="font-medium text-body text-foreground">
+            <span className="text-body text-foreground font-medium">
               {selectedSerial ? "No snapshots recorded yet" : "Connect a device to manage backups"}
             </span>
             <span className="text-caption text-muted-foreground">
@@ -201,7 +202,7 @@ export const BackupRestorePanel = () => {
 
           {selectedSerial && packages.length > 0 ? (
             <Button
-              className="mt-1 cursor-pointer gap-1.5 text-caption"
+              className="text-caption mt-1 cursor-pointer gap-1.5"
               disabled={isCreatingBackup}
               onClick={() => {
                 void handleCreateBackup();
@@ -227,30 +228,30 @@ export const BackupRestorePanel = () => {
         <div className="flex max-h-56 flex-col gap-1.5 overflow-y-auto pr-1">
           {backups.map((backup) => (
             <div
-              className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-surface-raised/40 p-2.5 transition-colors hover:border-border hover:bg-accent/50"
+              className="border-border/40 bg-surface-raised/40 hover:border-border hover:bg-accent/50 flex items-center justify-between gap-3 rounded-md border p-2.5 transition-colors"
               key={backup.fileName}
             >
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className="flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 bg-surface">
-                  <HardDrive aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                <div className="border-border/60 bg-surface flex size-7 shrink-0 items-center justify-center rounded-md border">
+                  <HardDrive aria-hidden="true" className="text-muted-foreground size-3.5" />
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-medium text-body text-foreground">
+                  <span className="text-body text-foreground truncate font-medium">
                     {formatBackupTimestamp(backup.createdAt)}
                   </span>
-                  <span className="truncate font-mono text-[11px] text-muted-foreground">
+                  <span className="text-muted-foreground truncate font-mono text-[11px]">
                     {backup.fileName}
                   </span>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-2.5">
-                <Badge className="font-mono text-caption" variant="neutral">
+                <Badge className="text-caption font-mono" variant="neutral">
                   {backup.packageCount} packages
                 </Badge>
                 <Button
-                  className="h-7 cursor-pointer gap-1 px-2.5 text-caption"
+                  className="text-caption h-7 cursor-pointer gap-1 px-2.5"
                   disabled={restoringFile !== null || !selectedSerial}
                   onClick={() => setPending(backup)}
                   size="sm"
@@ -279,7 +280,7 @@ export const BackupRestorePanel = () => {
         consequence={
           <p className="leading-relaxed">
             Every package recorded in this snapshot will be re-applied to its recorded state on{" "}
-            <span className="font-mono font-semibold text-foreground">
+            <span className="text-foreground font-mono font-semibold">
               {selectedSerial ?? "the device"}
             </span>
             . Any debloating performed afterwards will be reversed.

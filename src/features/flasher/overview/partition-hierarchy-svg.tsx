@@ -12,7 +12,7 @@ export const PartitionHierarchySvg = ({
   onSelectPartition,
   selectedPartition,
 }: PartitionHierarchySvgProps) => (
-  <div className="relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-lg border border-border/80 bg-background/60 p-3">
+  <div className="border-border/80 bg-background/60 relative flex min-h-[260px] flex-1 items-center justify-center overflow-hidden rounded-lg border p-3">
     <svg
       aria-label="Android Partition Flowchart"
       className="h-full max-h-[320px] w-full"
@@ -54,7 +54,7 @@ export const PartitionHierarchySvg = ({
       {/* Level 1: Primary Bootloader */}
       <g className="cursor-pointer" onClick={() => onSelectPartition("bootloader")}>
         <rect
-          className="stroke-border/80 transition-[stroke] duration-150 hover:stroke-foreground"
+          className="stroke-border/80 hover:stroke-foreground transition-[stroke] duration-150"
           fill="var(--surface-raised)"
           height="36"
           rx="8"
@@ -64,7 +64,7 @@ export const PartitionHierarchySvg = ({
           y="10"
         />
         <text
-          className="fill-foreground font-semibold text-[12px]"
+          className="fill-foreground text-[12px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="380"
@@ -100,7 +100,7 @@ export const PartitionHierarchySvg = ({
           y="80"
         />
         <text
-          className="fill-foreground font-semibold text-[12px]"
+          className="fill-foreground text-[12px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="200"
@@ -135,7 +135,7 @@ export const PartitionHierarchySvg = ({
           y="80"
         />
         <text
-          className="fill-foreground font-semibold text-[12px]"
+          className="fill-foreground text-[12px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -181,7 +181,7 @@ export const PartitionHierarchySvg = ({
           y="155"
         />
         <text
-          className="fill-foreground font-semibold text-[11px]"
+          className="fill-foreground text-[11px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="210"
@@ -216,7 +216,7 @@ export const PartitionHierarchySvg = ({
           y="155"
         />
         <text
-          className="fill-foreground font-semibold text-[11px]"
+          className="fill-foreground text-[11px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -262,7 +262,7 @@ export const PartitionHierarchySvg = ({
           y="225"
         />
         <text
-          className="fill-foreground font-semibold text-[12px]"
+          className="fill-foreground text-[12px] font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="385"

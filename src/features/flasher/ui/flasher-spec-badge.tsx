@@ -24,7 +24,7 @@ export const FlasherSpecBadge = ({
   const content = (
     <div
       className={cn(
-        "group relative flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:border-border hover:bg-surface-raised/70",
+        "group border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised/70 relative flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors",
         variant === "success" && "border-success/30 bg-success/5 hover:border-success/50",
         variant === "warning" && "border-warning/30 bg-warning/5 hover:border-warning/50",
         variant === "destructive" &&
@@ -34,19 +34,19 @@ export const FlasherSpecBadge = ({
       <div className="flex min-w-0 items-center gap-2">
         <Icon
           className={cn(
-            "size-3.5 shrink-0 text-muted-foreground",
+            "text-muted-foreground size-3.5 shrink-0",
             variant === "success" && "text-success",
             variant === "warning" && "text-warning",
             variant === "destructive" && "text-destructive"
           )}
         />
         <div className="flex min-w-0 flex-col">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+          <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
             {label}
           </span>
           <span
             className={cn(
-              "truncate font-medium font-mono text-foreground text-mono-sm",
+              "text-foreground text-mono-sm truncate font-mono font-medium",
               variant === "success" && "text-success",
               variant === "warning" && "text-warning",
               variant === "destructive" && "text-destructive"

@@ -90,7 +90,7 @@ const saveLogsToFile = async () => {
   }
 };
 
-export const PanelHeaderActions = memo(function PanelHeaderActions({
+const PanelHeaderActionsImpl = ({
   activeTab,
   clearHistory,
   clearLogs,
@@ -101,7 +101,7 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
   setIsSearchOpen,
   toggleMaximized,
   togglePanel,
-}: PanelHeaderActionsProps) {
+}: PanelHeaderActionsProps) => {
   const { hasLogs, isFollowing, isPanelMaximized, isSearchOpen } = flags;
   const handleClear = () => {
     if (activeTab === "logs") {
@@ -299,4 +299,6 @@ export const PanelHeaderActions = memo(function PanelHeaderActions({
       </Tooltip>
     </div>
   );
-});
+};
+
+export const PanelHeaderActions = memo(PanelHeaderActionsImpl);

@@ -111,7 +111,7 @@ export const ViewEmulatorManager = () => {
       {(() => {
         if (isAvdsError) {
           return (
-            <Card className="rounded-lg border-border bg-surface p-6 shadow-none">
+            <Card className="border-border bg-surface rounded-lg p-6 shadow-none">
               <EmptyState
                 action={
                   <Button
@@ -137,7 +137,7 @@ export const ViewEmulatorManager = () => {
           return (
             <output
               aria-live="polite"
-              className="block rounded-lg border border-border bg-surface p-6 shadow-none"
+              className="border-border bg-surface block rounded-lg border p-6 shadow-none"
             >
               <EmptyState
                 action={
@@ -159,7 +159,7 @@ export const ViewEmulatorManager = () => {
           );
         }
         return (
-          <Card className="gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
+          <Card className="border-border bg-surface gap-0 rounded-lg py-0 shadow-none">
             <CardContent className="flex flex-col gap-4 p-4">
               <Tabs
                 className="gap-4"

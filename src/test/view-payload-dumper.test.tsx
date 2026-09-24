@@ -205,6 +205,7 @@ describe(ViewPayloadDumper, () => {
     expect(screen.getByText(/Local File Archive/iu)).toBeInTheDocument();
     expect(screen.getByText(/Remote OTA URL Stream/iu)).toBeInTheDocument();
   });
+
   it("navigates to firmware hub and opens device detail", async () => {
     const user = userEvent.setup();
     renderWithClient();
@@ -214,6 +215,7 @@ describe(ViewPayloadDumper, () => {
     expect(screen.getAllByText("husky").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/AP4A.250105.002/u).length).toBeGreaterThan(0);
   });
+
   it("filters Nothing devices in firmware hub and opens device detail", async () => {
     const user = userEvent.setup();
     renderWithClient();
@@ -235,6 +237,7 @@ describe(ViewPayloadDumper, () => {
     expect(screen.getAllByText("houji").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/OS1.0.18.0.UNCMIXM/u).length).toBeGreaterThan(0);
   });
+
   it("filters OnePlus devices in firmware hub and opens device detail", async () => {
     const user = userEvent.setup();
     renderWithClient();
@@ -256,6 +259,7 @@ describe(ViewPayloadDumper, () => {
     expect(screen.getAllByText("SM-S928B").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/S928BXXS6DZG1/u).length).toBeGreaterThan(0);
   });
+
   it("renders the loaded state with precision hero banner and extractor controls", async () => {
     const user = userEvent.setup();
     usePayloadDumperStore.setState({

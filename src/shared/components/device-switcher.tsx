@@ -59,7 +59,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                 className={cn(
                   // Squared to match every other header control (h-8, rounded-md).
                   // This was a rounded-full h-7 pill — the only one in the chrome.
-                  "h-8 gap-1.5 rounded-md border border-border px-2.5 font-medium text-label",
+                  "border-border text-label h-8 gap-1.5 rounded-md border px-2.5 font-medium",
                   !selectedDevice && "text-muted-foreground"
                 )}
                 size="sm"
@@ -70,7 +70,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                     <span className="max-w-[120px] truncate">{displayName}</span>
                     <Badge
                       className={cn(
-                        "pointer-events-none px-1.5 py-0 text-caption",
+                        "text-caption pointer-events-none px-1.5 py-0",
                         statusConfig?.badgeClass
                       )}
                       variant={statusConfig?.variant}
@@ -103,8 +103,8 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-1.5">
-              <Smartphone aria-hidden="true" className="size-4 text-muted-foreground" />
-              <span className="font-medium text-sm">Connected Devices</span>
+              <Smartphone aria-hidden="true" className="text-muted-foreground size-4" />
+              <span className="text-sm font-medium">Connected Devices</span>
             </div>
             <RefreshButton
               aria-label="Refresh Devices"
@@ -123,12 +123,12 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
               <div className="px-3 py-6 text-center">
                 <MonitorSmartphone
                   aria-hidden="true"
-                  className="mx-auto size-8 text-muted-foreground/40"
+                  className="text-muted-foreground/40 mx-auto size-8"
                 />
-                <p className="mt-2 text-muted-foreground text-sm">
+                <p className="text-muted-foreground mt-2 text-sm">
                   {isRefreshing ? "Scanning for devices…" : "No devices detected"}
                 </p>
-                <p className="mt-1 text-label text-muted-foreground">
+                <p className="text-label text-muted-foreground mt-1">
                   Ensure USB Debugging is enabled
                 </p>
               </div>
@@ -148,7 +148,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         aria-current={isSelected}
                         className={cn(
                           "relative flex w-full cursor-pointer items-center gap-2.5 rounded-md py-2 pr-9 pl-2.5 text-left text-sm",
-                          "transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                          "hover:bg-accent/80 focus-visible:ring-ring transition-colors focus-visible:ring-1 focus-visible:outline-none",
                           isSelected && "bg-accent"
                         )}
                         onClick={() => {
@@ -163,7 +163,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                             "size-2 shrink-0 rounded-full",
                             isSelected
                               ? "bg-foreground"
-                              : "bg-transparent ring-2 ring-muted-foreground/30"
+                              : "ring-muted-foreground/30 bg-transparent ring-2"
                           )}
                         />
 
@@ -171,7 +171,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-medium">{name}</span>
                           {subtitle ? (
-                            <span className="block truncate font-mono text-muted-foreground text-xs">
+                            <span className="text-muted-foreground block truncate font-mono text-xs">
                               {subtitle}
                             </span>
                           ) : null}
@@ -180,7 +180,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         {/* Status badge */}
                         <Badge
                           className={cn(
-                            "pointer-events-none shrink-0 px-1.5 py-0 text-caption",
+                            "text-caption pointer-events-none shrink-0 px-1.5 py-0",
                             config.badgeClass
                           )}
                           variant={config.variant}
@@ -191,7 +191,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
 
                       <Button
                         aria-label={`Edit ${name} Nickname`}
-                        className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity focus-visible:opacity-100 group-focus-within/device:opacity-100 group-hover/device:opacity-100"
+                        className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity group-focus-within/device:opacity-100 group-hover/device:opacity-100 focus-visible:opacity-100"
                         onClick={() => {
                           handleEdit(device.serial);
                         }}

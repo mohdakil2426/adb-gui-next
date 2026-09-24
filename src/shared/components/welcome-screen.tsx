@@ -11,7 +11,7 @@ interface WelcomeScreenProps {
 }
 
 export const WelcomeScreen = (_props: WelcomeScreenProps) => (
-  <div className="flex h-svh w-full flex-col items-center justify-center gap-8 bg-background">
+  <div className="bg-background flex h-svh w-full flex-col items-center justify-center gap-8">
     <div className="flex flex-col items-center gap-4">
       <img
         alt=""
@@ -25,7 +25,7 @@ export const WelcomeScreen = (_props: WelcomeScreenProps) => (
     </div>
 
     <output aria-busy="true" className="flex items-center gap-2">
-      <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-primary" />
+      <span aria-hidden="true" className="bg-primary size-1.5 animate-pulse rounded-full" />
       <span className="text-caption text-muted-foreground">Starting…</span>
     </output>
   </div>

@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Database, FileJson, Loader2, RefreshCw, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -116,15 +117,15 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Database className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Database className="text-primary size-4.5" />
             Fastboot Variables Deep Inspector (getvar all)
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-muted-foreground">
+            <span className="text-muted-foreground font-mono text-[11px]">
               {filteredVariables.length} / {parsedVariables.length} Variables
             </span>
           </div>
@@ -140,10 +141,10 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex max-w-md flex-1 items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
               <Input
                 aria-label="Search fastboot variables"
-                className="h-8 pl-8 text-caption"
+                className="text-caption h-8 pl-8"
                 onChange={(e) => setVarSearch(e.target.value)}
                 placeholder="Search variables (e.g. secure, product, slot)…"
                 value={varSearch}
@@ -153,7 +154,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
             <div className="flex items-center gap-1">
               {["ALL", "Hardware", "Security", "Slots"].map((cat) => (
                 <Button
-                  className="h-8 text-caption"
+                  className="text-caption h-8"
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
                   size="sm"
@@ -168,7 +169,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
 
           <div className="flex items-center gap-2">
             <Button
-              className="h-8 gap-1.5 px-3 text-caption"
+              className="text-caption h-8 gap-1.5 px-3"
               disabled={isLoadingVars || !isFastboot}
               onClick={() => {
                 void handleQueryGetVars();
@@ -186,7 +187,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
 
             {parsedVariables.length > 0 ? (
               <Button
-                className="h-8 gap-1.5 px-3 text-caption"
+                className="text-caption h-8 gap-1.5 px-3"
                 onClick={() => {
                   void handleExportJson();
                 }}
@@ -194,7 +195,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
                 type="button"
                 variant="outline"
               >
-                <FileJson className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <FileJson className="text-muted-foreground size-3.5" data-icon="inline-start" />
                 Export JSON
               </Button>
             ) : null}
@@ -202,27 +203,27 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
         </div>
 
         {/* Variables Table */}
-        <div className="max-h-[360px] min-h-[200px] overflow-y-auto rounded-lg border border-border/80 bg-background/90 font-mono text-[11px]">
+        <div className="border-border/80 bg-background/90 max-h-[360px] min-h-[200px] overflow-y-auto rounded-lg border font-mono text-[11px]">
           {filteredVariables.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-caption text-muted-foreground">
+            <div className="text-caption text-muted-foreground flex h-32 items-center justify-center">
               {isFastboot
                 ? 'Click "Query Variables" to fetch bootloader parameters.'
                 : "Connect a device in Fastboot mode to inspect getvar variables."}
             </div>
           ) : (
-            <table className="w-full divide-y divide-border/40 text-left">
-              <thead className="sticky top-0 bg-surface-raised/80 text-[10px] text-muted-foreground uppercase tracking-wider">
+            <table className="divide-border/40 w-full divide-y text-left">
+              <thead className="bg-surface-raised/80 text-muted-foreground sticky top-0 text-[10px] tracking-wider uppercase">
                 <tr>
                   <th className="px-3 py-2 font-medium">Variable Key</th>
                   <th className="px-3 py-2 font-medium">Value</th>
                   <th className="w-12 px-3 py-2 text-right">Copy</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/40">
+              <tbody className="divide-border/40 divide-y">
                 {filteredVariables.map((row) => (
                   <tr className="hover:bg-surface-raised/40" key={`${row.key}-${row.value}`}>
-                    <td className="px-3 py-1.5 font-semibold text-primary">{row.key}</td>
-                    <td className="px-3 py-1.5 text-foreground">{row.value}</td>
+                    <td className="text-primary px-3 py-1.5 font-semibold">{row.key}</td>
+                    <td className="text-foreground px-3 py-1.5">{row.value}</td>
                     <td className="px-3 py-1.5 text-right">
                       <CopyButton value={`${row.key}: ${row.value}`} />
                     </td>

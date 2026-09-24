@@ -47,7 +47,7 @@ const FieldGroup = ({ className, ...props }: React.ComponentProps<"div">) => (
   />
 );
 
-const fieldVariants = cva("group/field flex w-full gap-3 data-[invalid=true]:text-destructive", {
+const fieldVariants = cva("group/field data-[invalid=true]:text-destructive flex w-full gap-3", {
   defaultVariants: {
     orientation: "vertical",
   },
@@ -59,7 +59,7 @@ const fieldVariants = cva("group/field flex w-full gap-3 data-[invalid=true]:tex
         "has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],
       responsive: [
-        "@md/field-group:flex-row flex-col @md/field-group:items-center @md/field-group:[&>*]:w-auto [&>*]:w-full [&>.sr-only]:w-auto",
+        "flex-col @md/field-group:flex-row @md/field-group:items-center [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto",
         "@md/field-group:[&>[data-slot=field-label]]:flex-auto",
         "@md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
       ],
@@ -105,7 +105,7 @@ const FieldLabel = ({ className, ...props }: React.ComponentProps<typeof Label>)
 const FieldTitle = ({ className, ...props }: React.ComponentProps<"div">) => (
   <div
     className={cn(
-      "flex w-fit items-center gap-2 font-medium text-body leading-snug group-data-[disabled=true]/field:opacity-50",
+      "text-body flex w-fit items-center gap-2 leading-snug font-medium group-data-[disabled=true]/field:opacity-50",
       className
     )}
     data-slot="field-label"
@@ -116,8 +116,8 @@ const FieldTitle = ({ className, ...props }: React.ComponentProps<"div">) => (
 const FieldDescription = ({ className, ...props }: React.ComponentProps<"p">) => (
   <p
     className={cn(
-      "font-normal text-body text-muted-foreground leading-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
-      "nth-last-2:-mt-1 last:mt-0 [[data-variant=legend]+&]:-mt-1.5",
+      "text-body text-muted-foreground leading-normal font-normal group-has-[[data-orientation=horizontal]]/field:text-balance",
+      "last:mt-0 nth-last-2:-mt-1 [[data-variant=legend]+&]:-mt-1.5",
       "[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4",
       className
     )}
@@ -135,7 +135,7 @@ const FieldSeparator = ({
 }) => (
   <div
     className={cn(
-      "relative -my-2 h-5 text-body group-data-[variant=outline]/field-group:-mb-2",
+      "text-body relative -my-2 h-5 group-data-[variant=outline]/field-group:-mb-2",
       className
     )}
     data-content={!!children}
@@ -145,7 +145,7 @@ const FieldSeparator = ({
     <Separator className="absolute inset-0 top-1/2" />
     {children ? (
       <span
-        className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
+        className="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
         data-slot="field-separator-content"
       >
         {children}
@@ -191,7 +191,7 @@ const FieldError = ({
 
   return (
     <div
-      className={cn("font-normal text-body text-destructive", className)}
+      className={cn("text-body text-destructive font-normal", className)}
       data-slot="field-error"
       role="alert"
       {...props}

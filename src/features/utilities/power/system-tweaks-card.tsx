@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Loader2, Moon, RotateCcw, Sliders, Sun } from "lucide-react";
 import { useState } from "react";
 
@@ -100,10 +101,10 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 font-semibold text-title">
-          <Sliders className="size-4.5 text-primary" />
+        <CardTitle className="text-title flex items-center gap-2 font-semibold">
+          <Sliders className="text-primary size-4.5" />
           Android System Tweaks
         </CardTitle>
         <CardDescription className="text-body text-muted-foreground">
@@ -112,11 +113,11 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4 pt-1">
-        <div className="grid @lg:grid-cols-2 @xs:grid-cols-1 gap-4">
+        <div className="grid gap-4 @xs:grid-cols-1 @lg:grid-cols-2">
           {/* Tweak 1: Animation Scale */}
-          <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Window Animation Scales
               </span>
               <span className="text-caption text-muted-foreground">
@@ -127,7 +128,7 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
             <div className="flex items-center gap-2">
               {["0.0", "0.5", "1.0", "1.5"].map((scale) => (
                 <Button
-                  className="h-8 flex-1 text-caption"
+                  className="text-caption h-8 flex-1"
                   disabled={!isAdb || Boolean(isTweaking)}
                   key={scale}
                   onClick={() => {
@@ -144,9 +145,9 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
           </div>
 
           {/* Tweak 2: Force Dark Mode */}
-          <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 System Dark / Light Mode
               </span>
               <span className="text-caption text-muted-foreground">
@@ -156,7 +157,7 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
 
             <div className="flex items-center gap-2">
               <Button
-                className="h-8 flex-1 gap-1.5 text-caption"
+                className="text-caption h-8 flex-1 gap-1.5"
                 disabled={!isAdb || Boolean(isTweaking)}
                 onClick={() => {
                   void handleSetDarkTheme(true);
@@ -165,11 +166,11 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
                 type="button"
                 variant="outline"
               >
-                <Moon className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <Moon className="text-muted-foreground size-3.5" data-icon="inline-start" />
                 Force Dark
               </Button>
               <Button
-                className="h-8 flex-1 gap-1.5 text-caption"
+                className="text-caption h-8 flex-1 gap-1.5"
                 disabled={!isAdb || Boolean(isTweaking)}
                 onClick={() => {
                   void handleSetDarkTheme(false);
@@ -178,16 +179,16 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
                 type="button"
                 variant="outline"
               >
-                <Sun className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <Sun className="text-muted-foreground size-3.5" data-icon="inline-start" />
                 Force Light
               </Button>
             </div>
           </div>
 
           {/* Tweak 3: Display Density */}
-          <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Custom Display Density
               </span>
               <span className="text-caption text-muted-foreground">
@@ -198,14 +199,14 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
             <div className="flex items-center gap-2">
               <Input
                 aria-label="Custom display density DPI"
-                className="h-8 text-body"
+                className="text-body h-8"
                 disabled={!isAdb}
                 onChange={(e) => setCustomDpi(e.target.value)}
                 placeholder="DPI (e.g. 420)"
                 value={customDpi}
               />
               <Button
-                className="h-8 shrink-0 text-caption"
+                className="text-caption h-8 shrink-0"
                 disabled={!(isAdb && customDpi) || Boolean(isTweaking)}
                 onClick={() => {
                   void handleSetDpi();
@@ -216,7 +217,7 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
                 Apply
               </Button>
               <Button
-                className="h-8 shrink-0 text-caption"
+                className="text-caption h-8 shrink-0"
                 disabled={!isAdb || Boolean(isTweaking)}
                 onClick={() => {
                   void handleResetDpi();
@@ -231,16 +232,16 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
           </div>
 
           {/* Tweak 4: Soft Reboot */}
-          <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+          <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
             <div className="flex flex-col gap-0.5">
-              <span className="font-semibold text-body text-foreground">Zygote Soft Reboot</span>
+              <span className="text-body text-foreground font-semibold">Zygote Soft Reboot</span>
               <span className="text-caption text-muted-foreground">
                 Restarts the Android framework without kernel reboot
               </span>
             </div>
 
             <Button
-              className="h-8 gap-1.5 text-caption"
+              className="text-caption h-8 gap-1.5"
               disabled={!isAdb || Boolean(isTweaking)}
               onClick={() => {
                 void handleSoftReboot();
@@ -252,7 +253,7 @@ export const SystemTweaksCard = ({ deviceMode, deviceSerial }: SystemTweaksCardP
               {isTweaking === "soft-reboot" ? (
                 <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               ) : (
-                <RotateCcw className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <RotateCcw className="text-muted-foreground size-3.5" data-icon="inline-start" />
               )}
               Trigger Soft Reboot
             </Button>

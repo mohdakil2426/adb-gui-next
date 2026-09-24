@@ -56,7 +56,7 @@ export const ViewMarketplace = ({ initialTab }: { initialTab?: MarketplaceTab } 
       >
         <TabsList className="w-full">
           <TabsTrigger className="flex-1 gap-2" value="overview">
-            <Sparkles className="size-4 text-primary" />
+            <Sparkles className="text-primary size-4" />
             <span>Overview</span>
           </TabsTrigger>
 
@@ -64,7 +64,7 @@ export const ViewMarketplace = ({ initialTab }: { initialTab?: MarketplaceTab } 
             <Search className="size-4" />
             <span>Browse & Search</span>
             {(results ?? []).length > 0 && (
-              <Badge className="ml-1 px-1.5 py-0 font-mono text-caption" variant="neutral">
+              <Badge className="text-caption ml-1 px-1.5 py-0 font-mono" variant="neutral">
                 {(results ?? []).length}
               </Badge>
             )}

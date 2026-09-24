@@ -5,7 +5,7 @@ import { cn } from "@/shared/utils/cn";
 const Kbd = ({ className, ...props }: React.ComponentProps<"kbd">) => (
   <kbd
     className={cn(
-      "pointer-events-none inline-flex h-5 w-fit min-w-5 select-none items-center justify-center gap-1 rounded-sm border border-border bg-muted px-1 font-sans text-caption text-muted-foreground",
+      "border-border bg-muted text-caption text-muted-foreground pointer-events-none inline-flex h-5 w-fit min-w-5 items-center justify-center gap-1 rounded-sm border px-1 font-sans select-none",
       "[&_svg:not([class*='size-'])]:size-3",
       className
     )}

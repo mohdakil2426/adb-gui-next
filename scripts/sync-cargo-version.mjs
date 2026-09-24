@@ -20,8 +20,8 @@ const cargoPath = "src-tauri/Cargo.toml";
 const cargo = readFileSync(cargoPath, "utf-8");
 const next = cargo.replace(/^version\s*=\s*"[^"]+"/mu, `version = "${version}"`);
 if (next === cargo) {
-  const match = cargo.match(/^version\s*=\s*"([^"]+)"/mu);
-  if (match?.[1] === version) {
+  const match = cargo.match(/^version\s*=\s*"(?<version>[^"]+)"/mu);
+  if (match?.groups?.version === version) {
     console.log(`Cargo.toml already at ${version}`);
     process.exit(0);
   }

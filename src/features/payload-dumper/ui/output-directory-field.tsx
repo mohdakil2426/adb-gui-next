@@ -22,30 +22,30 @@ interface OutputDirectoryFieldProps {
  * now the second thing on the screen after the payload itself, and says what
  * happens when it is left unset instead of leaving that to be discovered.
  */
-export const OutputDirectoryField = memo(function OutputDirectoryField({
+const OutputDirectoryFieldImpl = ({
   disabled,
   effectiveOutputPath,
   isAuto,
   onOpenOutputFolder,
   onSelectOutput,
-}: OutputDirectoryFieldProps) {
+}: OutputDirectoryFieldProps) => {
   const isSet = effectiveOutputPath.length > 0;
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-border bg-surface-raised px-3 py-2.5">
+    <div className="border-border bg-surface-raised flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border px-3 py-2.5">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 text-caption text-muted-foreground uppercase tracking-wide">
+        <span className="text-caption text-muted-foreground flex items-center gap-1.5 tracking-wide uppercase">
           <FolderOutput aria-hidden="true" className="size-3.5" />
           Output directory
           {isAuto && isSet ? (
-            <span className="rounded-sm bg-muted px-1 text-caption normal-case tracking-normal">
+            <span className="bg-muted text-caption rounded-sm px-1 tracking-normal normal-case">
               auto
             </span>
           ) : null}
         </span>
         <span
           className={cn(
-            "min-w-0 break-all font-mono text-mono",
+            "text-mono min-w-0 font-mono break-all",
             isSet ? "text-foreground" : "text-muted-foreground"
           )}
           title={effectiveOutputPath || undefined}
@@ -80,4 +80,6 @@ export const OutputDirectoryField = memo(function OutputDirectoryField({
       </div>
     </div>
   );
-});
+};
+
+export const OutputDirectoryField = memo(OutputDirectoryFieldImpl);

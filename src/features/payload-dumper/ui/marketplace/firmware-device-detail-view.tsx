@@ -72,31 +72,31 @@ export const FirmwareDeviceDetailView = ({
           <ArrowLeft className="mr-1.5 size-3.5" data-icon="inline-start" />
           Back to Device Catalog
         </Button>
-        <div className="flex items-center gap-1.5 font-mono text-caption text-muted-foreground">
+        <div className="text-caption text-muted-foreground flex items-center gap-1.5 font-mono">
           <span>Firmware Hub</span>
           <span>/</span>
           <span>{brandInfo.displayName}</span>
           <span>/</span>
-          <span className="font-medium text-foreground">{device.name}</span>
+          <span className="text-foreground font-medium">{device.name}</span>
         </div>
       </div>
 
       {/* Device Hero Banner */}
-      <Card className="rounded-xl border-border bg-surface p-4.5 shadow-none">
+      <Card className="border-border bg-surface rounded-xl p-4.5 shadow-none">
         <CardContent className="flex flex-col gap-4 p-0">
-          <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-3">
+          <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center @lg:justify-between">
             <div className="flex items-center gap-3.5">
-              <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-raised text-primary">
+              <div className="border-border bg-surface-raised text-primary flex size-12 shrink-0 items-center justify-center rounded-xl border">
                 <Smartphone className="size-6" />
               </div>
               <div className="flex flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold text-foreground text-title">{device.name}</h2>
+                  <h2 className="text-foreground text-title font-semibold">{device.name}</h2>
                   <Badge variant="outline">{device.codename}</Badge>
                   <Badge variant="outline">{brandInfo.displayName}</Badge>
                   {device.series ? <Badge variant="secondary">{device.series}</Badge> : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-caption text-muted-foreground">
+                <div className="text-caption text-muted-foreground flex flex-wrap items-center gap-2">
                   {device.soc ? (
                     <span className="flex items-center gap-1">
                       <Cpu className="size-3.5" />
@@ -127,7 +127,7 @@ export const FirmwareDeviceDetailView = ({
                 <Globe className="mr-1.5 size-3.5" data-icon="inline-start" />
                 {brandInfo.portalName}
                 <ExternalLink
-                  className="ml-1 size-3 text-muted-foreground"
+                  className="text-muted-foreground ml-1 size-3"
                   data-icon="inline-start"
                 />
               </Button>
@@ -138,11 +138,11 @@ export const FirmwareDeviceDetailView = ({
 
       {/* Search & Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="relative min-w-[220px] max-w-sm flex-1">
-          <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative max-w-sm min-w-[220px] flex-1">
+          <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
           <Input
             aria-label="Search builds, version, patch date"
-            className="h-8 pl-8 text-body"
+            className="text-body h-8 pl-8"
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search build ID, version, patch date…"
             value={searchQuery}
@@ -150,9 +150,9 @@ export const FirmwareDeviceDetailView = ({
         </div>
 
         {/* Firmware Type Switcher */}
-        <div className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised/40 p-1">
+        <div className="border-border bg-surface-raised/40 flex items-center gap-1.5 rounded-lg border p-1">
           <Button
-            className="h-7 px-3 text-caption"
+            className="text-caption h-7 px-3"
             onClick={() => setSelectedType("ota")}
             size="sm"
             type="button"
@@ -164,7 +164,7 @@ export const FirmwareDeviceDetailView = ({
               : "Full OTA Images (Remote Stream)"}
           </Button>
           <Button
-            className="h-7 px-3 text-caption"
+            className="text-caption h-7 px-3"
             onClick={() => setSelectedType("factory")}
             size="sm"
             type="button"
@@ -174,7 +174,7 @@ export const FirmwareDeviceDetailView = ({
             {device.brand === "xiaomi" ? "Fastboot ROM (TGZ)" : "Factory Images (Fastboot)"}
           </Button>
           <Button
-            className="h-7 px-2.5 text-caption"
+            className="text-caption h-7 px-2.5"
             onClick={() => setSelectedType("all")}
             size="sm"
             type="button"
@@ -188,7 +188,7 @@ export const FirmwareDeviceDetailView = ({
       {/* Builds List */}
       <div className="flex flex-col gap-3">
         {filteredBuilds.length === 0 ? (
-          <Card className="rounded-xl border-border bg-surface p-8 text-center shadow-none">
+          <Card className="border-border bg-surface rounded-xl p-8 text-center shadow-none">
             <p className="text-body text-muted-foreground">
               No firmware builds matched your filter or search query.
             </p>

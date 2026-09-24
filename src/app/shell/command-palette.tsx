@@ -61,11 +61,11 @@ const PaletteRow = ({ action, ctx, onRun }: PaletteRowProps) => {
     >
       <Icon
         aria-hidden="true"
-        className={cn("size-4 text-muted-foreground", !enabled && "opacity-50")}
+        className={cn("text-muted-foreground size-4", !enabled && "opacity-50")}
       />
       <span className={cn("truncate", !enabled && "text-muted-foreground")}>{action.label}</span>
       {reason ? (
-        <span className="ml-auto shrink-0 truncate text-caption text-warning">{reason}</span>
+        <span className="text-caption text-warning ml-auto shrink-0 truncate">{reason}</span>
       ) : null}
       {enabled && action.shortcut ? (
         <CommandShortcut>
@@ -75,7 +75,7 @@ const PaletteRow = ({ action, ctx, onRun }: PaletteRowProps) => {
         </CommandShortcut>
       ) : null}
       {enabled && !action.shortcut && action.hint ? (
-        <span className="ml-auto shrink-0 text-caption text-muted-foreground">{action.hint}</span>
+        <span className="text-caption text-muted-foreground ml-auto shrink-0">{action.hint}</span>
       ) : null}
     </CommandItem>
   );
@@ -84,17 +84,17 @@ const PaletteRow = ({ action, ctx, onRun }: PaletteRowProps) => {
 const ShortcutsPage = () => (
   <>
     <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3">
-      <Keyboard aria-hidden="true" className="size-4 text-muted-foreground" />
-      <h2 className="font-medium text-body">Keyboard Shortcuts</h2>
+      <Keyboard aria-hidden="true" className="text-muted-foreground size-4" />
+      <h2 className="text-body font-medium">Keyboard Shortcuts</h2>
     </div>
     <div className={cn("custom-scroll overflow-y-auto p-2", LIST_HEIGHT)}>
       {SHORTCUT_GROUPS.map(({ scope, entries }) => (
         <section className="mb-2" key={scope}>
-          <h3 className="px-2 py-1.5 text-caption text-muted-foreground uppercase">{scope}</h3>
+          <h3 className="text-caption text-muted-foreground px-2 py-1.5 uppercase">{scope}</h3>
           <ul className="flex flex-col">
             {entries.map((entry) => (
               <li
-                className="flex items-center justify-between gap-4 rounded-md px-2 py-1.5 text-body"
+                className="text-body flex items-center justify-between gap-4 rounded-md px-2 py-1.5"
                 key={`${scope}:${entry.label}`}
               >
                 <span className="truncate">{entry.label}</span>
@@ -270,7 +270,7 @@ export const CommandPalette = ({
         <ShortcutsPage />
       )}
 
-      <div className="flex h-9 shrink-0 items-center gap-4 border-t bg-surface-raised px-3 text-caption text-muted-foreground">
+      <div className="bg-surface-raised text-caption text-muted-foreground flex h-9 shrink-0 items-center gap-4 border-t px-3">
         <span className="flex items-center gap-1.5">
           <Kbd>↑</Kbd>
           <Kbd>↓</Kbd>
@@ -288,7 +288,7 @@ export const CommandPalette = ({
         </span>
         {page === "shortcuts" ? (
           <button
-            className="ml-auto flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-foreground hover:bg-accent"
+            className="text-foreground hover:bg-accent ml-auto flex items-center gap-1.5 rounded-sm px-1.5 py-0.5"
             onClick={() => {
               setPage("commands");
             }}

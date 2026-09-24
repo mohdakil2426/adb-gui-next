@@ -141,7 +141,7 @@ export const PayloadExtractorTab = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Integrated Source & Remote Loader Ingestion Card (Always Accessible) */}
-      <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+      <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
         <CardContent className="flex flex-col gap-4 p-0">
           <PayloadSourceTabs
             connectionStatus={connectionStatus}
@@ -171,7 +171,7 @@ export const PayloadExtractorTab = ({
 
       {/* Local Parsing Loading State */}
       {status === "loading-partitions" && mode === "local" ? (
-        <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+        <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
           <CardContent className="p-0">
             <LoadingState mode={mode} payloadPath={payloadPath} remoteUrl={remoteUrl} />
           </CardContent>
@@ -190,7 +190,7 @@ export const PayloadExtractorTab = ({
           />
 
           {/* Partitions Command Bar */}
-          <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+          <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
             <CardContent className="flex flex-col gap-3.5 p-0">
               <PartitionToolbar
                 activeCategory={activeCategory}

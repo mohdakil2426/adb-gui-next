@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { useCallback } from "react";
@@ -148,8 +149,8 @@ export const InstallationTab = ({ onInstalled }: { onInstalled: () => void }) =>
   return (
     <div className="flex flex-col gap-3">
       {selectedSerial ? null : (
-        <p className="flex items-start gap-2 rounded-lg border border-info/30 bg-info-muted px-3 py-2 text-body text-muted-foreground">
-          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-info" />
+        <p className="border-info/30 bg-info-muted text-body text-muted-foreground flex items-start gap-2 rounded-lg border px-3 py-2">
+          <Info aria-hidden="true" className="text-info mt-0.5 size-4 shrink-0" />
           <span className="min-w-0">
             No device is selected, so nothing can be installed. Connect a device over USB and pick
             it in the sidebar — you can still queue files here in the meantime.

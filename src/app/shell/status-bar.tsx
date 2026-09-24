@@ -24,7 +24,7 @@ const AdbSegment = ({ state }: { state: AdbServerState }) => {
   return (
     <span className="flex shrink-0 items-center gap-1.5" title={label}>
       <span aria-hidden="true" className={cn("size-1.5 rounded-full", ADB_STATE_DOT[state])} />
-      <span className="font-mono text-mono-sm">adb</span>
+      <span className="text-mono-sm font-mono">adb</span>
       <span className="sr-only">{ADB_STATE_LABEL[state]}</span>
     </span>
   );
@@ -50,7 +50,7 @@ const DeviceSegment = () => {
       title={status ? `${nickname ?? selectedSerial} (${status})` : (nickname ?? selectedSerial)}
     >
       <Smartphone aria-hidden="true" className="size-3 shrink-0" />
-      <span className="truncate text-foreground">{nickname ?? selectedSerial}</span>
+      <span className="text-foreground truncate">{nickname ?? selectedSerial}</span>
     </span>
   );
 };
@@ -68,29 +68,31 @@ const OperationSegment = () => {
 
   return (
     <span className="ml-auto flex min-w-0 items-center gap-2">
-      <Loader2 aria-hidden="true" className="size-3 shrink-0 animate-spin text-primary" />
-      <span className="truncate text-foreground">{operation.label}</span>
+      <Loader2 aria-hidden="true" className="text-primary size-3 shrink-0 animate-spin" />
+      <span className="text-foreground truncate">{operation.label}</span>
       {operation.detail ? <span className="shrink-0 truncate">{operation.detail}</span> : null}
       {percent === null ? null : (
         <>
           <span
             aria-hidden="true"
-            className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-border"
+            className="bg-border h-1 w-16 shrink-0 overflow-hidden rounded-full"
           >
             <span
-              className="block h-full rounded-full bg-primary transition-[width] duration-200 ease-standard"
+              className="bg-primary ease-standard block h-full rounded-full transition-[width] duration-200"
               style={{ width: `${percent}%` }}
             />
           </span>
-          <span className="numeric shrink-0 text-foreground">{percent}%</span>
+          <span className="numeric text-foreground shrink-0">{percent}%</span>
         </>
       )}
       {pending > 0 ? <span className="numeric shrink-0">+{pending}</span> : null}
       {operation.cancel ? (
         <button
           aria-label={`Cancel ${operation.label}`}
-          className="flex size-6 shrink-0 items-center justify-center rounded-sm p-1 text-muted-foreground transition-colors hover:bg-destructive-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          onClick={operation.cancel}
+          className="text-muted-foreground hover:bg-destructive-muted hover:text-destructive focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded-sm p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+          onClick={() => {
+            operation.cancel?.();
+          }}
           type="button"
         >
           <X aria-hidden="true" className="size-3.5" />
@@ -114,7 +116,7 @@ interface StatusBarProps {
 export const StatusBar = ({ adbState }: StatusBarProps) => (
   <section
     aria-label="Status bar"
-    className="flex h-6.5 shrink-0 items-center gap-3 bg-surface px-3 text-caption text-muted-foreground"
+    className="bg-surface text-caption text-muted-foreground flex h-6.5 shrink-0 items-center gap-3 px-3"
   >
     <AdbSegment state={adbState} />
     <DeviceSegment />

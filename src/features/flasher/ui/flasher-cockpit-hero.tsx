@@ -37,15 +37,15 @@ interface FlasherCockpitHeroProps {
 
 const renderConnectionIcon = (mode: FlasherConnectionMode) => {
   if (mode === "SIDELOAD") {
-    return <Package aria-hidden="true" className="size-6 text-info" />;
+    return <Package aria-hidden="true" className="text-info size-6" />;
   }
   if (mode === "FASTBOOTD") {
-    return <Zap aria-hidden="true" className="size-6 text-warning" />;
+    return <Zap aria-hidden="true" className="text-warning size-6" />;
   }
   if (mode === "FASTBOOT") {
-    return <HardDrive aria-hidden="true" className="size-6 text-foreground" />;
+    return <HardDrive aria-hidden="true" className="text-foreground size-6" />;
   }
-  return <Smartphone aria-hidden="true" className="size-6 text-muted-foreground" />;
+  return <Smartphone aria-hidden="true" className="text-muted-foreground size-6" />;
 };
 
 const getPulseColorClass = (isFastboot: boolean, mode: FlasherConnectionMode) => {
@@ -84,7 +84,7 @@ const FlasherSpecGrid = ({ vitals }: { vitals: FastbootVitals }) => {
   const isDualSlot = vitals.slotCount > 1;
 
   return (
-    <div className="grid @3xl:grid-cols-6 @lg:grid-cols-3 @xs:grid-cols-2 gap-2.5">
+    <div className="grid gap-2.5 @xs:grid-cols-2 @lg:grid-cols-3 @3xl:grid-cols-6">
       <FlasherSpecBadge
         copyValue={vitals.connectionMode}
         icon={Zap}
@@ -157,12 +157,12 @@ export const FlasherCockpitHero = ({
   const nextSlot = vitals.activeSlot === "a" ? "b" : "a";
 
   return (
-    <Card className="@container rounded-xl border-border bg-surface p-4.5 shadow-none">
+    <Card className="border-border bg-surface @container rounded-xl p-4.5 shadow-none">
       <CardContent className="flex flex-col gap-4 p-0">
         {/* Top Header Row */}
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4">
+        <div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
-            <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface-raised p-2 text-foreground shadow-xs">
+            <div className="border-border/80 bg-surface-raised text-foreground relative flex size-12 shrink-0 items-center justify-center rounded-2xl border p-2 shadow-xs">
               {renderConnectionIcon(vitals.connectionMode)}
 
               {/* Pulse Indicator */}
@@ -175,7 +175,7 @@ export const FlasherCockpitHero = ({
                 />
                 <span
                   className={cn(
-                    "relative inline-flex size-3 rounded-full border-2 border-surface",
+                    "border-surface relative inline-flex size-3 rounded-full border-2",
                     getPulseColorClass(isFastbootMode, vitals.connectionMode)
                   )}
                 />
@@ -184,7 +184,7 @@ export const FlasherCockpitHero = ({
 
             <div className="flex min-w-0 flex-col gap-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate font-semibold text-foreground text-title">
+                <h2 className="text-foreground text-title truncate font-semibold">
                   {getDeviceTitle(vitals.productBoard, vitals.serial)}
                 </h2>
 
@@ -222,7 +222,7 @@ export const FlasherCockpitHero = ({
                 ) : null}
               </div>
 
-              <p className="truncate text-caption text-muted-foreground">
+              <p className="text-caption text-muted-foreground truncate">
                 {vitals.serial
                   ? `Hardware Serial: ${vitals.serial} · ${
                       vitals.bootloaderVersion
@@ -234,12 +234,12 @@ export const FlasherCockpitHero = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 @lg:self-auto self-start">
+          <div className="flex flex-wrap items-center gap-2 self-start @lg:self-auto">
             {isFastbootMode &&
             (vitals.activeSlot === "a" || vitals.activeSlot === "b") &&
             onSwitchSlot ? (
               <Button
-                className="h-8 gap-1.5 px-3 text-caption"
+                className="text-caption h-8 gap-1.5 px-3"
                 disabled={isProbing}
                 onClick={() => onSwitchSlot(nextSlot)}
                 size="sm"
@@ -252,7 +252,7 @@ export const FlasherCockpitHero = ({
             ) : null}
 
             {lastUpdated ? (
-              <span className="numeric text-[11px] text-caption text-muted-foreground">
+              <span className="numeric text-caption text-muted-foreground text-[11px]">
                 Probed {updatedAtFormatter.format(lastUpdated)}
               </span>
             ) : null}
@@ -270,8 +270,8 @@ export const FlasherCockpitHero = ({
               <RefreshCw
                 aria-hidden="true"
                 className={cn(
-                  "size-3.5 text-muted-foreground",
-                  isProbing && "animate-spin text-foreground"
+                  "text-muted-foreground size-3.5",
+                  isProbing && "text-foreground animate-spin"
                 )}
                 data-icon="inline-start"
               />

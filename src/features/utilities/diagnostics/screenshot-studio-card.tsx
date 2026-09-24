@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Camera, Check, Copy, Download, Loader2, Smartphone } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -83,11 +84,11 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Camera className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Camera className="text-primary size-4.5" />
             Device Screenshot Studio
           </CardTitle>
           {screenshotTime ? (
@@ -104,7 +105,7 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
       <CardContent className="flex flex-col gap-4 pt-1">
         <div className="flex flex-wrap items-center gap-2.5">
           <Button
-            className="h-8 gap-1.5 px-3 text-caption"
+            className="text-caption h-8 gap-1.5 px-3"
             disabled={!isAdb || isCapturing}
             onClick={() => {
               void handleCaptureScreenshot();
@@ -123,7 +124,7 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
           {screenshotBase64 ? (
             <>
               <Button
-                className="h-8 gap-1.5 px-3 text-caption"
+                className="text-caption h-8 gap-1.5 px-3"
                 onClick={() => {
                   void handleCopyScreenshot();
                 }}
@@ -132,15 +133,15 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
                 variant="outline"
               >
                 {copiedScreenshot ? (
-                  <Check className="size-3.5 text-success" data-icon="inline-start" />
+                  <Check className="text-success size-3.5" data-icon="inline-start" />
                 ) : (
-                  <Copy className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                  <Copy className="text-muted-foreground size-3.5" data-icon="inline-start" />
                 )}
                 {copiedScreenshot ? "Copied to Clipboard" : "Copy Image"}
               </Button>
 
               <Button
-                className="h-8 gap-1.5 px-3 text-caption"
+                className="text-caption h-8 gap-1.5 px-3"
                 onClick={() => {
                   void handleSaveScreenshotToDisk();
                 }}
@@ -148,7 +149,7 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
                 type="button"
                 variant="outline"
               >
-                <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <Download className="text-muted-foreground size-3.5" data-icon="inline-start" />
                 Save PNG to Disk
               </Button>
             </>
@@ -157,7 +158,7 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
 
         {/* Screenshot Viewport Container */}
         {screenshotBase64 ? (
-          <div className="flex max-h-[380px] items-center justify-center overflow-hidden rounded-lg border border-border/80 bg-black/80 p-3">
+          <div className="border-border/80 flex max-h-[380px] items-center justify-center overflow-hidden rounded-lg border bg-black/80 p-3">
             <img
               alt="Device Screen Capture"
               className="max-h-[360px] max-w-full rounded-md object-contain shadow-md"
@@ -167,9 +168,9 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-border/80 border-dashed py-10 text-center">
-            <Smartphone className="mb-2 size-8 text-muted-foreground" />
-            <span className="font-semibold text-body text-foreground">No Frame Captured Yet</span>
+          <div className="border-border/80 flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
+            <Smartphone className="text-muted-foreground mb-2 size-8" />
+            <span className="text-body text-foreground font-semibold">No Frame Captured Yet</span>
             <span className="text-caption text-muted-foreground">
               Click &quot;Take Screenshot&quot; above to fetch the active display buffer.
             </span>

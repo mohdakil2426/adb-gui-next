@@ -11,7 +11,7 @@ import type { VariantProps } from "class-variance-authority";
  * both themes, via dedicated `-hover` / `-active` tokens.
  */
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-body outline-none transition-colors duration-90 ease-standard focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/60 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  "text-body ease-standard focus-visible:border-ring focus-visible:ring-ring/60 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors duration-90 outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     defaultVariants: {
       size: "default",
@@ -28,13 +28,13 @@ export const buttonVariants = cva(
       },
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[inset_0_1px_0_0_var(--control-highlight)] hover:bg-primary-hover focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-primary-active",
+          "bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:ring-offset-background active:bg-primary-active shadow-[inset_0_1px_0_0_var(--control-highlight)] focus-visible:ring-offset-2",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-[inset_0_1px_0_0_var(--control-highlight)] hover:bg-destructive-hover focus-visible:ring-destructive/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-destructive-active",
+          "bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/50 focus-visible:ring-offset-background active:bg-destructive-active shadow-[inset_0_1px_0_0_var(--control-highlight)] focus-visible:ring-offset-2",
         ghost: "hover:bg-accent hover:text-accent-foreground active:bg-accent-active",
-        link: "text-primary underline-offset-4 hover:text-primary-hover hover:underline",
+        link: "text-primary hover:text-primary-hover underline-offset-4 hover:underline",
         outline:
-          "border border-border bg-surface text-foreground hover:border-border-strong hover:bg-accent active:bg-accent-active",
+          "border-border bg-surface text-foreground hover:border-border-strong hover:bg-accent active:bg-accent-active border",
         secondary: "bg-secondary text-secondary-foreground hover:bg-accent active:bg-accent-active",
       },
     },

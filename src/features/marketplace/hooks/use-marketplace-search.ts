@@ -1,4 +1,5 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { MarketplaceSearch } from "@/desktop/backend";
 import {
@@ -34,10 +35,6 @@ export const useMarketplaceSearch = () => {
   const githubToken = useMarketplaceStore(getMarketplaceEffectiveGithubToken);
 
   const [localQuery, setLocalQuery] = useState(query);
-  // Keep input responsive: text field commits `localQuery` synchronously while
-  // heavy work (filtering + IPC) reads the deferred value. Mirrors
-  // `src/features/file-explorer/hooks/useFileExplorerSort.ts:44`.
-  const deferredQuery = useDeferredValue(localQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestIdRef = useRef(0);
 
@@ -200,7 +197,7 @@ export const useMarketplaceSearch = () => {
       void performSearch("");
     }
     // Re-run the latest search only when filters or auth state change.
-  }, [activeProviders, sortBy, resultsPerProvider, githubToken, githubApkOnly, performSearch]);
+  }, [performSearch]);
 
   useEffect(
     () => () => {
@@ -213,14 +210,10 @@ export const useMarketplaceSearch = () => {
     void performSearch(localQuery);
   }, [localQuery, performSearch]);
 
-  // `deferredQuery` deprioritizes reconciliation when the result set is large.
-  // `visibleMarketplaceApps` currently filters only by `installableOnly`; the
-  // deferred dep is wired so any future query-based client filter benefits
-  // without re-blocking input. Mirrors file-explorer `useFileExplorerSort:44`.
-  const visibleResults = useMemo(() => {
-    void deferredQuery;
-    return visibleMarketplaceApps(results, installableOnly);
-  }, [installableOnly, results, deferredQuery]);
+  const visibleResults = useMemo(
+    () => visibleMarketplaceApps(results, installableOnly),
+    [installableOnly, results]
+  );
 
   return {
     fromCache: lastSearchMatches(

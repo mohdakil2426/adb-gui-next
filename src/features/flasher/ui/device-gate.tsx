@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
  * "smart gate, not a dead end" pattern the AVD root wizard already uses.
  */
 export const DeviceGate = ({ children }: { children: ReactNode }) => (
-  <p className="mt-2 flex items-start gap-2 text-caption text-muted-foreground">
+  <p className="text-caption text-muted-foreground mt-2 flex items-start gap-2">
     <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
     <span className="min-w-0">{children}</span>
   </p>

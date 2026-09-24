@@ -25,6 +25,7 @@ export const PayloadHistoryTab = ({
   onFlashToDevice,
   onNavigateToExtractor,
 }: PayloadHistoryTabProps) => {
+  // eslint-disable-next-line react/hook-use-state -- mount timestamp without setter
   const [sessionTimestamp] = useState(() => Date.now());
   // If history is empty but there are extractedFiles in current session, synthesize a current record
   const effectiveHistory = useMemo(() => {
@@ -66,13 +67,13 @@ export const PayloadHistoryTab = ({
 
   if (effectiveHistory.length === 0) {
     return (
-      <Card className="rounded-xl border-border bg-surface p-8 text-center shadow-none">
+      <Card className="border-border bg-surface rounded-xl p-8 text-center shadow-none">
         <CardContent className="flex flex-col items-center justify-center gap-4 p-0">
-          <div className="flex size-14 items-center justify-center rounded-2xl border border-border bg-surface-raised text-muted-foreground">
-            <History className="size-7 text-primary" />
+          <div className="border-border bg-surface-raised text-muted-foreground flex size-14 items-center justify-center rounded-2xl border">
+            <History className="text-primary size-7" />
           </div>
           <div className="flex max-w-md flex-col gap-1">
-            <h3 className="font-semibold text-foreground text-title">No Extraction History</h3>
+            <h3 className="text-foreground text-title font-semibold">No Extraction History</h3>
             <p className="text-body text-muted-foreground">
               Extracted partition images and sessions will be logged here with output paths, SHA-256
               hashes, and direct flash triggers.
@@ -91,15 +92,15 @@ export const PayloadHistoryTab = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Top History Telemetry Strip */}
-      <Card className="rounded-xl border-border bg-surface p-4 shadow-none">
+      <Card className="border-border bg-surface rounded-xl p-4 shadow-none">
         <CardContent className="flex flex-wrap items-center justify-between gap-4 p-0">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl border border-border/80 bg-surface-raised text-primary">
+            <div className="border-border/80 bg-surface-raised text-primary flex size-10 items-center justify-center rounded-xl border">
               <History className="size-5" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-foreground text-title">
+                <span className="text-foreground text-title font-semibold">
                   Extraction Output History
                 </span>
                 <Badge variant="secondary">{effectiveHistory.length} Sessions</Badge>
@@ -112,13 +113,13 @@ export const PayloadHistoryTab = ({
           </div>
 
           <Button
-            className="h-8 gap-1.5 text-caption"
+            className="text-caption h-8 gap-1.5"
             onClick={onClearHistory}
             size="sm"
             type="button"
             variant="outline"
           >
-            <Trash2 className="mr-1 size-3.5 text-destructive" data-icon="inline-start" /> Clear
+            <Trash2 className="text-destructive mr-1 size-3.5" data-icon="inline-start" /> Clear
             History
           </Button>
         </CardContent>

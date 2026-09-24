@@ -71,41 +71,41 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
   };
 
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-surface shadow-none">
+    <div className="border-border bg-surface flex flex-col rounded-lg border shadow-none">
       {/* Header Banner & Summary Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md border border-border bg-surface-raised text-muted-foreground">
+          <div className="border-border bg-surface-raised text-muted-foreground flex size-7 items-center justify-center rounded-md border">
             <Sliders aria-hidden="true" className="size-3.5" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 ADB Install Flags Cockpit
               </span>
               {isCustomized ? (
-                <Badge className="h-4.5 px-1.5 text-caption" variant="secondary">
+                <Badge className="text-caption h-4.5 px-1.5" variant="secondary">
                   Customized
                 </Badge>
               ) : null}
             </div>
             <span className="text-caption text-muted-foreground">
               Configure parameters sent to{" "}
-              <code className="font-mono text-foreground/80">adb install</code>
+              <code className="text-foreground/80 font-mono">adb install</code>
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
           {/* Active Flags Command Preview Pill */}
-          <div className="@lg:flex hidden items-center gap-1 rounded-md border border-border-control bg-surface-raised px-2 py-1 font-mono text-foreground text-mono-sm">
-            <Terminal aria-hidden="true" className="size-3 text-muted-foreground" />
+          <div className="border-border-control bg-surface-raised text-foreground text-mono-sm hidden items-center gap-1 rounded-md border px-2 py-1 font-mono @lg:flex">
+            <Terminal aria-hidden="true" className="text-muted-foreground size-3" />
             <span>adb install {activeFlagArgs.join(" ") || "(none)"}</span>
           </div>
 
           {isCustomized ? (
             <Button
-              className="h-7 px-2 text-caption text-muted-foreground hover:text-foreground"
+              className="text-caption text-muted-foreground hover:text-foreground h-7 px-2"
               disabled={disabled}
               onClick={resetInstallFlags}
               size="sm"
@@ -118,7 +118,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
           ) : null}
 
           <Button
-            className="h-7 gap-1 px-2.5 font-medium text-caption"
+            className="text-caption h-7 gap-1 px-2.5 font-medium"
             onClick={() => setIsExpanded((v) => !v)}
             size="sm"
             type="button"
@@ -141,15 +141,15 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
 
       {/* Expanded Precision Toggle Switchboard */}
       {isExpanded ? (
-        <div className="flex flex-col gap-3 border-border border-t bg-surface-raised/40 p-3.5">
+        <div className="border-border bg-surface-raised/40 flex flex-col gap-3 border-t p-3.5">
           {/* Quick Presets Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
+            <span className="text-caption text-muted-foreground font-medium tracking-wider uppercase">
               Quick Setup Presets
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
               <Button
-                className="h-6.5 px-2 text-caption"
+                className="text-caption h-6.5 px-2"
                 disabled={disabled}
                 onClick={() => applyPreset("default")}
                 size="sm"
@@ -159,7 +159,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
                 Standard (-r)
               </Button>
               <Button
-                className="h-6.5 px-2 text-caption"
+                className="text-caption h-6.5 px-2"
                 disabled={disabled}
                 onClick={() => applyPreset("developer")}
                 size="sm"
@@ -170,7 +170,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
                 Dev Mode (-r -g -t -d)
               </Button>
               <Button
-                className="h-6.5 px-2 text-caption"
+                className="text-caption h-6.5 px-2"
                 disabled={disabled}
                 onClick={() => applyPreset("legacy")}
                 size="sm"
@@ -183,7 +183,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
           </div>
 
           {/* Grid of Switchboard Tiles */}
-          <div className="grid @lg:grid-cols-2 grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2">
             {INSTALL_FLAGS_CATALOG.map((item) => {
               const isChecked = Boolean(installFlags[item.id]);
 
@@ -199,10 +199,10 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-bold font-mono text-foreground text-mono">
+                      <span className="text-foreground text-mono font-mono font-bold">
                         {item.flag}
                       </span>
-                      <span className="font-medium text-body text-foreground">{item.label}</span>
+                      <span className="text-body text-foreground font-medium">{item.label}</span>
                       {item.badge ? (
                         <Badge
                           className="h-4 px-1 text-[10px]"
@@ -242,17 +242,17 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
           </div>
 
           {/* User ID specification note */}
-          <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2 text-caption text-muted-foreground">
+          <div className="border-border bg-surface text-caption text-muted-foreground flex items-center justify-between rounded-md border px-3 py-2">
             <div className="flex items-center gap-1.5">
-              <Info aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <Info aria-hidden="true" className="text-muted-foreground size-3.5" />
               <span>
                 Targets current active user profile (
-                <code className="font-mono text-foreground">--user 0</code> by default).
+                <code className="text-foreground font-mono">--user 0</code> by default).
               </span>
             </div>
-            <div className="flex items-center gap-1 font-mono text-foreground text-mono-sm">
+            <div className="text-foreground text-mono-sm flex items-center gap-1 font-mono">
               <span>Selected flags:</span>
-              <span className="rounded bg-muted px-1.5 py-0.5 font-bold text-primary">
+              <span className="bg-muted text-primary rounded px-1.5 py-0.5 font-bold">
                 {activeFlagArgs.join(" ") || "none"}
               </span>
             </div>

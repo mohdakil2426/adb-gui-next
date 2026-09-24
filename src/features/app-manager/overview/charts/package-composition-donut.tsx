@@ -77,9 +77,9 @@ export const PackageCompositionDonut = ({
   });
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-3.5">
+    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-foreground text-label">Package Composition</h3>
+        <h3 className="text-foreground text-label font-medium">Package Composition</h3>
         <span className="numeric text-caption text-muted-foreground">{totalCount} total</span>
       </div>
 
@@ -142,7 +142,7 @@ export const PackageCompositionDonut = ({
             {active ? (
               <m.span
                 animate={{ opacity: 1, y: 0 }}
-                className="numeric font-semibold text-foreground text-headline"
+                className="numeric text-foreground text-headline font-semibold"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
                 key={active.key}
                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15 }}
@@ -151,7 +151,7 @@ export const PackageCompositionDonut = ({
               </m.span>
             ) : (
               <>
-                <span className="numeric font-semibold text-foreground text-headline">{total}</span>
+                <span className="numeric text-foreground text-headline font-semibold">{total}</span>
                 <span className="text-caption text-muted-foreground">apps</span>
               </>
             )}
@@ -163,7 +163,7 @@ export const PackageCompositionDonut = ({
           {slices.map((slice, index) => (
             <m.button
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center justify-between rounded-md px-1.5 py-1 text-body transition-colors hover:bg-surface-raised"
+              className="text-body hover:bg-surface-raised flex items-center justify-between rounded-md px-1.5 py-1 transition-colors"
               initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
               key={slice.key}
               onBlur={() => {
@@ -198,8 +198,8 @@ export const PackageCompositionDonut = ({
                 <span className="text-muted-foreground">{slice.label}</span>
               </span>
               <span className="flex items-baseline gap-1.5">
-                <span className="numeric font-medium text-foreground">{slice.count}</span>
-                <span className="numeric w-9 text-right text-caption text-muted-foreground">
+                <span className="numeric text-foreground font-medium">{slice.count}</span>
+                <span className="numeric text-caption text-muted-foreground w-9 text-right">
                   {formatPercent(usageRatio(slice.count, total))}
                 </span>
               </span>

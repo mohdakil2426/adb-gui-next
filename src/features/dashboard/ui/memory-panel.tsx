@@ -31,6 +31,7 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
   const ratio = usageRatio(memory?.usedBytes ?? 0, memory?.totalBytes ?? 0);
   const tone = usageTone(ratio);
   const hasMemory = Boolean(memory && memory.totalBytes > 0);
+  // eslint-disable-next-line react/hook-use-state -- mount timestamp captured once as immutable state
   const [mountTime] = useState(() => Date.now());
 
   // Provide immediate baseline sample if memory is available but history has not accumulated yet
@@ -62,10 +63,10 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
           {hasMemory && memory ? (
             <div className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-3">
-                <span className="numeric font-semibold text-display text-foreground">
+                <span className="numeric text-display text-foreground font-semibold">
                   {formatPercent(ratio)}
                 </span>
-                <span className={cn("numeric font-medium text-label", TONE_TEXT[tone])}>
+                <span className={cn("numeric text-label font-medium", TONE_TEXT[tone])}>
                   {formatBytes(memory.usedBytes)} of {formatBytes(memory.totalBytes)}
                 </span>
               </div>
@@ -79,8 +80,8 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
 
           {/* Session history waveform */}
           {hasMemory ? (
-            <div className="flex flex-col gap-1 border-border/50 border-t pt-2">
-              <div className="flex items-center justify-between font-medium text-caption text-muted-foreground uppercase tracking-wider">
+            <div className="border-border/50 flex flex-col gap-1 border-t pt-2">
+              <div className="text-caption text-muted-foreground flex items-center justify-between font-medium tracking-wider uppercase">
                 <span>Session history</span>
                 <span className="numeric lowercase">
                   {effectiveSamples.length} {effectiveSamples.length === 1 ? "sample" : "samples"}
@@ -93,7 +94,7 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
           ) : null}
 
           {hasMemory && memory ? (
-            <div className="grid w-full grid-cols-2 gap-2 border-border/50 border-t pt-2">
+            <div className="border-border/50 grid w-full grid-cols-2 gap-2 border-t pt-2">
               <SpecChip icon={Activity} label="Used" value={formatBytes(memory.usedBytes)} />
               <SpecChip
                 icon={Layers}

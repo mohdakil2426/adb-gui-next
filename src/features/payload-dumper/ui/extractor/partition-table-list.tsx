@@ -34,7 +34,7 @@ export const PartitionTableList = ({
   <>
     {/* Partition Grid Header */}
     <div
-      className="grid items-center gap-2 border-border/60 border-b bg-surface-raised/40 px-3 py-2 font-medium text-[11px] text-label text-muted-foreground uppercase tracking-wider"
+      className="border-border/60 bg-surface-raised/40 text-label text-muted-foreground grid items-center gap-2 border-b px-3 py-2 text-[11px] font-medium tracking-wider uppercase"
       style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
     >
       <span>Sel</span>
@@ -44,9 +44,9 @@ export const PartitionTableList = ({
     </div>
 
     {/* Partition Grid Rows */}
-    <div className="flex max-h-[480px] flex-col divide-y divide-border/40 overflow-y-auto rounded-md border border-border/60 bg-surface">
+    <div className="divide-border/40 border-border/60 bg-surface flex max-h-[480px] flex-col divide-y overflow-y-auto rounded-md border">
       {filteredPartitions.length === 0 ? (
-        <div className="py-8 text-center text-caption text-muted-foreground">
+        <div className="text-caption text-muted-foreground py-8 text-center">
           No partitions match current search or category filter.
         </div>
       ) : (

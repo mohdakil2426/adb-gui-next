@@ -15,14 +15,14 @@ interface AboutCardProps {
 export const AboutCard = ({ children, className, icon: Icon, title }: AboutCardProps) => (
   <Card
     className={cn(
-      "@container flex h-full flex-col justify-between gap-3 rounded-lg border-border bg-surface py-4 shadow-none",
+      "border-border bg-surface @container flex h-full flex-col justify-between gap-3 rounded-lg py-4 shadow-none",
       className
     )}
   >
     <CardHeader className="gap-0 px-4">
       <CardTitle
         as="h2"
-        className="flex items-center gap-1.5 text-caption text-muted-foreground uppercase tracking-wide"
+        className="text-caption text-muted-foreground flex items-center gap-1.5 tracking-wide uppercase"
       >
         {Icon ? <Icon aria-hidden="true" className="size-3.5" /> : null}
         {title}

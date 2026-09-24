@@ -35,12 +35,12 @@ const SetupProgressBanner = ({ progress }: { progress: backend.HostSetupProgress
       : 0;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-surface-raised/40 p-3">
-      <div className="flex items-center justify-between text-caption">
-        <span className="font-medium text-foreground">
+    <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3">
+      <div className="text-caption flex items-center justify-between">
+        <span className="text-foreground font-medium">
           {STAGE_LABEL[progress.stage] ?? progress.stage}
         </span>
-        <span className="font-mono text-muted-foreground">{percent}%</span>
+        <span className="text-muted-foreground font-mono">{percent}%</span>
       </div>
       <Progress className="h-1.5" value={percent} />
     </div>
@@ -56,10 +56,10 @@ const PlatformToolsActionCard = ({
   onInstall: () => void;
   status: backend.HostSetupStatus | undefined;
 }) => (
-  <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+  <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-body text-foreground">Google Platform-Tools</span>
+        <span className="text-body text-foreground font-semibold">Google Platform-Tools</span>
         {status?.adbPresent ? (
           <Badge className="text-[10px]" variant="success">
             Installed
@@ -77,14 +77,14 @@ const PlatformToolsActionCard = ({
 
     <Button
       aria-busy={isPending}
-      className="h-8 gap-1.5 text-caption"
+      className="text-caption h-8 gap-1.5"
       disabled={isPending}
       onClick={onInstall}
       size="sm"
       type="button"
       variant="outline"
     >
-      <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+      <Download className="text-muted-foreground size-3.5" data-icon="inline-start" />
       {status?.adbPresent ? "Reinstall Platform-Tools" : "Install Platform-Tools"}
     </Button>
   </div>
@@ -99,10 +99,10 @@ const DriverActionCard = ({
   onInstall: () => void;
   status: backend.HostSetupStatus | undefined;
 }) => (
-  <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+  <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-body text-foreground">Google USB Driver</span>
+        <span className="text-body text-foreground font-semibold">Google USB Driver</span>
         {status?.driverInstalled ? (
           <Badge className="text-[10px]" variant="success">
             Registered
@@ -120,14 +120,14 @@ const DriverActionCard = ({
 
     <Button
       aria-busy={isPending}
-      className="h-8 gap-1.5 text-caption"
+      className="text-caption h-8 gap-1.5"
       disabled={isPending}
       onClick={onInstall}
       size="sm"
       type="button"
       variant="outline"
     >
-      <Usb className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+      <Usb className="text-muted-foreground size-3.5" data-icon="inline-start" />
       {status?.driverInstalled ? "Reinstall USB Driver" : "Install USB Driver"}
     </Button>
   </div>
@@ -142,10 +142,10 @@ const PathActionCard = ({
   onRepair: () => void;
   status: backend.HostSetupStatus | undefined;
 }) => (
-  <div className="flex flex-col justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+  <div className="border-border/80 bg-surface-raised/40 flex flex-col justify-between gap-3 rounded-lg border p-3.5">
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-body text-foreground">System PATH Variable</span>
+        <span className="text-body text-foreground font-semibold">System PATH Variable</span>
         {status?.onPath ? (
           <Badge className="text-[10px]" variant="success">
             Configured
@@ -163,14 +163,14 @@ const PathActionCard = ({
 
     <Button
       aria-busy={isPending}
-      className="h-8 gap-1.5 text-caption"
+      className="text-caption h-8 gap-1.5"
       disabled={isPending || status?.onPath}
       onClick={onRepair}
       size="sm"
       type="button"
       variant="outline"
     >
-      <ListTree className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+      <ListTree className="text-muted-foreground size-3.5" data-icon="inline-start" />
       {status?.onPath ? "PATH Configured" : "Add to System PATH"}
     </Button>
   </div>
@@ -227,11 +227,11 @@ export const HostGoogleSetupCard = ({ status }: HostGoogleSetupCardProps) => {
   const isPending = installTools.isPending || installDriver.isPending || repairPath.isPending;
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Zap className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Zap className="text-primary size-4.5" />
             Official Google Platform-Tools & USB Driver Suite
           </CardTitle>
           <Badge className="font-mono text-[10px]" variant="outline">
@@ -248,7 +248,7 @@ export const HostGoogleSetupCard = ({ status }: HostGoogleSetupCardProps) => {
         <SetupProgressBanner progress={progress} />
 
         {/* Tools Actions Grid */}
-        <div className="grid @lg:grid-cols-3 @xs:grid-cols-1 gap-3">
+        <div className="grid gap-3 @xs:grid-cols-1 @lg:grid-cols-3">
           <PlatformToolsActionCard
             isPending={isPending}
             onInstall={() => setToolsConfirmOpen(true)}

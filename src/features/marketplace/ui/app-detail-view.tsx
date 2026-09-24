@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -112,7 +113,7 @@ const AppDetailBody = ({
 }: AppDetailBodyProps) => (
   <>
     {detailError ? (
-      <div className="flex items-center justify-between rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-body">
+      <div className="border-destructive/30 bg-destructive/10 text-body flex items-center justify-between rounded-lg border p-3.5">
         <span className="text-destructive-foreground">{detailError}</span>
         <Button onClick={onRetry} size="sm" type="button" variant="outline">
           Retry
@@ -123,13 +124,13 @@ const AppDetailBody = ({
     {detail?.screenshots && detail.screenshots.length > 0 ? (
       <AppScreenshots appName={displayName} urls={detail.screenshots} />
     ) : null}
-    <div className="grid @2xl:grid-cols-[1fr_280px] gap-6">
+    <div className="grid gap-6 @2xl:grid-cols-[1fr_280px]">
       <div className="flex min-w-0 flex-col gap-5">
         <section className="flex flex-col gap-2">
-          <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+          <h2 className="text-caption text-muted-foreground tracking-wide uppercase">
             About this app
           </h2>
-          <p className="whitespace-pre-wrap text-body text-muted-foreground">
+          <p className="text-body text-muted-foreground whitespace-pre-wrap">
             {detail?.description ??
               selectedApp.summary ??
               "No description is available for this app yet."}
@@ -138,8 +139,8 @@ const AppDetailBody = ({
 
         {detail?.readmeMarkdown ? (
           <section className="flex flex-col gap-2">
-            <h2 className="text-caption text-muted-foreground uppercase tracking-wide">README</h2>
-            <div className="rounded-lg border border-border bg-surface-raised p-3">
+            <h2 className="text-caption text-muted-foreground tracking-wide uppercase">README</h2>
+            <div className="border-border bg-surface-raised rounded-lg border p-3">
               <ReadmeMarkdown html={detail.readmeHtml} markdown={detail.readmeMarkdown} />
             </div>
           </section>
@@ -147,10 +148,10 @@ const AppDetailBody = ({
 
         {detail?.changelog ? (
           <section className="flex flex-col gap-2">
-            <h2 className="text-caption text-muted-foreground uppercase tracking-wide">
+            <h2 className="text-caption text-muted-foreground tracking-wide uppercase">
               What&apos;s new
             </h2>
-            <p className="whitespace-pre-wrap rounded-lg border border-border bg-surface-raised p-3 text-body text-muted-foreground">
+            <p className="border-border bg-surface-raised text-body text-muted-foreground rounded-lg border p-3 whitespace-pre-wrap">
               {detail.changelog}
             </p>
           </section>
@@ -183,6 +184,9 @@ export const AppDetailView = ({ target }: { target: InstallTarget }) => {
 
   useEffect(() => {
     let cancelled = false;
+    if (retryTrigger < 0) {
+      return;
+    }
     const timer = setTimeout(() => {
       if (cancelled) {
         return;

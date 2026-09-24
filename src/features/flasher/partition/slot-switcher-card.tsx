@@ -44,7 +44,7 @@ const SlotItemCard = ({
     )}
   >
     <div className="flex items-center justify-between">
-      <span className="font-bold font-mono text-body text-foreground">SLOT _{slotName}</span>
+      <span className="text-body text-foreground font-mono font-bold">SLOT _{slotName}</span>
       {isCurrent ? (
         <Badge className="gap-1 font-mono text-[10px]" variant="success">
           <Check className="size-3" />
@@ -57,14 +57,14 @@ const SlotItemCard = ({
       )}
     </div>
 
-    <p className="text-[11px] text-muted-foreground">
+    <p className="text-muted-foreground text-[11px]">
       {isCurrent
         ? "Currently designated boot target for kernel & system."
         : "Alternative backup partition slot."}
     </p>
 
     <Button
-      className="mt-1 w-full text-caption"
+      className="text-caption mt-1 w-full"
       disabled={disabled || !isFastbootMode || isCurrent || otherSwitching}
       onClick={onSwitch}
       size="sm"
@@ -93,6 +93,7 @@ export const SlotSwitcherCard = ({
 
   const handleSwitch = async (slot: "a" | "b") => {
     setSwitchingSlot(slot);
+    // eslint-disable-next-line react/todo
     try {
       await onSwitchSlot(slot);
     } finally {
@@ -105,11 +106,11 @@ export const SlotSwitcherCard = ({
   const isDualSlot = slotCount > 1 || activeSlot === "a" || activeSlot === "b";
 
   return (
-    <Card className="flex flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface flex flex-col justify-between rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <Layers className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <Layers className="text-muted-foreground size-5" />
             Active Boot Slot Switcher
           </CardTitle>
           <Badge variant={isDualSlot ? "outline" : "secondary"}>
@@ -150,19 +151,19 @@ export const SlotSwitcherCard = ({
 
         {/* Action Helper */}
         {onRebootFastboot ? (
-          <div className="flex items-center justify-between rounded-lg border border-border/70 bg-background/50 px-3 py-2">
+          <div className="border-border/70 bg-background/50 flex items-center justify-between rounded-lg border px-3 py-2">
             <span className="text-caption text-muted-foreground">
               Need FastbootD for dynamic partitions?
             </span>
             <Button
-              className="h-7 gap-1 text-caption"
+              className="text-caption h-7 gap-1"
               disabled={disabled || !isFastbootMode}
               onClick={onRebootFastboot}
               size="sm"
               type="button"
               variant="ghost"
             >
-              <Zap aria-hidden="true" className="size-3 text-warning" data-icon="inline-start" />
+              <Zap aria-hidden="true" className="text-warning size-3" data-icon="inline-start" />
               Reboot FastbootD
             </Button>
           </div>

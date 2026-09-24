@@ -44,7 +44,7 @@ export const EmulatorLaunchStudioTab = ({
       {/* 1. Quick Quality Presets */}
       <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-body text-foreground">
+          <h3 className="text-body text-foreground font-semibold">
             AVD Startup Profiles & Presets
           </h3>
           <span className="text-caption text-muted-foreground">
@@ -63,9 +63,9 @@ export const EmulatorLaunchStudioTab = ({
       />
 
       {/* 3. Launch Controls Footer */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-surface-raised/40 p-4">
+      <div className="border-border bg-surface-raised/40 flex items-center justify-between rounded-xl border p-4">
         <div className="flex flex-col gap-0.5">
-          <span className="font-semibold text-body text-foreground">
+          <span className="text-body text-foreground font-semibold">
             {isRunning ? "Virtual Machine Active" : "Ready to Boot"}
           </span>
           <span className="text-caption text-muted-foreground">
@@ -75,7 +75,7 @@ export const EmulatorLaunchStudioTab = ({
 
         {isRunning ? (
           <Button
-            className="h-9 gap-1.5 px-4 text-caption"
+            className="text-caption h-9 gap-1.5 px-4"
             disabled={isBusy}
             onClick={onStop}
             type="button"
@@ -86,7 +86,7 @@ export const EmulatorLaunchStudioTab = ({
           </Button>
         ) : (
           <Button
-            className="h-9 gap-1.5 px-4 text-caption"
+            className="text-caption h-9 gap-1.5 px-4"
             disabled={!selectedAvd || isBusy || Boolean(launchBlockedReason)}
             onClick={() => onLaunch()}
             type="button"

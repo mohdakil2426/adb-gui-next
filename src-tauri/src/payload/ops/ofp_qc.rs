@@ -103,10 +103,11 @@ fn parse_ofp_qc_xml(xml: &str, pagesize: u64) -> Result<Vec<OpsPartitionEntry>> 
     loop {
         match reader.read_event() {
             Ok(Event::Start(e) | Event::Empty(e)) => {
-                let tag = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                let qname = e.name();
+                let tag = qname.as_ref();
 
                 if matches!(
-                    tag.as_str(),
+                    tag,
                     "Sahara"
                         | "Config"
                         | "Provision"
@@ -115,7 +116,7 @@ fn parse_ofp_qc_xml(xml: &str, pagesize: u64) -> Result<Vec<OpsPartitionEntry>> 
                         | "Firmware"
                 ) || tag.starts_with("Program")
                 {
-                    current_section = tag.clone();
+                    current_section = tag.to_string();
                 }
 
                 if tag == "File"
@@ -147,16 +148,16 @@ fn parse_ofp_qc_file_element(
     let mut sparse = false;
 
     for attr in e.attributes().filter_map(|a| a.ok()) {
-        let key = String::from_utf8_lossy(attr.key.as_ref()).to_string();
-        let val = String::from_utf8_lossy(&attr.value).to_string();
+        let key = attr.key.as_ref();
+        let val = attr.value.as_ref();
 
-        match key.as_str() {
-            "Path" | "filename" => name = sanitize_filename(&val),
+        match key {
+            "Path" | "filename" => name = sanitize_filename(val),
             "FileOffsetInSrc" => offset = val.parse().unwrap_or(0),
             "SizeInByteInSrc" => size = val.parse().unwrap_or(0),
             "SizeInSectorInSrc" => sector_size = val.parse().unwrap_or(0),
-            "Sha256" | "sha256" => sha256 = val,
-            "md5" => md5 = val,
+            "Sha256" | "sha256" => sha256 = val.to_string(),
+            "md5" => md5 = val.to_string(),
             "sparse" => sparse = val.eq_ignore_ascii_case("true"),
             _ => {}
         }

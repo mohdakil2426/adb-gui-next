@@ -15,14 +15,14 @@ export const ResultsSkeleton = ({ viewMode }: { viewMode: "grid" | "list" }) => 
     aria-label="Loading search results"
     className={cn(
       viewMode === "grid"
-        ? "grid @4xl:grid-cols-3 @7xl:grid-cols-4 @lg:grid-cols-2 gap-3"
+        ? "grid gap-3 @lg:grid-cols-2 @4xl:grid-cols-3 @7xl:grid-cols-4"
         : "flex flex-col gap-2"
     )}
   >
     {CARDS.map((card) => (
       <div
         className={cn(
-          "flex gap-3 rounded-lg border border-border bg-surface p-3",
+          "border-border bg-surface flex gap-3 rounded-lg border p-3",
           viewMode === "grid" ? "flex-col" : "items-center"
         )}
         key={card}

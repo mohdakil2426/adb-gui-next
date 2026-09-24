@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useEffect, useState } from "react";
 
 import { InspectPartitionImage } from "@/desktop/backend";
@@ -113,7 +114,7 @@ export const FlasherPartitionTab = ({
   }, [onAddToQueue, partition, filePath]);
 
   return (
-    <div className="grid @3xl:grid-cols-2 grid-cols-1 items-start gap-5">
+    <div className="grid grid-cols-1 items-start gap-5 @3xl:grid-cols-2">
       <PartitionFlashCard
         dragTarget={dragTarget}
         filePath={filePath}

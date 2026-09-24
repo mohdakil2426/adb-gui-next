@@ -29,7 +29,7 @@ export const MarketplaceAppIcon = ({ alt = "", iconUrl, size = "sm" }: Marketpla
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-raised ${config.container}`}
+      className={`border-border bg-surface-raised flex shrink-0 items-center justify-center overflow-hidden rounded-lg border ${config.container}`}
     >
       {showFallback ? (
         <Package className={`${config.fallback} text-muted-foreground`} />

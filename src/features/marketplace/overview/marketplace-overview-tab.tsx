@@ -32,11 +32,11 @@ export const MarketplaceOverviewTab = ({ onQuickSearch }: MarketplaceOverviewTab
   return (
     <div className="flex flex-col gap-6">
       {/* Quick Search & Popular Queries Bar */}
-      <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-3.5">
+      <div className="border-border bg-surface flex flex-col gap-2.5 rounded-lg border p-3.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="size-4 text-primary" />
-            <span className="font-semibold text-caption text-foreground uppercase tracking-wider">
+            <TrendingUp className="text-primary size-4" />
+            <span className="text-caption text-foreground font-semibold tracking-wider uppercase">
               Instant Discovery & Popular Topics
             </span>
           </div>
@@ -46,27 +46,27 @@ export const MarketplaceOverviewTab = ({ onQuickSearch }: MarketplaceOverviewTab
         <div className="flex flex-wrap items-center gap-1.5">
           {QUICK_DISCOVERY_TAGS.map((tag) => (
             <Button
-              className="h-7 rounded-full border-border/80 bg-surface-raised/40 text-caption transition-colors hover:bg-accent hover:text-foreground"
+              className="border-border/80 bg-surface-raised/40 text-caption hover:bg-accent hover:text-foreground h-7 rounded-full transition-colors"
               key={tag.label}
               onClick={() => handleChipClick(tag.query)}
               size="sm"
               type="button"
               variant="outline"
             >
-              <Search className="mr-1 size-3 text-muted-foreground" data-icon="inline-start" />
+              <Search className="text-muted-foreground mr-1 size-3" data-icon="inline-start" />
               {tag.label}
             </Button>
           ))}
         </div>
 
         {(searchHistory ?? []).length > 0 && (
-          <div className="flex items-center gap-2 border-border/40 border-t pt-1 text-caption text-muted-foreground">
+          <div className="border-border/40 text-caption text-muted-foreground flex items-center gap-2 border-t pt-1">
             <History className="size-3.5 shrink-0" />
-            <span className="font-medium text-foreground">Recent searches:</span>
+            <span className="text-foreground font-medium">Recent searches:</span>
             <div className="flex flex-wrap items-center gap-1">
               {(searchHistory ?? []).slice(0, 5).map((term) => (
                 <button
-                  className="cursor-pointer rounded px-1.5 py-0.5 font-mono text-caption text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="text-caption text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer rounded px-1.5 py-0.5 font-mono transition-colors"
                   key={term}
                   onClick={() => handleChipClick(term)}
                   type="button"
@@ -80,7 +80,7 @@ export const MarketplaceOverviewTab = ({ onQuickSearch }: MarketplaceOverviewTab
       </div>
 
       {/* Symmetrical Charts Duo Grid */}
-      <div className="grid @lg:grid-cols-2 grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2">
         <SourceCompositionDonut />
         <CategoryDistributionMeter />
       </div>

@@ -44,8 +44,8 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Sparkles aria-hidden="true" className="size-4 text-foreground" />
-            <CardTitle className="font-semibold text-body text-foreground">
+            <Sparkles aria-hidden="true" className="text-foreground size-4" />
+            <CardTitle className="text-body text-foreground font-semibold">
               1-Click Streaming Cockpit Profiles
             </CardTitle>
           </div>
@@ -57,7 +57,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
       </CardHeader>
 
       <CardContent>
-        <div className="grid @2xl:grid-cols-4 @lg:grid-cols-2 grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @2xl:grid-cols-4">
           {activePresets.map((preset) => {
             const Icon = PRESET_ICONS[preset.id] ?? Sparkles;
             const isCurrent = matchesPreset(preset);
@@ -65,16 +65,16 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
             return (
               <div
                 className={cn(
-                  "group relative flex flex-col justify-between rounded-lg border p-3.5 transition-colors duration-100 ease-standard",
+                  "group ease-standard relative flex flex-col justify-between rounded-lg border p-3.5 transition-colors duration-100",
                   isCurrent
-                    ? "border-foreground/40 bg-surface-raised ring-1 ring-foreground/20"
+                    ? "border-foreground/40 bg-surface-raised ring-foreground/20 ring-1"
                     : "border-border/80 bg-surface-raised/40 hover:border-border hover:bg-surface-raised"
                 )}
                 key={preset.id}
               >
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface text-foreground">
+                    <div className="border-border bg-surface text-foreground flex size-8 shrink-0 items-center justify-center rounded-md border">
                       <Icon aria-hidden="true" className="size-4" />
                     </div>
                     {isCurrent ? (
@@ -87,7 +87,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                       </Badge>
                     ) : (
                       <Badge
-                        className="border-border/60 bg-surface/80 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        className="border-border/60 bg-surface/80 text-muted-foreground px-1.5 py-0.5 text-[10px]"
                         variant="outline"
                       >
                         {preset.badge}
@@ -96,8 +96,8 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-body text-foreground">{preset.label}</h3>
-                    <p className="mt-1 line-clamp-2 text-caption text-muted-foreground">
+                    <h3 className="text-body text-foreground font-semibold">{preset.label}</h3>
+                    <p className="text-caption text-muted-foreground mt-1 line-clamp-2">
                       {preset.description}
                     </p>
                   </div>
@@ -106,7 +106,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                   <div className="flex flex-wrap gap-1 pt-1">
                     {preset.specs.map((spec) => (
                       <span
-                        className="rounded border border-border/50 bg-surface/60 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
+                        className="border-border/50 bg-surface/60 text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]"
                         key={spec}
                       >
                         {spec}
@@ -118,7 +118,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                 <div className="pt-3">
                   <Button
                     className={cn(
-                      "h-7 w-full font-medium text-caption",
+                      "text-caption h-7 w-full font-medium",
                       isCurrent
                         ? "border-border bg-surface text-foreground hover:bg-surface-raised"
                         : "border-border/80 bg-surface-raised hover:bg-foreground hover:text-background"

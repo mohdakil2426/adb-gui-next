@@ -44,7 +44,7 @@ export const ActionFooter = ({
   const isBusy = status === "extracting" || status === "cancelling";
 
   return (
-    <div className="flex flex-wrap items-center justify-end gap-2 border-border border-t pt-3">
+    <div className="border-border flex flex-wrap items-center justify-end gap-2 border-t pt-3">
       <Button
         // Allow Reset during cancel so a hung backend cannot trap the UI forever.
         disabled={status === "extracting"}

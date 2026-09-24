@@ -53,7 +53,7 @@ export const AppUpdateRow = ({ item, onUpdate, target }: AppUpdateRowProps) => {
     if (isUpdated) {
       return (
         <>
-          <CheckCircle2 className="size-3.5 text-success" data-icon="inline-start" />
+          <CheckCircle2 className="text-success size-3.5" data-icon="inline-start" />
           Installed
         </>
       );
@@ -66,15 +66,15 @@ export const AppUpdateRow = ({ item, onUpdate, target }: AppUpdateRowProps) => {
     );
   };
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-4 transition-colors hover:border-border hover:bg-surface-raised/70">
+    <div className="border-border/80 bg-surface-raised/40 hover:border-border hover:bg-surface-raised/70 flex flex-col gap-3 rounded-lg border p-4 transition-colors">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl border border-border bg-surface-raised font-bold text-body text-foreground">
+          <div className="border-border bg-surface-raised text-body text-foreground flex size-10 items-center justify-center rounded-xl border font-bold">
             {item.name.charAt(0)}
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-body text-foreground">{item.name}</span>
+              <span className="text-body text-foreground font-semibold">{item.name}</span>
               <ProviderBadge source={item.source} />
               {item.hasUpdate ? (
                 <Badge className="text-[10px]" variant="default">
@@ -86,24 +86,24 @@ export const AppUpdateRow = ({ item, onUpdate, target }: AppUpdateRowProps) => {
                 </Badge>
               )}
             </div>
-            <span className="font-mono text-[11px] text-muted-foreground">{item.packageName}</span>
+            <span className="text-muted-foreground font-mono text-[11px]">{item.packageName}</span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Version Transition Chip */}
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-surface px-2.5 py-1 text-caption text-muted-foreground">
+          <div className="border-border/60 bg-surface text-caption text-muted-foreground flex items-center gap-1.5 rounded-lg border px-2.5 py-1">
             <span className="font-mono">{item.currentVersion}</span>
             {item.hasUpdate ? (
               <>
-                <ArrowRight className="size-3 text-muted-foreground" />
-                <span className="font-medium font-mono text-foreground">{item.latestVersion}</span>
+                <ArrowRight className="text-muted-foreground size-3" />
+                <span className="text-foreground font-mono font-medium">{item.latestVersion}</span>
               </>
             ) : null}
           </div>
 
           <Button
-            className="h-8 gap-1.5 px-3 text-caption"
+            className="text-caption h-8 gap-1.5 px-3"
             disabled={!item.hasUpdate || isUpdating || isUpdated || !target.canInstall}
             onClick={() => onUpdate(item)}
             size="sm"
@@ -118,8 +118,8 @@ export const AppUpdateRow = ({ item, onUpdate, target }: AppUpdateRowProps) => {
       {isDownloading ? <DownloadProgressStrip packageName={item.packageName} /> : null}
 
       {item.changelogSnippet ? (
-        <div className="rounded-md border border-border/40 bg-surface/50 p-2.5 text-caption text-muted-foreground">
-          <span className="font-semibold text-foreground">What&apos;s New: </span>
+        <div className="border-border/40 bg-surface/50 text-caption text-muted-foreground rounded-md border p-2.5">
+          <span className="text-foreground font-semibold">What&apos;s New: </span>
           {item.changelogSnippet}
         </div>
       ) : null}

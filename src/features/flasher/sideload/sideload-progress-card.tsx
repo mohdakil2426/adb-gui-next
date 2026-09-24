@@ -33,7 +33,7 @@ const renderStepIcon = (status: string) => {
   if (status === "ready") {
     return <FileCheck className="size-3" />;
   }
-  return <div className="size-1.5 rounded-full bg-muted-foreground" />;
+  return <div className="bg-muted-foreground size-1.5 rounded-full" />;
 };
 
 export const SideloadProgressCard = ({
@@ -122,11 +122,11 @@ export const SideloadProgressCard = ({
     },
   ];
   return (
-    <Card className="flex flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface flex flex-col justify-between rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <Radio className="size-5 text-info" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <Radio className="text-info size-5" />
             Sideload Pipeline & Execution Tracker
           </CardTitle>
           <Badge variant={isSideloading ? "default" : "outline"}>
@@ -141,19 +141,19 @@ export const SideloadProgressCard = ({
       <CardContent className="flex flex-col gap-3.5">
         {/* Streamed Progress Bar during execution */}
         {isSideloading ? (
-          <div className="flex flex-col gap-2 rounded-lg border border-info/30 bg-info/5 p-3">
-            <div className="flex items-center justify-between text-caption">
-              <span className="font-semibold text-foreground">
+          <div className="border-info/30 bg-info/5 flex flex-col gap-2 rounded-lg border p-3">
+            <div className="text-caption flex items-center justify-between">
+              <span className="text-foreground font-semibold">
                 Streaming {fileName || "Package"} to Recovery... ({streamProgress.percentage}%)
               </span>
-              <span className="font-mono text-info">
+              <span className="text-info font-mono">
                 {streamProgress.message ||
                   (streamProgress.percentage >= 100 ? "Processing" : "Live Transfer")}
               </span>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
               <div
-                className="h-full rounded-full bg-info transition-[width] duration-300 ease-out"
+                className="bg-info h-full rounded-full transition-[width] duration-300 ease-out"
                 style={{
                   width: `${Math.max(2, Math.min(100, streamProgress.percentage))}%`,
                 }}
@@ -186,7 +186,7 @@ export const SideloadProgressCard = ({
                 </div>
 
                 <div className="flex min-w-0 flex-col">
-                  <span className="font-medium text-body text-foreground">{step.label}</span>
+                  <span className="text-body text-foreground font-medium">{step.label}</span>
                   <span className="text-caption text-muted-foreground">{step.description}</span>
                 </div>
               </div>

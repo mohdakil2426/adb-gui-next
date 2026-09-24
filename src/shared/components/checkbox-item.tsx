@@ -18,23 +18,19 @@ interface CheckboxItemProps {
  * Radix checkbox per virtual row would add a second focus target and a listener
  * to every row. It is `aria-hidden` for exactly that reason.
  */
-export const CheckboxItem = memo(function CheckboxItem({
-  checked,
-  disabled = false,
-  className,
-}: CheckboxItemProps) {
-  return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        "flex size-4 shrink-0 items-center justify-center rounded-sm border transition-colors duration-90 ease-standard",
-        checked && "border-primary bg-primary",
-        !checked && disabled && "border-border opacity-50",
-        !(checked || disabled) && "border-border-strong",
-        className
-      )}
-    >
-      {checked ? <Check className="size-3 text-primary-foreground" /> : null}
-    </div>
-  );
-});
+const CheckboxItemImpl = ({ checked, disabled = false, className }: CheckboxItemProps) => (
+  <div
+    aria-hidden="true"
+    className={cn(
+      "ease-standard flex size-4 shrink-0 items-center justify-center rounded-sm border transition-colors duration-90",
+      checked && "border-primary bg-primary",
+      !checked && disabled && "border-border opacity-50",
+      !(checked || disabled) && "border-border-strong",
+      className
+    )}
+  >
+    {checked ? <Check className="text-primary-foreground size-3" /> : null}
+  </div>
+);
+
+export const CheckboxItem = memo(CheckboxItemImpl);

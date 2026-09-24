@@ -47,13 +47,13 @@ export const AppMetricsHeroBanner = ({ stats }: AppMetricsHeroBannerProps) => {
   ];
 
   return (
-    <div className="grid @lg:grid-cols-5 grid-cols-2 gap-2.5 rounded-xl border border-border bg-surface p-3">
+    <div className="border-border bg-surface grid grid-cols-2 gap-2.5 rounded-xl border p-3 @lg:grid-cols-5">
       {specs.map((spec, index) => {
         const Icon = spec.icon;
         return (
           <m.div
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col justify-between rounded-lg border border-border/60 bg-surface-raised/40 p-2.5 transition-colors hover:border-border hover:bg-surface-raised/80"
+            className="border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised/80 flex flex-col justify-between rounded-lg border p-2.5 transition-colors"
             initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
             key={spec.label}
             transition={
@@ -63,12 +63,12 @@ export const AppMetricsHeroBanner = ({ stats }: AppMetricsHeroBannerProps) => {
             }
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-caption text-muted-foreground">{spec.label}</span>
-              <Icon aria-hidden="true" className="size-4 text-muted-foreground" />
+              <span className="text-caption text-muted-foreground font-medium">{spec.label}</span>
+              <Icon aria-hidden="true" className="text-muted-foreground size-4" />
             </div>
             <div className="flex flex-col pt-1.5">
-              <span className="numeric font-bold text-foreground text-headline">{spec.value}</span>
-              <span className="truncate text-caption text-muted-foreground">{spec.subtext}</span>
+              <span className="numeric text-foreground text-headline font-bold">{spec.value}</span>
+              <span className="text-caption text-muted-foreground truncate">{spec.subtext}</span>
             </div>
           </m.div>
         );

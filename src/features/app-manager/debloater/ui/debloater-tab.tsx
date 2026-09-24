@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -92,7 +93,7 @@ export const DebloaterTab = () => {
 
   useEffect(() => {
     void loadAll();
-  }, [loadAll, selectedSerial]);
+  }, [loadAll]);
 
   const handleDisableModeChange = async (value: boolean) => {
     setDisableMode(value);

@@ -42,10 +42,10 @@ export const WipeSafetyGate = ({
   };
 
   return (
-    <Card className="rounded-xl border-destructive/40 bg-destructive/5 shadow-none">
+    <Card className="border-destructive/40 bg-destructive/5 rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-destructive text-title">
+          <CardTitle className="text-destructive text-title flex items-center gap-2">
             <ShieldAlert className="size-5" />
             Safety Interlock Gate
           </CardTitle>
@@ -83,7 +83,7 @@ export const WipeSafetyGate = ({
         </Alert>
 
         {/* Checkbox 1 */}
-        <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-surface p-3 transition-colors hover:border-destructive/40">
+        <div className="border-border/80 bg-surface hover:border-destructive/40 flex items-start gap-2.5 rounded-lg border p-3 transition-colors">
           <Checkbox
             checked={agreeDataLoss}
             className="mt-0.5"
@@ -91,7 +91,7 @@ export const WipeSafetyGate = ({
             onCheckedChange={(checked) => handleToggleLoss(Boolean(checked))}
           />
           <label className="flex cursor-pointer flex-col" htmlFor="agree-data-loss">
-            <span className="font-semibold text-body text-foreground">
+            <span className="text-body text-foreground font-semibold">
               Acknowledge Permanent Data Destruction
             </span>
             <span className="text-caption text-muted-foreground">
@@ -102,7 +102,7 @@ export const WipeSafetyGate = ({
         </div>
 
         {/* Checkbox 2 */}
-        <div className="flex items-start gap-2.5 rounded-lg border border-border/80 bg-surface p-3 transition-colors hover:border-destructive/40">
+        <div className="border-border/80 bg-surface hover:border-destructive/40 flex items-start gap-2.5 rounded-lg border p-3 transition-colors">
           <Checkbox
             checked={agreeTargetDevice}
             className="mt-0.5"
@@ -110,20 +110,20 @@ export const WipeSafetyGate = ({
             onCheckedChange={(checked) => handleToggleTarget(Boolean(checked))}
           />
           <label className="flex cursor-pointer flex-col" htmlFor="agree-target-device">
-            <span className="font-semibold text-body text-foreground">
+            <span className="text-body text-foreground font-semibold">
               Verify Target Hardware Identity
             </span>
             <span className="text-caption text-muted-foreground">
               I have checked the serial{" "}
-              <strong className="font-mono text-foreground">{serial || "(none)"}</strong> and
+              <strong className="text-foreground font-mono">{serial || "(none)"}</strong> and
               confirm this is the intended hardware target.
             </span>
           </label>
         </div>
         {/* Type to confirm WIPE */}
-        <div className="flex flex-col gap-1.5 rounded-lg border border-border/80 bg-surface p-3">
-          <span className="font-semibold text-body text-foreground">
-            Type <span className="font-bold font-mono text-destructive">WIPE</span> to Authorize
+        <div className="border-border/80 bg-surface flex flex-col gap-1.5 rounded-lg border p-3">
+          <span className="text-body text-foreground font-semibold">
+            Type <span className="text-destructive font-mono font-bold">WIPE</span> to Authorize
           </span>
           <Input
             aria-label="Type WIPE to authorize data wipe"

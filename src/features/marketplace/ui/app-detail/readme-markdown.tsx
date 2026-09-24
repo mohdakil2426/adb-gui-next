@@ -1,3 +1,4 @@
+/* eslint-disable prefer-named-capture-group -- Markdown AST tokenizer utilizes standard indexed capture groups */
 import {
   AlertCircle,
   ChevronRight,
@@ -77,8 +78,8 @@ const renderHtmlImage = (attrs: Record<string, string>, key: string): ReactNode 
     return null;
   }
   const alt = decodeHtmlEntities(attrs.alt ?? "Image");
-  const widthVal = attrs.width ? Number.parseInt(attrs.width, 10) : undefined;
-  const heightVal = attrs.height ? Number.parseInt(attrs.height, 10) : undefined;
+  const widthVal = attrs.width ? Number(attrs.width) : undefined;
+  const heightVal = attrs.height ? Number(attrs.height) : undefined;
   const isBadge =
     src.includes("shields.io") ||
     src.includes("badge") ||
@@ -90,7 +91,7 @@ const renderHtmlImage = (attrs: Record<string, string>, key: string): ReactNode 
       className={
         isBadge
           ? "inline-block h-auto max-h-8 max-w-full align-middle"
-          : "my-1 h-auto max-h-96 max-w-full rounded border border-border/40 object-contain"
+          : "border-border/40 my-1 h-auto max-h-96 max-w-full rounded border object-contain"
       }
       height={heightVal ?? (isBadge ? 28 : 240)}
       key={key}
@@ -106,7 +107,7 @@ const renderInlineTag = (tag: string, content: ReactNode[], idx: number): ReactN
     case "kbd": {
       return (
         <kbd
-          className="rounded border border-border bg-surface-raised px-1.5 py-0.5 font-mono text-caption text-foreground shadow-xs"
+          className="border-border bg-surface-raised text-caption text-foreground rounded border px-1.5 py-0.5 font-mono shadow-xs"
           key={`kbd-${idx}`}
         >
           {content}
@@ -130,7 +131,7 @@ const renderInlineTag = (tag: string, content: ReactNode[], idx: number): ReactN
     case "code": {
       return (
         <code
-          className="rounded bg-surface-raised px-1.5 py-0.5 font-mono text-caption text-foreground"
+          className="bg-surface-raised text-caption text-foreground rounded px-1.5 py-0.5 font-mono"
           key={`code-${idx}`}
         >
           {content}
@@ -140,7 +141,7 @@ const renderInlineTag = (tag: string, content: ReactNode[], idx: number): ReactN
     case "b":
     case "strong": {
       return (
-        <strong className="font-semibold text-foreground" key={`strong-${idx}`}>
+        <strong className="text-foreground font-semibold" key={`strong-${idx}`}>
           {content}
         </strong>
       );
@@ -182,7 +183,7 @@ const renderInlineHtml = (
       : parseInline(innerContent);
     return (
       <a
-        className="inline-flex items-center gap-1 text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
+        className="text-primary hover:text-primary/80 inline-flex items-center gap-1 underline underline-offset-2 transition-colors"
         href={href}
         key={`a-${idx}`}
         rel="noopener noreferrer"
@@ -219,7 +220,7 @@ const renderInlineMarkdown = (
         className={
           isBadge
             ? "inline-block h-auto max-h-8 max-w-full align-middle"
-            : "my-1 h-auto max-h-96 max-w-full rounded border border-border/40 object-contain"
+            : "border-border/40 my-1 h-auto max-h-96 max-w-full rounded border object-contain"
         }
         height={isBadge ? 28 : 240}
         key={`img-${idx}`}
@@ -232,7 +233,7 @@ const renderInlineMarkdown = (
   if (match[3] && match[4]) {
     return (
       <a
-        className="text-primary underline underline-offset-2 transition-colors hover:text-primary/80"
+        className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
         href={decodeHtmlEntities(match[4])}
         key={`link-${idx}`}
         rel="noopener noreferrer"
@@ -245,7 +246,7 @@ const renderInlineMarkdown = (
   if (match[10]) {
     return (
       <code
-        className="rounded bg-surface-raised px-1.5 py-0.5 font-mono text-caption text-foreground"
+        className="bg-surface-raised text-caption text-foreground rounded px-1.5 py-0.5 font-mono"
         key={`code-${idx}`}
       >
         {decodeHtmlEntities(match[10])}
@@ -254,7 +255,7 @@ const renderInlineMarkdown = (
   }
   if (match[11]) {
     return (
-      <strong className="font-semibold text-foreground" key={`bold-${idx}`}>
+      <strong className="text-foreground font-semibold" key={`bold-${idx}`}>
         {parseInline(match[11])}
       </strong>
     );
@@ -387,14 +388,14 @@ const renderCodeBlock = (
   const fullCode = codeLines.join("\n");
   const element = (
     <div
-      className="group relative my-2 overflow-hidden rounded-md border border-border bg-surface-sunken"
+      className="group border-border bg-surface-sunken relative my-2 overflow-hidden rounded-md border"
       key={key}
     >
-      <div className="flex items-center justify-between border-border/40 border-b bg-surface px-3 py-1 font-mono text-[10px] text-muted-foreground uppercase">
+      <div className="border-border/40 bg-surface text-muted-foreground flex items-center justify-between border-b px-3 py-1 font-mono text-[10px] uppercase">
         <span>{lang || "code"}</span>
         <CopyButton value={fullCode} />
       </div>
-      <pre className="overflow-x-auto p-3 font-mono text-caption text-foreground">
+      <pre className="text-caption text-foreground overflow-x-auto p-3 font-mono">
         <code>{fullCode}</code>
       </pre>
     </div>
@@ -418,7 +419,7 @@ const renderAlertBlock = (
   }
   const element = (
     <div className={`my-2 flex flex-col gap-1.5 rounded-lg border-l-4 p-3 ${cfg.style}`} key={key}>
-      <div className="flex items-center gap-1.5 font-medium text-caption">
+      <div className="text-caption flex items-center gap-1.5 font-medium">
         <Icon className="size-4 shrink-0" />
         <span>{cfg.title}</span>
       </div>
@@ -449,12 +450,12 @@ const renderTableBlock = (
   }
   const element = (
     <div className="my-2 overflow-x-auto" key={key}>
-      <table className="w-full border-collapse text-caption">
+      <table className="text-caption w-full border-collapse">
         <thead>
-          <tr className="border-border border-b bg-surface-raised">
+          <tr className="border-border bg-surface-raised border-b">
             {table.headers.map((h, hIdx) => (
               <th
-                className={`px-3 py-1.5 font-medium text-foreground text-${table.aligns[hIdx] ?? "left"}`}
+                className={`text-foreground px-3 py-1.5 font-medium text-${table.aligns[hIdx] ?? "left"}`}
                 key={`th-${hIdx}`}
               >
                 {inlineNodes(h)}
@@ -464,10 +465,10 @@ const renderTableBlock = (
         </thead>
         <tbody>
           {table.rows.map((row, rIdx) => (
-            <tr className="border-border/40 border-b hover:bg-surface/50" key={`tr-${rIdx}`}>
+            <tr className="border-border/40 hover:bg-surface/50 border-b" key={`tr-${rIdx}`}>
               {row.map((cell, cIdx) => (
                 <td
-                  className={`px-3 py-1.5 text-muted-foreground text-${table.aligns[cIdx] ?? "left"}`}
+                  className={`text-muted-foreground px-3 py-1.5 text-${table.aligns[cIdx] ?? "left"}`}
                   key={`td-${rIdx}-${cIdx}`}
                 >
                   {inlineNodes(cell)}
@@ -550,7 +551,7 @@ const renderHtmlBlock = (
     startIndex
   );
   if (tagName.startsWith("h")) {
-    const headingLevel = Number.parseInt(tagName[1] ?? "2", 10);
+    const headingLevel = Number(tagName[1] ?? "2");
     const headingClass = getHeadingClass(headingLevel);
     return {
       element: (
@@ -571,14 +572,14 @@ const renderHtmlBlock = (
     return {
       element: (
         <details
-          className="group my-2 rounded-lg border border-border bg-surface-raised/40 p-3"
+          className="group border-border bg-surface-raised/40 my-2 rounded-lg border p-3"
           key={key}
         >
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 font-medium text-foreground hover:text-primary">
+          <summary className="text-foreground hover:text-primary flex cursor-pointer list-none items-center gap-1.5 font-medium">
             <ChevronRight className="size-4 transition-transform duration-150 group-open:rotate-90" />
             <span>{inlineNodes(summaryText)}</span>
           </summary>
-          <div className="mt-2.5 text-body text-muted-foreground">{inlineNodes(detailsBody)}</div>
+          <div className="text-body text-muted-foreground mt-2.5">{inlineNodes(detailsBody)}</div>
         </details>
       ),
       nextIndex,
@@ -590,7 +591,7 @@ const renderHtmlBlock = (
         className={
           isCentered
             ? "my-2 flex flex-wrap items-center justify-center gap-2 text-center"
-            : "my-1 flex flex-col gap-1 text-body text-muted-foreground leading-relaxed"
+            : "text-body text-muted-foreground my-1 flex flex-col gap-1 leading-relaxed"
         }
         key={key}
       >
@@ -606,11 +607,12 @@ const renderListBlock = (trimmed: string, key: number): ReactNode | null => {
   if (taskMatch) {
     const isChecked = (taskMatch[1] ?? "").toLowerCase() === "x";
     return (
-      <div className="flex items-start gap-2 text-body text-muted-foreground" key={key}>
+      <div className="text-body text-muted-foreground flex items-start gap-2" key={key}>
         <input
           checked={isChecked}
-          className="mt-1 size-3.5 rounded accent-primary"
+          className="accent-primary mt-1 size-3.5 rounded"
           disabled
+          readOnly
           type="checkbox"
         />
         <span>{inlineNodes(taskMatch[2] ?? "")}</span>
@@ -621,7 +623,7 @@ const renderListBlock = (trimmed: string, key: number): ReactNode | null => {
   const bulletMatch = /^[-*+]\s+(.*)$/u.exec(trimmed);
   if (bulletMatch) {
     return (
-      <div className="flex items-start gap-2 text-body text-muted-foreground" key={key}>
+      <div className="text-body text-muted-foreground flex items-start gap-2" key={key}>
         <span className="text-muted-foreground/60">•</span>
         <span>{inlineNodes(bulletMatch[1] ?? "")}</span>
       </div>
@@ -631,8 +633,8 @@ const renderListBlock = (trimmed: string, key: number): ReactNode | null => {
   const orderedMatch = /^(\d+)\.\s+(.*)$/u.exec(trimmed);
   if (orderedMatch) {
     return (
-      <div className="flex items-start gap-2 text-body text-muted-foreground" key={key}>
-        <span className="font-mono text-caption text-muted-foreground">{orderedMatch[1]}.</span>
+      <div className="text-body text-muted-foreground flex items-start gap-2" key={key}>
+        <span className="text-caption text-muted-foreground font-mono">{orderedMatch[1]}.</span>
         <span>{inlineNodes(orderedMatch[2] ?? "")}</span>
       </div>
     );
@@ -644,21 +646,21 @@ const renderListBlock = (trimmed: string, key: number): ReactNode | null => {
 const renderMarkdownHeading = (trimmed: string, key: number): ReactNode | null => {
   if (trimmed.startsWith("# ")) {
     return (
-      <h2 className="mt-4 font-semibold text-foreground text-title tracking-tight" key={key}>
+      <h2 className="text-foreground text-title mt-4 font-semibold tracking-tight" key={key}>
         {inlineNodes(trimmed.slice(2))}
       </h2>
     );
   }
   if (trimmed.startsWith("## ")) {
     return (
-      <h3 className="mt-3 font-semibold text-foreground text-subtitle tracking-tight" key={key}>
+      <h3 className="text-foreground text-subtitle mt-3 font-semibold tracking-tight" key={key}>
         {inlineNodes(trimmed.slice(3))}
       </h3>
     );
   }
   if (trimmed.startsWith("### ")) {
     return (
-      <h4 className="mt-2 font-medium text-body text-foreground" key={key}>
+      <h4 className="text-body text-foreground mt-2 font-medium" key={key}>
         {inlineNodes(trimmed.slice(4))}
       </h4>
     );
@@ -671,7 +673,7 @@ const renderMarkdownHeading = (trimmed: string, key: number): ReactNode | null =
     const hashes = trimmed.match(/^#+/u)?.[0]?.length ?? 4;
     return (
       <h5
-        className="mt-2 font-medium text-caption text-foreground uppercase tracking-wide"
+        className="text-caption text-foreground mt-2 font-medium tracking-wide uppercase"
         key={key}
       >
         {inlineNodes(trimmed.slice(hashes).trim())}
@@ -739,7 +741,7 @@ const renderFallbackElements = (markdown: string): ReactNode[] => {
     }
 
     if (/^(?:-{3,}|\*{3,}|_{3,}|<hr\s*\/?>)$/iu.test(trimmed)) {
-      elements.push(<hr className="my-3 border-border/60" key={key} />);
+      elements.push(<hr className="border-border/60 my-3" key={key} />);
       key += 1;
       i += 1;
       continue;
@@ -756,7 +758,7 @@ const renderFallbackElements = (markdown: string): ReactNode[] => {
     if (trimmed.startsWith("> ")) {
       elements.push(
         <blockquote
-          className="my-1.5 border-primary/60 border-l-2 pl-3 text-muted-foreground italic"
+          className="border-primary/60 text-muted-foreground my-1.5 border-l-2 pl-3 italic"
           key={key}
         >
           {inlineNodes(trimmed.slice(2))}
@@ -862,7 +864,7 @@ export const ReadmeMarkdown = ({ markdown, html, owner, repo }: ReadmeMarkdownPr
   return (
     <div className={PROSE_CONTAINER_CLASS} ref={containerRef}>
       {effectiveHtml ? (
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: Sanitized GFM HTML generated by Rust comrak engine
+        // eslint-disable-next-line react/no-danger -- sanitized local Markdown HTML generated by Rust comrak engine
         <div dangerouslySetInnerHTML={{ __html: effectiveHtml }} />
       ) : (
         renderFallbackElements(markdown)

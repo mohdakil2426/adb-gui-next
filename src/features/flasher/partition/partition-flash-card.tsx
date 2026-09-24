@@ -62,7 +62,7 @@ const PartitionFlashFooter = ({
   onAddToQueue: () => void;
   requestFlash: () => void;
 }) => (
-  <CardFooter className="flex items-center justify-between border-border border-t pt-4">
+  <CardFooter className="border-border flex items-center justify-between border-t pt-4">
     <Button
       className="gap-1.5"
       disabled={isGlobalLoading || isBatchFlashing || !partition || !filePath}
@@ -111,12 +111,12 @@ export const PartitionFlashCard = ({
 
   return (
     <div className="flex" ref={flashSectionRef}>
-      <Card className="flex h-full w-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+      <Card className="border-border bg-surface flex h-full w-full flex-col justify-between rounded-xl shadow-none">
         <div className="flex flex-1 flex-col">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-foreground text-title">
-                <HardDrive className="size-5 text-muted-foreground" />
+              <CardTitle className="text-foreground text-title flex items-center gap-2">
+                <HardDrive className="text-muted-foreground size-5" />
                 Flash Partition Image
               </CardTitle>
               {partition ? (

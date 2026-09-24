@@ -5,7 +5,7 @@ import { cn } from "@/shared/utils/cn";
 const Table = ({ className, ...props }: React.ComponentProps<"table">) => (
   <div className="relative w-full overflow-x-auto" data-slot="table-container">
     <table
-      className={cn("w-full caption-bottom text-body", className)}
+      className={cn("text-body w-full caption-bottom", className)}
       data-slot="table"
       {...props}
     />
@@ -26,7 +26,7 @@ const TableBody = ({ className, ...props }: React.ComponentProps<"tbody">) => (
 
 const TableFooter = ({ className, ...props }: React.ComponentProps<"tfoot">) => (
   <tfoot
-    className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
+    className={cn("bg-muted/50 border-t font-medium [&>tr]:last:border-b-0", className)}
     data-slot="table-footer"
     {...props}
   />
@@ -35,7 +35,7 @@ const TableFooter = ({ className, ...props }: React.ComponentProps<"tfoot">) => 
 const TableRow = ({ className, ...props }: React.ComponentProps<"tr">) => (
   <tr
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
       className
     )}
     data-slot="table-row"
@@ -46,7 +46,7 @@ const TableRow = ({ className, ...props }: React.ComponentProps<"tr">) => (
 const TableHead = ({ className, ...props }: React.ComponentProps<"th">) => (
   <th
     className={cn(
-      "h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-[2px]",
+      "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-[2px]",
       className
     )}
     data-slot="table-head"
@@ -57,7 +57,7 @@ const TableHead = ({ className, ...props }: React.ComponentProps<"th">) => (
 const TableCell = ({ className, ...props }: React.ComponentProps<"td">) => (
   <td
     className={cn(
-      "whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-[2px]",
+      "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 *:[[role=checkbox]]:translate-y-[2px]",
       className
     )}
     data-slot="table-cell"
@@ -67,7 +67,7 @@ const TableCell = ({ className, ...props }: React.ComponentProps<"td">) => (
 
 const TableCaption = ({ className, ...props }: React.ComponentProps<"caption">) => (
   <caption
-    className={cn("mt-4 text-muted-foreground text-sm", className)}
+    className={cn("text-muted-foreground mt-4 text-sm", className)}
     data-slot="table-caption"
     {...props}
   />

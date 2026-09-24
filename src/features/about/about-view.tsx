@@ -21,9 +21,9 @@ import { Badge } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 const DetailRow = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="flex items-baseline justify-between gap-4 py-1.5 text-body">
-    <dt className="shrink-0 text-label text-muted-foreground">{label}</dt>
-    <dd className="numeric min-w-0 truncate text-right font-mono text-foreground text-mono">
+  <div className="text-body flex items-baseline justify-between gap-4 py-1.5">
+    <dt className="text-label text-muted-foreground shrink-0">{label}</dt>
+    <dd className="numeric text-foreground text-mono min-w-0 truncate text-right font-mono">
       {value}
     </dd>
   </div>
@@ -45,7 +45,7 @@ export const ViewAbout = () => {
       <h1 className="sr-only">About {APP_NAME}</h1>
 
       {/* Hero Header Section */}
-      <section className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4 rounded-lg border border-border bg-surface p-4 shadow-none">
+      <section className="border-border bg-surface flex flex-col gap-4 rounded-lg border p-4 shadow-none @lg:flex-row @lg:items-center @lg:justify-between">
         <div className="flex items-center gap-3.5">
           <img
             alt="ADB GUI Next logo"
@@ -55,8 +55,8 @@ export const ViewAbout = () => {
             width={48}
           />
           <div className="flex flex-col gap-0.5">
-            <span className="font-semibold text-foreground text-title">{APP_NAME}</span>
-            <p className="max-w-xl text-body text-muted-foreground">
+            <span className="text-foreground text-title font-semibold">{APP_NAME}</span>
+            <p className="text-body text-muted-foreground max-w-xl">
               A desktop front end for adb and fastboot: inspect a device, move files, manage apps,
               flash partitions and unpack firmware — without memorising command lines.
             </p>
@@ -72,10 +72,10 @@ export const ViewAbout = () => {
       </section>
 
       {/* Top Grid: Build + Licence (Equal Stretched Height) */}
-      <div className="grid @3xl:grid-cols-2 grid-cols-1 items-stretch gap-4">
+      <div className="grid grid-cols-1 items-stretch gap-4 @3xl:grid-cols-2">
         {/* Build Card */}
         <AboutCard icon={Cpu} title="Build">
-          <dl className="flex flex-col divide-y divide-border">
+          <dl className="divide-border flex flex-col divide-y">
             <DetailRow label="Version" value={`v${APP_VERSION}`} />
             <DetailRow label="Platform" value={`${target.platform} · ${target.arch}`} />
             {target.triple ? <DetailRow label="Target triple" value={target.triple} /> : null}
@@ -96,7 +96,7 @@ export const ViewAbout = () => {
 
         {/* Licence Card */}
         <AboutCard icon={Scale} title="Licence">
-          <dl className="flex flex-col divide-y divide-border">
+          <dl className="divide-border flex flex-col divide-y">
             <DetailRow label="Licence" value={<Badge variant="secondary">{APP_LICENSE}</Badge>} />
             <DetailRow label="Copyright" value={APP_COPYRIGHT} />
           </dl>
@@ -115,31 +115,31 @@ export const ViewAbout = () => {
 
         {/* Full-Width Built With Grid */}
         <AboutCard className="@3xl:col-span-2" icon={Package} title="Built with">
-          <div className="grid @4xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 @lg:grid-cols-2 @4xl:grid-cols-3">
             {CREDITS.map((credit) => (
               <button
-                className="group flex cursor-pointer flex-col justify-between gap-2 rounded-lg border border-border bg-surface-raised/40 p-3 text-left transition-colors duration-150 hover:border-border hover:bg-surface-raised"
+                className="group border-border bg-surface-raised/40 hover:border-border hover:bg-surface-raised flex cursor-pointer flex-col justify-between gap-2 rounded-lg border p-3 text-left transition-colors duration-150"
                 key={credit.name}
                 onClick={() => BrowserOpenURL(credit.url)}
                 type="button"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-body text-foreground transition-colors group-hover:text-foreground">
+                  <span className="text-body text-foreground group-hover:text-foreground font-medium transition-colors">
                     {credit.name}
                   </span>
-                  <ExternalLink className="size-3 text-muted-foreground opacity-60 transition-opacity group-hover:opacity-100" />
+                  <ExternalLink className="text-muted-foreground size-3 opacity-60 transition-opacity group-hover:opacity-100" />
                 </div>
                 <span className="text-caption text-muted-foreground">{credit.role}</span>
                 <div className="pt-0.5">
-                  <span className="inline-block rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <span className="bg-muted text-muted-foreground inline-block rounded px-1.5 py-0.5 font-mono text-[10px]">
                     {credit.license}
                   </span>
                 </div>
               </button>
             ))}
           </div>
-          <p className="mt-2 flex items-center gap-1.5 text-caption text-muted-foreground">
-            <Heart aria-hidden="true" className="size-3.5 text-destructive" />
+          <p className="text-caption text-muted-foreground mt-2 flex items-center gap-1.5">
+            <Heart aria-hidden="true" className="text-destructive size-3.5" />
             Each project keeps its own licence; the full texts ship with the application.
           </p>
         </AboutCard>

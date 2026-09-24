@@ -91,13 +91,13 @@ export const EmulatorKnowledgeBase = () => {
   const [expandedId, setExpandedId] = useState<string>("virtualization");
 
   return (
-    <Card className="@container flex flex-col rounded-xl border-border bg-surface py-4 shadow-none">
+    <Card className="border-border bg-surface @container flex flex-col rounded-xl py-4 shadow-none">
       <CardHeader className="gap-0 px-4.5 pb-2">
         <CardTitle
           as="h2"
-          className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+          className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
         >
-          <BookOpen aria-hidden="true" className="size-3.5 text-muted-foreground" />
+          <BookOpen aria-hidden="true" className="text-muted-foreground size-3.5" />
           Virtualization & Rooting Knowledge Base
         </CardTitle>
       </CardHeader>
@@ -139,15 +139,15 @@ export const EmulatorKnowledgeBase = () => {
                   </div>
                   <div className="flex min-w-0 flex-col">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-body text-foreground">{topic.title}</span>
-                      <span className="rounded-md border border-border/60 bg-surface px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      <span className="text-body text-foreground font-medium">{topic.title}</span>
+                      <span className="border-border/60 bg-surface text-muted-foreground rounded-md border px-1.5 py-0.5 text-[10px]">
                         {topic.badge}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="shrink-0 text-muted-foreground">
+                <div className="text-muted-foreground shrink-0">
                   {isExpanded ? (
                     <ChevronUp aria-hidden="true" className="size-4" />
                   ) : (
@@ -158,20 +158,20 @@ export const EmulatorKnowledgeBase = () => {
 
               {/* Accordion Content Body */}
               {isExpanded ? (
-                <div className="flex flex-col gap-3 border-border/40 border-t p-3.5 pt-3">
-                  <div className="flex flex-col gap-1.5 text-body text-muted-foreground">
+                <div className="border-border/40 flex flex-col gap-3 border-t p-3.5 pt-3">
+                  <div className="text-body text-muted-foreground flex flex-col gap-1.5">
                     {topic.content.map((paragraph) => (
                       <p key={paragraph}>{paragraph}</p>
                     ))}
                   </div>
 
                   {topic.commandSnippet ? (
-                    <div className="flex items-center gap-2 rounded-md border border-border/60 bg-surface p-2.5">
+                    <div className="border-border/60 bg-surface flex items-center gap-2 rounded-md border p-2.5">
                       <Terminal
                         aria-hidden="true"
-                        className="size-3.5 shrink-0 text-muted-foreground"
+                        className="text-muted-foreground size-3.5 shrink-0"
                       />
-                      <code className="font-mono text-foreground text-mono-sm">
+                      <code className="text-foreground text-mono-sm font-mono">
                         {topic.commandSnippet}
                       </code>
                     </div>

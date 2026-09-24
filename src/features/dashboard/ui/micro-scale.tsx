@@ -58,14 +58,14 @@ export const MicroScale = ({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
+        <span className="text-caption text-muted-foreground font-medium tracking-wider uppercase">
           {label}
         </span>
-        <span className={cn("numeric font-semibold text-label", TONE_TEXT[activeTone])}>
+        <span className={cn("numeric text-label font-semibold", TONE_TEXT[activeTone])}>
           {display}
         </span>
       </div>
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="bg-secondary relative h-1.5 w-full overflow-hidden rounded-full">
         <progress aria-label={ariaLabel} className="sr-only" max={max} value={value ?? undefined}>
           {display}
         </progress>
@@ -95,7 +95,7 @@ export const MicroScale = ({
           />
         )}
       </div>
-      <div className="numeric flex items-baseline justify-between text-caption text-muted-foreground">
+      <div className="numeric text-caption text-muted-foreground flex items-baseline justify-between">
         <span>{min}</span>
         <span>{max}</span>
       </div>

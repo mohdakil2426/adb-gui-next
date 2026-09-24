@@ -44,11 +44,11 @@ export const RepositorySourcesCard = () => {
   const setActiveProviders = useMarketplaceStore((state) => state.setActiveProviders);
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div>
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <Store className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <Store className="text-muted-foreground size-5" />
             Enabled Repository Catalogs
           </CardTitle>
           <CardDescription className="text-caption">
@@ -58,7 +58,7 @@ export const RepositorySourcesCard = () => {
 
         <div className="flex items-center gap-1.5">
           <Button
-            className="h-7 px-2.5 text-caption"
+            className="text-caption h-7 px-2.5"
             onClick={() => setAllProviders()}
             size="sm"
             type="button"
@@ -67,7 +67,7 @@ export const RepositorySourcesCard = () => {
             Enable All
           </Button>
           <Button
-            className="h-7 px-2.5 text-caption"
+            className="text-caption h-7 px-2.5"
             onClick={() => setActiveProviders(["GitHub"])}
             size="sm"
             type="button"
@@ -85,16 +85,16 @@ export const RepositorySourcesCard = () => {
 
           return (
             <div
-              className="flex items-center justify-between gap-4 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5 transition-colors"
+              className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-4 rounded-lg border p-3.5 transition-colors"
               key={provider.id}
             >
               <div className="flex items-start gap-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised">
-                  <Icon className="size-4.5 text-foreground" />
+                <div className="border-border bg-surface-raised flex size-9 shrink-0 items-center justify-center rounded-lg border">
+                  <Icon className="text-foreground size-4.5" />
                 </div>
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-body text-foreground">
+                    <span className="text-body text-foreground font-semibold">
                       {provider.label}
                     </span>
                     <Badge className="text-[10px]" variant="secondary">
@@ -117,7 +117,7 @@ export const RepositorySourcesCard = () => {
                   variant="ghost"
                 >
                   <ExternalLink
-                    className="size-3.5 text-muted-foreground"
+                    className="text-muted-foreground size-3.5"
                     data-icon="inline-start"
                   />
                 </Button>

@@ -47,7 +47,7 @@ const EngineStatusBadge = ({
   if (isInstalling) {
     return (
       <Badge
-        className="border-sky-500/30 bg-sky-500/10 text-caption text-sky-400"
+        className="text-caption border-sky-500/30 bg-sky-500/10 text-sky-400"
         variant="outline"
       >
         <DownloadCloud aria-hidden="true" className="size-3 animate-pulse" />
@@ -58,7 +58,7 @@ const EngineStatusBadge = ({
   if (updateAvailable) {
     return (
       <Badge
-        className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-caption"
+        className="text-caption border-amber-500/30 bg-amber-500/10 text-amber-400"
         variant="outline"
       >
         <ArrowUpRight aria-hidden="true" className="size-3" />
@@ -69,7 +69,7 @@ const EngineStatusBadge = ({
   if (isInstalled) {
     return (
       <Badge
-        className="border-emerald-500/30 bg-emerald-500/10 text-caption text-emerald-400"
+        className="text-caption border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
         variant="outline"
       >
         <ShieldCheck aria-hidden="true" className="size-3" />
@@ -103,10 +103,10 @@ const CockpitActionButtons = ({
   onStopAll: () => void;
   selectedCount: number;
 }) => (
-  <div className="flex items-center gap-2 @lg:self-auto self-start">
+  <div className="flex items-center gap-2 self-start @lg:self-auto">
     {activeCount > 0 ? (
       <Button
-        className="h-8 gap-1.5 px-3 text-caption hover:bg-destructive/10 hover:text-destructive"
+        className="text-caption hover:bg-destructive/10 hover:text-destructive h-8 gap-1.5 px-3"
         disabled={isStopping}
         onClick={onStopAll}
         size="sm"
@@ -123,7 +123,7 @@ const CockpitActionButtons = ({
     ) : null}
 
     <Button
-      className="h-8 gap-1.5 bg-foreground px-3.5 font-medium text-background text-caption hover:bg-foreground/90"
+      className="bg-foreground text-background text-caption hover:bg-foreground/90 h-8 gap-1.5 px-3.5 font-medium"
       disabled={!canLaunch || isLaunching || selectedCount === 0}
       onClick={onLaunch}
       size="sm"
@@ -198,17 +198,17 @@ export const ScrcpyCockpitHero = ({
       : null;
 
   return (
-    <Card className="@container border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface @container shadow-none">
       <CardContent className="flex flex-col gap-4 p-4">
         {/* Top Header Row */}
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-3">
+        <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center @lg:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground">
+            <div className="border-border bg-surface-raised text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border">
               <Monitor aria-hidden="true" className="size-5" />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold text-foreground text-title tracking-tight">
+                <h2 className="text-foreground text-title font-semibold tracking-tight">
                   Scrcpy Engine Cockpit
                 </h2>
                 <EngineStatusBadge
@@ -219,7 +219,7 @@ export const ScrcpyCockpitHero = ({
                   updateAvailable={updateAvailable}
                 />
               </div>
-              <p className="truncate text-caption text-muted-foreground">
+              <p className="text-caption text-muted-foreground truncate">
                 High-performance Genymobile display mirroring & hardware device bridge
               </p>
             </div>
@@ -238,10 +238,10 @@ export const ScrcpyCockpitHero = ({
         </div>
 
         {/* Telemetry Strip Metric Tiles */}
-        <div className="grid @lg:grid-cols-4 grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
           {/* Tile 1: Binary Engine Status */}
-          <div className="flex flex-col gap-1 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5">
-            <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
               Scrcpy Engine
             </span>
             <div className="flex items-center gap-1.5">
@@ -251,15 +251,15 @@ export const ScrcpyCockpitHero = ({
                   isInstalled ? "bg-emerald-500" : "bg-muted-foreground"
                 )}
               />
-              <span className="truncate font-medium text-body text-foreground">
+              <span className="text-body text-foreground truncate font-medium">
                 {getEngineLabel(isInstalled, status)}
               </span>
             </div>
           </div>
 
           {/* Tile 2: Live Mirroring Sessions */}
-          <div className="flex flex-col gap-1 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5">
-            <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
               Active Sessions
             </span>
             <div className="flex items-center gap-1.5">
@@ -269,30 +269,30 @@ export const ScrcpyCockpitHero = ({
                   activeCount > 0 ? "animate-pulse bg-emerald-500" : "bg-muted-foreground/50"
                 )}
               />
-              <span className="truncate font-medium text-body text-foreground">
+              <span className="text-body text-foreground truncate font-medium">
                 {activeCount > 0 ? `${activeCount} Streaming` : "Standby / Idle"}
               </span>
             </div>
           </div>
 
           {/* Tile 3: Selected Transport Link */}
-          <div className="flex flex-col gap-1 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5">
-            <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
               Link Transport
             </span>
             <div className="flex items-center gap-1.5">
-              <TransportIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
-              <span className="truncate font-medium text-body">{transportLabel}</span>
+              <TransportIcon aria-hidden="true" className="text-muted-foreground size-3.5" />
+              <span className="text-body truncate font-medium">{transportLabel}</span>
             </div>
           </div>
 
           {/* Tile 4: Device Connection Count */}
-          <div className="flex flex-col gap-1 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5">
-            <span className="font-medium text-[11px] text-muted-foreground uppercase tracking-wider">
+          <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
+            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
               Devices Available
             </span>
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-body text-foreground">{selectedCount}</span>
+              <span className="text-body text-foreground font-semibold">{selectedCount}</span>
               <span className="text-caption text-muted-foreground">
                 of {totalDevicesCount} selected
               </span>

@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Download, RefreshCw, Search, Terminal, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -140,15 +141,15 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 font-semibold text-title">
-            <Terminal className="size-4.5 text-primary" />
+          <CardTitle className="text-title flex items-center gap-2 font-semibold">
+            <Terminal className="text-primary size-4.5" />
             Live Logcat Buffer & Filter Studio
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-muted-foreground">
+            <span className="text-muted-foreground font-mono text-[11px]">
               {filteredLogs.length} / {logs.length} Lines
             </span>
           </div>
@@ -163,10 +164,10 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex max-w-md flex-1 items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
               <Input
                 aria-label="Filter logcat logs"
-                className="h-8 pl-8 text-caption"
+                className="text-caption h-8 pl-8"
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter logs (e.g. tag, error, pid)…"
                 value={searchQuery}
@@ -176,7 +177,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
               onValueChange={(val) => setSelectedLevel(val as LogLevel)}
               value={selectedLevel}
             >
-              <SelectTrigger aria-label="Filter log level" className="h-8 w-28 text-caption">
+              <SelectTrigger aria-label="Filter log level" className="text-caption h-8 w-28">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -195,7 +196,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
 
           <div className="flex items-center gap-2">
             <Button
-              className="h-8 gap-1.5 px-3 text-caption"
+              className="text-caption h-8 gap-1.5 px-3"
               disabled={isFetchingLogs || !isAdb}
               onClick={() => {
                 void fetchLogcatSnapshot();
@@ -212,7 +213,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
             </Button>
 
             <Button
-              className="h-8 gap-1.5 px-3 text-caption"
+              className="text-caption h-8 gap-1.5 px-3"
               disabled={logs.length === 0}
               onClick={() => {
                 void handleExportLogs();
@@ -221,19 +222,19 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
               type="button"
               variant="outline"
             >
-              <Download className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+              <Download className="text-muted-foreground size-3.5" data-icon="inline-start" />
               Export .txt
             </Button>
 
             <Button
-              className="h-8 gap-1.5 px-3 text-caption"
+              className="text-caption h-8 gap-1.5 px-3"
               disabled={logs.length === 0}
               onClick={() => setLogs([])}
               size="sm"
               type="button"
               variant="ghost"
             >
-              <Trash2 className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+              <Trash2 className="text-muted-foreground size-3.5" data-icon="inline-start" />
               Clear
             </Button>
           </div>
@@ -241,11 +242,11 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
 
         {/* Log Viewer Terminal Box */}
         <div
-          className="max-h-[380px] min-h-[220px] overflow-y-auto rounded-lg border border-border/80 bg-background/90 p-3 font-mono text-[11px] text-muted-foreground leading-relaxed"
+          className="border-border/80 bg-background/90 text-muted-foreground max-h-[380px] min-h-[220px] overflow-y-auto rounded-lg border p-3 font-mono text-[11px] leading-relaxed"
           ref={logScrollRef}
         >
           {filteredLogs.length === 0 ? (
-            <div className="flex h-32 items-center justify-center text-caption text-muted-foreground">
+            <div className="text-caption text-muted-foreground flex h-32 items-center justify-center">
               {isAdb
                 ? "No log entries match current filter."
                 : "Connect an active ADB device to read logcat stream."}
@@ -254,12 +255,12 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
             filteredLogs.map((entry) => (
               <div
                 className={cn(
-                  "flex items-start gap-2 py-0.5 hover:bg-surface-raised/30",
+                  "hover:bg-surface-raised/30 flex items-start gap-2 py-0.5",
                   getLogLevelColor(entry.level)
                 )}
                 key={entry.id}
               >
-                <span className="shrink-0 select-none text-[10px] text-muted-foreground/60">
+                <span className="text-muted-foreground/60 shrink-0 text-[10px] select-none">
                   {entry.line.toString().padStart(4, "0")}
                 </span>
                 <span
@@ -270,7 +271,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
                 >
                   [{entry.level}]
                 </span>
-                <span className="whitespace-pre-wrap break-all">{entry.message}</span>
+                <span className="break-all whitespace-pre-wrap">{entry.message}</span>
               </div>
             ))
           )}

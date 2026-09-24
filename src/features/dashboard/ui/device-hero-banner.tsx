@@ -52,16 +52,16 @@ const SpecBadge = ({
   value: string;
 }) => (
   <div
-    className="group relative flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-surface-raised/40 px-3 py-2 transition-colors hover:border-border hover:bg-surface-raised/80"
+    className="group border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised/80 relative flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors"
     title={tooltip || value}
   >
     <div className="flex min-w-0 items-center gap-2.5">
-      <Icon aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+      <Icon aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
       <div className="flex min-w-0 flex-col">
-        <span className="font-medium text-caption text-muted-foreground uppercase tracking-wider">
+        <span className="text-caption text-muted-foreground font-medium tracking-wider uppercase">
           {label}
         </span>
-        <span className="truncate font-medium text-foreground text-label">{value}</span>
+        <span className="text-foreground text-label truncate font-medium">{value}</span>
       </div>
     </div>
     {copyValue ? (
@@ -94,7 +94,7 @@ const DeviceRefreshControl = ({
   onRefresh?: (() => void) | undefined;
   updatedAt?: number | undefined;
 }) => (
-  <div className="flex items-center gap-2.5 @lg:self-auto self-start">
+  <div className="flex items-center gap-2.5 self-start @lg:self-auto">
     {updatedAt && updatedAt > 0 ? (
       <span className="numeric text-caption text-muted-foreground">
         Updated {updatedAtFormatter.format(updatedAt)}
@@ -114,8 +114,8 @@ const DeviceRefreshControl = ({
         <RefreshCw
           aria-hidden="true"
           className={cn(
-            "size-3.5 text-muted-foreground transition-transform",
-            isRefreshing ? "animate-spin text-foreground" : ""
+            "text-muted-foreground size-3.5 transition-transform",
+            isRefreshing ? "text-foreground animate-spin" : ""
           )}
           data-icon="inline-start"
         />
@@ -206,7 +206,7 @@ const DeviceHardwareGrid = ({
   security: backend.SecurityInfo | undefined;
   telemetry: backend.DeviceTelemetry | null;
 }) => (
-  <div className="grid @3xl:grid-cols-4 @sm:grid-cols-2 grid-cols-1 gap-2.5 border-border/50 border-t pt-3">
+  <div className="border-border/50 grid grid-cols-1 gap-2.5 border-t pt-3 @sm:grid-cols-2 @3xl:grid-cols-4">
     <SoftwareSpecsRow androidLabel={androidLabel} identity={identity} security={security} />
     <HardwareSpecsRow deviceSerial={deviceSerial} identity={identity} telemetry={telemetry} />
   </div>
@@ -233,27 +233,27 @@ export const DeviceHeroBanner = ({
     : "Android";
 
   return (
-    <Card className="@container rounded-xl border-border bg-surface p-4.5 shadow-none">
+    <Card className="border-border bg-surface @container rounded-xl p-4.5 shadow-none">
       <CardContent className="flex flex-col gap-4 p-0">
         {/* Identity row */}
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-4">
+        <div className="flex flex-col gap-4 @lg:flex-row @lg:items-center @lg:justify-between">
           <div className="flex min-w-0 items-center gap-3.5">
-            <div className="relative flex size-12 shrink-0 items-center justify-center rounded-2xl border border-border/80 bg-surface-raised p-2 text-foreground shadow-xs">
-              <Smartphone aria-hidden="true" className="size-6 text-foreground" />
+            <div className="border-border/80 bg-surface-raised text-foreground relative flex size-12 shrink-0 items-center justify-center rounded-2xl border p-2 shadow-xs">
+              <Smartphone aria-hidden="true" className="text-foreground size-6" />
               {/* Active connection pulse dot */}
               <span className="absolute -top-0.5 -right-0.5 flex size-3">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
-                <span className="relative inline-flex size-3 rounded-full border-2 border-surface bg-success" />
+                <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-60" />
+                <span className="border-surface bg-success relative inline-flex size-3 rounded-full border-2" />
               </span>
             </div>
 
             <div className="flex min-w-0 flex-col gap-0.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate font-semibold text-foreground text-title">{headline}</h2>
+                <h2 className="text-foreground text-title truncate font-semibold">{headline}</h2>
                 {onEditNickname ? (
                   <button
                     aria-label="Edit device nickname"
-                    className="flex size-6 items-center justify-center rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-6 items-center justify-center rounded p-1 transition-colors"
                     onClick={onEditNickname}
                     title="Edit device nickname"
                     type="button"
@@ -265,7 +265,7 @@ export const DeviceHeroBanner = ({
                   {status.label}
                 </Badge>
                 {isWirelessSerial(device.serial) ? (
-                  <Badge className="gap-1 font-mono text-caption" variant="info">
+                  <Badge className="text-caption gap-1 font-mono" variant="info">
                     <Wifi aria-hidden="true" className="size-3" />
                     Wi-Fi ADB
                   </Badge>
@@ -275,7 +275,7 @@ export const DeviceHeroBanner = ({
               {isLoading && !vendorLine ? (
                 <Skeleton className="h-4 w-40" />
               ) : (
-                <p className="truncate text-caption text-muted-foreground">
+                <p className="text-caption text-muted-foreground truncate">
                   {vendorLine || "Connected Android Device"}
                 </p>
               )}

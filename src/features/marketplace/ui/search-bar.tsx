@@ -57,7 +57,7 @@ export const SearchBar = ({
 
   return (
     <div className="flex items-center gap-2">
-      <InputGroup className="h-10 min-w-0 flex-1 bg-surface">
+      <InputGroup className="bg-surface h-10 min-w-0 flex-1">
         <InputGroupAddon>
           <Search aria-hidden="true" />
         </InputGroupAddon>
@@ -86,7 +86,7 @@ export const SearchBar = ({
                 <TooltipContent side="bottom">Recent searches</TooltipContent>
               </Tooltip>
               <PopoverContent align="end" className="w-72 p-1">
-                <p className="px-2 py-1 text-caption text-muted-foreground uppercase tracking-wide">
+                <p className="text-caption text-muted-foreground px-2 py-1 tracking-wide uppercase">
                   Recent searches
                 </p>
                 {searchHistory.map((entry) => (
@@ -118,7 +118,7 @@ export const SearchBar = ({
               <TooltipContent side="bottom">Clear search</TooltipContent>
             </Tooltip>
           ) : (
-            <Kbd className="@sm:inline-flex hidden">{SEARCH_SHORTCUT}</Kbd>
+            <Kbd className="hidden @sm:inline-flex">{SEARCH_SHORTCUT}</Kbd>
           )}
         </InputGroupAddon>
       </InputGroup>

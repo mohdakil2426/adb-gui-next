@@ -18,11 +18,13 @@ interface ActiveSessionControllerProps {
   sessions?: backend.ScrcpySessionInfo[] | undefined;
 }
 
+const EMPTY_SESSIONS: backend.ScrcpySessionInfo[] = [];
+
 export const ActiveSessionController = ({
   activeSerials,
   isStopping,
   onStopDevice,
-  sessions = [],
+  sessions = EMPTY_SESSIONS,
 }: ActiveSessionControllerProps) => {
   const nicknames = useNicknameStore((state) => state.nicknames);
   const [openToolbars, setOpenToolbars] = useState<Set<string>>(new Set());
@@ -55,7 +57,7 @@ export const ActiveSessionController = ({
   }
 
   return (
-    <Card className="border-emerald-500/20 bg-surface shadow-none">
+    <Card className="bg-surface border-emerald-500/20 shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -63,12 +65,12 @@ export const ActiveSessionController = ({
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
             </span>
-            <CardTitle className="font-semibold text-body text-foreground">
+            <CardTitle className="text-body text-foreground font-semibold">
               Active Mirroring Sessions ({serialList.length})
             </CardTitle>
           </div>
           <Badge
-            className="border-emerald-500/30 bg-emerald-500/10 text-caption text-emerald-400"
+            className="text-caption border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
             variant="outline"
           >
             Live Hardware Stream
@@ -89,23 +91,23 @@ export const ActiveSessionController = ({
 
             return (
               <div
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/50 p-3"
+                className="border-border/80 bg-surface-raised/50 flex items-center justify-between gap-3 rounded-lg border p-3"
                 key={serial}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
                   <Smartphone aria-hidden="true" className="size-4 shrink-0 text-emerald-400" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate font-medium text-body text-foreground">
+                      <span className="text-body text-foreground truncate font-medium">
                         {displayName}
                       </span>
                       {session?.pid ? (
-                        <span className="rounded bg-surface px-1.5 py-0.2 font-mono text-[10px] text-muted-foreground">
+                        <span className="bg-surface py-0.2 text-muted-foreground rounded px-1.5 font-mono text-[10px]">
                           PID {session.pid}
                         </span>
                       ) : null}
                     </div>
-                    <p className="truncate font-mono text-caption text-muted-foreground">
+                    <p className="text-caption text-muted-foreground truncate font-mono">
                       {serial}
                     </p>
                   </div>
@@ -115,7 +117,7 @@ export const ActiveSessionController = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        className="h-7 gap-1.5 px-2.5 text-caption"
+                        className="text-caption h-7 gap-1.5 px-2.5"
                         onClick={() => handleToggleToolbar(serial)}
                         size="sm"
                         type="button"
@@ -135,7 +137,7 @@ export const ActiveSessionController = ({
                   </Tooltip>
 
                   <Button
-                    className="h-7 gap-1 px-2.5 text-caption hover:bg-destructive/10 hover:text-destructive"
+                    className="text-caption hover:bg-destructive/10 hover:text-destructive h-7 gap-1 px-2.5"
                     disabled={isStopping}
                     onClick={() => onStopDevice(serial)}
                     size="sm"

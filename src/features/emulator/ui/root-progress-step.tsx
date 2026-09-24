@@ -31,15 +31,15 @@ const StepIcon = ({
   isFailed: boolean;
 }) => {
   if (isFailed) {
-    return <CircleX aria-hidden="true" className="size-4 text-destructive" />;
+    return <CircleX aria-hidden="true" className="text-destructive size-4" />;
   }
   if (isDone) {
-    return <CircleCheck aria-hidden="true" className="size-4 text-success" />;
+    return <CircleCheck aria-hidden="true" className="text-success size-4" />;
   }
   if (isActive) {
-    return <Loader2 aria-hidden="true" className="size-4 animate-spin text-primary" />;
+    return <Loader2 aria-hidden="true" className="text-primary size-4 animate-spin" />;
   }
-  return <Circle aria-hidden="true" className="size-4 text-foreground-subtle" />;
+  return <Circle aria-hidden="true" className="text-foreground-subtle size-4" />;
 };
 
 export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootProgressStepProps) => {
@@ -55,7 +55,7 @@ export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootPro
     <div className="flex flex-col gap-4">
       <div>
         <h3 className="text-title">{failed ? "Rooting failed" : "Rooting in progress"}</h3>
-        <p className="mt-0.5 text-body text-muted-foreground">
+        <p className="text-body text-muted-foreground mt-0.5">
           {failed
             ? error
             : `The boot image on ${avdName} is being modified to include Magisk's root tools.`}
@@ -72,9 +72,9 @@ export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootPro
           return (
             <li
               className={cn(
-                "flex items-start gap-3 text-body",
-                isActive && "font-medium text-foreground",
-                isFailed && "font-medium text-destructive",
+                "text-body flex items-start gap-3",
+                isActive && "text-foreground font-medium",
+                isFailed && "text-destructive font-medium",
                 isDone && "text-foreground",
                 !(isDone || isActive || isFailed) && "text-muted-foreground"
               )}
@@ -87,7 +87,7 @@ export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootPro
               <div className="min-w-0">
                 <span>{label}</span>
                 {isActive && progress?.detail ? (
-                  <p className="mt-0.5 text-caption text-muted-foreground">{progress.detail}</p>
+                  <p className="text-caption text-muted-foreground mt-0.5">{progress.detail}</p>
                 ) : null}
               </div>
             </li>
@@ -99,10 +99,10 @@ export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootPro
         <div className="flex flex-col gap-1">
           <div
             aria-hidden="true"
-            className="h-1 w-full overflow-hidden rounded-full bg-surface-raised"
+            className="bg-surface-raised h-1 w-full overflow-hidden rounded-full"
           >
             <div
-              className="h-full rounded-full bg-primary transition-[width] duration-200 ease-standard"
+              className="bg-primary ease-standard h-full rounded-full transition-[width] duration-200"
               style={{ width: `${completedRatio * 100}%` }}
             />
           </div>

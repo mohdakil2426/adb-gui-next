@@ -6,7 +6,7 @@ const Textarea = ({ className, ...props }: React.ComponentProps<"textarea">) => 
   <textarea
     aria-label={props["aria-label"] || props.placeholder || "Text area"}
     className={cn(
-      "field-sizing-content flex min-h-16 w-full rounded-md border border-border-control bg-transparent px-3 py-2 text-body shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40",
+      "border-border-control text-body placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
       className
     )}
     data-slot="textarea"

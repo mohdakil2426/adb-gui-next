@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Cpu, Edit3, Hash, RefreshCw, Server, Smartphone, Terminal, Zap } from "lucide-react";
 import { useCallback, useState } from "react";
 
@@ -30,22 +31,22 @@ interface SpecItemProps {
 }
 
 const SpecItem = ({ copyValue, icon: Icon, label, tooltip, value }: SpecItemProps) => (
-  <div className="group relative flex flex-col justify-between rounded-lg border border-border bg-surface-raised/40 p-2.5 transition-colors hover:bg-surface-raised/80">
-    <div className="flex items-center justify-between gap-1 text-muted-foreground">
+  <div className="group border-border bg-surface-raised/40 hover:bg-surface-raised/80 relative flex flex-col justify-between rounded-lg border p-2.5 transition-colors">
+    <div className="text-muted-foreground flex items-center justify-between gap-1">
       <div className="flex min-w-0 items-center gap-1.5">
-        <Icon className="size-3.5 shrink-0 text-muted-foreground/80" />
-        <span className="truncate font-medium text-caption uppercase tracking-wider">{label}</span>
+        <Icon className="text-muted-foreground/80 size-3.5 shrink-0" />
+        <span className="text-caption truncate font-medium tracking-wider uppercase">{label}</span>
       </div>
       {copyValue ? (
         <CopyButton
-          className="size-5 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+          className="size-5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
           label={label}
           value={copyValue}
         />
       ) : null}
     </div>
 
-    <div className="mt-1.5 truncate font-medium text-body text-foreground">
+    <div className="text-body text-foreground mt-1.5 truncate font-medium">
       {tooltip ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -64,9 +65,9 @@ const getToolVersion = (rawOutput: string | undefined): string => {
   if (!rawOutput) {
     return "Searching…";
   }
-  const match = rawOutput.match(/version\s+([0-9.]+)/iu);
-  if (match?.[1]) {
-    return `v${match[1]}`;
+  const match = rawOutput.match(/version\s+(?<version>[0-9.]+)/iu);
+  if (match?.groups?.version) {
+    return `v${match.groups.version}`;
   }
   return "Detected";
 };
@@ -134,7 +135,7 @@ export const UtilitiesCockpitHero = ({
   const fastbootVersion = getToolVersion(hostVersions?.fastboot);
   const modeConfig = getDeviceModeConfig(deviceMode);
   return (
-    <Card className="@container rounded-xl border border-border bg-surface p-4.5 shadow-none transition-colors duration-150">
+    <Card className="border-border bg-surface @container rounded-xl border p-4.5 shadow-none transition-colors duration-150">
       <CardContent className="flex flex-col gap-4 p-0">
         {/* Screen-reader status announcement region */}
         <output aria-live="polite" className="sr-only">
@@ -142,16 +143,16 @@ export const UtilitiesCockpitHero = ({
         </output>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised text-foreground shadow-none">
+            <div className="border-border bg-surface-raised text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border shadow-none">
               <Terminal className="size-5" />
             </div>
             <div className="flex flex-col gap-0.5">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-semibold text-foreground text-title tracking-tight">
+                <h2 className="text-foreground text-title font-semibold tracking-tight">
                   ADB & Hardware Utilities Cockpit
                 </h2>
                 <Badge
-                  className="flex items-center gap-1.5 px-2 py-0.5 font-medium text-caption uppercase tracking-wider"
+                  className="text-caption flex items-center gap-1.5 px-2 py-0.5 font-medium tracking-wider uppercase"
                   variant={modeConfig.variant}
                 >
                   <span className={cn("size-1.5 rounded-full", modeConfig.dotClass)} />
@@ -199,13 +200,13 @@ export const UtilitiesCockpitHero = ({
         </div>
 
         {/* 6-Spec Hardware Specifications Grid */}
-        <div className="grid @2xl:grid-cols-6 @lg:grid-cols-3 grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5 @lg:grid-cols-3 @2xl:grid-cols-6">
           <SpecItem
             copyValue={hostVersions?.adb ?? null}
             icon={Server}
             label="ADB Daemon"
             tooltip={hostVersions?.adb ?? "ADB server status"}
-            value={<span className="font-mono text-mono-sm">{adbVersion}</span>}
+            value={<span className="text-mono-sm font-mono">{adbVersion}</span>}
           />
 
           <SpecItem
@@ -213,7 +214,7 @@ export const UtilitiesCockpitHero = ({
             icon={Zap}
             label="Fastboot Protocol"
             tooltip={hostVersions?.fastboot ?? "Fastboot toolchain"}
-            value={<span className="font-mono text-mono-sm">{fastbootVersion}</span>}
+            value={<span className="text-mono-sm font-mono">{fastbootVersion}</span>}
           />
 
           <SpecItem
@@ -222,7 +223,7 @@ export const UtilitiesCockpitHero = ({
             label="Target Serial"
             tooltip={deviceSerial ?? "No hardware device connected"}
             value={
-              <span className="font-mono text-mono-sm">{deviceSerial ?? "None connected"}</span>
+              <span className="text-mono-sm font-mono">{deviceSerial ?? "None connected"}</span>
             }
           />
 
@@ -231,7 +232,7 @@ export const UtilitiesCockpitHero = ({
             icon={Smartphone}
             label="Transport Mode"
             value={
-              <span className="font-medium text-body capitalize">{modeConfig.transportText}</span>
+              <span className="text-body font-medium capitalize">{modeConfig.transportText}</span>
             }
           />
 
@@ -240,21 +241,21 @@ export const UtilitiesCockpitHero = ({
             icon={Cpu}
             label="ADB Host Socket"
             tooltip="Local ADB Server default loopback listener port"
-            value={<span className="font-mono text-mono-sm">127.0.0.1:5037</span>}
+            value={<span className="text-mono-sm font-mono">127.0.0.1:5037</span>}
           />
 
-          <div className="group relative flex flex-col justify-between rounded-lg border border-border bg-surface-raised/40 p-2.5 transition-colors hover:bg-surface-raised/80">
-            <div className="flex items-center justify-between gap-1 text-muted-foreground">
+          <div className="group border-border bg-surface-raised/40 hover:bg-surface-raised/80 relative flex flex-col justify-between rounded-lg border p-2.5 transition-colors">
+            <div className="text-muted-foreground flex items-center justify-between gap-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                <Edit3 className="size-3.5 shrink-0 text-muted-foreground/80" />
-                <span className="truncate font-medium text-caption uppercase tracking-wider">
+                <Edit3 className="text-muted-foreground/80 size-3.5 shrink-0" />
+                <span className="text-caption truncate font-medium tracking-wider uppercase">
                   Nickname
                 </span>
               </div>
               {deviceSerial ? (
                 <Button
                   aria-label="Edit device nickname"
-                  className="size-5 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+                  className="size-5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
                   onClick={onEditNickname}
                   size="icon"
                   type="button"
@@ -265,10 +266,10 @@ export const UtilitiesCockpitHero = ({
               ) : null}
             </div>
 
-            <div className="mt-1.5 flex items-center justify-between gap-1 truncate font-medium text-body text-foreground">
+            <div className="text-body text-foreground mt-1.5 flex items-center justify-between gap-1 truncate font-medium">
               <span className="truncate">
                 {nickname ? (
-                  <span className="font-semibold text-foreground">{nickname}</span>
+                  <span className="text-foreground font-semibold">{nickname}</span>
                 ) : (
                   <span className="text-muted-foreground italic">No nickname</span>
                 )}

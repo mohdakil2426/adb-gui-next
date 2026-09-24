@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { useCallback } from "react";
 
 import { ListFiles } from "@/desktop/backend";

@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Code2, Loader2, Package, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -81,21 +82,21 @@ export const PackageInspectorDrawer = ({
     >
       <SheetContent
         aria-label={`Package details for ${details?.label || packageName || "application"}`}
-        className="top-11 z-50 flex h-[calc(100vh-2.75rem)] w-full max-w-lg flex-col gap-0 border-border border-t-0 border-l bg-surface p-0 shadow-2xl sm:max-w-lg"
+        className="border-border bg-surface top-11 z-50 flex h-[calc(100vh-2.75rem)] w-full max-w-lg flex-col gap-0 border-t-0 border-l p-0 shadow-2xl sm:max-w-lg"
         showCloseButton={false}
         side="right"
       >
         {/* Header */}
-        <SheetHeader className="flex flex-row items-center justify-between border-border border-b p-4 text-left">
+        <SheetHeader className="border-border flex flex-row items-center justify-between border-b p-4 text-left">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-primary shadow-xs">
+            <div className="border-border bg-surface text-primary flex size-10 shrink-0 items-center justify-center rounded-lg border shadow-xs">
               <Package className="size-5" />
             </div>
             <div className="flex min-w-0 flex-col">
-              <SheetTitle className="truncate font-bold text-foreground text-label">
+              <SheetTitle className="text-foreground text-label truncate font-bold">
                 {details?.label || packageName}
               </SheetTitle>
-              <SheetDescription className="truncate font-mono text-caption text-muted-foreground">
+              <SheetDescription className="text-caption text-muted-foreground truncate font-mono">
                 {packageName}
               </SheetDescription>
             </div>
@@ -103,7 +104,7 @@ export const PackageInspectorDrawer = ({
 
           <Button
             aria-label="Close inspector"
-            className="size-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground size-8 shrink-0 p-0"
             onClick={onClose}
             size="icon"
             type="button"
@@ -119,8 +120,8 @@ export const PackageInspectorDrawer = ({
           {(() => {
             if (isLoading) {
               return (
-                <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <Loader2 className="size-6 animate-spin text-primary" />
+                <div className="text-muted-foreground flex h-64 flex-col items-center justify-center gap-2">
+                  <Loader2 className="text-primary size-6 animate-spin" />
                   <span className="text-caption">Inspecting package details via ADB…</span>
                 </div>
               );
@@ -130,27 +131,27 @@ export const PackageInspectorDrawer = ({
                 <div className="flex flex-col gap-4">
                   {/* Version & Target SDK Badges */}
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col rounded-md border border-border bg-surface p-2">
+                    <div className="border-border bg-surface flex flex-col rounded-md border p-2">
                       <span className="text-caption text-muted-foreground">Version</span>
-                      <span className="numeric truncate font-semibold text-body text-foreground">
+                      <span className="numeric text-body text-foreground truncate font-semibold">
                         {details.versionName || "1.0"}
                       </span>
                       <span className="numeric text-caption text-muted-foreground">
                         Code {details.versionCode || "1"}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded-md border border-border bg-surface p-2">
+                    <div className="border-border bg-surface flex flex-col rounded-md border p-2">
                       <span className="text-caption text-muted-foreground">Target SDK</span>
-                      <span className="numeric font-semibold text-body text-foreground">
+                      <span className="numeric text-body text-foreground font-semibold">
                         API {details.targetSdk}
                       </span>
                       <span className="text-caption text-muted-foreground">
                         Min API {details.minSdk}
                       </span>
                     </div>
-                    <div className="flex flex-col rounded-md border border-border bg-surface p-2">
+                    <div className="border-border bg-surface flex flex-col rounded-md border p-2">
                       <span className="text-caption text-muted-foreground">Architecture</span>
-                      <span className="truncate font-semibold text-body text-foreground">
+                      <span className="text-body text-foreground truncate font-semibold">
                         {details.signatures && details.signatures.length > 0
                           ? "Signed"
                           : "Unsigned"}
@@ -179,8 +180,8 @@ export const PackageInspectorDrawer = ({
               );
             }
             return (
-              <div className="flex h-64 flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Code2 className="size-6 text-muted-foreground" />
+              <div className="text-muted-foreground flex h-64 flex-col items-center justify-center gap-2">
+                <Code2 className="text-muted-foreground size-6" />
                 <span className="text-caption">Package not found on connected device</span>
               </div>
             );

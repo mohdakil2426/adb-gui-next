@@ -31,13 +31,13 @@ export const CliCommandPreview = ({ options, selectedSerials }: CliCommandPrevie
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Terminal aria-hidden="true" className="size-4 text-foreground" />
-            <CardTitle className="font-semibold text-body text-foreground">
+            <Terminal aria-hidden="true" className="text-foreground size-4" />
+            <CardTitle className="text-body text-foreground font-semibold">
               Live Generated Scrcpy CLI Command
             </CardTitle>
           </div>
           <Badge
-            className="border-border bg-surface-raised font-mono text-[10px] text-muted-foreground"
+            className="border-border bg-surface-raised text-muted-foreground font-mono text-[10px]"
             variant="outline"
           >
             Direct Process Invocation
@@ -51,8 +51,8 @@ export const CliCommandPreview = ({ options, selectedSerials }: CliCommandPrevie
 
       <CardContent className="flex flex-col gap-4">
         {/* Terminal Monospace Command Block */}
-        <div className="group relative flex items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised p-3">
-          <code className="min-w-0 flex-1 select-all break-all font-mono text-foreground text-mono">
+        <div className="group border-border/80 bg-surface-raised relative flex items-center justify-between gap-3 rounded-lg border p-3">
+          <code className="text-foreground text-mono min-w-0 flex-1 font-mono break-all select-all">
             {cliCommand}
           </code>
           <div className="shrink-0">
@@ -63,19 +63,19 @@ export const CliCommandPreview = ({ options, selectedSerials }: CliCommandPrevie
         {/* Active Flag Explanations */}
         {flagsExplanation.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <span className="font-semibold text-caption text-foreground">
+            <span className="text-caption text-foreground font-semibold">
               Active Argument Breakdown ({flagsExplanation.length} flags):
             </span>
-            <div className="grid @lg:grid-cols-2 grid-cols-1 gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5 @lg:grid-cols-2">
               {flagsExplanation.map(({ flag, description }) => (
                 <div
-                  className="flex items-center justify-between gap-2 rounded border border-border/60 bg-surface-raised/30 px-2.5 py-1.5"
+                  className="border-border/60 bg-surface-raised/30 flex items-center justify-between gap-2 rounded border px-2.5 py-1.5"
                   key={flag}
                 >
-                  <code className="font-mono font-semibold text-foreground text-mono-sm">
+                  <code className="text-foreground text-mono-sm font-mono font-semibold">
                     {flag}
                   </code>
-                  <span className="truncate text-right text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground truncate text-right">
                     {description}
                   </span>
                 </div>

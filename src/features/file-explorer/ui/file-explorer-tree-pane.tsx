@@ -40,7 +40,7 @@ export const FileExplorerTreePane = (props: Props) => {
       />
       <Separator className="mx-2 my-2 shrink-0" />
       <div className="flex shrink-0 items-center gap-1.5 px-3.5 pb-1">
-        <Layers aria-hidden="true" className="size-3.5 shrink-0 text-muted-foreground" />
+        <Layers aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
         <p className="text-caption text-muted-foreground">Device</p>
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">

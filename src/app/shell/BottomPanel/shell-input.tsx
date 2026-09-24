@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import type React from "react";
 import { memo, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -19,7 +20,7 @@ import { shellCommandSchema } from "@/shared/utils/schemas";
  * Owns the command draft and in-flight state so that keystrokes never re-render
  * the (potentially multi-megabyte) transcript rendered by its sibling.
  */
-export const ShellInput = memo(function ShellInput() {
+const ShellInputImpl = () => {
   const { commandHistory, addHistoryEntry, addCommand } = useShellStore(
     useShallow((state) => ({
       addCommand: state.addCommand,
@@ -130,7 +131,7 @@ export const ShellInput = memo(function ShellInput() {
       <InputGroup className="border-0 bg-transparent shadow-none">
         <InputGroupAddon>
           <InputGroupText
-            className="select-none font-mono font-semibold text-sm"
+            className="font-mono text-sm font-semibold select-none"
             style={{ color: "var(--terminal-log-info)" }}
           >
             $
@@ -157,4 +158,6 @@ export const ShellInput = memo(function ShellInput() {
       </InputGroup>
     </div>
   );
-});
+};
+
+export const ShellInput = memo(ShellInputImpl);

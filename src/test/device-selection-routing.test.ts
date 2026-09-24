@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import { invoke } from "@tauri-apps/api/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -214,7 +214,7 @@ describe("selected device routing", () => {
 
   it("keeps the header device popover inside the content area instead of overlapping the sidebar", () => {
     const source = readFileSync(
-      join(process.cwd(), "src/shared/components/device-switcher.tsx"),
+      path.join(process.cwd(), "src/shared/components/device-switcher.tsx"),
       "utf-8"
     );
 

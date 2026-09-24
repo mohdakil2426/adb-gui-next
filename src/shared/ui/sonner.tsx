@@ -50,11 +50,11 @@ const Toaster = ({ style, ...props }: ToasterProps) => {
     <Sonner
       className="toaster group"
       icons={{
-        error: <OctagonXIcon className="size-4 text-destructive" />,
-        info: <InfoIcon className="size-4 text-info" />,
-        loading: <Loader2Icon className="size-4 animate-spin text-muted-foreground" />,
-        success: <CircleCheckIcon className="size-4 text-success" />,
-        warning: <TriangleAlertIcon className="size-4 text-warning" />,
+        error: <OctagonXIcon className="text-destructive size-4" />,
+        info: <InfoIcon className="text-info size-4" />,
+        loading: <Loader2Icon className="text-muted-foreground size-4 animate-spin" />,
+        success: <CircleCheckIcon className="text-success size-4" />,
+        warning: <TriangleAlertIcon className="text-warning size-4" />,
       }}
       style={{ ...TOAST_TOKENS, ...style }}
       theme={resolvedTheme === "dark" ? "dark" : "light"}

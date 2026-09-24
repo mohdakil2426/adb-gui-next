@@ -37,11 +37,11 @@ export const ShortcutsCheatSheet = () => {
   return (
     <Card className="border-border bg-surface shadow-none">
       <CardHeader className="pb-3">
-        <div className="flex @lg:flex-row flex-col @lg:items-center @lg:justify-between gap-3">
+        <div className="flex flex-col gap-3 @lg:flex-row @lg:items-center @lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Keyboard aria-hidden="true" className="size-4 text-foreground" />
-              <CardTitle className="font-semibold text-body text-foreground">
+              <Keyboard aria-hidden="true" className="text-foreground size-4" />
+              <CardTitle className="text-body text-foreground font-semibold">
                 Scrcpy Keyboard Shortcuts Cheat-Sheet
               </CardTitle>
             </div>
@@ -52,14 +52,14 @@ export const ShortcutsCheatSheet = () => {
           </div>
 
           {/* Search Input */}
-          <div className="relative @lg:w-64 w-full">
+          <div className="relative w-full @lg:w-64">
             <Search
               aria-hidden="true"
-              className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+              className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
             />
             <Input
               aria-label="Search keyboard shortcuts"
-              className="h-8 pl-8 text-caption"
+              className="text-caption h-8 pl-8"
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search shortcuts..."
               type="text"
@@ -75,7 +75,7 @@ export const ShortcutsCheatSheet = () => {
               className={cn(
                 "h-6 px-2.5 text-[11px]",
                 filterCategory === cat.id
-                  ? "border-border bg-surface-raised font-medium text-foreground"
+                  ? "border-border bg-surface-raised text-foreground font-medium"
                   : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"
               )}
               key={cat.id}
@@ -92,19 +92,19 @@ export const ShortcutsCheatSheet = () => {
 
       <CardContent>
         {filteredShortcuts.length === 0 ? (
-          <p className="py-6 text-center text-caption text-muted-foreground">
+          <p className="text-caption text-muted-foreground py-6 text-center">
             No shortcuts matched your search query.
           </p>
         ) : (
-          <div className="grid @2xl:grid-cols-3 @lg:grid-cols-2 grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-2 @lg:grid-cols-2 @2xl:grid-cols-3">
             {filteredShortcuts.map((shortcut) => (
               <div
-                className="flex items-center justify-between gap-2.5 rounded-lg border border-border/70 bg-surface-raised/40 p-2.5 transition-colors hover:bg-surface-raised/80"
+                className="border-border/70 bg-surface-raised/40 hover:bg-surface-raised/80 flex items-center justify-between gap-2.5 rounded-lg border p-2.5 transition-colors"
                 key={shortcut.label}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-body text-foreground">{shortcut.label}</p>
-                  <p className="truncate text-caption text-muted-foreground">
+                  <p className="text-body text-foreground truncate font-medium">{shortcut.label}</p>
+                  <p className="text-caption text-muted-foreground truncate">
                     {shortcut.description}
                   </p>
                 </div>

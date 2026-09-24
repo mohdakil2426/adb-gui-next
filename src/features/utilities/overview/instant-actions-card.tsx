@@ -1,3 +1,4 @@
+/* eslint-disable react/todo -- non-React-Compiler try/finally flow */
 import { Camera, FileText, Loader2, Sparkles, Trash2, Tv, Wifi } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -110,10 +111,10 @@ export const InstantActionsCard = ({
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 font-semibold text-title">
-          <Sparkles className="size-4.5 text-primary" />
+        <CardTitle className="text-title flex items-center gap-2 font-semibold">
+          <Sparkles className="text-primary size-4.5" />
           Instant Action Command Cockpit
         </CardTitle>
         <CardDescription className="text-body text-muted-foreground">
@@ -122,7 +123,7 @@ export const InstantActionsCard = ({
       </CardHeader>
 
       <CardContent className="pt-1">
-        <div className="grid @lg:grid-cols-3 @xs:grid-cols-2 gap-3">
+        <div className="grid gap-3 @xs:grid-cols-2 @lg:grid-cols-3">
           {/* Action 1: Capture Screenshot */}
           <Button
             className="h-14 justify-start gap-3 p-3 text-left"
@@ -134,12 +135,12 @@ export const InstantActionsCard = ({
             variant="outline"
           >
             {runningAction === "screenshot" ? (
-              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
+              <Loader2 className="text-primary size-5 animate-spin" data-icon="inline-start" />
             ) : (
-              <Camera className="size-5 text-muted-foreground" data-icon="inline-start" />
+              <Camera className="text-muted-foreground size-5" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Capture Screenshot</span>
+              <span className="text-body text-foreground font-semibold">Capture Screenshot</span>
               <span className="text-caption text-muted-foreground">Save PNG to host disk</span>
             </div>
           </Button>
@@ -155,12 +156,12 @@ export const InstantActionsCard = ({
             variant="outline"
           >
             {runningAction === "bugreport" ? (
-              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
+              <Loader2 className="text-primary size-5 animate-spin" data-icon="inline-start" />
             ) : (
-              <FileText className="size-5 text-muted-foreground" data-icon="inline-start" />
+              <FileText className="text-muted-foreground size-5" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Dump Sysinfo Report</span>
+              <span className="text-body text-foreground font-semibold">Dump Sysinfo Report</span>
               <span className="text-caption text-muted-foreground">Battery & memory logs</span>
             </div>
           </Button>
@@ -176,12 +177,12 @@ export const InstantActionsCard = ({
             variant="outline"
           >
             {runningAction === "clear-logcat" ? (
-              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
+              <Loader2 className="text-primary size-5 animate-spin" data-icon="inline-start" />
             ) : (
-              <Trash2 className="size-5 text-muted-foreground" data-icon="inline-start" />
+              <Trash2 className="text-muted-foreground size-5" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Flush Logcat Buffer</span>
+              <span className="text-body text-foreground font-semibold">Flush Logcat Buffer</span>
               <span className="text-caption text-muted-foreground">logcat -c instant clear</span>
             </div>
           </Button>
@@ -197,12 +198,12 @@ export const InstantActionsCard = ({
             variant="outline"
           >
             {runningAction === "wifi" ? (
-              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
+              <Loader2 className="text-primary size-5 animate-spin" data-icon="inline-start" />
             ) : (
-              <Wifi className="size-5 text-muted-foreground" data-icon="inline-start" />
+              <Wifi className="text-muted-foreground size-5" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">Cycle Wi-Fi Radio</span>
+              <span className="text-body text-foreground font-semibold">Cycle Wi-Fi Radio</span>
               <span className="text-caption text-muted-foreground">svc wifi restart cycle</span>
             </div>
           </Button>
@@ -218,12 +219,12 @@ export const InstantActionsCard = ({
             variant="outline"
           >
             {runningAction === "demo" ? (
-              <Loader2 className="size-5 animate-spin text-primary" data-icon="inline-start" />
+              <Loader2 className="text-primary size-5 animate-spin" data-icon="inline-start" />
             ) : (
-              <Tv className="size-5 text-muted-foreground" data-icon="inline-start" />
+              <Tv className="text-muted-foreground size-5" data-icon="inline-start" />
             )}
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">SystemUI Demo Mode</span>
+              <span className="text-body text-foreground font-semibold">SystemUI Demo Mode</span>
               <span className="text-caption text-muted-foreground">Clean statusbar for photo</span>
             </div>
           </Button>
@@ -235,9 +236,9 @@ export const InstantActionsCard = ({
             type="button"
             variant="outline"
           >
-            <Camera className="size-5 text-muted-foreground" data-icon="inline-start" />
+            <Camera className="text-muted-foreground size-5" data-icon="inline-start" />
             <div className="flex flex-col">
-              <span className="font-semibold text-body text-foreground">
+              <span className="text-body text-foreground font-semibold">
                 Screenshot & Log Studio
               </span>
               <span className="text-caption text-muted-foreground">Live viewer & preview</span>

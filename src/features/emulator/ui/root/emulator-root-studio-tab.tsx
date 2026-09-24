@@ -20,7 +20,7 @@ export const EmulatorRootStudioTab = ({ avd, onLaunch }: EmulatorRootStudioTabPr
 
   if (!avd) {
     return (
-      <div className="rounded-lg border border-border bg-surface-raised/40 p-8 text-center">
+      <div className="border-border bg-surface-raised/40 rounded-lg border p-8 text-center">
         <p className="text-body text-muted-foreground">
           Select an AVD before starting the root workflow.
         </p>
@@ -35,22 +35,22 @@ export const EmulatorRootStudioTab = ({ avd, onLaunch }: EmulatorRootStudioTabPr
     };
 
     return (
-      <Card className="@container rounded-xl border-border bg-surface py-4 shadow-none">
+      <Card className="border-border bg-surface @container rounded-xl py-4 shadow-none">
         <CardHeader className="gap-0 px-4.5 pb-3">
           <CardTitle
             as="h2"
-            className="flex items-center gap-2 font-medium text-caption text-muted-foreground uppercase tracking-wider"
+            className="text-caption text-muted-foreground flex items-center gap-2 font-medium tracking-wider uppercase"
           >
-            <Lock aria-hidden="true" className="size-3.5 text-muted-foreground" />
+            <Lock aria-hidden="true" className="text-muted-foreground size-3.5" />
             Root Studio · Device Online Gate
           </CardTitle>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4 px-4.5">
-          <div className="flex items-start gap-3 rounded-xl border border-warning/40 bg-warning-muted p-4">
-            <ShieldAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-warning" />
+          <div className="border-warning/40 bg-warning-muted flex items-start gap-3 rounded-xl border p-4">
+            <ShieldAlert aria-hidden="true" className="text-warning mt-0.5 size-5 shrink-0" />
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="font-semibold text-body text-foreground">
+              <p className="text-body text-foreground font-semibold">
                 {avd.name} is currently offline
               </p>
               <p className="text-caption text-muted-foreground">
@@ -86,8 +86,8 @@ export const EmulatorRootStudioTab = ({ avd, onLaunch }: EmulatorRootStudioTabPr
             </Button>
           </div>
 
-          <div className="flex items-start gap-2 rounded-lg border border-border/40 bg-surface-raised/30 p-3 text-caption text-muted-foreground">
-            <Info aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-info" />
+          <div className="border-border/40 bg-surface-raised/30 text-caption text-muted-foreground flex items-start gap-2 rounded-lg border p-3">
+            <Info aria-hidden="true" className="text-info mt-0.5 size-3.5 shrink-0" />
             <span>
               <strong>Why Cold Boot?</strong> Cold boot starts the emulator without restoring a
               saved snapshot. A normal launch may reload an older snapshot taken prior to rooting,

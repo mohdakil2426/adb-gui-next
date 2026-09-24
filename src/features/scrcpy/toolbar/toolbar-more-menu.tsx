@@ -57,12 +57,12 @@ export const ToolbarMoreMenu = ({
   };
 
   return (
-    <div className="fade-in zoom-in-95 flex w-[310px] max-w-[310px] shrink-0 animate-in flex-col gap-2.5 rounded-xl border border-border/90 bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl dark:bg-[#1e1f22]/98">
-      <div className="flex items-center justify-between border-border/60 border-b pb-2">
-        <span className="font-semibold text-foreground text-xs">Extended Controls</span>
+    <div className="fade-in zoom-in-95 animate-in border-border/90 flex w-[310px] max-w-[310px] shrink-0 flex-col gap-2.5 rounded-xl border bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl dark:bg-[#1e1f22]/98">
+      <div className="border-border/60 flex items-center justify-between border-b pb-2">
+        <span className="text-foreground text-xs font-semibold">Extended Controls</span>
         <button
           aria-label="Close menu"
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
           onClick={onClose}
           type="button"
         >
@@ -72,10 +72,10 @@ export const ToolbarMoreMenu = ({
 
       {/* Mode Toggle: Locked vs Freeform */}
       <div className="flex flex-col gap-1.5">
-        <span className="font-medium text-[11px] text-muted-foreground">Toolbar Position Mode</span>
-        <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-muted/60 p-1">
+        <span className="text-muted-foreground text-[11px] font-medium">Toolbar Position Mode</span>
+        <div className="bg-muted/60 grid grid-cols-2 gap-1.5 rounded-lg p-1">
           <button
-            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-colors ${
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               mode === "locked"
                 ? "bg-surface text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -87,7 +87,7 @@ export const ToolbarMoreMenu = ({
             <span>Lock to Phone</span>
           </button>
           <button
-            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 font-medium text-xs transition-colors ${
+            className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
               mode === "freeform"
                 ? "bg-surface text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
@@ -103,14 +103,14 @@ export const ToolbarMoreMenu = ({
 
       {/* Side & Vertical Adjustment when Locked */}
       {mode === "locked" ? (
-        <div className="flex flex-col gap-2.5 rounded-lg border border-border/60 bg-muted/30 p-2.5">
+        <div className="border-border/60 bg-muted/30 flex flex-col gap-2.5 rounded-lg border p-2.5">
           <div className="flex items-center justify-between">
-            <span className="font-medium text-[11px] text-muted-foreground">Dock Side</span>
+            <span className="text-muted-foreground text-[11px] font-medium">Dock Side</span>
             <div className="flex gap-1">
               <button
                 className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] ${
                   side === "left"
-                    ? "bg-surface font-semibold text-foreground shadow-xs"
+                    ? "bg-surface text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => onSideChange("left")}
@@ -122,7 +122,7 @@ export const ToolbarMoreMenu = ({
               <button
                 className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] ${
                   side === "right"
-                    ? "bg-surface font-semibold text-foreground shadow-xs"
+                    ? "bg-surface text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => onSideChange("right")}
@@ -137,11 +137,11 @@ export const ToolbarMoreMenu = ({
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground">Vertical Position</span>
-              <span className="font-mono text-[10px] text-muted-foreground">{localOffset}px</span>
+              <span className="text-muted-foreground font-mono text-[10px]">{localOffset}px</span>
             </div>
             <input
               aria-label="Vertical Position"
-              className="h-1.5 w-full cursor-pointer accent-primary"
+              className="accent-primary h-1.5 w-full cursor-pointer"
               max="400"
               min="-200"
               onChange={handleSliderChange}
@@ -149,16 +149,16 @@ export const ToolbarMoreMenu = ({
               type="range"
               value={localOffset}
             />
-            <div className="flex justify-between pt-1 text-[10px] text-muted-foreground">
+            <div className="text-muted-foreground flex justify-between pt-1 text-[10px]">
               <button
-                className="rounded bg-muted px-1.5 py-0.5 hover:text-foreground"
+                className="bg-muted hover:text-foreground rounded px-1.5 py-0.5"
                 onClick={() => nudgeOffset(-20)}
                 type="button"
               >
                 ▲ Up
               </button>
               <button
-                className="rounded bg-muted px-1.5 py-0.5 hover:text-foreground"
+                className="bg-muted hover:text-foreground rounded px-1.5 py-0.5"
                 onClick={() => {
                   setLocalOffset(20);
                   onOffsetChange(20);
@@ -168,7 +168,7 @@ export const ToolbarMoreMenu = ({
                 Reset
               </button>
               <button
-                className="rounded bg-muted px-1.5 py-0.5 hover:text-foreground"
+                className="bg-muted hover:text-foreground rounded px-1.5 py-0.5"
                 onClick={() => nudgeOffset(20)}
                 type="button"
               >
@@ -178,58 +178,58 @@ export const ToolbarMoreMenu = ({
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-2 rounded-md bg-muted/40 p-2 text-[11px] text-muted-foreground">
+        <div className="bg-muted/40 text-muted-foreground flex items-center gap-2 rounded-md p-2 text-[11px]">
           <Move className="size-3.5 shrink-0" />
           <span>Drag the top handle to reposition anywhere on your desktop.</span>
         </div>
       )}
 
       {/* System Actions */}
-      <div className="flex flex-col gap-1 border-border/60 border-t pt-2">
-        <span className="font-medium text-[11px] text-muted-foreground">Device Actions</span>
+      <div className="border-border/60 flex flex-col gap-1 border-t pt-2">
+        <span className="text-muted-foreground text-[11px] font-medium">Device Actions</span>
         <div className="grid grid-cols-1 gap-1 text-xs">
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-foreground hover:bg-muted/80"
+            className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("notifications")}
             type="button"
           >
-            <Bell className="size-3.5 text-muted-foreground" />
+            <Bell className="text-muted-foreground size-3.5" />
             <span>Pull Notifications</span>
           </button>
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-foreground hover:bg-muted/80"
+            className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("quick-settings")}
             type="button"
           >
-            <Sliders className="size-3.5 text-muted-foreground" />
+            <Sliders className="text-muted-foreground size-3.5" />
             <span>Quick Settings Drawer</span>
           </button>
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-foreground hover:bg-muted/80"
+            className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("collapse-panels")}
             type="button"
           >
-            <ChevronUp className="size-3.5 text-muted-foreground" />
+            <ChevronUp className="text-muted-foreground size-3.5" />
             <span>Collapse Panels</span>
           </button>
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-foreground hover:bg-muted/80"
+            className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("turn-off-screen")}
             type="button"
           >
-            <Moon className="size-3.5 text-muted-foreground" />
+            <Moon className="text-muted-foreground size-3.5" />
             <span>Turn Off Physical Screen</span>
           </button>
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-foreground hover:bg-muted/80"
+            className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("wake-up")}
             type="button"
           >
-            <Sun className="size-3.5 text-muted-foreground" />
+            <Sun className="text-muted-foreground size-3.5" />
             <span>Wake Up Device</span>
           </button>
           <button
-            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-destructive hover:bg-destructive/10"
+            className="text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"
             onClick={() => onAction("stop-session")}
             type="button"
           >

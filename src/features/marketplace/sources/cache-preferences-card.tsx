@@ -32,16 +32,17 @@ export const CachePreferencesCard = () => {
       toast.success("Marketplace cache and repository index cleared");
     } catch {
       toast.error("Failed to clear marketplace cache");
+      // eslint-disable-next-line react/todo -- non-React-Compiler try/finally flow
     } finally {
       setIsClearingCache(false);
     }
   };
 
   return (
-    <Card className="rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface rounded-xl shadow-none">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-foreground text-title">
-          <Database className="size-5 text-muted-foreground" />
+        <CardTitle className="text-foreground text-title flex items-center gap-2">
+          <Database className="text-muted-foreground size-5" />
           Cache & Query Preferences
         </CardTitle>
         <CardDescription className="text-caption">
@@ -52,9 +53,9 @@ export const CachePreferencesCard = () => {
 
       <CardContent className="flex flex-col gap-4">
         {/* Results per provider — merged from Settings SearchPreferences (6,8,12,16) + Sources (10,25,50,100) */}
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+        <div className="border-border/80 bg-surface-raised/40 flex items-center justify-between gap-4 rounded-lg border p-3.5">
           <div className="flex flex-col">
-            <span className="font-semibold text-body text-foreground">
+            <span className="text-body text-foreground font-semibold">
               Results Limit per Repository
             </span>
             <span className="text-caption text-muted-foreground">
@@ -63,7 +64,7 @@ export const CachePreferencesCard = () => {
           </div>
 
           <Select
-            onValueChange={(val) => setResultsPerProvider(Number.parseInt(val, 10))}
+            onValueChange={(val) => setResultsPerProvider(Number(val))}
             value={resultsPerProvider.toString()}
           >
             <SelectTrigger aria-label="Results Limit per Repository" className="w-32">
@@ -82,9 +83,9 @@ export const CachePreferencesCard = () => {
         </div>
 
         {/* Clear Search History & Cache — merged from Settings CacheHistorySection */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/80 bg-surface-raised/40 p-3.5">
+        <div className="border-border/80 bg-surface-raised/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3.5">
           <div className="flex flex-col">
-            <span className="font-semibold text-body text-foreground">
+            <span className="text-body text-foreground font-semibold">
               Local Metadata & Search Cache
             </span>
             <span className="text-caption text-muted-foreground">
@@ -96,7 +97,7 @@ export const CachePreferencesCard = () => {
 
           <div className="flex items-center gap-2">
             <Button
-              className="h-8 gap-1.5 text-caption"
+              className="text-caption h-8 gap-1.5"
               disabled={searchHistory.length === 0}
               onClick={() => {
                 clearSearchHistory();
@@ -111,7 +112,7 @@ export const CachePreferencesCard = () => {
             </Button>
 
             <Button
-              className="h-8 gap-1.5 text-caption"
+              className="text-caption h-8 gap-1.5"
               disabled={isClearingCache}
               onClick={() => {
                 void handleClearCache();
@@ -123,7 +124,7 @@ export const CachePreferencesCard = () => {
               {isClearingCache ? (
                 <Loader2 className="size-3.5 animate-spin" data-icon="inline-start" />
               ) : (
-                <Trash2 className="size-3.5 text-muted-foreground" data-icon="inline-start" />
+                <Trash2 className="text-muted-foreground size-3.5" data-icon="inline-start" />
               )}
               Purge Cache
             </Button>

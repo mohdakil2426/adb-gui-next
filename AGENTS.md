@@ -22,33 +22,33 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 
 ## Routing table
 
-| Task                                         | Required guidance                                                                                                    |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Workflow, reports, hard stops, quality gates | `docs/project_rules.md`                                                                                              |
-| Cross-module design / data flow / IPC map    | `docs/architecture.md`                                                                                               |
-| Visual design, theme, type, shared UI taste  | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
-| Entire frontend (`src/**`)                   | `src/AGENTS.md`                                                                                                      |
-| Entire Rust backend (`src-tauri/**`)         | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`)                                            |
-| FE lint standards (Ultracite)                | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md`                                             |
-| Living session context (not architecture)    | `memory-bank/` — read before non-trivial work; verify against code                                                   |
+| Task | Required guidance |
+| --- | --- |
+| Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
+| Cross-module design / data flow / IPC map | `docs/architecture.md` |
+| Visual design, theme, type, shared UI taste | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
+| Entire frontend (`src/**`) | `src/AGENTS.md` |
+| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`) |
+| FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
+| Living session context (not architecture) | `memory-bank/` — read before non-trivial work; verify against code |
 
 ## Project map
 
-| Path                           | Owns                                                     |
-| ------------------------------ | -------------------------------------------------------- |
-| `src/`                         | Full React/Vite client (see `src/AGENTS.md`)             |
-| `src/main.tsx`, `src/app/`     | Bootstrap, shell, MainLayout, view map, BottomPanel      |
-| `src/desktop/`                 | Only raw Tauri invoke / events / file-drop / models      |
-| `src/features/`                | Product views and feature-local state                    |
-| `src/shared/`                  | Cross-feature components, stores, shadcn, shared utils   |
-| `src/styles/`                  | Theme tokens (`global.css`)                              |
-| `DESIGN.md`                    | UI system (taste, tokens, components) — UI tasks only    |
-| `src/test/`                    | All Vitest frontend tests                                |
-| `src-tauri/`                   | Rust lib, thin commands, domains, bundled platform-tools |
-| `docs/architecture.md`         | Cross-module architecture reference                      |
-| `docs/project_rules.md`        | Workflow, reports, hard stops                            |
-| `docs/internal/reports/`       | Audits / research / validation write-ups                 |
-| `package.json` / `biome.jsonc` | Scripts, lint-staged, Ultracite config                   |
+| Path | Owns |
+| --- | --- |
+| `src/` | Full React/Vite client (see `src/AGENTS.md`) |
+| `src/main.tsx`, `src/app/` | Bootstrap, shell, MainLayout, view map, BottomPanel |
+| `src/desktop/` | Only raw Tauri invoke / events / file-drop / models |
+| `src/features/` | Product views and feature-local state |
+| `src/shared/` | Cross-feature components, stores, shadcn, shared utils |
+| `src/styles/` | Theme tokens (`global.css`) |
+| `DESIGN.md` | UI system (taste, tokens, components) — UI tasks only |
+| `src/test/` | All Vitest frontend tests |
+| `src-tauri/` | Rust lib, thin commands, domains, bundled platform-tools |
+| `docs/architecture.md` | Cross-module architecture reference |
+| `docs/project_rules.md` | Workflow, reports, hard stops |
+| `docs/internal/reports/` | Audits / research / validation write-ups |
+| `package.json` / `oxlint.config.ts` / `oxfmt.config.ts` | Scripts, lint-staged, frontend lint/format config |
 
 ## Non-negotiable cross-module boundaries
 

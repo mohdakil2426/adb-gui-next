@@ -9,7 +9,7 @@ const LINES = [0, 1, 2];
  * hero, which described nothing that was actually loading.
  */
 export const AppDetailSkeleton = () => (
-  <output aria-label="Loading app details" className="grid @2xl:grid-cols-[1fr_280px] gap-6">
+  <output aria-label="Loading app details" className="grid gap-6 @2xl:grid-cols-[1fr_280px]">
     <div className="flex min-w-0 flex-col gap-3">
       <Skeleton className="h-4 w-40" />
       {LINES.map((line) => (

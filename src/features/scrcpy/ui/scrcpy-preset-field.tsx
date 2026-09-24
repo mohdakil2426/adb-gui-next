@@ -83,7 +83,7 @@ export const ScrcpyPresetField = <T extends string | number>({
         <Label htmlFor={id}>{label}</Label>
         {isCustom ? (
           <button
-            className="text-caption text-muted-foreground transition-colors hover:text-foreground"
+            className="text-caption text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => {
               setIsCustom(false);
               const defaultPreset = presets[0]?.value ?? null;

@@ -76,7 +76,7 @@ export const CopyButton = ({ value, label = "Value", className }: CopyButtonProp
       variant="ghost"
     >
       {copied ? (
-        <Check aria-hidden="true" className="size-3.5 text-success" data-icon="inline-start" />
+        <Check aria-hidden="true" className="text-success size-3.5" data-icon="inline-start" />
       ) : (
         <Copy aria-hidden="true" className="size-3.5" data-icon="inline-start" />
       )}

@@ -42,7 +42,7 @@ export const AppManagerView = ({ activeView }: { activeView: string }) => {
     <div className="flex flex-col gap-4">
       <h1 className="sr-only">Applications</h1>
 
-      <Card className="gap-0 rounded-lg border-border bg-surface py-0 shadow-none">
+      <Card className="border-border bg-surface gap-0 rounded-lg py-0 shadow-none">
         <CardContent className="p-4">
           <Tabs
             className="w-full gap-4"

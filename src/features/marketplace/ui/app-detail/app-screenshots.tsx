@@ -24,7 +24,7 @@ export const AppScreenshots = ({ appName, urls }: AppScreenshotsProps) => {
 
   if (usable.length === 0) {
     return (
-      <p className="flex items-center gap-2 text-body text-muted-foreground">
+      <p className="text-body text-muted-foreground flex items-center gap-2">
         <ImageOff aria-hidden="true" className="size-4 shrink-0" />
         {urls.length === 0
           ? "This source published no screenshots."
@@ -35,11 +35,11 @@ export const AppScreenshots = ({ appName, urls }: AppScreenshotsProps) => {
 
   return (
     <section aria-label={`${appName} screenshots`} className="flex flex-col gap-2">
-      <h2 className="text-caption text-muted-foreground uppercase tracking-wide">Screenshots</h2>
+      <h2 className="text-caption text-muted-foreground tracking-wide uppercase">Screenshots</h2>
       <div className="custom-scroll flex snap-x gap-3 overflow-x-auto pb-2">
         {usable.map((url, index) => (
           <div
-            className="aspect-9/16 h-64 shrink-0 snap-start overflow-hidden rounded-lg border border-border bg-surface-raised"
+            className="border-border bg-surface-raised aspect-9/16 h-64 shrink-0 snap-start overflow-hidden rounded-lg border"
             key={url}
           >
             <img

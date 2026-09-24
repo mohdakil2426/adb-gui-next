@@ -49,11 +49,11 @@ export const PartitionHierarchyDiagram = ({ activeSlot }: PartitionHierarchyDiag
   const [viewMode, setViewMode] = useState<"diagram" | "ascii">("diagram");
 
   return (
-    <Card className="flex h-full flex-col justify-between rounded-xl border-border bg-surface shadow-none">
+    <Card className="border-border bg-surface flex h-full flex-col justify-between rounded-xl shadow-none">
       <CardHeader className="flex flex-row items-start justify-between pb-3">
         <div>
-          <CardTitle className="flex items-center gap-2 text-foreground text-title">
-            <Layers className="size-5 text-muted-foreground" />
+          <CardTitle className="text-foreground text-title flex items-center gap-2">
+            <Layers className="text-muted-foreground size-5" />
             Android A/B Partition Architecture
           </CardTitle>
           <CardDescription className="text-caption">
@@ -65,7 +65,7 @@ export const PartitionHierarchyDiagram = ({ activeSlot }: PartitionHierarchyDiag
         <div className="flex items-center gap-1.5">
           <Button
             className={cn(
-              "h-7 gap-1 px-2.5 text-caption",
+              "text-caption h-7 gap-1 px-2.5",
               viewMode === "diagram" && "bg-surface-raised"
             )}
             onClick={() => setViewMode("diagram")}
@@ -78,7 +78,7 @@ export const PartitionHierarchyDiagram = ({ activeSlot }: PartitionHierarchyDiag
           </Button>
           <Button
             className={cn(
-              "h-7 gap-1 px-2.5 text-caption",
+              "text-caption h-7 gap-1 px-2.5",
               viewMode === "ascii" && "bg-surface-raised"
             )}
             onClick={() => setViewMode("ascii")}
@@ -94,8 +94,8 @@ export const PartitionHierarchyDiagram = ({ activeSlot }: PartitionHierarchyDiag
 
       <CardContent className="flex flex-1 flex-col gap-4">
         {viewMode === "ascii" ? (
-          <div className="flex-1 overflow-x-auto rounded-lg border border-border/80 bg-background/80 p-3.5">
-            <pre className="font-mono text-[11px] text-muted-foreground leading-relaxed">
+          <div className="border-border/80 bg-background/80 flex-1 overflow-x-auto rounded-lg border p-3.5">
+            <pre className="text-muted-foreground font-mono text-[11px] leading-relaxed">
               {ASCII_DIAGRAM}
             </pre>
           </div>
