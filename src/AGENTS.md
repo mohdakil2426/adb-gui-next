@@ -26,10 +26,10 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 | Area | Path |
 | --- | --- |
 | Bootstrap | `src/main.tsx` → `src/app/App.tsx` (`QueryClientProvider`) |
-| Shell | `src/app/shell/` — MainLayout, viewConfig, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
+| Shell | `src/app/shell/` — MainLayout, view-config.tsx, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
 | Command registry | `src/shared/commands/` — palette actions, `VIEW_META`, `NAV_SECTIONS`, shortcut reference |
-| Desktop IPC only | `src/desktop/backend.ts`, `runtime.ts`, `models.ts` |
-| Features | `src/features/<feature>/` — `*View.tsx`, optional `hooks/`, `model/`, `ui/`, `utils/` |
+| Desktop IPC only | src/desktop/ (see src/desktop/AGENTS.md) — backend.ts, runtime.ts, models.ts |
+| Features | src/features/<feature>/ (marketplace: see src/features/marketplace/AGENTS.md) |
 | Shared | `src/shared/{ui,components,stores,hooks,utils}/` |
 | Design tokens | `src/styles/global.css` |
 | Fonts | `public/fonts/` — self-hosted Inter + JetBrains Mono woff2 (+ OFL texts), preloaded in `index.html` |
@@ -38,20 +38,20 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 
 ### Views (no React Router, code-split)
 
-Defined in `src/app/shell/viewConfig.tsx`. Every view is a `React.lazy` dynamic import, and every view also has a `VIEW_PRELOADERS` entry:
+Defined in `src/app/shell/view-config.tsx`. Every view is a `React.lazy` dynamic import, and every view also has a `VIEW_PRELOADERS` entry:
 
-| `ViewType`    | Feature entry                                   |
-| ------------- | ----------------------------------------------- |
-| `dashboard`   | `features/dashboard/DashboardView.tsx`          |
-| `apps`        | `features/app-manager/AppManagerView.tsx`       |
-| `files`       | `features/file-explorer/FileExplorerView.tsx`   |
-| `marketplace` | `features/marketplace/MarketplaceView.tsx`      |
-| `flasher`     | `features/flasher/FlasherView.tsx`              |
-| `utils`       | `features/utilities/UtilitiesView.tsx`          |
-| `scrcpy`      | `features/scrcpy/ScrcpyView.tsx`                |
-| `payload`     | `features/payload-dumper/PayloadDumperView.tsx` |
-| `emulator`    | `features/emulator/EmulatorView.tsx`            |
-| `about`       | `features/about/AboutView.tsx`                  |
+| `ViewType`    | Feature entry                                     |
+| ------------- | ------------------------------------------------- |
+| `dashboard`   | `features/dashboard/dashboard-view.tsx`           |
+| `apps`        | `features/app-manager/app-manager-view.tsx`       |
+| `files`       | `features/file-explorer/file-explorer-view.tsx`   |
+| `marketplace` | `features/marketplace/marketplace-view.tsx`       |
+| `flasher`     | `features/flasher/flasher-view.tsx`               |
+| `utils`       | `features/utilities/utilities-view.tsx`           |
+| `scrcpy`      | `features/scrcpy/scrcpy-view.tsx`                 |
+| `payload`     | `features/payload-dumper/payload-dumper-view.tsx` |
+| `emulator`    | `features/emulator/emulator-view.tsx`             |
+| `about`       | `features/about/about-view.tsx`                   |
 
 - Switching: `MainLayout` view state (persisted to `localStorage` via `usePersistedActiveView`) + `VIEW_RENDERERS`. `renderView` must stay a **module-level** function — `ViewContent` is `memo`ized and a fresh closure defeats it.
 - `ViewContent` owns the single `<Suspense>` boundary and its skeleton fallback. Do not add per-view `Suspense`.
@@ -131,8 +131,8 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 - Provider defaults: `App.tsx` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess; do not restore focus-refetch or blind retries globally. Queries that need to be fresher opt in individually.
 - **Device _list_ poll only in `MainLayout`:** `queryKeys.allDevices()`, `STALE_TIME.ALL_DEVICES` = **5_000** ms (`shared/utils/queries.ts`). `fetchAllDevices` merges ADB + fastboot by serial.
 - **Do not** add a second device-list poll.
-- Dashboard telemetry: `features/dashboard/hooks/useDeviceTelemetry.ts` — `GetDeviceTelemetry` for the selected serial, `staleTime` 10 s, `refetchInterval` 15 s, and the interval **stops on error** (inline error state carries the retry, no toast loop). Mounted only while the Dashboard is; it also feeds `deviceStore.setDeviceInfo` via `toLegacyDeviceInfo` and records `memoryHistoryStore` samples.
-- Emulator view: separate AVD list poll (`STALE_TIME.EMULATOR_LIST`) in `EmulatorView.tsx` (AVDs only, not phone devices).
+- Dashboard telemetry: `features/dashboard/hooks/use-device-telemetry.ts` — `GetDeviceTelemetry` for the selected serial, `staleTime` 10 s, `refetchInterval` 15 s, and the interval **stops on error** (inline error state carries the retry, no toast loop). Mounted only while the Dashboard is; it also feeds `deviceStore.setDeviceInfo` via `toLegacyDeviceInfo` and records `memoryHistoryStore` samples.
+- Emulator view: separate AVD list poll (`STALE_TIME.EMULATOR_LIST`) in `emulator-view.tsx` (AVDs only, not phone devices).
 - Query keys / `STALE_TIME` catalog: `shared/utils/queries.ts`.
 - Prefer `GetDeviceTelemetry` (typed numbers) over `GetDeviceInfo` (display strings) for anything charted, compared or computed. `GetDeviceInfo` currently has no caller.
 
@@ -148,7 +148,7 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 - BottomPanel resize: DOM-first during drag; React height commit on mouseup.
 - Splash gating: `useAppReady()` (fonts settled + one frame, 2 s ceiling). Do not reintroduce a fixed-duration fake progress animation.
 - Sonner: top-right in `MainLayout`.
-- New view: update `viewConfig.tsx` (**renderer + preloader**) + `shared/commands/navigation.ts` (`VIEW_META`, `NAV_SECTIONS`) + add `features/<feature>/`.
+- New view: update `view-config.tsx` (**renderer + preloader**) + `shared/commands/navigation.ts` (`VIEW_META`, `NAV_SECTIONS`) + add `features/<feature>/`.
 
 ## Adaptivity — container queries, not viewport breakpoints
 
@@ -246,6 +246,12 @@ Re-added **with real call sites** — each stays only while its call site exists
 | Scrcpy | 5-tab Hardware Cockpit (Overview & Quick Mirror, Display & Video Engine, Audio & Recording Studio, Input & Keymaps, Binary Management); `ScrcpyCockpitHero` with session count & transport badges; 4 tailored 1-click quality presets (Gaming, Productivity, Battery Saver, Creator); Genymobile binary lifecycle manager and live CLI command preview |
 | Emulator | 4-tab Hardware Cockpit (Overview & Telemetry, AVD Launch Studio, Root Engine, Snapshots & Restore); `EmulatorCockpitHero` with 8-spec hardware grid; pure SVG `AvdResourceAllocationMeter` and `DiskUsageBreakdownChart`; 5 startup presets in `LaunchPresetsGrid`; multi-step Magisk/KernelSU root wizard |
 | App Manager list | Visible-row icon batch via `get_app_icons` (max 24); Lucide fallback when no raster; `TopStorageConsumersChart` caps to 5, strips quoted `packageName`/`label`, `computePackageOverviewStats` filters `storageBreakdown` to user packages only (system excluded, quoted CSV trimmed in `apps/telemetry.rs`) |
+
+## Rules & Traps (Ponytail Ultra Format)
+
+- **Wrong:** importing npm charting or markdown libraries that mutate `Object.prototype` or builtins at module-eval time.
+  **Right:** use hand-rolled SVG charts and zero-dependency AST parsers because `freezePrototype: true` crashes the webview on prototype mutations.
+  **Id:** Frontend prototype freeze compliance
 
 ## Tests
 

@@ -27,8 +27,8 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 | Workflow, reports, hard stops, quality gates | `docs/project_rules.md` |
 | Cross-module design / data flow / IPC map | `docs/architecture.md` |
 | Visual design, theme, type, shared UI taste | `DESIGN.md` — **read only when changing UI** (tokens, layout, components, theme). Skip for Rust/IPC/non-visual work. |
-| Entire frontend (`src/**`) | `src/AGENTS.md` |
-| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` (payload domain: `src-tauri/src/payload/AGENTS.md`) |
+| Entire frontend (`src/**`) | `src/AGENTS.md` (desktop: `src/desktop/AGENTS.md`, marketplace: `src/features/marketplace/AGENTS.md`) |
+| Entire Rust backend (`src-tauri/**`) | `src-tauri/AGENTS.md` (payload: `src-tauri/src/payload/AGENTS.md`, marketplace: `src-tauri/src/marketplace/AGENTS.md`) |
 | FE lint standards (Ultracite) | `.agents/skills/utils/ultracite/SKILL.md` · `.agents/rules/ultracite.md` |
 | Living session context (not architecture) | `memory-bank/` — read before non-trivial work; verify against code |
 
@@ -56,7 +56,7 @@ This root guide is a **router** plus durable **cross-module** rules. Frontend im
 - **IPC only through `src/desktop/`.** Features must not call raw `core.invoke` or raw Tauri event APIs.
 - **Thin Rust commands, fat domains.** Logic in `src-tauri/src/{payload,marketplace,emulator,debloat,host_setup}/` or `helpers.rs`; not bloated `commands/*` bodies.
 - **No React Router.** View switching is `ViewType` + `VIEW_RENDERERS` in the shell.
-- **One global device poll** in `MainLayout` (30s). Do not add per-view device polling.
+- **One global device poll** in MainLayout (5s). Do not add per-view device polling.
 - **Feature code** under `src/features/<feature>/`. **shadcn** under `src/shared/ui/`. **Theme tokens** in `src/styles/global.css` (no hard-coded colors in components).
 - **IPC DTOs** live in `src/desktop/models.ts` and match Rust `camelCase` serde.
 - **New production deps** only with clear user-visible payoff; prefer existing stack. **Vet frontend deps for module-eval prototype writes** — `freezePrototype: true` makes any `SomeBuiltin.prototype.x = …` at import time a `TypeError` that kills the view, and it reproduces _only_ in the webview (never in `vite build`, Vitest, or the browser preview). This is why there is no charting library.

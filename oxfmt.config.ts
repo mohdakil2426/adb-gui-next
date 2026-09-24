@@ -10,6 +10,7 @@ export default defineConfig({
     "**/docs/**",
     "**/memory-bank/**",
     "**/src-tauri/**",
+    "**/AGENTS.md",
   ],
   printWidth: 100,
 });

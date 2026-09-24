@@ -32,7 +32,7 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 | Shared process/path helpers | `src/helpers.rs` |
 | Payload domain | `src/payload/` (see `src/payload/AGENTS.md` for domain guide) |
 | Firmware hub domain | `src/firmware/` (Google Pixel scraper, Nothing/Xiaomi stubs, 24h disk cache) |
-| Marketplace domain | `src/marketplace/` — `service` + `github`/`fdroid`/`aptoide` providers + `assets` (ABI rank) + `resolver` (package-ID → repo) + `markdown` (README enrich) + `cache` (SWR) + `install_queue` (streaming) + `types` (progress DTOs) |
+| Marketplace domain | src/marketplace/ (see src/marketplace/AGENTS.md for domain guide) — service + providers + SWR cache + streaming installer |
 | Scrcpy domain | `src/scrcpy/` |
 | Host setup (Windows Google tools/USB) | `src/host_setup/` |
 | Utilities domain | `src/utilities/` |
@@ -92,6 +92,12 @@ Rules:
 - Apps telemetry: `apps/telemetry.rs` trims surrounding `"`/`'` on CSV package lists and filters `storageBreakdown` to user packages only (skip system pkgs; when `user_pkgs` non-empty require membership).
 - Emulator AVD discovery: `~/.android/avd/*.ini` (not `emulator -list-avds`). Root proof: `verify_avd_root` / `su -c id -u == 0`.
 - Clippy bar: package `[lints]` + `clippy.toml`; CI uses `-D warnings`.
+
+## Rules & Traps (Ponytail Ultra Format)
+
+- **Wrong:** assuming host process exit code 0 means device shell command succeeded.
+  **Right:** use `AdbClient::shell_checked` because `adb shell false` exits 0 on host; inspect nonce exit markers.
+  **Id:** AdbClient checked shell execution
 
 ## Build profiles
 
