@@ -121,7 +121,7 @@ export const PartitionFlashCard = ({
               </CardTitle>
               {partition ? (
                 <Badge
-                  className="font-mono text-[10px]"
+                  className="text-caption font-mono"
                   variant={isHighRisk ? "destructive" : "outline"}
                 >
                   {isHighRisk ? "Critical Partition" : "Standard Partition"}

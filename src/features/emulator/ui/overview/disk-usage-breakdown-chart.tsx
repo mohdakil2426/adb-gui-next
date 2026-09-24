@@ -15,6 +15,7 @@ interface DiskUsageBreakdownChartProps {
 
 interface PartitionSegment {
   color: string;
+  colorClass: string;
   description: string;
   id: string;
   label: string;
@@ -35,6 +36,7 @@ const buildPartitions = (
   const rawPartitions = [
     {
       color: "var(--chart-1)",
+      colorClass: "bg-chart-1",
       description: "system.img + vendor.img + ramdisk.img",
       id: "system",
       label: "System Image",
@@ -43,6 +45,7 @@ const buildPartitions = (
     },
     {
       color: "var(--chart-2)",
+      colorClass: "bg-chart-2",
       description: "userdata.img (/data partition & app storage)",
       id: "userdata",
       label: "Userdata & Apps",
@@ -51,6 +54,7 @@ const buildPartitions = (
     },
     {
       color: "var(--chart-3)",
+      colorClass: "bg-chart-3",
       description: "Quick boot memory dumps & writable overlayfs",
       id: "snapshots",
       label: "Snapshots & Overlays",
@@ -59,6 +63,7 @@ const buildPartitions = (
     },
     {
       color: "var(--chart-4)",
+      colorClass: "bg-chart-4",
       description: "sdcard.img (FAT32 emulated external storage)",
       id: "sdcard",
       label: "Virtual SD Card",
@@ -138,8 +143,8 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
                   onMouseLeave={() => {
                     setHoveredId(null);
                   }}
+                  className="transition-opacity duration-200 ease-out"
                   opacity={hoveredId && !isHovered ? 0.45 : 1}
-                  style={{ transition: "opacity 0.2s ease" }}
                   width={Math.max(0.5, segment.percentage - 0.4)}
                   x={segment.x}
                   y="0"
@@ -169,10 +174,7 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
               >
                 <div className="flex items-center justify-between">
                   <div className="flex min-w-0 items-center gap-1.5">
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: part.color }}
-                    />
+                    <span className={cn("size-2 shrink-0 rounded-full", part.colorClass)} />
                     <span className="text-caption text-foreground truncate font-medium">
                       {part.label}
                     </span>
@@ -181,7 +183,7 @@ export const DiskUsageBreakdownChart = ({ avd }: DiskUsageBreakdownChartProps) =
                     {part.sizeGb.toFixed(1)} GB
                   </span>
                 </div>
-                <span className="text-muted-foreground truncate text-[10px]">
+                <span className="text-muted-foreground text-caption truncate">
                   {part.percentage.toFixed(1)}% · {part.description}
                 </span>
               </div>

@@ -151,12 +151,17 @@ export const SideloadProgressCard = ({
                   (streamProgress.percentage >= 100 ? "Processing" : "Live Transfer")}
               </span>
             </div>
-            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+            <div className="bg-muted relative h-2 w-full overflow-hidden rounded-full">
               <div
-                className="bg-info h-full rounded-full transition-[width] duration-300 ease-out"
-                style={{
-                  width: `${Math.max(2, Math.min(100, streamProgress.percentage))}%`,
-                }}
+                className="bg-info h-full w-full origin-left scale-x-(--progress-scale) transition-transform duration-300 ease-out"
+                style={
+                  {
+                    "--progress-scale": Math.max(
+                      0.02,
+                      Math.min(1, streamProgress.percentage / 100)
+                    ),
+                  } as React.CSSProperties
+                }
               />
             </div>
           </div>
@@ -192,7 +197,7 @@ export const SideloadProgressCard = ({
               </div>
 
               <Badge
-                className="shrink-0 font-mono text-[9px] uppercase"
+                className="text-caption shrink-0 font-mono uppercase"
                 variant={STEP_BADGE_VARIANTS[step.status] ?? "outline"}
               >
                 {step.status}

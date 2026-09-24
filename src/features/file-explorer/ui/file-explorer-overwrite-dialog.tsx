@@ -10,7 +10,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { buttonVariants } from "@/shared/ui/button-variants";
 
 interface Props {
   isBusy: boolean;
@@ -32,8 +31,7 @@ export const FileExplorerOverwriteDialog = ({ isBusy, onConfirm, onOpenChange, o
       <AlertDialogFooter>
         <AlertDialogCancel disabled={isBusy}>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          aria-label={isBusy ? "Replacing items…" : "Replace"}
-          className={buttonVariants({ variant: "destructive" })}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/50 active:bg-destructive-active"
           disabled={isBusy}
           onClick={onConfirm}
         >

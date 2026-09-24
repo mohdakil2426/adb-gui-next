@@ -25,6 +25,7 @@ export const PayloadOverviewShortcuts = ({ onNavigateTab }: PayloadOverviewShort
 
     <div className="grid grid-cols-1 gap-3.5 @sm:grid-cols-2 @lg:grid-cols-3">
       <Card
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted composite transition for card border, surface, and hover shadow
         className="group border-border bg-surface hover:border-primary/50 hover:bg-surface-raised/40 relative cursor-pointer rounded-xl transition-[border-color,background-color,box-shadow] duration-150 hover:shadow-sm"
         onClick={() => onNavigateTab("extractor")}
       >
@@ -42,10 +43,10 @@ export const PayloadOverviewShortcuts = ({ onNavigateTab }: PayloadOverviewShort
               </h3>
               <p className="text-caption text-muted-foreground mt-1 leading-relaxed">
                 Load local files or remote URLs, filter, and extract specific partition images (
-                <code className="text-[11px]">boot</code>,{" "}
-                <code className="text-[11px]">init_boot</code>,{" "}
-                <code className="text-[11px]">vbmeta</code>,{" "}
-                <code className="text-[11px]">system</code>).
+                <code className="text-caption">boot</code>,{" "}
+                <code className="text-caption">init_boot</code>,{" "}
+                <code className="text-caption">vbmeta</code>,{" "}
+                <code className="text-caption">system</code>).
               </p>
             </div>
           </div>
@@ -57,8 +58,8 @@ export const PayloadOverviewShortcuts = ({ onNavigateTab }: PayloadOverviewShort
       </Card>
 
       <Card
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted composite transition for card border, surface, and hover shadow
         className="group border-border bg-surface hover:border-primary/50 hover:bg-surface-raised/40 relative cursor-pointer rounded-xl transition-[border-color,background-color,box-shadow] duration-150 hover:shadow-sm"
-        onClick={() => onNavigateTab("marketplace")}
       >
         <CardContent className="flex h-full flex-col justify-between p-4">
           <div className="flex flex-col gap-2.5">
@@ -87,8 +88,8 @@ export const PayloadOverviewShortcuts = ({ onNavigateTab }: PayloadOverviewShort
       </Card>
 
       <Card
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted composite transition for card border, surface, and hover shadow
         className="group border-border bg-surface hover:border-primary/50 hover:bg-surface-raised/40 relative cursor-pointer rounded-xl transition-[border-color,background-color,box-shadow] duration-150 hover:shadow-sm"
-        onClick={() => onNavigateTab("history")}
       >
         <CardContent className="flex h-full flex-col justify-between p-4">
           <div className="flex flex-col gap-2.5">

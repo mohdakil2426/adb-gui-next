@@ -43,14 +43,14 @@ export const PartitionInspectorCard = ({
     <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-3 rounded-lg border p-3.5">
       <div className="border-border/50 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
-          <Badge className="font-mono text-[11px]" variant="secondary">
+          <Badge className="text-caption font-mono" variant="secondary">
             {meta.name}.img
           </Badge>
-          <Badge className="text-[10px]" variant={RISK_BADGE_VARIANT[meta.riskLevel] ?? "outline"}>
+          <Badge className="text-caption" variant={RISK_BADGE_VARIANT[meta.riskLevel] ?? "outline"}>
             {meta.riskLevel.toUpperCase()} RISK
           </Badge>
           {meta.isSlotted ? (
-            <Badge className="text-[10px]" variant="outline">
+            <Badge className="text-caption" variant="outline">
               A/B Slotted
             </Badge>
           ) : null}
@@ -59,7 +59,7 @@ export const PartitionInspectorCard = ({
         <div className="flex flex-wrap items-center gap-1">
           {QUICK_PARTITIONS.map((name) => (
             <Button
-              className="h-5 px-1.5 font-mono text-[10px]"
+              className="text-caption h-5 px-1.5 font-mono"
               key={name}
               onClick={() => onSelectPartition(name)}
               size="sm"

@@ -38,11 +38,9 @@ const SpecItem = ({ copyValue, icon: Icon, label, tooltip, value }: SpecItemProp
         <span className="text-caption truncate font-medium tracking-wider uppercase">{label}</span>
       </div>
       {copyValue ? (
-        <CopyButton
-          className="size-5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-          label={label}
-          value={copyValue}
-        />
+        <span className="inline-flex opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+          <CopyButton className="size-5" label={label} value={copyValue} />
+        </span>
       ) : null}
     </div>
 
@@ -253,16 +251,18 @@ export const UtilitiesCockpitHero = ({
                 </span>
               </div>
               {deviceSerial ? (
-                <Button
-                  aria-label="Edit device nickname"
-                  className="size-5 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
-                  onClick={onEditNickname}
-                  size="icon"
-                  type="button"
-                  variant="ghost"
-                >
-                  <Edit3 aria-hidden="true" className="size-3" data-icon="inline-start" />
-                </Button>
+                <span className="inline-flex opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  <Button
+                    aria-label="Edit device nickname"
+                    className="size-5"
+                    onClick={onEditNickname}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Edit3 aria-hidden="true" className="size-3" data-icon="inline-start" />
+                  </Button>
+                </span>
               ) : null}
             </div>
 

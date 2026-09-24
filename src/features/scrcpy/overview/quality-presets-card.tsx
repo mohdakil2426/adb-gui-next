@@ -79,7 +79,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                     </div>
                     {isCurrent ? (
                       <Badge
-                        className="gap-1 border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] text-emerald-400"
+                        className="text-caption border-success/30 bg-success/10 text-success gap-1 px-1.5 py-0.5"
                         variant="outline"
                       >
                         <Check aria-hidden="true" className="size-2.5" />
@@ -87,7 +87,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                       </Badge>
                     ) : (
                       <Badge
-                        className="border-border/60 bg-surface/80 text-muted-foreground px-1.5 py-0.5 text-[10px]"
+                        className="border-border/60 bg-surface/80 text-caption text-muted-foreground px-1.5 py-0.5"
                         variant="outline"
                       >
                         {preset.badge}
@@ -106,7 +106,7 @@ export const QualityPresetsCard = ({ onApplyPreset, options }: QualityPresetsCar
                   <div className="flex flex-wrap gap-1 pt-1">
                     {preset.specs.map((spec) => (
                       <span
-                        className="border-border/50 bg-surface/60 text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-[10px]"
+                        className="border-border/50 bg-surface/60 text-muted-foreground text-mono-sm rounded border px-1.5 py-0.5 font-mono"
                         key={spec}
                       >
                         {spec}

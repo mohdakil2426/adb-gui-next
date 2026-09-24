@@ -54,7 +54,7 @@ export const PartitionHierarchySvg = ({
       {/* Level 1: Primary Bootloader */}
       <g className="cursor-pointer" onClick={() => onSelectPartition("bootloader")}>
         <rect
-          className="stroke-border/80 hover:stroke-foreground transition-[stroke] duration-150"
+          className="stroke-border/80 hover:stroke-foreground transition-colors duration-150"
           fill="var(--surface-raised)"
           height="36"
           rx="8"
@@ -64,7 +64,7 @@ export const PartitionHierarchySvg = ({
           y="10"
         />
         <text
-          className="fill-foreground text-[12px] font-semibold"
+          className="fill-foreground text-xs font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="380"
@@ -88,7 +88,7 @@ export const PartitionHierarchySvg = ({
       <g className="cursor-pointer" onClick={() => onSelectPartition("boot")}>
         <rect
           className={cn(
-            "transition-[stroke] duration-150",
+            "transition-colors duration-150",
             activeSlot === "a" ? "stroke-success" : "stroke-border"
           )}
           fill="var(--surface)"
@@ -100,7 +100,7 @@ export const PartitionHierarchySvg = ({
           y="80"
         />
         <text
-          className="fill-foreground text-[12px] font-semibold"
+          className="fill-foreground text-xs font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="200"
@@ -109,7 +109,7 @@ export const PartitionHierarchySvg = ({
           SLOT A {activeSlot === "a" ? "🟢 (ACTIVE)" : "⚪ (INACTIVE)"}
         </text>
         <text
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-caption"
           dominantBaseline="middle"
           textAnchor="middle"
           x="200"
@@ -123,7 +123,7 @@ export const PartitionHierarchySvg = ({
       <g className="cursor-pointer" onClick={() => onSelectPartition("boot")}>
         <rect
           className={cn(
-            "transition-[stroke] duration-150",
+            "transition-colors duration-150",
             activeSlot === "b" ? "stroke-success" : "stroke-border"
           )}
           fill="var(--surface)"
@@ -135,7 +135,7 @@ export const PartitionHierarchySvg = ({
           y="80"
         />
         <text
-          className="fill-foreground text-[12px] font-semibold"
+          className="fill-foreground text-xs font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -144,7 +144,7 @@ export const PartitionHierarchySvg = ({
           SLOT B {activeSlot === "b" ? "🟢 (ACTIVE)" : "⚪ (INACTIVE)"}
         </text>
         <text
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-caption"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -167,7 +167,7 @@ export const PartitionHierarchySvg = ({
       <g className="cursor-pointer" onClick={() => onSelectPartition("boot")}>
         <rect
           className={cn(
-            "transition-[stroke] duration-150",
+            "transition-colors duration-150",
             selectedPartition === "boot" || selectedPartition === "init_boot"
               ? "stroke-primary"
               : "stroke-border/80"
@@ -181,7 +181,7 @@ export const PartitionHierarchySvg = ({
           y="155"
         />
         <text
-          className="fill-foreground text-[11px] font-semibold"
+          className="fill-foreground text-caption font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="210"
@@ -190,7 +190,7 @@ export const PartitionHierarchySvg = ({
           Core Kernel & Ramdisk Layer
         </text>
         <text
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-caption"
           dominantBaseline="middle"
           textAnchor="middle"
           x="210"
@@ -204,7 +204,7 @@ export const PartitionHierarchySvg = ({
       <g className="cursor-pointer" onClick={() => onSelectPartition("vbmeta")}>
         <rect
           className={cn(
-            "transition-[stroke] duration-150",
+            "transition-colors duration-150",
             selectedPartition.startsWith("vbmeta") ? "stroke-primary" : "stroke-border/80"
           )}
           fill="var(--surface-raised)"
@@ -216,7 +216,7 @@ export const PartitionHierarchySvg = ({
           y="155"
         />
         <text
-          className="fill-foreground text-[11px] font-semibold"
+          className="fill-foreground text-caption font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -225,7 +225,7 @@ export const PartitionHierarchySvg = ({
           AVB 2.0 Verification Chained Hashes
         </text>
         <text
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-caption"
           dominantBaseline="middle"
           textAnchor="middle"
           x="560"
@@ -248,7 +248,7 @@ export const PartitionHierarchySvg = ({
       <g className="cursor-pointer" onClick={() => onSelectPartition("super")}>
         <rect
           className={cn(
-            "transition-[stroke] duration-150",
+            "transition-colors duration-150",
             selectedPartition === "super" || selectedPartition === "system"
               ? "stroke-primary"
               : "stroke-border/80"
@@ -262,7 +262,7 @@ export const PartitionHierarchySvg = ({
           y="225"
         />
         <text
-          className="fill-foreground text-[12px] font-semibold"
+          className="fill-foreground text-xs font-semibold"
           dominantBaseline="middle"
           textAnchor="middle"
           x="385"
@@ -271,7 +271,7 @@ export const PartitionHierarchySvg = ({
           Dynamic Partition Container (super.img / FastbootD)
         </text>
         <text
-          className="fill-muted-foreground text-[10px]"
+          className="fill-muted-foreground text-caption"
           dominantBaseline="middle"
           textAnchor="middle"
           x="385"

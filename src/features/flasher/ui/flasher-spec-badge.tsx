@@ -41,7 +41,7 @@ export const FlasherSpecBadge = ({
           )}
         />
         <div className="flex min-w-0 flex-col">
-          <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption tracking-wider uppercase">
             {label}
           </span>
           <span

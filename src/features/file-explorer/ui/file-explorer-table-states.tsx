@@ -2,10 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { CircleAlert, FilePlus2, FolderPlus, Lock, Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
-import {
-  FILE_ROW_HEIGHT,
-  FILE_TABLE_COLUMNS,
-} from "@/features/file-explorer/model/file-explorer-constants";
+import { FILE_TABLE_COLUMNS } from "@/features/file-explorer/model/file-explorer-constants";
 import { Button } from "@/shared/ui/button";
 import {
   Empty,
@@ -34,18 +31,17 @@ export const FileExplorerRowSkeleton = () => (
   <output aria-label="Loading directory…" className="block w-full">
     {SKELETON_ROWS.map((index) => (
       <div
-        className="border-border/60 grid items-center gap-3 border-b px-3"
+        className="border-border/60 grid h-10 [grid-template-columns:var(--file-table-cols)] items-center gap-3 border-b px-3"
         key={index}
-        style={{
-          gridTemplateColumns: FILE_TABLE_COLUMNS,
-          height: FILE_ROW_HEIGHT,
-        }}
+        style={{ "--file-table-cols": FILE_TABLE_COLUMNS } as React.CSSProperties}
       >
         <Skeleton
-          className="h-3"
-          style={{
-            width: SKELETON_NAME_WIDTHS[index % SKELETON_NAME_WIDTHS.length],
-          }}
+          className="h-3 w-[var(--skeleton-width)]"
+          style={
+            {
+              "--skeleton-width": SKELETON_NAME_WIDTHS[index % SKELETON_NAME_WIDTHS.length],
+            } as React.CSSProperties
+          }
         />
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-3 w-12" />

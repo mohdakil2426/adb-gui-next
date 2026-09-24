@@ -33,8 +33,8 @@ describe(PartitionSizeChart, () => {
     );
 
     const bars = container.querySelectorAll("li > span > span");
-    expect((bars[0] as HTMLElement).style.width).toBe("100%");
-    expect((bars[1] as HTMLElement).style.width).toBe("50%");
+    expect((bars[0] as HTMLElement).style.getPropertyValue("--width")).toBe("100%");
+    expect((bars[1] as HTMLElement).style.getPropertyValue("--width")).toBe("50%");
   });
 
   it("recolours a partition once it has been extracted", () => {
@@ -48,8 +48,8 @@ describe(PartitionSizeChart, () => {
     );
 
     const bars = container.querySelectorAll("li > span > span");
-    expect((bars[0] as HTMLElement).style.backgroundColor).toBe("var(--chart-2)");
-    expect((bars[1] as HTMLElement).style.backgroundColor).toBe("var(--chart-1)");
+    expect((bars[0] as HTMLElement).className).toContain("bg-chart-2");
+    expect((bars[1] as HTMLElement).className).toContain("bg-chart-1");
   });
 
   it("renders nothing when every partition is zero-sized", () => {

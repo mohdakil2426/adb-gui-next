@@ -34,8 +34,8 @@ export const PartitionTableList = ({
   <>
     {/* Partition Grid Header */}
     <div
-      className="border-border/60 bg-surface-raised/40 text-label text-muted-foreground grid items-center gap-2 border-b px-3 py-2 text-[11px] font-medium tracking-wider uppercase"
-      style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
+      className="border-border/60 bg-surface-raised/40 text-muted-foreground text-caption grid grid-cols-(--grid-cols) items-center gap-2 border-b px-3 py-2 font-medium tracking-wider uppercase"
+      style={{ "--grid-cols": PARTITION_GRID_COLUMNS } as React.CSSProperties}
     >
       <span>Sel</span>
       <span>Partition Name</span>

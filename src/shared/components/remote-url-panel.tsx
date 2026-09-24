@@ -183,7 +183,7 @@ export const RemoteUrlPanel = ({
                     <>
                       <Zap
                         aria-hidden="true"
-                        className="size-4 text-amber-300"
+                        className="text-warning size-4"
                         data-icon="inline-start"
                       />
                       Read Partitions
@@ -204,7 +204,7 @@ export const RemoteUrlPanel = ({
 
       {/* Recent URLs History Strip */}
       {recentUrls.length > 0 && !disabled ? (
-        <div className="border-border/40 bg-surface flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px]">
+        <div className="border-border/40 bg-surface text-caption flex flex-wrap items-center gap-1.5 rounded-lg border px-2.5 py-1.5">
           <span className="text-muted-foreground flex shrink-0 items-center gap-1 font-medium">
             <History className="text-primary size-3" />
             Recent Links:
@@ -215,7 +215,7 @@ export const RemoteUrlPanel = ({
               const isCurrent = recent === url;
               return (
                 <button
-                  className={`inline-flex max-w-[220px] items-center truncate rounded px-2 py-0.5 font-mono text-[10px] transition-colors ${
+                  className={`text-mono-sm inline-flex max-w-[220px] items-center truncate rounded px-2 py-0.5 font-mono transition-colors ${
                     isCurrent
                       ? "border-primary/30 bg-primary/15 text-primary border font-medium"
                       : "border-border/60 bg-surface-raised/80 text-muted-foreground hover:bg-surface-raised hover:text-foreground border"
@@ -231,7 +231,7 @@ export const RemoteUrlPanel = ({
             })}
           </div>
           <button
-            className="text-muted-foreground/80 hover:text-destructive flex shrink-0 items-center gap-0.5 px-1 py-0.5 text-[10px] transition-colors"
+            className="text-muted-foreground/80 hover:text-destructive text-caption flex shrink-0 items-center gap-0.5 px-1 py-0.5 transition-colors"
             onClick={clearRecentUrls}
             title="Clear recent links"
             type="button"
@@ -255,7 +255,7 @@ export const RemoteUrlPanel = ({
             <FieldLabel className="text-caption cursor-pointer font-medium" htmlFor="prefetch">
               Prefetch mode
             </FieldLabel>
-            <FieldDescription className="text-[11px]">
+            <FieldDescription className="text-caption">
               Download complete archive before extraction
             </FieldDescription>
           </FieldContent>
@@ -281,7 +281,7 @@ export const RemoteUrlPanel = ({
                     <>
                       <span className="text-success/60">·</span>
                       <Badge
-                        className="border-success/30 text-success font-mono text-[10px]"
+                        className="border-success/30 text-success text-mono-sm font-mono"
                         variant="outline"
                       >
                         {estimatedSize}
@@ -301,7 +301,7 @@ export const RemoteUrlPanel = ({
             }
             return (
               <div className="text-caption text-muted-foreground flex items-center gap-1">
-                <Zap className="size-3 text-amber-400" />
+                <Zap className="text-warning size-3" />
                 <span>Zero-download selective partition extraction</span>
               </div>
             );

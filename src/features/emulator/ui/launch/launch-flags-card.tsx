@@ -54,7 +54,7 @@ export const LaunchFlagsCard = ({
                     <div className="flex items-center gap-2">
                       <span className="text-body text-foreground font-semibold">{opt.label}</span>
                       {isHazard ? (
-                        <Badge className="text-[10px]" variant="destructive">
+                        <Badge className="text-caption" variant="destructive">
                           Safety Interlock
                         </Badge>
                       ) : null}

@@ -189,8 +189,8 @@ export const FileExplorerTablePane = ({
               <Table className="min-w-0">
                 <TableHeader className="border-border bg-surface sticky top-0 z-10 block border-b">
                   <TableRow
-                    className="group/header grid hover:bg-transparent"
-                    style={{ gridTemplateColumns: fileTableColumns }}
+                    className="group/header grid [grid-template-columns:var(--file-table-cols)] hover:bg-transparent"
+                    style={{ "--file-table-cols": fileTableColumns } as React.CSSProperties}
                   >
                     {SORTABLE_COLUMNS.map(({ field, label }) => (
                       <TableHead

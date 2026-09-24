@@ -176,7 +176,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
         </div>
 
         {/* Output Directory Path */}
-        <div className="border-border/40 bg-surface-raised/20 flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 font-mono text-[11px]">
+        <div className="border-border/40 bg-surface-raised/20 text-mono-sm flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 font-mono">
           <span className="text-muted-foreground truncate" title={record.outputDir}>
             {record.outputDir}
           </span>
@@ -185,7 +185,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
 
         {/* Extracted Partitions Grid */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
             Extracted Partitions ({record.partitions.length})
           </span>
           <div className="grid grid-cols-1 gap-2 @sm:grid-cols-2 @lg:grid-cols-3">
@@ -207,7 +207,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
-                        className="h-6 px-1.5 text-[10px]"
+                        className="text-caption h-6 px-1.5"
                         onClick={() => handleFlash(part)}
                         size="sm"
                         title="Flash to Device"
@@ -220,7 +220,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
                   </div>
 
                   {/* Hash calculation / display */}
-                  <div className="border-border/30 flex items-center justify-between border-t pt-1 text-[10px]">
+                  <div className="border-border/30 text-caption flex items-center justify-between border-t pt-1">
                     {hash ? (
                       <div className="text-muted-foreground flex w-full items-center justify-between font-mono">
                         <span className="max-w-[140px] truncate" title={hash}>
@@ -230,7 +230,7 @@ export const HistoryRecordCard = ({ record, onFlashToDevice }: HistoryRecordCard
                       </div>
                     ) : (
                       <Button
-                        className="text-muted-foreground hover:text-foreground h-5 px-1 text-[10px]"
+                        className="text-muted-foreground hover:text-foreground text-caption h-5 px-1"
                         disabled={isComputing}
                         onClick={() => handleComputeChecksum(part)}
                         size="sm"

@@ -1,4 +1,5 @@
 import { Check, Clock, Globe, Loader2, Radio, XCircle } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
 import type { backend } from "@/desktop/models";
@@ -115,7 +116,7 @@ const StepDefinitionsGrid = ({ activeStep, isError }: { activeStep: number; isEr
         >
           <div
             className={cn(
-              "flex size-5 shrink-0 items-center justify-center rounded-full font-mono text-[10px]",
+              "text-mono-sm flex size-5 shrink-0 items-center justify-center rounded-full font-mono",
               done && "bg-success/20 text-success",
               working && "bg-primary text-primary-foreground",
               pending && "border-border bg-surface text-muted-foreground border",
@@ -124,7 +125,7 @@ const StepDefinitionsGrid = ({ activeStep, isError }: { activeStep: number; isEr
           >
             {renderStepBadgeContent(done, working, stepNum)}
           </div>
-          <span className="truncate text-[11px] leading-tight">{title}</span>
+          <span className="text-caption truncate leading-tight">{title}</span>
         </div>
       );
     })}
@@ -187,17 +188,17 @@ export const RemoteLoadProgressCard = ({
           </div>
           <div>
             <h3 className="text-body text-foreground font-semibold">Loading partitions</h3>
-            <p className="text-muted-foreground text-[11px]">
+            <p className="text-muted-foreground text-caption">
               Zero-download partition manifest extraction
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Badge className="font-mono text-[10px]" variant="outline">
+          <Badge className="text-mono-sm font-mono" variant="outline">
             Phase {Math.min(activeStep, totalSteps)} of {totalSteps}
           </Badge>
-          <Badge className="gap-1 font-mono text-[10px]" variant="secondary">
+          <Badge className="text-mono-sm gap-1 font-mono" variant="secondary">
             <span className="bg-primary size-1.5 animate-ping rounded-full" />
             {elapsedLabel}
           </Badge>
@@ -214,10 +215,11 @@ export const RemoteLoadProgressCard = ({
       >
         <div
           className={cn(
-            "h-full rounded-full transition-[width] duration-300 ease-out",
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted width animation avoids forbidden transition-all
+            "h-full w-(--progress) rounded-full transition-[width] duration-300 ease-out",
             isError ? "bg-destructive" : "from-primary to-primary/80 animate-pulse bg-gradient-to-r"
           )}
-          style={{ width: `${progressPercent}%` }}
+          style={{ "--progress": `${progressPercent}%` } as CSSProperties}
         />
       </div>
 
@@ -227,11 +229,11 @@ export const RemoteLoadProgressCard = ({
           <span className={cn("font-medium", isError ? "text-destructive" : "text-foreground")}>
             {statusLine}
           </span>
-          <span className="text-muted-foreground font-mono text-[11px]">{sizeCopy}</span>
+          <span className="text-muted-foreground text-mono-sm font-mono">{sizeCopy}</span>
         </div>
 
         {detail ? (
-          <div className="text-primary/90 flex items-center gap-1.5 font-mono text-[11px]">
+          <div className="text-primary/90 text-mono-sm flex items-center gap-1.5 font-mono">
             <Globe className="size-3 shrink-0" />
             <span className="truncate" title={detail}>
               {detail}
@@ -240,7 +242,7 @@ export const RemoteLoadProgressCard = ({
         ) : null}
 
         {slowHint ? (
-          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-amber-400">
+          <div className="text-warning text-caption mt-0.5 flex items-center gap-1.5">
             <Clock className="size-3 shrink-0" />
             <span>{slowHint}</span>
           </div>

@@ -25,7 +25,7 @@ export const SafetyTierLegend = ({ expertMode }: { expertMode: boolean }) => (
         </h3>
       </div>
 
-      <Badge className="text-[10px]" variant="neutral">
+      <Badge className="text-caption" variant="neutral">
         UAD Community Standard
       </Badge>
     </div>
@@ -40,13 +40,13 @@ export const SafetyTierLegend = ({ expertMode }: { expertMode: boolean }) => (
           <div className="flex items-center justify-between">
             <span
               className={cn(
-                "py-0.2 inline-flex items-center gap-1 rounded-full px-2 text-[10px] font-medium",
+                "text-caption inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
                 REMOVAL_TIER_CLASSES[tier].badge
               )}
             >
               <span
                 aria-hidden="true"
-                className={cn("size-1.2 rounded-full", REMOVAL_TIER_CLASSES[tier].dot)}
+                className={cn("size-1.5 rounded-full", REMOVAL_TIER_CLASSES[tier].dot)}
               />
               {REMOVAL_TIER_LABELS[tier]}
             </span>

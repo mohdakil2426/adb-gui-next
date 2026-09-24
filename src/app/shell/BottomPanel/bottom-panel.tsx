@@ -7,6 +7,7 @@ import { useBottomPanelResize } from "@/app/shell/BottomPanel/use-bottom-panel-r
 import { useLogStore } from "@/shared/stores/log-store";
 import { useShellStore } from "@/shared/stores/shell-store";
 import { useSidebar } from "@/shared/ui/sidebar";
+import { cn } from "@/shared/utils/cn";
 
 import { LogsPanel } from "./logs-panel";
 import { ShellPanel } from "./shell-panel";
@@ -137,8 +138,6 @@ export const BottomPanel = ({ viewportHeight }: BottomPanelProps) => {
     return null;
   }
 
-  const translateY = isAnimatingOut || isAnimatingIn ? "translateY(100%)" : "translateY(0)";
-
   return (
     <>
       {showCursorOverlay ? (
@@ -146,17 +145,19 @@ export const BottomPanel = ({ viewportHeight }: BottomPanelProps) => {
       ) : null}
 
       <div
-        className="fixed right-0 bottom-0 flex flex-col border-t shadow-2xl"
+        className={cn(
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- panel slide and sidebar tracking transitions
+          "bg-terminal-bg border-terminal-border fixed right-0 bottom-0 z-40 flex flex-col border-t shadow-2xl transition-[transform,left] duration-200 ease-linear",
+          "left-(--panel-left) h-(--panel-height)",
+          isAnimatingOut || isAnimatingIn ? "translate-y-full" : "translate-y-0"
+        )}
         ref={panelRef}
-        style={{
-          backgroundColor: "var(--terminal-bg)",
-          borderColor: "var(--terminal-border)",
-          height: `${computedHeight}px`,
-          left: panelLeft,
-          transform: translateY,
-          transition: "transform 200ms cubic-bezier(0.4, 0, 0.2, 1), left 200ms ease-linear",
-          zIndex: 40,
-        }}
+        style={
+          {
+            "--panel-height": `${computedHeight}px`,
+            "--panel-left": panelLeft,
+          } as React.CSSProperties
+        }
       >
         <div
           aria-controls="bottom-panel-content"
@@ -171,11 +172,7 @@ export const BottomPanel = ({ viewportHeight }: BottomPanelProps) => {
           role="scrollbar"
           tabIndex={0}
         >
-          <span
-            aria-hidden="true"
-            className="h-1 w-full"
-            style={{ backgroundColor: "var(--terminal-border)" }}
-          />
+          <span aria-hidden="true" className="bg-terminal-border h-1 w-full" />
         </div>
 
         <PanelHeader

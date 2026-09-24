@@ -47,7 +47,7 @@ const InstalledPackageRowActions = ({
       {isDisabled && onToggleEnable ? (
         <Button
           aria-label={`Enable ${appLabel}`}
-          className="text-muted-foreground size-7 p-0 hover:bg-emerald-500/10 hover:text-emerald-500"
+          className="text-muted-foreground hover:bg-success/10 hover:text-success size-7 p-0"
           onClick={(e) => {
             e.stopPropagation();
             onToggleEnable(pkg.name, true);
@@ -66,7 +66,7 @@ const InstalledPackageRowActions = ({
           {onLaunch ? (
             <Button
               aria-label={`Launch ${appLabel}`}
-              className="text-muted-foreground size-7 p-0 hover:bg-emerald-500/10 hover:text-emerald-500"
+              className="text-muted-foreground hover:bg-success/10 hover:text-success size-7 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onLaunch(pkg.name);
@@ -83,7 +83,7 @@ const InstalledPackageRowActions = ({
           {onForceStop ? (
             <Button
               aria-label={`Force stop ${appLabel}`}
-              className="text-muted-foreground size-7 p-0 hover:bg-amber-500/10 hover:text-amber-500"
+              className="text-muted-foreground hover:bg-warning/10 hover:text-warning size-7 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onForceStop(pkg.name);
@@ -104,7 +104,7 @@ const InstalledPackageRowActions = ({
           {onToggleEnable ? (
             <Button
               aria-label={`Disable ${appLabel}`}
-              className="text-muted-foreground size-7 p-0 hover:bg-amber-500/10 hover:text-amber-500"
+              className="text-muted-foreground hover:bg-warning/10 hover:text-warning size-7 p-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleEnable(pkg.name, false);
@@ -162,7 +162,7 @@ export const InstalledPackageRow = ({
     <div
       aria-selected={isSelected}
       className={cn(
-        "group border-border/40 ease-standard hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:ring-ring absolute left-0 flex w-full cursor-pointer items-center gap-3 border-b px-3.5 transition-colors duration-90 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
+        "group border-border/40 ease-standard hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:ring-ring absolute left-0 flex h-[var(--row-height)] w-full [transform:translateY(var(--row-y))] cursor-pointer items-center gap-3 border-b px-3.5 transition-colors duration-90 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
         isSelected && "bg-primary-muted/70 hover:bg-primary-muted",
         isDisabled && "opacity-65 hover:opacity-100"
       )}
@@ -174,7 +174,7 @@ export const InstalledPackageRow = ({
         }
       }}
       role="treeitem"
-      style={{ height: `${height}px`, transform: `translateY(${start}px)` }}
+      style={{ "--row-height": `${height}px`, "--row-y": `${start}px` } as React.CSSProperties}
       tabIndex={0}
     >
       {/* Multi-selection Checkbox */}
@@ -205,7 +205,7 @@ export const InstalledPackageRow = ({
           aria-hidden="true"
           className={cn(
             "ring-surface absolute -right-0.5 -bottom-0.5 size-2 rounded-full ring-2",
-            isDisabled ? "bg-amber-500 shadow-xs" : "bg-emerald-500 shadow-xs ring-emerald-500/20"
+            isDisabled ? "bg-warning shadow-xs" : "bg-success ring-success/20 shadow-xs"
           )}
           title={isDisabled ? "Disabled" : "Active"}
         />
@@ -232,13 +232,13 @@ export const InstalledPackageRow = ({
       <div className="hidden w-20 shrink-0 justify-center @md:flex">
         {targetSdk > 0 ? (
           <Badge
-            className="border-border/60 text-muted-foreground font-mono text-[10px]"
+            className="border-border/60 text-muted-foreground text-mono-sm font-mono"
             variant="neutral"
           >
             API {targetSdk}
           </Badge>
         ) : (
-          <span className="text-muted-foreground/60 font-mono text-[10px]">—</span>
+          <span className="text-muted-foreground/60 text-mono-sm font-mono">—</span>
         )}
       </div>
 
@@ -251,12 +251,12 @@ export const InstalledPackageRow = ({
       {/* Package Type Badge Column */}
       <div className="flex w-20 shrink-0 justify-center">
         {isDisabled ? (
-          <Badge className="text-[10px]" variant="warning">
+          <Badge className="text-caption" variant="warning">
             Disabled
           </Badge>
         ) : (
           <Badge
-            className="text-[10px]"
+            className="text-caption"
             variant={pkg.packageType === "user" ? "secondary" : "neutral"}
           >
             {pkg.packageType}

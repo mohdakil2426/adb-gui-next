@@ -149,7 +149,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
             Live Logcat Buffer & Filter Studio
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground font-mono text-[11px]">
+            <span className="text-muted-foreground text-caption font-mono">
               {filteredLogs.length} / {logs.length} Lines
             </span>
           </div>
@@ -242,7 +242,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
 
         {/* Log Viewer Terminal Box */}
         <div
-          className="border-border/80 bg-background/90 text-muted-foreground max-h-[380px] min-h-[220px] overflow-y-auto rounded-lg border p-3 font-mono text-[11px] leading-relaxed"
+          className="border-border/80 bg-background/90 text-muted-foreground text-caption max-h-[380px] min-h-[220px] overflow-y-auto rounded-lg border p-3 font-mono leading-relaxed"
           ref={logScrollRef}
         >
           {filteredLogs.length === 0 ? (
@@ -260,7 +260,7 @@ export const LogcatStreamCard = ({ deviceMode, deviceSerial }: LogcatStreamCardP
                 )}
                 key={entry.id}
               >
-                <span className="text-muted-foreground/60 shrink-0 text-[10px] select-none">
+                <span className="text-muted-foreground/60 text-caption shrink-0 select-none">
                   {entry.line.toString().padStart(4, "0")}
                 </span>
                 <span

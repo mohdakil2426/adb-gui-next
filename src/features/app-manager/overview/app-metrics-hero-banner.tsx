@@ -67,7 +67,7 @@ export const AppMetricsHeroBanner = ({ stats }: AppMetricsHeroBannerProps) => {
               <Icon aria-hidden="true" className="text-muted-foreground size-4" />
             </div>
             <div className="flex flex-col pt-1.5">
-              <span className="numeric text-foreground text-headline font-bold">{spec.value}</span>
+              <span className="numeric text-foreground text-title font-bold">{spec.value}</span>
               <span className="text-caption text-muted-foreground truncate">{spec.subtext}</span>
             </div>
           </m.div>

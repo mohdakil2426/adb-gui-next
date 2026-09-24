@@ -1,3 +1,4 @@
+import type { MotionStyle } from "framer-motion";
 import { m, useReducedMotion } from "framer-motion";
 import { useId, useMemo, useState } from "react";
 
@@ -159,8 +160,9 @@ export const MemorySparkline = ({ samples }: { samples: MemorySample[] }) => {
             cx={latest.x}
             cy={latest.y}
             fill="var(--chart-1)"
+            className="[transform-origin:var(--origin)]"
             r={2.5}
-            style={{ transformOrigin: `${latest.x}px ${latest.y}px` }}
+            style={{ "--origin": `${latest.x}px ${latest.y}px` } as unknown as MotionStyle}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }

@@ -41,7 +41,7 @@ const DeviceTileBottomRow = ({
       <span className="inline-flex items-center gap-1">
         {isWireless ? (
           <>
-            <Wifi aria-hidden="true" className="size-3 text-sky-400" />
+            <Wifi aria-hidden="true" className="text-info size-3" />
             <span>TCP 5555</span>
           </>
         ) : (
@@ -55,7 +55,7 @@ const DeviceTileBottomRow = ({
       {batteryPercent !== undefined && batteryPercent !== null ? (
         <span className="text-mono-sm inline-flex items-center gap-1 font-mono">
           {isCharging ? (
-            <BatteryCharging aria-hidden="true" className="size-3 text-emerald-400" />
+            <BatteryCharging aria-hidden="true" className="text-success size-3" />
           ) : (
             <Battery aria-hidden="true" className="text-muted-foreground size-3" />
           )}
@@ -147,10 +147,10 @@ const DeviceTile = ({
         <div className="flex shrink-0 items-center gap-1.5">
           {isMirroring ? (
             <Badge
-              className="text-caption gap-1 border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-400"
+              className="text-caption border-success/30 bg-success/10 text-success gap-1 px-2 py-0.5"
               variant="outline"
             >
-              <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <span className="bg-success size-1.5 animate-pulse rounded-full" />
               Mirroring
             </Badge>
           ) : null}

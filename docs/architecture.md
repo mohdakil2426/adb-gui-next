@@ -945,8 +945,11 @@ Does **not** run clippy, full-repo checks, or tests. CI owns the heavy bar.
 
 ### Frontend lint bar
 
-- Ultracite/Oxlint runs via `bun run lint:web` (`ultracite check`).
-- `@shadcn/lint` is registered through `jsPlugins` in `oxlint.config.ts`. No shadcn lint rules are enabled yet; rule selection remains user-configured and belongs in `oxlint.config.ts`.
+- Ultracite/Oxlint runs via `bun run lint:web` (`ultracite check`): Oxfmt format check **plus** Oxlint (Ultracite core/react/vitest presets + shadcn rules). Any diagnostic fails the gate.
+- `@shadcn/lint` is registered through `jsPlugins` in `oxlint.config.ts` and all six rules run as errors: `no-restyle`, `no-raw-colors`, `no-arbitrary-values`, `no-inline-styles`, `no-unknown-classes`, `require-static-classes`.
+- `no-restyle` policy encodes DESIGN.md's call-site token composition: top-level `allow` for layout/spacing/typography/color (plus the `numeric` / `ease-standard` utilities) and per-component contracts for variant-less primitives (Card family incl. shape/effects/motion, Skeleton, Empty, TabsContent, Input, Tooltip/Popover/Sheet content, Table, DropdownMenuTrigger, SidebarMenuButton, BreadcrumbPage). **Button/Badge/CopyButton stay fully enforced** — use their existing `variant`/`size`, or move effects (`opacity-*`, `transition-*`, `rounded-*`) onto a plain wrapper element.
+- `src/shared/ui/**` turns `no-restyle` / `no-arbitrary-values` / `require-static-classes` **off** (components style their own internals); `no-unknown-classes` allows `toaster` (sonner's external class).
+- Only when no token or class can preserve the rendered result: add `// oxlint-disable-next-line shadcn/<rule> -- <reason>` as the line **directly above** the diagnostic (a later `ultracite fix` run must not separate the comment from that line, or the gate fails). Rule selection and contracts live in `oxlint.config.ts`; change them there.
 
 ### Rust lint bar
 

@@ -120,7 +120,7 @@ export const DebloatSafetySpectrum = ({
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="numeric text-foreground text-headline font-semibold">
+            <span className="numeric text-foreground text-title font-semibold">
               {debloatableTotal}
             </span>
             <span className="text-caption text-muted-foreground">debloat</span>

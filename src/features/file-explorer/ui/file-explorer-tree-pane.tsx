@@ -29,8 +29,8 @@ export const FileExplorerTreePane = (props: Props) => {
 
   return (
     <div
-      className="flex min-h-0 shrink-0 flex-col overflow-hidden"
-      style={{ width: `${leftWidth}px` }}
+      className="flex min-h-0 w-[var(--pane-width)] shrink-0 flex-col overflow-hidden"
+      style={{ "--pane-width": `${leftWidth}px` } as React.CSSProperties}
     >
       <FileExplorerPlaces
         currentPath={currentPath}

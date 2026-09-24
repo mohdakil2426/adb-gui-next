@@ -49,8 +49,9 @@ export const DownloadProgressStrip = ({ className, packageName }: DownloadProgre
       </progress>
       <div className="bg-secondary h-1 w-full overflow-hidden rounded-full">
         <div
-          className="bg-primary h-full rounded-full transition-[width] duration-150 ease-linear"
-          style={{ width: `${pct}%` }}
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- width-only progress bar transition avoids forbidden transition:all
+          className="bg-primary h-full w-(--progress-width) rounded-full transition-[width] duration-150 ease-linear"
+          style={{ "--progress-width": `${pct}%` } as React.CSSProperties}
         />
       </div>
       <div className="numeric text-caption text-muted-foreground flex items-center justify-between gap-2">

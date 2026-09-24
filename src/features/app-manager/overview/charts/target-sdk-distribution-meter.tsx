@@ -62,10 +62,15 @@ export const TargetSdkDistributionMeter = ({
           <m.div
             animate={{ opacity: 1, scaleX: 1 }}
             aria-hidden="true"
-            className={cn("h-full origin-left", segment.colorClass)}
+            className={cn("h-full w-[var(--segment-width)] origin-left", segment.colorClass)}
             initial={shouldReduceMotion ? false : { opacity: 0, scaleX: 0 }}
             key={segment.bucketKey}
-            style={{ width: `${(buckets[segment.bucketKey] / total) * 100}%` }}
+            style={
+              { "--segment-width": `${(buckets[segment.bucketKey] / total) * 100}%` } as Record<
+                string,
+                string
+              >
+            }
             transition={
               shouldReduceMotion
                 ? { duration: 0 }

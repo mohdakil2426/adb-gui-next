@@ -233,8 +233,10 @@ export const MainLayout = () => {
                   {isLogOpen ? (
                     <div
                       aria-hidden="true"
-                      className="shrink-0"
-                      style={{ height: `${panelDockHeight}px` }}
+                      className="h-(--panel-dock-height) shrink-0"
+                      style={
+                        { "--panel-dock-height": `${panelDockHeight}px` } as React.CSSProperties
+                      }
                     />
                   ) : null}
                   <ErrorBoundary viewName="Bottom Panel">

@@ -107,11 +107,11 @@ export const PayloadOverviewTab = ({ onNavigateTab }: PayloadOverviewTabProps) =
                   </Badge>
                 </div>
                 <p className="text-caption text-muted-foreground leading-relaxed">
-                  Unpack logical sub-partitions (<code className="text-[11px]">system.img</code>,{" "}
-                  <code className="text-[11px]">vendor.img</code>,{" "}
-                  <code className="text-[11px]">product.img</code>,{" "}
-                  <code className="text-[11px]">system_ext.img</code>,{" "}
-                  <code className="text-[11px]">odm.img</code>) directly from the super image.
+                  Unpack logical sub-partitions (<code className="text-caption">system.img</code>,{" "}
+                  <code className="text-caption">vendor.img</code>,{" "}
+                  <code className="text-caption">product.img</code>,{" "}
+                  <code className="text-caption">system_ext.img</code>,{" "}
+                  <code className="text-caption">odm.img</code>) directly from the super image.
                 </p>
               </div>
             </div>

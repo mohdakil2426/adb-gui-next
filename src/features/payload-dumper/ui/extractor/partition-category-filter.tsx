@@ -56,16 +56,16 @@ export const PartitionCategoryFilter = ({
         return (
           <Button
             className={cn(
-              "text-caption h-7 rounded-md px-2.5 font-medium transition-colors",
+              "text-caption h-7 px-2.5 font-medium",
               isActive
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "border-border/50 bg-surface-raised/60 text-muted-foreground hover:bg-surface-raised hover:text-foreground border"
+                : "border-border/50 bg-surface-raised/60 text-muted-foreground hover:bg-surface-raised hover:text-foreground"
             )}
             key={btn.id}
             onClick={() => onSelectCategory(btn.id)}
             size="sm"
             type="button"
-            variant="ghost"
+            variant={isActive ? "default" : "outline"}
           >
             {btn.dot ? (
               <span aria-hidden="true" className={cn("mr-1.5 size-2 rounded-full", btn.dot)} />
@@ -73,7 +73,7 @@ export const PartitionCategoryFilter = ({
             {btn.label}
             <span
               className={cn(
-                "py-0.2 ml-1.5 rounded-full px-1.5 font-mono text-[10px] tabular-nums",
+                "text-mono-sm ml-1.5 rounded-full px-1.5 py-0.5 font-mono tabular-nums",
                 isActive
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-surface text-muted-foreground"

@@ -214,16 +214,20 @@ export const MarketplaceHeroBanner = ({
                 {MARKETPLACE_PROVIDERS.map((provider) => {
                   const isActive = activeProviders.includes(provider.id);
                   return (
-                    <Badge
-                      className={cn(
-                        "text-caption px-2 py-0.5 font-mono",
-                        !isActive && "line-through opacity-50"
-                      )}
+                    <span
+                      className={cn("inline-flex", !isActive && "opacity-50")}
                       key={provider.id}
-                      variant={isActive ? "neutral" : "outline"}
                     >
-                      {provider.label}
-                    </Badge>
+                      <Badge
+                        className={cn(
+                          "text-caption px-2 py-0.5 font-mono",
+                          !isActive && "line-through"
+                        )}
+                        variant={isActive ? "neutral" : "outline"}
+                      >
+                        {provider.label}
+                      </Badge>
+                    </span>
                   );
                 })}
               </div>

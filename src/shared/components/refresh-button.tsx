@@ -49,6 +49,7 @@ type RefreshButtonProps = RefreshButtonIcon | RefreshButtonAction;
  * previously drifted to five different heights.
  */
 export const RefreshButton = (props: RefreshButtonProps) => {
+  // oxlint-disable-next-line shadcn/require-static-classes -- Reusable component forwards caller className to Button
   const { className, disabled = false, isLoading = false, mode, onClick } = props;
 
   const buttonVariant = props.buttonVariant ?? (mode === "icon" ? "ghost" : "outline");

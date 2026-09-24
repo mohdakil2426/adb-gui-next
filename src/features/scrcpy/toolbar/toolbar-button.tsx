@@ -155,6 +155,7 @@ export const ToolbarButton = ({
       <TooltipTrigger asChild>
         <button
           aria-label={label}
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- scoped property transition avoids transition:all
           className={`group ease-standard flex size-10 items-center justify-center rounded-lg transition-[color,background-color,transform] duration-150 active:scale-92 ${
             isActive
               ? "bg-accent text-accent-foreground shadow-xs"
@@ -176,13 +177,13 @@ export const ToolbarButton = ({
         <div className="text-foreground flex items-center gap-2 text-xs font-medium">
           <span>{label}</span>
           {shortcut ? (
-            <kbd className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+            <kbd className="bg-muted text-muted-foreground text-mono-sm rounded px-1.5 py-0.5 font-mono">
               {shortcut}
             </kbd>
           ) : null}
         </div>
         {description ? (
-          <span className="text-muted-foreground text-[11px]">{description}</span>
+          <span className="text-muted-foreground text-caption">{description}</span>
         ) : null}
       </TooltipContent>
     </Tooltip>

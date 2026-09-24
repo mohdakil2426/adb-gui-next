@@ -57,9 +57,10 @@ export const PayloadMarketplaceFilterBar = ({
         return (
           <Button
             className={cn(
-              "text-caption h-8 rounded-full px-3.5 font-medium transition-colors",
+              // oxlint-disable-next-line shadcn/no-restyle -- brand filter chips require pill geometry
+              "text-caption h-8 rounded-full px-3.5 font-medium",
               isSelected
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-primary text-primary-foreground"
                 : "bg-surface-raised/60 text-muted-foreground hover:bg-surface-raised hover:text-foreground"
             )}
             key={chip.id}
@@ -71,7 +72,7 @@ export const PayloadMarketplaceFilterBar = ({
             <span>{chip.label}</span>
             <span
               className={cn(
-                "py-0.2 ml-1.5 rounded-full px-1.5 font-mono text-[10px]",
+                "text-mono-sm ml-1.5 rounded-full px-1.5 py-0.5 font-mono",
                 isSelected
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "bg-muted text-muted-foreground"
@@ -99,6 +100,7 @@ export const PayloadMarketplaceFilterBar = ({
         {searchQuery ? (
           <Button
             aria-label="Clear search"
+            // oxlint-disable-next-line shadcn/no-restyle -- circular clear search button
             className="text-muted-foreground hover:text-foreground absolute top-1/2 right-1.5 size-6 -translate-y-1/2 rounded-full p-1"
             onClick={() => onSearchChange("")}
             size="icon"
@@ -165,7 +167,7 @@ export const PayloadMarketplaceFilterBar = ({
                         All Models
                       </span>
                     </div>
-                    <span className="text-muted-foreground ml-2 shrink-0 font-mono text-[10px]">
+                    <span className="text-muted-foreground text-mono-sm ml-2 shrink-0 font-mono">
                       {devices.length}
                     </span>
                   </CommandItem>
@@ -193,13 +195,13 @@ export const PayloadMarketplaceFilterBar = ({
                             <span className={cn("truncate", isSelected && "font-medium")}>
                               {device.name}
                             </span>
-                            <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
+                            <span className="text-muted-foreground text-caption shrink-0 font-mono">
                               ({device.codename})
                             </span>
                           </div>
                         </div>
                         {device.releaseYear ? (
-                          <span className="text-muted-foreground ml-2 shrink-0 font-mono text-[10px]">
+                          <span className="text-muted-foreground text-mono-sm ml-2 shrink-0 font-mono">
                             {device.releaseYear}
                           </span>
                         ) : null}

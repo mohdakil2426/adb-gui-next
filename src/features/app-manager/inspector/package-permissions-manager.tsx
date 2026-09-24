@@ -13,7 +13,7 @@ export const PackagePermissionsManager = ({ info }: PackagePermissionsManagerPro
     <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <ShieldCheck className="size-4 text-emerald-500" />
+          <ShieldCheck className="text-success size-4" />
           <h4 className="text-foreground text-label font-medium">Granted Permissions</h4>
         </div>
         <span className="numeric text-caption text-muted-foreground">{granted.length} active</span>
@@ -34,7 +34,7 @@ export const PackagePermissionsManager = ({ info }: PackagePermissionsManagerPro
                 key={perm}
               >
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <Check className="size-3.5 shrink-0 text-emerald-500" />
+                  <Check className="text-success size-3.5 shrink-0" />
                   <span className="text-foreground truncate font-mono">{shortName}</span>
                 </div>
                 <span className="text-muted-foreground shrink-0 font-mono">

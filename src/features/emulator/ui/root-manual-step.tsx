@@ -171,7 +171,7 @@ export const RootManualStep = ({ avdName, serial }: RootManualStepProps) => {
 
       <div className="flex flex-col gap-2">
         <Button
-          className="h-auto w-full justify-start gap-3 border-dashed px-3 py-4 text-left"
+          className="h-auto w-full justify-start gap-3 px-3 py-4 text-left"
           id="root-manual-pick-package"
           onClick={() => {
             void handleChoosePackage();

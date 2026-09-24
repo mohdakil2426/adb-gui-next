@@ -189,7 +189,7 @@ export const FlasherCockpitHero = ({
                 </h2>
 
                 <Badge
-                  className="font-mono text-[10px] uppercase"
+                  className="text-caption font-mono uppercase"
                   variant={CONNECTION_BADGE_VARIANT[vitals.connectionMode] ?? "outline"}
                 >
                   {vitals.connectionMode}
@@ -197,7 +197,7 @@ export const FlasherCockpitHero = ({
 
                 {vitals.lockState === "UNKNOWN" ? null : (
                   <Badge
-                    className="gap-1 font-mono text-[10px]"
+                    className="text-caption gap-1 font-mono"
                     variant={isUnlocked ? "success" : "destructive"}
                   >
                     {isUnlocked ? (
@@ -215,7 +215,7 @@ export const FlasherCockpitHero = ({
                 )}
 
                 {vitals.activeSlot !== "unknown" && vitals.activeSlot !== "single" ? (
-                  <Badge className="gap-1 font-mono text-[10px]" variant="outline">
+                  <Badge className="text-caption gap-1 font-mono" variant="outline">
                     <Layers className="size-3" />
                     SLOT _{vitals.activeSlot.toUpperCase()}
                   </Badge>
@@ -252,17 +252,16 @@ export const FlasherCockpitHero = ({
             ) : null}
 
             {lastUpdated ? (
-              <span className="numeric text-caption text-muted-foreground text-[11px]">
+              <span className="numeric text-caption text-muted-foreground">
                 Probed {updatedAtFormatter.format(lastUpdated)}
               </span>
             ) : null}
 
             <Button
               aria-label="Refresh hardware vitals"
-              className="size-8 rounded-lg p-0"
               disabled={isProbing || !vitals.serial}
               onClick={onRefresh}
-              size="sm"
+              size="icon-sm"
               title="Refresh Fastboot Vitals"
               type="button"
               variant="outline"

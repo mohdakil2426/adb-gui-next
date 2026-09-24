@@ -72,6 +72,7 @@ export const AppsCompositionDonut = ({ slices }: AppsCompositionDonutProps) => {
             animate={{
               opacity: activeKey === null || activeKey === arc.key ? 1 : 0.25,
             }}
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- SVG stroke-width hover transition avoids transition:all
             className="cursor-pointer transition-[stroke-width] duration-150"
             cx={SIZE / 2}
             cy={SIZE / 2}

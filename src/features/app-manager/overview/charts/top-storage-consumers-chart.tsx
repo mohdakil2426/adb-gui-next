@@ -103,9 +103,9 @@ export const TopStorageConsumersChart = ({
                 <div className="bg-surface-raised h-2 w-full overflow-hidden rounded-full">
                   <m.div
                     animate={{ opacity: 1 }}
-                    className="flex h-full overflow-hidden rounded-full"
+                    className="flex h-full w-[var(--bar-width)] overflow-hidden rounded-full"
                     initial={shouldReduceMotion ? false : { opacity: 0 }}
-                    style={{ width: `${Math.max(4, ratio)}%` }}
+                    style={{ "--bar-width": `${Math.max(4, ratio)}%` } as Record<string, string>}
                     transition={
                       shouldReduceMotion
                         ? { duration: 0 }
@@ -113,18 +113,18 @@ export const TopStorageConsumersChart = ({
                     }
                   >
                     <div
-                      className="bg-primary group-hover:bg-primary/90 h-full transition-colors"
-                      style={{ width: `${appPct}%` }}
+                      className="bg-primary group-hover:bg-primary/90 h-full w-[var(--app-width)] transition-colors"
+                      style={{ "--app-width": `${appPct}%` } as React.CSSProperties}
                       title={`App: ${formatBytes(app.appSize)}`}
                     />
                     <div
-                      className="bg-primary/60 group-hover:bg-primary/70 h-full transition-colors"
-                      style={{ width: `${dataPct}%` }}
+                      className="bg-primary/60 group-hover:bg-primary/70 h-full w-[var(--data-width)] transition-colors"
+                      style={{ "--data-width": `${dataPct}%` } as React.CSSProperties}
                       title={`Data: ${formatBytes(app.dataSize)}`}
                     />
                     <div
-                      className="bg-primary/30 group-hover:bg-primary/40 h-full transition-colors"
-                      style={{ width: `${cachePct}%` }}
+                      className="bg-primary/30 group-hover:bg-primary/40 h-full w-[var(--cache-width)] transition-colors"
+                      style={{ "--cache-width": `${cachePct}%` } as React.CSSProperties}
                       title={`Cache: ${formatBytes(app.cacheSize)}`}
                     />
                   </m.div>

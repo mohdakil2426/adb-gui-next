@@ -57,7 +57,7 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
               <span className="text-body text-foreground font-semibold">
                 Installing Package {currentStep} of {progress.total}
               </span>
-              <Badge className="h-4.5 px-1.5 font-mono text-[10px]" variant="secondary">
+              <Badge className="text-mono-sm h-4.5 px-1.5 font-mono" variant="secondary">
                 {percentage}%
               </Badge>
             </div>
@@ -96,7 +96,7 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
               {progress.currentFile}
             </span>
           </div>
-          <Badge className="h-4.5 shrink-0 px-1.5 font-mono text-[10px]" variant="outline">
+          <Badge className="text-mono-sm h-4.5 shrink-0 px-1.5 font-mono" variant="outline">
             In Flight
           </Badge>
         </div>
@@ -105,11 +105,11 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
       {/* Telemetry Metrics Strip */}
       <div className="grid grid-cols-2 gap-2 pt-0.5 @lg:grid-cols-4">
         <div className="border-border/70 bg-surface-raised/40 flex flex-col rounded-md border p-2">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
             Completed
           </span>
           <div className="flex items-center gap-1 pt-0.5">
-            <CheckCircle2 aria-hidden="true" className="size-3.5 text-emerald-500" />
+            <CheckCircle2 aria-hidden="true" className="text-success size-3.5" />
             <span className="numeric text-foreground text-mono-sm font-mono font-bold">
               {progress.completed} / {progress.total}
             </span>
@@ -117,7 +117,7 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
         </div>
 
         <div className="border-border/70 bg-surface-raised/40 flex flex-col rounded-md border p-2">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
             Elapsed Time
           </span>
           <div className="flex items-center gap-1 pt-0.5">
@@ -129,7 +129,7 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
         </div>
 
         <div className="border-border/70 bg-surface-raised/40 flex flex-col rounded-md border p-2">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
             Active Flags
           </span>
           <div className="flex items-center gap-1 pt-0.5">
@@ -141,11 +141,11 @@ export const InstallProgressCard = ({ flagsCount = 1, progress }: InstallProgres
         </div>
 
         <div className="border-border/70 bg-surface-raised/40 flex flex-col rounded-md border p-2">
-          <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
             Socket State
           </span>
           <div className="flex items-center gap-1 pt-0.5">
-            <Activity aria-hidden="true" className="size-3.5 animate-pulse text-sky-500" />
+            <Activity aria-hidden="true" className="text-info size-3.5 animate-pulse" />
             <span className="text-foreground text-mono-sm font-mono font-bold">Active Stream</span>
           </div>
         </div>

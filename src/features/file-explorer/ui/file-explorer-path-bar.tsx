@@ -102,7 +102,11 @@ const PathCrumb = ({ isLast, isRoot, onMoveToFolder, onNavigate, segment }: Path
   );
   if (isLast) {
     return (
-      <BreadcrumbPage className={className} data-fe-drop-dir={destDir} {...dropProps}>
+      <BreadcrumbPage
+        className="data-fe-drop-over:bg-accent data-fe-drop-over:text-accent-foreground data-fe-drop-over:ring-ring flex min-w-0 items-center gap-1 rounded-sm px-0.5 py-0.5 data-fe-drop-over:ring-1"
+        data-fe-drop-dir={destDir}
+        {...dropProps}
+      >
         <CrumbLabel isRoot={isRoot} segment={segment} />
       </BreadcrumbPage>
     );

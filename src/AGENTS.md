@@ -268,6 +268,6 @@ Re-added **with real call sites** — each stays only while its call site exists
 | FE quality / doctor-sensitive | Also `npx react-doctor@latest .` when touching state/effects/motion/lists/unused ui |
 | IPC contract | Also update `src-tauri` handler + permissions + desktop models |
 
-- **Frontend linting (`bun run lint:web`):** Ultracite/Oxlint registers `@shadcn/lint` through `jsPlugins` in `oxlint.config.ts`. No shadcn lint rules are enabled yet; rule selection remains user-configured and belongs in `oxlint.config.ts`.
+- **Frontend linting (`bun run lint:web`):** Oxfmt format check **plus** Oxlint, which includes all six `@shadcn/lint` rules as errors (plugin registered via `jsPlugins` in `oxlint.config.ts`). Fix findings with theme tokens/scale values, existing component `variant`/`size`, or wrapper elements; add an `oxlint-disable-next-line` comment with a reason only when no class preserves the rendered result. Rule policy and contracts live in `oxlint.config.ts` — summary in `docs/architecture.md` §13 "Frontend lint bar".
 
 Full gate (`bun run check`) only after **all** tasks for the request finish — see `docs/project_rules.md`.

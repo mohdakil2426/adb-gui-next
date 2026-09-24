@@ -1,17 +1,18 @@
 import React, { memo } from "react";
 
 import type { LogEntry, LogLevel } from "@/shared/stores/log-store";
+import { cn } from "@/shared/utils/cn";
 
-const LOG_LEVEL_CONFIG: Record<LogLevel, { colorVar: string; icon: string; label: string }> = {
-  error: { colorVar: "var(--terminal-log-error)", icon: "✗", label: "ERROR" },
-  info: { colorVar: "var(--terminal-log-info)", icon: "›", label: "INFO" },
+const LOG_LEVEL_CONFIG: Record<LogLevel, { colorClass: string; icon: string; label: string }> = {
+  error: { colorClass: "text-terminal-log-error", icon: "✗", label: "ERROR" },
+  info: { colorClass: "text-terminal-log-info", icon: "›", label: "INFO" },
   success: {
-    colorVar: "var(--terminal-log-success)",
+    colorClass: "text-terminal-log-success",
     icon: "✓",
     label: "SUCCESS",
   },
   warning: {
-    colorVar: "var(--terminal-log-warning)",
+    colorClass: "text-terminal-log-warning",
     icon: "!",
     label: "WARN",
   },
@@ -66,22 +67,18 @@ const LogRowImpl = ({ log, searchRegex }: { log: LogEntry; searchRegex: RegExp |
 
   return (
     <div className="hover:bg-accent/20 flex gap-2 px-3 py-0.5 transition-colors">
-      <span
-        className="shrink-0 font-mono text-[11px] leading-5 opacity-50 select-none"
-        style={{ color: "var(--terminal-fg)" }}
-      >
+      <span className="text-terminal-fg text-caption shrink-0 font-mono leading-5 opacity-50 select-none">
         {log.timestamp}
       </span>
       <span
-        className="w-16 shrink-0 font-mono text-[11px] leading-5 font-semibold select-none"
-        style={{ color: config.colorVar }}
+        className={cn(
+          "text-caption w-16 shrink-0 font-mono leading-5 font-semibold select-none",
+          config.colorClass
+        )}
       >
         {config.icon} {config.label}
       </span>
-      <span
-        className="min-w-0 font-mono text-[12px] leading-5 break-all"
-        style={{ color: "var(--terminal-fg)" }}
-      >
+      <span className="text-terminal-fg min-w-0 font-mono text-xs leading-5 break-all">
         <HighlightedText searchRegex={searchRegex} text={log.message} />
       </span>
     </div>

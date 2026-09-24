@@ -143,11 +143,12 @@ export const DebloaterPackageList = ({
       >
         {listState ?? (
           <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              position: "relative",
-              width: "100%",
-            }}
+            className="relative h-[var(--virtual-height)] w-full"
+            style={
+              {
+                "--virtual-height": `${rowVirtualizer.getTotalSize()}px`,
+              } as React.CSSProperties
+            }
           >
             {virtualRows.map((vRow) => {
               const pkg = filteredPackages[vRow.index];

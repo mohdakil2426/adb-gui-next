@@ -40,7 +40,7 @@ const PROSE_CONTAINER_CLASS =
   "[&_ol]:my-1.5 [&_ol]:list-decimal [&_ol]:pl-5 " +
   "[&_p]:my-1 [&_p]:leading-relaxed " +
   "[&_p[align=center]]:flex [&_p[align=center]]:flex-wrap [&_p[align=center]]:items-center [&_p[align=center]]:justify-center [&_p[align=center]]:gap-2 [&_p[align=center]]:text-center " +
-  "[&_pre]:my-2 [&_pre]:cursor-pointer [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-surface-sunken [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-caption [&_pre]:text-foreground " +
+  "[&_pre]:my-2 [&_pre]:cursor-pointer [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-border [&_pre]:bg-canvas [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-caption [&_pre]:text-foreground " +
   "[&_pre_code]:bg-transparent [&_pre_code]:p-0 " +
   "[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse [&_table]:text-caption " +
   "[&_td]:border-border/40 [&_td]:border-b [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-muted-foreground " +
@@ -116,14 +116,14 @@ const renderInlineTag = (tag: string, content: ReactNode[], idx: number): ReactN
     }
     case "sup": {
       return (
-        <sup className="text-[10px]" key={`sup-${idx}`}>
+        <sup className="text-caption" key={`sup-${idx}`}>
           {content}
         </sup>
       );
     }
     case "sub": {
       return (
-        <sub className="text-[10px]" key={`sub-${idx}`}>
+        <sub className="text-caption" key={`sub-${idx}`}>
           {content}
         </sub>
       );
@@ -388,10 +388,10 @@ const renderCodeBlock = (
   const fullCode = codeLines.join("\n");
   const element = (
     <div
-      className="group border-border bg-surface-sunken relative my-2 overflow-hidden rounded-md border"
+      className="group border-border bg-canvas relative my-2 overflow-hidden rounded-md border"
       key={key}
     >
-      <div className="border-border/40 bg-surface text-muted-foreground flex items-center justify-between border-b px-3 py-1 font-mono text-[10px] uppercase">
+      <div className="border-border/40 bg-surface text-muted-foreground text-caption flex items-center justify-between border-b px-3 py-1 font-mono uppercase">
         <span>{lang || "code"}</span>
         <CopyButton value={fullCode} />
       </div>
@@ -653,7 +653,7 @@ const renderMarkdownHeading = (trimmed: string, key: number): ReactNode | null =
   }
   if (trimmed.startsWith("## ")) {
     return (
-      <h3 className="text-foreground text-subtitle mt-3 font-semibold tracking-tight" key={key}>
+      <h3 className="text-body text-foreground mt-3 font-semibold tracking-tight" key={key}>
         {inlineNodes(trimmed.slice(3))}
       </h3>
     );

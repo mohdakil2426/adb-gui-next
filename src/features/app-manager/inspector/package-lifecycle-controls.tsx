@@ -99,7 +99,7 @@ export const PackageLifecycleControls = ({
           type="button"
           variant="outline"
         >
-          <Play aria-hidden="true" className="size-3.5 text-emerald-500" data-icon="inline-start" />
+          <Play aria-hidden="true" className="text-success size-3.5" data-icon="inline-start" />
           <span>Launch</span>
         </Button>
 
@@ -111,7 +111,7 @@ export const PackageLifecycleControls = ({
           type="button"
           variant="outline"
         >
-          <Square aria-hidden="true" className="size-3.5 text-amber-500" data-icon="inline-start" />
+          <Square aria-hidden="true" className="text-warning size-3.5" data-icon="inline-start" />
           <span>Force Stop</span>
         </Button>
         <Button
@@ -122,11 +122,7 @@ export const PackageLifecycleControls = ({
           type="button"
           variant="outline"
         >
-          <RotateCcw
-            aria-hidden="true"
-            className="size-3.5 text-sky-500"
-            data-icon="inline-start"
-          />
+          <RotateCcw aria-hidden="true" className="text-info size-3.5" data-icon="inline-start" />
           <span>Clear Cache</span>
         </Button>
 
@@ -138,7 +134,11 @@ export const PackageLifecycleControls = ({
           type="button"
           variant="outline"
         >
-          <Trash2 aria-hidden="true" className="size-3.5 text-rose-500" data-icon="inline-start" />
+          <Trash2
+            aria-hidden="true"
+            className="text-destructive size-3.5"
+            data-icon="inline-start"
+          />
           <span>Clear Data</span>
         </Button>
         <Button
@@ -171,18 +171,14 @@ export const PackageLifecycleControls = ({
             <>
               <ZapOff
                 aria-hidden="true"
-                className="size-3.5 text-amber-500"
+                className="text-warning size-3.5"
                 data-icon="inline-start"
               />
               <span>Disable App</span>
             </>
           ) : (
             <>
-              <Zap
-                aria-hidden="true"
-                className="size-3.5 text-emerald-500"
-                data-icon="inline-start"
-              />
+              <Zap aria-hidden="true" className="text-success size-3.5" data-icon="inline-start" />
               <span>Enable App</span>
             </>
           )}

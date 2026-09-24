@@ -99,10 +99,7 @@ const LogsPanelImpl = () => {
   }, [isFollowing, setIsFollowing]);
 
   return (
-    <div
-      className="flex h-full flex-col overflow-hidden"
-      style={{ backgroundColor: "var(--terminal-bg)" }}
-    >
+    <div className="bg-terminal-bg flex h-full flex-col overflow-hidden">
       <div
         aria-live="polite"
         aria-relevant="additions"
@@ -111,21 +108,17 @@ const LogsPanelImpl = () => {
         role="log"
       >
         {filteredLogs.length === 0 ? (
-          <div
-            className="py-8 text-center text-sm italic opacity-40 select-none"
-            style={{ color: "var(--terminal-fg)" }}
-          >
+          <div className="text-terminal-fg py-8 text-center text-sm italic opacity-40 select-none">
             {logs.length === 0
               ? "No logs yet. Operations will appear here."
               : "No logs match the current filter."}
           </div>
         ) : (
           <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              position: "relative",
-              width: "100%",
-            }}
+            className="relative h-(--total-height) w-full"
+            style={
+              { "--total-height": `${rowVirtualizer.getTotalSize()}px` } as React.CSSProperties
+            }
           >
             {virtualRows.map((vRow) => {
               const log = filteredLogs[vRow.index];
@@ -135,16 +128,11 @@ const LogsPanelImpl = () => {
 
               return (
                 <div
+                  className="absolute top-0 left-0 w-full translate-y-(--row-y)"
                   data-index={vRow.index}
                   key={vRow.key}
                   ref={rowVirtualizer.measureElement}
-                  style={{
-                    left: 0,
-                    position: "absolute",
-                    top: 0,
-                    transform: `translateY(${vRow.start}px)`,
-                    width: "100%",
-                  }}
+                  style={{ "--row-y": `${vRow.start}px` } as React.CSSProperties}
                 >
                   <LogRow log={log} searchRegex={searchRegex} />
                 </div>

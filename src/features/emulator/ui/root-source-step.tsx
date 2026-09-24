@@ -230,7 +230,7 @@ export const RootSourceStep = ({ source, onSourceChange, onContinue }: RootSourc
       {mode === "local" && (
         <div className="flex flex-col gap-3">
           <Button
-            className="h-auto justify-start gap-3 border-dashed px-3 py-5"
+            className="h-auto justify-start gap-3 px-3 py-5"
             id="root-local-file-picker"
             onClick={() => {
               void handleLocalPick();

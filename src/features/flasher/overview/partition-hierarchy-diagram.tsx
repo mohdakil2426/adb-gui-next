@@ -95,7 +95,7 @@ export const PartitionHierarchyDiagram = ({ activeSlot }: PartitionHierarchyDiag
       <CardContent className="flex flex-1 flex-col gap-4">
         {viewMode === "ascii" ? (
           <div className="border-border/80 bg-background/80 flex-1 overflow-x-auto rounded-lg border p-3.5">
-            <pre className="text-muted-foreground font-mono text-[11px] leading-relaxed">
+            <pre className="text-muted-foreground text-caption font-mono leading-relaxed">
               {ASCII_DIAGRAM}
             </pre>
           </div>

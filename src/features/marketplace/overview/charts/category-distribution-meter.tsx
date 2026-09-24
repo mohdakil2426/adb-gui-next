@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { MarketplaceGetOverviewStats } from "@/desktop/backend";
 import type { backend } from "@/desktop/models";
+import { cn } from "@/shared/utils/cn";
 import { formatPercent, usageRatio } from "@/shared/utils/format";
 
 interface CategoryDistributionMeterProps {
@@ -41,7 +42,6 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
   const toolsCount = props.toolsCount ?? stats?.toolsCount ?? 1840;
   const categories = [
     {
-      color: "var(--chart-1)",
       count: devCount,
       dotClass: "bg-chart-1",
       icon: Code2,
@@ -49,7 +49,6 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
       label: "Developer Tools",
     },
     {
-      color: "var(--chart-2)",
       count: systemCount,
       dotClass: "bg-chart-2",
       icon: Cpu,
@@ -57,7 +56,6 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
       label: "System & Root",
     },
     {
-      color: "var(--chart-3)",
       count: privacyCount,
       dotClass: "bg-chart-3",
       icon: Shield,
@@ -65,7 +63,6 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
       label: "Privacy & Security",
     },
     {
-      color: "var(--chart-4)",
       count: mediaCount,
       dotClass: "bg-chart-4",
       icon: Play,
@@ -73,7 +70,6 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
       label: "Media & Streaming",
     },
     {
-      color: "var(--chart-5)",
       count: toolsCount,
       dotClass: "bg-chart-5",
       icon: Wrench,
@@ -102,12 +98,13 @@ export const CategoryDistributionMeter = (props: CategoryDistributionMeterProps)
           const pct = (cat.count / total) * 100;
           return (
             <div
-              className="h-full transition-[width,opacity] duration-300 first:rounded-l-full last:rounded-r-full hover:opacity-80"
+              className={cn(
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- segmented meter animates width and hover opacity without transition:all
+                "h-full w-(--segment-width) transition-[width,opacity] duration-300 first:rounded-l-full last:rounded-r-full hover:opacity-80",
+                cat.dotClass
+              )}
               key={cat.key}
-              style={{
-                backgroundColor: cat.color,
-                width: `${pct}%`,
-              }}
+              style={{ "--segment-width": `${pct}%` } as React.CSSProperties}
               title={`${cat.label}: ${cat.count.toLocaleString()} (${pct.toFixed(1)}%)`}
             />
           );

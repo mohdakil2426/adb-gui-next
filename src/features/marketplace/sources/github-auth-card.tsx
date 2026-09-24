@@ -45,7 +45,7 @@ const GithubDeviceChallengeView = ({ challenge, onCancel }: GithubDeviceChalleng
   <div className="bg-background/80 text-caption text-muted-foreground mt-3 rounded-lg border p-3">
     <p className="text-foreground font-medium">Enter this code at github.com/login/device</p>
     <div className="mt-1 flex items-center gap-2">
-      <span className="text-foreground text-title font-mono tracking-[0.2em] select-all">
+      <span className="text-foreground text-title font-mono tracking-widest select-all">
         {challenge.challenge.userCode}
       </span>
       <CopyButton
@@ -98,7 +98,7 @@ const GithubPatSection = ({
           <Key className="text-muted-foreground size-4" />
           Session Personal Access Token (PAT)
         </label>
-        <span className="text-muted-foreground text-[10px]">In-memory only</span>
+        <span className="text-muted-foreground text-caption">In-memory only</span>
       </div>
 
       <div className="flex gap-2">
@@ -310,13 +310,13 @@ export const GithubAuthCard = () => {
             GitHub API Rate Limit & Authentication
           </CardTitle>
           {isAuthenticated ? (
-            <Badge className="gap-1 text-[10px]" variant="success">
+            <Badge className="text-caption gap-1" variant="success">
               <ShieldCheck className="size-3" />
               Authenticated (
               {rateLimit?.limit ? `${rateLimit.limit.toLocaleString()} req/hr` : "5,000 req/hr"})
             </Badge>
           ) : (
-            <Badge className="gap-1 text-[10px]" variant="outline">
+            <Badge className="text-caption gap-1" variant="outline">
               <ShieldAlert className="text-warning size-3" />
               Anonymous (60 req/hr)
             </Badge>
@@ -357,7 +357,7 @@ export const GithubAuthCard = () => {
                 <span className="text-body text-foreground font-semibold">
                   @{githubSession.user.login}
                 </span>
-                <span className="text-muted-foreground font-mono text-[11px]">
+                <span className="text-muted-foreground text-caption font-mono">
                   GitHub Account Active
                 </span>
               </div>

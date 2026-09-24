@@ -32,7 +32,7 @@ export const PartitionInspectionBadge = ({
         Target file: <span className="text-foreground font-mono">{fileName}</span>
       </span>
       <Button
-        className="h-6 gap-1 px-2 text-[11px]"
+        className="text-caption h-6 gap-1 px-2"
         disabled={disabled || !partition}
         onClick={onAddToQueue}
         size="sm"
@@ -44,14 +44,14 @@ export const PartitionInspectionBadge = ({
       </Button>
     </div>
     {isInspecting && (
-      <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+      <div className="text-muted-foreground text-caption flex items-center gap-1.5">
         <Loader2 className="size-3 animate-spin" />
         <span>Inspecting image headers...</span>
       </div>
     )}
     {!isInspecting && inspectInfo && (
-      <div className="border-border/40 flex flex-wrap items-center gap-2 border-t pt-1 text-[11px]">
-        <Badge className="font-mono text-[10px]" variant="secondary">
+      <div className="border-border/40 text-caption flex flex-wrap items-center gap-2 border-t pt-1">
+        <Badge className="text-caption font-mono" variant="secondary">
           {inspectInfo.detectedPartition || partition}
         </Badge>
         {inspectInfo.confidence ? (
@@ -61,24 +61,24 @@ export const PartitionInspectionBadge = ({
         ) : null}
         {inspectInfo.riskLevel ? (
           <Badge
-            className="text-[9px] uppercase"
+            className="text-caption uppercase"
             variant={RISK_BADGE_VARIANT[inspectInfo.riskLevel] ?? "outline"}
           >
             {inspectInfo.riskLevel}
           </Badge>
         ) : null}
         {inspectInfo.isSparse ? (
-          <Badge className="text-[9px]" variant="outline">
+          <Badge className="text-caption" variant="outline">
             Sparse
           </Badge>
         ) : null}
         {inspectInfo.isSlotted ? (
-          <Badge className="text-[9px]" variant="outline">
+          <Badge className="text-caption" variant="outline">
             A/B Slotted
           </Badge>
         ) : null}
         {inspectInfo.requiredMode ? (
-          <Badge className="font-mono text-[9px]" variant="secondary">
+          <Badge className="text-caption font-mono" variant="secondary">
             {inspectInfo.requiredMode}
           </Badge>
         ) : null}

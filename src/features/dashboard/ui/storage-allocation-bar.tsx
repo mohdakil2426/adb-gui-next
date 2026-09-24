@@ -1,3 +1,4 @@
+import type { MotionStyle } from "framer-motion";
 import { m, useReducedMotion } from "framer-motion";
 
 import type { backend } from "@/desktop/models";
@@ -39,10 +40,15 @@ export const StorageAllocationBar = ({ volumes }: StorageAllocationBarProps) => 
         <m.div
           animate={{ opacity: 1, scaleX: 1 }}
           aria-hidden="true"
-          className="h-full origin-left"
+          className="h-full w-(--seg-width) origin-left bg-(--seg-color)"
           initial={shouldReduceMotion ? false : { opacity: 0, scaleX: 0 }}
           key={segment.key}
-          style={{ backgroundColor: segment.color, width: `${segment.width}%` }}
+          style={
+            {
+              "--seg-color": segment.color,
+              "--seg-width": `${segment.width}%`,
+            } as unknown as MotionStyle
+          }
           transition={
             shouldReduceMotion
               ? { duration: 0 }
@@ -57,9 +63,9 @@ export const StorageAllocationBar = ({ volumes }: StorageAllocationBarProps) => 
       <m.div
         animate={{ opacity: 1 }}
         aria-hidden="true"
-        className="bg-secondary h-full"
+        className="bg-secondary h-full w-(--free-width)"
         initial={shouldReduceMotion ? false : { opacity: 0 }}
-        style={{ width: `${freeWidth}%` }}
+        style={{ "--free-width": `${freeWidth}%` } as unknown as MotionStyle}
         transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3, duration: 0.5 }}
       />
     </figure>

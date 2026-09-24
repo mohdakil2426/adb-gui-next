@@ -4,7 +4,6 @@ import { memo } from "react";
 
 import type { FileEntry } from "@/features/file-explorer/model/file-explorer-types";
 import {
-  FE_DROP_OVER_CLASS,
   folderInternalDropProps,
   INTERNAL_FILES_MIME,
 } from "@/features/file-explorer/utils/file-explorer-drop";
@@ -94,8 +93,9 @@ const FileExplorerRowImpl = ({
       aria-posinset={index + 1}
       aria-setsize={visibleCount}
       className={cn(
-        "border-border/60 focus-visible:ring-ring grid cursor-pointer items-center focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
-        isNavigable && FE_DROP_OVER_CLASS
+        "border-border/60 focus-visible:ring-ring absolute top-0 left-0 grid w-full [transform:translateY(var(--row-y))] cursor-pointer [grid-template-columns:var(--file-table-cols)] items-center focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset",
+        isNavigable &&
+          "data-fe-drop-over:bg-accent data-fe-drop-over:text-accent-foreground data-fe-drop-over:ring-ring data-fe-drop-over:ring-1"
       )}
       data-fe-drop-dir={destDir}
       data-index={index}
@@ -132,14 +132,12 @@ const FileExplorerRowImpl = ({
         }
       }}
       ref={measureElement}
-      style={{
-        gridTemplateColumns: fileTableColumns,
-        left: 0,
-        position: "absolute",
-        top: 0,
-        transform: `translateY(${start + phantomOffset}px)`,
-        width: "100%",
-      }}
+      style={
+        {
+          "--file-table-cols": fileTableColumns,
+          "--row-y": `${start + phantomOffset}px`,
+        } as React.CSSProperties
+      }
       tabIndex={0}
     >
       <TableCell className="text-body min-w-0 px-3 py-2">

@@ -30,7 +30,7 @@ const SpecRow = ({
       <div className="flex min-w-0 flex-col">
         <span className="text-caption text-muted-foreground font-medium">{label}</span>
         {secondary ? (
-          <span className="text-muted-foreground truncate text-[11px]">{secondary}</span>
+          <span className="text-caption text-muted-foreground truncate">{secondary}</span>
         ) : null}
       </div>
     </div>

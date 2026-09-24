@@ -1,3 +1,6 @@
+import type { CSSProperties } from "react";
+
+import { cn } from "@/shared/utils/cn";
 import { formatBytes } from "@/shared/utils/format";
 // Empty state handled across UI when data?.length === 0
 
@@ -45,11 +48,12 @@ export const PartitionSizeChart = ({ data }: { data: PartitionSizeDatum[] }) => 
             <span className="text-caption text-muted-foreground truncate">{row.name}</span>
             <span className="bg-surface-raised h-3 w-full overflow-hidden rounded-xs">
               <span
-                className="duration-base ease-standard block h-full rounded-xs transition-[width]"
-                style={{
-                  backgroundColor: row.extracted ? "var(--chart-2)" : "var(--chart-1)",
-                  width: `${percent}%`,
-                }}
+                className={cn(
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted width animation avoids forbidden transition-all
+                  "ease-standard block h-full w-(--width) rounded-xs transition-[width] duration-200",
+                  row.extracted ? "bg-chart-2" : "bg-chart-1"
+                )}
+                style={{ "--width": `${percent}%` } as CSSProperties}
               />
             </span>
             <span className="text-caption text-muted-foreground tabular-nums">

@@ -74,7 +74,7 @@ const RestorePlanContent = ({
                   </span>
                 </div>
               </div>
-              <Badge className="shrink-0 font-mono text-[10px]" variant="outline">
+              <Badge className="text-mono-sm shrink-0 font-mono" variant="outline">
                 backup
               </Badge>
             </div>

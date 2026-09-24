@@ -24,10 +24,10 @@ export const PayloadDumperSpecBadge = ({
     <div className="flex min-w-0 items-center gap-2.5">
       <Icon className="text-muted-foreground size-3.5 shrink-0" />
       <div className="flex min-w-0 flex-col">
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           {label}
         </span>
-        <span className="text-body text-foreground truncate text-[12px] font-medium">{value}</span>
+        <span className="text-foreground truncate text-xs font-medium">{value}</span>
       </div>
     </div>
     {copyValue ? (

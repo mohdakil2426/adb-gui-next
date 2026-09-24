@@ -57,7 +57,7 @@ export const ToolbarMoreMenu = ({
   };
 
   return (
-    <div className="fade-in zoom-in-95 animate-in border-border/90 flex w-[310px] max-w-[310px] shrink-0 flex-col gap-2.5 rounded-xl border bg-[#f3f4f6]/98 p-3.5 shadow-2xl backdrop-blur-xl dark:bg-[#1e1f22]/98">
+    <div className="fade-in zoom-in-95 animate-in border-border/90 bg-muted/98 dark:bg-card/98 flex w-[310px] max-w-[310px] shrink-0 flex-col gap-2.5 rounded-xl border p-3.5 shadow-2xl backdrop-blur-xl">
       <div className="border-border/60 flex items-center justify-between border-b pb-2">
         <span className="text-foreground text-xs font-semibold">Extended Controls</span>
         <button
@@ -72,7 +72,9 @@ export const ToolbarMoreMenu = ({
 
       {/* Mode Toggle: Locked vs Freeform */}
       <div className="flex flex-col gap-1.5">
-        <span className="text-muted-foreground text-[11px] font-medium">Toolbar Position Mode</span>
+        <span className="text-muted-foreground text-caption font-medium">
+          Toolbar Position Mode
+        </span>
         <div className="bg-muted/60 grid grid-cols-2 gap-1.5 rounded-lg p-1">
           <button
             className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
@@ -105,10 +107,10 @@ export const ToolbarMoreMenu = ({
       {mode === "locked" ? (
         <div className="border-border/60 bg-muted/30 flex flex-col gap-2.5 rounded-lg border p-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground text-[11px] font-medium">Dock Side</span>
+            <span className="text-muted-foreground text-caption font-medium">Dock Side</span>
             <div className="flex gap-1">
               <button
-                className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] ${
+                className={`text-caption flex items-center gap-1 rounded px-2 py-1 ${
                   side === "left"
                     ? "bg-surface text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -120,7 +122,7 @@ export const ToolbarMoreMenu = ({
                 <span>Left</span>
               </button>
               <button
-                className={`flex items-center gap-1 rounded px-2 py-1 text-[11px] ${
+                className={`text-caption flex items-center gap-1 rounded px-2 py-1 ${
                   side === "right"
                     ? "bg-surface text-foreground font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -135,9 +137,9 @@ export const ToolbarMoreMenu = ({
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="text-caption flex items-center justify-between">
               <span className="text-muted-foreground">Vertical Position</span>
-              <span className="text-muted-foreground font-mono text-[10px]">{localOffset}px</span>
+              <span className="text-muted-foreground text-mono-sm font-mono">{localOffset}px</span>
             </div>
             <input
               aria-label="Vertical Position"
@@ -149,7 +151,7 @@ export const ToolbarMoreMenu = ({
               type="range"
               value={localOffset}
             />
-            <div className="text-muted-foreground flex justify-between pt-1 text-[10px]">
+            <div className="text-muted-foreground text-caption flex justify-between pt-1">
               <button
                 className="bg-muted hover:text-foreground rounded px-1.5 py-0.5"
                 onClick={() => nudgeOffset(-20)}
@@ -178,7 +180,7 @@ export const ToolbarMoreMenu = ({
           </div>
         </div>
       ) : (
-        <div className="bg-muted/40 text-muted-foreground flex items-center gap-2 rounded-md p-2 text-[11px]">
+        <div className="bg-muted/40 text-muted-foreground text-caption flex items-center gap-2 rounded-md p-2">
           <Move className="size-3.5 shrink-0" />
           <span>Drag the top handle to reposition anywhere on your desktop.</span>
         </div>
@@ -186,7 +188,7 @@ export const ToolbarMoreMenu = ({
 
       {/* System Actions */}
       <div className="border-border/60 flex flex-col gap-1 border-t pt-2">
-        <span className="text-muted-foreground text-[11px] font-medium">Device Actions</span>
+        <span className="text-muted-foreground text-caption font-medium">Device Actions</span>
         <div className="grid grid-cols-1 gap-1 text-xs">
           <button
             className="text-foreground hover:bg-muted/80 flex items-center gap-2 rounded-md px-2 py-1.5 text-left"

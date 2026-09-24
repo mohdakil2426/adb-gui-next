@@ -24,6 +24,7 @@ import type { ToasterProps } from "sonner";
  * device-status tokens) because the raw status hues are tuned for solid fills
  * and fall under 4.5:1 on a lightly tinted surface in the light theme.
  */
+/* oxlint-disable shadcn/no-inline-styles -- Sonner richColors override requires inline style variables to beat vendor stylesheet */
 const TOAST_TOKENS = {
   "--border-radius": "var(--radius)",
   "--error-bg": "color-mix(in oklab, var(--destructive) 8%, var(--surface-raised))",
@@ -42,6 +43,7 @@ const TOAST_TOKENS = {
   "--warning-border": "color-mix(in oklab, var(--warning) 28%, var(--border))",
   "--warning-text": "var(--foreground)",
 } as CSSProperties;
+/* oxlint-enable shadcn/no-inline-styles */
 
 const Toaster = ({ style, ...props }: ToasterProps) => {
   const { resolvedTheme } = useTheme();

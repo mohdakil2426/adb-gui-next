@@ -119,9 +119,9 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             fill="none"
             initial={shouldReduceMotion ? false : { strokeDashoffset: CIRCUMFERENCE }}
             r={RADIUS}
+            strokeDasharray={CIRCUMFERENCE}
             strokeLinecap="round"
             strokeWidth={STROKE}
-            style={{ strokeDasharray: CIRCUMFERENCE }}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
@@ -137,7 +137,7 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
                 ? { opacity: 0.4, scale: 1 }
                 : { opacity: [0.5, 0.8, 0.5], scale: [1, 1.08, 1] }
             }
-            className={cn(TONE_STROKE[tone], "opacity-40")}
+            className={cn(TONE_STROKE[tone], "origin-center opacity-40")}
             cx={CENTER}
             cy={CENTER}
             fill="none"
@@ -146,7 +146,6 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
             strokeDashoffset={-INNER_CIRCUMFERENCE * 0.25}
             strokeLinecap="round"
             strokeWidth={INNER_STROKE}
-            style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
             transition={
               shouldReduceMotion
                 ? { duration: 0 }

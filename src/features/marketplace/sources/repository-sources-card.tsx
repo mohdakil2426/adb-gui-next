@@ -97,7 +97,7 @@ export const RepositorySourcesCard = () => {
                     <span className="text-body text-foreground font-semibold">
                       {provider.label}
                     </span>
-                    <Badge className="text-[10px]" variant="secondary">
+                    <Badge className="text-caption" variant="secondary">
                       {provider.badge}
                     </Badge>
                   </div>

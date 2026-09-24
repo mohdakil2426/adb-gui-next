@@ -127,13 +127,10 @@ const ShellInputImpl = () => {
   }, [commandHistory.length]);
 
   return (
-    <div className="shrink-0 border-t px-3 py-2" style={{ borderColor: "var(--terminal-border)" }}>
+    <div className="border-terminal-border shrink-0 border-t px-3 py-2">
       <InputGroup className="border-0 bg-transparent shadow-none">
         <InputGroupAddon>
-          <InputGroupText
-            className="font-mono text-sm font-semibold select-none"
-            style={{ color: "var(--terminal-log-info)" }}
-          >
+          <InputGroupText className="text-terminal-log-info font-mono text-sm font-semibold select-none">
             $
           </InputGroupText>
         </InputGroupAddon>
@@ -141,7 +138,7 @@ const ShellInputImpl = () => {
           aria-label="Shell Command"
           autoComplete="off"
           autoFocus
-          className="font-mono text-[12px]"
+          className="text-terminal-fg font-mono text-xs"
           disabled={isLoading}
           id="shell-panel-input"
           name="shell-command"
@@ -152,7 +149,6 @@ const ShellInputImpl = () => {
           onKeyDown={handleKeyDown}
           placeholder="adb devices, adb shell ls, fastboot devices…"
           spellCheck={false}
-          style={{ color: "var(--terminal-fg)" }}
           value={command}
         />
       </InputGroup>

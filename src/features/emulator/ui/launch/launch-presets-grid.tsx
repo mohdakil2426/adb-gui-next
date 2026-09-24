@@ -121,7 +121,7 @@ export const LaunchPresetsGrid = ({ currentOptions, onApplyPreset }: LaunchPrese
                 <Icon className="text-foreground size-4" />
               </div>
               <Badge
-                className="text-[10px]"
+                className="text-caption"
                 variant={preset.id === "wipe-reset" ? "destructive" : "secondary"}
               >
                 {preset.badge}
@@ -135,7 +135,7 @@ export const LaunchPresetsGrid = ({ currentOptions, onApplyPreset }: LaunchPrese
               </p>
             </div>
 
-            <span className="text-muted-foreground font-mono text-[10px]">{preset.flags}</span>
+            <span className="text-muted-foreground text-mono-sm font-mono">{preset.flags}</span>
           </CardContent>
         </Card>
       );

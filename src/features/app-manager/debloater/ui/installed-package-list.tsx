@@ -313,7 +313,7 @@ export const InstalledPackageList = ({
       {/* Virtualized Package Listbox Container with Table Header */}
       <div className="border-border bg-surface flex flex-col overflow-hidden rounded-lg border">
         {/* Table Column Header Band */}
-        <div className="border-border/80 bg-surface-raised/60 text-muted-foreground flex items-center gap-3 border-b px-3.5 py-2 text-[11px] font-medium tracking-wider uppercase select-none">
+        <div className="border-border/80 bg-surface-raised/60 text-muted-foreground text-caption flex items-center gap-3 border-b px-3.5 py-2 font-medium tracking-wider uppercase select-none">
           <div className="size-4 shrink-0" />
           <div className="size-7 shrink-0" />
           <div className="flex-1">Application & Package Name</div>
@@ -330,11 +330,12 @@ export const InstalledPackageList = ({
         >
           {listState ?? (
             <div
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                position: "relative",
-                width: "100%",
-              }}
+              className="relative h-[var(--virtual-height)] w-full"
+              style={
+                {
+                  "--virtual-height": `${rowVirtualizer.getTotalSize()}px`,
+                } as React.CSSProperties
+              }
             >
               {virtualRows.map((vRow) => {
                 const pkg = filteredPackages[vRow.index];

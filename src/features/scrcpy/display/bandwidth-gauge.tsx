@@ -92,7 +92,7 @@ export const BandwidthGauge = ({ bitrateStr }: BandwidthGaugeProps) => {
             {bitrateMbps}{" "}
             <span className="text-caption text-muted-foreground font-normal">Mbps</span>
           </span>
-          <span className={cn("text-[11px] font-medium", ratingColor)}>{rating}</span>
+          <span className={cn("text-caption font-medium", ratingColor)}>{rating}</span>
         </div>
       </div>
 

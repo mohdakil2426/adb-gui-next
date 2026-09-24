@@ -33,7 +33,7 @@ export const HostServerControlCard = ({
             <Server className="text-primary size-4.5" />
             Host ADB Server Controls
           </CardTitle>
-          <Badge className="font-mono text-[10px]" variant="success">
+          <Badge className="text-caption font-mono" variant="success">
             Port 5037 Active
           </Badge>
         </div>
@@ -47,7 +47,7 @@ export const HostServerControlCard = ({
         {/* Version info readouts */}
         <div className="grid gap-3 @xs:grid-cols-1 @lg:grid-cols-2">
           <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption tracking-wider uppercase">
               ADB Server Binary
             </span>
             <span className="text-body text-foreground truncate font-mono font-medium">
@@ -56,7 +56,7 @@ export const HostServerControlCard = ({
           </div>
 
           <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
-            <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption tracking-wider uppercase">
               Fastboot Tool Binary
             </span>
             <span className="text-body text-foreground truncate font-mono font-medium">

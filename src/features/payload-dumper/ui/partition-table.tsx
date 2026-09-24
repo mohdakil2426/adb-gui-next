@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 
 import type { backend } from "@/desktop/models";
@@ -143,8 +144,8 @@ export const PartitionTable = ({
 
         {/* Header — the grid never changes, so rows never reflow mid-extraction */}
         <div
-          className="border-border bg-surface-raised text-caption text-muted-foreground grid gap-2 border-b px-3 py-2 tracking-wide uppercase"
-          style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
+          className="border-border bg-surface-raised text-caption text-muted-foreground grid grid-cols-(--grid-cols) gap-2 border-b px-3 py-2 tracking-wide uppercase"
+          style={{ "--grid-cols": PARTITION_GRID_COLUMNS } as CSSProperties}
         >
           <span />
           <span>Partition</span>

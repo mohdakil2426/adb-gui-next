@@ -14,9 +14,9 @@ const Progress = ({
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="bg-primary h-full w-full flex-1 transition-transform duration-300 ease-out"
+      className="bg-primary h-full w-full flex-1 translate-x-[var(--progress-offset)] transition-transform duration-300 ease-out"
       data-slot="progress-indicator"
-      style={{ transform: `translateX(-${100 - (value ?? 0)}%)` }}
+      style={{ "--progress-offset": `-${100 - (value ?? 0)}%` } as React.CSSProperties}
     />
   </ProgressPrimitive.Root>
 );

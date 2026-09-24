@@ -55,7 +55,7 @@ export const PayloadStreamDiagnostics = () => (
               <div className="border-border bg-surface text-primary flex size-7 items-center justify-center rounded-md border">
                 <Icon className="size-3.5" />
               </div>
-              <span className="text-muted-foreground font-mono text-[10px] uppercase">
+              <span className="text-muted-foreground text-mono-sm font-mono uppercase">
                 {step.badge}
               </span>
             </div>

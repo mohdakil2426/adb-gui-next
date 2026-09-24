@@ -95,7 +95,7 @@ export const AdbTransportGuideCard = () => {
       <CardContent className="pt-1">
         {viewMode === "ascii" ? (
           <div className="border-border/80 bg-background/80 overflow-x-auto rounded-lg border p-3.5">
-            <pre className="text-muted-foreground font-mono text-[11px] leading-relaxed">
+            <pre className="text-muted-foreground text-caption font-mono leading-relaxed">
               {ASCII_TRANSPORT_DIAGRAM}
             </pre>
           </div>

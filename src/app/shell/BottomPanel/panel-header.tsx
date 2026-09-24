@@ -45,33 +45,22 @@ export const PanelHeader = ({
 
   return (
     <>
-      <div
-        className="flex h-9 shrink-0 items-center justify-between px-2"
-        style={{ backgroundColor: "var(--terminal-header-bg)" }}
-      >
+      <div className="bg-terminal-header-bg flex h-9 shrink-0 items-center justify-between px-2">
         <div aria-label="Bottom panel tabs" className="flex items-center gap-0.5" role="tablist">
           <button
             aria-controls="bottom-panel-logs"
             aria-selected={activeTab === "logs"}
             className={cn(
-              "flex items-center gap-1.5 rounded-t-md px-3 py-1 text-xs font-medium transition-colors",
-              activeTab === "logs" ? "opacity-100" : "opacity-60 hover:opacity-80"
+              "flex items-center gap-1.5 rounded-t-md border-b-2 px-3 py-1 text-xs font-medium transition-colors",
+              activeTab === "logs"
+                ? "border-b-terminal-tab-active text-terminal-tab-active opacity-100"
+                : "text-terminal-tab-inactive border-b-transparent opacity-60 hover:opacity-80"
             )}
             id="bottom-panel-logs-tab"
             onClick={() => {
               onTabChange("logs");
             }}
             role="tab"
-            style={{
-              borderBottom:
-                activeTab === "logs"
-                  ? "2px solid var(--terminal-tab-active)"
-                  : "2px solid transparent",
-              color:
-                activeTab === "logs"
-                  ? "var(--terminal-tab-active)"
-                  : "var(--terminal-tab-inactive)",
-            }}
             type="button"
           >
             <Logs aria-hidden="true" className="size-3.5" />
@@ -84,24 +73,16 @@ export const PanelHeader = ({
             aria-controls="bottom-panel-shell"
             aria-selected={activeTab === "shell"}
             className={cn(
-              "flex items-center gap-1.5 rounded-t-md px-3 py-1 text-xs font-medium transition-colors",
-              activeTab === "shell" ? "opacity-100" : "opacity-60 hover:opacity-80"
+              "flex items-center gap-1.5 rounded-t-md border-b-2 px-3 py-1 text-xs font-medium transition-colors",
+              activeTab === "shell"
+                ? "border-b-terminal-tab-active text-terminal-tab-active opacity-100"
+                : "text-terminal-tab-inactive border-b-transparent opacity-60 hover:opacity-80"
             )}
             id="bottom-panel-shell-tab"
             onClick={() => {
               onTabChange("shell");
             }}
             role="tab"
-            style={{
-              borderBottom:
-                activeTab === "shell"
-                  ? "2px solid var(--terminal-tab-active)"
-                  : "2px solid transparent",
-              color:
-                activeTab === "shell"
-                  ? "var(--terminal-tab-active)"
-                  : "var(--terminal-tab-inactive)",
-            }}
             type="button"
           >
             <Terminal aria-hidden="true" className="size-3.5" />
@@ -128,42 +109,32 @@ export const PanelHeader = ({
         />
       </div>
       {isSearchOpen && activeTab === "logs" ? (
-        <div
-          className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5"
-          style={{
-            backgroundColor: "var(--terminal-header-bg)",
-            borderColor: "var(--terminal-border)",
-          }}
-        >
-          <Search
-            aria-hidden="true"
-            className="size-3.5 opacity-50"
-            style={{ color: "var(--terminal-fg)" }}
-          />
+        <div className="bg-terminal-header-bg border-terminal-border flex shrink-0 items-center gap-2 border-b px-3 py-1.5">
+          <Search aria-hidden="true" className="text-terminal-fg size-3.5 opacity-50" />
           <Input
             aria-label="Search Logs"
             autoFocus
-            className="h-6 border-none bg-transparent px-0 font-mono text-[12px] shadow-none focus-visible:ring-0"
+            className="text-terminal-fg h-6 border-none bg-transparent px-0 font-mono text-xs shadow-none focus-visible:ring-0"
             onChange={(e) => {
               setSearchQuery(e.target.value);
             }}
             placeholder="Search logs…"
-            style={{ color: "var(--terminal-fg)" }}
             value={searchQuery}
           />
           {searchQuery ? (
-            <Button
-              aria-label="Clear Log Search"
-              className="size-6 opacity-60 hover:opacity-100"
-              onClick={() => {
-                setSearchQuery("");
-              }}
-              size="icon"
-              style={{ color: "var(--terminal-fg)" }}
-              variant="ghost"
-            >
-              <X aria-hidden="true" className="size-3" data-icon="inline-start" />
-            </Button>
+            <span className="inline-flex opacity-60 hover:opacity-100">
+              <Button
+                aria-label="Clear Log Search"
+                className="text-terminal-fg size-6"
+                onClick={() => {
+                  setSearchQuery("");
+                }}
+                size="icon"
+                variant="ghost"
+              >
+                <X aria-hidden="true" className="size-3" data-icon="inline-start" />
+              </Button>
+            </span>
           ) : null}
         </div>
       ) : null}

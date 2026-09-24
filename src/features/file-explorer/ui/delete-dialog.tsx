@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { buttonVariants } from "@/shared/ui/button-variants";
 
 interface DeleteDialogProps {
   fileList: FileEntry[];
@@ -77,8 +76,7 @@ export const DeleteDialog = ({
       <AlertDialogFooter className="min-w-0">
         <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
         <AlertDialogAction
-          aria-label={isDeleting ? "Deleting permanently…" : "Delete permanently"}
-          className={buttonVariants({ variant: "destructive" })}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/50 active:bg-destructive-active"
           disabled={isDeleting}
           onClick={onConfirm}
         >

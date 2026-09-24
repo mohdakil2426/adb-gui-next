@@ -65,7 +65,8 @@ const RadialMeter = ({
             strokeDashoffset={offset}
             strokeLinecap="round"
             strokeWidth={strokeWidth}
-            style={{ transition: "stroke-dashoffset 0.6s ease" }}
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- SVG circle animates stroke-dashoffset
+            className="transition-[stroke-dashoffset] duration-500 ease-out"
           />
         </svg>
 
@@ -74,7 +75,7 @@ const RadialMeter = ({
           <span className="text-foreground text-title font-semibold tracking-tight">
             {Math.round(clamped)}%
           </span>
-          <span className="text-muted-foreground text-[10px] tracking-wider uppercase">
+          <span className="text-muted-foreground text-caption tracking-wider uppercase">
             {sublabel}
           </span>
         </div>

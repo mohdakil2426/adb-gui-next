@@ -36,8 +36,8 @@ export const ScrcpyInputTab = ({ onOptionsChange, options }: ScrcpyInputTabProps
             className={cn(
               "text-caption",
               options.noControl
-                ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                ? "border-warning/30 bg-warning/10 text-warning"
+                : "border-success/30 bg-success/10 text-success"
             )}
             variant="outline"
           >

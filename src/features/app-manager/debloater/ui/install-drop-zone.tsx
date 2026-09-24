@@ -119,6 +119,7 @@ export const InstallDropZone = ({
     return (
       <div
         className={cn(
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- scoped transition properties avoid forbidden transition:all
           "group relative flex items-center justify-between gap-3 rounded-lg border-2 border-dashed px-4 py-2.5 transition-[color,background-color,border-color,box-shadow] duration-200 select-none",
           isDragOver
             ? "border-primary bg-primary/10 ring-primary/20 ring-2"
@@ -172,6 +173,7 @@ export const InstallDropZone = ({
   return (
     <div
       className={cn(
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- scoped transition properties avoid forbidden transition:all
         "group relative flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-6 text-center transition-[border-color,background-color,box-shadow] duration-200 select-none",
         isDragOver
           ? "border-primary bg-primary/5 ring-primary/10 ring-4"
@@ -187,6 +189,7 @@ export const InstallDropZone = ({
       {/* Central Illuminated Icon Module */}
       <div
         className={cn(
+          // oxlint-disable-next-line shadcn/no-arbitrary-values -- scoped transition properties avoid forbidden transition:all
           "flex size-14 items-center justify-center rounded-2xl border transition-[color,background-color,border-color,box-shadow,transform] duration-300",
           isDragOver
             ? "border-primary bg-primary text-primary-foreground shadow-primary/20 scale-110 shadow-lg"

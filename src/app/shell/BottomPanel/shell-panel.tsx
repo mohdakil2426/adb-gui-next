@@ -9,10 +9,7 @@ import { ShellTranscript } from "@/app/shell/BottomPanel/shell-transcript";
  * the transcript.
  */
 const ShellPanelImpl = () => (
-  <div
-    className="flex h-full flex-col overflow-hidden"
-    style={{ backgroundColor: "var(--terminal-bg)" }}
-  >
+  <div className="bg-terminal-bg flex h-full flex-col overflow-hidden">
     <ShellTranscript />
     <ShellInput />
   </div>

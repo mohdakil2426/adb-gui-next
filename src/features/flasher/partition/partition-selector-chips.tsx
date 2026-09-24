@@ -48,7 +48,7 @@ export const PartitionSelectorChips = ({
           return (
             <button
               className={cn(
-                "flex items-center gap-1 rounded-md border px-2.5 py-1 font-mono text-[11px] transition-[border-color,background-color,color,box-shadow] duration-150",
+                "text-caption flex items-center gap-1 rounded-md border px-2.5 py-1 font-mono transition duration-150",
                 isSelected
                   ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
                   : "border-border bg-surface text-muted-foreground hover:border-foreground/30 hover:bg-surface-raised hover:text-foreground",

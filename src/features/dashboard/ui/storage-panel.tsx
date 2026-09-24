@@ -35,8 +35,8 @@ const VolumeRow = ({ index, volume }: { index: number; volume: backend.StorageVo
           {/* Matches this volume's segment in the capacity map above. */}
           <span
             aria-hidden="true"
-            className="size-1.5 shrink-0 translate-y-[-1px] rounded-full"
-            style={{ backgroundColor: storageSegmentColor(index) }}
+            className="size-1.5 shrink-0 translate-y-[-1px] rounded-full bg-(--dot-color)"
+            style={{ "--dot-color": storageSegmentColor(index) } as React.CSSProperties}
           />
           <span className="text-body text-foreground font-medium">{label}</span>
           <span

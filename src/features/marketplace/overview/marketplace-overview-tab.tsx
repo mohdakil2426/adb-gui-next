@@ -45,17 +45,18 @@ export const MarketplaceOverviewTab = ({ onQuickSearch }: MarketplaceOverviewTab
 
         <div className="flex flex-wrap items-center gap-1.5">
           {QUICK_DISCOVERY_TAGS.map((tag) => (
-            <Button
-              className="border-border/80 bg-surface-raised/40 text-caption hover:bg-accent hover:text-foreground h-7 rounded-full transition-colors"
-              key={tag.label}
-              onClick={() => handleChipClick(tag.query)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <Search className="text-muted-foreground mr-1 size-3" data-icon="inline-start" />
-              {tag.label}
-            </Button>
+            <span className="inline-flex overflow-hidden rounded-full" key={tag.label}>
+              <Button
+                className="border-border/80 bg-surface-raised/40 text-caption hover:bg-accent hover:text-foreground h-7"
+                onClick={() => handleChipClick(tag.query)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <Search className="text-muted-foreground mr-1 size-3" data-icon="inline-start" />
+                {tag.label}
+              </Button>
+            </span>
           ))}
         </div>
 

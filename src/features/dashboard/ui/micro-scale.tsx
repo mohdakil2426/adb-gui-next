@@ -73,14 +73,14 @@ export const MicroScale = ({
           {segments.map((segment, index) => (
             <div
               className={cn(
-                "h-full",
+                "h-full w-(--seg-width)",
                 segment.tone === "ok" && "bg-success-muted",
                 segment.tone === "warn" && "bg-warning-muted",
                 segment.tone === "danger" && "bg-destructive-muted",
                 segment.tone === "neutral" && "bg-transparent"
               )}
               key={`${segment.tone}-${index}`}
-              style={{ width: `${segment.width}%` }}
+              style={{ "--seg-width": `${segment.width}%` } as React.CSSProperties}
             />
           ))}
         </div>

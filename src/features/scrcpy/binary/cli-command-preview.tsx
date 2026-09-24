@@ -37,7 +37,7 @@ export const CliCommandPreview = ({ options, selectedSerials }: CliCommandPrevie
             </CardTitle>
           </div>
           <Badge
-            className="border-border bg-surface-raised text-muted-foreground font-mono text-[10px]"
+            className="border-border bg-surface-raised text-muted-foreground text-mono-sm font-mono"
             variant="outline"
           >
             Direct Process Invocation

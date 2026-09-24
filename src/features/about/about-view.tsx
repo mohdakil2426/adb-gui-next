@@ -64,7 +64,7 @@ export const ViewAbout = () => {
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Badge className="numeric font-mono text-[11px]" variant="secondary">
+          <Badge className="numeric text-caption font-mono" variant="secondary">
             v{APP_VERSION}
           </Badge>
           {target.isDebug ? <Badge variant="warning">Development build</Badge> : null}
@@ -131,7 +131,7 @@ export const ViewAbout = () => {
                 </div>
                 <span className="text-caption text-muted-foreground">{credit.role}</span>
                 <div className="pt-0.5">
-                  <span className="bg-muted text-muted-foreground inline-block rounded px-1.5 py-0.5 font-mono text-[10px]">
+                  <span className="bg-muted text-muted-foreground text-mono-sm inline-block rounded px-1.5 py-0.5 font-mono">
                     {credit.license}
                   </span>
                 </div>

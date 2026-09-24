@@ -46,10 +46,7 @@ const EngineStatusBadge = ({
 }) => {
   if (isInstalling) {
     return (
-      <Badge
-        className="text-caption border-sky-500/30 bg-sky-500/10 text-sky-400"
-        variant="outline"
-      >
+      <Badge className="text-caption border-info/30 bg-info/10 text-info" variant="outline">
         <DownloadCloud aria-hidden="true" className="size-3 animate-pulse" />
         Downloading {percent === null ? "..." : `${percent}%`}
       </Badge>
@@ -58,7 +55,7 @@ const EngineStatusBadge = ({
   if (updateAvailable) {
     return (
       <Badge
-        className="text-caption border-amber-500/30 bg-amber-500/10 text-amber-400"
+        className="text-caption border-warning/30 bg-warning/10 text-warning"
         variant="outline"
       >
         <ArrowUpRight aria-hidden="true" className="size-3" />
@@ -69,7 +66,7 @@ const EngineStatusBadge = ({
   if (isInstalled) {
     return (
       <Badge
-        className="text-caption border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+        className="text-caption border-success/30 bg-success/10 text-success"
         variant="outline"
       >
         <ShieldCheck aria-hidden="true" className="size-3" />
@@ -241,14 +238,14 @@ export const ScrcpyCockpitHero = ({
         <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
           {/* Tile 1: Binary Engine Status */}
           <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
               Scrcpy Engine
             </span>
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
                   "size-2 rounded-full",
-                  isInstalled ? "bg-emerald-500" : "bg-muted-foreground"
+                  isInstalled ? "bg-success" : "bg-muted-foreground"
                 )}
               />
               <span className="text-body text-foreground truncate font-medium">
@@ -259,14 +256,14 @@ export const ScrcpyCockpitHero = ({
 
           {/* Tile 2: Live Mirroring Sessions */}
           <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
               Active Sessions
             </span>
             <div className="flex items-center gap-1.5">
               <span
                 className={cn(
                   "size-2 rounded-full",
-                  activeCount > 0 ? "animate-pulse bg-emerald-500" : "bg-muted-foreground/50"
+                  activeCount > 0 ? "bg-success animate-pulse" : "bg-muted-foreground/50"
                 )}
               />
               <span className="text-body text-foreground truncate font-medium">
@@ -277,7 +274,7 @@ export const ScrcpyCockpitHero = ({
 
           {/* Tile 3: Selected Transport Link */}
           <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
               Link Transport
             </span>
             <div className="flex items-center gap-1.5">
@@ -288,7 +285,7 @@ export const ScrcpyCockpitHero = ({
 
           {/* Tile 4: Device Connection Count */}
           <div className="border-border/70 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-2.5">
-            <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
               Devices Available
             </span>
             <div className="flex items-center gap-1.5">

@@ -57,13 +57,11 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
             <PopoverTrigger asChild>
               <Button
                 className={cn(
-                  // Squared to match every other header control (h-8, rounded-md).
-                  // This was a rounded-full h-7 pill — the only one in the chrome.
-                  "border-border text-label h-8 gap-1.5 rounded-md border px-2.5 font-medium",
+                  "text-label h-8 gap-1.5 px-2.5 font-medium",
                   !selectedDevice && "text-muted-foreground"
                 )}
                 size="sm"
-                variant="ghost"
+                variant="outline"
               >
                 {selectedDevice ? (
                   <>
@@ -71,6 +69,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                     <Badge
                       className={cn(
                         "text-caption pointer-events-none px-1.5 py-0",
+                        // oxlint-disable-next-line shadcn/require-static-classes -- dynamic status badge classes from getStatusConfig
                         statusConfig?.badgeClass
                       )}
                       variant={statusConfig?.variant}
@@ -181,6 +180,7 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         <Badge
                           className={cn(
                             "text-caption pointer-events-none shrink-0 px-1.5 py-0",
+                            // oxlint-disable-next-line shadcn/require-static-classes -- dynamic status badge classes from getStatusConfig
                             config.badgeClass
                           )}
                           variant={config.variant}
@@ -189,18 +189,20 @@ export const DeviceSwitcher = ({ isRefreshing, onRefresh }: DeviceSwitcherProps)
                         </Badge>
                       </button>
 
-                      <Button
-                        aria-label={`Edit ${name} Nickname`}
-                        className="absolute top-1/2 right-1.5 size-6 -translate-y-1/2 opacity-0 transition-opacity group-focus-within/device:opacity-100 group-hover/device:opacity-100 focus-visible:opacity-100"
-                        onClick={() => {
-                          handleEdit(device.serial);
-                        }}
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-3" data-icon="inline-start" />
-                      </Button>
+                      <div className="absolute top-1/2 right-1.5 -translate-y-1/2 opacity-0 transition-opacity group-focus-within/device:opacity-100 group-hover/device:opacity-100">
+                        <Button
+                          aria-label={`Edit ${name} Nickname`}
+                          className="size-6"
+                          onClick={() => {
+                            handleEdit(device.serial);
+                          }}
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                        >
+                          <Pencil aria-hidden="true" className="size-3" data-icon="inline-start" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}

@@ -140,7 +140,7 @@ export const EmulatorKnowledgeBase = () => {
                   <div className="flex min-w-0 flex-col">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-body text-foreground font-medium">{topic.title}</span>
-                      <span className="border-border/60 bg-surface text-muted-foreground rounded-md border px-1.5 py-0.5 text-[10px]">
+                      <span className="border-border/60 bg-surface text-muted-foreground text-caption rounded-md border px-1.5 py-0.5">
                         {topic.badge}
                       </span>
                     </div>

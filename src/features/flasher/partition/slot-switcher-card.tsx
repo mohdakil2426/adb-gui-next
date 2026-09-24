@@ -37,7 +37,7 @@ const SlotItemCard = ({
 }: SlotItemCardProps) => (
   <div
     className={cn(
-      "flex flex-col gap-2.5 rounded-lg border p-3.5 transition-[border-color,background-color,box-shadow] duration-150",
+      "flex flex-col gap-2.5 rounded-lg border p-3.5 transition duration-150",
       isCurrent
         ? "border-success/40 bg-success/5 shadow-xs"
         : "border-border/80 bg-surface-raised/40"
@@ -46,18 +46,18 @@ const SlotItemCard = ({
     <div className="flex items-center justify-between">
       <span className="text-body text-foreground font-mono font-bold">SLOT _{slotName}</span>
       {isCurrent ? (
-        <Badge className="gap-1 font-mono text-[10px]" variant="success">
+        <Badge className="text-caption gap-1 font-mono" variant="success">
           <Check className="size-3" />
           ACTIVE
         </Badge>
       ) : (
-        <Badge className="font-mono text-[10px]" variant="outline">
+        <Badge className="text-caption font-mono" variant="outline">
           INACTIVE
         </Badge>
       )}
     </div>
 
-    <p className="text-muted-foreground text-[11px]">
+    <p className="text-muted-foreground text-caption">
       {isCurrent
         ? "Currently designated boot target for kernel & system."
         : "Alternative backup partition slot."}

@@ -15,7 +15,6 @@ import {
   AlertDialogTrigger,
 } from "@/shared/ui/alert-dialog";
 import { Button } from "@/shared/ui/button";
-import { buttonVariants } from "@/shared/ui/button-variants";
 
 interface UninstallConfirmDialogProps {
   isUninstalling: boolean;
@@ -117,7 +116,7 @@ export const UninstallConfirmDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className={buttonVariants({ variant: "destructive" })}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/50 active:bg-destructive-active"
             disabled={isUninstalling || !selectedSerial}
             onClick={onUninstall}
           >

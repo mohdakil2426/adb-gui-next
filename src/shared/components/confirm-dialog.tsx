@@ -12,7 +12,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { buttonVariants } from "@/shared/ui/button-variants";
 import { Input } from "@/shared/ui/input";
 import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/utils/cn";
@@ -153,9 +152,11 @@ export const ConfirmDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
           <AlertDialogAction
-            className={buttonVariants({
-              variant: destructive ? "destructive" : "default",
-            })}
+            className={
+              destructive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/50 active:bg-destructive-active"
+                : ""
+            }
             disabled={!phraseMatches}
             onClick={onConfirm}
           >

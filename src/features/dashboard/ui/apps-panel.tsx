@@ -1,3 +1,4 @@
+import type { MotionStyle } from "framer-motion";
 import { m, useReducedMotion } from "framer-motion";
 import { CircleAlert, HardDrive, LayoutGrid, Package, Puzzle, ShieldCheck } from "lucide-react";
 
@@ -63,10 +64,10 @@ const SdkDistributionMeter = ({ buckets, total }: { buckets: SdkBuckets; total: 
             <m.div
               animate={{ opacity: 1, scaleX: 1 }}
               aria-hidden="true"
-              className={cn("h-full origin-left", segment.colorClass)}
+              className={cn("h-full w-(--sdk-width) origin-left", segment.colorClass)}
               initial={shouldReduceMotion ? false : { opacity: 0, scaleX: 0 }}
               key={segment.bucketKey}
-              style={{ width: `${(count / denominator) * 100}%` }}
+              style={{ "--sdk-width": `${(count / denominator) * 100}%` } as unknown as MotionStyle}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
@@ -172,8 +173,8 @@ export const AppsPanel = ({ isEnabled, serial }: AppsPanelProps) => {
                   <span className="text-caption text-muted-foreground flex items-center gap-1.5">
                     <span
                       aria-hidden="true"
-                      className="size-1.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: slice.color }}
+                      className="size-1.5 shrink-0 rounded-full bg-(--dot-color)"
+                      style={{ "--dot-color": slice.color } as React.CSSProperties}
                     />
                     {slice.label}
                   </span>

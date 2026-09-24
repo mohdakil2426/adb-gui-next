@@ -158,7 +158,7 @@ export const FirmwareDeviceDetailView = ({
             type="button"
             variant={selectedType === "ota" ? "default" : "ghost"}
           >
-            <Zap className="mr-1.5 size-3 text-amber-400" data-icon="inline-start" />
+            <Zap className="text-chart-4 mr-1.5 size-3" data-icon="inline-start" />
             {device.brand === "xiaomi"
               ? "Recovery ROM (Remote Stream)"
               : "Full OTA Images (Remote Stream)"}

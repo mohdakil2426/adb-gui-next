@@ -77,16 +77,16 @@ export const AppUpdateRow = ({ item, onUpdate, target }: AppUpdateRowProps) => {
               <span className="text-body text-foreground font-semibold">{item.name}</span>
               <ProviderBadge source={item.source} />
               {item.hasUpdate ? (
-                <Badge className="text-[10px]" variant="default">
+                <Badge className="text-caption" variant="default">
                   Update Available
                 </Badge>
               ) : (
-                <Badge className="text-[10px]" variant="outline">
+                <Badge className="text-caption" variant="outline">
                   Up to Date
                 </Badge>
               )}
             </div>
-            <span className="text-muted-foreground font-mono text-[11px]">{item.packageName}</span>
+            <span className="text-muted-foreground text-caption font-mono">{item.packageName}</span>
           </div>
         </div>
 

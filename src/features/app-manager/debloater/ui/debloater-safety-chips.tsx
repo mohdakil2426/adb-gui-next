@@ -47,7 +47,7 @@ export const DebloaterSafetyChips = ({
           <span className="font-medium">{chip.label}</span>
           <span
             className={cn(
-              "numeric ml-0.5 text-[10px]",
+              "numeric text-caption ml-0.5",
               isActive ? "opacity-90" : "text-muted-foreground"
             )}
           >

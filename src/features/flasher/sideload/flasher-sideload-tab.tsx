@@ -58,11 +58,11 @@ export const FlasherSideloadTab = ({
                   Recovery Sideload Studio
                 </CardTitle>
                 {selectedSideloadSerial ? (
-                  <Badge className="font-mono text-[10px]" variant="success">
+                  <Badge className="text-caption font-mono" variant="success">
                     Recovery Ready
                   </Badge>
                 ) : (
-                  <Badge className="font-mono text-[10px]" variant="outline">
+                  <Badge className="text-caption font-mono" variant="outline">
                     Awaiting Sideload Mode
                   </Badge>
                 )}

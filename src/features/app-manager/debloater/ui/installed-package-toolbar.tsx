@@ -166,9 +166,9 @@ export const InstalledPackageToolbar = ({
             return (
               <Button
                 className={cn(
-                  "text-caption h-7 gap-1.5 rounded-sm px-2.5 font-medium transition-colors",
+                  "text-caption h-7 gap-1.5 px-2.5 font-medium",
                   isActive
-                    ? "bg-surface text-foreground font-semibold shadow-xs"
+                    ? "bg-surface text-foreground font-semibold"
                     : "text-muted-foreground hover:bg-surface/50 hover:text-foreground"
                 )}
                 key={pill.id}
@@ -180,7 +180,7 @@ export const InstalledPackageToolbar = ({
                 <span>{pill.label}</span>
                 <Badge
                   className={cn(
-                    "numeric px-1 py-0 font-mono text-[10px]",
+                    "numeric text-mono-sm px-1 py-0 font-mono",
                     isActive
                       ? "bg-primary text-primary-foreground border-transparent"
                       : "bg-muted text-muted-foreground border-transparent"

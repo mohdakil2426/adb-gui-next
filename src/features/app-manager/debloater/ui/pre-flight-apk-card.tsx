@@ -64,7 +64,7 @@ const PreFlightCardIcon = ({
       );
     }
     if (isBundle) {
-      return <Layers aria-hidden="true" className="size-5 text-sky-500" />;
+      return <Layers aria-hidden="true" className="text-info size-5" />;
     }
     return <Package aria-hidden="true" className="text-muted-foreground size-5" />;
   };
@@ -107,7 +107,7 @@ const PreFlightCardStatus = ({
 
   if (status === "completed") {
     return (
-      <div className="text-caption flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-500">
+      <div className="border-success/30 bg-success/10 text-caption text-success flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium">
         <CheckCircle2 aria-hidden="true" className="size-3" />
         <span>
           {installStatus?.durationMs
@@ -128,17 +128,19 @@ const PreFlightCardStatus = ({
   }
 
   return (
-    <Button
-      aria-label={`Remove ${fileName} from install queue`}
-      className="text-muted-foreground hover:text-destructive size-7 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-      disabled={disabled || isInstalling}
-      onClick={() => onRemove(filePath)}
-      size="icon-sm"
-      type="button"
-      variant="ghost"
-    >
-      <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-    </Button>
+    <div className="opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+      <Button
+        aria-label={`Remove ${fileName} from install queue`}
+        className="text-muted-foreground hover:text-destructive size-7"
+        disabled={disabled || isInstalling}
+        onClick={() => onRemove(filePath)}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+      >
+        <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+      </Button>
+    </div>
   );
 };
 
@@ -184,7 +186,7 @@ const PreFlightCardSpecGrid = ({
     <div className="grid grid-cols-2 gap-1.5 pt-0.5 @lg:grid-cols-4">
       {/* Version Name & Code */}
       <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Version
         </span>
         <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
@@ -194,7 +196,7 @@ const PreFlightCardSpecGrid = ({
 
       {/* Target SDK */}
       <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Target SDK
         </span>
         <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
@@ -204,7 +206,7 @@ const PreFlightCardSpecGrid = ({
 
       {/* Native ABIs */}
       <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Architecture / ABI
         </span>
         <div className="flex items-center gap-1 overflow-hidden">
@@ -217,7 +219,7 @@ const PreFlightCardSpecGrid = ({
 
       {/* File Size & Bundle info */}
       <div className="border-border/60 bg-surface-raised/40 flex flex-col rounded-md border px-2 py-1">
-        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           File Size
         </span>
         <span className="text-foreground text-mono-sm truncate font-mono font-semibold">
@@ -243,14 +245,14 @@ const PreFlightCardHeader = ({
       </span>
 
       <Badge
-        className="h-4.5 px-1.5 font-mono text-[10px] uppercase"
+        className="text-mono-sm h-4.5 px-1.5 font-mono uppercase"
         variant={getFormatBadgeColor(inspection?.format ?? "apk")}
       >
         .{inspection?.format ?? filePath.split(".").pop()}
       </Badge>
 
       {inspection?.isTestOnly ? (
-        <Badge className="h-4.5 px-1.5 text-[10px]" variant="destructive">
+        <Badge className="text-caption h-4.5 px-1.5" variant="destructive">
           testOnly
         </Badge>
       ) : null}

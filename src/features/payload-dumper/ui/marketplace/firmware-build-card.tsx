@@ -85,12 +85,12 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
           <div className="border-border/60 bg-surface-raised/40 text-caption flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2">
             <div className="flex min-w-0 items-center gap-2">
               <span className="text-muted-foreground shrink-0 font-medium">SHA-256:</span>
-              <span className="text-foreground/80 truncate font-mono text-[11px]">
+              <span className="text-foreground/80 text-caption truncate font-mono">
                 {build.sha256}
               </span>
             </div>
             <Button
-              className="h-6 px-2 text-[11px]"
+              className="text-caption h-6 px-2"
               onClick={handleCopySha}
               size="sm"
               type="button"
@@ -111,7 +111,7 @@ export const FirmwareBuildCard = ({ build, device, onSelectRemoteUrl }: Firmware
           <div className="flex items-center gap-2">
             {build.imageType === "ota" ? (
               <Button onClick={handleRemoteExtract} size="sm" type="button" variant="default">
-                <Zap className="mr-1.5 size-3.5 text-amber-300" data-icon="inline-start" />
+                <Zap className="text-chart-4 mr-1.5 size-3.5" data-icon="inline-start" />
                 {device.brand === "xiaomi" ? "Extract Recovery ROM" : "Remote Stream Extract"}
               </Button>
             ) : (

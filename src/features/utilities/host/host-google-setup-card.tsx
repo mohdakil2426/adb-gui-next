@@ -61,11 +61,11 @@ const PlatformToolsActionCard = ({
       <div className="flex items-center justify-between">
         <span className="text-body text-foreground font-semibold">Google Platform-Tools</span>
         {status?.adbPresent ? (
-          <Badge className="text-[10px]" variant="success">
+          <Badge className="text-caption" variant="success">
             Installed
           </Badge>
         ) : (
-          <Badge className="text-[10px]" variant="outline">
+          <Badge className="text-caption" variant="outline">
             Not Installed
           </Badge>
         )}
@@ -104,11 +104,11 @@ const DriverActionCard = ({
       <div className="flex items-center justify-between">
         <span className="text-body text-foreground font-semibold">Google USB Driver</span>
         {status?.driverInstalled ? (
-          <Badge className="text-[10px]" variant="success">
+          <Badge className="text-caption" variant="success">
             Registered
           </Badge>
         ) : (
-          <Badge className="text-[10px]" variant="outline">
+          <Badge className="text-caption" variant="outline">
             Not Registered
           </Badge>
         )}
@@ -147,11 +147,11 @@ const PathActionCard = ({
       <div className="flex items-center justify-between">
         <span className="text-body text-foreground font-semibold">System PATH Variable</span>
         {status?.onPath ? (
-          <Badge className="text-[10px]" variant="success">
+          <Badge className="text-caption" variant="success">
             Configured
           </Badge>
         ) : (
-          <Badge className="text-[10px]" variant="warning">
+          <Badge className="text-caption" variant="warning">
             Missing
           </Badge>
         )}
@@ -234,7 +234,7 @@ export const HostGoogleSetupCard = ({ status }: HostGoogleSetupCardProps) => {
             <Zap className="text-primary size-4.5" />
             Official Google Platform-Tools & USB Driver Suite
           </CardTitle>
-          <Badge className="font-mono text-[10px]" variant="outline">
+          <Badge className="text-caption font-mono" variant="outline">
             Windows Environment
           </Badge>
         </div>

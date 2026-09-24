@@ -141,6 +141,7 @@ export const DescriptionPanel = ({
             className={cn(
               "size-1.5 rounded-full",
               PKG_STATE_CLASSES[pkg.state],
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- status indicator glow for enabled state
               pkg.state === "Enabled" && "shadow-[0_0_4px_rgba(34,197,94,0.4)]"
             )}
           />
@@ -235,7 +236,7 @@ export const DescriptionPanel = ({
         {pkg.dependencies.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {pkg.dependencies.map((dep) => (
-              <Badge className="font-mono text-[10px]" key={dep} variant="neutral">
+              <Badge className="text-mono-sm font-mono" key={dep} variant="neutral">
                 {dep}
               </Badge>
             ))}
@@ -255,7 +256,7 @@ export const DescriptionPanel = ({
           <div className="flex flex-wrap gap-1">
             {pkg.neededBy.map((dep) => (
               <Badge
-                className="border-warning/30 bg-warning-muted/40 text-warning font-mono text-[10px]"
+                className="border-warning/30 bg-warning-muted/40 text-warning text-mono-sm font-mono"
                 key={dep}
                 variant="outline"
               >

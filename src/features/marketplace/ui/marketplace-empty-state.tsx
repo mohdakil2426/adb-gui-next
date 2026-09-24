@@ -50,18 +50,18 @@ const ChipRow = ({
 }) => (
   <div className="flex flex-wrap gap-1.5">
     {entries.map((entry) => (
-      <Button
-        className="rounded-full"
-        key={entry}
-        onClick={() => {
-          onSelect(entry);
-        }}
-        size="sm"
-        type="button"
-        variant="outline"
-      >
-        {entry}
-      </Button>
+      <span className="inline-flex overflow-hidden rounded-full" key={entry}>
+        <Button
+          onClick={() => {
+            onSelect(entry);
+          }}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {entry}
+        </Button>
+      </span>
     ))}
   </div>
 );

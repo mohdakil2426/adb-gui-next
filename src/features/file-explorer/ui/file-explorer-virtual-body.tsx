@@ -2,10 +2,7 @@ import { File, Folder, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 import { useFileExplorerRowVirtualizer } from "@/features/file-explorer/hooks/use-file-explorer-row-virtualizer";
-import {
-  FILE_TABLE_CELL_COUNT,
-  PHANTOM_ROW_HEIGHT,
-} from "@/features/file-explorer/model/file-explorer-constants";
+import { FILE_TABLE_CELL_COUNT } from "@/features/file-explorer/model/file-explorer-constants";
 import type {
   FileEntry,
   FileExplorerActions,
@@ -78,29 +75,23 @@ export const FileExplorerVirtualBody = ({
         }}
       >
         <TableBody
-          className="block"
+          className="relative block h-[var(--virtual-height)]"
           onPointerDown={(event) => {
             if (event.button !== 2) {
               return;
             }
             setMenuFile(resolveRowEntry(event.target, listing.visibleList));
           }}
-          style={{
-            height: `${rowVirtualizer.getTotalSize() + listing.phantomOffset}px`,
-            position: "relative",
-          }}
+          style={
+            {
+              "--virtual-height": `${rowVirtualizer.getTotalSize() + listing.phantomOffset}px`,
+            } as React.CSSProperties
+          }
         >
           {editing.creatingType !== null && (
             <TableRow
-              className="grid"
-              style={{
-                gridTemplateColumns: fileTableColumns,
-                height: PHANTOM_ROW_HEIGHT,
-                left: 0,
-                position: "absolute",
-                top: 0,
-                width: "100%",
-              }}
+              className="absolute top-0 left-0 grid h-10 w-full [grid-template-columns:var(--file-table-cols)]"
+              style={{ "--file-table-cols": fileTableColumns } as React.CSSProperties}
             >
               <TableCell className="min-w-0 px-2 py-0">
                 <div className="flex min-w-0 items-center gap-2">
@@ -159,14 +150,13 @@ export const FileExplorerVirtualBody = ({
 
           {listing.fileList.length > 0 && listing.visibleList.length === 0 ? (
             <TableRow
-              className="grid"
-              style={{
-                gridTemplateColumns: fileTableColumns,
-                left: 0,
-                position: "absolute",
-                top: listing.phantomOffset,
-                width: "100%",
-              }}
+              className="absolute top-[var(--top-offset)] left-0 grid w-full [grid-template-columns:var(--file-table-cols)]"
+              style={
+                {
+                  "--file-table-cols": fileTableColumns,
+                  "--top-offset": `${listing.phantomOffset}px`,
+                } as React.CSSProperties
+              }
             >
               <TableCell
                 className="text-body text-muted-foreground col-span-full h-32 text-center"

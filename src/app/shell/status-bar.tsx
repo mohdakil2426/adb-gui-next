@@ -77,10 +77,13 @@ const OperationSegment = () => {
             aria-hidden="true"
             className="bg-border h-1 w-16 shrink-0 overflow-hidden rounded-full"
           >
-            <span
-              className="bg-primary ease-standard block h-full rounded-full transition-[width] duration-200"
-              style={{ width: `${percent}%` }}
-            />
+            {
+              <span
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- width-only progress bar transition avoids transition:all
+                className="bg-primary ease-standard block h-full w-(--progress-width) rounded-full transition-[width] duration-200"
+                style={{ "--progress-width": `${percent}%` } as React.CSSProperties}
+              />
+            }
           </span>
           <span className="numeric text-foreground shrink-0">{percent}%</span>
         </>

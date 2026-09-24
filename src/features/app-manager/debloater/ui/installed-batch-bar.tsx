@@ -57,7 +57,7 @@ export const InstalledBatchBar = ({
       <div className="flex flex-wrap items-center gap-2">
         {onBatchEnable ? (
           <Button
-            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-emerald-600 dark:text-emerald-400"
+            className="border-border/80 text-caption hover:bg-accent text-success h-8 gap-1.5 font-medium"
             disabled={isUninstalling}
             onClick={onBatchEnable}
             size="sm"
@@ -71,7 +71,7 @@ export const InstalledBatchBar = ({
 
         {onBatchDisable ? (
           <Button
-            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-amber-600 dark:text-amber-400"
+            className="border-border/80 text-caption hover:bg-accent text-warning h-8 gap-1.5 font-medium"
             disabled={isUninstalling}
             onClick={onBatchDisable}
             size="sm"
@@ -102,7 +102,7 @@ export const InstalledBatchBar = ({
 
         {onBatchClearCache ? (
           <Button
-            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-sky-600 dark:text-sky-400"
+            className="border-border/80 text-caption hover:bg-accent text-info h-8 gap-1.5 font-medium"
             disabled={isUninstalling}
             onClick={onBatchClearCache}
             size="sm"
@@ -116,7 +116,7 @@ export const InstalledBatchBar = ({
 
         {onBatchForceStop ? (
           <Button
-            className="border-border/80 text-caption hover:bg-accent h-8 gap-1.5 font-medium text-amber-600 dark:text-amber-400"
+            className="border-border/80 text-caption hover:bg-accent text-warning h-8 gap-1.5 font-medium"
             disabled={isUninstalling}
             onClick={onBatchForceStop}
             size="sm"
@@ -131,7 +131,7 @@ export const InstalledBatchBar = ({
         <Button
           aria-haspopup="dialog"
           aria-label={`Uninstall ${selectedCount} selected package${selectedCount === 1 ? "" : "s"}`}
-          className="text-caption h-8 gap-1.5 font-medium shadow-xs"
+          className="text-caption h-8 gap-1.5 font-medium"
           disabled={isUninstalling}
           onClick={onBatchUninstall}
           size="sm"

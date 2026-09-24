@@ -204,16 +204,19 @@ const PayloadDumperHeroBannerImpl = ({
                 </h2>
 
                 {/* Status Badges */}
-                <Badge className="font-mono text-[10px]" variant={isLoaded ? "success" : "outline"}>
+                <Badge
+                  className="text-mono-sm font-mono"
+                  variant={isLoaded ? "success" : "outline"}
+                >
                   {getExtractionBadgeLabel(isExtractionActive, isLoaded, partitionCount)}
                 </Badge>
 
-                <Badge className="font-mono text-[10px]" variant="secondary">
+                <Badge className="text-mono-sm font-mono" variant="secondary">
                   {activeMode === "local" ? "Local Storage" : "Remote HTTP Stream"}
                 </Badge>
 
                 {isLoaded ? (
-                  <Badge className="font-mono text-[10px]" variant="outline">
+                  <Badge className="text-mono-sm font-mono" variant="outline">
                     {formatInfo.label}
                   </Badge>
                 ) : null}
@@ -255,10 +258,9 @@ const PayloadDumperHeroBannerImpl = ({
             {isLoaded ? (
               <Button
                 aria-label="Refresh partition list"
-                className="size-8 rounded-lg p-0"
                 disabled={isExtractionActive}
                 onClick={onRefreshPartitions}
-                size="sm"
+                size="icon-sm"
                 title="Re-read Partition Table"
                 type="button"
                 variant="outline"

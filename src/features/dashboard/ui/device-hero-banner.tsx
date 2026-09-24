@@ -103,7 +103,7 @@ const DeviceRefreshControl = ({
     {onRefresh ? (
       <Button
         aria-label="Refresh telemetry and scan devices"
-        className="size-7 rounded-lg p-0"
+        className="size-7 p-0"
         disabled={isLoading || isRefreshing}
         onClick={onRefresh}
         size="sm"
@@ -261,6 +261,7 @@ export const DeviceHeroBanner = ({
                     <Edit3 aria-hidden="true" className="size-3.5" />
                   </button>
                 ) : null}
+                {/* oxlint-disable-next-line shadcn/require-static-classes -- dynamic status badge classes from getStatusConfig */}
                 <Badge className={status.badgeClass} variant={status.variant}>
                   {status.label}
                 </Badge>

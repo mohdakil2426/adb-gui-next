@@ -50,7 +50,7 @@ export const WipeSafetyGate = ({
             Safety Interlock Gate
           </CardTitle>
           <Badge
-            className="font-mono text-[10px]"
+            className="text-caption font-mono"
             variant={allConditionsMet ? "success" : "destructive"}
           >
             {allConditionsMet ? (

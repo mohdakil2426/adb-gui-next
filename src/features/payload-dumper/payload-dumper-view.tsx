@@ -148,7 +148,7 @@ export const ViewPayloadDumper = () => {
                 <Layers aria-hidden="true" className="mr-2 size-4" />
                 Extractor & Partitions
                 {partitions.length > 0 ? (
-                  <span className="bg-primary/10 py-0.2 text-primary ml-1.5 rounded-full px-1.5 font-mono text-[10px]">
+                  <span className="bg-primary/10 text-primary text-mono-sm ml-1.5 rounded-full px-1.5 py-0.5 font-mono">
                     {partitions.length}
                   </span>
                 ) : null}
@@ -162,7 +162,7 @@ export const ViewPayloadDumper = () => {
                 <History aria-hidden="true" className="mr-2 size-4" />
                 Extracted Outputs & History
                 {history.length > 0 || extractedFiles.length > 0 ? (
-                  <span className="bg-surface-raised py-0.2 text-muted-foreground ml-1.5 rounded-full px-1.5 font-mono text-[10px]">
+                  <span className="bg-surface-raised text-muted-foreground text-mono-sm ml-1.5 rounded-full px-1.5 py-0.5 font-mono">
                     {history.length || extractedFiles.length}
                   </span>
                 ) : null}

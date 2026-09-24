@@ -87,7 +87,7 @@ const AppCardBase = ({ app, onSelect, target }: AppCardProps) => {
           <div className="flex items-center gap-1">
             {app.downloadUrl ? (
               <Badge
-                className="border-success/30 bg-success/5 text-success gap-0.5 px-1.5 py-0 font-mono text-[10px]"
+                className="border-success/30 bg-success/5 text-success text-caption gap-0.5 px-1.5 py-0 font-mono"
                 variant="outline"
               >
                 <CheckCircle2 className="size-2.5" />
@@ -95,7 +95,7 @@ const AppCardBase = ({ app, onSelect, target }: AppCardProps) => {
               </Badge>
             ) : (
               <Badge
-                className="text-muted-foreground px-1.5 py-0 font-mono text-[10px]"
+                className="text-muted-foreground text-caption px-1.5 py-0 font-mono"
                 variant="outline"
               >
                 Universal

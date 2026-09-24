@@ -131,11 +131,11 @@ export const ApkPickerPanel = ({
                   <span className="text-body text-foreground font-semibold">
                     Installation Queue
                   </span>
-                  <Badge className="h-5 px-2 font-mono text-[11px]" variant="secondary">
+                  <Badge className="text-caption h-5 px-2 font-mono" variant="secondary">
                     {apkPaths.length} file{apkPaths.length === 1 ? "" : "s"}
                   </Badge>
                   {totalSizeBytes > 0 ? (
-                    <Badge className="h-5 px-2 font-mono text-[11px]" variant="outline">
+                    <Badge className="text-caption h-5 px-2 font-mono" variant="outline">
                       {formatBytes(totalSizeBytes)} total
                     </Badge>
                   ) : null}
@@ -217,7 +217,7 @@ export const ApkPickerPanel = ({
           {/* Primary Installation Action Trigger */}
           <div className="flex flex-col gap-1.5 pt-0.5">
             <Button
-              className="text-body h-10 w-full gap-2 font-semibold shadow-xs"
+              className="text-body h-10 w-full gap-2 font-semibold"
               disabled={isInstalling || !selectedSerial}
               onClick={onInstall}
               size="lg"

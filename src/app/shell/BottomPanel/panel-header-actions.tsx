@@ -120,21 +120,24 @@ const PanelHeaderActionsImpl = ({
       {activeTab === "logs" && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              aria-label={isSearchOpen ? "Close Log Search" : "Search Logs"}
+            <span
               className={cn(
-                "size-6",
+                "inline-flex",
                 isSearchOpen ? "opacity-100" : "opacity-60 hover:opacity-100"
               )}
-              onClick={() => {
-                setIsSearchOpen(!isSearchOpen);
-              }}
-              size="icon"
-              style={{ color: "var(--terminal-fg)" }}
-              variant="ghost"
             >
-              <Search aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-            </Button>
+              <Button
+                aria-label={isSearchOpen ? "Close Log Search" : "Search Logs"}
+                className="text-terminal-fg size-6"
+                onClick={() => {
+                  setIsSearchOpen(!isSearchOpen);
+                }}
+                size="icon"
+                variant="ghost"
+              >
+                <Search aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent side="top">Search Logs</TooltipContent>
         </Tooltip>
@@ -145,30 +148,28 @@ const PanelHeaderActionsImpl = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button
-                  aria-label="Filter Logs"
+                <span
                   className={cn(
-                    "size-6",
+                    "inline-flex",
                     filter === "all" ? "opacity-60 hover:opacity-100" : "opacity-100"
                   )}
-                  size="icon"
-                  style={{ color: "var(--terminal-fg)" }}
-                  variant="ghost"
                 >
-                  <Filter aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-                </Button>
+                  <Button
+                    aria-label="Filter Logs"
+                    className="text-terminal-fg size-6"
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <Filter aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+                  </Button>
+                </span>
               </DropdownMenuTrigger>
             </TooltipTrigger>
             <TooltipContent side="top">Filter Logs</TooltipContent>
           </Tooltip>
           <DropdownMenuContent
             align="end"
-            className="w-40"
-            style={{
-              backgroundColor: "var(--terminal-header-bg)",
-              borderColor: "var(--terminal-border)",
-              color: "var(--terminal-fg)",
-            }}
+            className="bg-terminal-header-bg border-terminal-border text-terminal-fg w-40"
           >
             <DropdownMenuLabel>Filter logs</DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -191,18 +192,24 @@ const PanelHeaderActionsImpl = ({
       {activeTab === "logs" && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              aria-label={isFollowing ? "Pause Log Following" : "Follow Latest Logs"}
-              className={cn("size-6", isFollowing ? "opacity-100" : "opacity-60 hover:opacity-100")}
-              onClick={() => {
-                setIsFollowing(!isFollowing);
-              }}
-              size="icon"
-              style={{ color: "var(--terminal-fg)" }}
-              variant="ghost"
+            <span
+              className={cn(
+                "inline-flex",
+                isFollowing ? "opacity-100" : "opacity-60 hover:opacity-100"
+              )}
             >
-              <FollowIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-            </Button>
+              <Button
+                aria-label={isFollowing ? "Pause Log Following" : "Follow Latest Logs"}
+                className="text-terminal-fg size-6"
+                onClick={() => {
+                  setIsFollowing(!isFollowing);
+                }}
+                size="icon"
+                variant="ghost"
+              >
+                <FollowIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent side="top">
             {isFollowing ? "Following Output" : "Scroll Paused"}
@@ -215,16 +222,17 @@ const PanelHeaderActionsImpl = ({
       {activeTab === "logs" && hasLogs && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              aria-label="Copy Logs"
-              className="size-6 opacity-60 hover:opacity-100"
-              onClick={copyLogsToClipboard}
-              size="icon"
-              style={{ color: "var(--terminal-fg)" }}
-              variant="ghost"
-            >
-              <Copy aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-            </Button>
+            <span className="inline-flex opacity-60 hover:opacity-100">
+              <Button
+                aria-label="Copy Logs"
+                className="text-terminal-fg size-6"
+                onClick={copyLogsToClipboard}
+                size="icon"
+                variant="ghost"
+              >
+                <Copy aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent side="top">Copy Logs</TooltipContent>
         </Tooltip>
@@ -233,16 +241,17 @@ const PanelHeaderActionsImpl = ({
       {activeTab === "logs" && hasLogs && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              aria-label="Save Logs"
-              className="size-6 opacity-60 hover:opacity-100"
-              onClick={saveLogsToFile}
-              size="icon"
-              style={{ color: "var(--terminal-fg)" }}
-              variant="ghost"
-            >
-              <Save aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-            </Button>
+            <span className="inline-flex opacity-60 hover:opacity-100">
+              <Button
+                aria-label="Save Logs"
+                className="text-terminal-fg size-6"
+                onClick={saveLogsToFile}
+                size="icon"
+                variant="ghost"
+              >
+                <Save aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent side="top">Save Logs</TooltipContent>
         </Tooltip>
@@ -250,32 +259,34 @@ const PanelHeaderActionsImpl = ({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            aria-label={activeTab === "logs" ? "Clear Logs" : "Clear Shell"}
-            className="size-6 opacity-60 hover:opacity-100"
-            onClick={handleClear}
-            size="icon"
-            style={{ color: "var(--terminal-fg)" }}
-            variant="ghost"
-          >
-            <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-          </Button>
+          <span className="inline-flex opacity-60 hover:opacity-100">
+            <Button
+              aria-label={activeTab === "logs" ? "Clear Logs" : "Clear Shell"}
+              className="text-terminal-fg size-6"
+              onClick={handleClear}
+              size="icon"
+              variant="ghost"
+            >
+              <Trash2 aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+            </Button>
+          </span>
         </TooltipTrigger>
         <TooltipContent side="top">Clear {activeTab === "logs" ? "Logs" : "Shell"}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            aria-label={isPanelMaximized ? "Restore Panel" : "Maximize Panel"}
-            className="size-6 opacity-60 hover:opacity-100"
-            onClick={toggleMaximized}
-            size="icon"
-            style={{ color: "var(--terminal-fg)" }}
-            variant="ghost"
-          >
-            <MaximizeIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-          </Button>
+          <span className="inline-flex opacity-60 hover:opacity-100">
+            <Button
+              aria-label={isPanelMaximized ? "Restore Panel" : "Maximize Panel"}
+              className="text-terminal-fg size-6"
+              onClick={toggleMaximized}
+              size="icon"
+              variant="ghost"
+            >
+              <MaximizeIcon aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+            </Button>
+          </span>
         </TooltipTrigger>
         <TooltipContent side="top">
           {isPanelMaximized ? "Restore Panel" : "Maximize Panel"}
@@ -284,16 +295,17 @@ const PanelHeaderActionsImpl = ({
 
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            aria-label="Close Panel"
-            className="size-6 opacity-60 hover:opacity-100"
-            onClick={togglePanel}
-            size="icon"
-            style={{ color: "var(--terminal-fg)" }}
-            variant="ghost"
-          >
-            <X aria-hidden="true" className="size-3.5" data-icon="inline-start" />
-          </Button>
+          <span className="inline-flex opacity-60 hover:opacity-100">
+            <Button
+              aria-label="Close Panel"
+              className="text-terminal-fg size-6"
+              onClick={togglePanel}
+              size="icon"
+              variant="ghost"
+            >
+              <X aria-hidden="true" className="size-3.5" data-icon="inline-start" />
+            </Button>
+          </span>
         </TooltipTrigger>
         <TooltipContent side="top">Close Panel (Ctrl+`)</TooltipContent>
       </Tooltip>

@@ -73,7 +73,7 @@ export const ShortcutsCheatSheet = () => {
           {CATEGORIES.map((cat) => (
             <Button
               className={cn(
-                "h-6 px-2.5 text-[11px]",
+                "text-caption h-6 px-2.5",
                 filterCategory === cat.id
                   ? "border-border bg-surface-raised text-foreground font-medium"
                   : "text-muted-foreground hover:bg-surface-raised hover:text-foreground"

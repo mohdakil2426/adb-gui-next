@@ -52,7 +52,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
                 "text-caption",
                 options.noAudio
                   ? "border-border bg-surface-raised text-muted-foreground"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-success/30 bg-success/10 text-success"
               )}
               variant="outline"
             >
@@ -138,10 +138,10 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
             </div>
             {isRecording ? (
               <Badge
-                className="text-caption gap-1 border-rose-500/30 bg-rose-500/10 text-rose-400"
+                className="text-caption border-destructive/30 bg-destructive/10 text-destructive gap-1"
                 variant="outline"
               >
-                <span className="size-1.5 animate-pulse rounded-full bg-rose-500" />
+                <span className="bg-destructive size-1.5 animate-pulse rounded-full" />
                 Recording Arm Active
               </Badge>
             ) : (
@@ -248,7 +248,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
               {/* Active Path Box */}
               {options.recordPath ? (
                 <div className="border-border/60 bg-surface flex flex-col gap-1 rounded border p-2.5">
-                  <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+                  <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
                     Target Output File
                   </span>
                   <span className="text-foreground text-mono-sm truncate font-mono">

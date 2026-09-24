@@ -22,6 +22,7 @@ export const FirmwareDeviceCard = ({ device, onSelect }: FirmwareDeviceCardProps
 
   return (
     <Card
+      // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted composite transition for card border, surface, and hover shadow
       className="group border-border bg-surface hover:border-primary/50 hover:bg-surface-raised/40 relative cursor-pointer rounded-xl transition-[border-color,background-color,box-shadow] duration-150 hover:shadow-sm"
       onClick={() => onSelect(device)}
     >
@@ -33,7 +34,7 @@ export const FirmwareDeviceCard = ({ device, onSelect }: FirmwareDeviceCardProps
               <Smartphone className="size-4.5" />
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-muted-foreground font-mono text-[11px] tracking-wider uppercase">
+              <span className="text-muted-foreground text-caption font-mono tracking-wider uppercase">
                 {device.codename}
               </span>
               <Badge variant="outline">{brandInfo.displayName}</Badge>
@@ -62,15 +63,15 @@ export const FirmwareDeviceCard = ({ device, onSelect }: FirmwareDeviceCardProps
           {latestBuild ? (
             <div className="border-border/60 bg-surface-raised/40 text-caption rounded-md border px-2.5 py-1.5">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground text-[11px]">Latest Firmware</span>
-                <span className="text-foreground truncate font-mono text-[11px]">
+                <span className="text-muted-foreground text-caption">Latest Firmware</span>
+                <span className="text-foreground text-caption truncate font-mono">
                   {latestBuild.version || latestBuild.buildId}
                 </span>
               </div>
             </div>
           ) : (
             <div className="border-border/60 bg-surface-raised/40 text-caption rounded-md border px-2.5 py-1.5">
-              <span className="text-muted-foreground text-[11px]">Catalog Entry</span>
+              <span className="text-muted-foreground text-caption">Catalog Entry</span>
             </div>
           )}
         </div>

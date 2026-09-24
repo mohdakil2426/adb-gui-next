@@ -92,7 +92,7 @@ export const MultiPartitionQueue = ({
                 key={item.id}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <span className="text-muted-foreground font-mono text-[11px] font-semibold">
+                  <span className="text-muted-foreground text-caption font-mono font-semibold">
                     #{idx + 1}
                   </span>
 
@@ -106,14 +106,14 @@ export const MultiPartitionQueue = ({
                       </span>
                     </div>
                     {item.error ? (
-                      <span className="text-destructive truncate text-[10px]">{item.error}</span>
+                      <span className="text-destructive text-caption truncate">{item.error}</span>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge
-                    className="font-mono text-[9px] uppercase"
+                    className="text-caption font-mono uppercase"
                     variant={ITEM_STATUS_VARIANTS[item.status] ?? "outline"}
                   >
                     {item.status === "flashing" ? (

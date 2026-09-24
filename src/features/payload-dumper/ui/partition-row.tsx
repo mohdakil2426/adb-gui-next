@@ -146,7 +146,7 @@ const PartitionRowImpl = ({
   return (
     <button
       className={cn(
-        "text-body ease-standard grid w-full items-center gap-2 px-3 py-2 text-left transition-colors duration-90",
+        "text-body ease-standard grid w-full grid-cols-(--grid-cols) items-center gap-2 px-3 py-2 text-left transition-colors duration-90",
         !rowDisabled && "hover:bg-accent cursor-pointer",
         partition.selected && !isCompleted && !isFailed && "bg-primary-muted",
         isCompleted && "bg-success-muted",
@@ -158,7 +158,7 @@ const PartitionRowImpl = ({
           onToggle(index);
         }
       }}
-      style={{ gridTemplateColumns: PARTITION_GRID_COLUMNS }}
+      style={{ "--grid-cols": PARTITION_GRID_COLUMNS } as React.CSSProperties}
       type="button"
     >
       {/* Checkbox / terminal status icon */}

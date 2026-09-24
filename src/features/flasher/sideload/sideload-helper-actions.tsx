@@ -52,7 +52,7 @@ export const SideloadHelperActions = ({
             <RotateCcw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             Reboot to Recovery
           </div>
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-caption">
             Prepares device for &quot;Apply update from ADB&quot;
           </span>
         </Button>
@@ -70,7 +70,7 @@ export const SideloadHelperActions = ({
             <RefreshCw aria-hidden="true" className="size-3.5" data-icon="inline-start" />
             Check Sideload State
           </div>
-          <span className="text-muted-foreground text-[11px]">
+          <span className="text-muted-foreground text-caption">
             Scans for active ADB sideload handshake
           </span>
         </Button>
@@ -89,7 +89,7 @@ export const SideloadHelperActions = ({
         Reboot to System OS (Finish Sideload)
       </Button>
 
-      <div className="border-border/70 bg-background/50 text-muted-foreground rounded-lg border p-2.5 text-[11px]">
+      <div className="border-border/70 bg-background/50 text-muted-foreground text-caption rounded-lg border p-2.5">
         <p className="text-foreground font-semibold">💡 How to initiate Sideload on device:</p>
         <ol className="mt-1 list-inside list-decimal space-y-0.5">
           <li>Reboot device into Recovery mode.</li>

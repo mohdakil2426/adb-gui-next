@@ -57,20 +57,20 @@ export const ActiveSessionController = ({
   }
 
   return (
-    <Card className="bg-surface border-emerald-500/20 shadow-none">
+    <Card className="bg-surface border-success/20 shadow-none">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="relative flex size-2.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
+              <span className="bg-success absolute inline-flex size-full animate-ping rounded-full opacity-75" />
+              <span className="bg-success relative inline-flex size-2.5 rounded-full" />
             </span>
             <CardTitle className="text-body text-foreground font-semibold">
               Active Mirroring Sessions ({serialList.length})
             </CardTitle>
           </div>
           <Badge
-            className="text-caption border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+            className="text-caption border-success/30 bg-success/10 text-success"
             variant="outline"
           >
             Live Hardware Stream
@@ -95,14 +95,14 @@ export const ActiveSessionController = ({
                 key={serial}
               >
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <Smartphone aria-hidden="true" className="size-4 shrink-0 text-emerald-400" />
+                  <Smartphone aria-hidden="true" className="text-success size-4 shrink-0" />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-body text-foreground truncate font-medium">
                         {displayName}
                       </span>
                       {session?.pid ? (
-                        <span className="bg-surface py-0.2 text-muted-foreground rounded px-1.5 font-mono text-[10px]">
+                        <span className="bg-surface text-muted-foreground text-mono-sm rounded px-1.5 py-0.5 font-mono">
                           PID {session.pid}
                         </span>
                       ) : null}

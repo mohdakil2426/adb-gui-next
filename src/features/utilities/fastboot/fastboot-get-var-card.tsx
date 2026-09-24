@@ -125,7 +125,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
             Fastboot Variables Deep Inspector (getvar all)
           </CardTitle>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground font-mono text-[11px]">
+            <span className="text-muted-foreground text-caption font-mono">
               {filteredVariables.length} / {parsedVariables.length} Variables
             </span>
           </div>
@@ -203,7 +203,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
         </div>
 
         {/* Variables Table */}
-        <div className="border-border/80 bg-background/90 max-h-[360px] min-h-[200px] overflow-y-auto rounded-lg border font-mono text-[11px]">
+        <div className="border-border/80 bg-background/90 text-caption max-h-[360px] min-h-[200px] overflow-y-auto rounded-lg border font-mono">
           {filteredVariables.length === 0 ? (
             <div className="text-caption text-muted-foreground flex h-32 items-center justify-center">
               {isFastboot
@@ -212,7 +212,7 @@ export const FastbootGetVarCard = ({ deviceMode, deviceSerial }: FastbootGetVarC
             </div>
           ) : (
             <table className="divide-border/40 w-full divide-y text-left">
-              <thead className="bg-surface-raised/80 text-muted-foreground sticky top-0 text-[10px] tracking-wider uppercase">
+              <thead className="bg-surface-raised/80 text-muted-foreground text-caption sticky top-0 tracking-wider uppercase">
                 <tr>
                   <th className="px-3 py-2 font-medium">Variable Key</th>
                   <th className="px-3 py-2 font-medium">Value</th>

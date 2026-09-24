@@ -195,7 +195,7 @@ const TreeRowImpl = ({
       aria-level={depth + 1}
       aria-selected={isActive}
       className={cn(
-        "text-body mx-1 flex min-w-0 cursor-pointer items-center gap-2 rounded-md py-1.5 transition-colors select-none",
+        "text-body mx-1 flex min-w-0 cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 pl-(--tree-pad-left) transition-colors select-none",
         "hover:bg-accent hover:text-accent-foreground",
         FE_DROP_OVER_CLASS,
         isActive && "bg-accent text-accent-foreground font-medium",
@@ -224,7 +224,7 @@ const TreeRowImpl = ({
         onSelect(node.path);
       }}
       role="treeitem"
-      style={{ paddingLeft: `${depth * 16 + 8}px`, paddingRight: "8px" }}
+      style={{ "--tree-pad-left": `${depth * 16 + 8}px` } as React.CSSProperties}
       tabIndex={0}
     >
       <button
@@ -420,9 +420,9 @@ export const DirectoryTree = ({
         {rows.map((row) =>
           row.kind === "empty" ? (
             <div
-              className="text-caption text-muted-foreground py-1.5 italic"
+              className="text-caption text-muted-foreground py-1.5 pl-(--tree-pad-left) italic"
               key={row.key}
-              style={{ paddingLeft: `${row.depth * 16 + 32}px` }}
+              style={{ "--tree-pad-left": `${row.depth * 16 + 32}px` } as React.CSSProperties}
             >
               Empty
             </div>

@@ -14,20 +14,19 @@ const TranscriptRowImpl = ({ entry }: { entry: HistoryEntry }) => (
   <div className="flex gap-2 px-3">
     <span
       className={cn(
-        "shrink-0 font-mono text-[12px] leading-5 select-none",
-        entry.type === "command" ? "font-semibold" : "opacity-60"
+        "shrink-0 font-mono text-xs leading-5 select-none",
+        entry.type === "command"
+          ? "text-terminal-log-info font-semibold"
+          : "text-terminal-fg opacity-60"
       )}
-      style={{
-        color: entry.type === "command" ? "var(--terminal-log-info)" : "var(--terminal-fg)",
-      }}
     >
       {entry.type === "command" ? "$" : ">"}
     </span>
     <span
-      className="min-w-0 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap"
-      style={{
-        color: entry.type === "error" ? "var(--terminal-log-error)" : "var(--terminal-fg)",
-      }}
+      className={cn(
+        "min-w-0 font-mono text-xs leading-5 break-words whitespace-pre-wrap",
+        entry.type === "error" ? "text-terminal-log-error" : "text-terminal-fg"
+      )}
     >
       {entry.text}
     </span>
@@ -68,19 +67,13 @@ const ShellTranscriptImpl = () => {
       role="log"
     >
       {history.length === 0 ? (
-        <pre
-          className="px-3 font-mono text-[12px] leading-5 break-words whitespace-pre-wrap italic opacity-40"
-          style={{ color: "var(--terminal-fg)" }}
-        >
+        <pre className="text-terminal-fg px-3 font-mono text-xs leading-5 break-words whitespace-pre-wrap italic opacity-40">
           {WELCOME_TEXT}
         </pre>
       ) : (
         <div
-          style={{
-            height: `${rowVirtualizer.getTotalSize()}px`,
-            position: "relative",
-            width: "100%",
-          }}
+          className="relative h-(--total-height) w-full"
+          style={{ "--total-height": `${rowVirtualizer.getTotalSize()}px` } as React.CSSProperties}
         >
           {virtualRows.map((vRow) => {
             const entry = history[vRow.index];
@@ -90,16 +83,11 @@ const ShellTranscriptImpl = () => {
 
             return (
               <div
+                className="absolute top-0 left-0 w-full translate-y-(--row-y)"
                 data-index={vRow.index}
                 key={vRow.key}
                 ref={rowVirtualizer.measureElement}
-                style={{
-                  left: 0,
-                  position: "absolute",
-                  top: 0,
-                  transform: `translateY(${vRow.start}px)`,
-                  width: "100%",
-                }}
+                style={{ "--row-y": `${vRow.start}px` } as React.CSSProperties}
               >
                 <TranscriptRow entry={entry} />
               </div>

@@ -114,14 +114,14 @@ export const FlashAuditLogCard = () => {
 
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <p className="text-body text-foreground truncate font-mono">{entry.message}</p>
-                    <span className="text-caption text-muted-foreground font-mono text-[10px]">
+                    <span className="text-caption text-muted-foreground font-mono">
                       {entry.timestamp}
                     </span>
                   </div>
                 </div>
 
                 <Badge
-                  className="font-mono text-[9px] uppercase"
+                  className="text-caption font-mono uppercase"
                   variant={LOG_BADGE_VARIANT[entry.type] ?? "outline"}
                 >
                   {entry.type}

@@ -88,7 +88,10 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
 
       <div className="flex flex-col items-center gap-5 pt-2 sm:flex-row">
         {/* Pure SVG Donut */}
-        <div className="relative shrink-0" style={{ height: SIZE, width: SIZE }}>
+        <div
+          className="relative size-(--donut-size) shrink-0"
+          style={{ "--donut-size": `${SIZE}px` } as React.CSSProperties}
+        >
           <svg
             aria-label="Source repository composition chart"
             className="-rotate-90"
@@ -114,8 +117,8 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
 
               return (
                 <circle
+                  // oxlint-disable-next-line shadcn/no-arbitrary-values -- SVG donut segments animate stroke-dasharray and stroke-dashoffset
                   className="transition-[stroke-dasharray,stroke-dashoffset] duration-300 ease-out"
-                  cx={SIZE / 2}
                   cy={SIZE / 2}
                   fill="none"
                   key={slice.key}
@@ -132,7 +135,7 @@ export const SourceCompositionDonut = (props: SourceCompositionDonutProps) => {
             <span className="numeric text-foreground text-title leading-tight font-bold">
               {slices.length}
             </span>
-            <span className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase">
+            <span className="text-muted-foreground text-caption font-mono tracking-wider uppercase">
               Sources
             </span>
           </div>

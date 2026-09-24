@@ -60,6 +60,7 @@ export const PanelCard = ({
           {action ? <CardAction>{action}</CardAction> : null}
         </CardHeader>
         <CardContent
+          // oxlint-disable-next-line shadcn/require-static-classes -- Reusable shell forwards caller contentClassName to CardContent
           className={cn("flex flex-1 flex-col justify-between gap-3 px-4.5 pt-1", contentClassName)}
         >
           {children}

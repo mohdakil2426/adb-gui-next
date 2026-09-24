@@ -115,7 +115,7 @@ const EmulatorHeroHeader = ({
 
           {/* State Badges */}
           <Badge
-            className="gap-1 font-mono text-[10px]"
+            className="text-mono-sm gap-1 font-mono"
             variant={isRunning ? "success" : "outline"}
           >
             <Activity className="size-3" />
@@ -123,20 +123,20 @@ const EmulatorHeroHeader = ({
           </Badge>
 
           {isColdBootRequired ? (
-            <Badge className="gap-1 font-mono text-[10px]" variant="warning">
+            <Badge className="text-mono-sm gap-1 font-mono" variant="warning">
               <Snowflake className="size-3" />
               COLD BOOT NEEDED
             </Badge>
           ) : null}
 
           {selectedAvd?.target ? (
-            <Badge className="font-mono text-[10px]" variant="secondary">
+            <Badge className="text-mono-sm font-mono" variant="secondary">
               {selectedAvd.target}
             </Badge>
           ) : null}
 
           {selectedAvd?.abi ? (
-            <Badge className="font-mono text-[10px]" variant="outline">
+            <Badge className="text-mono-sm font-mono" variant="outline">
               {selectedAvd.abi}
             </Badge>
           ) : null}

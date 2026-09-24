@@ -240,7 +240,7 @@ export const BackupRestorePanel = () => {
                   <span className="text-body text-foreground truncate font-medium">
                     {formatBackupTimestamp(backup.createdAt)}
                   </span>
-                  <span className="text-muted-foreground truncate font-mono text-[11px]">
+                  <span className="text-muted-foreground text-mono-sm truncate font-mono">
                     {backup.fileName}
                   </span>
                 </div>

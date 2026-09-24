@@ -181,7 +181,7 @@ export const DebloaterPackageRow = ({
     <div
       aria-selected={isSelected}
       className={cn(
-        "group border-border/30 ease-standard hover:bg-accent/60 focus-visible:ring-ring absolute left-0 flex w-full cursor-pointer items-center justify-between gap-3 border-b px-3 py-1.5 transition-colors duration-90 outline-none focus-visible:ring-1 focus-visible:ring-inset",
+        "group border-border/30 ease-standard hover:bg-accent/60 focus-visible:ring-ring absolute left-0 flex h-[var(--row-height)] w-full [transform:translateY(var(--row-y))] cursor-pointer items-center justify-between gap-3 border-b px-3 py-1.5 transition-colors duration-90 outline-none focus-visible:ring-1 focus-visible:ring-inset",
         isSelected && "bg-primary-muted/40 hover:bg-primary-muted/60",
         isCurrent && !isSelected && "bg-accent/80 ring-border/80 ring-1 ring-inset",
         isUnsafeBlocked && "cursor-not-allowed opacity-65"
@@ -202,7 +202,7 @@ export const DebloaterPackageRow = ({
         }
       }}
       role="treeitem"
-      style={{ height: `${size}px`, transform: `translateY(${start}px)` }}
+      style={{ "--row-height": `${size}px`, "--row-y": `${start}px` } as React.CSSProperties}
       tabIndex={0}
     >
       {/* Left Column: Checkbox, State Dot & Metadata Stacks */}
@@ -228,6 +228,7 @@ export const DebloaterPackageRow = ({
           className={cn(
             "size-2 shrink-0 rounded-full",
             PKG_STATE_CLASSES[pkg.state],
+            // oxlint-disable-next-line shadcn/no-arbitrary-values -- status indicator glow for enabled state
             pkg.state === "Enabled" && "shadow-[0_0_6px_rgba(34,197,94,0.4)]"
           )}
           title={PKG_STATE_LABELS[pkg.state]}
@@ -241,19 +242,19 @@ export const DebloaterPackageRow = ({
               {pkg.name}
             </span>
 
-            <Badge className="h-4.5 shrink-0 px-1.5 py-0 text-[10px]" variant="neutral">
+            <Badge className="text-caption h-4.5 shrink-0 px-1.5 py-0" variant="neutral">
               {pkg.list}
             </Badge>
 
             <span
               className={cn(
-                "py-0.2 inline-flex shrink-0 items-center gap-1 rounded-full px-2 text-[10px] font-medium",
+                "text-caption inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-medium",
                 REMOVAL_TIER_CLASSES[pkg.removal].badge
               )}
             >
               <span
                 aria-hidden="true"
-                className={cn("size-1.2 rounded-full", REMOVAL_TIER_CLASSES[pkg.removal].dot)}
+                className={cn("size-1.5 rounded-full", REMOVAL_TIER_CLASSES[pkg.removal].dot)}
               />
               {REMOVAL_TIER_LABELS[pkg.removal]}
             </span>
@@ -266,7 +267,7 @@ export const DebloaterPackageRow = ({
             </span>
 
             {pkg.neededBy.length > 0 ? (
-              <span className="text-warning shrink-0 text-[10px] font-medium">
+              <span className="text-warning text-caption shrink-0 font-medium">
                 Needed by {pkg.neededBy.length}
               </span>
             ) : null}

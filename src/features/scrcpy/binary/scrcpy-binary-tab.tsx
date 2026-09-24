@@ -151,8 +151,8 @@ const BinaryTabDetails = ({
 }) => (
   <CardContent className="flex flex-col gap-4">
     {isInstalling ? (
-      <div className="flex flex-col gap-2 rounded-lg border border-sky-500/30 bg-sky-500/10 p-3.5">
-        <div className="text-caption flex items-center justify-between gap-2 font-medium text-sky-400">
+      <div className="border-info/30 bg-info/10 flex flex-col gap-2 rounded-lg border p-3.5">
+        <div className="text-caption text-info flex items-center justify-between gap-2 font-medium">
           <span>{progress?.stage ?? "Downloading official Scrcpy release archive..."}</span>
           <span>{percent === null ? "In-flight" : `${percent}%`}</span>
         </div>
@@ -168,7 +168,7 @@ const BinaryTabDetails = ({
 
     <div className="grid grid-cols-1 gap-3 @lg:grid-cols-3">
       <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Installed Version
         </span>
         <span className="text-foreground text-mono font-mono font-medium">
@@ -177,7 +177,7 @@ const BinaryTabDetails = ({
       </div>
 
       <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Latest Upstream
         </span>
         <span className="text-foreground text-mono font-mono font-medium">
@@ -186,7 +186,7 @@ const BinaryTabDetails = ({
       </div>
 
       <div className="border-border/80 bg-surface-raised/40 flex flex-col gap-1 rounded-lg border p-3">
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Binary Source
         </span>
         <span className="text-body text-foreground font-medium capitalize">
@@ -197,7 +197,7 @@ const BinaryTabDetails = ({
 
     {status?.binaryPath ? (
       <div className="border-border/60 bg-surface-raised/30 flex flex-col gap-1 rounded-lg border p-2.5">
-        <span className="text-muted-foreground text-[11px] font-medium tracking-wider uppercase">
+        <span className="text-muted-foreground text-caption font-medium tracking-wider uppercase">
           Executable Location
         </span>
         <span className="text-foreground text-mono-sm truncate font-mono">{status.binaryPath}</span>
@@ -205,7 +205,7 @@ const BinaryTabDetails = ({
     ) : null}
 
     <div className="border-border/60 bg-surface-raised/30 text-caption text-muted-foreground flex items-start gap-2.5 rounded-lg border p-3">
-      <ShieldCheck aria-hidden="true" className="size-4 shrink-0 text-emerald-400" />
+      <ShieldCheck aria-hidden="true" className="text-success size-4 shrink-0" />
       <span>
         Official Genymobile release archives are cryptographically verified using SHA-256 checksums
         prior to extraction. Scrcpy runs as a native detached OS process beside the managed ADB

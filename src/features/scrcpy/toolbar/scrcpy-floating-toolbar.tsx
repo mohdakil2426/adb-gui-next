@@ -171,7 +171,7 @@ export const ScrcpyFloatingToolbar = () => {
   if (isMinimized) {
     return (
       <div
-        className="border-border/80 hover:bg-surface-raised flex size-10 cursor-move items-center justify-center rounded-xl border bg-[#f3f4f6]/95 shadow-xl backdrop-blur-md transition-colors dark:bg-[#1e1f22]/95"
+        className="border-border/80 hover:bg-surface-raised bg-muted/95 dark:bg-card/95 flex size-10 cursor-move items-center justify-center rounded-xl border shadow-xl backdrop-blur-md transition-colors"
         data-tauri-drag-region
       >
         <button
@@ -189,7 +189,7 @@ export const ScrcpyFloatingToolbar = () => {
   return (
     <div className="relative flex items-start gap-2 bg-transparent p-0 select-none">
       {/* Main Action Strip */}
-      <div className="border-border/80 flex w-[52px] flex-col items-center gap-1 rounded-xl border bg-[#f3f4f6]/95 p-1.5 shadow-2xl backdrop-blur-lg dark:bg-[#1e1f22]/95">
+      <div className="border-border/80 bg-muted/95 dark:bg-card/95 flex w-[52px] flex-col items-center gap-1 rounded-xl border p-1.5 shadow-2xl backdrop-blur-lg">
         {/* Top Window Header: Drag Region, Minimize, Mode, Close */}
         <div
           className="border-border/40 text-muted-foreground flex w-full cursor-move items-center justify-between border-b px-1 pb-1.5"

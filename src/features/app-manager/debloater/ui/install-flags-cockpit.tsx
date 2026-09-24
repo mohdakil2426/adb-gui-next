@@ -205,7 +205,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
                       <span className="text-body text-foreground font-medium">{item.label}</span>
                       {item.badge ? (
                         <Badge
-                          className="h-4 px-1 text-[10px]"
+                          className="text-caption h-4 px-1"
                           variant={item.badgeTone === "warning" ? "outline" : "secondary"}
                         >
                           {item.badge}
@@ -218,7 +218,7 @@ export const InstallFlagsCockpit = ({ disabled = false }: InstallFlagsCockpitPro
                     </p>
 
                     {item.riskNotice && isChecked ? (
-                      <div className="mt-1 flex items-start gap-1.5 rounded-md border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-500 dark:text-amber-400">
+                      <div className="border-warning/20 bg-warning/10 text-caption text-warning mt-1 flex items-start gap-1.5 rounded-md border px-2 py-1">
                         <AlertTriangle aria-hidden="true" className="mt-0.5 size-3 shrink-0" />
                         <span>{item.riskNotice}</span>
                       </div>

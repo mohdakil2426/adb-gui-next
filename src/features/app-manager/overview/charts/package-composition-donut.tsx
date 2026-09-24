@@ -103,6 +103,7 @@ export const PackageCompositionDonut = ({
                 animate={{
                   opacity: activeKey === null || activeKey === arc.key ? 1 : 0.25,
                 }}
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- SVG stroke-width hover transition avoids transition:all
                 className="cursor-pointer transition-[stroke-width] duration-150"
                 cx={SIZE / 2}
                 cy={SIZE / 2}
@@ -142,7 +143,7 @@ export const PackageCompositionDonut = ({
             {active ? (
               <m.span
                 animate={{ opacity: 1, y: 0 }}
-                className="numeric text-foreground text-headline font-semibold"
+                className="numeric text-foreground text-title font-semibold"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
                 key={active.key}
                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15 }}
@@ -151,7 +152,7 @@ export const PackageCompositionDonut = ({
               </m.span>
             ) : (
               <>
-                <span className="numeric text-foreground text-headline font-semibold">{total}</span>
+                <span className="numeric text-foreground text-title font-semibold">{total}</span>
                 <span className="text-caption text-muted-foreground">apps</span>
               </>
             )}

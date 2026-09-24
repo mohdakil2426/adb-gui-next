@@ -56,8 +56,7 @@ export const QuickActionsPanel = ({
     }
   };
 
-  const actionClass =
-    "h-auto w-full justify-start gap-2.5 rounded-lg px-3 py-2.5 font-medium text-label";
+  const actionClass = "h-auto w-full justify-start gap-2.5 px-3 py-2.5 font-medium text-label";
 
   return (
     <PanelCard delay={0.37} icon={Zap} title="Quick actions">

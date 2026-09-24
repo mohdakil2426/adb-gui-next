@@ -30,11 +30,11 @@ export const UpdatesSummaryBanner = ({
           <div className="flex items-center gap-2">
             <h2 className="text-body text-foreground font-semibold">Catalog Update Inspector</h2>
             {updatableCount > 0 ? (
-              <Badge className="text-[10px]" variant="default">
+              <Badge className="text-caption" variant="default">
                 {updatableCount} New Releases
               </Badge>
             ) : (
-              <Badge className="gap-1 text-[10px]" variant="success">
+              <Badge className="text-caption gap-1" variant="success">
                 <CheckCircle2 className="size-3" />
                 All Apps Up to Date
               </Badge>

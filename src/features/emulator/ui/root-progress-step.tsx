@@ -102,8 +102,9 @@ export const RootProgressStep = ({ progress, error, avdName, onCancel }: RootPro
             className="bg-surface-raised h-1 w-full overflow-hidden rounded-full"
           >
             <div
-              className="bg-primary ease-standard h-full rounded-full transition-[width] duration-200"
-              style={{ width: `${completedRatio * 100}%` }}
+              // oxlint-disable-next-line shadcn/no-arbitrary-values -- targeted width animation avoids forbidden transition-all
+              className="bg-primary ease-standard h-full w-(--progress-width) rounded-full transition-[width] duration-200"
+              style={{ "--progress-width": `${completedRatio * 100}%` } as React.CSSProperties}
             />
           </div>
           <output aria-live="polite" className="numeric text-caption text-muted-foreground">

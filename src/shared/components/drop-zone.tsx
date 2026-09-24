@@ -140,9 +140,11 @@ export const DropZone = ({
   return (
     <div
       className={cn(
+        // oxlint-disable-next-line shadcn/no-arbitrary-values -- scoped transition properties avoid forbidden transition:all
         "relative flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-[border-color,background-color,box-shadow,transform] duration-200",
         isDragging
-          ? "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]"
+          ? // oxlint-disable-next-line shadcn/no-arbitrary-values -- active dropzone halo shadow uses theme-token color-mix glow
+            "border-primary bg-primary/5 scale-[1.01] shadow-[0_0_20px_color-mix(in_oklch,var(--primary)_15%,transparent)]"
           : "border-muted-foreground/25 hover:border-muted-foreground/40",
         disabled && "pointer-events-none opacity-50",
         className
@@ -151,7 +153,7 @@ export const DropZone = ({
     >
       {/* Drag-over overlay */}
       {isDragging ? (
-        <div className="bg-primary/5 absolute inset-0 z-10 flex items-center justify-center rounded-lg backdrop-blur-[2px]">
+        <div className="bg-primary/5 absolute inset-0 z-10 flex items-center justify-center rounded-lg backdrop-blur-xs">
           <div className="fade-in zoom-in-95 animate-in text-primary flex flex-col items-center gap-2">
             <div className="bg-primary/10 rounded-full p-4">
               <Upload className="size-8" />

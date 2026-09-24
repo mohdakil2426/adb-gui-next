@@ -20,9 +20,13 @@ const SKELETON_ROWS = [0, 1, 2, 3, 4, 5, 6, 7];
  * than the shape of the list they are about to get.
  */
 export const PackageListSkeleton = ({ rowHeight }: { rowHeight: number }) => (
-  <output aria-label="Loading packages" className="flex flex-col">
+  <output
+    aria-label="Loading packages"
+    className="flex flex-col"
+    style={{ "--row-height": `${rowHeight}px` } as React.CSSProperties}
+  >
     {SKELETON_ROWS.map((row) => (
-      <div className="flex items-center gap-2 px-3" key={row} style={{ height: rowHeight }}>
+      <div className="flex h-[var(--row-height)] items-center gap-2 px-3" key={row}>
         <Skeleton className="size-4 shrink-0 rounded" />
         <Skeleton className="h-3 w-full max-w-64" />
       </div>

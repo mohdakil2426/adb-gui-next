@@ -46,7 +46,7 @@ const AppListItemBase = ({ app, onSelect, target }: AppListItemProps) => {
             <ProviderBadge source={app.source} />
             {app.downloadUrl && (
               <Badge
-                className="border-success/30 bg-success/5 text-success gap-0.5 px-1 py-0 font-mono text-[10px]"
+                className="border-success/30 bg-success/5 text-success text-caption gap-0.5 px-1 py-0 font-mono"
                 variant="outline"
               >
                 <CheckCircle2 className="size-2.5" />

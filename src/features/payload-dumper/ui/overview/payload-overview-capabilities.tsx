@@ -17,7 +17,7 @@ export const PayloadOverviewCapabilities = () => (
       <CardContent className="grid grid-cols-1 gap-4 pt-0 @lg:grid-cols-3">
         <div className="border-border bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3.5">
           <div className="flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground flex size-5.5 items-center justify-center rounded-full font-mono text-[11px] font-semibold">
+            <span className="bg-primary text-primary-foreground text-caption flex size-5.5 items-center justify-center rounded-full font-mono font-semibold">
               1
             </span>
             <h4 className="text-caption text-foreground font-medium">Select Payload Source</h4>
@@ -30,7 +30,7 @@ export const PayloadOverviewCapabilities = () => (
 
         <div className="border-border bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3.5">
           <div className="flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground flex size-5.5 items-center justify-center rounded-full font-mono text-[11px] font-semibold">
+            <span className="bg-primary text-primary-foreground text-caption flex size-5.5 items-center justify-center rounded-full font-mono font-semibold">
               2
             </span>
             <h4 className="text-caption text-foreground font-medium">Select Partitions</h4>
@@ -43,7 +43,7 @@ export const PayloadOverviewCapabilities = () => (
 
         <div className="border-border bg-surface-raised/40 flex flex-col gap-1.5 rounded-lg border p-3.5">
           <div className="flex items-center gap-2">
-            <span className="bg-primary text-primary-foreground flex size-5.5 items-center justify-center rounded-full font-mono text-[11px] font-semibold">
+            <span className="bg-primary text-primary-foreground text-caption flex size-5.5 items-center justify-center rounded-full font-mono font-semibold">
               3
             </span>
             <h4 className="text-caption text-foreground font-medium">Extract & Deploy</h4>

@@ -92,7 +92,7 @@ export const ScreenshotStudioCard = ({ deviceMode, deviceSerial }: ScreenshotStu
             Device Screenshot Studio
           </CardTitle>
           {screenshotTime ? (
-            <Badge className="text-[10px]" variant="secondary">
+            <Badge className="text-caption" variant="secondary">
               Captured {screenshotTime}
             </Badge>
           ) : null}

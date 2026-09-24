@@ -227,7 +227,7 @@ const DiagnosticRow = ({ diag }: { diag: DiagnosticItem }) => {
           <div className="flex items-center gap-2">
             <span className="text-body text-foreground font-semibold">{diag.label}</span>
             {diag.value ? (
-              <Badge className="font-mono text-[10px]" variant="outline">
+              <Badge className="text-caption font-mono" variant="outline">
                 {diag.value}
               </Badge>
             ) : null}
@@ -250,7 +250,7 @@ const DiagnosticRow = ({ diag }: { diag: DiagnosticItem }) => {
         ) : null}
 
         <Badge
-          className="font-mono text-[10px] uppercase"
+          className="text-caption font-mono uppercase"
           variant={DIAG_BADGE_VARIANT[diag.status] ?? "secondary"}
         >
           {diag.status}
