@@ -1,7 +1,8 @@
 /* eslint-disable react/todo -- non-React-Compiler try/finally flow */
-import { useCallback, useEffect } from "react";
+import { Cause, Effect, Exit, Fiber } from "effect";
+import { useCallback, useEffect, useRef } from "react";
 
-import { GetInstalledPackages } from "@/desktop/backend";
+import { GetInstalledPackagesEffect } from "@/desktop/effect";
 import { useInstallationStore } from "@/features/app-manager/debloater/model/installation-store";
 import { useDeviceStore } from "@/shared/stores/device-store";
 import { handleError } from "@/shared/utils/error-handler";
@@ -33,44 +34,77 @@ export const useInstalledPackages = (): InstalledPackagesController => {
   const setSelectedPackages = useInstallationStore((s) => s.setSelectedPackages);
   const packagesError = useInstallationStore((s) => s.packagesError);
   const setPackagesError = useInstallationStore((s) => s.setPackagesError);
+  const activeFiberRef = useRef<Fiber.Fiber<void, unknown> | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
+    if (activeFiberRef.current) {
+      Effect.runFork(Fiber.interrupt(activeFiberRef.current));
+      activeFiberRef.current = null;
+    }
+
     if (!selectedSerial) {
       setPackages([]);
       setPackagesError(null);
       setLoadedSerial(null);
+      setIsLoadingPackages(false);
       return;
     }
+
     setIsLoadingPackages(true);
-    try {
-      const list = await GetInstalledPackages(selectedSerial);
-      setPackages(list ?? []);
-      setPackagesError(null);
-    } catch (error) {
-      handleError("Load Packages", error);
-      // A toast is transient; without this the list renders its neutral "this
-      // device reported no packages" copy for what was a failed `pm list`.
-      setPackages([]);
-      setPackagesError(error instanceof Error ? error.message : String(error));
-    } finally {
-      // Marked loaded even on failure, otherwise the effect below retries forever.
+
+    let fiber: Fiber.Fiber<void, unknown> | null = null;
+    const program = Effect.gen(function* loadPackages() {
+      const exit = yield* Effect.exit(GetInstalledPackagesEffect(selectedSerial));
+      if (Exit.isSuccess(exit)) {
+        setPackages(exit.value ?? []);
+        setPackagesError(null);
+      } else {
+        if (Cause.hasInterrupts(exit.cause)) {
+          return;
+        }
+        const error = Cause.squash(exit.cause);
+        handleError("Load Packages", error);
+        setPackages([]);
+        const msg = error instanceof Error ? error.message : String(error);
+        setPackagesError(msg);
+      }
       setLoadedSerial(selectedSerial);
       setIsLoadingPackages(false);
-    }
+    }).pipe(
+      Effect.ensuring(
+        Effect.sync(() => {
+          if (activeFiberRef.current === fiber) {
+            activeFiberRef.current = null;
+          }
+        })
+      )
+    );
+
+    fiber = Effect.runFork(program);
+    activeFiberRef.current = fiber;
   }, [selectedSerial, setIsLoadingPackages, setLoadedSerial, setPackages, setPackagesError]);
 
   useEffect(() => {
     // Reload when the selected device changes — not when the list is merely empty.
     if (selectedSerial !== loadedSerial) {
       setSelectedPackages(new Set());
-      void load();
+      load();
     }
   }, [load, loadedSerial, selectedSerial, setSelectedPackages]);
 
-  const refresh = useCallback(() => {
-    void load();
-  }, [load]);
+  useEffect(
+    () => () => {
+      if (activeFiberRef.current) {
+        Effect.runFork(Fiber.interrupt(activeFiberRef.current));
+        activeFiberRef.current = null;
+      }
+    },
+    []
+  );
 
+  const refresh = useCallback(() => {
+    load();
+  }, [load]);
   return {
     error: packagesError,
     hasLoaded: selectedSerial !== null && selectedSerial === loadedSerial,

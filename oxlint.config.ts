@@ -12,6 +12,7 @@ export default defineConfig({
     "**/docs/**",
     "**/memory-bank/**",
     "**/src-tauri/**",
+    "src/shared/charts/**",
   ],
   jsPlugins: ["@shadcn/lint"],
   overrides: [

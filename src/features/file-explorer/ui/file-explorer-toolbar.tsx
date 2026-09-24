@@ -20,6 +20,7 @@ import {
 import type { FileEntry } from "@/features/file-explorer/model/file-explorer-types";
 import { FileExplorerPathBar } from "@/features/file-explorer/ui/file-explorer-path-bar";
 import { FileExplorerRootAccessButton } from "@/features/file-explorer/ui/file-explorer-root-access-button";
+import { FileExplorerStorageGauge } from "@/features/file-explorer/ui/file-explorer-storage-gauge";
 import { ToolbarTooltip } from "@/features/file-explorer/ui/toolbar-tooltip";
 import { RefreshButton } from "@/shared/components/refresh-button";
 import { Button } from "@/shared/ui/button";
@@ -348,6 +349,10 @@ export const FileExplorerToolbar = (props: FileExplorerToolbarProps) => {
               <Download aria-hidden="true" className="size-4" data-icon="inline-start" />
             </Button>
           </ToolbarTooltip>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          <FileExplorerStorageGauge currentPath={currentPath} />
         </div>
       </div>
     </div>

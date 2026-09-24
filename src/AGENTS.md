@@ -28,7 +28,7 @@ Project skills live under `.agents/skills/`. Load the matching skill **before** 
 | Bootstrap | `src/main.tsx` → `src/app/App.tsx` (`QueryClientProvider`) |
 | Shell | `src/app/shell/` — MainLayout, view-config.tsx, Header, AppSidebar, BottomPanel, ViewContent, StatusBar, CommandPalette |
 | Command registry | `src/shared/commands/` — palette actions, `VIEW_META`, `NAV_SECTIONS`, shortcut reference |
-| Desktop IPC only | src/desktop/ (see src/desktop/AGENTS.md) — backend.ts, runtime.ts, models.ts |
+| Desktop IPC only | src/desktop/ (see src/desktop/AGENTS.md) — backend.ts, effect.ts, errors.ts, runtime.ts, models.ts |
 | Features | src/features/<feature>/ (marketplace: see src/features/marketplace/AGENTS.md) |
 | Shared | `src/shared/{ui,components,stores,hooks,utils}/` |
 | Design tokens | `src/styles/global.css` |

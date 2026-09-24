@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { Effect, Schedule } from "effect";
 import { useCallback, useEffect } from "react";
 
-import { GetDeviceTelemetry } from "@/desktop/backend";
+import { GetDeviceTelemetryEffect } from "@/desktop/effect";
 import type { backend } from "@/desktop/models";
 import { toLegacyDeviceInfo } from "@/features/dashboard/model/legacy-device-info";
 import { useMemoryHistoryStore } from "@/features/dashboard/model/memory-history-store";
@@ -19,6 +20,14 @@ const TELEMETRY_STALE_MS = 10_000;
  * focus (TanStack's default). It is what makes the memory sparkline live.
  */
 const TELEMETRY_POLL_MS = 15_000;
+
+/**
+ * Lightweight exponential retry policy for transient USB / ADB glitches
+ * before propagating failure to the UI.
+ */
+export const deviceTelemetryRetrySchedule = Schedule.exponential("200 millis").pipe(
+  Schedule.upTo({ times: 2 })
+);
 
 export const telemetryQueryKey = (serial: string) => ["deviceTelemetry", serial] as const;
 
@@ -46,7 +55,10 @@ export const useDeviceTelemetry = (
     enabled: enabled && Boolean(serial),
     queryFn: async () => {
       try {
-        return await GetDeviceTelemetry(serial);
+        const pipeline = GetDeviceTelemetryEffect(serial).pipe(
+          Effect.retry(deviceTelemetryRetrySchedule)
+        );
+        return await Effect.runPromise(pipeline);
       } catch (error) {
         handleError("Device Telemetry", error);
         throw error;

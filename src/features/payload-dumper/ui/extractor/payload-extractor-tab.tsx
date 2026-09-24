@@ -8,6 +8,7 @@ import { PartitionTableList } from "@/features/payload-dumper/ui/extractor/parti
 import { PartitionToolbar } from "@/features/payload-dumper/ui/extractor/partition-toolbar";
 import { LoadingState } from "@/features/payload-dumper/ui/loading-state";
 import { OutputDirectoryField } from "@/features/payload-dumper/ui/output-directory-field";
+import { PayloadPartitionChart } from "@/features/payload-dumper/ui/payload-partition-chart";
 import { PayloadSourceTabs } from "@/features/payload-dumper/ui/payload-source-tabs";
 import { getPartitionCategory } from "@/features/payload-dumper/utils/partition-categories";
 import type { ConnectionStatus } from "@/shared/components/remote-url-panel";
@@ -188,6 +189,7 @@ export const PayloadExtractorTab = ({
             onOpenOutputFolder={onOpenOutputFolder}
             onSelectOutput={onSelectOutput}
           />
+          <PayloadPartitionChart partitions={partitions} />
 
           {/* Partitions Command Bar */}
           <Card className="border-border bg-surface rounded-xl p-4 shadow-none">

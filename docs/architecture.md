@@ -415,9 +415,10 @@ All Tauri surface area is concentrated in `src/desktop/`.
 | Module       | Responsibility                                                        |
 | ------------ | --------------------------------------------------------------------- |
 | `backend.ts` | `core.invoke<T>(command, args)` wrappers + dialog helpers             |
+| `effect.ts`  | Effect v4 IPC wrappers with typed error taxonomy and interruption      |
+| `errors.ts`  | Typed domain errors (`Schema.TaggedError`) for Rust IPC rejections   |
 | `models.ts`  | TypeScript DTOs under `namespace backend` (camelCase)                 |
 | `runtime.ts` | `EventsOn` / `EventsOff`, window-level `OnFileDrop`, `BrowserOpenURL` |
-
 ### Invoke pattern
 
 ```ts

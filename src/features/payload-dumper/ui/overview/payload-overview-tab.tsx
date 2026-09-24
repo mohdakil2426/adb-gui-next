@@ -9,6 +9,7 @@ import type { PayloadTabType } from "@/features/payload-dumper/payload-dumper-vi
 import { PayloadOverviewCapabilities } from "@/features/payload-dumper/ui/overview/payload-overview-capabilities";
 import { PayloadOverviewShortcuts } from "@/features/payload-dumper/ui/overview/payload-overview-shortcuts";
 import { PayloadStreamDiagnostics } from "@/features/payload-dumper/ui/overview/payload-stream-diagnostics";
+import { PayloadPartitionChart } from "@/features/payload-dumper/ui/payload-partition-chart";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
@@ -135,6 +136,9 @@ export const PayloadOverviewTab = ({ onNavigateTab }: PayloadOverviewTabProps) =
           </CardContent>
         </Card>
       ) : null}
+      {/* Visual Partition Allocation Summary (Appears when partitions parsed) */}
+      {partitions.length > 0 ? <PayloadPartitionChart partitions={partitions} /> : null}
+
       {/* Section 1: Core Navigation Shortcuts */}
       <PayloadOverviewShortcuts onNavigateTab={onNavigateTab} />
 

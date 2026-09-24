@@ -1,4 +1,5 @@
 import { CheckCircle2, HardDrive, Layers, Map as MapIcon } from "lucide-react";
+import { useMemo } from "react";
 
 import type { backend } from "@/desktop/models";
 import { storageSegmentColor } from "@/features/dashboard/model/storage-colors";
@@ -8,6 +9,10 @@ import { SpecChip } from "@/features/dashboard/ui/spec-chip";
 import { StorageAllocationBar } from "@/features/dashboard/ui/storage-allocation-bar";
 import { UsageBar } from "@/features/dashboard/ui/usage-bar";
 import { volumeLabel } from "@/features/dashboard/ui/volume-label";
+import { Ring } from "@/shared/charts/ring";
+import { RingCenter } from "@/shared/charts/ring-center";
+import { RingChart } from "@/shared/charts/ring-chart";
+import type { RingData } from "@/shared/charts/ring-context";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
 import { formatBytes, formatPercent, usageRatio } from "@/shared/utils/format";
@@ -81,6 +86,49 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
   const totalUsed = mainVolume?.usedBytes ?? maxUsed;
   const totalFree = mainVolume?.freeBytes ?? maxFree;
   const volumeCount = volumes.length;
+  const ringData: RingData[] = useMemo(() => {
+    if (totalCapacity <= 0) {
+      return [];
+    }
+    const explicitSystem = volumes
+      .filter((v) => v.mount.includes("system") || v.rawMount?.includes("system"))
+      .reduce((sum, v) => sum + v.usedBytes, 0);
+    const systemBytes =
+      explicitSystem > 0 ? explicitSystem : Math.max(0, totalCapacity - totalUsed - totalFree);
+    const userUsed = explicitSystem > 0 ? Math.max(0, totalUsed - explicitSystem) : totalUsed;
+
+    const data: RingData[] = [
+      {
+        color: "var(--chart-1)",
+        label: "Internal Data",
+        maxValue: totalCapacity,
+        value: userUsed,
+      },
+    ];
+
+    if (systemBytes > 0) {
+      data.push({
+        color: "var(--chart-2)",
+        label: "System OS",
+        maxValue: totalCapacity,
+        value: systemBytes,
+      });
+    }
+
+    const secondaryVolumes = volumes.filter(
+      (v) => v.mount !== "/data" && !v.mount.includes("system") && v.totalBytes > 0
+    );
+    for (const v of secondaryVolumes) {
+      data.push({
+        color: "var(--chart-3)",
+        label: volumeLabel(v.mount),
+        maxValue: v.totalBytes,
+        value: v.usedBytes,
+      });
+    }
+
+    return data;
+  }, [totalCapacity, totalUsed, totalFree, volumes]);
 
   if (isLoading && volumes.length === 0) {
     return (
@@ -102,6 +150,48 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
         </p>
       ) : (
         <div className="flex w-full flex-1 flex-col justify-between gap-3">
+          {ringData.length > 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-1">
+              <RingChart
+                baseInnerRadius={48}
+                data={ringData}
+                ringGap={6}
+                size={184}
+                strokeWidth={10}
+              >
+                {ringData.map((_, index) => (
+                  <Ring index={index} key={ringData[index]?.label ?? index} lineCap="round" />
+                ))}
+                <RingCenter defaultLabel="Used">
+                  {({ value, label, isHovered }) => (
+                    <div className="flex flex-col items-center justify-center px-1 text-center">
+                      <span className="numeric text-display text-foreground font-bold tracking-tight">
+                        {formatBytes(isHovered ? value : totalUsed)}
+                      </span>
+                      <span className="text-caption text-muted-foreground font-medium">
+                        {isHovered ? label : `used of ${formatBytes(totalCapacity)}`}
+                      </span>
+                    </div>
+                  )}
+                </RingCenter>
+              </RingChart>
+
+              {/* Ring chart legend */}
+              <div className="text-caption flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span aria-hidden="true" className="bg-chart-1 size-2 rounded-full" />
+                  <span className="text-muted-foreground">Data:</span>
+                  <span className="text-foreground font-medium">{formatBytes(totalUsed)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span aria-hidden="true" className="bg-muted-foreground/30 size-2 rounded-full" />
+                  <span className="text-muted-foreground">Free:</span>
+                  <span className="text-foreground font-medium">{formatBytes(totalFree)}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {/* Capacity map: every volume's share of the summed capacity */}
           <div className="border-border/50 flex flex-col gap-2 pb-0.5">
             <div className="text-caption text-muted-foreground flex items-center justify-between font-medium tracking-wider uppercase">

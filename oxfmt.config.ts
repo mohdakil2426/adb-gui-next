@@ -11,6 +11,7 @@ export default defineConfig({
     "**/memory-bank/**",
     "**/src-tauri/**",
     "**/AGENTS.md",
+    "src/shared/charts/**",
   ],
   printWidth: 100,
 });

@@ -4,9 +4,11 @@ import { lazy, Suspense, useMemo, useState } from "react";
 import type { backend } from "@/desktop/models";
 import type { MemorySample } from "@/features/dashboard/model/memory-history-store";
 import { TONE_TEXT, usageTone } from "@/features/dashboard/model/tone";
+import type { Tone } from "@/features/dashboard/model/tone";
 import { PanelCard } from "@/features/dashboard/ui/panel-card";
 import { SpecChip } from "@/features/dashboard/ui/spec-chip";
 import { UsageBar } from "@/features/dashboard/ui/usage-bar";
+import { Gauge } from "@/shared/charts/gauge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
 import { formatBytes, formatPercent, usageRatio } from "@/shared/utils/format";
@@ -20,6 +22,13 @@ const MemorySparkline = lazy(async () => {
   const module = await import("@/features/dashboard/ui/memory-sparkline");
   return { default: module.MemorySparkline };
 });
+
+const TONE_CSS_COLOR: Record<Tone, string> = {
+  danger: "var(--destructive)",
+  neutral: "var(--chart-1)",
+  ok: "var(--success)",
+  warn: "var(--warning)",
+};
 
 interface MemoryPanelProps {
   isLoading: boolean;
@@ -70,6 +79,14 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
                   {formatBytes(memory.usedBytes)} of {formatBytes(memory.totalBytes)}
                 </span>
               </div>
+              <Gauge
+                activeFill={TONE_CSS_COLOR[tone]}
+                className="w-full"
+                linearHeight={10}
+                orientation="linear"
+                totalNotches={32}
+                value={Math.round(ratio * 100)}
+              />
               <UsageBar label="Memory used" ratio={ratio} tone={tone} />
             </div>
           ) : (

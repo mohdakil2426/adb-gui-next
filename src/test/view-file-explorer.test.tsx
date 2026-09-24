@@ -30,6 +30,7 @@ vi.mock(import("@/desktop/backend"), () => ({
   CreateDirectory: vi.fn<() => Promise<unknown>>(),
   CreateFile: vi.fn<() => Promise<unknown>>(),
   DeleteFiles: vi.fn<() => Promise<unknown>>(),
+  GetDeviceTelemetry: vi.fn<() => Promise<unknown>>().mockResolvedValue(null),
   HostPathKinds: vi.fn<() => Promise<unknown>>(),
   ListFiles: (...args: unknown[]) => listFilesMock(...args),
   OpenDeviceFileInEditor: vi.fn<() => Promise<unknown>>(),

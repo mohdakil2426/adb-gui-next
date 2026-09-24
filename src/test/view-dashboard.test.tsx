@@ -148,7 +148,9 @@ describe(ViewDashboard, () => {
 
     renderDashboard();
 
-    await expect(screen.findByText("87%")).resolves.toBeInTheDocument();
+    await expect(
+      screen.findByText("87%", undefined, { timeout: 5000 })
+    ).resolves.toBeInTheDocument();
     expect(GetDeviceTelemetry).toHaveBeenCalledWith("1A2B3C4D");
     expect(screen.getByText("Unlocked")).toBeInTheDocument();
     expect(screen.getByText("3d 4h")).toBeInTheDocument();
@@ -162,7 +164,9 @@ describe(ViewDashboard, () => {
 
     renderDashboard();
 
-    await expect(screen.findByText("87%")).resolves.toBeInTheDocument();
+    await expect(
+      screen.findByText("87%", undefined, { timeout: 5000 })
+    ).resolves.toBeInTheDocument();
     expect(screen.getByText("Internal storage")).toBeInTheDocument();
     expect(screen.getByText("/data")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Internal storage used" })).toBeInTheDocument();

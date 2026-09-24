@@ -42,7 +42,8 @@ export const useEmulatorActions = ({
         setPendingAction(action);
         await task();
       } catch (error) {
-        handleError("Emulator", error instanceof Error ? error : new Error(fallbackMessage));
+        const msg = error instanceof Error ? error.message : String(error);
+        handleError("Emulator", msg ? new Error(msg) : new Error(fallbackMessage));
       } finally {
         setPendingAction(null);
       }

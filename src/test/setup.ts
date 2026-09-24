@@ -2,6 +2,16 @@ import "@testing-library/jest-dom";
 import { QueryClient } from "@tanstack/react-query";
 import { vi } from "vitest";
 
+/* eslint-disable eslint/class-methods-use-this, eslint/no-empty-function */
+if (typeof window !== "undefined" && window.ResizeObserver === undefined) {
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver;
+}
+/* eslint-enable eslint/class-methods-use-this, eslint/no-empty-function */
+
 // Mock @tauri-apps/api/core — IPC is unavailable in jsdom
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),

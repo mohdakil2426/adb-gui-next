@@ -12,11 +12,13 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
+    "components": "@/shared/components",
+    "utils": "@/shared/utils/cn",
     "ui": "@/shared/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "lib": "@/shared/lib",
+    "hooks": "@/shared/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@bklit": "https://ui.bklit.com/r/{name}.json"
+  }
 }
