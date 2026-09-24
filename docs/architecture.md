@@ -363,7 +363,7 @@ src/features/<feature>/
 ```text
 ┌────────────────────────────────────────────────────────────┐
 │ TanStack Query                                             │
-│  · allDevices poll in MainLayout (30s)  — the ONLY device  │
+│  · allDevices poll in MainLayout (5s)   — the ONLY device  │
 │    *list* poll                                             │
 │  · AVD list poll in EmulatorView (5s)                      │
 │  · device telemetry in useDeviceTelemetry (15s, Dashboard  │

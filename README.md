@@ -62,7 +62,7 @@ Built with [Tauri 2](https://v2.tauri.app) · React 19 · TypeScript · Rust
 3. **Launch ADB GUI Next** — your device should appear in the Dashboard automatically
 4. **Authorize** the USB debugging prompt on your device when prompted
 
-> **Tip**: The app auto-detects ADB and Fastboot devices every **30 seconds** (plus manual refresh). No per-view polling.
+> **Tip**: The app auto-detects ADB and Fastboot devices every **5 seconds** (plus manual refresh). No per-view polling.
 
 ---
 

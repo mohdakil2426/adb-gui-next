@@ -129,7 +129,7 @@ File Explorer, Flasher, Utilities, About: local React state / hooks (no feature 
 ### TanStack Query
 
 - Provider defaults: `App.tsx` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess; do not restore focus-refetch or blind retries globally. Queries that need to be fresher opt in individually.
-- **Device _list_ poll only in `MainLayout`:** `queryKeys.allDevices()`, `STALE_TIME.ALL_DEVICES` = **30_000** ms (`shared/utils/queries.ts`). `fetchAllDevices` merges ADB + fastboot by serial.
+- **Device _list_ poll only in `MainLayout`:** `queryKeys.allDevices()`, `STALE_TIME.ALL_DEVICES` = **5_000** ms (`shared/utils/queries.ts`). `fetchAllDevices` merges ADB + fastboot by serial.
 - **Do not** add a second device-list poll.
 - Dashboard telemetry: `features/dashboard/hooks/useDeviceTelemetry.ts` — `GetDeviceTelemetry` for the selected serial, `staleTime` 10 s, `refetchInterval` 15 s, and the interval **stops on error** (inline error state carries the retry, no toast loop). Mounted only while the Dashboard is; it also feeds `deviceStore.setDeviceInfo` via `toLegacyDeviceInfo` and records `memoryHistoryStore` samples.
 - Emulator view: separate AVD list poll (`STALE_TIME.EMULATOR_LIST`) in `EmulatorView.tsx` (AVDs only, not phone devices).

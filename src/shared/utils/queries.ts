@@ -43,7 +43,7 @@ export const queryKeys = {
 // staleTime constants — in milliseconds
 // ---------------------------------------------------------------------------
 export const STALE_TIME = {
-  ALL_DEVICES: 30 * 1000,
+  ALL_DEVICES: 5 * 1000,
   DEBOLOAT_LISTS: 60 * 60 * 1000,
   DEBOLOAT_PACKAGES: 30 * 1000,
   /** Global default applied in `App.tsx`. */
