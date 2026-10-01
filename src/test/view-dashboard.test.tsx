@@ -167,9 +167,9 @@ describe(ViewDashboard, () => {
     await expect(
       screen.findByText("87%", undefined, { timeout: 5000 })
     ).resolves.toBeInTheDocument();
-    expect(screen.getByText("Internal storage")).toBeInTheDocument();
-    expect(screen.getByText("/data")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Internal storage used" })).toBeInTheDocument();
+    expect(screen.getByText("used of 64.0 GB")).toBeInTheDocument();
+    expect(screen.getByText("Capacity map")).toBeInTheDocument();
+    expect(screen.queryByText("Internal storage")).not.toBeInTheDocument();
   });
 
   it("explains why telemetry is unavailable in fastboot", async () => {

@@ -61,18 +61,18 @@ export const BatteryGauge = ({ isCharging, levelPct, tone }: BatteryGaugeProps) 
   }
 
   return (
-    <div className="relative flex size-[184px] shrink-0 items-center justify-center">
+    <div className="relative flex size-[230px] shrink-0 items-center justify-center">
       {isCharging ? <ChargingAura shouldReduceMotion={shouldReduceMotion} tone={tone} /> : null}
       <Gauge
         activeFill={TONE_CSS_COLOR[tone]}
         centerValue={levelPct ?? 0}
         defaultLabel={statusLabel}
-        height={184}
+        height={230}
         orientation="arc"
         suffix="%"
         totalNotches={36}
         value={levelPct ?? 0}
-        width={184}
+        width={230}
       />
     </div>
   );

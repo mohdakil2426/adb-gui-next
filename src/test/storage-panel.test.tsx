@@ -16,25 +16,20 @@ const volume = (overrides: Partial<backend.StorageVolume>): backend.StorageVolum
 });
 
 describe(StoragePanel, () => {
-  it("labels /data as Internal storage and keeps the raw mount visible underneath", () => {
-    render(
-      <StoragePanel isLoading={false} volumes={[volume({ mount: "/data", rawMount: "/data" })]} />
-    );
-
-    expect(screen.getByText("Internal storage")).toBeInTheDocument();
-    expect(screen.getByText("/data")).toBeInTheDocument();
-    expect(screen.getByRole("progressbar", { name: "Internal storage used" })).toBeInTheDocument();
-  });
-
-  it("labels /storage/emulated and /sdcard as Shared storage", () => {
+  it("omits internal and shared storage from volume breakdown rows", () => {
     render(
       <StoragePanel
         isLoading={false}
-        volumes={[volume({ mount: "/storage/emulated", rawMount: "/storage/emulated" })]}
+        volumes={[
+          volume({ mount: "/data", rawMount: "/data" }),
+          volume({ mount: "/storage/emulated", rawMount: "/storage/emulated" }),
+        ]}
       />
     );
 
-    expect(screen.getByText("Shared storage")).toBeInTheDocument();
+    expect(screen.queryByText("Internal storage")).not.toBeInTheDocument();
+    expect(screen.queryByText("Shared storage")).not.toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });
 
   it("labels a removable media_rw mount as SD card", () => {
@@ -62,22 +57,22 @@ describe(StoragePanel, () => {
         isLoading={false}
         volumes={[
           volume({
-            mount: "/data",
+            mount: "/mnt/media_rw/1234-5678",
             rawMount: "/apex/com.android.art/bin/dex2oat64",
           }),
         ]}
       />
     );
 
-    expect(screen.getByText("Internal storage")).toBeInTheDocument();
+    expect(screen.getByText("SD card")).toBeInTheDocument();
     expect(screen.queryByText("/apex/com.android.art/bin/dex2oat64")).not.toBeInTheDocument();
-    expect(screen.getByText("/data")).toHaveAttribute(
+    expect(screen.getByText("/mnt/media_rw/1234-5678")).toHaveAttribute(
       "title",
-      "/data (df reported: /apex/com.android.art/bin/dex2oat64)"
+      "/mnt/media_rw/1234-5678 (df reported: /apex/com.android.art/bin/dex2oat64)"
     );
   });
 
-  it("renders one row per distinct volume with correct usage figures", () => {
+  it("renders rows for external volumes with correct usage figures", () => {
     render(
       <StoragePanel
         isLoading={false}
@@ -100,7 +95,8 @@ describe(StoragePanel, () => {
       />
     );
 
-    expect(screen.getByText("42.0 GB of 110.0 GB")).toBeInTheDocument();
+    expect(screen.queryByText("Internal storage")).not.toBeInTheDocument();
+    expect(screen.getByText("SD card")).toBeInTheDocument();
     expect(screen.getByText("32.0 GB of 64.0 GB")).toBeInTheDocument();
   });
 

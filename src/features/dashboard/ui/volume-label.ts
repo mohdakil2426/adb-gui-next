@@ -18,3 +18,8 @@ export const volumeLabel = (mount: string): string => {
   }
   return mount;
 };
+
+export const isInternalOrSharedMount = (mount: string): boolean => {
+  const label = volumeLabel(mount);
+  return label === "Internal storage" || label === "Shared storage";
+};

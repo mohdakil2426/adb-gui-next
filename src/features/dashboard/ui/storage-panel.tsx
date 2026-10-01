@@ -8,7 +8,7 @@ import { PanelCard } from "@/features/dashboard/ui/panel-card";
 import { SpecChip } from "@/features/dashboard/ui/spec-chip";
 import { StorageAllocationBar } from "@/features/dashboard/ui/storage-allocation-bar";
 import { UsageBar } from "@/features/dashboard/ui/usage-bar";
-import { volumeLabel } from "@/features/dashboard/ui/volume-label";
+import { isInternalOrSharedMount, volumeLabel } from "@/features/dashboard/ui/volume-label";
 import { Ring } from "@/shared/charts/ring";
 import { RingCenter } from "@/shared/charts/ring-center";
 import { RingChart } from "@/shared/charts/ring-chart";
@@ -116,7 +116,11 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
     }
 
     const secondaryVolumes = volumes.filter(
-      (v) => v.mount !== "/data" && !v.mount.includes("system") && v.totalBytes > 0
+      (v) =>
+        v.mount !== "/data" &&
+        !isInternalOrSharedMount(v.mount) &&
+        !v.mount.includes("system") &&
+        v.totalBytes > 0
     );
     for (const v of secondaryVolumes) {
       data.push({
@@ -129,6 +133,14 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
 
     return data;
   }, [totalCapacity, totalUsed, totalFree, volumes]);
+  const allocationVolumes = useMemo(
+    () => volumes.filter((v) => volumeLabel(v.mount) !== "Shared storage"),
+    [volumes]
+  );
+  const externalVolumes = useMemo(
+    () => volumes.filter((v) => !isInternalOrSharedMount(v.mount)),
+    [volumes]
+  );
 
   if (isLoading && volumes.length === 0) {
     return (
@@ -153,11 +165,11 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
           {ringData.length > 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-1">
               <RingChart
-                baseInnerRadius={48}
+                baseInnerRadius={76}
                 data={ringData}
                 ringGap={6}
-                size={184}
-                strokeWidth={10}
+                size={230}
+                strokeWidth={14}
               >
                 {ringData.map((_, index) => (
                   <Ring index={index} key={ringData[index]?.label ?? index} lineCap="round" />
@@ -198,14 +210,16 @@ export const StoragePanel = ({ isLoading, volumes }: StoragePanelProps) => {
               <span>Capacity map</span>
               <MapIcon aria-hidden="true" className="size-3.5" />
             </div>
-            <StorageAllocationBar volumes={volumes} />
+            <StorageAllocationBar volumes={allocationVolumes} />
           </div>
 
-          <div className="border-border/50 flex flex-col gap-2 border-t pt-2">
-            {volumes.map((volume, index) => (
-              <VolumeRow index={index} key={volume.mount} volume={volume} />
-            ))}
-          </div>
+          {externalVolumes.length > 0 ? (
+            <div className="border-border/50 flex flex-col gap-2 border-t pt-2">
+              {externalVolumes.map((volume, index) => (
+                <VolumeRow index={index} key={volume.mount} volume={volume} />
+              ))}
+            </div>
+          ) : null}
 
           <div className="border-border/50 grid w-full grid-cols-2 gap-2 border-t pt-2">
             <SpecChip icon={HardDrive} label="Capacity" value={formatBytes(totalCapacity)} />
