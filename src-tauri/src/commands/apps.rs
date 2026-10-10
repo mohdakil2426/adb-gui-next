@@ -123,11 +123,32 @@ pub async fn get_installed_packages(
             log::warn!("Failed to resolve label_reader.jar local path");
         }
 
-        // 3. Fetch package lists: user packages (-3), disabled packages (-d), and all packages (-u)
+        // 3. Fetch package lists: user packages (-3), disabled packages (-d), system packages (-s), and all packages (-u)
         let user_output =
-            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3", "-u"])
+                .or_else(|_| {
+                    run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3"])
+                })
                 .unwrap_or_default();
-        let user_names: HashSet<String> = parse_package_names(&user_output).into_iter().collect();
+        let mut user_names: HashSet<String> =
+            parse_package_names(&user_output).into_iter().collect();
+
+        if let Ok(disabled_user_out) =
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-3", "-d"])
+        {
+            for pkg in parse_package_names(&disabled_user_out) {
+                user_names.insert(pkg);
+            }
+        }
+
+        let system_output =
+            run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-s", "-u"])
+                .or_else(|_| {
+                    run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-s"])
+                })
+                .unwrap_or_default();
+        let system_names: HashSet<String> =
+            parse_package_names(&system_output).into_iter().collect();
 
         let disabled_output =
             run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-d"])
@@ -135,11 +156,18 @@ pub async fn get_installed_packages(
         let disabled_names: HashSet<String> =
             parse_package_names(&disabled_output).into_iter().collect();
 
+        if !system_names.is_empty() {
+            for d in &disabled_names {
+                if !system_names.contains(d) {
+                    user_names.insert(d.clone());
+                }
+            }
+        }
+
         let all_output =
             run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages", "-u"]).or_else(
                 |_| run_adb_for_serial(&app, serial, &["shell", "pm", "list", "packages"]),
             )?;
-
         // 4. Extract targetSdk and minSdk from dumpsys package in a single pass
         let mut sdk_map: HashMap<String, (u32, u32)> = HashMap::new();
         if let Ok(dumpsys_out) = run_adb_for_serial(&app, serial, &["shell", "dumpsys", "package"])
@@ -187,7 +215,9 @@ pub async fn get_installed_packages(
                     {
                         pkg_names = trimmed[start + 1..end]
                             .split(',')
-                            .map(|s| s.trim().to_string())
+                            .map(|s| {
+                                s.trim().trim_matches(|c| c == '"' || c == '\'').trim().to_string()
+                            })
                             .filter(|s| !s.is_empty())
                             .collect();
                     }
@@ -213,7 +243,8 @@ pub async fn get_installed_packages(
 
         for name in parse_package_names(&all_output) {
             if seen_names.insert(name.clone()) {
-                let is_user = user_names.contains(&name);
+                let is_user = user_names.contains(&name)
+                    || (!system_names.is_empty() && !system_names.contains(&name));
                 let package_type = if is_user { "user".to_string() } else { "system".to_string() };
                 let is_disabled = disabled_names.contains(&name);
                 let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
@@ -237,7 +268,8 @@ pub async fn get_installed_packages(
 
         for name in disabled_names {
             if seen_names.insert(name.clone()) {
-                let is_user = user_names.contains(&name);
+                let is_user = user_names.contains(&name)
+                    || (!system_names.is_empty() && !system_names.contains(&name));
                 let package_type = if is_user { "user".to_string() } else { "system".to_string() };
                 let label = labels_map.get(&name).cloned().unwrap_or_else(|| name.clone());
                 let (target_sdk, min_sdk) = sdk_map.get(&name).copied().unwrap_or((34, 26));

@@ -89,7 +89,7 @@ Rules:
 - Marketplace assets: `assets.rs` `is_apk_asset` (only `.apk`, excludes `.aab/.xapk/.apks/.sig/.sha256`, alpine `alpine-`/`_alpine`, `androidTest`) + `classify_abi` (arm64-v8a 100 > universal 80 > generic 70 > armeabi-v7a 60 > x86_64 40 > x86 20) + `rank_and_select_best_apk` (score +10 for `release`/`stable`, -15 for `debug` except `github-debug`). Used by `github::verify_apk_availability` and `get_detail`/`list_releases`.
 - Marketplace markdown: `markdown.rs` `enrich_readme_markdown` rewrites relative `![alt](path)` → `raw.githubusercontent.com/{owner}/{repo}/{branch}/...` and `[text](path)` → `github.com/{owner}/{repo}/blob/{branch}/...`, rewrites `<img src>`, flattens `<details>/<summary>` → `###`, guards fenced code-blocks. `github::fetch_readme` dual-path: `GET /repos/{slug}/readme` with `Accept: application/vnd.github.raw` then raw CDN fallback (`head`/`main`/`master` × 6 filenames) + pre-release fallback (`/releases/latest` 404 → `/releases?per_page=5`).
 - Marketplace HTTP client: `ManagedHttpClient` tuned (`connect_timeout 2500ms`, `timeout 10s`, `pool_max_idle_per_host 32`, `idle 180s`, `tcp_nodelay true`, `http2_adaptive_window`, keep-alive 15s/5s) for bursty provider calls. Download client separate (`install_queue` 300s/15s, pool 8).
-- Apps telemetry: `apps/telemetry.rs` trims surrounding `"`/`'` on CSV package lists and filters `storageBreakdown` to user packages only (skip system pkgs; when `user_pkgs` non-empty require membership).
+- Apps telemetry: `apps/telemetry.rs` queries `-3 -u`/`-3 -d` and `-s -u`, trims surrounding `"`/`'` on CSV package lists, filters `storageBreakdown` to user packages only, and supplements user packages omitted by `dumpsys diskstats` via `pm path` + `stat -c %s`.
 - Emulator AVD discovery: `~/.android/avd/*.ini` (not `emulator -list-avds`). Root proof: `verify_avd_root` / `su -c id -u == 0`.
 - Clippy bar: package `[lints]` + `clippy.toml`; CI uses `-D warnings`.
 
@@ -98,6 +98,10 @@ Rules:
 - **Wrong:** assuming host process exit code 0 means device shell command succeeded.
   **Right:** use `AdbClient::shell_checked` because `adb shell false` exits 0 on host; inspect nonce exit markers.
   **Id:** AdbClient checked shell execution
+
+- **Wrong:** querying `pm list packages -3` or `-s` without `-u` / `-3 -d` and relying solely on `dumpsys diskstats` for user app storage breakdown.
+  **Right:** query `-3 -u` + `-3 -d` and `-s -u`, and supplement user packages omitted by `diskstats` via `pm path <pkg>` + `stat -c %s`.
+  **Id:** Apps telemetry user package completeness
 
 ## Build profiles
 

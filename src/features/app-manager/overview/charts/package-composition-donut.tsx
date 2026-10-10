@@ -1,6 +1,8 @@
 import { m, useReducedMotion } from "framer-motion";
+import { Cpu, Package, PauseCircle, User } from "lucide-react";
 import { useState } from "react";
 
+import { cn } from "@/shared/utils/cn";
 import { formatPercent, usageRatio } from "@/shared/utils/format";
 
 export interface PackageCompositionDonutProps {
@@ -10,18 +12,12 @@ export interface PackageCompositionDonutProps {
   userCount?: number | undefined;
 }
 
-const SIZE = 148;
-const STROKE = 16;
-const RADIUS = (SIZE - STROKE) / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const GAP_DEGREES = 3;
-
 const EASE_STANDARD: [number, number, number, number] = [0.2, 0, 0, 1];
 
 /**
- * Interactive user / system / disabled composition donut. Hovering an arc (or
- * a legend row) dims the rest and swaps the center readout to that slice's
- * share; idle state shows the installed total.
+ * Precision hardware telemetry card for user / system / disabled packages.
+ * Displays a holistic multi-segment distribution bar paired with rich
+ * category diagnostic rows.
  */
 export const PackageCompositionDonut = ({
   disabledCount = 0,
@@ -32,181 +28,148 @@ export const PackageCompositionDonut = ({
   const shouldReduceMotion = useReducedMotion();
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
-  const slices = [
+  const total = Math.max(1, totalCount ?? userCount + systemCount + disabledCount);
+
+  const categories = [
     {
-      color: "var(--chart-1)",
+      barClass: "bg-chart-1",
       count: userCount,
-      dotClass: "bg-chart-1",
+      description: "Third-party & sideloaded applications",
+      icon: User,
+      iconBg: "bg-chart-1/10 text-chart-1",
       key: "user",
-      label: "User Apps",
+      label: "User Applications",
     },
     {
-      color: "var(--chart-2)",
+      barClass: "bg-chart-2",
       count: systemCount,
-      dotClass: "bg-chart-2",
+      description: "Android OS & OEM platform core",
+      icon: Cpu,
+      iconBg: "bg-chart-2/10 text-chart-2",
       key: "system",
-      label: "System Apps",
+      label: "System Framework",
     },
     {
-      color: "var(--chart-3)",
+      barClass: "bg-chart-3",
       count: disabledCount,
-      dotClass: "bg-chart-3",
+      description: "Deactivated & frozen packages",
+      icon: PauseCircle,
+      iconBg: "bg-chart-3/10 text-chart-3",
       key: "disabled",
-      label: "Disabled / Frozen",
+      label: "Disabled & Frozen",
     },
-  ].filter((slice) => slice.count > 0);
-
-  const total = slices.reduce((sum, slice) => sum + slice.count, 0) || totalCount || 1;
-  const active = slices.find((slice) => slice.key === activeKey) ?? null;
-
-  if (slices.length === 0) {
-    return null;
-  }
-
-  let offsetDegrees = 0;
-  const arcs = slices.map((slice) => {
-    const sweep = (slice.count / total) * 360;
-    const arc = {
-      dash: Math.max(0, ((sweep - (slices.length > 1 ? GAP_DEGREES : 0)) / 360) * CIRCUMFERENCE),
-      key: slice.key,
-      offsetDegrees,
-      slice,
-    };
-    offsetDegrees += sweep;
-    return arc;
-  });
+  ];
 
   return (
-    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
+    <div className="border-border bg-surface flex h-full flex-col justify-between gap-3.5 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-label font-medium">Package Composition</h3>
-        <span className="numeric text-caption text-muted-foreground">{totalCount} total</span>
+        <div className="flex items-center gap-2">
+          <Package aria-hidden="true" className="text-primary size-4" />
+          <h3 className="text-foreground text-label font-medium">Package Distribution</h3>
+        </div>
+        <span className="numeric text-caption text-muted-foreground font-mono">
+          {total} packages
+        </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex size-28 shrink-0 items-center justify-center">
-          <svg
-            aria-label={`Package composition: ${slices.map((slice) => `${slice.label} ${slice.count}`).join(", ")}`}
-            className="size-full -rotate-90"
-            viewBox={`0 0 ${SIZE} ${SIZE}`}
-          >
-            <circle
-              className="stroke-secondary"
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              fill="none"
-              r={RADIUS}
-              strokeWidth={STROKE}
-            />
-            {arcs.map((arc, index) => (
-              <m.circle
-                animate={{
-                  opacity: activeKey === null || activeKey === arc.key ? 1 : 0.25,
-                }}
-                // oxlint-disable-next-line shadcn/no-arbitrary-values -- SVG stroke-width hover transition avoids transition:all
-                className="cursor-pointer transition-[stroke-width] duration-150"
-                cx={SIZE / 2}
-                cy={SIZE / 2}
-                fill="none"
-                initial={shouldReduceMotion ? false : { opacity: 0 }}
-                key={arc.key}
-                onPointerEnter={() => {
-                  setActiveKey(arc.key);
-                }}
-                onPointerLeave={() => {
-                  setActiveKey(null);
-                }}
-                r={RADIUS}
-                stroke={arc.slice.color}
-                strokeDasharray={`${arc.dash} ${CIRCUMFERENCE - arc.dash}`}
-                strokeDashoffset={-arc.offsetDegrees}
-                strokeLinecap="butt"
-                strokeWidth={activeKey === arc.key ? STROKE + 3 : STROKE}
-                transition={
-                  shouldReduceMotion
-                    ? { duration: 0 }
-                    : {
-                        delay: 0.1 + index * 0.09,
-                        duration: 0.32,
-                        ease: EASE_STANDARD,
-                      }
-                }
-              >
-                <title>{`${arc.slice.label}: ${arc.slice.count}`}</title>
-              </m.circle>
-            ))}
-          </svg>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center"
-          >
-            {active ? (
-              <m.span
-                animate={{ opacity: 1, y: 0 }}
-                className="numeric text-foreground text-title font-semibold"
-                initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
-                key={active.key}
-                transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.15 }}
-              >
-                {formatPercent(usageRatio(active.count, total))}
-              </m.span>
-            ) : (
-              <>
-                <span className="numeric text-foreground text-title font-semibold">{total}</span>
-                <span className="text-caption text-muted-foreground">apps</span>
-              </>
-            )}
-          </div>
-        </div>
+      {/* Holistic Multi-Segment Capacity Bar */}
+      <div className="border-border/60 bg-secondary/60 flex h-3 w-full gap-0.5 overflow-hidden rounded-full border p-0.5">
+        {categories.map((cat) => {
+          const rawPct = (cat.count / total) * 100;
+          const displayPct = cat.count > 0 ? Math.max(1.8, rawPct) : 0;
+          const isDimmed = activeKey !== null && activeKey !== cat.key;
 
-        {/* Legend rows double as hover controls for the arcs */}
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          {slices.map((slice, index) => (
-            <m.button
+          return (
+            <div
+              className={cn(
+                // oxlint-disable-next-line shadcn/no-arbitrary-values -- segmented meter tracks dynamic width without transition-all
+                "h-full w-(--segment-width) rounded-full transition-opacity duration-200",
+                cat.barClass,
+                isDimmed ? "opacity-35" : "opacity-100"
+              )}
+              key={cat.key}
+              onPointerEnter={() => setActiveKey(cat.key)}
+              onPointerLeave={() => setActiveKey(null)}
+              style={{ "--segment-width": `${displayPct}%` } as React.CSSProperties}
+              title={`${cat.label}: ${cat.count} (${rawPct.toFixed(1)}%)`}
+            />
+          );
+        })}
+      </div>
+
+      {/* 3 Rich Diagnostic Metric Rows */}
+      <div className="flex flex-1 flex-col justify-between gap-2">
+        {categories.map((cat, idx) => {
+          const isHovered = activeKey === cat.key;
+          const ratio = usageRatio(cat.count, total);
+          const pct = formatPercent(ratio);
+          const Icon = cat.icon;
+
+          return (
+            <m.div
               animate={{ opacity: 1, x: 0 }}
-              className="text-body hover:bg-surface-raised flex items-center justify-between rounded-md px-1.5 py-1 transition-colors"
+              className={cn(
+                "group flex flex-1 cursor-pointer flex-col justify-center gap-1.5 rounded-md border p-2 transition-all",
+                isHovered
+                  ? "border-border bg-surface-raised shadow-xs"
+                  : "border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised"
+              )}
               initial={shouldReduceMotion ? false : { opacity: 0, x: -6 }}
-              key={slice.key}
-              onBlur={() => {
-                setActiveKey(null);
-              }}
-              onFocus={() => {
-                setActiveKey(slice.key);
-              }}
-              onPointerEnter={() => {
-                setActiveKey(slice.key);
-              }}
-              onPointerLeave={() => {
-                setActiveKey(null);
-              }}
-              tabIndex={0}
+              key={cat.key}
+              onPointerEnter={() => setActiveKey(cat.key)}
+              onPointerLeave={() => setActiveKey(null)}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
-                  : {
-                      delay: 0.15 + index * 0.06,
-                      duration: 0.28,
-                      ease: EASE_STANDARD,
-                    }
+                  : { delay: 0.1 + idx * 0.05, duration: 0.28, ease: EASE_STANDARD }
               }
-              type="button"
             >
-              <span className="flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className={`size-2 shrink-0 rounded-full ${slice.dotClass}`}
+              <div className="flex items-center justify-between">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div
+                    className={cn(
+                      "flex size-6.5 shrink-0 items-center justify-center rounded",
+                      cat.iconBg
+                    )}
+                  >
+                    <Icon className="size-3.5" />
+                  </div>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="text-body text-foreground truncate font-medium">
+                      {cat.label}
+                    </span>
+                    <span className="text-caption text-muted-foreground truncate">
+                      {cat.description}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-baseline gap-2">
+                  <span className="numeric text-body text-foreground font-semibold">
+                    {cat.count}
+                  </span>
+                  <span className="numeric text-caption text-muted-foreground bg-surface border-border/40 rounded border px-1.5 py-0.5 font-medium">
+                    {pct}
+                  </span>
+                </div>
+              </div>
+
+              {/* Category micro-progress bar */}
+              <div className="bg-secondary h-1.5 w-full overflow-hidden rounded-full">
+                <m.div
+                  animate={{ scaleX: ratio }}
+                  className={cn("h-full w-full origin-left rounded-full", cat.barClass)}
+                  initial={shouldReduceMotion ? false : { scaleX: 0 }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { delay: 0.16 + idx * 0.05, duration: 0.35, ease: EASE_STANDARD }
+                  }
                 />
-                <span className="text-muted-foreground">{slice.label}</span>
-              </span>
-              <span className="flex items-baseline gap-1.5">
-                <span className="numeric text-foreground font-medium">{slice.count}</span>
-                <span className="numeric text-caption text-muted-foreground w-9 text-right">
-                  {formatPercent(usageRatio(slice.count, total))}
-                </span>
-              </span>
-            </m.button>
-          ))}
-        </div>
+              </div>
+            </m.div>
+          );
+        })}
       </div>
     </div>
   );

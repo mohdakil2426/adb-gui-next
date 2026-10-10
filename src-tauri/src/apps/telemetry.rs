@@ -64,12 +64,28 @@ pub fn get_app_overview_telemetry(
     debug!("Collecting app overview telemetry for serial {:?}", serial);
 
     // 1. Query package lists
-    let user_output = run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-3"])
-        .unwrap_or_default();
-    let user_pkgs = parse_package_lines(&user_output);
+    let user_output =
+        run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-3", "-u"])
+            .or_else(|_| {
+                run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-3"])
+            })
+            .unwrap_or_default();
+    let mut user_pkgs = parse_package_lines(&user_output);
 
-    let system_output = run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-s"])
-        .unwrap_or_default();
+    if let Ok(disabled_user_out) =
+        run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-3", "-d"])
+    {
+        for pkg in parse_package_lines(&disabled_user_out) {
+            user_pkgs.insert(pkg);
+        }
+    }
+
+    let system_output =
+        run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-s", "-u"])
+            .or_else(|_| {
+                run_adb_for_serial(app, serial, &["shell", "pm", "list", "packages", "-s"])
+            })
+            .unwrap_or_default();
     let system_pkgs = parse_package_lines(&system_output);
 
     let disabled_output =
@@ -77,6 +93,13 @@ pub fn get_app_overview_telemetry(
             .unwrap_or_default();
     let disabled_pkgs = parse_package_lines(&disabled_output);
 
+    if !system_pkgs.is_empty() {
+        for d_pkg in &disabled_pkgs {
+            if !system_pkgs.contains(d_pkg) {
+                user_pkgs.insert(d_pkg.clone());
+            }
+        }
+    }
     let user_apps_count = user_pkgs.len();
     let system_apps_count = system_pkgs.len();
     let disabled_apps_count = disabled_pkgs.len();
@@ -141,6 +164,7 @@ pub fn get_app_overview_telemetry(
         }
     }
 
+    let mut seen_in_breakdown = HashSet::new();
     if !parsed_pkg_names.is_empty() {
         for (i, pkg_name) in parsed_pkg_names.into_iter().enumerate() {
             if system_pkgs.contains(&pkg_name) {
@@ -165,6 +189,7 @@ pub fn get_app_overview_telemetry(
                 },
             );
 
+            seen_in_breakdown.insert(pkg_name.clone());
             storage_breakdown.push(StorageConsumerItem {
                 package_name: pkg_name,
                 label,
@@ -172,6 +197,52 @@ pub fn get_app_overview_telemetry(
                 data_size,
                 cache_size,
                 total_size,
+            });
+        }
+    }
+
+    // Supplement any user packages omitted by dumpsys diskstats so all user apps are represented
+    for user_pkg in &user_pkgs {
+        if !seen_in_breakdown.contains(user_pkg) && storage_breakdown.len() < 10 {
+            let mut app_size = 24_000_000u64;
+            if let Ok(path_out) =
+                run_adb_for_serial(app, serial, &["shell", "pm", "path", user_pkg])
+            {
+                for line in path_out.lines() {
+                    if let Some(apk_path) = line.trim().strip_prefix("package:")
+                        && let Ok(stat_out) = run_adb_for_serial(
+                            app,
+                            serial,
+                            &["shell", "stat", "-c", "%s", apk_path.trim()],
+                        )
+                        && let Ok(bytes) = stat_out.trim().parse::<u64>()
+                        && bytes > 0
+                    {
+                        app_size = bytes;
+                        break;
+                    }
+                }
+            }
+
+            let label = user_pkg.split('.').next_back().map_or_else(
+                || user_pkg.clone(),
+                |s| {
+                    let mut c = s.chars();
+                    match c.next() {
+                        None => String::new(),
+                        Some(first) => first.to_uppercase().collect::<String>() + c.as_str(),
+                    }
+                },
+            );
+
+            seen_in_breakdown.insert(user_pkg.clone());
+            storage_breakdown.push(StorageConsumerItem {
+                package_name: user_pkg.clone(),
+                label,
+                app_size,
+                data_size: 0,
+                cache_size: 0,
+                total_size: app_size,
             });
         }
     }

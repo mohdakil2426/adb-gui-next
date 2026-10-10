@@ -15,6 +15,9 @@
 - **Wrong:** saving 8 Hz `marketplace:download-progress` events into a `zustand/persist` store causing localStorage write churn.
   **Right:** record high-frequency progress in non-persisted `downloadStore` with 8 Hz throttling and auto-clear.
   **Id:** Marketplace download progress store separation
+- **Wrong:** omitting `cx={SIZE / 2}` on rotated (`-rotate-90`) SVG `<circle>` arcs in `SourceCompositionDonut`, or using a 3-column grid for 5 items in `CategoryDistributionMeter`.
+  **Right:** set both `cx={SIZE / 2}` and `cy={SIZE / 2}` on every SVG `<circle>`, and use a 2-column grid with `isLastOdd && "@sm:col-span-2"` to prevent truncation and empty cells.
+  **Id:** Marketplace overview chart geometry and grid balance
 
 ## Ownership Map
 

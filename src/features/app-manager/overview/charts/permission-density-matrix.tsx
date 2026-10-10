@@ -79,7 +79,7 @@ export const PermissionDensityMatrix = ({
   const maxCount = Math.max(...items.map((item) => item.count), 1);
 
   return (
-    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
+    <div className="border-border bg-surface flex h-full flex-col justify-between gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Eye aria-hidden="true" className="text-primary size-4" />
@@ -98,11 +98,18 @@ export const PermissionDensityMatrix = ({
         <div className="grid grid-cols-2 gap-2">
           {items.map((item, index) => {
             const Icon = getPermissionIcon(item.permission, item.label);
-            const riskInfo = getRiskLabel(item.riskLevel ?? item.risk);
+            const isExposed = item.count > 0;
+            const riskInfo = isExposed
+              ? getRiskLabel(item.riskLevel ?? item.risk)
+              : {
+                  label: "None exposed",
+                  meterClass: "bg-muted-foreground/20",
+                  toneClass: "text-muted-foreground/70",
+                };
             return (
               <m.div
                 animate={{ opacity: 1, y: 0 }}
-                className="border-border bg-surface-raised hover:bg-surface-raised/80 flex flex-col gap-1.5 rounded-md border p-2 transition-colors"
+                className="border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised flex flex-col gap-1.5 rounded-md border p-2 transition-colors"
                 initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
                 key={item.permission || item.label}
                 transition={
@@ -117,7 +124,13 @@ export const PermissionDensityMatrix = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <Icon aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
+                    <Icon
+                      aria-hidden="true"
+                      className={cn(
+                        "size-4 shrink-0",
+                        isExposed ? "text-primary" : "text-muted-foreground/50"
+                      )}
+                    />
                     <div className="flex min-w-0 flex-col">
                       <span className="text-body text-foreground truncate font-medium">
                         {item.label || item.permission}
@@ -127,11 +140,17 @@ export const PermissionDensityMatrix = ({
                       </span>
                     </div>
                   </div>
-                  <span className="numeric text-body text-foreground shrink-0 font-semibold">
+                  <span
+                    className={cn(
+                      "numeric text-body shrink-0",
+                      isExposed
+                        ? "text-foreground font-semibold"
+                        : "text-muted-foreground font-medium"
+                    )}
+                  >
                     {item.count}
                   </span>
                 </div>
-                {/* Density meter relative to the largest category */}
                 <div
                   aria-hidden="true"
                   className="bg-secondary h-1 w-full overflow-hidden rounded-full"

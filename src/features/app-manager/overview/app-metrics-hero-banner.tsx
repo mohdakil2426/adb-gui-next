@@ -64,7 +64,9 @@ export const AppMetricsHeroBanner = ({ stats }: AppMetricsHeroBannerProps) => {
           >
             <div className="flex items-center justify-between">
               <span className="text-caption text-muted-foreground font-medium">{spec.label}</span>
-              <Icon aria-hidden="true" className="text-muted-foreground size-4" />
+              <div className="bg-surface-raised/80 flex size-6 items-center justify-center rounded-md">
+                <Icon aria-hidden="true" className="text-primary size-3.5" />
+              </div>
             </div>
             <div className="flex flex-col pt-1.5">
               <span className="numeric text-foreground text-title font-bold">{spec.value}</span>

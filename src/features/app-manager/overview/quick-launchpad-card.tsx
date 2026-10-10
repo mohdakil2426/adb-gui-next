@@ -1,9 +1,17 @@
 import { m, useReducedMotion } from "framer-motion";
-import { BatteryCharging, Camera, Code2, Folder, LayoutGrid, Play, Settings } from "lucide-react";
+import {
+  ArrowUpRight,
+  BatteryCharging,
+  Camera,
+  Code2,
+  Folder,
+  LayoutGrid,
+  Play,
+  Settings,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { RunShellCommand } from "@/desktop/backend";
-import { Button } from "@/shared/ui/button";
 
 const LAUNCHPAD_ACTIONS = [
   {
@@ -58,7 +66,7 @@ export const QuickLaunchpadCard = ({ selectedSerial }: QuickLaunchpadCardProps) 
   };
 
   return (
-    <div className="border-border bg-surface flex flex-col gap-3 rounded-lg border p-3.5">
+    <div className="border-border bg-surface flex h-full flex-col justify-between gap-3 rounded-lg border p-3.5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Play className="text-primary size-4" />
@@ -71,10 +79,12 @@ export const QuickLaunchpadCard = ({ selectedSerial }: QuickLaunchpadCardProps) 
         {LAUNCHPAD_ACTIONS.map((act, index) => {
           const Icon = act.icon;
           return (
-            <m.div
+            <m.button
               animate={{ opacity: 1, y: 0 }}
+              className="group border-border/60 bg-surface-raised/40 hover:border-border hover:bg-surface-raised flex h-8.5 w-full items-center justify-between rounded-md border px-2.5 text-left transition-all active:scale-[0.99]"
               initial={shouldReduceMotion ? false : { opacity: 0, y: 6 }}
               key={act.label}
+              onClick={() => launchIntent(act.label, act.cmd)}
               transition={
                 shouldReduceMotion
                   ? { duration: 0 }
@@ -84,18 +94,19 @@ export const QuickLaunchpadCard = ({ selectedSerial }: QuickLaunchpadCardProps) 
                       ease: [0.2, 0, 0, 1],
                     }
               }
+              type="button"
             >
-              <Button
-                className="border-border/80 bg-surface-raised/60 text-body text-foreground hover:bg-surface-raised h-8 w-full justify-start gap-2 px-2.5"
-                onClick={() => launchIntent(act.label, act.cmd)}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <Icon aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
-                <span className="truncate">{act.label}</span>
-              </Button>
-            </m.div>
+              <div className="flex min-w-0 items-center gap-2">
+                <Icon aria-hidden="true" className="text-primary size-3.5 shrink-0" />
+                <span className="text-caption text-foreground truncate font-medium">
+                  {act.label}
+                </span>
+              </div>
+              <ArrowUpRight
+                aria-hidden="true"
+                className="text-muted-foreground/30 group-hover:text-primary size-3 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              />
+            </m.button>
           );
         })}
       </div>

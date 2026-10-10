@@ -265,6 +265,10 @@ Re-added **with real call sites** — each stays only while its call site exists
   **Right:** map dynamic tones via semantic classes (`TONE_BG_CLASS[tone]` -> `bg-destructive`, `bg-chart-1`, etc.) to pass `@shadcn/lint(no-inline-styles)`.
   **Id:** Dynamic tone style rule
 
+- **Wrong:** rendering `TopStorageConsumersChart` solely from raw `telemetry.storageBreakdown`, showing raw package suffixes and missing apps omitted by `diskstats`.
+  **Right:** cross-reference `fallbackPackages` (`installedPackages`) to enrich `label_reader.jar` labels and merge omitted user apps up to `MAX_DISPLAY_CONSUMERS`.
+  **Id:** App Manager storage consumer enrichment
+
 ## Tests
 
 - All Vitest FE tests live under `src/test/`.

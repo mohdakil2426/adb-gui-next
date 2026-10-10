@@ -28,10 +28,6 @@ export const AppManagerView = ({ activeView }: { activeView: string }) => {
 
   void activeView;
 
-  const openDebloat = useCallback(() => {
-    setActiveTab("debloater");
-  }, [setActiveTab]);
-
   const handleInspectApp = useCallback((packageName: string) => {
     setInspectedPackage(packageName);
   }, []);
@@ -88,7 +84,6 @@ export const AppManagerView = ({ activeView }: { activeView: string }) => {
                   <AppOverviewTab
                     debloatPackages={debloatPackages}
                     installedPackages={installedPackages}
-                    onOpenDebloat={openDebloat}
                     onSelectApp={handleInspectApp}
                     selectedSerial={selectedSerial}
                   />
