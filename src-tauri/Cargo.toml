@@ -86,12 +86,6 @@ windows-sys = { version = "0.61.2", features = [
 ] }
 [dev-dependencies]
 proptest = { version = "1.11.0", features = ["attr-macro"] }
-criterion = "0.8.2"
-
-[[bench]]
-name = "copy_benchmark"
-harness = false
-
 [features]
 default = ["local_zip", "remote_zip", "brotli"]
 local_zip = []
