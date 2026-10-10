@@ -538,7 +538,7 @@ mod http_zip_tests {
         let mut archive = ::zip::ZipArchive::new(zip_file).expect("read zip");
         assert_eq!(archive.len(), 1);
         let entry = archive.by_index(0).expect("get entry");
-        assert_eq!(entry.name(), "payload.bin");
+        assert_eq!(entry.name().unwrap(), "payload.bin");
     }
 
     #[test]

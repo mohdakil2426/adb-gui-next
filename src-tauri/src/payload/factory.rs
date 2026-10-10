@@ -100,12 +100,14 @@ pub fn is_factory_zip(path: &Path) -> bool {
 
     for i in 0..archive.len() {
         if let Ok(entry) = archive.by_index(i) {
-            let name = entry.name();
+            let Ok(name) = entry.name() else {
+                continue;
+            };
             if name == "payload.bin" || name.ends_with("/payload.bin") {
                 has_payload_bin = true;
                 break;
             }
-            if is_image_entry(name) || is_image_zip_entry(name) {
+            if is_image_entry(&name) || is_image_zip_entry(&name) {
                 has_factory_indicators = true;
             }
         }
@@ -126,7 +128,7 @@ pub fn discover_local_factory_entries(zip_path: &Path) -> Result<Vec<LocalFactor
 
     for i in 0..outer_archive.len() {
         let entry = outer_archive.by_index(i)?;
-        let name = entry.name().to_string();
+        let name = entry.name()?.to_string();
         let size = entry.size();
 
         if is_image_entry(&name) && size > 0 {
@@ -158,7 +160,7 @@ pub fn discover_local_factory_entries(zip_path: &Path) -> Result<Vec<LocalFactor
 
         for j in 0..nested_archive.len() {
             let inner_entry = nested_archive.by_index(j)?;
-            let inner_name = inner_entry.name().to_string();
+            let inner_name = inner_entry.name()?.to_string();
             let inner_size = inner_entry.size();
 
             if is_image_entry(&inner_name) && inner_size > 0 {

@@ -86,7 +86,8 @@ fn extract_entry(
         .by_name(name)
         .map_err(|_| format!("Entry '{name}' not found inside Magisk package"))?;
     fs::create_dir_all(dest).map_err(|e| e.to_string())?;
-    let dest_path = dest.join(entry.mangled_name().file_name().unwrap_or_default());
+    let mangled = entry.mangled_name().map_err(|e| e.to_string())?;
+    let dest_path = dest.join(mangled.file_name().unwrap_or_default());
     let mut out = fs::File::create(&dest_path).map_err(|e| e.to_string())?;
     io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
     Ok(dest_path)

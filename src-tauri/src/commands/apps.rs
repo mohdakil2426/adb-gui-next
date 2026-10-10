@@ -459,11 +459,12 @@ fn install_apks(
 
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).map_err(|e| e.to_string())?;
-        if !entry.name().to_ascii_lowercase().ends_with(".apk") {
+        let entry_name = entry.name().map_err(|e| e.to_string())?;
+        if !entry_name.to_ascii_lowercase().ends_with(".apk") {
             continue;
         }
 
-        let file_name = Path::new(entry.name())
+        let file_name = Path::new(entry_name.as_ref())
             .file_name()
             .and_then(|v| v.to_str())
             .ok_or_else(|| "Invalid APK entry name.".to_string())?;

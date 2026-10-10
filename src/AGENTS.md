@@ -253,6 +253,18 @@ Re-added **with real call sites** — each stays only while its call site exists
   **Right:** use hand-rolled SVG charts and zero-dependency AST parsers because `freezePrototype: true` crashes the webview on prototype mutations.
   **Id:** Frontend prototype freeze compliance
 
+- **Wrong:** rendering `/data` and `/storage/emulated` as separate volume breakdown rows or dual rings in `RingChart`.
+  **Right:** filter with `!isInternalOrSharedMount` so only external mounts (SD card/USB) get breakdown rows; emulated storage mirrors `/data` and duplicates capacity numbers.
+  **Id:** Dashboard storage volume deduplication
+
+- **Wrong:** running `bun test <file>` on React/DOM suites and failing with `ReferenceError: document is not defined`.
+  **Right:** use `bun x vitest run <file>` (or `bun run test`) which configures Vite's `jsdom` testing environment.
+  **Id:** Vitest test runner execution
+
+- **Wrong:** applying inline styles like `style={{ backgroundColor: TONE_CSS_COLOR[tone] }}` on tone dots.
+  **Right:** map dynamic tones via semantic classes (`TONE_BG_CLASS[tone]` -> `bg-destructive`, `bg-chart-1`, etc.) to pass `@shadcn/lint(no-inline-styles)`.
+  **Id:** Dynamic tone style rule
+
 ## Tests
 
 - All Vitest FE tests live under `src/test/`.

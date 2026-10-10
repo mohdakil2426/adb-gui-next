@@ -1,9 +1,9 @@
 ---
-name: self-evolve-v2
-description: Universal continuous learning & documentation self-improvement engine. Use whenever completing any bug fix, code modification, proven working CLI command, or architectural decision to capture verified learnings and record durable rules in the nearest project document. Trigger on user prompts like "learn", "learning", "self-evolve", "self-improve", "update docs", "update rules", "teach the repo", "lessons learned", "capture this", or before completing non-trivial tasks. Selects the nearest existing AGENTS.md (or creates a dedicated module AGENTS.md), DESIGN.md, CODING_STANDARD.md, ARCHITECTURE.md, or PROJECT_RULES.md.
+name: self-learning
+description: Universal continuous learning & documentation self-improvement engine to learn from mistakes and capture verified learnings. Use whenever completing any bug fix, code modification, proven working CLI command, or architectural decision to record durable rules in the nearest project document. Trigger on user prompts like "learn", "learning", "self-learning", "self-evolve", "self-improve", "learn from mistakes", "update docs", "update rules", "teach the repo", "lessons learned", "capture this", or before completing non-trivial tasks. Selects the nearest existing AGENTS.md (or creates a dedicated module AGENTS.md), DESIGN.md, CODING_STANDARD.md, ARCHITECTURE.md, or PROJECT_RULES.md.
 ---
 
-# Self-Evolve
+# Self-Learning
 
 Continuous repository learning: capture verified lessons, proven commands, and architectural invariants permanently into project documentation so future developers and agents never repeat solved failures.
 

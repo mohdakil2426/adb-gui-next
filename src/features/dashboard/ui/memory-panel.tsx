@@ -3,12 +3,14 @@ import { lazy, Suspense, useMemo, useState } from "react";
 
 import type { backend } from "@/desktop/models";
 import type { MemorySample } from "@/features/dashboard/model/memory-history-store";
-import { TONE_TEXT, usageTone } from "@/features/dashboard/model/tone";
+import { usageTone } from "@/features/dashboard/model/tone";
 import type { Tone } from "@/features/dashboard/model/tone";
 import { PanelCard } from "@/features/dashboard/ui/panel-card";
 import { SpecChip } from "@/features/dashboard/ui/spec-chip";
-import { UsageBar } from "@/features/dashboard/ui/usage-bar";
-import { Gauge } from "@/shared/charts/gauge";
+import { Ring } from "@/shared/charts/ring";
+import { RingCenter } from "@/shared/charts/ring-center";
+import { RingChart } from "@/shared/charts/ring-chart";
+import type { RingData } from "@/shared/charts/ring-context";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { cn } from "@/shared/utils/cn";
 import { formatBytes, formatPercent, usageRatio } from "@/shared/utils/format";
@@ -28,6 +30,13 @@ const TONE_CSS_COLOR: Record<Tone, string> = {
   neutral: "var(--chart-1)",
   ok: "var(--success)",
   warn: "var(--warning)",
+};
+
+const TONE_BG_CLASS: Record<Tone, string> = {
+  danger: "bg-destructive",
+  neutral: "bg-chart-1",
+  ok: "bg-success",
+  warn: "bg-warning",
 };
 
 interface MemoryPanelProps {
@@ -59,35 +68,89 @@ export const MemoryPanel = ({ isLoading, memory, samples }: MemoryPanelProps) =>
     }
     return [];
   }, [samples, hasMemory, memory, mountTime]);
+  const ringData: RingData[] = useMemo(() => {
+    if (!memory || memory.totalBytes <= 0) {
+      return [];
+    }
+
+    const data: RingData[] = [
+      {
+        color: TONE_CSS_COLOR[tone],
+        label: "Used RAM",
+        maxValue: memory.totalBytes,
+        value: memory.usedBytes,
+      },
+    ];
+
+    if (memory.availableBytes > 0) {
+      data.push({
+        color: "var(--chart-2)",
+        label: "Available RAM",
+        maxValue: memory.totalBytes,
+        value: memory.availableBytes,
+      });
+    }
+
+    return data;
+  }, [memory, tone]);
 
   return (
     <PanelCard delay={0.19} icon={MemoryStick} title="Memory">
       {isLoading && !hasMemory ? (
-        <div className="flex flex-col gap-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-16 w-full" />
+        <div className="flex flex-col items-center gap-3 py-2">
+          <Skeleton className="size-[210px] rounded-full" />
+          <Skeleton className="h-4 w-40" />
         </div>
       ) : (
         <div className="flex w-full flex-1 flex-col justify-between gap-3">
           {hasMemory && memory ? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="numeric text-display text-foreground font-semibold">
-                  {formatPercent(ratio)}
-                </span>
-                <span className={cn("numeric text-label font-medium", TONE_TEXT[tone])}>
-                  {formatBytes(memory.usedBytes)} of {formatBytes(memory.totalBytes)}
-                </span>
+            <div className="flex flex-col items-center justify-center gap-2 py-1">
+              <RingChart
+                baseInnerRadius={68}
+                data={ringData}
+                ringGap={6}
+                size={210}
+                strokeWidth={12}
+              >
+                {ringData.map((_, index) => (
+                  <Ring index={index} key={ringData[index]?.label ?? index} lineCap="round" />
+                ))}
+                <RingCenter defaultLabel="Used">
+                  {({ value, label, isHovered }) => (
+                    <div className="flex flex-col items-center justify-center px-1 text-center">
+                      <span className="numeric text-display text-foreground font-bold tracking-tight">
+                        {isHovered ? formatBytes(value) : formatPercent(ratio)}
+                      </span>
+                      <span className="text-caption text-muted-foreground font-medium">
+                        {isHovered
+                          ? label
+                          : `${formatBytes(memory.usedBytes)} of ${formatBytes(memory.totalBytes)}`}
+                      </span>
+                    </div>
+                  )}
+                </RingCenter>
+              </RingChart>
+
+              {/* Ring chart legend */}
+              <div className="text-caption flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className={cn("size-2 rounded-full", TONE_BG_CLASS[tone])}
+                  />
+                  <span className="text-muted-foreground">Used:</span>
+                  <span className="text-foreground font-medium">
+                    {formatBytes(memory.usedBytes)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span aria-hidden="true" className="bg-chart-2 size-2 rounded-full" />
+                  <span className="text-muted-foreground">Available:</span>
+                  <span className="text-foreground font-medium">
+                    {formatBytes(memory.availableBytes)}
+                  </span>
+                </div>
               </div>
-              <Gauge
-                activeFill={TONE_CSS_COLOR[tone]}
-                className="w-full"
-                linearHeight={10}
-                orientation="linear"
-                totalNotches={32}
-                value={Math.round(ratio * 100)}
-              />
-              <UsageBar label="Memory used" ratio={ratio} tone={tone} />
             </div>
           ) : (
             <p className="text-body text-muted-foreground">

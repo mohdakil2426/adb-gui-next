@@ -106,7 +106,10 @@ pub fn pick_icon_from_apk_bytes(bytes: &[u8]) -> Option<(String, Vec<u8>)> {
     let mut best: Option<(i32, String, Vec<u8>)> = None;
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).ok()?;
-        let name = entry.name().replace('\\', "/");
+        let Ok(raw_name) = entry.name() else {
+            continue;
+        };
+        let name = raw_name.replace('\\', "/");
         let lower = name.to_ascii_lowercase();
         let Some(mime) = mime_for(&lower) else {
             continue;

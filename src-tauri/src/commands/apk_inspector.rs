@@ -382,7 +382,10 @@ pub fn inspect_package_file_sync(file_path: &str) -> CmdResult<ApkInspectionResu
         let Ok(mut entry) = archive.by_index(i) else {
             continue;
         };
-        let name = entry.name().to_string();
+        let Ok(raw_name) = entry.name() else {
+            continue;
+        };
+        let name = raw_name.to_string();
 
         if ext == "apks" || ext == "xapk" || ext == "apkm" {
             if name.to_ascii_lowercase().ends_with(".apk") {
@@ -479,7 +482,10 @@ pub fn inspect_package_file_sync(file_path: &str) -> CmdResult<ApkInspectionResu
         if let Ok(mut inner_zip) = ZipArchive::new(cursor) {
             for j in 0..inner_zip.len() {
                 if let Ok(mut inner_entry) = inner_zip.by_index(j) {
-                    let iname = inner_entry.name().to_string();
+                    let Ok(raw_name) = inner_entry.name() else {
+                        continue;
+                    };
+                    let iname = raw_name.to_string();
                     if iname.starts_with("lib/") {
                         let parts: Vec<&str> = iname.split('/').collect();
                         if parts.len() >= 2 && !parts[1].is_empty() {

@@ -192,7 +192,10 @@ fn open_zip_payload(zip_path: &Path) -> Result<OpenedZipPayload> {
 
     for index in 0..archive.len() {
         let entry = archive.by_index(index)?;
-        if entry.name() != "payload.bin" || entry.size() == 0 {
+        let Ok(name) = entry.name() else {
+            continue;
+        };
+        if name != "payload.bin" || entry.size() == 0 {
             continue;
         }
 
@@ -247,7 +250,10 @@ fn extract_payload_to_tempfile(zip_path: &Path) -> Result<PathBuf> {
 
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index)?;
-        if entry.name() != "payload.bin" || entry.size() == 0 {
+        let Ok(name) = entry.name() else {
+            continue;
+        };
+        if name != "payload.bin" || entry.size() == 0 {
             continue;
         }
 
