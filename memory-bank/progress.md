@@ -4,13 +4,12 @@
 
 Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core features: device dashboard, wireless ADB, app manager + UAD debloat + APK icons, file explorer (root grant, hidden listing, open-in-editor), flasher, utilities (stacked Host/Device/Inspect/Danger + Windows Google host setup), **scrcpy** (official binaries, native window), payload dumper (local/remote/OPS/OFP/factory), marketplace (search-first + GitHub releases/README) with **GitHub APK/APKS filter + trending explore (Komi Store port)**, emulator + Magisk root wizard, bottom logs/shell.
 
-**2026-09-18 — Ultracite Oxlint + Oxfmt Migration & Curated Tools Removal:**
+**2026-10-24 — Latest Dependency Bumps & Quality Gates:**
 
-- **Marketplace:** Removed Curated Open-Source Android Power Tools grid, backend Tauri command, service logic, test, and permissions entries.
-- **Linter & Formatter:** Replaced Biome with Ultracite Oxlint + Oxfmt (`printWidth: 100`, ignoring docs, .agents, .github, memory-bank, src-tauri).
-- **Code Quality:** Resolved all TypeScript strict null / property types / no-implicit-returns, empty functions, and Vitest async expect rules without rule suppression.
-- **Validation:** Full verification passed — Oxlint (0 errors), Ultracite check (0 issues), tsc (0 errors), Vitest (48/48 files passed, 324/324 tests), Vite build (clean), Cargo check (0 errors).
-## Quality / CI (current)
+- **Dependencies:** All frontend and backend dependencies updated to latest releases (`bun outdated` clean; Tauri 2.12.5 backend / 2.12.4 CLI & API).
+- **File Explorer Root Mode:** Fixed root transfer staging permissions (`0777`) and single-quoted `su -c` execution preventing unprivileged splitting by Android shell.
+- **UI & A11y:** Restored clean centered border UI for file creation/renaming; resolved a11y label semantics across scrcpy and field primitives.
+- **Validation:** Oxlint (0 errors, 476 files clean), `tsc` (0 errors), Vitest (53/53 files, 350/350 tests), Cargo check (0 errors).
 
 | Item         | State                                                                                        |
 | ------------ | -------------------------------------------------------------------------------------------- |
@@ -24,4 +23,4 @@ Fully functional Tauri 2 desktop app on **local `main`** (v**0.2.5**). Core feat
 | ShadScan     | 79/100 (bunx @shadscan/cli)                                                                  |
 | Code signing | Not used                                                                                     |
 
-**Last updated:** 2026-08-21
+**Last updated:** 2026-10-24

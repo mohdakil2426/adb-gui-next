@@ -213,7 +213,7 @@ export const ScrcpyAudioTab = ({ onOptionsChange, options }: ScrcpyAudioTabProps
 
                 {/* Destination File Picker */}
                 <div className="flex flex-col gap-1.5">
-                  <Label>Output File Destination</Label>
+                  <span className="text-body font-medium">Output File Destination</span>
                   <div className="flex items-center gap-2">
                     <Button
                       className="text-caption h-9 gap-1.5 font-medium"

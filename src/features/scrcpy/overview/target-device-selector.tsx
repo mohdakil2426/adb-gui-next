@@ -8,7 +8,6 @@ import { useNicknameStore } from "@/shared/stores/nickname-store";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
-import { Label } from "@/shared/ui/label";
 import { cn } from "@/shared/utils/cn";
 
 // Empty state handled across UI when data?.length === 0
@@ -203,7 +202,7 @@ export const TargetDeviceSelector = ({
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Label className="text-body text-foreground font-semibold">Target Android Devices</Label>
+          <span className="text-body text-foreground font-semibold">Target Android Devices</span>
           {adbDevices.length > 0 ? (
             <span className="text-caption text-muted-foreground">
               ({selectedSerials.size} of {adbDevices.length} selected)

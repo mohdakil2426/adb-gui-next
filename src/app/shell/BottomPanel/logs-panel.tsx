@@ -10,7 +10,7 @@ const ESTIMATED_ROW_HEIGHT = 20;
 const AT_BOTTOM_TOLERANCE_PX = 30;
 const REGEX_ESCAPE = /[.*+?^${}()|[\]\\]/gu;
 
-const escapeRegExp = (value: string): string => value.replace(REGEX_ESCAPE, "\\$&");
+const escapeRegExp = (value: string): string => value.replaceAll(REGEX_ESCAPE, "\\$&");
 
 const LogsPanelImpl = () => {
   const { logs, filter, searchQuery, isFollowing, setIsFollowing } = useLogStore(

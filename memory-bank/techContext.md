@@ -4,7 +4,7 @@
 
 ### Frontend
 
-React 19 · TypeScript · Vite 8 · Tailwind v4 · shadcn/Radix · Zustand 5 · TanStack Query 5 · React Hook Form · Zod · Framer Motion · lucide · next-themes · sonner · TanStack Virtual · **cmdk** (⌘K palette) · **no charting library** (pure hand-rolled SVG against `--chart-1..5`) · Tauri API 2.11 + dialog/opener/clipboard plugins · Bun **1.3.14**
+React 19 · TypeScript · Vite 8 · Tailwind v4 · shadcn/Radix · Zustand 5 · TanStack Query 5 · React Hook Form · Zod · Framer Motion · lucide · next-themes · sonner · TanStack Virtual · **cmdk** (⌘K palette) · **no charting library** (pure hand-rolled SVG against `--chart-1..5`) · Tauri API 2.12 + dialog/opener/clipboard plugins · Bun **1.4.4**
 
 **Why no charting library.** `freezePrototype: true` (`tauri.conf.json`) freezes `Object.prototype`, so any dependency that writes to a built-in prototype at module-evaluation time throws `TypeError` in strict mode and kills the whole view. Recharts was added and then removed for exactly this: its `decimal.js-light` does `Decimal.prototype.valueOf = …`. It never reproduces in `vite build`, Vitest or the browser preview — only inside the webview. **Vet every new frontend dependency for module-eval prototype writes.** All charts across Dashboard, Applications, Marketplace, Flasher, Payload Dumper, Utilities, Scrcpy, and Emulator are hand-rolled pure SVG against the `chart-1..5` tokens.
 
@@ -14,7 +14,7 @@ Fonts are **not** an npm runtime dep: Inter + JetBrains Mono variable woff2 are 
 
 ### Backend
 
-Rust 2024 · Tauri 2.11 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · brotli · sha1 · sha2 · byteorder · lz4_flex · scraper · windows-sys (sparse IOCTLs) · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
+Rust 2024 · Tauri 2.12 · tokio · memmap2 · rayon · prost · zip/zstd/**liblzma**/bzip2 · flate2(zlib-rs) · brotli · sha1 · sha2 · byteorder · lz4_flex · scraper · windows-sys (sparse IOCTLs) · reqwest(rustls) · aes/cfb-mode/md-5/quick-xml (OPS/OFP) · **tauri-plugin-single-instance**
 
 `[profile.release]`: `opt-level = 3` · `lto = true` · `codegen-units = 1` · `panic = "abort"` · `strip = true`. The old `opt-level = "s"` and the separate `release-fast` profile are gone — the workload is CPU-bound, so `release` **is** the speed profile.
 
@@ -94,4 +94,4 @@ Full design: `docs/architecture.md`.
 - Scrcpy: official release assets + SHA256; no in-tree scrcpy source; outbound URL validation on GitHub hops
 - Host setup: Google catalog hops re-validated; UAC for HKLM Path / `pnputil`; app ADB stays bundled
 
-**Last updated:** 2026-08-18
+**Last updated:** 2026-10-24

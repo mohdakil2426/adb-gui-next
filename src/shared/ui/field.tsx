@@ -1,8 +1,8 @@
+import * as LabelPrimitive from "@radix-ui/react-label";
 import { cva } from "class-variance-authority";
 import type { VariantProps } from "class-variance-authority";
 import { useMemo } from "react";
 
-import { Label } from "@/shared/ui/label";
 import { Separator } from "@/shared/ui/separator";
 import { cn } from "@/shared/utils/cn";
 
@@ -89,8 +89,8 @@ const FieldContent = ({ className, ...props }: React.ComponentProps<"div">) => (
   />
 );
 
-const FieldLabel = ({ className, ...props }: React.ComponentProps<typeof Label>) => (
-  <Label
+const FieldLabel = ({ className, ...props }: React.ComponentProps<typeof LabelPrimitive.Root>) => (
+  <LabelPrimitive.Root
     className={cn(
       "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50",
       "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col has-[>[data-slot=field]]:rounded-md has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-4",
