@@ -179,14 +179,13 @@ impl AdbClient {
         let marker = next_marker();
         let wrapped = format!("{cmd}; echo {marker}0:$?");
 
-        let mut args: Vec<&str> = vec!["shell"];
-        if access_root {
-            args.push("su");
-            args.push("-c");
-        }
-        args.push(&wrapped);
+        let shell_arg = if access_root {
+            format!("su -c '{}'", wrapped.replace('\'', "'\\''"))
+        } else {
+            wrapped
+        };
 
-        let raw = self.run(&args)?;
+        let raw = self.run(&["shell", &shell_arg])?;
         let output = raw.combined();
 
         let Some(code) = output

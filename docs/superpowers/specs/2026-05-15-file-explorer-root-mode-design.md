@@ -41,8 +41,7 @@ type FileAccessMode = "normal" | "root";
 The frontend must pass it per target path. Backend command behavior remains:
 
 - `normal`: preserve safe write prefix validation.
-- `root`: verify path shape, bypass safe-prefix restrictions, execute shell mutations through `su -c`, and stage protected push/pull under `/data/local/tmp/adb-gui-next-root-transfer/`.
-
+- `root`: verify path shape, bypass safe-prefix restrictions, execute shell mutations through `su -c '<cmd>'` (single-quoted to prevent ADB unquoted arg splitting), and stage protected push/pull under `/data/local/tmp/adb-gui-next-root-transfer/` with `0777` permissions and in-place `cat` updates preserving file ownership and SELinux contexts.
 ## Verification
 
 Success is testable by:

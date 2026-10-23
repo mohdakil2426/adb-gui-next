@@ -142,33 +142,38 @@ const FileExplorerRowImpl = ({
     >
       <TableCell className="text-body min-w-0 px-3 py-2">
         {isBeingRenamed ? (
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <Input
-              aria-label={`Rename ${file.name}`}
-              autoFocus
-              className={cn(
-                "text-body h-7 w-full px-1.5 py-0",
-                renameError && "border-destructive focus-visible:ring-destructive"
-              )}
-              onBlur={onRenameCancel}
-              onChange={(e) => onRenameChange(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onFocus={(e) => e.target.select()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void onRenameConfirm();
-                }
-                if (e.key === "Escape") {
-                  e.preventDefault();
-                  onRenameCancel();
-                }
-              }}
-              value={renameValue}
-            />
-            {renameError ? (
-              <span className="text-caption text-destructive">{renameError}</span>
-            ) : null}
+          <div className="flex min-w-0 items-center gap-2">
+            {isMultiSelectMode ? <span className="size-4 shrink-0" /> : null}
+            <FileEntryIcon type={file.type} />
+            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <Input
+                aria-label={`Rename ${file.name}`}
+                autoFocus
+                className={cn(
+                  "text-body h-7 w-full min-w-0 px-2 py-0",
+                  renameError &&
+                    "border-destructive focus-visible:border-destructive focus-visible:ring-destructive"
+                )}
+                onBlur={onRenameCancel}
+                onChange={(e) => onRenameChange(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onFocus={(e) => e.target.select()}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void onRenameConfirm();
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    onRenameCancel();
+                  }
+                }}
+                value={renameValue}
+              />
+              {renameError ? (
+                <span className="text-caption text-destructive">{renameError}</span>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="flex min-w-0 items-center gap-2">

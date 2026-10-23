@@ -103,6 +103,9 @@ Rules:
   **Right:** query `-3 -u` + `-3 -d` and `-s -u`, and supplement user packages omitted by `diskstats` via `pm path <pkg>` + `stat -c %s`.
   **Id:** Apps telemetry user package completeness
 
+- **Wrong:** passing multi-command shell pipelines to `adb shell su -c` as separate argv tokens (`["shell", "su", "-c", cmd]`), which causes ADB to concatenate without quotes and Android `/system/bin/sh` to run only the first command as root and subsequent `&&`/`;` commands as non-root `shell` (UID 2000).
+  **Right:** wrap root commands in single quotes as a single argument `su -c '<cmd>'` (as in `AdbClient::shell_checked(true, cmd)`), ensuring all commands and exit markers run strictly under root UID 0.
+  **Id:** Root shell su -c argument quoting
 ## Build profiles
 
 `[profile.release]`: `opt-level = 3`, `lto = true`, `codegen-units = 1`, `panic = "abort"`, `strip = true`.

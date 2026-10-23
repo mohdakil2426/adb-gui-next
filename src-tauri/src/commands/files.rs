@@ -596,19 +596,25 @@ fn pull_root_path(
 ) -> CmdResult<String> {
     let staging_dir = root_transfer_dir();
     let staged_path = format!("{staging_dir}/{}", remote_basename(remote));
-    let setup = format!("mkdir -p {}", quote_shell_arg(&staging_dir));
-    let copy = format!("cp -a {} {}", quote_shell_arg(remote), quote_shell_arg(&staging_dir));
-    let cleanup = format!("rm -rf {}", quote_shell_arg(&staging_dir));
+    let q_staging_dir = quote_shell_arg(&staging_dir);
+    let setup = format!("mkdir -p {q_staging_dir} && chmod 777 {q_staging_dir}");
+    let copy = format!(
+        "cp -a {} {} && chmod -R 777 {}",
+        quote_shell_arg(remote),
+        q_staging_dir,
+        q_staging_dir
+    );
+    let cleanup = format!("rm -rf {q_staging_dir}");
 
-    run_adb_for_serial(app, serial, &["shell", "su", "-c", &setup])?;
-    let copy_result = run_adb_for_serial(app, serial, &["shell", "su", "-c", &copy]);
+    run_shell_for_mode(app, serial, FileAccessMode::Root, &setup)?;
+    let copy_result = run_shell_for_mode(app, serial, FileAccessMode::Root, &copy);
     if copy_result.is_err() {
-        let _ = run_adb_for_serial(app, serial, &["shell", "su", "-c", &cleanup]);
+        let _ = run_shell_for_mode(app, serial, FileAccessMode::Root, &cleanup);
         return copy_result;
     }
 
     let pull_result = run_adb_for_serial(app, serial, &["pull", "-a", &staged_path, local]);
-    let cleanup_result = run_adb_for_serial(app, serial, &["shell", "su", "-c", &cleanup]);
+    let cleanup_result = run_shell_for_mode(app, serial, FileAccessMode::Root, &cleanup);
 
     match (pull_result, cleanup_result) {
         (Ok(output), Ok(_)) => Ok(output),
@@ -625,19 +631,24 @@ fn push_root_path(
 ) -> CmdResult<String> {
     let staging_dir = root_transfer_dir();
     let staged_path = format!("{staging_dir}/{}", local_basename(local));
-    let setup = format!("mkdir -p {}", quote_shell_arg(&staging_dir));
-    let copy = format!("cp -a {} {}", quote_shell_arg(&staged_path), quote_shell_arg(remote));
-    let cleanup = format!("rm -rf {}", quote_shell_arg(&staging_dir));
+    let q_staging_dir = quote_shell_arg(&staging_dir);
+    let q_staged_path = quote_shell_arg(&staged_path);
+    let q_remote = quote_shell_arg(remote);
+    let setup = format!("mkdir -p {q_staging_dir} && chmod 777 {q_staging_dir}");
+    let copy = format!(
+        "if [ -f {q_remote} ]; then cat {q_staged_path} > {q_remote}; else cp -a {q_staged_path} {q_remote}; fi"
+    );
+    let cleanup = format!("rm -rf {q_staging_dir}");
 
-    run_adb_for_serial(app, serial, &["shell", "su", "-c", &setup])?;
+    run_shell_for_mode(app, serial, FileAccessMode::Root, &setup)?;
     let push_result = run_adb_for_serial(app, serial, &["push", local, &staging_dir]);
     if push_result.is_err() {
-        let _ = run_adb_for_serial(app, serial, &["shell", "su", "-c", &cleanup]);
+        let _ = run_shell_for_mode(app, serial, FileAccessMode::Root, &cleanup);
         return push_result;
     }
 
-    let copy_result = run_adb_for_serial(app, serial, &["shell", "su", "-c", &copy]);
-    let cleanup_result = run_adb_for_serial(app, serial, &["shell", "su", "-c", &cleanup]);
+    let copy_result = run_shell_for_mode(app, serial, FileAccessMode::Root, &copy);
+    let cleanup_result = run_shell_for_mode(app, serial, FileAccessMode::Root, &cleanup);
 
     match (copy_result, cleanup_result) {
         (Ok(_), Ok(_)) => Ok(format!("Pushed {local} to {remote} with root staging")),

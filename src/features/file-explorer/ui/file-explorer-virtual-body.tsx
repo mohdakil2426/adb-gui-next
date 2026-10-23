@@ -90,56 +90,59 @@ export const FileExplorerVirtualBody = ({
         >
           {editing.creatingType !== null && (
             <TableRow
-              className="absolute top-0 left-0 grid h-10 w-full [grid-template-columns:var(--file-table-cols)]"
+              className="border-border/60 absolute top-0 left-0 grid h-10 w-full [grid-template-columns:var(--file-table-cols)] items-center"
               style={{ "--file-table-cols": fileTableColumns } as React.CSSProperties}
             >
-              <TableCell className="min-w-0 px-2 py-0">
+              <TableCell className="text-body min-w-0 px-3 py-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="size-4 shrink-0" />
+                  {selection.isMultiSelectMode ? <span className="size-4 shrink-0" /> : null}
                   {editing.creatingType === "folder" ? (
                     <Folder aria-hidden="true" className="text-primary size-4 shrink-0" />
                   ) : (
                     <File aria-hidden="true" className="text-foreground-subtle size-4 shrink-0" />
                   )}
-                  <Input
-                    aria-label={
-                      editing.creatingType === "folder" ? "New folder name" : "New file name"
-                    }
-                    autoFocus
-                    className={cn(
-                      "text-mono h-7 max-w-xs px-1.5 py-0 font-mono",
-                      editing.createError && "border-destructive focus-visible:ring-destructive"
-                    )}
-                    disabled={status.isCreating}
-                    onBlur={handleCancelCreate}
-                    onChange={(e) => actions.handleCreateChange(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        void actions.handleCreateConfirm();
+                  <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                    <Input
+                      aria-label={
+                        editing.creatingType === "folder" ? "New folder name" : "New file name"
                       }
-                      if (e.key === "Escape") {
-                        e.preventDefault();
-                        actions.cancelCreate();
+                      autoFocus
+                      className={cn(
+                        "text-body h-7 w-full min-w-0 px-2 py-0",
+                        editing.createError &&
+                          "border-destructive focus-visible:border-destructive focus-visible:ring-destructive"
+                      )}
+                      disabled={status.isCreating}
+                      onBlur={handleCancelCreate}
+                      onChange={(e) => actions.handleCreateChange(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void actions.handleCreateConfirm();
+                        }
+                        if (e.key === "Escape") {
+                          e.preventDefault();
+                          actions.cancelCreate();
+                        }
+                      }}
+                      placeholder={
+                        editing.creatingType === "folder" ? "New folder name" : "filename.ext"
                       }
-                    }}
-                    placeholder={
-                      editing.creatingType === "folder" ? "New folder name" : "filename.ext"
-                    }
-                    value={editing.createName}
-                  />
-                  {editing.createError ? (
-                    <span className="text-caption text-destructive shrink-0">
-                      {editing.createError}
-                    </span>
-                  ) : null}
-                  {status.isCreating ? (
-                    <Loader2
-                      aria-hidden="true"
-                      className="text-muted-foreground size-3.5 shrink-0 animate-spin"
+                      value={editing.createName}
                     />
-                  ) : null}
+                    {editing.createError ? (
+                      <span className="text-caption text-destructive shrink-0">
+                        {editing.createError}
+                      </span>
+                    ) : null}
+                    {status.isCreating ? (
+                      <Loader2
+                        aria-hidden="true"
+                        className="text-muted-foreground size-3.5 shrink-0 animate-spin"
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </TableCell>
               <TableCell className="min-w-0" />
