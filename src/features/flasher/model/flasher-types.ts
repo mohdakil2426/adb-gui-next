@@ -1,4 +1,4 @@
-export type FlasherTab = "overview" | "partition" | "sideload" | "wipe";
+export type FlasherTab = "partition" | "sideload" | "wipe";
 
 export type FlasherConnectionMode =
   | "FASTBOOT"

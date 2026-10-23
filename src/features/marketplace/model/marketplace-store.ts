@@ -10,7 +10,8 @@ type ProviderSource = backend.ProviderSource;
 type GithubDeviceFlowChallenge = backend.GithubDeviceFlowChallenge;
 type GithubRateLimitSummary = backend.GithubRateLimitSummary;
 type GithubUserSummary = backend.GithubUserSummary;
-export type MarketplaceTab = "overview" | "browse" | "updates" | "sources";
+export type MarketplaceTab = "overview" | "browse" | "sources";
+const VALID_MARKETPLACE_TABS = new Set<MarketplaceTab>(["overview", "browse", "sources"]);
 const ALL_PROVIDERS: ProviderSource[] = ALL_PROVIDER_IDS;
 const SEARCH_HISTORY_LIMIT = 10;
 const RECENTLY_VIEWED_LIMIT = 6;
@@ -136,7 +137,10 @@ export const getMarketplaceActiveFilterSummary = (
 };
 export const useMarketplaceStore = create<MarketplaceState>((set, get) => ({
   activeProviders: loadFromStorage<ProviderSource[]>("marketplace_providers", ALL_PROVIDERS),
-  activeTab: loadFromStorage<MarketplaceTab>("marketplace_tab", "overview"),
+  activeTab: (() => {
+    const saved = loadFromStorage<MarketplaceTab>("marketplace_tab", "overview");
+    return VALID_MARKETPLACE_TABS.has(saved) ? saved : "overview";
+  })(),
   addToSearchHistory: (query) => {
     const trimmed = query.trim();
     if (!trimmed) {

@@ -39,7 +39,6 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, "features", "marketplace", "ui", "app-detail-view.tsx"),
   path.join(srcRoot, "features", "marketplace", "sources", "github-auth-card.tsx"),
   path.join(srcRoot, "features", "dashboard", "ui", "device-hero-banner.tsx"),
-  path.join(srcRoot, "features", "flasher", "overview", "pre-flight-diagnostic-matrix.tsx"),
   path.join(srcRoot, "features", "utilities", "host", "host-google-setup-card.tsx"),
   path.join(srcRoot, "features", "app-manager", "debloater", "ui", "description-panel.tsx"),
   path.join(srcRoot, "features", "app-manager", "debloater", "ui", "install-flags-cockpit.tsx"),
@@ -65,7 +64,6 @@ const allowedLargeFiles = new Set([
   path.join(srcRoot, "features", "scrcpy", "display", "scrcpy-display-tab.tsx"),
   path.join(srcRoot, "features", "scrcpy", "scrcpy-view.tsx"),
   path.join(srcRoot, "features", "utilities", "diagnostics", "logcat-stream-card.tsx"),
-  path.join(srcRoot, "features", "utilities", "overview", "instant-actions-card.tsx"),
   path.join(srcRoot, "features", "utilities", "power", "system-tweaks-card.tsx"),
   path.join(srcRoot, "features", "utilities", "ui", "utilities-cockpit-hero.tsx"),
 ]);

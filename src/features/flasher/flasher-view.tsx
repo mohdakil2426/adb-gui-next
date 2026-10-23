@@ -1,4 +1,4 @@
-import { HardDrive, LayoutDashboard, Package, Trash2 } from "lucide-react";
+import { HardDrive, Package, Trash2 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 
 import { useFlashBatchQueue } from "@/features/flasher/hooks/use-flash-batch-queue";
@@ -6,7 +6,6 @@ import { useFlasherActions } from "@/features/flasher/hooks/use-flasher-actions"
 import { useFlasherDropTargets } from "@/features/flasher/hooks/use-flasher-drop-targets";
 import { useFlasherTelemetry } from "@/features/flasher/hooks/use-flasher-telemetry";
 import type { FlasherTab } from "@/features/flasher/model/flasher-types";
-import { FlasherOverviewTab } from "@/features/flasher/overview/flasher-overview-tab";
 import { FlasherPartitionTab } from "@/features/flasher/partition/flasher-partition-tab";
 import { FlasherSideloadTab } from "@/features/flasher/sideload/flasher-sideload-tab";
 import { FlasherCockpitHero } from "@/features/flasher/ui/flasher-cockpit-hero";
@@ -14,7 +13,7 @@ import { FlasherConfirmations } from "@/features/flasher/ui/flasher-confirmation
 import { FlasherWipeTab } from "@/features/flasher/wipe/flasher-wipe-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
-export const ViewFlasher = ({ initialTab = "overview" }: { initialTab?: FlasherTab } = {}) => {
+export const ViewFlasher = ({ initialTab = "partition" }: { initialTab?: FlasherTab } = {}) => {
   const [activeTab, setActiveTab] = useState<FlasherTab>(initialTab);
   const {
     confirmFlash,
@@ -39,7 +38,6 @@ export const ViewFlasher = ({ initialTab = "overview" }: { initialTab?: FlasherT
   } = useFlasherActions();
 
   const {
-    diagnostics,
     vitals,
     isProbing,
     lastUpdated,
@@ -70,10 +68,6 @@ export const ViewFlasher = ({ initialTab = "overview" }: { initialTab?: FlasherT
     sideloadSectionRef,
   });
 
-  const handleRebootBootloader = useCallback(() => {
-    void rebootDevice("bootloader");
-  }, [rebootDevice]);
-
   const handleRebootFastboot = useCallback(() => {
     void rebootDevice("fastboot");
   }, [rebootDevice]);
@@ -100,18 +94,13 @@ export const ViewFlasher = ({ initialTab = "overview" }: { initialTab?: FlasherT
         vitals={vitals}
       />
 
-      {/* ── 4-Tab Hardware Navigation ────────────────────────────────── */}
+      {/* ── 3-Tab Hardware Navigation ────────────────────────────────── */}
       <Tabs
         className="flex flex-col gap-4"
         onValueChange={(v) => setActiveTab(v as FlasherTab)}
         value={activeTab}
       >
         <TabsList className="bg-surface-raised w-full p-1">
-          <TabsTrigger className="text-caption flex-1 gap-2 font-medium" value="overview">
-            <LayoutDashboard className="size-4" />
-            <span>Overview & Diagnostics</span>
-          </TabsTrigger>
-
           <TabsTrigger className="text-caption flex-1 gap-2 font-medium" value="partition">
             <HardDrive className="size-4" />
             <span>Partition Flasher</span>
@@ -127,18 +116,6 @@ export const ViewFlasher = ({ initialTab = "overview" }: { initialTab?: FlasherT
             <span>Partitions & Wipe</span>
           </TabsTrigger>
         </TabsList>
-
-        {/* Tab 1: Overview & Diagnostics */}
-        <TabsContent className="m-0 focus-visible:outline-none" value="overview">
-          <FlasherOverviewTab
-            diagnostics={diagnostics}
-            isFastbootMode={isFastbootMode}
-            isProbing={isProbing}
-            onRebootBootloader={handleRebootBootloader}
-            onRefresh={refresh}
-            vitals={vitals}
-          />
-        </TabsContent>
 
         {/* Tab 2: Partition Flasher Studio */}
         <TabsContent className="m-0 focus-visible:outline-none" value="partition">

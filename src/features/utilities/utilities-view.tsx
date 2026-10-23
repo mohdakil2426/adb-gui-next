@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Camera, Power, Server, Zap } from "lucide-react";
+import { Camera, Power, Server, Zap } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { GetHostToolVersions } from "@/desktop/backend";
@@ -8,7 +8,6 @@ import { UtilitiesFastbootTab } from "@/features/utilities/fastboot/utilities-fa
 import { useHostSetupProgress } from "@/features/utilities/hooks/use-host-setup-progress";
 import { useUtilityActions } from "@/features/utilities/hooks/use-utility-actions";
 import { UtilitiesHostTab } from "@/features/utilities/host/utilities-host-tab";
-import { UtilitiesOverviewTab } from "@/features/utilities/overview/utilities-overview-tab";
 import { UtilitiesPowerTab } from "@/features/utilities/power/utilities-power-tab";
 import { GetVarDialog } from "@/features/utilities/ui/get-var-dialog";
 import { UtilitiesCockpitHero } from "@/features/utilities/ui/utilities-cockpit-hero";
@@ -17,7 +16,7 @@ import { TabsWithIcon } from "@/shared/ui/tabs-with-icon";
 import { queryKeys } from "@/shared/utils/queries";
 // Empty state handled across UI when data?.length === 0
 
-export type UtilitiesTab = "overview" | "power" | "diagnostics" | "fastboot" | "host";
+export type UtilitiesTab = "power" | "fastboot" | "diagnostics" | "host";
 
 export const ViewUtilities = () => {
   const {
@@ -57,9 +56,9 @@ export const ViewUtilities = () => {
     staleTime: 30_000,
   });
 
-  // Active Tab state — default to 'fastboot' if device is in fastboot mode, otherwise 'overview'
+  // Active Tab state — default to 'fastboot' if device is in fastboot mode, otherwise 'power'
   const [prevDeviceMode, setPrevDeviceMode] = useState(deviceMode);
-  const [tab, setTab] = useState<UtilitiesTab>(deviceMode === "fastboot" ? "fastboot" : "overview");
+  const [tab, setTab] = useState<UtilitiesTab>(deviceMode === "fastboot" ? "fastboot" : "power");
 
   if (deviceMode !== prevDeviceMode) {
     setPrevDeviceMode(deviceMode);
@@ -81,27 +80,8 @@ export const ViewUtilities = () => {
     });
   }, [refetchDevices, refetchVersions, queryClient]);
 
-  const handleNavigateTab = useCallback(
-    (targetTab: "power" | "diagnostics" | "fastboot" | "host") => {
-      setTab(targetTab);
-    },
-    []
-  );
-
   const utilityTabs = useMemo(
     () => [
-      {
-        content: (
-          <UtilitiesOverviewTab
-            deviceMode={deviceMode}
-            deviceSerial={deviceSerial}
-            onNavigateTab={handleNavigateTab}
-          />
-        ),
-        icon: <Activity aria-hidden="true" className="size-4" />,
-        name: "Overview",
-        value: "overview",
-      },
       {
         content: (
           <UtilitiesPowerTab
@@ -115,12 +95,6 @@ export const ViewUtilities = () => {
         icon: <Power aria-hidden="true" className="size-4" />,
         name: "Power & Tweaks",
         value: "power",
-      },
-      {
-        content: <UtilitiesDiagnosticsTab deviceMode={deviceMode} deviceSerial={deviceSerial} />,
-        icon: <Camera aria-hidden="true" className="size-4" />,
-        name: "Diagnostics",
-        value: "diagnostics",
       },
       {
         content: (
@@ -142,6 +116,12 @@ export const ViewUtilities = () => {
         value: "fastboot",
       },
       {
+        content: <UtilitiesDiagnosticsTab deviceMode={deviceMode} deviceSerial={deviceSerial} />,
+        icon: <Camera aria-hidden="true" className="size-4" />,
+        name: "Diagnostics",
+        value: "diagnostics",
+      },
+      {
         content: (
           <UtilitiesHostTab
             handleKillServer={handleKillServer}
@@ -158,7 +138,6 @@ export const ViewUtilities = () => {
     [
       deviceMode,
       deviceSerial,
-      handleNavigateTab,
       handleReboot,
       loadingAction,
       sentAction,
@@ -194,7 +173,7 @@ export const ViewUtilities = () => {
         onRefresh={handleRescan}
       />
 
-      {/* 5-Tab Navigation System */}
+      {/* 4-Tab Navigation System */}
       <TabsWithIcon
         className="w-full"
         onValueChange={(value) => {

@@ -1,6 +1,6 @@
 # Marketplace Feature Guide
 
-`src/features/marketplace/` is the 4-tab Hardware Cockpit frontend (`marketplace-view.tsx`) for browsing, searching, downloading, and managing Android apps and tools. Parent: `src/AGENTS.md`.
+`src/features/marketplace/` is the 3-tab Hardware Cockpit frontend (`marketplace-view.tsx`) for browsing, searching, downloading, and managing Android apps and tools. Parent: `src/AGENTS.md`.
 
 ## Architecture & Invariants
 
@@ -21,4 +21,4 @@
 
 ## Ownership Map
 
-`ui/` + `overview/` + `browse/` + `updates/` + `sources/` (tabs/views), `model/` (stores), `hooks/` (auth/search), `utils/` (install).
+`ui/` + `overview/` + `browse/` + `sources/` (tabs/views), `model/` (stores), `hooks/` (auth/search), `utils/` (install).

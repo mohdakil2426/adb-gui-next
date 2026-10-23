@@ -74,32 +74,29 @@ const wrapper = ({ children }: { children: ReactNode }) => {
 };
 
 describe(ViewUtilities, () => {
-  it("renders heading and navigation tab triggers", () => {
+  it("renders heading and navigation tab triggers without overview", () => {
     render(<ViewUtilities />, { wrapper });
 
     expect(screen.getByRole("heading", { hidden: true, name: "Utilities" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /overview/iu })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /power & tweaks/iu })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /diagnostics/iu })).toBeInTheDocument();
+    const tabNames = screen.getAllByRole("tab").map((el) => el.textContent?.trim());
+    expect(tabNames).toStrictEqual(["Power & Tweaks", "Fastboot", "Diagnostics", "Host Setup"]);
   });
 
-  it("renders fastboot and host setup tab triggers with default overview selection", () => {
+  it("renders tab triggers with default power selection when not in fastboot", () => {
     render(<ViewUtilities />, { wrapper });
 
-    expect(screen.getByRole("tab", { name: /fastboot/iu })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /host setup/iu })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /overview/iu, selected: true })).toBeInTheDocument();
-    expect(screen.getByText("Instant Action Command Cockpit")).toBeInTheDocument();
+    expect(
+      screen.getByRole("tab", { name: /power & tweaks/iu, selected: true })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Target Reboot Actions")).toBeInTheDocument();
   });
 
   it("navigates across power, fastboot, and host setup tabs", async () => {
     const user = userEvent.setup();
     render(<ViewUtilities />, { wrapper });
 
-    await user.click(screen.getByRole("tab", { name: /power & tweaks/iu }));
     expect(screen.getByText("Target Reboot Actions")).toBeInTheDocument();
     expect(screen.getByText("Android System Tweaks")).toBeInTheDocument();
-
     await user.click(screen.getByRole("tab", { name: /fastboot/iu }));
     expect(screen.getByText(/Bootloader Slot Controls/iu)).toBeInTheDocument();
 

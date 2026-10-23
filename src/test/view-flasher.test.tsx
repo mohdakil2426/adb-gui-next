@@ -27,10 +27,10 @@ describe(ViewFlasher, () => {
     useDeviceStore.getState().reset();
   });
 
-  it("renders 4 tab triggers", () => {
+  it("renders 3 tab triggers without overview & diagnostics", () => {
     render(<ViewFlasher />);
 
-    expect(screen.getByRole("tab", { name: /overview & diagnostics/iu })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: /overview & diagnostics/iu })).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /partition flasher/iu })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /recovery sideload/iu })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /partitions & wipe/iu })).toBeInTheDocument();
@@ -43,15 +43,6 @@ describe(ViewFlasher, () => {
     expect(screen.getByText("Bootloader Lock")).toBeInTheDocument();
     expect(screen.getByText("Active Slot")).toBeInTheDocument();
     expect(screen.getByText("Product Board")).toBeInTheDocument();
-  });
-
-  it("renders overview tab with partition architecture and diagnostic matrix", () => {
-    render(<ViewFlasher initialTab="overview" />);
-
-    expect(screen.getByText("Android A/B Partition Architecture")).toBeInTheDocument();
-    expect(screen.getByText("Pre-Flight Diagnostic Matrix")).toBeInTheDocument();
-    expect(screen.getByText("Flasher Knowledge Base: Modes & Protocols")).toBeInTheDocument();
-    expect(screen.getByText("Recent Flash History & Audit Log")).toBeInTheDocument();
   });
 
   it("renders partition helper text alongside the explicit field label in partition tab", () => {
@@ -87,10 +78,6 @@ describe(ViewFlasher, () => {
   it("allows navigating between tabs via tab triggers", async () => {
     const user = userEvent.setup();
     render(<ViewFlasher />);
-
-    expect(screen.getByText("Android A/B Partition Architecture")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("tab", { name: /partition flasher/iu }));
     expect(screen.getByLabelText("Partition Name")).toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: /recovery sideload/iu }));

@@ -1,4 +1,4 @@
-import { ArrowUpCircle, Database, Search, Sparkles } from "lucide-react";
+import { Database, Search, Sparkles } from "lucide-react";
 import { useEffect } from "react";
 
 import { MarketplaceBrowseTab } from "@/features/marketplace/browse/marketplace-browse-tab";
@@ -10,7 +10,6 @@ import type { MarketplaceTab } from "@/features/marketplace/model/marketplace-st
 import { MarketplaceOverviewTab } from "@/features/marketplace/overview/marketplace-overview-tab";
 import { MarketplaceSourcesTab } from "@/features/marketplace/sources/marketplace-sources-tab";
 import { MarketplaceHeroBanner } from "@/features/marketplace/ui/marketplace-hero-banner";
-import { MarketplaceUpdatesTab } from "@/features/marketplace/updates/marketplace-updates-tab";
 import { Badge } from "@/shared/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
@@ -70,11 +69,6 @@ export const ViewMarketplace = ({ initialTab }: { initialTab?: MarketplaceTab } 
             )}
           </TabsTrigger>
 
-          <TabsTrigger className="flex-1 gap-2" value="updates">
-            <ArrowUpCircle className="size-4" />
-            <span>Installed & Updates</span>
-          </TabsTrigger>
-
           <TabsTrigger className="flex-1 gap-2" value="sources">
             <Database className="size-4" />
             <span>Sources & Repos</span>
@@ -101,10 +95,6 @@ export const ViewMarketplace = ({ initialTab }: { initialTab?: MarketplaceTab } 
             searchError={searchError}
             target={target}
           />
-        </TabsContent>
-
-        <TabsContent className="mt-0 flex-1 outline-none" value="updates">
-          <MarketplaceUpdatesTab target={target} />
         </TabsContent>
 
         <TabsContent className="mt-0 flex-1 outline-none" value="sources">
