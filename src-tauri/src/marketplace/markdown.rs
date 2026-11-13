@@ -447,8 +447,8 @@ mod tests {
         let md = "| Feature | Status |\n| :--- | :---: |\n| Root | Supported |\n| OTA | Active |\n";
         let html = render_markdown_to_html(md, None, None, None);
         assert!(html.contains("<table>"));
-        assert!(html.contains("<th>Feature</th>"));
-        assert!(html.contains("<td>Root</td>"));
+        assert!(html.contains("<th align=\"left\">Feature</th>"));
+        assert!(html.contains("<td align=\"left\">Root</td>"));
     }
 
     #[test]
