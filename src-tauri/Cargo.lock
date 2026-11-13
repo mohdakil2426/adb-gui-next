@@ -8,7 +8,6 @@ version = "0.2.5"
 dependencies = [
  "aes",
  "anyhow",
- "apk-info-axml",
  "base64 0.23.1",
  "brotli",
  "byteorder",
@@ -133,25 +132,6 @@ name = "anyhow"
 version = "1.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
-
-[[package]]
-name = "apk-info-axml"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7af147082b58f6690b566f1620201b5f372b5c75dd66b10d8f2b643e0107cc8c"
-dependencies = [
- "apk-info-xml",
- "bitflags 2.13.2",
- "log",
- "thiserror 2.0.21",
- "winnow 1.0.4",
-]
-
-[[package]]
-name = "apk-info-xml"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34214c70a83350c5c28b57a677c945057850fdd744de4890aabbdbe7391aa348"
 
 [[package]]
 name = "apple-native-keyring-store"
