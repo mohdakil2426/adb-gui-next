@@ -409,20 +409,16 @@ pub async fn get_remote_payload_metadata(
         .map(|p| p.new_partition_info.as_ref().and_then(|i| i.size).unwrap_or_default())
         .sum();
 
-    let dynamic_groups = manifest
-        .dynamic_partition_metadata
-        .as_ref()
-        .map(|meta| {
-            meta.groups
-                .iter()
-                .map(|g| DynamicGroupInfo {
-                    name: g.name.clone(),
-                    size: g.size,
-                    partitions: g.partition_names.clone(),
-                })
-                .collect()
-        })
-        .unwrap_or_default();
+    let dynamic_groups = manifest.dynamic_partition_metadata.as_ref().map_or_default(|meta| {
+        meta.groups
+            .iter()
+            .map(|g| DynamicGroupInfo {
+                name: g.name.clone(),
+                size: g.size,
+                partitions: g.partition_names.clone(),
+            })
+            .collect()
+    });
 
     // =========================================================================
     // OTA Package metadata — read from ZIP entries (best-effort, never fails)

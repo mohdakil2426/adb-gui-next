@@ -117,8 +117,7 @@ impl NothingProvider {
             let subtitle_text = summary
                 .select(&subtitle_span_sel)
                 .next()
-                .map(|s| s.text().collect::<String>())
-                .unwrap_or_default();
+                .map_or_default(|s| s.text().collect::<String>());
 
             let trimmed_title = title_text.trim();
             if trimmed_title.contains("Categorization")

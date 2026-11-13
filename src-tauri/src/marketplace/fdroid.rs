@@ -114,7 +114,7 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
     };
 
     let name = search_meta.as_ref().map_or_else(|| package.to_string(), |meta| meta.name.clone());
-    let description = search_meta.as_ref().map(|meta| meta.summary.clone()).unwrap_or_default();
+    let description = search_meta.as_ref().map_or_default(|meta| meta.summary.clone());
     let icon_url = search_meta.as_ref().and_then(|meta| {
         if meta.icon.is_empty() {
             None
@@ -125,32 +125,24 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
         }
     });
 
-    let versions = response["packages"]
-        .as_array()
-        .map(|packages| {
-            packages
-                .iter()
-                .filter_map(|package_entry| {
-                    let version_code = package_entry["versionCode"].as_i64()?;
-                    Some(VersionInfo {
-                        version_name: package_entry["versionName"]
-                            .as_str()
-                            .unwrap_or("")
-                            .to_string(),
-                        version_code,
-                        size: package_entry["size"].as_u64(),
-                        download_url: Some(format!(
-                            "https://f-droid.org/repo/{package}_{version_code}.apk"
-                        )),
-                        published_at: package_entry["added"]
-                            .as_str()
-                            .map(|value| value.to_string()),
-                    })
+    let versions = response["packages"].as_array().map_or_default(|packages| {
+        packages
+            .iter()
+            .filter_map(|package_entry| {
+                let version_code = package_entry["versionCode"].as_i64()?;
+                Some(VersionInfo {
+                    version_name: package_entry["versionName"].as_str().unwrap_or("").to_string(),
+                    version_code,
+                    size: package_entry["size"].as_u64(),
+                    download_url: Some(format!(
+                        "https://f-droid.org/repo/{package}_{version_code}.apk"
+                    )),
+                    published_at: package_entry["added"].as_str().map(|value| value.to_string()),
                 })
-                .take(10)
-                .collect()
-        })
-        .unwrap_or_default();
+            })
+            .take(10)
+            .collect()
+    });
 
     let version_name = response["packages"]
         .as_array()

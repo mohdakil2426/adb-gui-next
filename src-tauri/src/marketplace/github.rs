@@ -43,15 +43,12 @@ fn parse_repo_items(items: &[serde_json::Value]) -> Vec<MarketplaceApp> {
             let updated_at = repo["pushed_at"].as_str().map(|value| value.to_string());
             let language = repo["language"].as_str().map(|v| v.to_string());
 
-            let categories: Vec<String> = repo["topics"]
-                .as_array()
-                .map(|topics| {
-                    topics
-                        .iter()
-                        .filter_map(|topic| topic.as_str().map(|value| value.to_string()))
-                        .collect()
-                })
-                .unwrap_or_default();
+            let categories: Vec<String> = repo["topics"].as_array().map_or_default(|topics| {
+                topics
+                    .iter()
+                    .filter_map(|topic| topic.as_str().map(|value| value.to_string()))
+                    .collect()
+            });
 
             Some(MarketplaceApp {
                 name,

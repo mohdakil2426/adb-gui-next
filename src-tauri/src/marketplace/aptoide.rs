@@ -107,15 +107,13 @@ pub async fn get_detail(client: &Client, package: &str) -> CmdResult<Marketplace
         .or_else(|| file["path"]["url"].as_str())
         .map(|value| value.to_string());
 
-    let screenshots: Vec<String> = data["media"]["screenshots"]
-        .as_array()
-        .map(|screenshots| {
+    let screenshots: Vec<String> =
+        data["media"]["screenshots"].as_array().map_or_default(|screenshots| {
             screenshots
                 .iter()
                 .filter_map(|screenshot| screenshot["url"].as_str().map(|value| value.to_string()))
                 .collect()
-        })
-        .unwrap_or_default();
+        });
 
     let description = data["media"]["description"].as_str().unwrap_or("").to_string();
 

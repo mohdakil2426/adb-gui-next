@@ -33,8 +33,7 @@ mod tests;
 pub(crate) fn format_datetime() -> String {
     let ts = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or_default();
+        .map_or_default(|d| d.as_secs());
     let days = ts / 86400;
     let time = ts % 86400;
 
