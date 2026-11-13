@@ -189,9 +189,14 @@ const FileExplorerRowImpl = ({
             ) : null}
             <FileEntryIcon type={file.type} />
             <div className="min-w-0 flex-1">
-              <span className="block min-w-0 leading-tight break-words">{file.name}</span>
+              <span className="block min-w-0 truncate leading-tight" title={file.name}>
+                {file.name}
+              </span>
               {file.type === "Symlink" && file.linkTarget ? (
-                <span className="text-mono-sm text-muted-foreground block min-w-0 font-mono break-words">
+                <span
+                  className="text-mono-sm text-muted-foreground block min-w-0 truncate font-mono"
+                  title={`→ ${file.linkTarget}`}
+                >
                   → {file.linkTarget}
                 </span>
               ) : null}
