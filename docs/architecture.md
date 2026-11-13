@@ -108,7 +108,7 @@ The system is a **layered Tauri 2 app**: UI never shells out directly; all proce
 ```mermaid
 flowchart TB
   subgraph FE["Frontend — React 19 + TypeScript + Vite"]
-    entry["main.tsx → App.tsx"]
+    entry["main.tsx → app.tsx"]
     shell["app/shell — MainLayout, sidebar, header, StatusBar, CommandPalette, BottomPanel"]
     views["features/* — 9 lazy-loaded views"]
     stores["Zustand + TanStack Query"]
@@ -197,7 +197,7 @@ adb-gui-next/
 ├── src/                          # Frontend
 │   ├── main.tsx                  # React mount
 │   ├── app/                      # App shell only
-│   │   ├── App.tsx               # QueryClientProvider
+│   │   ├── app.tsx               # QueryClientProvider
 │   │   └── shell/                # MainLayout, viewConfig, Header, AppSidebar,
 │   │                             # ViewContent, StatusBar, CommandPalette, BottomPanel
 │   ├── desktop/                  # ONLY place for raw Tauri invoke/events
@@ -237,7 +237,7 @@ adb-gui-next/
 
 | Concern                | Correct location                                                                                            | Do not                                             |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| Bootstrap              | `src/main.tsx`, `src/app/App.tsx`                                                                           | Feature logic in bootstrap                         |
+| Bootstrap              | `src/main.tsx`, `src/app/app.tsx`                                                                           | Feature logic in bootstrap                         |
 | Shell / view switch    | `src/app/shell/`                                                                                            | React Router / per-view device polls               |
 | Feature UI             | `src/features/<feature>/`                                                                                   | Legacy `components/views`                          |
 | Raw `invoke` / events  | `src/desktop/*` only                                                                                        | Scatter in features                                |
@@ -258,7 +258,7 @@ adb-gui-next/
 ```mermaid
 flowchart TD
   A["index.html #root — font preload"] --> B["main.tsx StrictMode"]
-  B --> C["App.tsx QueryClientProvider"]
+  B --> C["app.tsx QueryClientProvider"]
   C --> D["MainLayout"]
   D --> E["ThemeProvider + LazyMotion + MotionConfig"]
   D --> F["LoadingScreen until useAppReady()"]
@@ -278,7 +278,7 @@ flowchart TD
 | File                              | Role                                                                                                                                                                                                                                                                                |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `src/main.tsx`                    | Mount only                                                                                                                                                                                                                                                                          |
-| `src/app/App.tsx`                 | Global `QueryClient` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess, so refetch-on-focus and blind retries were removed; queries that need to be fresher opt in individually. |
+| `src/app/app.tsx`                 | Global `QueryClient` — `staleTime: STALE_TIME.DEFAULT` (30 s), `gcTime: 5m`, `retry: false`, `refetchOnWindowFocus: false`. Every query spawns an adb/fastboot subprocess, so refetch-on-focus and blind retries were removed; queries that need to be fresher opt in individually. |
 | `src/app/shell/MainLayout.tsx`    | Shell, device poll, view state, palette state, layout chrome                                                                                                                                                                                                                        |
 | `src/shared/hooks/useAppReady.ts` | Gates the splash on `document.fonts.ready` + one frame, capped at 2 s (replaced a fixed 750 ms animation)                                                                                                                                                                           |
 

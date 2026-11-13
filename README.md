@@ -294,7 +294,7 @@ bun run tauri build
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │              Frontend (React 19 + TypeScript + Vite 8)           │
-│  app/App.tsx → app/shell/MainLayout → 9 views + Bottom Panel     │
+│  app/app.tsx → app/shell/MainLayout → 9 views + Bottom Panel     │
 │  State: Zustand 5 + TanStack Query 5 (centralized device poll)   │
 │  UI: shadcn/ui (40 primitives) + Tailwind CSS v4 + Framer Motion │
 ├──────────────────────────────────────────────────────────────────┤
