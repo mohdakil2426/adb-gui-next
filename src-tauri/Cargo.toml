@@ -15,20 +15,20 @@ name = "adb_gui_next_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-prost-build = "0.14.4"
+prost-build = "0.14.6"
 protoc-bin-vendored = "3.3.0"
 tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
 anyhow = "1.0.104"
-apk-info-axml = "1.0.13"
+apk-info-axml = "1.1.1"
 base64 = "0.23.1"
 bzip2 = "0.6.1"
 hex = "0.4.3"
-log = "0.4.34"
+log = "0.4.35"
 libc = "0.2.191"
 memmap2 = "0.9.12"
-prost = "0.14.4"
+prost = "0.14.6"
 rayon = "1.12.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
@@ -36,17 +36,17 @@ sha1 = "0.11.0"
 sha2 = "0.11.1"
 tauri = { version = "2.12.5", features = [] }
 tokio = { version = "1.54.1", features = ["rt-multi-thread", "fs", "io-util", "macros"] }
-tauri-plugin-dialog = "2.8.3"
-tauri-plugin-log = "2.10.1"
-tauri-plugin-opener = "2.7.2"
+tauri-plugin-dialog = "2.8.4"
+tauri-plugin-log = "2.10.2"
+tauri-plugin-opener = "2.7.3"
 tempfile = "3.27.0"
 url = "2.5.8"
 which = "8.0.6"
 # liblzma is the maintained fork of xz2 (API-compatible XzDecoder path).
 # Do not also depend on xz2 — dual native lzma links break the link step.
 liblzma = "0.4.9"
-zstd = "0.14.3"
-zip = "9.0.5"
+zstd = "0.14.4"
+zip = "9.5.1"
 tar = "0.4.46"
 # HTTP range bodies / zero-copy reclaim into Vec when refcount == 1.
 bytes = "1.12.1"
@@ -56,11 +56,11 @@ dunce = "1.0.5"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 
 # OPS/OFP firmware format support
-aes = "0.9.3"
+aes = "0.9.4"
 cfb-mode = "0.9.1"
 md-5 = "0.11.0"
 quick-xml = "0.42.0"
-brotli = { version = "9.0.0", optional = true }
+brotli = { version = "9.1.1", optional = true }
 
 # HTTP client for marketplace + payload
 reqwest = { version = "0.13.5", features = ["rustls", "stream", "http2", "blocking", "json"] }
@@ -70,12 +70,12 @@ keyring = "4.2.0"
 rand = "0.10.3"
 open = "5.4.5"
 # zlib-rs: pure-Rust zlib backend (~1.5–2× inflate vs miniz_oxide on factory/ZIP deflate).
-flate2 = { version = "1.1.10", default-features = false, features = ["zlib-rs"] }
+flate2 = { version = "1.1.11", default-features = false, features = ["zlib-rs"] }
 byteorder = "1.5.0"
 lz4_flex = "0.14.0"
 scraper = "0.29.0"
-tauri-plugin-single-instance = "2.5.4"
-comrak = { version = "0.57.0", default-features = false }
+tauri-plugin-single-instance = "2.5.5"
+comrak = { version = "0.59.0", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", features = [
